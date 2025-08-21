@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('continents', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('code', 2)->unique();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('continents')) {
+            Schema::create('continents', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('code', 2)->unique();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

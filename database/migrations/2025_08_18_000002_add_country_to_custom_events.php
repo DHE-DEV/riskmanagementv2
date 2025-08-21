@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('custom_events', function (Blueprint $table) {
-            $table->foreignId('country_id')->nullable()->after('event_type')->constrained('countries')->nullOnDelete();
-        });
+        if (!Schema::hasColumn('custom_events', 'country_id')) {
+            Schema::table('custom_events', function (Blueprint $table) {
+                $table->foreignId('country_id')->nullable()->after('event_type')->constrained('countries')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void
@@ -20,5 +22,3 @@ return new class extends Migration
         });
     }
 };
-
-

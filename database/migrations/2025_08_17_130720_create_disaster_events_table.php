@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('disaster_events', function (Blueprint $table) {
+        if (!Schema::hasTable('disaster_events')) {
+            Schema::create('disaster_events', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
@@ -87,8 +88,9 @@ return new class extends Migration
             $table->json('utility_services_status')->nullable();
             $table->json('border_crossings_status')->nullable();
             $table->timestamps();
-            $table->softDeletes();
-        });
+                $table->softDeletes();
+            });
+        }
     }
 
     /**
