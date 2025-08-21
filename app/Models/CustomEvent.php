@@ -1,0 +1,173 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class CustomEvent extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'title',
+        'description',
+        'event_type',
+        'country_id',
+        'latitude',
+        'longitude',
+        'marker_color',
+        'marker_icon',
+        'icon_color',
+        'marker_size',
+        'popup_content',
+        'start_date',
+        'end_date',
+        'is_active',
+        'priority',
+        'severity',
+        'category',
+        'tags',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:16',
+        'longitude' => 'decimal:16',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'is_active' => 'boolean',
+        'tags' => 'array',
+    ];
+
+    protected $attributes = [
+        'marker_color' => '#FF0000',
+        'marker_icon' => 'fa-map-marker',
+        'icon_color' => '#FFFFFF',
+        'marker_size' => 'medium',
+        'is_active' => true,
+        'priority' => 'medium',
+        'severity' => 'medium',
+    ];
+
+    /**
+     * Country relation.
+     */
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * Get the user who created this event.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the user who last updated this event.
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Scope a query to only include active events.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope a query to only include events within a date range.
+     */
+    public function scopeInDateRange($query, $startDate, $endDate)
+    {
+        return $query->where(function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('start_date', [$startDate, $endDate])
+              ->orWhereBetween('end_date', [$startDate, $endDate])
+              ->orWhere(function ($subQ) use ($startDate, $endDate) {
+                  $subQ->where('start_date', '<=', $startDate)
+                       ->where('end_date', '>=', $endDate);
+              });
+        });
+    }
+
+    /**
+     * Scope a query to only include events by priority.
+     */
+    public function scopeByPriority($query, $priority)
+    {
+        return $query->where('priority', $priority);
+    }
+
+    /**
+     * Scope a query to only include events by category.
+     */
+    public function scopeByCategory($query, $category)
+    {
+        return $query->where('category', $category);
+    }
+
+    /**
+     * Get the marker size options.
+     */
+    public static function getMarkerSizeOptions(): array
+    {
+        return [
+            'small' => 'Klein',
+            'medium' => 'Mittel',
+            'large' => 'Groß',
+        ];
+    }
+
+    /**
+     * Get the priority options.
+     */
+    public static function getPriorityOptions(): array
+    {
+        return [
+            'low' => 'Niedrig',
+            'medium' => 'Mittel',
+            'high' => 'Hoch',
+            'critical' => 'Kritisch',
+        ];
+    }
+
+    /**
+     * Get the event type options.
+     */
+    public static function getEventTypeOptions(): array
+    {
+        return [
+            'earthquake' => 'Erdbeben',
+            'hurricane' => 'Hurrikan',
+            'flood' => 'Überschwemmung',
+            'wildfire' => 'Waldbrand',
+            'volcano' => 'Vulkan',
+            'drought' => 'Dürre',
+            'exercise' => 'Übung',
+            'other' => 'Sonstiges',
+        ];
+    }
+
+    /**
+     * Get the severity options.
+     */
+    public static function getSeverityOptions(): array
+    {
+        return [
+            'low' => 'Niedrig',
+            'medium' => 'Mittel',
+            'high' => 'Hoch',
+            'critical' => 'Kritisch',
+        ];
+    }
+}
