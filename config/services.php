@@ -42,4 +42,10 @@ return [
         'kit' => env('FONT_AWESOME'),
     ],
 
+    'passolution' => [
+        'api_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
+        'api_key' => env('PASSOLUTION_API_KEY'),
+        'api_secret' => env('PASSOLUTION_API_SECRET'),
+    ],
+
 ];
