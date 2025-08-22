@@ -55,32 +55,37 @@ class UserResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()->isAdmin();
+        return auth()->user() && auth()->user()->isAdmin() && auth()->user()->isActive();
     }
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()->isAdmin();
+        return auth()->user() && auth()->user()->isAdmin() && auth()->user()->isActive();
     }
 
     public static function canDelete(Model $record): bool
     {
+        // Check if user is authenticated, admin, and active
+        if (!auth()->user() || !auth()->user()->isAdmin() || !auth()->user()->isActive()) {
+            return false;
+        }
+        
         // Verhindere das Löschen des eigenen Accounts
         if ($record->id === auth()->id()) {
             return false;
         }
         
-        return auth()->user()->isAdmin();
+        return true;
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->isAdmin();
+        return auth()->user() && auth()->user()->isAdmin() && auth()->user()->isActive();
     }
 
     public static function canView(Model $record): bool
     {
-        return auth()->user()->isAdmin();
+        return auth()->user() && auth()->user()->isAdmin() && auth()->user()->isActive();
     }
 
     public static function getNavigationGroup(): ?string

@@ -4,6 +4,12 @@ namespace App\Filament\Resources\UserResource\Tables;
 
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 
 class UsersTable
@@ -84,11 +90,11 @@ class UsersTable
                     ->toggle(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->label('Bearbeiten')
                     ->icon('heroicon-o-pencil'),
 
-                Tables\Actions\Action::make('toggle_active')
+                Action::make('toggle_active')
                     ->label(fn ($record) => $record->is_active ? 'Deaktivieren' : 'Aktivieren')
                     ->icon(fn ($record) => $record->is_active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn ($record) => $record->is_active ? 'danger' : 'success')
@@ -105,14 +111,14 @@ class UsersTable
                     })
                     ->visible(fn ($record) => $record->id !== auth()->id()),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('Löschen')
                     ->icon('heroicon-o-trash')
                     ->visible(fn ($record) => $record->id !== auth()->id()),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('activate')
+                BulkActionGroup::make([
+                    BulkAction::make('activate')
                         ->label('Aktivieren')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -127,7 +133,7 @@ class UsersTable
                             });
                         }),
 
-                    Tables\Actions\BulkAction::make('deactivate')
+                    BulkAction::make('deactivate')
                         ->label('Deaktivieren')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
@@ -142,7 +148,7 @@ class UsersTable
                             });
                         }),
 
-                    Tables\Actions\DeleteBulkAction::make()
+                    DeleteBulkAction::make()
                         ->label('Löschen')
                         ->icon('heroicon-o-trash')
                         ->requiresConfirmation()
@@ -156,7 +162,7 @@ class UsersTable
             ->emptyStateHeading('Keine Benutzer gefunden')
             ->emptyStateDescription('Erstellen Sie den ersten Benutzer, um zu beginnen.')
             ->emptyStateActions([
-                Tables\Actions\Action::make('create')
+                Action::make('create')
                     ->label('Benutzer erstellen')
                     ->url(route('filament.admin.resources.users.create'))
                     ->icon('heroicon-o-plus')
