@@ -25,6 +25,7 @@ class CustomEventController extends Controller
                         'description' => $event->description,
                         'event_type' => $event->event_type,
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',
+                        'country_relation' => $event->country,
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $event->marker_color,

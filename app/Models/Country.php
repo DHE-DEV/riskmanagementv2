@@ -17,6 +17,7 @@ class Country extends Model
         'iso3_code',
         'name_translations',
         'is_eu_member',
+        'is_schengen_member',
         'currency_code',
         'currency_name',
         'currency_symbol',
@@ -36,6 +37,7 @@ class Country extends Model
     protected $casts = [
         'name_translations' => 'array',
         'is_eu_member' => 'boolean',
+        'is_schengen_member' => 'boolean',
         'languages' => 'array',
         'risk_factors' => 'array',
         'travel_advisories' => 'array',

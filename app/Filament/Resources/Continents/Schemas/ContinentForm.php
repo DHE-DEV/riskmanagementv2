@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Continents\Schemas;
 
+use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
@@ -12,17 +13,34 @@ class ContinentForm
     {
         return $schema
             ->components([
-                TextInput::make('name_translations')
+                KeyValue::make('name_translations')
+                    ->label('Namen (Übersetzungen)')
+                    ->keyLabel('Sprache')
+                    ->valueLabel('Name')
+                    ->default(['de' => '', 'en' => ''])
                     ->required(),
+                
                 TextInput::make('code')
-                    ->required(),
+                    ->label('Code')
+                    ->required()
+                    ->maxLength(10),
+                    
                 Textarea::make('description')
+                    ->label('Beschreibung')
                     ->columnSpanFull(),
-                Textarea::make('keywords')
+                    
+                KeyValue::make('keywords')
+                    ->label('Schlagwörter')
+                    ->keyLabel('Index')
+                    ->valueLabel('Schlagwort')
                     ->columnSpanFull(),
+                    
                 TextInput::make('lat')
+                    ->label('Breitengrad')
                     ->numeric(),
+                    
                 TextInput::make('lng')
+                    ->label('Längengrad')
                     ->numeric(),
             ]);
     }

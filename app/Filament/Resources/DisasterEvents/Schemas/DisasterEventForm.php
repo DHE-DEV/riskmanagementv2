@@ -45,11 +45,20 @@ class DisasterEventForm
                 TextInput::make('radius_km')
                     ->numeric(),
                 Select::make('country_id')
-                    ->relationship('country', 'id'),
+                    ->relationship('country', 'iso_code', fn ($query) => $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))"))
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->getName('de'))
+                    ->searchable()
+                    ->preload(),
                 Select::make('region_id')
-                    ->relationship('region', 'id'),
+                    ->relationship('region', 'code', fn ($query) => $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))"))
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->getName('de'))
+                    ->searchable()
+                    ->preload(),
                 Select::make('city_id')
-                    ->relationship('city', 'id'),
+                    ->relationship('city', 'id', fn ($query) => $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))"))
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->getName('de'))
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('affected_areas'),
                 DatePicker::make('event_date')
                     ->required(),

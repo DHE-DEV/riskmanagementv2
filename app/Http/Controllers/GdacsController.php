@@ -59,14 +59,11 @@ class GdacsController extends Controller
     public function getDashboardEvents(): JsonResponse
     {
         try {
-            // Lade GDACS Events
-            $gdacsEvents = $this->gdacsService->fetchCurrentEvents();
-            
-            // Lade Events aus der Datenbank
-            $dbEvents = DisasterEvent::active()
+            // Lade alle Events aus der Datenbank (sowohl GDACS als auch Custom)
+            $allEvents = DisasterEvent::active()
                 ->with(['country', 'region', 'city'])
                 ->orderBy('event_date', 'desc')
-                ->limit(20)
+                ->limit(50)
                 ->get()
                 ->map(function ($event) {
                     return [
@@ -75,11 +72,13 @@ class GdacsController extends Controller
                         'severity' => $event->severity,
                         'event_type' => $event->event_type,
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',
+                        'country_relation' => $event->country,
+                        'gdacs_date_added' => $event->gdacs_date_added,
                         'date' => $event->event_date->format('d/m/Y H:i'),
                         'date_iso' => $event->event_date->toIso8601String(),
                         'magnitude' => $event->magnitude,
                         'affected_population' => $event->gdacs_population_text,
-                        'is_gdacs' => $event->is_gdacs,
+                        'source' => $event->external_sources === 'gdacs' ? 'gdacs' : 'db',
                         'latitude' => $event->lat,
                         'longitude' => $event->lng,
                         'icon' => $this->getEventIcon($event->event_type, $event->severity),
@@ -87,16 +86,11 @@ class GdacsController extends Controller
                     ];
                 });
 
-            // Kombiniere GDACS und DB Events
-            $allEvents = array_merge($gdacsEvents, $dbEvents->toArray());
-
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'events' => $allEvents,
-                    'total' => count($allEvents),
-                    'gdacs_count' => count($gdacsEvents),
-                    'db_count' => $dbEvents->count(),
+                    'events' => $allEvents->toArray(),
+                    'total' => $allEvents->count(),
                     'last_updated' => now()->format('H:i')
                 ]
             ]);

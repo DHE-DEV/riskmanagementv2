@@ -11,6 +11,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class CitiesTable
 {
@@ -18,23 +19,48 @@ class CitiesTable
     {
         return $table
             ->columns([
-                TextColumn::make('country.id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('city_name')
+                    ->label('Stadtname')
+                    ->getStateUsing(fn ($record) => $record->name_translations['de'] ?? $record->name_translations['en'] ?? 'Unbekannt')
+                    ->searchable(query: function ($query, string $search): Builder {
+                        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
+                                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                    })
+                    ->sortable(query: function ($query, string $direction): Builder {
+                        return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) {$direction}");
+                    }),
+                TextColumn::make('country_name')
+                    ->label('Land')
+                    ->getStateUsing(fn ($record) => $record->country ? $record->country->getName('de') : 'Unbekannt')
+                    ->searchable(query: function ($query, string $search): Builder {
+                        return $query->whereHas('country', function ($q) use ($search) {
+                            $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
+                              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                        });
+                    })
+                    ->sortable(query: function ($query, string $direction): Builder {
+                        return $query->join('countries', 'cities.country_id', '=', 'countries.id')
+                                    ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(countries.name_translations, '$.de')) {$direction}");
+                    }),
                 TextColumn::make('region.id')
+                    ->label('Region ID')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('population')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('lat')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('lng')
+                    ->label('Bevölkerung')
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_capital')
+                    ->label('Hauptstadt')
                     ->boolean(),
+                TextColumn::make('lat')
+                    ->label('Breitengrad')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('lng')
+                    ->label('Längengrad')
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -48,6 +74,7 @@ class CitiesTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('city_name', 'asc')
             ->filters([
                 TrashedFilter::make(),
             ])

@@ -114,6 +114,11 @@
             width: 100%;
         }
         
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
         /* Rest der Styles bleiben gleich */
         .custom-marker {
             background: none;
@@ -563,6 +568,28 @@
             color: #1e293b;
         }
         
+        /* Events Container Layout Fix */
+        #eventsWrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        #currentEvents {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+        
+        #eventsList {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
         /* Event Sidebar Styles */
         .event-sidebar {
             position: fixed;
@@ -961,9 +988,9 @@
                     </button>
                 </div>
                 
-                <div id="currentEvents" class="p-2 flex-1 min-h-0">
+                <div id="currentEvents" class="p-2 flex-1 min-h-0" style="display: flex; flex-direction: column;">
                     <p class="text-xs text-gray-500 px-2 mb-2">Neueste Events zuerst</p>
-                    <div id="eventsList" class="space-y-2 h-full overflow-y-auto pb-10">
+                    <div id="eventsList" class="space-y-2 flex-1 min-h-0 overflow-y-auto pb-10" style="position: relative; z-index: 1;">
                         <!-- Events werden hier dynamisch eingefügt -->
                     </div>
                 </div>
@@ -1168,10 +1195,6 @@
                             <span class="font-semibold text-red-600" id="highRiskEvents">0</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Manuelle Events</span>
-                            <span class="font-semibold text-purple-600" id="manualEvents">0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">GDACS Events</span>
                             <span class="font-semibold text-orange-600" id="gdacsEvents">0</span>
                         </div>
@@ -1346,10 +1369,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Karte initialisieren
 function initializeMap() {
     // Karte erstellen mit Weltansicht
-    map = L.map('map').setView([20, 0], 2);
+    map = L.map('map', {
+        worldCopyJump: false,
+        maxBounds: [[-90, -180], [90, 180]]
+    }).setView([20, 0], 2);
     
-    // OpenStreetMap Tile Layer hinzufügen
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // OpenStreetMap Tile Layer mit deutschen Namen hinzufügen
+    L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(map);
@@ -1462,15 +1488,34 @@ function processGdacsEvents(events) {
             longitude = coordinates.longitude;
         }
         
-        return {
+        // Store event in global repository for onClick handlers
+        const processedEvent = {
             ...event,
             latitude: latitude,
             longitude: longitude,
+            lat: latitude,  // Ensure both formats are available
+            lng: longitude,  // Ensure both formats are available
             date: event.pub_date || event.date || null,
             icon: getEventIcon(event.event_type, event.severity),
             iconColor: getSeverityColor(event.severity),
-            source: 'gdacs'
+            source: 'gdacs',
+            is_gdacs: true,
+            // Ländername aus der Beziehung laden - Backend liefert bereits den Namen
+            country_name: event.country || 'Unbekannt',
+            // GDACS Date Added verfügbar machen
+            gdacs_date_added: event.gdacs_date_added || null,
+            // Startdatum für einheitliche Anzeige - verwende date_iso vom Backend
+            start_date: event.date_iso || event.date || event.pub_date || null,
+            // Priorität für GDACS Events aus severity ableiten
+            priority: event.severity || 'unknown'
         };
+        
+        // Store in global repository
+        if (processedEvent.id != null) {
+            window.eventById[processedEvent.id] = processedEvent;
+        }
+        
+        return processedEvent;
     });
 }
 
@@ -1489,6 +1534,8 @@ function processCustomEvents(events) {
             source: 'custom',
             // CustomEvents haben andere Feldnamen
             event_type: event.event_type,
+            // Ländername aus der Beziehung laden
+            country_name: event.country_relation ? event.country_relation.name_translations?.de || event.country_relation.name_translations?.en || event.country_relation.iso_code : (event.country || 'Unbekannt'),
             severity: event.severity,
             priority: event.priority,
             country: event.country || 'Unbekannt',
@@ -1769,6 +1816,17 @@ async function loadEventDetails(event) {
         
         const result = await response.json();
         
+        // Debug-Logging
+        console.log('Event Details Debug:', {
+            id: event.id,
+            title: event.title,
+            source: event.source,
+            country: event.country,
+            country_name: event.country_name,
+            country_relation: event.country_relation,
+            gdacs_date_added: event.gdacs_date_added
+        });
+
         // Erstelle detaillierte Event-Anzeige
         let detailsHtml = `
             <div class="event-details">
@@ -1785,12 +1843,18 @@ async function loadEventDetails(event) {
                 <div class="event-info-grid">
                     <div class="info-item">
                         <span class="info-label">Land:</span>
-                        <span class="info-value">${event.country || 'Unbekannt'}</span>
+                        <span class="info-value">${event.country_name || event.country || 'Unbekannt'}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Startdatum:</span>
-                        <span class="info-value">${event.start_date ? formatDateTimeDE(event.start_date) : (event.date ? formatDateTimeDE(event.date) : 'Unbekannt')}</span>
+                        <span class="info-value">${event.start_date ? formatDateTimeDE(event.start_date) : (event.date_iso ? formatDateTimeDE(event.date_iso) : (event.date ? formatDateTimeDE(event.date) : 'Unbekannt'))}</span>
                     </div>
+                    ${event.gdacs_date_added && event.source === 'gdacs' ? `
+                    <div class="info-item">
+                        <span class="info-label">GDACS hinzugefügt:</span>
+                        <span class="info-value">${formatDateTimeDE(event.gdacs_date_added)}</span>
+                    </div>
+                    ` : ''}
                     ${event.magnitude ? `
                     <div class="info-item">
                         <span class="info-label">Magnitude:</span>
@@ -2076,7 +2140,7 @@ async function loadStatistics() {
         }
 
         if (customJson.success) {
-            // Eigene Events zum Zähler ergänzen
+            // Passolution Events zum Zähler ergänzen
             const totalEl = document.getElementById('totalEvents');
             if (totalEl) {
                 const current = parseInt(totalEl.textContent || '0', 10);
@@ -2096,7 +2160,7 @@ function appendCustomEventsToList(customJson) {
     const count = customJson?.data?.total_events ?? 0;
     const row = document.createElement('div');
     row.className = 'flex justify-between items-center';
-    row.innerHTML = `<span class="text-sm text-gray-600">Eigene Events</span><span class="font-semibold text-lg">${count}</span>`;
+    row.innerHTML = `<span class="text-sm text-gray-600">Passolution Events</span><span class="font-semibold text-lg">${count}</span>`;
     listContainer.appendChild(row);
 }
 
@@ -2380,7 +2444,6 @@ function updateStatistics() {
     const activeEvents = currentEvents.filter(e => e.severity !== 'green').length;
     const lastWeekEvents = Math.floor(Math.random() * 10) + 5; // Simuliert
     const highRiskEvents = currentEvents.filter(e => e.severity === 'red' || e.severity === 'orange').length;
-    const manualEvents = currentEvents.filter(e => !e.is_gdacs).length;
     const gdacsEvents = currentEvents.filter(e => e.is_gdacs).length;
     
     // Alle Elemente mit den gleichen IDs aktualisieren
@@ -2388,7 +2451,6 @@ function updateStatistics() {
     document.querySelectorAll('#activeEvents').forEach(el => el.textContent = activeEvents);
     document.querySelectorAll('#lastWeekEvents').forEach(el => el.textContent = lastWeekEvents);
     document.querySelectorAll('#highRiskEvents').forEach(el => el.textContent = highRiskEvents);
-    document.querySelectorAll('#manualEvents').forEach(el => el.textContent = manualEvents);
     document.querySelectorAll('#gdacsEvents').forEach(el => el.textContent = gdacsEvents);
     document.querySelectorAll('#currentEventsCount').forEach(el => el.textContent = currentEvents.length);
 }
@@ -2423,7 +2485,6 @@ function updateStatisticsFromApi(stats) {
     document.querySelectorAll('#activeEvents').forEach(el => el.textContent = stats.active_events);
     document.querySelectorAll('#lastWeekEvents').forEach(el => el.textContent = stats.last_week_events);
     document.querySelectorAll('#highRiskEvents').forEach(el => el.textContent = stats.high_risk_events);
-    document.querySelectorAll('#manualEvents').forEach(el => el.textContent = stats.manual_events);
     document.querySelectorAll('#gdacsEvents').forEach(el => el.textContent = stats.gdacs_events);
 }
 
@@ -2468,7 +2529,7 @@ function createEventElement(event) {
         : '<span class="text-xs text-gray-500 uppercase">GDACS</span>';
     const displayDate = event.source === 'custom'
         ? (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : ''))
-        : (event.date || '');
+        : (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date_iso ? new Date(event.date_iso).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : '')));
     
     div.className = `bg-gray-50 rounded-lg p-3 border-l-4 ${severityClass} cursor-pointer hover:bg-gray-100 transition-colors`;
     div.innerHTML = `
@@ -2524,21 +2585,169 @@ function renderContinents() {
 
 // Kontinent auswählen
 function selectContinent(continentId) {
-    selectedContinent = continentId;
+    // Wenn derselbe Kontinent erneut geklickt wird, Filter zurücksetzen
+    if (selectedContinent === continentId) {
+        selectedContinent = null;
+        continentId = null;
+    } else {
+        selectedContinent = continentId;
+    }
     selectedCountry = null;
     
     // Button-Styles aktualisieren
     const buttons = document.querySelectorAll('#continentsList button');
     buttons.forEach((button, index) => {
-        if (index === continentId - 1) {
+        if (selectedContinent && index === selectedContinent - 1) {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
         } else {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
         }
     });
     
-    // Hier könnte man Events nach Kontinent filtern
-    console.log(`Selected continent: ${continentId}`);
+    // Events nach Kontinent filtern
+    filterEventsByContinent();
+    
+    console.log(`Selected continent: ${selectedContinent || 'none'}`);
+}
+
+// Globale Variable für alle Events (ungefiltert)
+let allEvents = [];
+
+// Events nach Kontinent filtern
+function filterEventsByContinent() {
+    if (!selectedContinent) {
+        // Kein Kontinent ausgewählt - alle Events anzeigen
+        currentEvents = [...allEvents];
+        addMarkersToMap();
+        renderEvents();
+        updateStatistics();
+        return;
+    }
+    
+    // Events nach Kontinent filtern
+    const filteredEvents = allEvents.filter(event => {
+        const eventContinent = getEventContinent(event);
+        return eventContinent === selectedContinent;
+    });
+    
+    // Gefilterte Events als aktuelle Events setzen
+    currentEvents = filteredEvents;
+    
+    // Karte und Sidebar aktualisieren
+    addMarkersToMap();
+    renderEvents();
+    updateStatistics();
+    
+    console.log(`Filtered ${filteredEvents.length} events for continent ${selectedContinent}`);
+}
+
+// Kontinent eines Events bestimmen
+function getEventContinent(event) {
+    const country = event.country_name || event.country || '';
+    
+    // Länder-zu-Kontinent-Mapping
+    const countryToContinent = {
+        // Europa (1)
+        'Deutschland': 1, 'Germany': 1, 'Frankreich': 1, 'France': 1, 'Italien': 1, 'Italy': 1,
+        'Spanien': 1, 'Spain': 1, 'Portugal': 1, 'Niederlande': 1, 'Netherlands': 1,
+        'Belgien': 1, 'Belgium': 1, 'Österreich': 1, 'Austria': 1, 'Schweiz': 1, 'Switzerland': 1,
+        'Polen': 1, 'Poland': 1, 'Tschechien': 1, 'Czech Republic': 1, 'Ungarn': 1, 'Hungary': 1,
+        'Slowakei': 1, 'Slovakia': 1, 'Slowenien': 1, 'Slovenia': 1, 'Kroatien': 1, 'Croatia': 1,
+        'Serbien': 1, 'Serbia': 1, 'Bosnien': 1, 'Bosnia': 1, 'Montenegro': 1, 'Albanien': 1, 'Albania': 1,
+        'Griechenland': 1, 'Greece': 1, 'Bulgarien': 1, 'Bulgaria': 1, 'Rumänien': 1, 'Romania': 1,
+        'Ukraine': 1, 'Moldau': 1, 'Moldova': 1, 'Weißrussland': 1, 'Belarus': 1,
+        'Litauen': 1, 'Lithuania': 1, 'Lettland': 1, 'Latvia': 1, 'Estland': 1, 'Estonia': 1,
+        'Finnland': 1, 'Finland': 1, 'Schweden': 1, 'Sweden': 1, 'Norwegen': 1, 'Norway': 1,
+        'Dänemark': 1, 'Denmark': 1, 'Island': 1, 'Iceland': 1, 'Irland': 1, 'Ireland': 1,
+        'Vereinigtes Königreich': 1, 'United Kingdom': 1, 'Großbritannien': 1, 'Russland': 1, 'Russia': 1,
+        'Türkiye': 1, 'Turkey': 1, 'Zypern': 1, 'Cyprus': 1, 'Malta': 1,
+        
+        // Asien (2)
+        'China': 2, 'Japan': 2, 'Indien': 2, 'India': 2, 'Indonesien': 2, 'Indonesia': 2,
+        'Thailand': 2, 'Vietnam': 2, 'Malaysia': 2, 'Singapur': 2, 'Singapore': 2,
+        'Philippinen': 2, 'Philippines': 2, 'Südkorea': 2, 'South Korea': 2, 'South': 2,
+        'Nordkorea': 2, 'North Korea': 2, 'Myanmar': 2, 'Kambodscha': 2, 'Cambodia': 2,
+        'Laos': 2, 'Brunei': 2, 'Pakistan': 2, 'Bangladesch': 2, 'Bangladesh': 2,
+        'Sri Lanka': 2, 'Nepal': 2, 'Bhutan': 2, 'Malediven': 2, 'Maldives': 2,
+        'Afghanistan': 2, 'Iran': 2, 'Irak': 2, 'Iraq': 2, 'Saudi-Arabien': 2, 'Saudi Arabia': 2,
+        'Vereinigte Arabische Emirate': 2, 'UAE': 2, 'Katar': 2, 'Qatar': 2, 'Kuwait': 2,
+        'Bahrain': 2, 'Oman': 2, 'Jemen': 2, 'Yemen': 2, 'Jordanien': 2, 'Jordan': 2,
+        'Syrien': 2, 'Syria': 2, 'Libanon': 2, 'Lebanon': 2, 'Israel': 2, 'Palästina': 2,
+        'Gaza Strip': 2, 'Kasachstan': 2, 'Kazakhstan': 2, 'Usbekistan': 2, 'Uzbekistan': 2,
+        'Kirgisistan': 2, 'Kyrgyzstan': 2, 'Tadschikistan': 2, 'Tajikistan': 2,
+        'Turkmenistan': 2, 'Mongolei': 2, 'Mongolia': 2,
+        
+        // Afrika (3)
+        'Ägypten': 3, 'Egypt': 3, 'Libyen': 3, 'Libya': 3, 'Tunesien': 3, 'Tunisia': 3,
+        'Algerien': 3, 'Algeria': 3, 'Marokko': 3, 'Morocco': 3, 'Sudan': 3, 'South Sudan': 3,
+        'Äthiopien': 3, 'Ethiopia': 3, 'Kenia': 3, 'Kenya': 3, 'Uganda': 3, 'Tansania': 3, 'Tanzania': 3,
+        'Ruanda': 3, 'Rwanda': 3, 'Burundi': 3, 'Demokratische Republik Kongo': 3, 'The': 3,
+        'Kongo': 3, 'Congo': 3, 'Zentralafrikanische Republik': 3, 'Central African Republic': 3,
+        'Tschad': 3, 'Chad': 3, 'Niger': 3, 'Nigeria': 3, 'Kamerun': 3, 'Cameroon': 3,
+        'Benin': 3, 'Togo': 3, 'Ghana': 3, 'Burkina Faso': 3, 'Burkina': 3, 'Mali': 3,
+        'Senegal': 3, 'Gambia': 3, 'Guinea-Bissau': 3, 'Guinea': 3, 'Sierra Leone': 3,
+        'Liberia': 3, 'Elfenbeinküste': 3, 'Côte d\'Ivoire': 3, 'Mauretanien': 3, 'Mauritania': 3,
+        'Südafrika': 3, 'South Africa': 3, 'Namibia': 3, 'Botswana': 3, 'Simbabwe': 3, 'Zimbabwe': 3,
+        'Sambia': 3, 'Zambia': 3, 'Malawi': 3, 'Mosambik': 3, 'Mozambique': 3,
+        'Madagaskar': 3, 'Madagascar': 3, 'Mauritius': 3, 'Seychellen': 3, 'Seychelles': 3,
+        'Komoren': 3, 'Comoros': 3, 'Dschibuti': 3, 'Djibouti': 3, 'Eritrea': 3, 'Somalia': 3,
+        'Angola': 3, 'Lesotho': 3, 'Eswatini': 3, 'Swaziland': 3,
+        
+        // Nordamerika (4)
+        'Vereinigte Staaten': 4, 'United States': 4, 'USA': 4, 'Kanada': 4, 'Canada': 4,
+        'Mexiko': 4, 'Mexico': 4, 'Guatemala': 4, 'Belize': 4, 'El Salvador': 4,
+        'Honduras': 4, 'Nicaragua': 4, 'Costa Rica': 4, 'Panama': 4, 'Kuba': 4, 'Cuba': 4,
+        'Jamaika': 4, 'Jamaica': 4, 'Haiti': 4, 'Dominikanische Republik': 4, 'Dominican Republic': 4,
+        'Puerto Rico': 4, 'Bahamas': 4, 'The Bahamas': 4, 'Barbados': 4, 'Trinidad und Tobago': 4,
+        'Grenada': 4, 'St. Vincent': 4, 'St. Lucia': 4, 'Dominica': 4, 'Antigua': 4,
+        'St. Kitts': 4, 'Bermuda': 4, 'Grönland': 4, 'Greenland': 4,
+        
+        // Südamerika (5)
+        'Brasilien': 5, 'Brazil': 5, 'Argentinien': 5, 'Argentina': 5, 'Chile': 5,
+        'Peru': 5, 'Kolumbien': 5, 'Colombia': 5, 'Venezuela': 5, 'Ecuador': 5,
+        'Bolivien': 5, 'Bolivia': 5, 'Paraguay': 5, 'Uruguay': 5, 'Guyana': 5,
+        'Suriname': 5, 'Französisch-Guayana': 5, 'French Guiana': 5,
+        
+        // Australien/Ozeanien (6)
+        'Australien': 6, 'Australia': 6, 'Neuseeland': 6, 'New Zealand': 6, 'New': 6,
+        'Papua-Neuguinea': 6, 'Papua New Guinea': 6, 'Fidschi': 6, 'Fiji': 6,
+        'Salomonen': 6, 'Solomon': 6, 'Vanuatu': 6, 'Neukaledonien': 6, 'New Caledonia': 6,
+        'Samoa': 6, 'Tonga': 6, 'Kiribati': 6, 'Tuvalu': 6, 'Nauru': 6, 'Palau': 6,
+        'Marshallinseln': 6, 'Marshall Islands': 6, 'Mikronesien': 6, 'Micronesia': 6,
+        
+        // Antarktis (7)
+        'Antarktis': 7, 'Antarctica': 7
+    };
+    
+    // Direkte Suche nach Ländername
+    if (countryToContinent[country]) {
+        return countryToContinent[country];
+    }
+    
+    // Fallback: Suche nach Teilstring (für zusammengesetzte Namen)
+    for (const [countryName, continentId] of Object.entries(countryToContinent)) {
+        if (country.includes(countryName) || countryName.includes(country)) {
+            return continentId;
+        }
+    }
+    
+    // Fallback basierend auf Koordinaten
+    if (event.latitude && event.longitude) {
+        const lat = parseFloat(event.latitude);
+        const lng = parseFloat(event.longitude);
+        
+        // Grobe geografische Zuordnung
+        if (lat >= 35 && lat <= 71 && lng >= -10 && lng <= 40) return 1; // Europa
+        if (lat >= -10 && lat <= 55 && lng >= 25 && lng <= 180) return 2; // Asien
+        if (lat >= -35 && lat <= 37 && lng >= -20 && lng <= 55) return 3; // Afrika
+        if (lat >= 15 && lat <= 72 && lng >= -170 && lng <= -30) return 4; // Nordamerika
+        if (lat >= -56 && lat <= 15 && lng >= -82 && lng <= -30) return 5; // Südamerika
+        if (lat >= -50 && lat <= -10 && lng >= 110 && lng <= 180) return 6; // Australien/Ozeanien
+        if (lat < -60) return 7; // Antarktis
+    }
+    
+    // Kein Kontinent gefunden
+    return null;
 }
 
 // Karte zentrieren
@@ -2612,19 +2821,58 @@ function toggleSection(sectionId) {
 function adjustSidebarLayout() {
     const filtersWrapper = document.getElementById('filtersWrapper');
     const eventsWrapper = document.getElementById('eventsWrapper');
+    const currentEvents = document.getElementById('currentEvents');
+    const eventsList = document.getElementById('eventsList');
+    
     if (!(filtersWrapper && eventsWrapper)) return;
+    
     const filtersOpen = document.getElementById('filters')?.style.display !== 'none';
+    
     if (filtersOpen) {
         // Filter nur so hoch wie Inhalt, Rest für Events
         filtersWrapper.style.flex = '0 0 auto';
         eventsWrapper.style.flex = '1 1 auto';
+        // Sicherstellen dass Events Container richtige Höhe behält
+        eventsWrapper.style.minHeight = '0';
+        eventsWrapper.style.height = 'auto';
         // Optische Trennlinie unten über komplette Breite
         filtersWrapper.style.borderBottom = '1px solid #e5e7eb';
+        
+        // Events Container Flex Layout korrigieren
+        if (currentEvents) {
+            currentEvents.style.display = 'flex';
+            currentEvents.style.flexDirection = 'column';
+            currentEvents.style.minHeight = '0';
+            currentEvents.style.flex = '1 1 auto';
+        }
+        
+        // Events List Overflow sicherstellen
+        if (eventsList) {
+            eventsList.style.flex = '1 1 auto';
+            eventsList.style.minHeight = '0';
+            eventsList.style.overflowY = 'auto';
+            eventsList.style.position = 'relative';
+        }
     } else {
         filtersWrapper.style.flex = '0 0 auto';
         eventsWrapper.style.flex = '1 1 auto';
         // Bei geschlossenem Filter keine zusätzliche Trennlinie nötig
         filtersWrapper.style.borderBottom = 'none';
+        
+        // Reset der Event Container Stile
+        if (currentEvents) {
+            currentEvents.style.display = 'flex';
+            currentEvents.style.flexDirection = 'column';
+            currentEvents.style.minHeight = '0';
+            currentEvents.style.flex = '1 1 auto';
+        }
+        
+        if (eventsList) {
+            eventsList.style.flex = '1 1 auto';
+            eventsList.style.minHeight = '0';
+            eventsList.style.overflowY = 'auto';
+            eventsList.style.position = 'relative';
+        }
     }
 }
 
