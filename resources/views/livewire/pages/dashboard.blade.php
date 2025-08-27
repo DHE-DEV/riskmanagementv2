@@ -112,15 +112,11 @@
         .leaflet-container {
             height: 100%;
             width: 100%;
-            min-height: 100vh; /* Mindestens Browserfensterhöhe */
-            min-width: 100vw; /* Mindestens Browserfensterbreite */
         }
         
         #map {
             height: 100%;
             width: 100%;
-            min-height: 100vh; /* Mindestens Browserfensterhöhe */
-            min-width: 100vw; /* Mindestens Browserfensterbreite */
         }
         
         /* Rest der Styles bleiben gleich */
@@ -1372,10 +1368,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Karte initialisieren
 function initializeMap() {
-    // Karte erstellen mit Weltansicht
+    // Karte erstellen mit Weltansicht und Zoom-Beschränkungen
     map = L.map('map', {
         worldCopyJump: false,
-        maxBounds: [[-90, -180], [90, 180]]
+        maxBounds: [[-90, -180], [90, 180]],
+        minZoom: 2  // Verhindert Herauszoomen über Weltansicht hinaus
     }).setView([20, 0], 2);
     
     // OpenStreetMap Tile Layer mit deutschen Namen hinzufügen
