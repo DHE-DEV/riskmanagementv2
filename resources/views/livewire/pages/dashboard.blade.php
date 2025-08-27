@@ -112,11 +112,15 @@
         .leaflet-container {
             height: 100%;
             width: 100%;
+            min-height: 100vh; /* Mindestens Browserfensterhöhe */
+            min-width: 100vw; /* Mindestens Browserfensterbreite */
         }
         
         #map {
             height: 100%;
             width: 100%;
+            min-height: 100vh; /* Mindestens Browserfensterhöhe */
+            min-width: 100vw; /* Mindestens Browserfensterbreite */
         }
         
         /* Rest der Styles bleiben gleich */
