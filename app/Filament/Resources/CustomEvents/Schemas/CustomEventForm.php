@@ -27,12 +27,35 @@ class CustomEventForm
                     ->label('Titel')
                     ->required()
                     ->maxLength(255)
-                    ->placeholder('z.B. Brandschutzübung Frankfurt'),
+                    ->placeholder('z.B. Brandschutzübung Frankfurt')
+                    ->columnSpanFull(),
                 
+                // Beschreibung-Feld ausgeblendet
                 Textarea::make('description')
                     ->label('Beschreibung')
                     ->rows(3)
-                    ->placeholder('Detaillierte Beschreibung des Events...'),
+                    ->placeholder('Detaillierte Beschreibung des Events...')
+                    ->hidden(),
+                
+                // Popup-Inhalt als Beschreibung
+                RichEditor::make('popup_content')
+                    ->label('Beschreibung')
+                    ->toolbarButtons([
+                        'bold',
+                        'italic',
+                        'underline',
+                        'strike',
+                        'link',
+                        'bulletList',
+                        'orderedList',
+                        'h2',
+                        'h3',
+                        'blockquote',
+                        'codeBlock',
+                    ])
+                    ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
+                    ->placeholder('Beschreiben Sie hier den Inhalt, der im Popup angezeigt werden soll...')
+                    ->columnSpanFull(),
                 
                 Select::make('event_type')
                     ->label('Event-Typ')
@@ -199,24 +222,6 @@ class CustomEventForm
                     ->required()
                     ->helperText('Größe des Markers auf der Karte'),
 
-                // Popup-Inhalt
-                RichEditor::make('popup_content')
-                    ->label('Popup-Inhalt')
-                    ->toolbarButtons([
-                        'bold',
-                        'italic',
-                        'underline',
-                        'strike',
-                        'link',
-                        'bulletList',
-                        'orderedList',
-                        'h2',
-                        'h3',
-                        'blockquote',
-                        'codeBlock',
-                    ])
-                    ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
-                    ->placeholder('Beschreiben Sie hier den Inhalt, der im Popup angezeigt werden soll...'),
             ]);
     }
 

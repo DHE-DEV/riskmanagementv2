@@ -867,11 +867,13 @@
                     </svg>
                 </button>
                 
+                <!-- Statistiken Button - vorübergehend auskommentiert
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Statistiken" onclick="toggleStatistics()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                 </button>
+                -->
                 
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events" onclick="showSidebarLiveStatistics()">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
@@ -1216,9 +1218,12 @@
                     <div class="flex flex-col gap-1">
                         <h3 id="sidebarTitle">Erweiterte Informationen</h3>
                         <div class="flex gap-2 text-xs">
-                            <button class="px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300" onclick="setSidebarWidth(1)">1×</button>
-                            <button class="px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300" onclick="setSidebarWidth(2)">2×</button>
-                            <button class="px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300" onclick="setSidebarWidth(3)">3×</button>
+                            <button id="decreaseBtn" class="px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300" onclick="decreaseSidebarWidth()" title="Verkleinern">
+                                <i class="fa-solid fa-magnifying-glass-minus"></i>
+                            </button>
+                            <button id="increaseBtn" class="px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300" onclick="increaseSidebarWidth()" title="Vergrößern">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                            </button>
                         </div>
                     </div>
                     <button onclick="closeEventSidebar()" class="close-btn">
@@ -1251,8 +1256,9 @@
             </div>
 
             <!-- Legend -->
+             <!--
             <div class="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg z-[1000] border border-gray-200 transition-all duration-300" id="legendContainer" style="bottom: 35px; right: 15px;">
-                <!-- Legend Header (always visible) -->
+
                 <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="toggleLegend()">
                     <div class="flex items-center justify-between" id="legendHeader">
                         <div class="flex items-center">
@@ -1267,7 +1273,6 @@
                     </div>
                 </div>
                 
-                <!-- Legend Content (collapsible) -->
                 <div class="p-4 max-w-xs" id="legendContent">
                     <div class="space-y-3">
                         <div class="flex items-center space-x-3">
@@ -1294,7 +1299,7 @@
                         </p>
                     </div>
                 </div>
-            </div>
+            </div>-->
 
             <!-- Map Attribution -->
             <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 rounded px-2 py-1 text-xs text-gray-600 z-[1000]">
@@ -1314,7 +1319,7 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.1</span>
+                <span>Version 1.0.2</span>
                 <span>Build: 2025-08-27</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
@@ -1770,6 +1775,9 @@ function openEventSidebar(event) {
     document.getElementById('sidebarTitle').textContent = 'Erweiterte Informationen';
     document.getElementById('eventSidebar').classList.add('open');
     
+    // Button-Zustände initialisieren
+    updateSidebarButtons();
+    
     // Lade Event-Details in die Seitenleiste
     loadEventDetails(event);
 }
@@ -1779,6 +1787,8 @@ function closeEventSidebar() {
 }
 
 // Sidebar Breite steuern
+let currentSidebarWidth = 1; // Startwert 1x
+
 function setSidebarWidth(multiplier) {
     const el = document.getElementById('eventSidebar');
     el.classList.remove('w-2x', 'w-3x');
@@ -1786,6 +1796,49 @@ function setSidebarWidth(multiplier) {
         el.classList.add('w-2x');
     } else if (multiplier === 3) {
         el.classList.add('w-3x');
+    }
+    currentSidebarWidth = multiplier;
+    updateSidebarButtons();
+}
+
+function updateSidebarButtons() {
+    const decreaseBtn = document.getElementById('decreaseBtn');
+    const increaseBtn = document.getElementById('increaseBtn');
+    
+    // Verkleinern-Button: deaktiviert bei minimaler Größe (1x)
+    if (currentSidebarWidth <= 1) {
+        decreaseBtn.classList.remove('bg-zinc-200', 'hover:bg-zinc-300');
+        decreaseBtn.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+        decreaseBtn.style.pointerEvents = 'none';
+    } else {
+        decreaseBtn.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+        decreaseBtn.classList.add('bg-zinc-200', 'hover:bg-zinc-300');
+        decreaseBtn.style.pointerEvents = 'auto';
+    }
+    
+    // Vergrößern-Button: deaktiviert bei maximaler Größe (3x)
+    if (currentSidebarWidth >= 3) {
+        increaseBtn.classList.remove('bg-zinc-200', 'hover:bg-zinc-300');
+        increaseBtn.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+        increaseBtn.style.pointerEvents = 'none';
+    } else {
+        increaseBtn.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+        increaseBtn.classList.add('bg-zinc-200', 'hover:bg-zinc-300');
+        increaseBtn.style.pointerEvents = 'auto';
+    }
+}
+
+function decreaseSidebarWidth() {
+    if (currentSidebarWidth > 1) {
+        currentSidebarWidth--;
+        setSidebarWidth(currentSidebarWidth);
+    }
+}
+
+function increaseSidebarWidth() {
+    if (currentSidebarWidth < 3) {
+        currentSidebarWidth++;
+        setSidebarWidth(currentSidebarWidth);
     }
 }
 
@@ -1838,7 +1891,12 @@ async function loadEventDetails(event) {
                         <span class="event-severity severity-${event.severity}">${mapPriority(event.priority)}</span>
                     </div>
                 </div>
-                ${event.source === 'custom' && event.description ? `<h3 class=\"mt-1 mb-1 text-base font-semibold\">${event.description}</h3>` : ''}
+                ${event.description ? `
+                    <div class="event-description mt-3 mb-3">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">${escapeHtml(event.description)}</div>
+                    </div>
+                ` : ''}
                 ${event.source === 'custom' && event.popup_content ? `<div class=\"mt-1 text-sm leading-6\">${event.popup_content}</div>` : ''}
                 
                 <div class="event-info-grid">
@@ -1966,7 +2024,16 @@ async function loadEventDetails(event) {
             // Erzwinge Europe/Berlin, wenn das Event selbst als "Manuell" markiert oder in Deutschland liegt
             const isManual = (event.source === 'custom');
             const isInGermany = (event.latitude >= 47 && event.latitude <= 55.2 && event.longitude >= 5.5 && event.longitude <= 15.7);
-            let tzName = (isInGermany || isManual) ? 'Europe/Berlin' : null;
+            const isInSpain = (event.latitude >= 36 && event.latitude <= 43.8 && event.longitude >= -9.3 && event.longitude <= 3.3);
+            
+            // Setze bekannte Zeitzonen für europäische Länder
+            let tzName = null;
+            if (isInGermany || isManual) {
+                tzName = 'Europe/Berlin';
+            } else if (isInSpain) {
+                tzName = 'Europe/Madrid';
+            }
+            
             let offset = tzName ? null : Math.round((event.longitude || 0) / 15);
 
             const formatDiff = (hours) => {
@@ -1983,6 +2050,14 @@ async function loadEventDetails(event) {
                 const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
                 return (berlin - utc) / 3600000;
             };
+            
+            // Zeitunterschied zwischen zwei Zeitzonen berechnen (DST-aware)
+            const getTimezoneOffset = (timezoneName) => {
+                const now = new Date();
+                const targetTime = new Date(now.toLocaleString('en-US', { timeZone: timezoneName }));
+                const berlinTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+                return (targetTime - berlinTime) / 3600000;
+            };
 
             const tick = () => {
                 const now = new Date();
@@ -1993,7 +2068,8 @@ async function loadEventDetails(event) {
                     if (dateEl) dateEl.textContent = dateFmt.format(now);
                     if (zoneEl) zoneEl.textContent = tzName;
                     if (abbrEl) abbrEl.textContent = '';
-                    if (diffEl) diffEl.textContent = formatDiff(0);
+                    // Korrekte Zeitdifferenz zu Berlin berechnen
+                    if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
                 } else {
                     const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
                     const local = new Date(utcMs + (offset || 0) * 3600 * 1000);

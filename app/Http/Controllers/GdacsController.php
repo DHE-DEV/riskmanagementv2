@@ -69,6 +69,7 @@ class GdacsController extends Controller
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
+                        'description' => $event->description,
                         'severity' => $event->severity,
                         'event_type' => $event->event_type,
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',

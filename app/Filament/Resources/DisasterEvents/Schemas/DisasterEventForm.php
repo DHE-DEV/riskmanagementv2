@@ -9,6 +9,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class DisasterEventForm
 {
@@ -45,9 +46,30 @@ class DisasterEventForm
                 TextInput::make('radius_km')
                     ->numeric(),
                 Select::make('country_id')
-                    ->relationship('country', 'iso_code', fn ($query) => $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))"))
+                    ->relationship(
+                        'country', 
+                        'iso_code', 
+                        fn ($query) => $query
+                            ->withoutGlobalScopes([SoftDeletingScope::class]) // Entferne SoftDelete Scope
+                            ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
+                    )
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->getName('de'))
-                    ->searchable()
+                    ->searchable(['iso_code', 'iso3_code'])
+                    ->getSearchResultsUsing(fn (string $search) => 
+                        \App\Models\Country::query()
+                            ->withoutGlobalScopes([SoftDeletingScope::class])
+                            ->where(function ($query) use ($search) {
+                                $query->where('iso_code', 'like', "%{$search}%")
+                                      ->orWhere('iso3_code', 'like', "%{$search}%")
+                                      ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                                      ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"]);
+                            })
+                            ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
+                            ->limit(50)
+                            ->get()
+                            ->pluck('name_translations', 'id')
+                            ->map(fn ($translations, $id) => $translations['de'] ?? $translations['en'] ?? 'Unbekannt')
+                    )
                     ->preload(),
                 Select::make('region_id')
                     ->relationship('region', 'code', fn ($query) => $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))"))
