@@ -1314,8 +1314,8 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.0</span>
-                <span>Build: 2025-08-17</span>
+                <span>Version 1.0.1</span>
+                <span>Build: 2025-08-27</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
