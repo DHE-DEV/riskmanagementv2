@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Continents;
 use App\Filament\Resources\Continents\Pages\CreateContinent;
 use App\Filament\Resources\Continents\Pages\EditContinent;
 use App\Filament\Resources\Continents\Pages\ListContinents;
+use App\Filament\Resources\Continents\Pages\ViewContinent;
+use App\Filament\Resources\Continents\RelationManagers;
 use App\Filament\Resources\Continents\Schemas\ContinentForm;
 use App\Filament\Resources\Continents\Tables\ContinentsTable;
 use App\Models\Continent;
@@ -45,7 +47,7 @@ class ContinentResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\CountriesRelationManager::class,
         ];
     }
 
@@ -54,6 +56,7 @@ class ContinentResource extends Resource
         return [
             'index' => ListContinents::route('/'),
             'create' => CreateContinent::route('/create'),
+            'view' => ViewContinent::route('/{record}'),
             'edit' => EditContinent::route('/{record}/edit'),
         ];
     }

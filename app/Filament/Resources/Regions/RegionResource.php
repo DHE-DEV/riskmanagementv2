@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Regions;
 use App\Filament\Resources\Regions\Pages\CreateRegion;
 use App\Filament\Resources\Regions\Pages\EditRegion;
 use App\Filament\Resources\Regions\Pages\ListRegions;
+use App\Filament\Resources\Regions\Pages\ViewRegion;
 use App\Filament\Resources\Regions\Schemas\RegionForm;
 use App\Filament\Resources\Regions\Tables\RegionsTable;
 use App\Models\Region;
@@ -30,7 +31,7 @@ class RegionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Regionen';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
@@ -54,6 +55,7 @@ class RegionResource extends Resource
         return [
             'index' => ListRegions::route('/'),
             'create' => CreateRegion::route('/create'),
+            'view' => ViewRegion::route('/{record}'),
             'edit' => EditRegion::route('/{record}/edit'),
         ];
     }

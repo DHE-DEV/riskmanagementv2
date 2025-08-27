@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Cities;
 use App\Filament\Resources\Cities\Pages\CreateCity;
 use App\Filament\Resources\Cities\Pages\EditCity;
 use App\Filament\Resources\Cities\Pages\ListCities;
+use App\Filament\Resources\Cities\Pages\ViewCity;
 use App\Filament\Resources\Cities\Schemas\CityForm;
 use App\Filament\Resources\Cities\Tables\CitiesTable;
 use App\Models\City;
@@ -54,6 +55,7 @@ class CityResource extends Resource
         return [
             'index' => ListCities::route('/'),
             'create' => CreateCity::route('/create'),
+            'view' => ViewCity::route('/{record}'),
             'edit' => EditCity::route('/{record}/edit'),
         ];
     }

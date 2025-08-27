@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Airports;
 use App\Filament\Resources\Airports\Pages\CreateAirport;
 use App\Filament\Resources\Airports\Pages\EditAirport;
 use App\Filament\Resources\Airports\Pages\ListAirports;
+use App\Filament\Resources\Airports\Pages\ViewAirport;
 use App\Filament\Resources\Airports\Schemas\AirportForm;
 use App\Filament\Resources\Airports\Tables\AirportsTable;
 use App\Models\Airport;
@@ -30,7 +31,7 @@ class AirportResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Flughäfen';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {
@@ -54,6 +55,7 @@ class AirportResource extends Resource
         return [
             'index' => ListAirports::route('/'),
             'create' => CreateAirport::route('/create'),
+            'view' => ViewAirport::route('/{record}'),
             'edit' => EditAirport::route('/{record}/edit'),
         ];
     }

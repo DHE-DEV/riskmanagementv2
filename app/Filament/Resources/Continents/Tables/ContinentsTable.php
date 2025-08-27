@@ -56,8 +56,12 @@ class ContinentsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                \Filament\Actions\ViewAction::make(),
                 EditAction::make(),
             ])
+            ->recordUrl(
+                fn ($record): string => route('filament.admin.resources.continents.view', $record)
+            )
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

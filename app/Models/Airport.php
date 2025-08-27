@@ -82,6 +82,7 @@ class Airport extends Model
     public static function getTypeOptions(): array
     {
         return [
+            'international' => 'Internationaler Flughafen',
             'large_airport' => 'Großer Flughafen',
             'medium_airport' => 'Mittlerer Flughafen',
             'small_airport' => 'Kleiner Flughafen',
