@@ -1319,8 +1319,8 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.2</span>
-                <span>Build: 2025-08-27</span>
+                <span>Version 1.0.3</span>
+                <span>Build: 2025-08-28</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
@@ -1435,6 +1435,9 @@ async function loadDashboardData() {
             allEvents = allEvents.concat(customEvents);
             console.log(`Loaded ${customEvents.length} custom events`);
         }
+        
+        // Globale allEvents Variable setzen
+        window.allEvents = allEvents;
         
         // Nach Datum/Zeit sortieren (neueste zuerst)
         const getEventTimeMs = (e) => {
@@ -2651,71 +2654,141 @@ function renderContinents() {
     const continentsList = document.getElementById('continentsList');
     continentsList.innerHTML = '';
     
+    // Globale Variable für ausgewählte Kontinente initialisieren (falls noch nicht gesetzt)
+    if (!window.selectedContinents) {
+        window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+    }
+    
+    // "Alle einblenden/ausblenden" Schaltfläche hinzufügen
+    const toggleAllButton = document.createElement('button');
+    toggleAllButton.id = 'toggleAllContinents';
+    toggleAllButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+    toggleAllButton.textContent = 'Alle ausblenden';
+    toggleAllButton.onclick = toggleAllContinents;
+    continentsList.appendChild(toggleAllButton);
+    
     continents.forEach(continent => {
         const button = document.createElement('button');
-        button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+        // Alle Kontinente sind initial aktiviert
+        button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
         button.textContent = continent.name;
         button.onclick = () => selectContinent(continent.id);
         continentsList.appendChild(button);
     });
 }
 
+// Alle Kontinente ein-/ausblenden
+function toggleAllContinents() {
+    const toggleButton = document.getElementById('toggleAllContinents');
+    const continentButtons = document.querySelectorAll('#continentsList button:not(#toggleAllContinents)');
+    const isAllActive = toggleButton.textContent === 'Alle ausblenden';
+    
+    if (isAllActive) {
+        // Alle Kontinente deaktivieren
+        toggleButton.textContent = 'Alle einblenden';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 font-medium';
+        
+        continentButtons.forEach(button => {
+            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+        });
+        
+        // Filter zurücksetzen
+        window.selectedContinents = new Set();
+        filterEventsByContinent();
+    } else {
+        // Alle Kontinente aktivieren
+        toggleButton.textContent = 'Alle ausblenden';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        
+        continentButtons.forEach(button => {
+            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+        });
+        
+        // Alle Kontinente zur Auswahl hinzufügen
+        window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]); // Alle Kontinent-IDs
+        filterEventsByContinent();
+    }
+}
+
 // Kontinent auswählen
 function selectContinent(continentId) {
-    // Wenn derselbe Kontinent erneut geklickt wird, Filter zurücksetzen
-    if (selectedContinent === continentId) {
-        selectedContinent = null;
-        continentId = null;
-    } else {
-        selectedContinent = continentId;
+    // Globale Variable für ausgewählte Kontinente initialisieren
+    if (!window.selectedContinents) {
+        // Beim ersten Aufruf alle Kontinente aktivieren
+        window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
     }
+    
+    // Kontinent zur Auswahl hinzufügen oder entfernen
+    if (window.selectedContinents.has(continentId)) {
+        window.selectedContinents.delete(continentId);
+    } else {
+        window.selectedContinents.add(continentId);
+    }
+    
     selectedCountry = null;
     
-    // Button-Styles aktualisieren
-    const buttons = document.querySelectorAll('#continentsList button');
+    // Button-Styles aktualisieren (ohne die "Alle einblenden/ausblenden" Schaltfläche)
+    const buttons = document.querySelectorAll('#continentsList button:not(#toggleAllContinents)');
     buttons.forEach((button, index) => {
-        if (selectedContinent && index === selectedContinent - 1) {
+        const buttonContinentId = index + 1; // Kontinent-IDs beginnen bei 1
+        if (window.selectedContinents.has(buttonContinentId)) {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
         } else {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
         }
     });
     
+    // "Alle einblenden/ausblenden" Schaltfläche zurücksetzen
+    const toggleButton = document.getElementById('toggleAllContinents');
+    if (toggleButton) {
+        toggleButton.textContent = 'Alle einblenden';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 font-medium';
+    }
+    
     // Events nach Kontinent filtern
     filterEventsByContinent();
     
-    console.log(`Selected continent: ${selectedContinent || 'none'}`);
+    console.log(`Selected continents: ${Array.from(window.selectedContinents).join(', ') || 'none'}`);
 }
 
-// Globale Variable für alle Events (ungefiltert)
-let allEvents = [];
+// Globale Variable für alle Events (ungefiltert) - wird in loadDashboardData gesetzt
 
 // Events nach Kontinent filtern
 function filterEventsByContinent() {
-    if (!selectedContinent) {
-        // Kein Kontinent ausgewählt - alle Events anzeigen
-        currentEvents = [...allEvents];
+    if (!window.selectedContinents || window.selectedContinents.size === 0) {
+        // Kein Kontinent ausgewählt - keine Events anzeigen
+        currentEvents = [];
         addMarkersToMap();
         renderEvents();
         updateStatistics();
         return;
     }
     
-    // Events nach Kontinent filtern
-    const filteredEvents = allEvents.filter(event => {
-        const eventContinent = getEventContinent(event);
-        return eventContinent === selectedContinent;
-    });
+    // Prüfen, ob alle Kontinente ausgewählt sind (1-7)
+    const allContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+    const isAllContinentsSelected = allContinents.size === window.selectedContinents.size && 
+                                   Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
     
-    // Gefilterte Events als aktuelle Events setzen
-    currentEvents = filteredEvents;
+    if (isAllContinentsSelected) {
+        // Alle Kontinente ausgewählt - alle Events anzeigen
+        currentEvents = [...(window.allEvents || [])];
+        console.log('All continents selected - showing all events');
+    } else {
+        // Nur bestimmte Kontinente ausgewählt - Events nach ausgewählten Kontinenten filtern
+        const filteredEvents = (window.allEvents || []).filter(event => {
+            const eventContinent = getEventContinent(event);
+            return window.selectedContinents.has(eventContinent);
+        });
+        currentEvents = filteredEvents;
+        console.log(`Filtered events for specific continents: ${Array.from(window.selectedContinents).join(', ')}`);
+    }
     
     // Karte und Sidebar aktualisieren
     addMarkersToMap();
     renderEvents();
     updateStatistics();
     
-    console.log(`Filtered ${filteredEvents.length} events for continent ${selectedContinent}`);
+    console.log(`Total events displayed: ${currentEvents.length}`);
 }
 
 // Kontinent eines Events bestimmen
@@ -2829,20 +2902,26 @@ function getEventContinent(event) {
 
 // Karte zentrieren
 function centerMap() {
-    if (selectedContinent) {
-        // Kontinent-spezifische Zentrierung
-        const continentCenters = {
-            1: [54.5260, 15.2551], // Europa
-            2: [34.0479, 100.6197], // Asien
-            3: [8.7832, 34.5085],   // Afrika
-            4: [45.0, -100.0],      // Nordamerika
-            5: [-8.7832, -55.4915], // Südamerika
-            6: [-25.2744, 133.7751], // Australien/Ozeanien
-            7: [-82.8628, 135.0000]  // Antarktis
-        };
-        map.setView(continentCenters[selectedContinent], 4);
+    if (window.selectedContinents && window.selectedContinents.size > 0) {
+        // Wenn nur ein Kontinent ausgewählt ist, diesen zentrieren
+        if (window.selectedContinents.size === 1) {
+            const selectedContinent = Array.from(window.selectedContinents)[0];
+            const continentCenters = {
+                1: [54.5260, 15.2551], // Europa
+                2: [34.0479, 100.6197], // Asien
+                3: [8.7832, 34.5085],   // Afrika
+                4: [45.0, -100.0],      // Nordamerika
+                5: [-8.7832, -55.4915], // Südamerika
+                6: [-25.2744, 133.7751], // Australien/Ozeanien
+                7: [-82.8628, 135.0000]  // Antarktis
+            };
+            map.setView(continentCenters[selectedContinent], 4);
+        } else {
+            // Bei mehreren Kontinenten: Weltweit zentrieren
+            map.setView([20, 0], 2);
+        }
     } else {
-        // Weltweit zentrieren
+        // Kein Kontinent ausgewählt - Weltweit zentrieren
         map.setView([20, 0], 2);
     }
 }
