@@ -159,19 +159,23 @@ class AirportSearchController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $countries = Country::query()
-            ->withoutGlobalScopes()
-            ->select(['id', 'iso_code', 'iso3_code', 'name_translations'])
-            ->where(function ($qb) use ($q) {
-                $qb->where('iso_code', 'like', "%{$q}%")
-                   ->orWhere('iso3_code', 'like', "%{$q}%")
-                   ->orWhereRaw("JSON_EXTRACT(name_translations, '$.de') LIKE ?", ["%{$q}%"]) 
-                   ->orWhereRaw("JSON_EXTRACT(name_translations, '$.en') LIKE ?", ["%{$q}%"]);
-            })
-            ->orderBy('iso_code')
-            ->limit(20)
-            ->get()
-            ->map(function (Country $c) {
+        try {
+            // Simple approach: get all countries and filter in PHP
+            $allCountries = Country::query()
+                ->withoutGlobalScopes()
+                ->select(['id', 'iso_code', 'iso3_code', 'name_translations'])
+                ->orderBy('iso_code')
+                ->get();
+
+            $filteredCountries = $allCountries->filter(function (Country $country) use ($q) {
+                $name = $country->getName('de');
+                $iso2 = $country->iso_code;
+                $iso3 = $country->iso3_code;
+                
+                return stripos($name, $q) !== false || 
+                       stripos($iso2, $q) !== false || 
+                       stripos($iso3, $q) !== false;
+            })->take(20)->map(function (Country $c) {
                 return [
                     'id' => $c->id,
                     'iso2' => $c->iso_code,
@@ -180,7 +184,53 @@ class AirportSearchController extends Controller
                 ];
             });
 
-        return response()->json(['data' => $countries]);
+            return response()->json(['data' => $filteredCountries->values()]);
+        } catch (\Exception $e) {
+            \Log::error('Country search error: ' . $e->getMessage());
+            return response()->json(['data' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function countrySearchDebug(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        if ($q === '') {
+            return response()->json(['data' => []]);
+        }
+
+        // Debug: Alle Länder anzeigen, die "deut" enthalten
+        $debugCountries = Country::query()
+            ->withoutGlobalScopes()
+            ->select(['id', 'iso_code', 'iso3_code', 'name_translations', 'name'])
+            ->get()
+            ->filter(function ($country) use ($q) {
+                $name = $country->getName('de');
+                $iso2 = $country->iso_code;
+                $iso3 = $country->iso3_code;
+                $legacyName = $country->name ?? '';
+                
+                return stripos($name, $q) !== false || 
+                       stripos($iso2, $q) !== false || 
+                       stripos($iso3, $q) !== false ||
+                       stripos($legacyName, $q) !== false;
+            })
+            ->map(function (Country $c) {
+                return [
+                    'id' => $c->id,
+                    'iso2' => $c->iso_code,
+                    'iso3' => $c->iso3_code,
+                    'name_de' => $c->getName('de'),
+                    'name_en' => $c->getName('en'),
+                    'legacy_name' => $c->name ?? 'null',
+                    'name_translations_raw' => $c->name_translations,
+                ];
+            });
+
+        return response()->json([
+            'query' => $q,
+            'debug_countries' => $debugCountries,
+            'total_found' => $debugCountries->count()
+        ]);
     }
 
     public function countryLocate(Request $request): JsonResponse

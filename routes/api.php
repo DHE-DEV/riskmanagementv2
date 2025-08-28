@@ -48,6 +48,7 @@ Route::get('/airports/search', [AirportSearchController::class, 'search'])->name
 Route::get('/airports/countries', [AirportSearchController::class, 'countries'])->name('airports.countries');
 Route::get('/airports/continents', [AirportSearchController::class, 'continents'])->name('airports.continents');
 Route::get('/countries/search', [AirportSearchController::class, 'countrySearch'])->name('countries.search');
+Route::get('/countries/search-debug', [AirportSearchController::class, 'countrySearchDebug'])->name('countries.search-debug');
 Route::get('/countries/locate', [AirportSearchController::class, 'countryLocate'])->name('countries.locate');
 
 // Social links

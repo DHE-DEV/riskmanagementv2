@@ -878,11 +878,11 @@
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events" onclick="showSidebarLiveStatistics()">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </button>
-                <!--
+                
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flugzeuge" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
                 </button>
-
+<!--
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Social Media" onclick="createSocialSidebar()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4z"></path>
@@ -955,20 +955,59 @@
                 </div>
                 
                 <div id="filters" class="p-4 space-y-4" style="display: none;">
+                    <!-- Länder -->
+                    <div class="border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('countriesSection')">
+                            <h4 class="text-sm font-medium text-gray-700">Länder</h4>
+                            <svg id="countriesToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="countriesSection" class="p-3">
+                            <div class="space-y-2">
+                                <input 
+                                    type="text" 
+                                    placeholder="Land suchen (Name oder Code)..." 
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    id="countryFilterInput"
+                                    onkeyup="debouncedCountryFilterSearch(this.value)"
+                                >
+                                <div id="countryFilterResults" class="space-y-1 text-sm text-gray-700 max-h-32 overflow-y-auto transition-all duration-200"></div>
+                                <div id="selectedCountriesFilterDisplay" class="mt-2 space-y-1">
+                                    <!-- Ausgewählte Länder werden hier dynamisch eingefügt -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Continents -->
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Kontinente</h4>
-                        <div class="grid grid-cols-2 gap-2" id="continentsList">
-                            <!-- Kontinente werden hier dynamisch eingefügt -->
+                    <div class="border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('continentsSection')">
+                            <h4 class="text-sm font-medium text-gray-700">Kontinente</h4>
+                            <svg id="continentsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="continentsSection" class="p-3">
+                            <div class="grid grid-cols-2 gap-2" id="continentsList">
+                                <!-- Kontinente werden hier dynamisch eingefügt -->
+                            </div>
                         </div>
                     </div>
 
                     <!-- Anbieter -->
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Anbieter</h4>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)">GDACS</button>
-                            <button type="button" id="provider-custom" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-provider="custom" onclick="toggleProviderFilter('custom', this)">Passolution</button>
+                    <div class="border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('providersSection')">
+                            <h4 class="text-sm font-medium text-gray-700">Anbieter</h4>
+                            <svg id="providersToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="providersSection" class="p-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)">GDACS</button>
+                                <button type="button" id="provider-custom" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-provider="custom" onclick="toggleProviderFilter('custom', this)">Passolution</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1319,7 +1358,7 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.3</span>
+                <span>Version 1.0.4</span>
                 <span>Build: 2025-08-28</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
@@ -1369,6 +1408,9 @@ document.addEventListener('DOMContentLoaded', () => {
     syncSectionToggleIcon('currentEvents');
     syncSectionToggleIcon('liveStatistics');
     syncSectionToggleIcon('mapControl');
+    
+    // Filter Unterbereiche Zustand wiederherstellen
+    restoreFilterSubSections();
 });
 
 // Karte initialisieren
@@ -2753,9 +2795,16 @@ function selectContinent(continentId) {
 
 // Globale Variable für alle Events (ungefiltert) - wird in loadDashboardData gesetzt
 
+// Globale Variable für ausgewählte Länder im Event-Filter
+window.selectedCountries = new Set();
+
 // Events nach Kontinent filtern
 function filterEventsByContinent() {
+    console.log('filterEventsByContinent called');
+    console.log('Selected continents:', window.selectedContinents ? Array.from(window.selectedContinents) : 'none');
+    
     if (!window.selectedContinents || window.selectedContinents.size === 0) {
+        console.log('No continents selected - showing no events');
         // Kein Kontinent ausgewählt - keine Events anzeigen
         currentEvents = [];
         addMarkersToMap();
@@ -2770,9 +2819,10 @@ function filterEventsByContinent() {
                                    Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
     
     if (isAllContinentsSelected) {
+        console.log('All continents selected - showing all events');
         // Alle Kontinente ausgewählt - alle Events anzeigen
         currentEvents = [...(window.allEvents || [])];
-        console.log('All continents selected - showing all events');
+        console.log('All events displayed:', currentEvents.length);
     } else {
         // Nur bestimmte Kontinente ausgewählt - Events nach ausgewählten Kontinenten filtern
         const filteredEvents = (window.allEvents || []).filter(event => {
@@ -2789,6 +2839,53 @@ function filterEventsByContinent() {
     updateStatistics();
     
     console.log(`Total events displayed: ${currentEvents.length}`);
+}
+
+// Events nach Land filtern
+function filterEventsByCountry() {
+    console.log('filterEventsByCountry called');
+    
+    // Prüfen ob Länder ausgewählt sind
+    const hasSelectedCountries = window.selectedCountries && window.selectedCountries.size > 0;
+    console.log('Has selected countries:', hasSelectedCountries);
+    console.log('Selected countries:', hasSelectedCountries ? Array.from(window.selectedCountries) : 'none');
+    
+    if (!hasSelectedCountries) {
+        console.log('No countries selected - checking continent filter');
+        // Kein Land ausgewählt - prüfen ob Kontinent-Filter aktiv ist
+        if (window.selectedContinents && window.selectedContinents.size > 0) {
+            console.log('Continent filter is active, calling filterEventsByContinent');
+            // Kontinent-Filter ist aktiv - Events nach Kontinent filtern
+            filterEventsByContinent();
+        } else {
+            console.log('No filters active - showing all events');
+            // Kein Filter aktiv - alle Events anzeigen
+            currentEvents = [...(window.allEvents || [])];
+            addMarkersToMap();
+            renderEvents();
+            updateStatistics();
+            console.log('All events displayed:', currentEvents.length);
+        }
+        return;
+    }
+    
+    console.log('Countries selected - filtering events by countries:', Array.from(window.selectedCountries));
+    // Länder ausgewählt - Events nach Ländern filtern
+    const filteredEvents = (window.allEvents || []).filter(event => {
+        const eventCountry = event.country_name || event.country || '';
+        return Array.from(window.selectedCountries).some(selectedCountry => 
+            eventCountry.toLowerCase().includes(selectedCountry.toLowerCase())
+        );
+    });
+    
+    currentEvents = filteredEvents;
+    
+    // Karte und Sidebar aktualisieren
+    addMarkersToMap();
+    renderEvents();
+    updateStatistics();
+    
+    console.log(`Filtered ${filteredEvents.length} events for countries: ${Array.from(window.selectedCountries).join(', ')}`);
 }
 
 // Kontinent eines Events bestimmen
@@ -3077,6 +3174,13 @@ function debouncedCountrySearch(query) {
     countrySearchTimer = setTimeout(() => searchCountries(query), 250);
 }
 
+// Länder-Filter-Suche für Event-Filter
+let countryFilterSearchTimer;
+function debouncedCountryFilterSearch(query) {
+    clearTimeout(countryFilterSearchTimer);
+    countryFilterSearchTimer = setTimeout(() => searchCountriesForFilter(query), 250);
+}
+
 async function searchCountries(query) {
     const box = document.getElementById('countrySearchResults');
     if (!box) return;
@@ -3120,6 +3224,92 @@ async function searchCountries(query) {
     }
 }
 
+async function searchCountriesForFilter(query) {
+    const box = document.getElementById('countryFilterResults');
+    if (!box) return;
+    const q = (query || '').trim();
+    if (!q) { box.innerHTML = ''; return; }
+    
+    console.log('Searching countries for filter with query:', q);
+    
+    try {
+        box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
+        const res = await fetch('/api/countries/search?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+        
+        console.log('Response status:', res.status);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error('API Error:', errorText);
+            throw new Error(`HTTP ${res.status}: ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log('API Response:', data);
+        
+        const list = Array.isArray(data.data) ? data.data : [];
+        
+        console.log('Country search results:', list);
+        console.log('Data type:', typeof data.data);
+        console.log('Is array:', Array.isArray(data.data));
+        console.log('Data keys:', Object.keys(data.data || {}));
+        
+        if (data.error) {
+            console.error('API returned error:', data.error);
+            box.innerHTML = '<div class="text-xs text-red-600">API Fehler: ' + escapeHtml(data.error) + '</div>';
+            return;
+        }
+        
+        if (!list.length) { 
+            box.innerHTML = '<div class="text-xs text-gray-500">Keine Treffer für "' + escapeHtml(q) + '"</div>'; 
+            // Höhe zurücksetzen
+            box.style.maxHeight = '8rem'; // 32 (max-h-32)
+            return; 
+        }
+        
+        // Höhe basierend auf Anzahl der Ergebnisse anpassen
+        if (list.length > 2) {
+            box.style.maxHeight = '16rem'; // Doppelte Höhe (64)
+        } else {
+            box.style.maxHeight = '8rem'; // Standard Höhe (32)
+        }
+        
+        box.innerHTML = list.map((c, i) => (
+            `<div class="autocomplete-item px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 flex items-center justify-between" data-index="${i}" data-name="${escapeForAttr(c.name)}">
+                <div>
+                    <div class="font-medium">${escapeHtml(c.name)}</div>
+                    <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
+                </div>
+                <button class="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100">Übernehmen</button>
+            </div>`
+        )).join('');
+        
+        box.querySelectorAll('.autocomplete-item').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                const idx = parseInt(el.getAttribute('data-index'));
+                setCountryFilterActiveIndex(idx);
+            });
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                const countryName = el.getAttribute('data-name');
+                console.log('Adding country to filter:', countryName);
+                addCountryToFilter(countryName);
+                box.innerHTML = '';
+            });
+            el.querySelector('button')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const countryName = el.getAttribute('data-name');
+                console.log('Adding country to filter via button:', countryName);
+                addCountryToFilter(countryName);
+                box.innerHTML = '';
+            });
+        });
+    } catch (e) {
+        console.error('Error in searchCountriesForFilter:', e);
+        box.innerHTML = '<div class="text-xs text-red-600">Fehler bei der Suche: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
 function applyCountryFilter(countryName) {
     const badgeWrap = document.getElementById('selectedCountryDisplay');
     const badgeText = document.getElementById('selectedCountryName');
@@ -3142,6 +3332,118 @@ function clearSelectedCountry() {
     const badgeWrap = document.getElementById('selectedCountryDisplay');
     if (badgeWrap) badgeWrap.classList.add('hidden');
     debouncedAirportSearchWithFilters();
+}
+
+function addCountryToFilter(countryName) {
+    console.log('addCountryToFilter called with:', countryName);
+    
+    // Land zur Auswahl hinzufügen
+    window.selectedCountries.add(countryName);
+    
+    // Suchfeld leeren
+    const countryInput = document.getElementById('countryFilterInput');
+    if (countryInput) countryInput.value = '';
+    
+    // Ausgewählte Länder anzeigen
+    renderSelectedCountries();
+    
+    // Events nach Ländern filtern
+    filterEventsByCountry();
+}
+
+function removeCountryFromFilter(countryName) {
+    console.log('removeCountryFromFilter called with:', countryName);
+    
+    // Land aus der Auswahl entfernen
+    window.selectedCountries.delete(countryName);
+    
+    // Ausgewählte Länder anzeigen
+    renderSelectedCountries();
+    
+    // Events nach Ländern filtern
+    filterEventsByCountry();
+}
+
+function renderSelectedCountries() {
+    const displayContainer = document.getElementById('selectedCountriesFilterDisplay');
+    if (!displayContainer) return;
+    
+    if (window.selectedCountries.size === 0) {
+        displayContainer.innerHTML = '';
+        return;
+    }
+    
+    const countryBadges = Array.from(window.selectedCountries).map(country => `
+        <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
+            <span>${escapeHtml(country)}</span>
+            <button type="button" class="text-blue-700 hover:text-blue-900" onclick="removeCountryFromFilter('${escapeForAttr(country)}')" style="cursor: pointer;">&times;</button>
+        </span>
+    `).join('');
+    
+    displayContainer.innerHTML = countryBadges;
+}
+
+function clearAllCountryFilters() {
+    console.log('clearAllCountryFilters called');
+    
+    // Alle Länder aus der Auswahl entfernen
+    window.selectedCountries.clear();
+    
+    // Suchfeld leeren
+    const countryInput = document.getElementById('countryFilterInput');
+    if (countryInput) countryInput.value = '';
+    
+    // Ergebnisse leeren
+    const resultsBox = document.getElementById('countryFilterResults');
+    if (resultsBox) resultsBox.innerHTML = '';
+    
+    // Ausgewählte Länder anzeigen
+    renderSelectedCountries();
+    
+    // Events nach Ländern filtern
+    filterEventsByCountry();
+}
+
+// Test-Funktion für Länder-Suche
+function testCountrySearch() {
+    console.log('Testing country search...');
+    const testQueries = ['Deutschland', 'Germany', 'DE', 'USA', 'Frankreich'];
+    
+    testQueries.forEach(query => {
+        setTimeout(() => {
+            console.log(`Testing query: ${query}`);
+            searchCountriesForFilter(query);
+        }, 1000);
+    });
+}
+
+// Debug-Funktion für Länder-Suche
+async function debugCountrySearch(query) {
+    console.log('Debug country search for:', query);
+    try {
+        const res = await fetch('/api/countries/search-debug?q=' + encodeURIComponent(query), { 
+            headers: { 'Accept': 'application/json' } 
+        });
+        if (!res.ok) throw new Error('Network');
+        const data = await res.json();
+        console.log('Debug results:', data);
+        return data;
+    } catch (e) {
+        console.error('Debug error:', e);
+        return null;
+    }
+}
+
+function setCountryFilterActiveIndex(index) {
+    const box = document.getElementById('countryFilterResults');
+    if (!box) return;
+    box.querySelectorAll('.autocomplete-item').forEach((el, i) => {
+        if (i === index) {
+            el.classList.add('bg-blue-50', 'border-blue-300');
+        } else {
+            el.classList.remove('bg-blue-50', 'border-blue-300');
+        }
+    });
 }
 
 async function searchAirports(query) {
@@ -3847,6 +4149,70 @@ function toggleNewFilterSection() {
         content.style.display = 'none';
         icon.style.transform = 'rotate(180deg)';
     }
+}
+
+// Filter Unterbereiche auf-/zuklappen
+function toggleFilterSubSection(sectionId) {
+    const content = document.getElementById(sectionId);
+    const iconId = sectionId === 'continentsSection' ? 'continentsToggleIcon' : 'providersToggleIcon';
+    const icon = document.getElementById(iconId);
+    
+    if (!content || !icon) return;
+    
+    const isOpen = content.style.display !== 'none';
+    const newOpen = !isOpen;
+    
+    content.style.display = newOpen ? 'block' : 'none';
+    // Icon-Ausrichtung: geschlossen = 0deg (nach unten), geöffnet = 180deg (nach oben)
+    icon.style.transform = newOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+    
+    // Zustand im localStorage speichern
+    try {
+        localStorage.setItem(`filterSubSection_${sectionId}`, newOpen.toString());
+    } catch (e) {}
+}
+
+// Filter Unterbereiche Zustand wiederherstellen
+function restoreFilterSubSections() {
+    const sections = ['continentsSection', 'countriesSection', 'providersSection'];
+    
+    sections.forEach(sectionId => {
+        const content = document.getElementById(sectionId);
+        let iconId;
+        switch(sectionId) {
+            case 'continentsSection':
+                iconId = 'continentsToggleIcon';
+                break;
+            case 'countriesSection':
+                iconId = 'countriesToggleIcon';
+                break;
+            case 'providersSection':
+                iconId = 'providersToggleIcon';
+                break;
+            default:
+                iconId = null;
+        }
+        const icon = document.getElementById(iconId);
+        
+        if (!content || !icon) return;
+        
+        try {
+            const saved = localStorage.getItem(`filterSubSection_${sectionId}`);
+            if (saved !== null) {
+                const shouldOpen = saved === 'true';
+                content.style.display = shouldOpen ? 'block' : 'none';
+                icon.style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            } else {
+                // Standardmäßig geöffnet
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            }
+        } catch (e) {
+            // Fallback: Standardmäßig geöffnet
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        }
+    });
 }
 
 // Sidebar Live Statistics anzeigen
