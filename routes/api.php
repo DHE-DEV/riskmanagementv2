@@ -1,11 +1,12 @@
 <?php
 
+use App\Http\Controllers\AirportSearchController;
+use App\Http\Controllers\CustomEventController;
+use App\Http\Controllers\GdacsController;
+use App\Http\Controllers\GeolocationController;
+use App\Http\Controllers\SocialLinkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\GdacsController;
-use App\Http\Controllers\AirportSearchController;
-use App\Http\Controllers\SocialLinkController;
-use App\Http\Controllers\CustomEventController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,7 @@ Route::prefix('gdacs')->group(function () {
     Route::get('/statistics', [GdacsController::class, 'getStatistics'])->name('gdacs.statistics');
     Route::post('/clear-cache', [GdacsController::class, 'clearCache'])->name('gdacs.clear-cache');
     Route::get('/test-apis', [GdacsController::class, 'testApis'])->name('gdacs.test-apis');
-    
+
     // Wetter und Zeitzonen APIs
     Route::post('/event-details', [GdacsController::class, 'getEventDetails'])->name('gdacs.event-details');
     Route::post('/weather-for-events', [GdacsController::class, 'getWeatherForEvents'])->name('gdacs.weather-for-events');
@@ -51,3 +52,11 @@ Route::get('/countries/locate', [AirportSearchController::class, 'countryLocate'
 
 // Social links
 Route::get('/social-links', [SocialLinkController::class, 'index'])->name('social-links.index');
+
+// Geolocation API Routes
+Route::prefix('geolocation')->group(function () {
+    Route::get('/find-location', [GeolocationController::class, 'findLocation'])->name('geolocation.find-location');
+    Route::get('/nearest-city', [GeolocationController::class, 'findNearestCity'])->name('geolocation.nearest-city');
+    Route::get('/cities-in-radius', [GeolocationController::class, 'findCitiesInRadius'])->name('geolocation.cities-in-radius');
+    Route::get('/test', [GeolocationController::class, 'test'])->name('geolocation.test');
+});

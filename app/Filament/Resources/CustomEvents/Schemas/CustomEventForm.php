@@ -2,15 +2,14 @@
 
 namespace App\Filament\Resources\CustomEvents\Schemas;
 
-use App\Models\CustomEvent;
 use App\Models\Country;
+use App\Models\CustomEvent;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -29,14 +28,14 @@ class CustomEventForm
                     ->maxLength(255)
                     ->placeholder('z.B. Brandschutzübung Frankfurt')
                     ->columnSpanFull(),
-                
+
                 // Beschreibung-Feld ausgeblendet
                 Textarea::make('description')
                     ->label('Beschreibung')
                     ->rows(3)
                     ->placeholder('Detaillierte Beschreibung des Events...')
                     ->hidden(),
-                
+
                 // Popup-Inhalt als Beschreibung
                 RichEditor::make('popup_content')
                     ->label('Beschreibung')
@@ -56,7 +55,7 @@ class CustomEventForm
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
                     ->placeholder('Beschreiben Sie hier den Inhalt, der im Popup angezeigt werden soll...')
                     ->columnSpanFull(),
-                
+
                 Select::make('event_type')
                     ->label('Event-Typ')
                     ->options(CustomEvent::getEventTypeOptions())
@@ -73,18 +72,18 @@ class CustomEventForm
                     )
                     ->searchable()
                     ->preload(),
-                
+
                 Select::make('priority')
                     ->label('Priorität')
                     ->options(CustomEvent::getPriorityOptions())
                     ->default('medium')
                     ->required(),
-                
+
                 TextInput::make('category')
                     ->label('Kategorie')
                     ->placeholder('z.B. Übung, Notfall, Wartung')
                     ->maxLength(100),
-                
+
                 TextInput::make('tags')
                     ->label('Tags')
                     ->placeholder('tag1, tag2, tag3')
@@ -95,13 +94,13 @@ class CustomEventForm
                     ->label('Aktiv')
                     ->default(true)
                     ->helperText('Event auf der Karte anzeigen'),
-                
+
                 DateTimePicker::make('start_date')
                     ->label('Startdatum')
                     ->required()
                     ->default(now())
                     ->displayFormat('d.m.Y H:i'),
-                
+
                 DateTimePicker::make('end_date')
                     ->label('Enddatum')
                     ->displayFormat('d.m.Y H:i')
@@ -122,14 +121,14 @@ class CustomEventForm
                             }
                         }
                     }),
-                
+
                 TextInput::make('latitude')
                     ->label('Breitengrad')
                     ->required()
                     ->numeric()
                     ->step(0.000000000000001)
                     ->placeholder('50.1109'),
-                
+
                 TextInput::make('longitude')
                     ->label('Längengrad')
                     ->required()
@@ -142,7 +141,7 @@ class CustomEventForm
                     ->label('Marker-Farbe')
                     ->default('#FF0000')
                     ->helperText('Hauptfarbe des Markers'),
-                
+
                 Select::make('marker_icon')
                     ->label('FontAwesome Symbol')
                     ->options([
@@ -209,12 +208,12 @@ class CustomEventForm
                     ->default('fa-map-marker')
                     ->searchable()
                     ->helperText('Symbol für den Marker'),
-                
+
                 ColorPicker::make('icon_color')
                     ->label('Symbol-Farbe')
                     ->default('#FFFFFF')
                     ->helperText('Farbe des Symbols'),
-                
+
                 Select::make('marker_size')
                     ->label('Marker-Größe')
                     ->options(CustomEvent::getMarkerSizeOptions())
@@ -231,37 +230,45 @@ class CustomEventForm
     private static function parseCoordinates(string $input): ?array
     {
         $input = trim($input);
-        
+
         // Format: 50.1109, 8.6821
         if (preg_match('/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/', $input, $matches)) {
             return [
                 'lat' => (float) $matches[1],
-                'lng' => (float) $matches[2]
+                'lng' => (float) $matches[2],
             ];
         }
-        
+
         // Format: 50°06'39.2"N 8°40'55.6"E
         if (preg_match('/(\d+)°(\d+)\'([\d.]+)"([NS])\s+(\d+)°(\d+)\'([\d.]+)"([EW])/', $input, $matches)) {
             $lat = (float) $matches[1] + (float) $matches[2] / 60 + (float) $matches[3] / 3600;
             $lng = (float) $matches[5] + (float) $matches[6] / 60 + (float) $matches[7] / 3600;
-            
-            if ($matches[4] === 'S') $lat = -$lat;
-            if ($matches[8] === 'W') $lng = -$lng;
-            
+
+            if ($matches[4] === 'S') {
+                $lat = -$lat;
+            }
+            if ($matches[8] === 'W') {
+                $lng = -$lng;
+            }
+
             return ['lat' => $lat, 'lng' => $lng];
         }
-        
+
         // Format: 50.1109°N, 8.6821°E
         if (preg_match('/(\d+\.?\d*)°([NS])\s*,\s*(\d+\.?\d*)°([EW])/', $input, $matches)) {
             $lat = (float) $matches[1];
             $lng = (float) $matches[3];
-            
-            if ($matches[2] === 'S') $lat = -$lat;
-            if ($matches[4] === 'W') $lng = -$lng;
-            
+
+            if ($matches[2] === 'S') {
+                $lat = -$lat;
+            }
+            if ($matches[4] === 'W') {
+                $lng = -$lng;
+            }
+
             return ['lat' => $lat, 'lng' => $lng];
         }
-        
+
         return null;
     }
 }
