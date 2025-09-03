@@ -3033,6 +3033,10 @@ async function refreshData() {
     
     try {
         button.innerHTML = '<div class="loading"></div>';
+        
+        // Zuerst neue GDACS Events von API holen
+        await fetch('/api/gdacs/fetch-events');
+        
         await loadDashboardData();
         await loadStatistics();
         showNotification('Daten erfolgreich aktualisiert!', 'success');

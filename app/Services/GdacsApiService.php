@@ -114,6 +114,11 @@ class GdacsApiService
         // Extrahiere Land/Region
         $location = $this->extractLocation($title, $description);
         
+        // Fallback-Koordinaten wenn keine gefunden wurden
+        if (!$coordinates['lat'] && !$coordinates['lng'] && $location['country']) {
+            $coordinates = $this->getCountryFallbackCoordinates($location['country']);
+        }
+        
         // Extrahiere Magnitude
         $magnitude = $this->extractMagnitude($title, $description);
         
@@ -169,14 +174,14 @@ class GdacsApiService
             $eventType = 'drought';
         }
 
-        // Severity bestimmen
-        $severity = 'green';
+        // Severity bestimmen und zu DB-Format konvertieren
+        $severity = 'low'; // Default für green
         if (str_contains($titleLower, 'red') || str_contains($descLower, 'red alert')) {
-            $severity = 'red';
+            $severity = 'critical';
         } elseif (str_contains($titleLower, 'orange') || str_contains($descLower, 'orange alert')) {
-            $severity = 'orange';
+            $severity = 'high';
         } elseif (str_contains($titleLower, 'yellow') || str_contains($descLower, 'yellow alert')) {
-            $severity = 'yellow';
+            $severity = 'medium';
         }
 
         return [
@@ -290,10 +295,11 @@ class GdacsApiService
         
         foreach ($events as $eventData) {
             try {
-                // Prüfe ob Event bereits existiert (basierend auf Titel und Datum)
-                $existingEvent = DisasterEvent::where('title', $eventData['title'])
-                    ->where('event_date', Carbon::parse($eventData['pub_date']))
+                // Prüfe ob Event bereits existiert (basierend auf GDACS Map Link)
+                $existingEvent = DisasterEvent::where('gdacs_map_link', $eventData['link'])
+                    ->where('is_gdacs', true)
                     ->first();
+
 
                 if ($existingEvent) {
                     // Update bestehendes Event
@@ -318,7 +324,9 @@ class GdacsApiService
                         'affected_population' => $eventData['affected_population'],
                         'gdacs_population_text' => $eventData['gdacs_population_text'],
                         'event_date' => Carbon::parse($eventData['pub_date']),
-                        'gdacs_link' => $eventData['link'],
+                        'gdacs_map_link' => $eventData['link'],
+                        'external_sources' => 'gdacs',
+                        'last_updated' => now(),
                         'is_gdacs' => true,
                         'country_id' => $this->findCountryId($eventData['country']),
                         'raw_data' => json_encode($eventData['raw_data'])
@@ -345,11 +353,34 @@ class GdacsApiService
             return null;
         }
 
-        $country = Country::where('name', 'like', "%{$countryName}%")
+        $country = Country::where('name_translations', 'like', "%{$countryName}%")
             ->orWhere('iso_code', 'like', "%{$countryName}%")
             ->first();
 
         return $country?->id;
+    }
+
+    /**
+     * Fallback-Koordinaten für Länder
+     */
+    private function getCountryFallbackCoordinates(string $country): array
+    {
+        $coordinates = [
+            'China' => ['lat' => 35.8617, 'lng' => 104.1954],
+            'United States' => ['lat' => 37.0902, 'lng' => -95.7129],
+            'Bolivia' => ['lat' => -16.2902, 'lng' => -63.5887],
+            'Brazil' => ['lat' => -14.2350, 'lng' => -51.9253],
+            'Madagascar' => ['lat' => -18.7669, 'lng' => 46.8691],
+            'Sudan' => ['lat' => 12.8628, 'lng' => 30.2176],
+            'Ethiopia' => ['lat' => 9.1450, 'lng' => 40.4897],
+            'Mexico' => ['lat' => 23.6345, 'lng' => -102.5528],
+            'Canada' => ['lat' => 56.1304, 'lng' => -106.3468],
+            'Australia' => ['lat' => -25.2744, 'lng' => 133.7751],
+            'Russia' => ['lat' => 61.5240, 'lng' => 105.3188],
+            'Mongolia' => ['lat' => 47.0659, 'lng' => 103.8467]
+        ];
+
+        return $coordinates[$country] ?? ['lat' => null, 'lng' => null];
     }
 
     /**
