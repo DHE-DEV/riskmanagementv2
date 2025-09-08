@@ -81,9 +81,8 @@
             flex-shrink: 0;
             width: 320px; /* 20 * 16 = 320px */
             background: #e5e7eb;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
+            overflow-y: auto;
+            height: 100vh;
         }
         
         /* Statistics Container - gleiche Größe wie Sidebar */
@@ -878,10 +877,10 @@
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events" onclick="showSidebarLiveStatistics()">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </button>
-                
+                <!--
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flugzeuge" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </button>
+                </button>-->
 <!--
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Social Media" onclick="createSocialSidebar()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -916,7 +915,7 @@
         </nav>
 
         <!-- Gray Sidebar -->
-        <aside class="sidebar flex flex-col min-h-0">
+        <aside class="sidebar overflow-y-auto">
             <!-- Container ID Display -->
             <div class="bg-blue-100 border-b border-blue-200 p-2">
                 <p class="text-xs text-blue-800 font-mono text-center">Container ID: sidebar-liveStatistics</p>
@@ -938,8 +937,8 @@
                 </div>
             </div>
             
-            <!-- Filters (nimmt Hälfte der Höhe) -->
-            <div id="filtersWrapper" class="bg-white shadow-sm flex-1 flex flex-col min-h-0">
+            <!-- Filters -->
+            <div id="filtersWrapper" class="bg-white shadow-sm">
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('filters')">
                     <h3 class="font-semibold text-gray-800 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1011,27 +1010,87 @@
                         </div>
                     </div>
 
+                    <!-- Risikostufe -->
+                    <div class="border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('riskLevelSection')">
+                            <h4 class="text-sm font-medium text-gray-700">Risikostufe</h4>
+                            <svg id="riskLevelToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="riskLevelSection" class="p-3">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-green-600 text-white border-green-600" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
+                                <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-orange-600 text-white border-orange-600" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
+                                <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-red-600 text-white border-red-600" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
+                            </div>
+                            <div class="grid grid-cols-1 gap-2 border-t border-gray-200 pt-2">
+                                <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium" onclick="toggleAllRiskLevels()">Alle</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Eventtype -->
+                    <div class="border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('eventTypeSection')">
+                            <h4 class="text-sm font-medium text-gray-700">Eventtype</h4>
+                            <svg id="eventTypeToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="eventTypeSection" class="p-3">
+                            <div class="grid grid-cols-1 gap-2 mb-2">
+                                <button type="button" id="event-earthquake" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="earthquake" onclick="toggleEventTypeFilter('earthquake', this)">Erdbeben</button>
+                                <button type="button" id="event-tsunami" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="tsunami" onclick="toggleEventTypeFilter('tsunami', this)">Tsunami</button>
+                                <button type="button" id="event-flood" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="flood" onclick="toggleEventTypeFilter('flood', this)">Überschwemmung</button>
+                                <button type="button" id="event-cyclone" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="cyclone" onclick="toggleEventTypeFilter('cyclone', this)">Zyklon</button>
+                                <button type="button" id="event-volcano" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="volcano" onclick="toggleEventTypeFilter('volcano', this)">Vulkan</button>
+                                <button type="button" id="event-wildfire" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="wildfire" onclick="toggleEventTypeFilter('wildfire', this)">Waldbrand</button>
+                            </div>
+                            <div class="grid grid-cols-1 gap-2 border-t border-gray-200 pt-2">
+                                <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium" onclick="toggleAllEventTypes()">Alle ausblenden</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Zeitraum -->
+                    <div class="border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('timePeriodSection')">
+                            <h4 class="text-sm font-medium text-gray-700">Zeitraum</h4>
+                            <svg id="timePeriodToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="timePeriodSection" class="p-3">
+                            <div class="grid grid-cols-1 gap-2">
+                                <button type="button" id="period-all" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-period="all" onclick="toggleTimePeriodFilter('all', this)">Alle</button>
+                                <button type="button" id="period-7days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="7days" onclick="toggleTimePeriodFilter('7days', this)">Letzte 7 Tage</button>
+                                <button type="button" id="period-30days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="30days" onclick="toggleTimePeriodFilter('30days', this)">Letzte 30 Tage</button>
+                            </div>
+                        </div>
+                    </div>
+
                     
                 </div>
             </div>
 
             <!-- Current Events -->
-            <div id="eventsWrapper" class="bg-white shadow-sm flex-1 flex flex-col min-h-0">
+            <div id="eventsWrapper" class="bg-white shadow-sm">
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('currentEvents')">
                     <h3 class="font-semibold text-gray-800 flex items-center gap-2">
                         <i class="fa-regular fa-brake-warning"></i>
                         <span>Aktuelle Ereignisse (<span id="currentEventsCount">0</span>)</span>
                     </h3>
                     <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('currentEvents')">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg id="currentEventsToggleIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
                 </div>
                 
-                <div id="currentEvents" class="p-2 flex-1 min-h-0" style="display: flex; flex-direction: column;">
+                <div id="currentEvents" class="p-2" style="display: none;">
                     <p class="text-xs text-gray-500 px-2 mb-2">Neueste Events zuerst</p>
-                    <div id="eventsList" class="space-y-2 flex-1 min-h-0 overflow-y-auto pb-10" style="position: relative; z-index: 1;">
+                    <div id="eventsList" class="space-y-2 pb-10" style="position: relative; z-index: 1;">
                         <!-- Events werden hier dynamisch eingefügt -->
                     </div>
                 </div>
@@ -1358,8 +1417,8 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.4</span>
-                <span>Build: 2025-08-28</span>
+                <span>Version 1.0.5</span>
+                <span>Build: 2025-09-08</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
@@ -1400,9 +1459,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(loadDashboardData, 5 * 60 * 1000);
 
     // Pfeil-Icons initial an angezeigten Zustand anpassen
-    // Filter standardmäßig zugeklappt und Layout anpassen
+    // Filter standardmäßig zugeklappt, currentEvents standardmäßig geöffnet
     const filters = document.getElementById('filters');
+    const currentEvents = document.getElementById('currentEvents');
     if (filters) filters.style.display = 'none';
+    if (currentEvents) currentEvents.style.display = 'block';
     adjustSidebarLayout();
     syncSectionToggleIcon('filters');
     syncSectionToggleIcon('currentEvents');
@@ -1493,13 +1554,111 @@ async function loadDashboardData() {
         };
         allEvents.sort((a, b) => getEventTimeMs(b) - getEventTimeMs(a));
 
-        // Provider-Filter anwenden
-        const filtered = allEvents.filter(e => {
+        // Kontinente-Filter ZUERST anwenden (hat spezielle Logik)
+        let filteredByContinent = [...allEvents];
+        if (window.selectedContinents) {
+            if (window.selectedContinents.size === 0) {
+                // Keine Kontinente ausgewählt - keine Events anzeigen
+                filteredByContinent = [];
+            } else {
+                const allContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+                const isAllContinentsSelected = allContinents.size === window.selectedContinents.size && 
+                                               Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
+                
+                if (!isAllContinentsSelected) {
+                    // Nur spezifische Kontinente ausgewählt
+                    filteredByContinent = allEvents.filter(event => {
+                        const eventContinent = getEventContinent(event);
+                        return window.selectedContinents.has(eventContinent);
+                    });
+                }
+                // Wenn alle Kontinente ausgewählt sind, bleibt filteredByContinent = [...allEvents]
+            }
+        }
+
+        // Debug: Risikostufen-Werte in den ersten paar Events ausgeben
+        if (filteredByContinent.length > 0 && window.riskFilterDebug !== true) {
+            window.riskFilterDebug = true;
+            console.log('=== RISK LEVEL DEBUG ===');
+            filteredByContinent.slice(0, 5).forEach((e, i) => {
+                console.log(`Event ${i + 1}:`, {
+                    risk_level: e.risk_level,
+                    alert_level: e.alert_level,
+                    alertlevel: e.alertlevel,
+                    severity: e.severity,
+                    title: e.title || e.event_title
+                });
+            });
+            console.log('=== END RISK LEVEL DEBUG ===');
+        }
+
+        // Dann alle anderen Filter auf das Kontinente-gefilterte Ergebnis anwenden
+        const filtered = filteredByContinent.filter(e => {
+            // Provider-Filter
             const isGdacs = e.is_gdacs === true || e.source === 'gdacs';
             const isCustom = e.is_gdacs === false || e.source === 'custom';
             const allowGdacs = (window.providerFilter?.gdacs ?? true);
             const allowCustom = (window.providerFilter?.custom ?? true);
-            return (isGdacs && allowGdacs) || (isCustom && allowCustom);
+            const providerMatch = (isGdacs && allowGdacs) || (isCustom && allowCustom);
+            
+            // Länder-Filter
+            let countryMatch = true;
+            if (window.selectedCountries && window.selectedCountries.size > 0) {
+                const eventCountry = e.country_name || e.country || '';
+                countryMatch = Array.from(window.selectedCountries).some(selectedCountry => 
+                    eventCountry.toLowerCase().includes(selectedCountry.toLowerCase())
+                );
+            }
+            
+            // Risikostufe-Filter
+            let riskLevel = e.risk_level || e.alert_level || e.alertlevel || e.severity || 'green';
+            
+            // Mapping verschiedener Risikostufen-Bezeichnungen auf unsere Filter-Keys
+            if (typeof riskLevel === 'string') {
+                riskLevel = riskLevel.toLowerCase();
+                if (riskLevel.includes('low') || riskLevel.includes('niedrig') || riskLevel === 'green') {
+                    riskLevel = 'green';
+                } else if (riskLevel.includes('medium') || riskLevel.includes('mittel') || riskLevel.includes('moderate') || riskLevel === 'orange') {
+                    riskLevel = 'orange';
+                } else if (riskLevel.includes('high') || riskLevel.includes('hoch') || riskLevel.includes('severe') || riskLevel === 'red') {
+                    riskLevel = 'red';
+                }
+            } else if (typeof riskLevel === 'number') {
+                // Numerische Werte auf Farben mappen
+                if (riskLevel <= 1) riskLevel = 'green';
+                else if (riskLevel <= 2) riskLevel = 'orange';
+                else riskLevel = 'red';
+            }
+            
+            const allowRisk = window.riskFilter?.[riskLevel] ?? true;
+            
+            // Eventtype-Filter
+            let eventType = (e.event_type || e.type || '').toLowerCase();
+            // Mapping für verschiedene Bezeichnungen
+            if (eventType.includes('earthquake') || eventType.includes('erdbeben')) eventType = 'earthquake';
+            else if (eventType.includes('tsunami')) eventType = 'tsunami';
+            else if (eventType.includes('flood') || eventType.includes('überschwemmung')) eventType = 'flood';
+            else if (eventType.includes('cyclone') || eventType.includes('hurricane') || eventType.includes('zyklon')) eventType = 'cyclone';
+            else if (eventType.includes('volcano') || eventType.includes('vulkan')) eventType = 'volcano';
+            else if (eventType.includes('fire') || eventType.includes('wildfire') || eventType.includes('waldbrand')) eventType = 'wildfire';
+            
+            const allowEventType = window.eventTypeFilter?.[eventType] ?? true;
+            
+            // Zeitraum-Filter
+            let timeMatch = true;
+            if (window.timePeriodFilter && window.timePeriodFilter !== 'all') {
+                const now = new Date();
+                const eventDate = new Date(e.event_date || e.created_at || e.date);
+                const daysDiff = Math.floor((now - eventDate) / (1000 * 60 * 60 * 24));
+                
+                if (window.timePeriodFilter === '7days') {
+                    timeMatch = daysDiff <= 7;
+                } else if (window.timePeriodFilter === '30days') {
+                    timeMatch = daysDiff <= 30;
+                }
+            }
+            
+            return providerMatch && countryMatch && allowRisk && allowEventType && timeMatch;
         });
         currentEvents = filtered;
         addMarkersToMap();
@@ -2600,6 +2759,246 @@ function toggleProviderFilter(key, btn) {
     }
 }
 
+// Risk Level Filter Toggle
+function toggleRiskFilter(key, btn) {
+    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
+    window.riskFilter[key] = !window.riskFilter[key];
+    
+    // Button-Style toggeln
+    if (window.riskFilter[key]) {
+        const colorClass = key === 'green' ? 'bg-green-600 border-green-600' : 
+                          key === 'orange' ? 'bg-orange-600 border-orange-600' : 
+                          'bg-red-600 border-red-600';
+        btn.className = `px-3 py-2 text-xs rounded-lg border transition-colors ${colorClass} text-white`;
+    } else {
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+    }
+    
+    // "Alle"/"Keine" Button aktualisieren
+    const toggleButton = document.getElementById('toggleAllRiskLevels');
+    if (toggleButton) {
+        const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+        const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red;
+        
+        if (allActive) {
+            toggleButton.textContent = 'Keine';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        } else if (allInactive) {
+            toggleButton.textContent = 'Alle';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        } else {
+            // Gemischter Zustand
+            toggleButton.textContent = 'Alle';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        }
+    }
+    
+    // Liste & Statistiken neu berechnen
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(currentEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { loadDashboardData(); }
+    }
+}
+
+// Event Type Filter Toggle
+function toggleEventTypeFilter(key, btn) {
+    if (!window.eventTypeFilter) window.eventTypeFilter = { 
+        earthquake: true, tsunami: true, flood: true, 
+        cyclone: true, volcano: true, wildfire: true 
+    };
+    window.eventTypeFilter[key] = !window.eventTypeFilter[key];
+    
+    // Button-Style toggeln
+    if (window.eventTypeFilter[key]) {
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+    } else {
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+    }
+    
+    // "Alle einblenden"/"Alle ausblenden" Button aktualisieren
+    const toggleButton = document.getElementById('toggleAllEventTypes');
+    if (toggleButton) {
+        const eventTypeKeys = ['earthquake', 'tsunami', 'flood', 'cyclone', 'volcano', 'wildfire'];
+        const allActive = eventTypeKeys.every(key => window.eventTypeFilter[key]);
+        const allInactive = eventTypeKeys.every(key => !window.eventTypeFilter[key]);
+        
+        if (allActive) {
+            toggleButton.textContent = 'Alle ausblenden';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        } else if (allInactive) {
+            toggleButton.textContent = 'Alle einblenden';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        } else {
+            // Gemischter Zustand
+            toggleButton.textContent = 'Alle einblenden';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        }
+    }
+    
+    // Liste & Statistiken neu berechnen
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(currentEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { loadDashboardData(); }
+    }
+}
+
+// Time Period Filter Toggle
+function toggleTimePeriodFilter(key, btn) {
+    if (!window.timePeriodFilter) window.timePeriodFilter = 'all';
+    
+    // Reset all period buttons to inactive state
+    const allPeriodButtons = ['period-all', 'period-7days', 'period-30days'];
+    allPeriodButtons.forEach(id => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+        }
+    });
+    
+    // Set the selected period as active
+    window.timePeriodFilter = key;
+    btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+    
+    // Liste & Statistiken neu berechnen
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(currentEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { loadDashboardData(); }
+    }
+}
+
+// Risk Level "Alle"/"Keine" Toggle
+function toggleAllRiskLevels() {
+    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
+    
+    const toggleButton = document.getElementById('toggleAllRiskLevels');
+    const riskButtons = ['risk-green', 'risk-orange', 'risk-red'];
+    
+    // Prüfen ob alle Risikostufen aktiv sind
+    const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+    
+    if (allActive) {
+        // Alle deaktivieren
+        toggleButton.textContent = 'Alle';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        
+        // Alle Risikostufen deaktivieren
+        window.riskFilter = { green: false, orange: false, red: false };
+        
+        // Button-Styles auf inaktiv setzen
+        riskButtons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+            }
+        });
+    } else {
+        // Alle aktivieren
+        toggleButton.textContent = 'Keine';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        
+        // Alle Risikostufen aktivieren
+        window.riskFilter = { green: true, orange: true, red: true };
+        
+        // Button-Styles auf aktiv setzen
+        const colorClasses = {
+            'risk-green': 'bg-green-600 border-green-600',
+            'risk-orange': 'bg-orange-600 border-orange-600',
+            'risk-red': 'bg-red-600 border-red-600'
+        };
+        
+        riskButtons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                const colorClass = colorClasses[id];
+                button.className = `px-3 py-2 text-xs rounded-lg border transition-colors ${colorClass} text-white`;
+            }
+        });
+    }
+    
+    // Liste & Statistiken neu berechnen
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(currentEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { loadDashboardData(); }
+    }
+}
+
+// Event Type "Alle einblenden"/"Alle ausblenden" Toggle
+function toggleAllEventTypes() {
+    if (!window.eventTypeFilter) window.eventTypeFilter = { 
+        earthquake: true, tsunami: true, flood: true, 
+        cyclone: true, volcano: true, wildfire: true 
+    };
+    
+    const toggleButton = document.getElementById('toggleAllEventTypes');
+    const eventTypeButtons = ['event-earthquake', 'event-tsunami', 'event-flood', 'event-cyclone', 'event-volcano', 'event-wildfire'];
+    const eventTypeKeys = ['earthquake', 'tsunami', 'flood', 'cyclone', 'volcano', 'wildfire'];
+    
+    // Prüfen ob alle Event-Typen aktiv sind
+    const allActive = eventTypeKeys.every(key => window.eventTypeFilter[key]);
+    
+    if (allActive) {
+        // Alle deaktivieren (ausblenden)
+        toggleButton.textContent = 'Alle einblenden';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        
+        // Alle Event-Typen deaktivieren
+        eventTypeKeys.forEach(key => {
+            window.eventTypeFilter[key] = false;
+        });
+        
+        // Button-Styles auf inaktiv setzen
+        eventTypeButtons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+            }
+        });
+    } else {
+        // Alle aktivieren (einblenden)
+        toggleButton.textContent = 'Alle ausblenden';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        
+        // Alle Event-Typen aktivieren
+        eventTypeKeys.forEach(key => {
+            window.eventTypeFilter[key] = true;
+        });
+        
+        // Button-Styles auf aktiv setzen
+        eventTypeButtons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+            }
+        });
+    }
+    
+    // Liste & Statistiken neu berechnen
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(currentEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { loadDashboardData(); }
+    }
+}
+
 // Statistiken von API aktualisieren
 function updateStatisticsFromApi(stats) {
     // Alle Elemente mit den gleichen IDs aktualisieren
@@ -2803,89 +3202,38 @@ function filterEventsByContinent() {
     console.log('filterEventsByContinent called');
     console.log('Selected continents:', window.selectedContinents ? Array.from(window.selectedContinents) : 'none');
     
-    if (!window.selectedContinents || window.selectedContinents.size === 0) {
-        console.log('No continents selected - showing no events');
-        // Kein Kontinent ausgewählt - keine Events anzeigen
-        currentEvents = [];
-        addMarkersToMap();
-        renderEvents();
-        updateStatistics();
-        return;
+    // Verwende die zentrale Filterlogik anstatt eigener Implementierung
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(allEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { 
+            loadDashboardData(); 
+        }
     }
     
-    // Prüfen, ob alle Kontinente ausgewählt sind (1-7)
-    const allContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
-    const isAllContinentsSelected = allContinents.size === window.selectedContinents.size && 
-                                   Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
-    
-    if (isAllContinentsSelected) {
-        console.log('All continents selected - showing all events');
-        // Alle Kontinente ausgewählt - alle Events anzeigen
-        currentEvents = [...(window.allEvents || [])];
-        console.log('All events displayed:', currentEvents.length);
-    } else {
-        // Nur bestimmte Kontinente ausgewählt - Events nach ausgewählten Kontinenten filtern
-        const filteredEvents = (window.allEvents || []).filter(event => {
-            const eventContinent = getEventContinent(event);
-            return window.selectedContinents.has(eventContinent);
-        });
-        currentEvents = filteredEvents;
-        console.log(`Filtered events for specific continents: ${Array.from(window.selectedContinents).join(', ')}`);
-    }
-    
-    // Karte und Sidebar aktualisieren
-    addMarkersToMap();
-    renderEvents();
-    updateStatistics();
-    
-    console.log(`Total events displayed: ${currentEvents.length}`);
+    console.log(`Total filtered events: ${currentEvents.length}`);
 }
 
 // Events nach Land filtern
 function filterEventsByCountry() {
     console.log('filterEventsByCountry called');
     
-    // Prüfen ob Länder ausgewählt sind
-    const hasSelectedCountries = window.selectedCountries && window.selectedCountries.size > 0;
-    console.log('Has selected countries:', hasSelectedCountries);
-    console.log('Selected countries:', hasSelectedCountries ? Array.from(window.selectedCountries) : 'none');
-    
-    if (!hasSelectedCountries) {
-        console.log('No countries selected - checking continent filter');
-        // Kein Land ausgewählt - prüfen ob Kontinent-Filter aktiv ist
-        if (window.selectedContinents && window.selectedContinents.size > 0) {
-            console.log('Continent filter is active, calling filterEventsByContinent');
-            // Kontinent-Filter ist aktiv - Events nach Kontinent filtern
-            filterEventsByContinent();
-        } else {
-            console.log('No filters active - showing all events');
-            // Kein Filter aktiv - alle Events anzeigen
-            currentEvents = [...(window.allEvents || [])];
-            addMarkersToMap();
-            renderEvents();
-            updateStatistics();
-            console.log('All events displayed:', currentEvents.length);
+    // Verwende die zentrale Filterlogik anstatt eigener Implementierung
+    if (typeof loadDashboardData === 'function') {
+        try {
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && Array.isArray(allEvents)) {
+                loadDashboardData();
+            }
+        } catch (e) { 
+            loadDashboardData(); 
         }
-        return;
     }
     
-    console.log('Countries selected - filtering events by countries:', Array.from(window.selectedCountries));
-    // Länder ausgewählt - Events nach Ländern filtern
-    const filteredEvents = (window.allEvents || []).filter(event => {
-        const eventCountry = event.country_name || event.country || '';
-        return Array.from(window.selectedCountries).some(selectedCountry => 
-            eventCountry.toLowerCase().includes(selectedCountry.toLowerCase())
-        );
-    });
-    
-    currentEvents = filteredEvents;
-    
-    // Karte und Sidebar aktualisieren
-    addMarkersToMap();
-    renderEvents();
-    updateStatistics();
-    
-    console.log(`Filtered ${filteredEvents.length} events for countries: ${Array.from(window.selectedCountries).join(', ')}`);
+    console.log(`Total filtered events: ${currentEvents.length}`);
 }
 
 // Kontinent eines Events bestimmen
@@ -3062,13 +3410,14 @@ function updateLastUpdated() {
 // Sektionen ein-/ausklappen
 function toggleSection(sectionId) {
     const section = document.getElementById(sectionId);
-    const filtersWrapper = document.getElementById('filtersWrapper');
-    const eventsWrapper = document.getElementById('eventsWrapper');
+    if (!section) return;
+    
     if (section.style.display === 'none') {
         section.style.display = 'block';
     } else {
         section.style.display = 'none';
     }
+    
     syncSectionToggleIcon(sectionId);
 
     // Höhe dynamisch aufteilen: wenn Filter zugeklappt -> Events bekommt volle Höhe, sonst 50/50
@@ -3139,7 +3488,7 @@ function syncSectionToggleIcon(sectionId) {
     // Mapping von Section -> Icon-Element-ID oder Query
     const icon = (
         sectionId === 'filters' ? document.getElementById('filtersToggleIcon') :
-        sectionId === 'currentEvents' ? document.querySelector('#currentEvents')?.previousElementSibling?.querySelector('svg.w-5.h-5') :
+        sectionId === 'currentEvents' ? document.getElementById('currentEventsToggleIcon') :
         sectionId === 'liveStatistics' ? document.querySelector('#liveStatistics')?.previousElementSibling?.querySelector('svg.w-5.h-5') :
         sectionId === 'mapControl' ? document.querySelector('#mapControl')?.previousElementSibling?.querySelector('svg.w-5.h-5') :
         null
@@ -4158,7 +4507,29 @@ function toggleNewFilterSection() {
 // Filter Unterbereiche auf-/zuklappen
 function toggleFilterSubSection(sectionId) {
     const content = document.getElementById(sectionId);
-    const iconId = sectionId === 'continentsSection' ? 'continentsToggleIcon' : 'providersToggleIcon';
+    let iconId;
+    switch(sectionId) {
+        case 'continentsSection':
+            iconId = 'continentsToggleIcon';
+            break;
+        case 'countriesSection':
+            iconId = 'countriesToggleIcon';
+            break;
+        case 'providersSection':
+            iconId = 'providersToggleIcon';
+            break;
+        case 'riskLevelSection':
+            iconId = 'riskLevelToggleIcon';
+            break;
+        case 'eventTypeSection':
+            iconId = 'eventTypeToggleIcon';
+            break;
+        case 'timePeriodSection':
+            iconId = 'timePeriodToggleIcon';
+            break;
+        default:
+            iconId = 'continentsToggleIcon';
+    }
     const icon = document.getElementById(iconId);
     
     if (!content || !icon) return;
@@ -4178,7 +4549,7 @@ function toggleFilterSubSection(sectionId) {
 
 // Filter Unterbereiche Zustand wiederherstellen
 function restoreFilterSubSections() {
-    const sections = ['continentsSection', 'countriesSection', 'providersSection'];
+    const sections = ['continentsSection', 'countriesSection', 'providersSection', 'riskLevelSection', 'eventTypeSection', 'timePeriodSection'];
     
     sections.forEach(sectionId => {
         const content = document.getElementById(sectionId);
@@ -4192,6 +4563,15 @@ function restoreFilterSubSections() {
                 break;
             case 'providersSection':
                 iconId = 'providersToggleIcon';
+                break;
+            case 'riskLevelSection':
+                iconId = 'riskLevelToggleIcon';
+                break;
+            case 'eventTypeSection':
+                iconId = 'eventTypeToggleIcon';
+                break;
+            case 'timePeriodSection':
+                iconId = 'timePeriodToggleIcon';
                 break;
             default:
                 iconId = null;
