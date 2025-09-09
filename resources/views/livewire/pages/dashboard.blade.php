@@ -846,7 +846,7 @@
 
                 <a 
                     href="/admin" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    class="px-4 py-2 bg-gray-300 text-black rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                 >
                     Admin
                 </a>
@@ -980,7 +980,7 @@
                     </div>
 
                     <!-- Continents -->
-                    <div class="border border-gray-200 rounded-lg">
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('continentsSection')">
                             <h4 class="text-sm font-medium text-gray-700">Kontinente</h4>
                             <svg id="continentsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1004,8 +1004,8 @@
                         </div>
                         <div id="providersSection" class="p-3">
                             <div class="grid grid-cols-2 gap-2">
-                                <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)">GDACS</button>
-                                <button type="button" id="provider-custom" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-provider="custom" onclick="toggleProviderFilter('custom', this)">Passolution</button>
+                                <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)">GDACS</button>
+                                <button type="button" id="provider-custom" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="custom" onclick="toggleProviderFilter('custom', this)">Passolution</button>
                             </div>
                         </div>
                     </div>
@@ -1020,12 +1020,10 @@
                         </div>
                         <div id="riskLevelSection" class="p-3">
                             <div class="grid grid-cols-2 gap-2 mb-2">
+                                <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
                                 <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-green-600 text-white border-green-600" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
                                 <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-orange-600 text-white border-orange-600" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
                                 <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-red-600 text-white border-red-600" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
-                            </div>
-                            <div class="grid grid-cols-1 gap-2 border-t border-gray-200 pt-2">
-                                <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium" onclick="toggleAllRiskLevels()">Alle</button>
                             </div>
                         </div>
                     </div>
@@ -1040,15 +1038,13 @@
                         </div>
                         <div id="eventTypeSection" class="p-3">
                             <div class="grid grid-cols-1 gap-2 mb-2">
-                                <button type="button" id="event-earthquake" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="earthquake" onclick="toggleEventTypeFilter('earthquake', this)">Erdbeben</button>
-                                <button type="button" id="event-tsunami" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="tsunami" onclick="toggleEventTypeFilter('tsunami', this)">Tsunami</button>
-                                <button type="button" id="event-flood" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="flood" onclick="toggleEventTypeFilter('flood', this)">Überschwemmung</button>
-                                <button type="button" id="event-cyclone" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="cyclone" onclick="toggleEventTypeFilter('cyclone', this)">Zyklon</button>
-                                <button type="button" id="event-volcano" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="volcano" onclick="toggleEventTypeFilter('volcano', this)">Vulkan</button>
-                                <button type="button" id="event-wildfire" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-eventtype="wildfire" onclick="toggleEventTypeFilter('wildfire', this)">Waldbrand</button>
-                            </div>
-                            <div class="grid grid-cols-1 gap-2 border-t border-gray-200 pt-2">
-                                <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium" onclick="toggleAllEventTypes()">Alle ausblenden</button>
+                                <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllEventTypes()">Alle ausblenden</button>
+                                <button type="button" id="event-earthquake" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="earthquake" onclick="toggleEventTypeFilter('earthquake', this)">Erdbeben</button>
+                                <button type="button" id="event-tsunami" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="tsunami" onclick="toggleEventTypeFilter('tsunami', this)">Tsunami</button>
+                                <button type="button" id="event-flood" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="flood" onclick="toggleEventTypeFilter('flood', this)">Überschwemmung</button>
+                                <button type="button" id="event-cyclone" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="cyclone" onclick="toggleEventTypeFilter('cyclone', this)">Zyklon</button>
+                                <button type="button" id="event-volcano" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="volcano" onclick="toggleEventTypeFilter('volcano', this)">Vulkan</button>
+                                <button type="button" id="event-wildfire" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="wildfire" onclick="toggleEventTypeFilter('wildfire', this)">Waldbrand</button>
                             </div>
                         </div>
                     </div>
@@ -1063,7 +1059,7 @@
                         </div>
                         <div id="timePeriodSection" class="p-3">
                             <div class="grid grid-cols-1 gap-2">
-                                <button type="button" id="period-all" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600" data-period="all" onclick="toggleTimePeriodFilter('all', this)">Alle</button>
+                                <button type="button" id="period-all" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-period="all" onclick="toggleTimePeriodFilter('all', this)">Alle</button>
                                 <button type="button" id="period-7days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="7days" onclick="toggleTimePeriodFilter('7days', this)">Letzte 7 Tage</button>
                                 <button type="button" id="period-30days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="30days" onclick="toggleTimePeriodFilter('30days', this)">Letzte 30 Tage</button>
                             </div>
@@ -1081,11 +1077,12 @@
                         <i class="fa-regular fa-brake-warning"></i>
                         <span>Aktuelle Ereignisse (<span id="currentEventsCount">0</span>)</span>
                     </h3>
+                    <!--
                     <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('currentEvents')">
                         <svg id="currentEventsToggleIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
-                    </button>
+                    </button>-->
                 </div>
                 
                 <div id="currentEvents" class="p-2" style="display: none;">
@@ -1117,7 +1114,7 @@
                 <div id="mapControl" class="p-4">
                     <button 
                         onclick="centerMap()"
-                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                        class="w-full bg-gray-300 text-black py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
@@ -1241,7 +1238,7 @@
 
                     <!-- Action Buttons -->
                     <div class="pt-4 border-t border-gray-200">
-                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mb-2">
+                        <button class="w-full bg-gray-300 text-black py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mb-2">
                             Filter anwenden
                         </button>
                         <button class="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
@@ -1258,8 +1255,8 @@
             
             <div class="statistics-content">
                 <!-- Überschrift für Statistik-Container -->
-                <div class="bg-blue-600 text-white p-4 mb-4 rounded-t-lg" style="display: none;">
-                    <h2 class="text-xl font-bold">📊 Detaillierte Statistiken</h2>
+                <div class="bg-gray-300 text-black p-4 mb-4 rounded-t-lg" style="display: none;">
+                    <h2 class="text-xl font-bold">Detaillierte Statistiken</h2>
                     <p class="text-blue-100 text-sm mt-1">Übersicht aller Event-Daten und Risiko-Analysen</p>
                 </div>
                 
@@ -1417,8 +1414,8 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.5</span>
-                <span>Build: 2025-09-08</span>
+                <span>Version 1.0.6</span>
+                <span>Build: 2025-09-09</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
@@ -2741,7 +2738,7 @@ function toggleProviderFilter(key, btn) {
     window.providerFilter[key] = !window.providerFilter[key];
     // Button-Style toggeln
     if (window.providerFilter[key]) {
-        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
     } else {
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
     }
@@ -2781,14 +2778,14 @@ function toggleRiskFilter(key, btn) {
         const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red;
         
         if (allActive) {
-            toggleButton.textContent = 'Keine';
-            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+            toggleButton.textContent = 'Alle ausblenden';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
         } else if (allInactive) {
-            toggleButton.textContent = 'Alle';
+            toggleButton.textContent = 'Alle einblenden';
             toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
         } else {
             // Gemischter Zustand
-            toggleButton.textContent = 'Alle';
+            toggleButton.textContent = 'Alle einblenden';
             toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
         }
     }
@@ -2814,7 +2811,7 @@ function toggleEventTypeFilter(key, btn) {
     
     // Button-Style toggeln
     if (window.eventTypeFilter[key]) {
-        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
     } else {
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
     }
@@ -2828,7 +2825,7 @@ function toggleEventTypeFilter(key, btn) {
         
         if (allActive) {
             toggleButton.textContent = 'Alle ausblenden';
-            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
         } else if (allInactive) {
             toggleButton.textContent = 'Alle einblenden';
             toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
@@ -2865,7 +2862,7 @@ function toggleTimePeriodFilter(key, btn) {
     
     // Set the selected period as active
     window.timePeriodFilter = key;
-    btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+    btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
     
     // Liste & Statistiken neu berechnen
     if (typeof loadDashboardData === 'function') {
@@ -2890,7 +2887,7 @@ function toggleAllRiskLevels() {
     
     if (allActive) {
         // Alle deaktivieren
-        toggleButton.textContent = 'Alle';
+        toggleButton.textContent = 'Alle einblenden';
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
         
         // Alle Risikostufen deaktivieren
@@ -2905,8 +2902,8 @@ function toggleAllRiskLevels() {
         });
     } else {
         // Alle aktivieren
-        toggleButton.textContent = 'Keine';
-        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        toggleButton.textContent = 'Alle ausblenden';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
         
         // Alle Risikostufen aktivieren
         window.riskFilter = { green: true, orange: true, red: true };
@@ -2972,7 +2969,7 @@ function toggleAllEventTypes() {
     } else {
         // Alle aktivieren (einblenden)
         toggleButton.textContent = 'Alle ausblenden';
-        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         
         // Alle Event-Typen aktivieren
         eventTypeKeys.forEach(key => {
@@ -2983,7 +2980,7 @@ function toggleAllEventTypes() {
         eventTypeButtons.forEach(id => {
             const button = document.getElementById(id);
             if (button) {
-                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
             }
         });
     }
@@ -3103,7 +3100,7 @@ function renderContinents() {
     // "Alle einblenden/ausblenden" Schaltfläche hinzufügen
     const toggleAllButton = document.createElement('button');
     toggleAllButton.id = 'toggleAllContinents';
-    toggleAllButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+    toggleAllButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
     toggleAllButton.textContent = 'Alle ausblenden';
     toggleAllButton.onclick = toggleAllContinents;
     continentsList.appendChild(toggleAllButton);
@@ -3111,7 +3108,7 @@ function renderContinents() {
     continents.forEach(continent => {
         const button = document.createElement('button');
         // Alle Kontinente sind initial aktiviert
-        button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+        button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         button.textContent = continent.name;
         button.onclick = () => selectContinent(continent.id);
         continentsList.appendChild(button);
@@ -3127,7 +3124,7 @@ function toggleAllContinents() {
     if (isAllActive) {
         // Alle Kontinente deaktivieren
         toggleButton.textContent = 'Alle einblenden';
-        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 font-medium';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200';
         
         continentButtons.forEach(button => {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
@@ -3139,10 +3136,10 @@ function toggleAllContinents() {
     } else {
         // Alle Kontinente aktivieren
         toggleButton.textContent = 'Alle ausblenden';
-        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 font-medium';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         
         continentButtons.forEach(button => {
-            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         });
         
         // Alle Kontinente zur Auswahl hinzufügen
@@ -3173,7 +3170,7 @@ function selectContinent(continentId) {
     buttons.forEach((button, index) => {
         const buttonContinentId = index + 1; // Kontinent-IDs beginnen bei 1
         if (window.selectedContinents.has(buttonContinentId)) {
-            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600';
+            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         } else {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
         }
@@ -3975,7 +3972,7 @@ async function createSocialSidebar() {
                 </div>
                 <div class="p-4 space-y-3 flex flex-col min-h-0 flex-1">
                     <div class="grid grid-cols-2 gap-2">
-                        <button class="px-3 py-2 text-xs rounded-lg border transition-colors bg-blue-600 text-white border-blue-600 inline-flex items-center gap-2" data-platform="all" onclick="setActiveSocialPlatform(this); loadSocialLinks('')"><i class="fa-solid fa-layer-group"></i><span>Alle</span></button>
+                        <button class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black inline-flex items-center gap-2" data-platform="all" onclick="setActiveSocialPlatform(this); loadSocialLinks('')"><i class="fa-solid fa-layer-group"></i><span>Alle</span></button>
                         <button class="px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50 inline-flex items-center gap-2" data-platform="tiktok" onclick="setActiveSocialPlatform(this); loadSocialLinks('tiktok')"><i class="fa-brands fa-tiktok"></i><span>TikTok</span></button>
                         <button class="px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50 inline-flex items-center gap-2" data-platform="instagram" onclick="setActiveSocialPlatform(this); loadSocialLinks('instagram')"><i class="fa-brands fa-instagram"></i><span>Instagram</span></button>
                         <button class="px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50 inline-flex items-center gap-2" data-platform="facebook" onclick="setActiveSocialPlatform(this); loadSocialLinks('facebook')"><i class="fa-brands fa-facebook"></i><span>Facebook</span></button>
@@ -4000,7 +3997,7 @@ let socialDebounceTimer;
 function debouncedLoadSocial(){
     clearTimeout(socialDebounceTimer);
     socialDebounceTimer = setTimeout(() => {
-        const active = document.querySelector('#sidebar-social-links [data-platform].bg-blue-600');
+        const active = document.querySelector('#sidebar-social-links [data-platform].bg-gray-300');
         const platform = active ? (active.getAttribute('data-platform') === 'all' ? '' : active.getAttribute('data-platform')) : '';
         loadSocialLinks(platform);
     }, 250);
@@ -4064,11 +4061,11 @@ function setActiveSocialPlatform(btn){
     const root = document.getElementById('sidebar-social-links');
     if (!root) return;
     root.querySelectorAll('[data-platform]').forEach(b => {
-        b.classList.remove('bg-blue-600','text-white','border-blue-600');
+        b.classList.remove('bg-gray-300','text-white','border-blue-600');
         b.classList.add('bg-white','text-gray-700','border-gray-300');
     });
     btn.classList.remove('bg-white','text-gray-700','border-gray-300');
-    btn.classList.add('bg-blue-600','text-white','border-blue-600');
+    btn.classList.add('bg-gray-300','text-white','border-blue-600');
 }
 
 function platformIconInline(platform){
@@ -4387,7 +4384,7 @@ function createNewFilterSidebar() {
                 
                 <!-- Action Buttons -->
                 <div class="pt-4 border-t border-gray-200">
-                    <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mb-2">
+                    <button class="w-full bg-gray-300 text-black py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mb-2">
                         Neue Filter anwenden
                     </button>
                     <button class="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
