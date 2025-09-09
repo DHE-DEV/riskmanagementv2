@@ -15,10 +15,14 @@ class CustomEventController extends Controller
     {
         try {
             $events = CustomEvent::where('is_active', true)
-                ->with(['creator', 'updater', 'country'])
+                ->with(['creator', 'updater', 'country', 'eventType'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($event) {
+                    // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
+                    $eventTypeIcon = $event->eventType?->icon;
+                    $eventTypeColor = $event->eventType?->color;
+                    
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
@@ -28,8 +32,8 @@ class CustomEventController extends Controller
                         'country_relation' => $event->country,
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
-                        'marker_color' => $event->marker_color,
-                        'marker_icon' => $event->marker_icon,
+                        'marker_color' => $eventTypeColor ?? $event->marker_color,
+                        'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
                         'icon_color' => $event->icon_color,
                         'marker_size' => $event->marker_size,
                         'popup_content' => $event->popup_content,
@@ -73,9 +77,13 @@ class CustomEventController extends Controller
             $events = CustomEvent::where('is_active', true)
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
-                ->with('country')
+                ->with(['country', 'eventType'])
                 ->get()
                 ->map(function ($event) {
+                    // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
+                    $eventTypeIcon = $event->eventType?->icon;
+                    $eventTypeColor = $event->eventType?->color;
+                    
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
@@ -83,8 +91,8 @@ class CustomEventController extends Controller
                         'event_type' => $event->event_type,
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
-                        'marker_color' => $event->marker_color,
-                        'marker_icon' => $event->marker_icon,
+                        'marker_color' => $eventTypeColor ?? $event->marker_color,
+                        'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
                         'icon_color' => $event->icon_color,
                         'marker_size' => $event->marker_size,
                         'popup_content' => $event->popup_content,

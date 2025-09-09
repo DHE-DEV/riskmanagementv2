@@ -61,11 +61,15 @@ class GdacsController extends Controller
         try {
             // Lade alle Events aus der Datenbank (sowohl GDACS als auch Custom)
             $allEvents = DisasterEvent::active()
-                ->with(['country', 'region', 'city'])
+                ->with(['country', 'region', 'city', 'eventType'])
                 ->orderBy('event_date', 'desc')
                 ->limit(50)
                 ->get()
                 ->map(function ($event) {
+                    // Verwende EventType Icon falls verfügbar, sonst Fallback auf getEventIcon
+                    $eventTypeIcon = $event->eventType?->icon;
+                    $eventTypeColor = $event->eventType?->color;
+                    
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
@@ -82,8 +86,8 @@ class GdacsController extends Controller
                         'source' => $event->external_sources === 'gdacs' ? 'gdacs' : 'db',
                         'latitude' => $event->lat,
                         'longitude' => $event->lng,
-                        'icon' => $this->getEventIcon($event->event_type, $event->severity),
-                        'iconColor' => $this->getSeverityColor($event->severity)
+                        'icon' => $eventTypeIcon ?? $this->getEventIcon($event->event_type, $event->severity),
+                        'iconColor' => $eventTypeColor ?? $this->getSeverityColor($event->severity)
                     ];
                 });
 
