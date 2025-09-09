@@ -1609,23 +1609,47 @@ async function loadDashboardData() {
             }
             
             // Risikostufe-Filter
-            let riskLevel = e.risk_level || e.alert_level || e.alertlevel || e.severity || 'green';
+            const originalRiskLevel = e.risk_level || e.alert_level || e.alertlevel || e.severity;
+            const originalPriority = e.priority;
+            let riskLevel = originalRiskLevel || 'green';
             
-            // Mapping verschiedener Risikostufen-Bezeichnungen auf unsere Filter-Keys
-            if (typeof riskLevel === 'string') {
+            // Priorität von CustomEvents hat Vorrang
+            if (e.source === 'custom' && originalPriority) {
+                const priority = originalPriority.toLowerCase();
+                if (priority === 'low') riskLevel = 'green';
+                else if (priority === 'medium') riskLevel = 'orange';
+                else if (priority === 'high') riskLevel = 'red';
+                else riskLevel = 'green';
+            } else if (typeof riskLevel === 'string') {
                 riskLevel = riskLevel.toLowerCase();
-                if (riskLevel.includes('low') || riskLevel.includes('niedrig') || riskLevel === 'green') {
+                // Exakte Matches für GDACS Events
+                if (riskLevel === 'low' || riskLevel === 'green') {
                     riskLevel = 'green';
-                } else if (riskLevel.includes('medium') || riskLevel.includes('mittel') || riskLevel.includes('moderate') || riskLevel === 'orange') {
+                } else if (riskLevel === 'medium' || riskLevel === 'orange' || riskLevel === 'yellow') {
                     riskLevel = 'orange';
-                } else if (riskLevel.includes('high') || riskLevel.includes('hoch') || riskLevel.includes('severe') || riskLevel === 'red') {
+                } else if (riskLevel === 'high' || riskLevel === 'red' || riskLevel === 'critical') {
                     riskLevel = 'red';
+                } else {
+                    riskLevel = 'green'; // Default fallback
                 }
             } else if (typeof riskLevel === 'number') {
                 // Numerische Werte auf Farben mappen
                 if (riskLevel <= 1) riskLevel = 'green';
                 else if (riskLevel <= 2) riskLevel = 'orange';
                 else riskLevel = 'red';
+            }
+            
+            // Debug logging für Risiko-Filter (nur erste 3 Events) - NACH dem Mapping
+            if (!window.riskFilterDebugCount) window.riskFilterDebugCount = 0;
+            if (window.riskFilterDebugCount < 3) {
+                console.log(`Event ${window.riskFilterDebugCount + 1} Risk Mapping:`, {
+                    title: e.title,
+                    originalRiskLevel,
+                    originalPriority,
+                    source: e.source,
+                    finalMappedRiskLevel: riskLevel
+                });
+                window.riskFilterDebugCount++;
             }
             
             const allowRisk = window.riskFilter?.[riskLevel] ?? true;
