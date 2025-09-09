@@ -3092,12 +3092,36 @@ function renderEvents() {
 // Event-Element erstellen
 function createEventElement(event) {
     const div = document.createElement('div');
-    // Schweregrad normalisieren
+    // Prioritäts-basierte Farben - exakte hex-Werte verwenden
     const sevMap = {
-        low: { label: 'NIEDRIG', border: 'border-green-500', dot: 'bg-green-500', text: 'text-green-600' },
-        medium: { label: 'MITTEL', border: 'border-orange-500', dot: 'bg-orange-500', text: 'text-orange-600' },
-        high: { label: 'HOCH', border: 'border-red-500', dot: 'bg-red-500', text: 'text-red-600' },
-        critical: { label: 'KRITISCH', border: 'border-red-700', dot: 'bg-red-700', text: 'text-red-700' },
+        low: { 
+            label: 'NIEDRIG', 
+            border: 'border-l-4', 
+            borderColor: '#0be60a', 
+            dot: 'bg-green-500', 
+            text: 'text-green-600' 
+        },
+        medium: { 
+            label: 'MITTEL', 
+            border: 'border-l-4', 
+            borderColor: '#e6a50a', 
+            dot: 'bg-orange-500', 
+            text: 'text-orange-600' 
+        },
+        high: { 
+            label: 'HOCH', 
+            border: 'border-l-4', 
+            borderColor: '#ff0000', 
+            dot: 'bg-red-500', 
+            text: 'text-red-600' 
+        },
+        critical: { 
+            label: 'KRITISCH', 
+            border: 'border-l-4', 
+            borderColor: '#ff0000', 
+            dot: 'bg-red-700', 
+            text: 'text-red-700' 
+        },
     };
     const pickSeverity = (e) => {
         if (e?.source === 'custom') {
@@ -3112,6 +3136,7 @@ function createEventElement(event) {
     };
     const sev = pickSeverity(event);
     const severityClass = sev.border;
+    const severityBorderColor = sev.borderColor;
     const severityColor = sev.dot;
     const severityTextClass = sev.text;
     const rightHtml = event.source === 'custom'
@@ -3121,7 +3146,8 @@ function createEventElement(event) {
         ? (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : ''))
         : (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date_iso ? new Date(event.date_iso).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : '')));
     
-    div.className = `bg-gray-50 rounded-lg p-3 border-l-4 ${severityClass} cursor-pointer hover:bg-gray-100 transition-colors`;
+    div.className = `bg-gray-50 rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-100 transition-colors`;
+    div.style.borderLeftColor = severityBorderColor;
     div.innerHTML = `
         <div class="flex items-start space-x-2">
             <div class="w-2 h-2 rounded-full mt-2 ${severityColor}"></div>
