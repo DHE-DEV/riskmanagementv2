@@ -995,7 +995,7 @@
                     </div>
 
                     <!-- Anbieter -->
-                    <div class="border border-gray-200 rounded-lg">
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('providersSection')">
                             <h4 class="text-sm font-medium text-gray-700">Anbieter</h4>
                             <svg id="providersToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
