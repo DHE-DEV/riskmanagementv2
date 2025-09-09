@@ -4,7 +4,7 @@ namespace App\Filament\Resources\EventTypes\Tables;
 
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -103,8 +103,6 @@ class EventTypeTable
                     ->query(fn (Builder $query): Builder => $query->doesntHave('customEvents')),
             ])
             ->recordActions([
-                ViewAction::make()
-                    ->iconButton(),
                 EditAction::make()
                     ->iconButton(),
                 DeleteAction::make()
