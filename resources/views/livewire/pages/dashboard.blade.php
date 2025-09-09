@@ -1022,9 +1022,9 @@
                         <div id="riskLevelSection" class="p-3">
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
-                                <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-green-600 text-white border-green-600" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
-                                <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-orange-600 text-white border-orange-600" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
-                                <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-red-600 text-white border-red-600" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
+                                <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0be60a; border-color: #0be60a;" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
+                                <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #e6a50a; border-color: #e6a50a;" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
+                                <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #ff0000; border-color: #ff0000;" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
                             </div>
                         </div>
                     </div>
@@ -1372,15 +1372,15 @@
                 <div class="p-4 max-w-xs" id="legendContent">
                     <div class="space-y-3">
                         <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <div class="w-3 h-3 rounded-full" style="background-color: #ff0000;"></div>
                             <span class="text-sm text-gray-700 font-medium">Kritisches Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+                            <div class="w-3 h-3 rounded-full" style="background-color: #e6a50a;"></div>
                             <span class="text-sm text-gray-700 font-medium">Hohes Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <div class="w-3 h-3 rounded-full" style="background-color: #0be60a;"></div>
                             <span class="text-sm text-gray-700 font-medium">Niedriges Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -2787,14 +2787,16 @@ function toggleRiskFilter(key, btn) {
     if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
     window.riskFilter[key] = !window.riskFilter[key];
     
-    // Button-Style toggeln
+    // Button-Style toggeln mit prioritätsbasierten Farben
     if (window.riskFilter[key]) {
-        const colorClass = key === 'green' ? 'bg-green-600 border-green-600' : 
-                          key === 'orange' ? 'bg-orange-600 border-orange-600' : 
-                          'bg-red-600 border-red-600';
-        btn.className = `px-3 py-2 text-xs rounded-lg border transition-colors ${colorClass} text-white`;
+        const colorStyle = key === 'green' ? 'background-color: #0be60a; border-color: #0be60a;' : 
+                          key === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' : 
+                          'background-color: #ff0000; border-color: #ff0000;';
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
+        btn.style.cssText = colorStyle;
     } else {
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+        btn.style.cssText = '';
     }
     
     // "Alle"/"Keine" Button aktualisieren
@@ -2980,18 +2982,19 @@ function toggleAllRiskLevels() {
         // Alle Risikostufen aktivieren
         window.riskFilter = { green: true, orange: true, red: true };
         
-        // Button-Styles auf aktiv setzen
-        const colorClasses = {
-            'risk-green': 'bg-green-600 border-green-600',
-            'risk-orange': 'bg-orange-600 border-orange-600',
-            'risk-red': 'bg-red-600 border-red-600'
+        // Button-Styles auf aktiv setzen mit prioritätsbasierten Farben
+        const colorStyles = {
+            'risk-green': 'background-color: #0be60a; border-color: #0be60a;',
+            'risk-orange': 'background-color: #e6a50a; border-color: #e6a50a;',
+            'risk-red': 'background-color: #ff0000; border-color: #ff0000;'
         };
         
         riskButtons.forEach(id => {
             const button = document.getElementById(id);
             if (button) {
-                const colorClass = colorClasses[id];
-                button.className = `px-3 py-2 text-xs rounded-lg border transition-colors ${colorClass} text-white`;
+                const colorStyle = colorStyles[id];
+                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
+                button.style.cssText = colorStyle;
             }
         });
     }
