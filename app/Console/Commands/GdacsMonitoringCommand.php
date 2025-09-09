@@ -62,14 +62,30 @@ class GdacsMonitoringCommand extends Command
         foreach (array_merge($monitoringFiles, $syncFiles) as $file) {
             if (!File::exists($file)) continue;
 
+            if ($this->option('verbose')) {
+                $this->line("Reading file: " . basename($file));
+            }
+
             $content = File::get($file);
             $lines = explode("\n", $content);
+
+            if ($this->option('verbose')) {
+                $this->line("  Found " . count($lines) . " lines");
+            }
 
             foreach ($lines as $line) {
                 if (empty(trim($line))) continue;
 
+                if ($this->option('verbose')) {
+                    $this->line("  Checking line: " . trim($line));
+                }
+
                 // Parse log line (Laravel JSON format)
-                if (preg_match('/\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}[^\]]*)\].*?({.+})$/', $line, $matches)) {
+                if (preg_match('/\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}[^\]]*)\].*?({.+})/', $line, $matches)) {
+                    // Debug output
+                    if ($this->option('verbose')) {
+                        $this->line("Processing line: " . trim($line));
+                    }
                     $timestamp = $matches[1];
                     $logData = json_decode($matches[2], true);
                     
