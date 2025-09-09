@@ -917,10 +917,11 @@
         <!-- Gray Sidebar -->
         <aside class="sidebar overflow-y-auto">
             <!-- Container ID Display -->
+            <!--
             <div class="bg-blue-100 border-b border-blue-200 p-2">
                 <p class="text-xs text-blue-800 font-mono text-center">Container ID: sidebar-liveStatistics</p>
             </div>
-            
+    -->
             <!-- Live Statistics -->
             <div class="bg-white rounded-lg shadow-sm" style="display: none;">
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('liveStatistics')">
@@ -1643,7 +1644,10 @@ async function loadDashboardData() {
             
             // Zeitraum-Filter
             let timeMatch = true;
-            if (window.timePeriodFilter && window.timePeriodFilter !== 'all') {
+            if (window.timePeriodFilter === 'none') {
+                // Wenn "none" gesetzt ist, keine Events anzeigen
+                timeMatch = false;
+            } else if (window.timePeriodFilter && window.timePeriodFilter !== 'all') {
                 const now = new Date();
                 const eventDate = new Date(e.event_date || e.created_at || e.date);
                 const daysDiff = Math.floor((now - eventDate) / (1000 * 60 * 60 * 24));
@@ -2851,18 +2855,64 @@ function toggleEventTypeFilter(key, btn) {
 function toggleTimePeriodFilter(key, btn) {
     if (!window.timePeriodFilter) window.timePeriodFilter = 'all';
     
-    // Reset all period buttons to inactive state
-    const allPeriodButtons = ['period-all', 'period-7days', 'period-30days'];
-    allPeriodButtons.forEach(id => {
-        const button = document.getElementById(id);
-        if (button) {
-            button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+    // Special handling for "Alle" button - it should toggle
+    if (key === 'all') {
+        const currentText = btn.textContent;
+        const isCurrentlyActive = window.timePeriodFilter === 'all';
+        
+        // Get other period buttons
+        const button7days = document.getElementById('period-7days');
+        const button30days = document.getElementById('period-30days');
+        
+        if (isCurrentlyActive && currentText === 'Alle ausblenden') {
+            // Switch to "Alle einblenden" (deactivate all)
+            btn.textContent = 'Alle einblenden';
+            btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+            window.timePeriodFilter = 'none';
+            
+            // Deactivate other period buttons (white background when hidden)
+            if (button7days) {
+                button7days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300';
+            }
+            if (button30days) {
+                button30days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300';
+            }
+        } else {
+            // Switch to "Alle ausblenden" (activate all)
+            btn.textContent = 'Alle ausblenden';
+            btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+            window.timePeriodFilter = 'all';
+            
+            // Activate other period buttons (same style as EventTypes when active)
+            if (button7days) {
+                button7days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+            }
+            if (button30days) {
+                button30days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+            }
         }
-    });
-    
-    // Set the selected period as active
-    window.timePeriodFilter = key;
-    btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+    } else {
+        // Regular period selection (7days, 30days)
+        // Reset all period buttons to inactive state
+        const allPeriodButtons = ['period-7days', 'period-30days'];
+        allPeriodButtons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+            }
+        });
+        
+        // Reset "Alle" button and set correct text
+        const allButton = document.getElementById('period-all');
+        if (allButton) {
+            allButton.textContent = 'Alle einblenden';
+            allButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+        }
+        
+        // Set the selected period as active
+        window.timePeriodFilter = key;
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+    }
     
     // Liste & Statistiken neu berechnen
     if (typeof loadDashboardData === 'function') {
@@ -3630,7 +3680,7 @@ async function searchCountriesForFilter(query) {
                     <div class="font-medium">${escapeHtml(c.name)}</div>
                     <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
                 </div>
-                <button class="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100">Übernehmen</button>
+                <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-100">Übernehmen</button>
             </div>`
         )).join('');
         
