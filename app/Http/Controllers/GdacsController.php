@@ -61,9 +61,10 @@ class GdacsController extends Controller
         try {
             // Lade alle Events aus der Datenbank (sowohl GDACS als auch Custom)
             $allEvents = DisasterEvent::active()
+                ->whereNotNull('lat')
+                ->whereNotNull('lng')
                 ->with(['country', 'region', 'city', 'eventType'])
                 ->orderBy('event_date', 'desc')
-                ->limit(50)
                 ->get()
                 ->map(function ($event) {
                     // Verwende EventType Icon falls verfügbar, sonst Fallback auf getEventIcon

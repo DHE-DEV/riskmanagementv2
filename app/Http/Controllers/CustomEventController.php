@@ -15,6 +15,8 @@ class CustomEventController extends Controller
     {
         try {
             $events = CustomEvent::where('is_active', true)
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
                 ->with(['creator', 'updater', 'country', 'eventType'])
                 ->orderBy('created_at', 'desc')
                 ->get()
