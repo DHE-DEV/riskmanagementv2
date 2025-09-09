@@ -1022,7 +1022,7 @@
                         <div id="riskLevelSection" class="p-3">
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
-                                <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0be60a; border-color: #0be60a;" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
+                                <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0fb67f; border-color: #0fb67f;" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
                                 <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #e6a50a; border-color: #e6a50a;" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
                                 <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #ff0000; border-color: #ff0000;" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
                             </div>
@@ -1380,7 +1380,7 @@
                             <span class="text-sm text-gray-700 font-medium">Hohes Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 rounded-full" style="background-color: #0be60a;"></div>
+                            <div class="w-3 h-3 rounded-full" style="background-color: #0fb67f;"></div>
                             <span class="text-sm text-gray-700 font-medium">Niedriges Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -1955,11 +1955,11 @@ function getSeverityColor(severity) {
 // Prioritäts-basierte Farben für Marker
 function getPriorityColor(priority) {
     const colors = {
-        'low': '#0be60a',     // Grün - geringes Risiko
+        'low': '#0fb67f',     // Grün - geringes Risiko
         'medium': '#e6a50a',  // Orange - mittleres Risiko
         'high': '#ff0000',    // Rot - hohes Risiko
         // Auch severity-Werte für GDACS Events unterstützen
-        'green': '#0be60a',
+        'green': '#0fb67f',
         'yellow': '#e6a50a',
         'orange': '#e6a50a',
         'red': '#ff0000',
@@ -2789,7 +2789,7 @@ function toggleRiskFilter(key, btn) {
     
     // Button-Style toggeln mit prioritätsbasierten Farben
     if (window.riskFilter[key]) {
-        const colorStyle = key === 'green' ? 'background-color: #0be60a; border-color: #0be60a;' : 
+        const colorStyle = key === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' : 
                           key === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' : 
                           'background-color: #ff0000; border-color: #ff0000;';
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
@@ -2984,7 +2984,7 @@ function toggleAllRiskLevels() {
         
         // Button-Styles auf aktiv setzen mit prioritätsbasierten Farben
         const colorStyles = {
-            'risk-green': 'background-color: #0be60a; border-color: #0be60a;',
+            'risk-green': 'background-color: #0fb67f; border-color: #0fb67f;',
             'risk-orange': 'background-color: #e6a50a; border-color: #e6a50a;',
             'risk-red': 'background-color: #ff0000; border-color: #ff0000;'
         };
@@ -3100,7 +3100,7 @@ function createEventElement(event) {
         low: { 
             label: 'NIEDRIG', 
             border: 'border-l-4', 
-            borderColor: '#0be60a', 
+            borderColor: '#0fad78', 
             dot: 'bg-green-500', 
             text: 'text-green-600' 
         },

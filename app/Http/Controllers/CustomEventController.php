@@ -160,7 +160,7 @@ class CustomEventController extends Controller
     private function getPriorityColor(string $priority): string
     {
         return match(strtolower($priority)) {
-            'low' => '#0be60a',     // Grün - geringes Risiko
+            'low' => '#0fb67f',     // Grün - geringes Risiko
             'medium' => '#e6a50a',  // Orange - mittleres Risiko  
             'high' => '#ff0000',    // Rot - hohes Risiko
             default => '#e6a50a'    // Orange als Fallback

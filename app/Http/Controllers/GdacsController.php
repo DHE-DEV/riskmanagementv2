@@ -353,7 +353,7 @@ class GdacsController extends Controller
     private function getPriorityColorFromSeverity(string $severity): string
     {
         return match(strtolower($severity)) {
-            'low', 'green' => '#0be60a',        // Grün - geringes Risiko
+            'low', 'green' => '#0fb67f',        // Grün - geringes Risiko
             'medium', 'yellow', 'orange', 'high' => '#e6a50a',  // Orange - mittleres Risiko
             'red', 'critical' => '#ff0000',     // Rot - hohes Risiko
             default => '#e6a50a'                // Orange als Fallback
