@@ -6,7 +6,7 @@ use App\Http\Controllers\SettingsController;
 
 Route::get('/', function () {
     return view('livewire.pages.dashboard');
-})->name('dashboard');
+})->name('home');
 
 Route::get('/dashboard', function () {
     return view('livewire.pages.dashboard');
