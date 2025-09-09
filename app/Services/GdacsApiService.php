@@ -25,7 +25,10 @@ class GdacsApiService
             $cachedEvents = Cache::get($cacheKey);
             
             if ($cachedEvents) {
-                Log::info('GDACS events loaded from cache');
+                Log::channel('gdacs_sync')->info('GDACS events loaded from cache', [
+                    'cache_key' => $cacheKey,
+                    'event_count' => count($cachedEvents)
+                ]);
                 return $cachedEvents;
             }
 
@@ -51,13 +54,18 @@ class GdacsApiService
             // Cache setzen
             Cache::put($cacheKey, $events, now()->addMinutes($this->cacheMinutes));
             
-            Log::info('GDACS events fetched and cached', ['count' => count($events)]);
+            Log::channel('gdacs_sync')->info('GDACS events fetched and cached', [
+                'count' => count($events),
+                'cache_key' => $cacheKey,
+                'cache_minutes' => $this->cacheMinutes
+            ]);
             return $events;
 
         } catch (\Exception $e) {
-            Log::error('GDACS API error', [
+            Log::channel('gdacs_sync')->error('GDACS API error', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'url' => $this->baseUrl
             ]);
             return [];
         }

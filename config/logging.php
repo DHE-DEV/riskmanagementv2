@@ -127,6 +127,22 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'gdacs_monitoring' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/gdacs-monitoring.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30, // 30 Tage aufbewahren für Monitoring
+            'replace_placeholders' => true,
+        ],
+
+        'gdacs_sync' => [
+            'driver' => 'daily', 
+            'path' => storage_path('logs/gdacs-sync.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14, // 14 Tage aufbewahren
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];
