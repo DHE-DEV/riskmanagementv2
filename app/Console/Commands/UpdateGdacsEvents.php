@@ -51,6 +51,7 @@ class UpdateGdacsEvents extends Command
 
     private function runSynchronously(bool $forceUpdate): int
     {
+        $startTime = microtime(true);
         $this->info('🔄 Starting GDACS events update (synchronous mode)...');
 
         try {
@@ -62,6 +63,7 @@ class UpdateGdacsEvents extends Command
 
             // Events aktualisieren
             $result = $this->gdacsService->updateAllEvents();
+            $executionTime = round((microtime(true) - $startTime) * 1000, 2);
 
             $this->info('✅ GDACS events update completed!');
             $this->table(
@@ -69,21 +71,33 @@ class UpdateGdacsEvents extends Command
                 [
                     ['Events Fetched', $result['fetched']],
                     ['Events Saved', $result['saved']],
+                    ['Execution Time', $executionTime . 'ms'],
                     ['Timestamp', $result['timestamp']],
                 ]
             );
 
-            // Log erstellen
-            Log::channel('gdacs_sync')->info('GDACS events updated via command (sync)', $result);
+            // Standard Log erstellen
+            Log::channel('gdacs_sync')->info('GDACS events updated via command (sync)', array_merge($result, [
+                'execution_time_ms' => $executionTime
+            ]));
+
+            // Monitoring-Daten für Analyse
+            $this->recordMonitoringData($result, $executionTime, true);
 
             return self::SUCCESS;
 
         } catch (\Exception $e) {
+            $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+            
             $this->error('❌ GDACS events update failed: ' . $e->getMessage());
             Log::channel('gdacs_sync')->error('GDACS command failed (sync)', [
                 'error' => $e->getMessage(),
+                'execution_time_ms' => $executionTime,
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // Monitoring-Daten für Fehlerfall
+            $this->recordMonitoringData(null, $executionTime, false, $e->getMessage());
 
             return self::FAILURE;
         }
@@ -125,5 +139,32 @@ class UpdateGdacsEvents extends Command
 
             return self::FAILURE;
         }
+    }
+
+    /**
+     * Record monitoring data for analysis
+     */
+    private function recordMonitoringData(?array $result, float $executionTime, bool $success, ?string $error = null): void
+    {
+        $monitoringData = [
+            'timestamp' => now()->toISOString(),
+            'execution_time_ms' => $executionTime,
+            'success' => $success,
+            'attempt' => 1,
+            'queue' => 'command',
+            'command_type' => 'sync',
+        ];
+
+        if ($success && $result) {
+            $monitoringData['events_fetched'] = $result['fetched'];
+            $monitoringData['events_saved'] = $result['saved'];
+        }
+
+        if (!$success && $error) {
+            $monitoringData['error'] = $error;
+        }
+
+        // Monitoring-Daten in separaten Log-Channel
+        Log::channel('gdacs_monitoring')->info('GDACS Command Execution', $monitoringData);
     }
 }
