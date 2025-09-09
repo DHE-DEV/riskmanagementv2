@@ -27,20 +27,12 @@ class DisasterEventForm
                     ->options(['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'critical' => 'Critical'])
                     ->default('low')
                     ->required(),
-                Select::make('event_type')
-                    ->options([
-                        'earthquake' => 'Earthquake',
-                        'hurricane' => 'Hurricane',
-                        'flood' => 'Flood',
-                        'wildfire' => 'Wildfire',
-                        'volcano' => 'Volcano',
-                        'tsunami' => 'Tsunami',
-                        'drought' => 'Drought',
-                        'tornado' => 'Tornado',
-                        'other' => 'Other',
-                    ])
-                    ->default('other')
-                    ->required(),
+                Select::make('event_type_id')
+                    ->label('Event-Typ')
+                    ->options(DisasterEvent::getEventTypeOptions())
+                    ->required()
+                    ->searchable()
+                    ->preload(),
                 // Koordinaten-Gruppe
                 Section::make([
                     TextInput::make('lat')

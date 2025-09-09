@@ -29,8 +29,9 @@ class EventTypeTable
 
                 TextColumn::make('icon')
                     ->label('Icon')
-                    ->formatStateUsing(fn (string $state): string => '<i class="fas ' . $state . '"></i>')
+                    ->formatStateUsing(fn (string $state): string => '<i class="fa ' . $state . '" style="font-size: 16px;"></i>')
                     ->html()
+                    ->alignCenter()
                     ->width(60),
 
                 TextColumn::make('code')

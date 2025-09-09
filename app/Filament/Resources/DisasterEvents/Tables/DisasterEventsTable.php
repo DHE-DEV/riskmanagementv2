@@ -21,7 +21,11 @@ class DisasterEventsTable
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('severity'),
-                TextColumn::make('event_type'),
+                TextColumn::make('eventType.name')
+                    ->label('Event-Typ')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('Nicht zugeordnet'),
                 TextColumn::make('lat')
                     ->numeric()
                     ->sortable(),

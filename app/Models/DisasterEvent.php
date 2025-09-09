@@ -16,6 +16,7 @@ class DisasterEvent extends Model
         'description',
         'severity',
         'event_type',
+        'event_type_id',
         'lat',
         'lng',
         'radius_km',
@@ -131,6 +132,14 @@ class DisasterEvent extends Model
     }
 
     /**
+     * Get the event type for this event.
+     */
+    public function eventType(): BelongsTo
+    {
+        return $this->belongsTo(EventType::class);
+    }
+
+    /**
      * Get the region for this event.
      */
     public function region(): BelongsTo
@@ -224,6 +233,17 @@ class DisasterEvent extends Model
      * Get the event type options.
      */
     public static function getEventTypeOptions(): array
+    {
+        return EventType::active()
+            ->ordered()
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
+    /**
+     * Get legacy event type options for backward compatibility.
+     */
+    public static function getLegacyEventTypeOptions(): array
     {
         return [
             'earthquake' => 'Erdbeben',
