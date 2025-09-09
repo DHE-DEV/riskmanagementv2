@@ -163,6 +163,7 @@ class CustomEventController extends Controller
             'low' => '#0fb67f',     // Grün - geringes Risiko
             'medium' => '#e6a50a',  // Orange - mittleres Risiko  
             'high' => '#ff0000',    // Rot - hohes Risiko
+            'critical' => '#8b0000', // Dunkelrot - kritisches Risiko
             default => '#e6a50a'    // Orange als Fallback
         };
     }

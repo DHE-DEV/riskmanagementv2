@@ -354,8 +354,9 @@ class GdacsController extends Controller
     {
         return match(strtolower($severity)) {
             'low', 'green' => '#0fb67f',        // Grün - geringes Risiko
-            'medium', 'yellow', 'orange', 'high' => '#e6a50a',  // Orange - mittleres Risiko
-            'red', 'critical' => '#ff0000',     // Rot - hohes Risiko
+            'medium', 'yellow', 'orange' => '#e6a50a',  // Orange - mittleres Risiko
+            'high', 'red' => '#ff0000',         // Rot - hohes Risiko
+            'critical' => '#8b0000',            // Dunkelrot - kritisches Risiko
             default => '#e6a50a'                // Orange als Fallback
         };
     }

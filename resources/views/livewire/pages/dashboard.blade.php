@@ -1021,10 +1021,11 @@
                         </div>
                         <div id="riskLevelSection" class="p-3">
                             <div class="grid grid-cols-2 gap-2 mb-2">
-                                <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
+                                <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
                                 <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0fb67f; border-color: #0fb67f;" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
                                 <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #e6a50a; border-color: #e6a50a;" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
                                 <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #ff0000; border-color: #ff0000;" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
+                                <button type="button" id="risk-critical" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #8b0000; border-color: #8b0000;" data-risk="critical" onclick="toggleRiskFilter('critical', this)">Kritisch</button>
                             </div>
                         </div>
                     </div>
@@ -1619,6 +1620,7 @@ async function loadDashboardData() {
                 if (priority === 'low') riskLevel = 'green';
                 else if (priority === 'medium') riskLevel = 'orange';
                 else if (priority === 'high') riskLevel = 'red';
+                else if (priority === 'critical') riskLevel = 'critical';
                 else riskLevel = 'green';
             } else if (typeof riskLevel === 'string') {
                 riskLevel = riskLevel.toLowerCase();
@@ -1627,8 +1629,10 @@ async function loadDashboardData() {
                     riskLevel = 'green';
                 } else if (riskLevel === 'medium' || riskLevel === 'orange' || riskLevel === 'yellow') {
                     riskLevel = 'orange';
-                } else if (riskLevel === 'high' || riskLevel === 'red' || riskLevel === 'critical') {
+                } else if (riskLevel === 'high' || riskLevel === 'red') {
                     riskLevel = 'red';
+                } else if (riskLevel === 'critical') {
+                    riskLevel = 'critical';
                 } else {
                     riskLevel = 'green'; // Default fallback
                 }
@@ -1636,7 +1640,8 @@ async function loadDashboardData() {
                 // Numerische Werte auf Farben mappen
                 if (riskLevel <= 1) riskLevel = 'green';
                 else if (riskLevel <= 2) riskLevel = 'orange';
-                else riskLevel = 'red';
+                else if (riskLevel <= 3) riskLevel = 'red';
+                else riskLevel = 'critical';
             }
             
             // Debug logging für Risiko-Filter (nur erste 3 Events) - NACH dem Mapping
@@ -1982,12 +1987,12 @@ function getPriorityColor(priority) {
         'low': '#0fb67f',     // Grün - geringes Risiko
         'medium': '#e6a50a',  // Orange - mittleres Risiko
         'high': '#ff0000',    // Rot - hohes Risiko
+        'critical': '#8b0000', // Dunkelrot - kritisches Risiko
         // Auch severity-Werte für GDACS Events unterstützen
         'green': '#0fb67f',
         'yellow': '#e6a50a',
         'orange': '#e6a50a',
-        'red': '#ff0000',
-        'critical': '#ff0000'
+        'red': '#ff0000'
     };
     
     return colors[priority?.toLowerCase()] || '#e6a50a';
@@ -2808,14 +2813,15 @@ function toggleProviderFilter(key, btn) {
 
 // Risk Level Filter Toggle
 function toggleRiskFilter(key, btn) {
-    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
+    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true, critical: true };
     window.riskFilter[key] = !window.riskFilter[key];
     
     // Button-Style toggeln mit prioritätsbasierten Farben
     if (window.riskFilter[key]) {
         const colorStyle = key === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' : 
-                          key === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' : 
-                          'background-color: #ff0000; border-color: #ff0000;';
+                          key === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
+                          key === 'red' ? 'background-color: #ff0000; border-color: #ff0000;' :
+                          'background-color: #8b0000; border-color: #8b0000;'; // critical
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
         btn.style.cssText = colorStyle;
     } else {
@@ -2826,8 +2832,8 @@ function toggleRiskFilter(key, btn) {
     // "Alle"/"Keine" Button aktualisieren
     const toggleButton = document.getElementById('toggleAllRiskLevels');
     if (toggleButton) {
-        const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
-        const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red;
+        const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red && window.riskFilter.critical;
+        const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red && !window.riskFilter.critical;
         
         if (allActive) {
             toggleButton.textContent = 'Alle ausblenden';
@@ -2975,13 +2981,13 @@ function toggleTimePeriodFilter(key, btn) {
 
 // Risk Level "Alle"/"Keine" Toggle
 function toggleAllRiskLevels() {
-    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
+    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true, critical: true };
     
     const toggleButton = document.getElementById('toggleAllRiskLevels');
-    const riskButtons = ['risk-green', 'risk-orange', 'risk-red'];
+    const riskButtons = ['risk-green', 'risk-orange', 'risk-red', 'risk-critical'];
     
     // Prüfen ob alle Risikostufen aktiv sind
-    const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+    const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red && window.riskFilter.critical;
     
     if (allActive) {
         // Alle deaktivieren
@@ -2989,7 +2995,7 @@ function toggleAllRiskLevels() {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
         
         // Alle Risikostufen deaktivieren
-        window.riskFilter = { green: false, orange: false, red: false };
+        window.riskFilter = { green: false, orange: false, red: false, critical: false };
         
         // Button-Styles auf inaktiv setzen
         riskButtons.forEach(id => {
@@ -3004,13 +3010,14 @@ function toggleAllRiskLevels() {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
         
         // Alle Risikostufen aktivieren
-        window.riskFilter = { green: true, orange: true, red: true };
+        window.riskFilter = { green: true, orange: true, red: true, critical: true };
         
         // Button-Styles auf aktiv setzen mit prioritätsbasierten Farben
         const colorStyles = {
             'risk-green': 'background-color: #0fb67f; border-color: #0fb67f;',
             'risk-orange': 'background-color: #e6a50a; border-color: #e6a50a;',
-            'risk-red': 'background-color: #ff0000; border-color: #ff0000;'
+            'risk-red': 'background-color: #ff0000; border-color: #ff0000;',
+            'risk-critical': 'background-color: #8b0000; border-color: #8b0000;'
         };
         
         riskButtons.forEach(id => {
@@ -3145,9 +3152,9 @@ function createEventElement(event) {
         critical: { 
             label: 'KRITISCH', 
             border: 'border-l-4', 
-            borderColor: '#ff0000', 
-            dot: 'bg-red-700', 
-            text: 'text-red-700' 
+            borderColor: '#8b0000', 
+            dot: 'bg-red-900', 
+            text: 'text-red-900' 
         },
     };
     const pickSeverity = (e) => {
