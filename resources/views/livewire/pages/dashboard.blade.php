@@ -3549,7 +3549,7 @@ async function searchCountries(query) {
                     <div class="font-medium">${escapeHtml(c.name)}</div>
                     <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
                 </div>
-                <button class="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100">Übernehmen</button>
+                <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-200">Übernehmen</button>
             </div>`
         )).join('');
         box.querySelectorAll('.autocomplete-item').forEach(el => {
