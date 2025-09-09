@@ -28,9 +28,11 @@ class CustomEventsTable
                     ->sortable()
                     ->limit(50),
                 
-                TextColumn::make('event_type')
+                TextColumn::make('eventType.name')
                     ->label('Typ')
-                    ->formatStateUsing(fn (string $state): string => CustomEvent::getEventTypeOptions()[$state] ?? $state),
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('Nicht zugeordnet'),
                 
                 TextColumn::make('category')
                     ->label('Kategorie')
@@ -62,9 +64,9 @@ class CustomEventsTable
             ->filters([
                 TrashedFilter::make(),
                 
-                SelectFilter::make('event_type')
+                SelectFilter::make('event_type_id')
                     ->label('Event-Typ')
-                    ->options(CustomEvent::getEventTypeOptions())
+                    ->relationship('eventType', 'name')
                     ->multiple(),
                 
                 SelectFilter::make('priority')

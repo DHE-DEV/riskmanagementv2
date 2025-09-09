@@ -56,11 +56,12 @@ class CustomEventForm
                     ->placeholder('Beschreiben Sie hier den Inhalt, der im Popup angezeigt werden soll...')
                     ->columnSpanFull(),
 
-                Select::make('event_type')
+                Select::make('event_type_id')
                     ->label('Event-Typ')
                     ->options(CustomEvent::getEventTypeOptions())
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
 
                 Select::make('country_id')
                     ->label('Land')
@@ -71,7 +72,8 @@ class CustomEventForm
                         ->toArray()
                     )
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->required(),
 
                 Select::make('priority')
                     ->label('Priorität')

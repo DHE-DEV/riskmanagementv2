@@ -2102,9 +2102,14 @@ async function loadEventDetails(event) {
                         <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">${escapeHtml(event.description)}</div>
                     </div>
                 ` : ''}
-                ${event.source === 'custom' && event.popup_content ? `<div class=\"mt-1 text-sm leading-6\">${event.popup_content}</div>` : ''}
+                ${event.source === 'custom' && event.popup_content ? `
+                    <div class="event-description mt-3 mb-3">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">${event.popup_content}</div>
+                    </div>
+                ` : ''}
                 
-                <div class="event-info-grid">
+                <div class="event-info-grid">xxx
                     <div class="info-item">
                         <span class="info-label">Land:</span>
                         <span class="info-value">${event.country_name || event.country || 'Unbekannt'}</span>
