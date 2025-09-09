@@ -21,7 +21,6 @@ class CustomEventController extends Controller
                 ->map(function ($event) {
                     // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
                     $eventTypeIcon = $event->eventType?->icon;
-                    $eventTypeColor = $event->eventType?->color;
                     
                     return [
                         'id' => $event->id,
@@ -32,7 +31,7 @@ class CustomEventController extends Controller
                         'country_relation' => $event->country,
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
-                        'marker_color' => $eventTypeColor ?? $event->marker_color,
+                        'marker_color' => $this->getPriorityColor($event->priority),
                         'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
                         'icon_color' => $event->icon_color,
                         'marker_size' => $event->marker_size,
@@ -82,7 +81,6 @@ class CustomEventController extends Controller
                 ->map(function ($event) {
                     // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
                     $eventTypeIcon = $event->eventType?->icon;
-                    $eventTypeColor = $event->eventType?->color;
                     
                     return [
                         'id' => $event->id,
@@ -91,7 +89,7 @@ class CustomEventController extends Controller
                         'event_type' => $event->event_type,
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
-                        'marker_color' => $eventTypeColor ?? $event->marker_color,
+                        'marker_color' => $this->getPriorityColor($event->priority),
                         'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
                         'icon_color' => $event->icon_color,
                         'marker_size' => $event->marker_size,
@@ -154,5 +152,18 @@ class CustomEventController extends Controller
                 'message' => 'Failed to load statistics: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get marker color based on priority
+     */
+    private function getPriorityColor(string $priority): string
+    {
+        return match(strtolower($priority)) {
+            'low' => '#0be60a',     // Grün - geringes Risiko
+            'medium' => '#e6a50a',  // Orange - mittleres Risiko  
+            'high' => '#ff0000',    // Rot - hohes Risiko
+            default => '#e6a50a'    // Orange als Fallback
+        };
     }
 }

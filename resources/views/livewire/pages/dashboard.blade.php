@@ -1937,7 +1937,7 @@ function formatDateTimeDE(dateInput) {
     return fmt.format(date);
 }
 
-// Schweregrad-Farbe
+// Schweregrad-Farbe (Legacy-Funktion)
 function getSeverityColor(severity) {
     const colors = {
         'red': '#ef4444',
@@ -1950,6 +1950,23 @@ function getSeverityColor(severity) {
     };
     
     return colors[severity] || '#6b7280';
+}
+
+// Prioritäts-basierte Farben für Marker
+function getPriorityColor(priority) {
+    const colors = {
+        'low': '#0be60a',     // Grün - geringes Risiko
+        'medium': '#e6a50a',  // Orange - mittleres Risiko
+        'high': '#ff0000',    // Rot - hohes Risiko
+        // Auch severity-Werte für GDACS Events unterstützen
+        'green': '#0be60a',
+        'yellow': '#e6a50a',
+        'orange': '#e6a50a',
+        'red': '#ff0000',
+        'critical': '#ff0000'
+    };
+    
+    return colors[priority?.toLowerCase()] || '#e6a50a';
 }
 
 // Wetter-Icon basierend auf Wetterbedingung
@@ -2508,13 +2525,13 @@ function createCustomMarker(event) {
     let iconClass, markerColor;
     
     if (event.source === 'custom') {
-        // CustomEvent: Verwende normalisiertes Icon
+        // CustomEvent: Verwende normalisiertes Icon und prioritätsbasierte Farbe
         iconClass = event.icon || event.marker_icon || 'fa-solid fa-location-pin';
-        markerColor = event.marker_color || '#FF0000';
+        markerColor = event.marker_color || getPriorityColor(event.priority);
     } else {
-        // GDACS-Event: Bestimme Farbe basierend auf Schweregrad
+        // GDACS-Event: Verwende prioritätsbasierte Farbe basierend auf Severity
         iconClass = event.icon || 'fa-solid fa-circle-exclamation';
-        markerColor = getSeverityColor(event.severity);
+        markerColor = event.iconColor || getPriorityColor(event.severity);
     }
     
     // Einheitliches Kreis-Design für alle Events

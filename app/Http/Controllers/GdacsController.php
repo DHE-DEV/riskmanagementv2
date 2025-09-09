@@ -68,7 +68,6 @@ class GdacsController extends Controller
                 ->map(function ($event) {
                     // Verwende EventType Icon falls verfügbar, sonst Fallback auf getEventIcon
                     $eventTypeIcon = $event->eventType?->icon;
-                    $eventTypeColor = $event->eventType?->color;
                     
                     return [
                         'id' => $event->id,
@@ -87,7 +86,7 @@ class GdacsController extends Controller
                         'latitude' => $event->lat,
                         'longitude' => $event->lng,
                         'icon' => $eventTypeIcon ?? $this->getEventIcon($event->event_type, $event->severity),
-                        'iconColor' => $eventTypeColor ?? $this->getSeverityColor($event->severity)
+                        'iconColor' => $this->getPriorityColorFromSeverity($event->severity)
                     ];
                 });
 
@@ -346,5 +345,18 @@ class GdacsController extends Controller
         ];
 
         return $colors[$severity] ?? '#6b7280';
+    }
+
+    /**
+     * Get marker color based on priority/severity mapping
+     */
+    private function getPriorityColorFromSeverity(string $severity): string
+    {
+        return match(strtolower($severity)) {
+            'low', 'green' => '#0be60a',        // Grün - geringes Risiko
+            'medium', 'yellow', 'orange', 'high' => '#e6a50a',  // Orange - mittleres Risiko
+            'red', 'critical' => '#ff0000',     // Rot - hohes Risiko
+            default => '#e6a50a'                // Orange als Fallback
+        };
     }
 }

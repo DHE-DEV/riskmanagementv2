@@ -4,7 +4,6 @@ namespace App\Filament\Resources\EventTypes\Tables;
 
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -22,10 +21,6 @@ class EventTypeTable
                     ->label('#')
                     ->sortable()
                     ->width(50),
-
-                ColorColumn::make('color')
-                    ->label('Farbe')
-                    ->width(60),
 
                 TextColumn::make('icon')
                     ->label('Icon')

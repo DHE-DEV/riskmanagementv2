@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\EventTypes\Schemas;
 
-use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -38,12 +37,6 @@ class EventTypeForm
                     ->maxLength(500)
                     ->placeholder('Beschreibung des Event-Typs...')
                     ->columnSpanFull(),
-
-                ColorPicker::make('color')
-                    ->label('Farbe')
-                    ->default('#3B82F6')
-                    ->helperText('Farbe für die Darstellung in der UI')
-                    ->columnSpan(1),
 
                 Select::make('icon')
                     ->label('FontAwesome Icon')
