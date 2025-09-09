@@ -96,6 +96,7 @@ class DisasterEvent extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'is_active' => 'boolean',
+        'is_gdacs' => 'boolean',
         'affected_areas' => 'array',
         'impact_assessment' => 'array',
         'travel_recommendations' => 'array',

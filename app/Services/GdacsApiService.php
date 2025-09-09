@@ -116,8 +116,8 @@ class GdacsApiService
             return null;
         }
 
-        // Extrahiere Koordinaten aus der Beschreibung
-        $coordinates = $this->extractCoordinates($description);
+        // Extrahiere Koordinaten aus XML-Elementen oder Beschreibung
+        $coordinates = $this->extractCoordinatesFromXml($item) ?: $this->extractCoordinates($description);
         
         // Extrahiere Land/Region
         $location = $this->extractLocation($title, $description);
@@ -127,8 +127,9 @@ class GdacsApiService
             $coordinates = $this->getCountryFallbackCoordinates($location['country']);
         }
         
-        // Extrahiere Magnitude
+        // Extrahiere Magnitude und konvertiere zu numerischem Wert
         $magnitude = $this->extractMagnitude($title, $description);
+        $magnitude = $this->convertMagnitudeToNumeric($magnitude);
         
         // Extrahiere betroffene Bevölkerung
         $affectedPopulation = $this->extractAffectedPopulation($description);
@@ -196,6 +197,47 @@ class GdacsApiService
             'type' => $eventType,
             'severity' => $severity
         ];
+    }
+
+    /**
+     * Extrahiere Koordinaten aus XML-Elementen (geo:lat, geo:long, georss:point)
+     */
+    private function extractCoordinatesFromXml(\SimpleXMLElement $item): array
+    {
+        $coordinates = ['lat' => null, 'lng' => null];
+        
+        // Namespace für geo-Elemente registrieren
+        $namespaces = $item->getNamespaces(true);
+        
+        // Versuche geo:Point zu finden
+        if (isset($namespaces['geo'])) {
+            $geoElements = $item->children($namespaces['geo']);
+            if (isset($geoElements->Point)) {
+                $point = $geoElements->Point;
+                $pointChildren = $point->children($namespaces['geo']);
+                if (isset($pointChildren->lat) && isset($pointChildren->long)) {
+                    $coordinates['lat'] = (float) $pointChildren->lat;
+                    $coordinates['lng'] = (float) $pointChildren->long;
+                    return $coordinates;
+                }
+            }
+        }
+        
+        // Versuche georss:point zu finden (Format: "lat lng")
+        if (isset($namespaces['georss'])) {
+            $georssElements = $item->children($namespaces['georss']);
+            if (isset($georssElements->point)) {
+                $pointString = (string) $georssElements->point;
+                $coords = explode(' ', trim($pointString));
+                if (count($coords) === 2) {
+                    $coordinates['lat'] = (float) $coords[0];
+                    $coordinates['lng'] = (float) $coords[1];
+                    return $coordinates;
+                }
+            }
+        }
+        
+        return $coordinates;
     }
 
     /**
@@ -270,6 +312,26 @@ class GdacsApiService
             }
         }
 
+        return null;
+    }
+
+    /**
+     * Konvertiere Magnitude-String zu numerischem Wert
+     */
+    private function convertMagnitudeToNumeric(?string $magnitude): ?float
+    {
+        if (!$magnitude) {
+            return null;
+        }
+        
+        // Entferne alle nicht-numerischen Zeichen außer Punkt und Minus
+        $numericMagnitude = preg_replace('/[^0-9.-]/', '', $magnitude);
+        
+        // Konvertiere zu Float
+        if (is_numeric($numericMagnitude)) {
+            return (float) $numericMagnitude;
+        }
+        
         return null;
     }
 
