@@ -955,7 +955,7 @@
                 
                 <div id="filters" class="p-4 space-y-4" style="display: none;">
                     <!-- Länder -->
-                    <div class="border border-gray-200 rounded-lg">
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('countriesSection')">
                             <h4 class="text-sm font-medium text-gray-700">Länder</h4>
                             <svg id="countriesToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1011,7 +1011,7 @@
                     </div>
 
                     <!-- Risikostufe -->
-                    <div class="border border-gray-200 rounded-lg">
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('riskLevelSection')">
                             <h4 class="text-sm font-medium text-gray-700">Risikostufe</h4>
                             <svg id="riskLevelToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1029,7 +1029,7 @@
                     </div>
 
                     <!-- Eventtype -->
-                    <div class="border border-gray-200 rounded-lg">
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('eventTypeSection')">
                             <h4 class="text-sm font-medium text-gray-700">Eventtype</h4>
                             <svg id="eventTypeToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1037,7 +1037,7 @@
                             </svg>
                         </div>
                         <div id="eventTypeSection" class="p-3">
-                            <div class="grid grid-cols-1 gap-2 mb-2">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllEventTypes()">Alle ausblenden</button>
                                 <button type="button" id="event-earthquake" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="earthquake" onclick="toggleEventTypeFilter('earthquake', this)">Erdbeben</button>
                                 <button type="button" id="event-tsunami" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="tsunami" onclick="toggleEventTypeFilter('tsunami', this)">Tsunami</button>
@@ -1050,7 +1050,7 @@
                     </div>
 
                     <!-- Zeitraum -->
-                    <div class="border border-gray-200 rounded-lg">
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('timePeriodSection')">
                             <h4 class="text-sm font-medium text-gray-700">Zeitraum</h4>
                             <svg id="timePeriodToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1058,8 +1058,8 @@
                             </svg>
                         </div>
                         <div id="timePeriodSection" class="p-3">
-                            <div class="grid grid-cols-1 gap-2">
-                                <button type="button" id="period-all" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-period="all" onclick="toggleTimePeriodFilter('all', this)">Alle</button>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <button type="button" id="period-all" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-period="all" onclick="toggleTimePeriodFilter('all', this)">Alle ausblenden</button>
                                 <button type="button" id="period-7days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="7days" onclick="toggleTimePeriodFilter('7days', this)">Letzte 7 Tage</button>
                                 <button type="button" id="period-30days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="30days" onclick="toggleTimePeriodFilter('30days', this)">Letzte 30 Tage</button>
                             </div>
