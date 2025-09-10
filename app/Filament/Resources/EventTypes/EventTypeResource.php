@@ -42,6 +42,13 @@ class EventTypeResource extends Resource
         return EventTypeTable::configure($table);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\EventCategoriesRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
