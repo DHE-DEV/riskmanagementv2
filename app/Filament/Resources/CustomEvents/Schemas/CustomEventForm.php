@@ -89,7 +89,8 @@ class CustomEventForm
                 TextInput::make('tags')
                     ->label('Tags')
                     ->placeholder('tag1, tag2, tag3')
-                    ->helperText('Tags durch Kommas getrennt eingeben'),
+                    ->helperText('Tags durch Kommas getrennt eingeben')
+                    ->hidden(),
 
                 // Status & Zeit
                 Toggle::make('is_active')
@@ -142,7 +143,8 @@ class CustomEventForm
                 ColorPicker::make('marker_color')
                     ->label('Marker-Farbe')
                     ->default('#FF0000')
-                    ->helperText('Hauptfarbe des Markers'),
+                    ->helperText('Hauptfarbe des Markers')
+                    ->hidden(),
 
                 Select::make('marker_icon')
                     ->label('FontAwesome Symbol')
@@ -209,19 +211,21 @@ class CustomEventForm
                     ])
                     ->default('fa-map-marker')
                     ->searchable()
-                    ->helperText('Symbol für den Marker'),
+                    ->helperText('Symbol für den Marker')
+                    ->hidden(),
 
                 ColorPicker::make('icon_color')
                     ->label('Symbol-Farbe')
                     ->default('#FFFFFF')
-                    ->helperText('Farbe des Symbols'),
+                    ->helperText('Farbe des Symbols')
+                    ->hidden(),
 
                 Select::make('marker_size')
                     ->label('Marker-Größe')
                     ->options(CustomEvent::getMarkerSizeOptions())
                     ->default('medium')
-                    ->required()
-                    ->helperText('Größe des Markers auf der Karte'),
+                    ->helperText('Größe des Markers auf der Karte')
+                    ->hidden(),
 
             ]);
     }

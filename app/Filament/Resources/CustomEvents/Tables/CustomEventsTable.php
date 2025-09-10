@@ -9,6 +9,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -85,6 +86,21 @@ class CustomEventsTable
                     ->label('Anzeigen'),
                 EditAction::make()
                     ->label('Bearbeiten'),
+                Action::make('duplicate')
+                    ->label('Dublizieren')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->action(function (CustomEvent $record) {
+                        $newEvent = $record->replicate();
+                        $newEvent->title = $record->title . ' (Kopie)';
+                        $newEvent->created_by = auth()->id();
+                        $newEvent->updated_by = auth()->id();
+                        $newEvent->save();
+                        
+                        return redirect()->route('filament.admin.resources.custom-events.edit', $newEvent);
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Event dublizieren')
+                    ->modalSubheading('Möchten Sie dieses Event wirklich dublizieren?'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
