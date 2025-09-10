@@ -1422,7 +1422,7 @@
             </div>
             <div class="flex items-center space-x-4 text-sm">
                 <span>Version 1.0.8</span>
-                <span>Build: 2025-09-09</span>
+                <span>Build: 2025-09-10</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
