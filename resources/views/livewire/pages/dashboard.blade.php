@@ -1421,7 +1421,7 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.6</span>
+                <span>Version 1.0.8</span>
                 <span>Build: 2025-09-09</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
@@ -2188,7 +2188,7 @@ async function loadEventDetails(event) {
                     </div>
                 ` : ''}
                 
-                <div class="event-info-grid">xxx
+                <div class="event-info-grid">
                     <div class="info-item">
                         <span class="info-label">Land:</span>
                         <span class="info-value">${event.country_name || event.country || 'Unbekannt'}</span>
