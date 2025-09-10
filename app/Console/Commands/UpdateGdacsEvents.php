@@ -36,6 +36,12 @@ class UpdateGdacsEvents extends Command
      */
     public function handle(): int
     {
+        // Prüfe ob GDACS aktiviert ist
+        if (!config('app.gdacs_enabled')) {
+            $this->error('❌ GDACS integration is disabled. Set GDACS_ENABLED=true in .env to enable.');
+            return self::FAILURE;
+        }
+
         $forceUpdate = $this->option('force');
         $runSync = $this->option('sync');
         $queueName = $this->option('queue');

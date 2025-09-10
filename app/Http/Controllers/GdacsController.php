@@ -32,6 +32,13 @@ class GdacsController extends Controller
     public function fetchEvents(): JsonResponse
     {
         try {
+            // Prüfe ob GDACS aktiviert ist
+            if (!config('app.gdacs_enabled')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'GDACS integration is disabled'
+                ]);
+            }
             $result = $this->gdacsService->updateAllEvents();
             
             return response()->json([
@@ -59,6 +66,19 @@ class GdacsController extends Controller
     public function getDashboardEvents(): JsonResponse
     {
         try {
+            // Prüfe ob GDACS aktiviert ist
+            if (!config('app.gdacs_enabled')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'GDACS integration is disabled',
+                    'data' => [
+                        'events' => [],
+                        'total' => 0,
+                        'last_updated' => now()->format('H:i')
+                    ]
+                ]);
+            }
+
             // Lade alle Events aus der Datenbank (sowohl GDACS als auch Custom)
             $allEvents = DisasterEvent::active()
                 ->whereNotNull('lat')

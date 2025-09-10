@@ -13,6 +13,12 @@ class GdacsMonitoringCommand extends Command
 
     public function handle(): int
     {
+        // Prüfe ob GDACS aktiviert ist
+        if (!config('app.gdacs_enabled')) {
+            $this->error('❌ GDACS integration is disabled. Set GDACS_ENABLED=true in .env to enable.');
+            return self::FAILURE;
+        }
+
         $days = (int) $this->option('days');
         $outputJson = $this->option('json');
 

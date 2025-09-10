@@ -796,6 +796,11 @@
             font-weight: 600;
         }
     </style>
+    
+    <!-- GDACS Configuration -->
+    <script>
+        window.GDACS_ENABLED = {{ config('app.gdacs_enabled') ? 'true' : 'false' }};
+    </script>
 </head>
 <body>
 <div class="app-container">
@@ -1004,8 +1009,8 @@
                             </svg>
                         </div>
                         <div id="providersSection" class="p-3">
-                            <div class="grid grid-cols-2 gap-2">
-                                <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)">GDACS</button>
+                            <div class="grid gap-2" id="provider-buttons-container">
+                                <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)" style="display: none;">GDACS</button>
                                 <button type="button" id="provider-custom" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="custom" onclick="toggleProviderFilter('custom', this)">Passolution</button>
                             </div>
                         </div>
@@ -1089,7 +1094,7 @@
                 
                 <div id="currentEvents" class="p-2" style="display: none;">
                     <p class="text-xs text-gray-500 px-2 mb-2">Neueste Events zuerst</p>
-                    <div id="eventsList" class="space-y-2 pb-10" style="position: relative; z-index: 1;">
+                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 60px;">
                         <!-- Events werden hier dynamisch eingefügt -->
                     </div>
                 </div>
@@ -1514,22 +1519,28 @@ async function loadInitialData() {
 // Dashboard-Daten laden
 async function loadDashboardData() {
     try {
-        // GDACS-Events laden
-        const gdacsResponse = await fetch('/api/gdacs/dashboard-events');
-        const gdacsResult = await gdacsResponse.json();
+        let allEvents = [];
+        
+        // GDACS-Events laden (nur wenn aktiviert)
+        if (window.GDACS_ENABLED) {
+            const gdacsResponse = await fetch('/api/gdacs/dashboard-events');
+            const gdacsResult = await gdacsResponse.json();
+            
+            // GDACS-Events verarbeiten
+            if (gdacsResult.success) {
+                const gdacsEvents = processGdacsEvents(gdacsResult.data.events);
+                allEvents = allEvents.concat(gdacsEvents);
+                console.log(`Loaded ${gdacsEvents.length} GDACS events`);
+            } else {
+                console.log('GDACS integration disabled or failed:', gdacsResult.message);
+            }
+        } else {
+            console.log('GDACS integration disabled via configuration');
+        }
         
         // CustomEvents laden
         const customResponse = await fetch('/api/custom-events/dashboard-events');
         const customResult = await customResponse.json();
-        
-        let allEvents = [];
-        
-        // GDACS-Events verarbeiten
-        if (gdacsResult.success) {
-            const gdacsEvents = processGdacsEvents(gdacsResult.data.events);
-            allEvents = allEvents.concat(gdacsEvents);
-            console.log(`Loaded ${gdacsEvents.length} GDACS events`);
-        }
         
         // CustomEvents verarbeiten
         if (customResult.success) {
@@ -1928,6 +1939,9 @@ function getCustomEventIcon(markerIcon, eventType) {
 
 // Deutsche Bezeichnungen für Event-Typen
 function mapEventType(type) {
+    // Debug logging
+    console.log('mapEventType called with:', type, 'type:', typeof type);
+    
     const map = {
         'earthquake': 'Erdbeben',
         'hurricane': 'Hurrikan',
@@ -1938,9 +1952,24 @@ function mapEventType(type) {
         'exercise': 'Übung',
         'other': 'Sonstiges',
         'storm': 'Sturm',
-        'cyclone': 'Zyklon'
+        'cyclone': 'Zyklon',
+        'tsunami': 'Tsunami',
+        'terrorist_attack': 'Terroranschlag',
+        'epidemic': 'Epidemie',
+        'pandemic': 'Pandemie',
+        'nuclear_accident': 'Nuklearunfall',
+        'chemical_accident': 'Chemieunfall',
+        'transportation_accident': 'Verkehrsunfall',
+        'infrastructure_failure': 'Infrastrukturausfall',
+        'cybersecurity': 'Cyber-Sicherheit',
+        'political_unrest': 'Politische Unruhen',
+        'financial_crisis': 'Finanzkrise',
+        'general': 'Allgemein'
     };
-    return map[type] || 'Unbekannt';
+    
+    const result = map[type?.toLowerCase()] || (type || 'Unbekannt');
+    console.log('mapEventType result for "' + type + '":', result);
+    return result;
 }
 
 // Deutsche Bezeichnungen für Priorität
@@ -2126,6 +2155,10 @@ async function loadEventDetails(event) {
             id: event.id,
             title: event.title,
             source: event.source,
+            event_type: event.event_type,
+            mapped_type: mapEventType(event.event_type),
+            priority: event.priority,
+            severity: event.severity,
             country: event.country,
             country_name: event.country_name,
             country_relation: event.country_relation,
@@ -2139,19 +2172,19 @@ async function loadEventDetails(event) {
                     <h2 class="event-title">${event.title}</h2>
                     <div class="event-meta">
                         <span class="event-type">${mapEventType(event.event_type)}</span>
-                        <span class="event-severity severity-${event.severity}">${mapPriority(event.priority)}</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>
                     </div>
                 </div>
                 ${event.description ? `
                     <div class="event-description mt-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">${escapeHtml(event.description)}</div>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}</div>
                     </div>
                 ` : ''}
                 ${event.source === 'custom' && event.popup_content ? `
                     <div class="event-description mt-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">${event.popup_content}</div>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}</div>
                     </div>
                 ` : ''}
                 
@@ -3188,11 +3221,11 @@ function createEventElement(event) {
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
-                        <span class="text-xs font-medium uppercase ${severityTextClass}">${sev.label}</span>
+                        <span class="text-xs font-medium uppercase text-gray-800">${mapEventType(event.event_type)}</span>
                     </div>
                     <div>${rightHtml}</div>
                 </div>
-                <p class="text-[11px] text-gray-600 mt-0.5">${mapEventType(event.event_type)}</p>
+                <p class="text-[11px] ${severityTextClass} mt-0.5">${sev.label}</p>
                 <p class="text-sm font-medium text-gray-800 mt-1">${event.title}</p>
                 <p class="text-xs text-gray-600 mt-1">
                     ${event.country || 'Unbekannt'} • ${displayDate || (event.date || 'Unbekannt')}
@@ -4019,7 +4052,20 @@ function escapeForAttr(str) {
 
 // Dropdowns für Länder/Kontinente initial befüllen
 document.addEventListener('DOMContentLoaded', async () => {
-    window.providerFilter = { gdacs: true, custom: true };
+    // Provider Filter basierend auf GDACS-Konfiguration initialisieren
+    window.providerFilter = { gdacs: window.GDACS_ENABLED, custom: true };
+    
+    // GDACS-Button sichtbar machen wenn aktiviert
+    const gdacsButton = document.getElementById('provider-gdacs');
+    const containerDiv = document.getElementById('provider-buttons-container');
+    if (window.GDACS_ENABLED && gdacsButton) {
+        gdacsButton.style.display = 'block';
+        // Grid-Layout anpassen wenn beide Buttons sichtbar sind
+        containerDiv.className = 'grid grid-cols-2 gap-2';
+    } else {
+        // Nur Custom-Button, daher grid-cols-1
+        containerDiv.className = 'grid grid-cols-1 gap-2';
+    }
     try {
         const [countriesRes, continentsRes] = await Promise.all([
             fetch('/api/airports/countries', { headers: { 'Accept': 'application/json' } }),

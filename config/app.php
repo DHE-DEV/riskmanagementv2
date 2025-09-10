@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | GDACS Integration
+    |--------------------------------------------------------------------------
+    |
+    | This option controls whether GDACS (Global Disaster Alert and Coordination System)
+    | integration is enabled. When enabled, the system will fetch and display
+    | GDACS events on the map and in the events list.
+    |
+    */
+
+    'gdacs_enabled' => env('GDACS_ENABLED', true),
+
 ];
