@@ -16,6 +16,7 @@ class CustomEvent extends Model
         'description',
         'event_type',
         'event_type_id',
+        'event_category_id',
         'country_id',
         'latitude',
         'longitude',
@@ -68,6 +69,14 @@ class CustomEvent extends Model
     public function eventType(): BelongsTo
     {
         return $this->belongsTo(EventType::class);
+    }
+
+    /**
+     * Event category relation.
+     */
+    public function eventCategory(): BelongsTo
+    {
+        return $this->belongsTo(EventCategory::class);
     }
 
     /**

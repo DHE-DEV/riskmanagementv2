@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CustomEvents\Schemas;
 
 use App\Models\Country;
 use App\Models\CustomEvent;
+use App\Models\EventCategory;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
@@ -61,7 +62,28 @@ class CustomEventForm
                     ->options(CustomEvent::getEventTypeOptions())
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(fn (Set $set) => $set('event_category_id', null)),
+
+                Select::make('event_category_id')
+                    ->label('Kategorie')
+                    ->options(function (Get $get) {
+                        $eventTypeId = $get('event_type_id');
+                        if (!$eventTypeId) {
+                            return [];
+                        }
+                        
+                        return EventCategory::byEventType($eventTypeId)
+                            ->active()
+                            ->ordered()
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->nullable()
+                    ->helperText('Wählen Sie zuerst einen Event-Typ aus'),
 
                 Select::make('country_id')
                     ->label('Land')

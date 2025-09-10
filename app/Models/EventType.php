@@ -31,6 +31,14 @@ class EventType extends Model
     }
 
     /**
+     * Get event categories of this type.
+     */
+    public function eventCategories(): HasMany
+    {
+        return $this->hasMany(EventCategory::class);
+    }
+
+    /**
      * Scope for active event types.
      */
     public function scopeActive($query)
