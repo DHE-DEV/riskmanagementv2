@@ -1001,6 +1001,7 @@
                     </div>
 
                     <!-- Anbieter -->
+                     <!--
                     <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('providersSection')">
                             <h4 class="text-sm font-medium text-gray-700">Anbieter</h4>
@@ -1015,7 +1016,7 @@
                             </div>
                         </div>
                     </div>
-
+    -->
                     <!-- Risikostufe -->
                     <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('riskLevelSection')">

@@ -103,10 +103,6 @@ class CustomEventForm
                     ->default('medium')
                     ->required(),
 
-                TextInput::make('category')
-                    ->label('Kategorie')
-                    ->placeholder('z.B. Übung, Notfall, Wartung')
-                    ->maxLength(100),
 
                 TextInput::make('tags')
                     ->label('Tags')
