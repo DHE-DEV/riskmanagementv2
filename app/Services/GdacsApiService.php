@@ -12,40 +12,50 @@ use Carbon\Carbon;
 class GdacsApiService
 {
     private string $baseUrl = 'https://www.gdacs.org/xml/rss.xml';
+    private string $extendedUrl = 'https://www.gdacs.org/xml/rss_7d.xml';
     private int $cacheMinutes = 15; // Cache für 15 Minuten
 
     /**
      * Lade aktuelle GDACS Events
      */
-    public function fetchCurrentEvents(): array
+    public function fetchCurrentEvents(bool $extended = false): array
     {
         try {
+            // Wähle URL basierend auf extended Parameter
+            $url = $extended ? $this->extendedUrl : $this->baseUrl;
+            $cacheKey = 'gdacs_events_' . ($extended ? '7d_' : '') . date('Y-m-d-H');
+            
             // Prüfe Cache zuerst
-            $cacheKey = 'gdacs_events_' . date('Y-m-d-H');
             $cachedEvents = Cache::get($cacheKey);
             
             if ($cachedEvents) {
                 Log::channel('gdacs_sync')->info('GDACS events loaded from cache', [
                     'cache_key' => $cacheKey,
-                    'event_count' => count($cachedEvents)
+                    'event_count' => count($cachedEvents),
+                    'extended' => $extended
                 ]);
                 return $cachedEvents;
             }
 
             // API-Call machen
-            $response = Http::timeout(30)->get($this->baseUrl);
+            $response = Http::timeout(30)->get($url);
             
             if (!$response->successful()) {
                 Log::error('GDACS API request failed', [
                     'status' => $response->status(),
-                    'body' => $response->body()
+                    'body' => $response->body(),
+                    'url' => $url,
+                    'extended' => $extended
                 ]);
                 return [];
             }
 
             $xml = simplexml_load_string($response->body());
             if (!$xml) {
-                Log::error('Failed to parse GDACS XML response');
+                Log::error('Failed to parse GDACS XML response', [
+                    'url' => $url,
+                    'extended' => $extended
+                ]);
                 return [];
             }
 
@@ -57,7 +67,9 @@ class GdacsApiService
             Log::channel('gdacs_sync')->info('GDACS events fetched and cached', [
                 'count' => count($events),
                 'cache_key' => $cacheKey,
-                'cache_minutes' => $this->cacheMinutes
+                'cache_minutes' => $this->cacheMinutes,
+                'extended' => $extended,
+                'url' => $url
             ]);
             return $events;
 
@@ -456,15 +468,16 @@ class GdacsApiService
     /**
      * Aktualisiere alle GDACS Events
      */
-    public function updateAllEvents(): array
+    public function updateAllEvents(bool $extended = false): array
     {
-        $events = $this->fetchCurrentEvents();
+        $events = $this->fetchCurrentEvents($extended);
         $savedCount = $this->saveEventsToDatabase($events);
         
         return [
             'fetched' => count($events),
             'saved' => $savedCount,
-            'timestamp' => now()->toISOString()
+            'timestamp' => now()->toISOString(),
+            'extended' => $extended
         ];
     }
 

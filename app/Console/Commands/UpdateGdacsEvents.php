@@ -14,7 +14,7 @@ class UpdateGdacsEvents extends Command
      *
      * @var string
      */
-    protected $signature = 'gdacs:update-events {--force : Force update even if cache is valid} {--sync : Run synchronously instead of using queue} {--queue= : Specify queue name}';
+    protected $signature = 'gdacs:update-events {--force : Force update even if cache is valid} {--sync : Run synchronously instead of using queue} {--queue= : Specify queue name} {--extended : Fetch extended 7-day events instead of standard}';
 
     /**
      * The console command description.
@@ -39,20 +39,21 @@ class UpdateGdacsEvents extends Command
         $forceUpdate = $this->option('force');
         $runSync = $this->option('sync');
         $queueName = $this->option('queue');
+        $extended = $this->option('extended');
 
         if ($runSync) {
             // Synchroner Modus - direkt ausführen
-            return $this->runSynchronously($forceUpdate);
+            return $this->runSynchronously($forceUpdate, $extended);
         }
 
         // Queue Job dispatchen
-        return $this->dispatchQueueJob($forceUpdate, $queueName);
+        return $this->dispatchQueueJob($forceUpdate, $queueName, $extended);
     }
 
-    private function runSynchronously(bool $forceUpdate): int
+    private function runSynchronously(bool $forceUpdate, bool $extended = false): int
     {
         $startTime = microtime(true);
-        $this->info('🔄 Starting GDACS events update (synchronous mode)...');
+        $this->info('🔄 Starting GDACS events update (synchronous mode' . ($extended ? ', extended 7-day' : '') . ')...');
 
         try {
             // Cache leeren wenn --force Option verwendet wird
@@ -62,7 +63,7 @@ class UpdateGdacsEvents extends Command
             }
 
             // Events aktualisieren
-            $result = $this->gdacsService->updateAllEvents();
+            $result = $this->gdacsService->updateAllEvents($extended);
             $executionTime = round((microtime(true) - $startTime) * 1000, 2);
 
             $this->info('✅ GDACS events update completed!');
@@ -103,7 +104,7 @@ class UpdateGdacsEvents extends Command
         }
     }
 
-    private function dispatchQueueJob(bool $forceUpdate, ?string $queueName): int
+    private function dispatchQueueJob(bool $forceUpdate, ?string $queueName, bool $extended = false): int
     {
         try {
             $this->info('📋 Dispatching GDACS update job to queue...');
