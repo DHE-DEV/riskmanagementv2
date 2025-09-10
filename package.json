@@ -3,14 +3,23 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test": "playwright test",
+        "test:headed": "playwright test --headed",
+        "test:ui": "playwright test --ui",
+        "test:debug": "playwright test --debug",
+        "test:timezone": "playwright test timezone.spec.js",
+        "test:fullhd": "playwright test --headed --project=chromium",
+        "report": "playwright show-report"
     },
     "dependencies": {
+        "@playwright/test": "^1.55.0",
         "@tailwindcss/vite": "^4.1.11",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0",
+        "playwright": "^1.55.0",
         "tailwindcss": "^4.0.7",
         "vite": "^7.0.4"
     },

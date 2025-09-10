@@ -1094,7 +1094,7 @@
                 
                 <div id="currentEvents" class="p-2" style="display: none;">
                     <p class="text-xs text-gray-500 px-2 mb-2">Neueste Events zuerst</p>
-                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 60px;">
+                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 60px; margin-bottom: 60px;">
                         <!-- Events werden hier dynamisch eingefügt -->
                     </div>
                 </div>
@@ -1939,9 +1939,6 @@ function getCustomEventIcon(markerIcon, eventType) {
 
 // Deutsche Bezeichnungen für Event-Typen
 function mapEventType(type) {
-    // Debug logging
-    console.log('mapEventType called with:', type, 'type:', typeof type);
-    
     const map = {
         'earthquake': 'Erdbeben',
         'hurricane': 'Hurrikan',
@@ -1964,11 +1961,13 @@ function mapEventType(type) {
         'cybersecurity': 'Cyber-Sicherheit',
         'political_unrest': 'Politische Unruhen',
         'financial_crisis': 'Finanzkrise',
-        'general': 'Allgemein'
+        'general': 'Allgemein',
+        'travel': 'Reiseverkehr',
+        'safety': 'Sicherheit',
+        'environment': 'Umweltereignisse'
     };
     
     const result = map[type?.toLowerCase()] || (type || 'Unbekannt');
-    console.log('mapEventType result for "' + type + '":', result);
     return result;
 }
 
@@ -2310,18 +2309,18 @@ async function loadEventDetails(event) {
             const abbrEl = document.getElementById('tz-abbr');
             const diffEl = document.getElementById('tz-berlin-diff');
 
-            // Erzwinge Europe/Berlin, wenn das Event selbst als "Manuell" markiert oder in Deutschland liegt
-            const isManual = (event.source === 'custom');
+            // Prüfe geografische Lage für Zeitzone (nicht mehr automatisch Berlin für CustomEvents)
             const isInGermany = (event.latitude >= 47 && event.latitude <= 55.2 && event.longitude >= 5.5 && event.longitude <= 15.7);
             const isInSpain = (event.latitude >= 36 && event.latitude <= 43.8 && event.longitude >= -9.3 && event.longitude <= 3.3);
             
-            // Setze bekannte Zeitzonen für europäische Länder
+            // Setze Zeitzonen basierend auf tatsächlichen Koordinaten, nicht auf Event-Typ
             let tzName = null;
-            if (isInGermany || isManual) {
+            if (isInGermany) {
                 tzName = 'Europe/Berlin';
             } else if (isInSpain) {
                 tzName = 'Europe/Madrid';
             }
+            // Für alle anderen Standorte (inkl. CustomEvents): Lass die API die korrekte Zeitzone bestimmen
             
             let offset = tzName ? null : Math.round((event.longitude || 0) / 15);
 

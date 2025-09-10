@@ -58,29 +58,34 @@ class TimezoneService
      */
     private function getTimezoneFallback(float $latitude, float $longitude): ?array
     {
-        // Deutschland (grobe Bounding Box): nutze Europe/Berlin (DST-aware)
-        $isGermany = $latitude >= 47.0 && $latitude <= 55.2 && $longitude >= 5.5 && $longitude <= 15.7;
-
-        if ($isGermany) {
-            $berlin = Carbon::now('Europe/Berlin');
-            $offsetHours = (int) round($berlin->utcOffset() / 60);
-            return [
-                'timezone' => 'Europe/Berlin',
-                'utc_offset' => ($offsetHours >= 0 ? "+$offsetHours:00" : "-$offsetHours:00"),
-                'utc_offset_hours' => $offsetHours,
-                'datetime' => now('UTC')->toISOString(),
-                'local_datetime' => $berlin->toISOString(),
-                'local_time' => $berlin->format('H:i'),
-                'local_date' => $berlin->format('d.m.Y'),
-                'abbreviation' => $berlin->format('T'),
-                'time_diff_to_berlin' => 0,
-                'time_diff_to_berlin_formatted' => 'Gleiche Zeit',
-                'is_daytime' => $this->isDaytime($berlin),
-                'is_fallback' => true
-            ];
+        // Versuche zuerst eine bekannte Zeitzone basierend auf Koordinaten zu finden
+        $timezone = $this->getTimezoneByCoordinates($latitude, $longitude);
+        
+        if ($timezone) {
+            try {
+                $localTime = Carbon::now($timezone);
+                $utcOffset = $localTime->getOffset() / 3600; // Convert seconds to hours
+                
+                return [
+                    'timezone' => $timezone,
+                    'utc_offset' => sprintf('%+03d:00', $utcOffset),
+                    'utc_offset_hours' => (int) $utcOffset,
+                    'datetime' => now('UTC')->toISOString(),
+                    'local_datetime' => $localTime->toISOString(),
+                    'local_time' => $localTime->format('H:i'),
+                    'local_date' => $localTime->format('d.m.Y'),
+                    'abbreviation' => $localTime->format('T'),
+                    'time_diff_to_berlin' => (int) $utcOffset - $this->getBerlinOffset(),
+                    'time_diff_to_berlin_formatted' => $this->formatTimeDifference((int) $utcOffset - $this->getBerlinOffset()),
+                    'is_daytime' => $this->isDaytime($localTime),
+                    'is_fallback' => true
+                ];
+            } catch (\Exception $e) {
+                // Fallback zur alten Methode wenn Zeitzone ungültig ist
+            }
         }
 
-        // Generische Berechnung basierend auf Längengrad (grobe Annäherung)
+        // Fallback zur alten groben Berechnung
         $timezoneOffset = (int) round($longitude / 15);
         $timezoneName = $this->getTimezoneNameByOffset($timezoneOffset);
         $nowUtc = Carbon::now('UTC');
@@ -100,6 +105,116 @@ class TimezoneService
             'is_daytime' => $this->isDaytime($localTime),
             'is_fallback' => true
         ];
+    }
+
+    /**
+     * Bestimme Zeitzone basierend auf Koordinaten
+     */
+    private function getTimezoneByCoordinates(float $latitude, float $longitude): ?string
+    {
+        // Deutschland
+        if ($latitude >= 47.0 && $latitude <= 55.2 && $longitude >= 5.5 && $longitude <= 15.7) {
+            return 'Europe/Berlin';
+        }
+
+        // USA - Continental US
+        if ($latitude >= 24.0 && $latitude <= 49.0 && $longitude >= -125.0 && $longitude <= -66.0) {
+            if ($longitude >= -75.0) return 'America/New_York';      // Eastern
+            if ($longitude >= -87.0) return 'America/Chicago';       // Central  
+            if ($longitude >= -115.0) return 'America/Denver';       // Mountain
+            return 'America/Los_Angeles';                            // Pacific
+        }
+
+        // Mexiko
+        if ($latitude >= 14.5 && $latitude <= 32.7 && $longitude >= -118.4 && $longitude <= -86.7) {
+            if ($longitude >= -102.0) return 'America/Mexico_City';   // Central Standard Time (most of Mexico)
+            if ($longitude >= -107.0) return 'America/Chihuahua';     // Mountain Standard Time  
+            if ($longitude >= -115.0) return 'America/Mazatlan';      // Mountain Standard Time (Sinaloa, etc.)
+            return 'America/Tijuana';                                 // Pacific Standard Time
+        }
+
+        // Kanada
+        if ($latitude >= 41.0 && $latitude <= 83.0 && $longitude >= -141.0 && $longitude <= -52.0) {
+            if ($longitude >= -60.0) return 'America/Halifax';       // Atlantic
+            if ($longitude >= -70.0) return 'America/Toronto';       // Eastern
+            if ($longitude >= -90.0) return 'America/Winnipeg';      // Central
+            if ($longitude >= -110.0) return 'America/Edmonton';     // Mountain
+            if ($longitude >= -125.0) return 'America/Vancouver';    // Pacific
+            return 'America/Whitehorse';                             // Yukon
+        }
+
+        // Großbritannien
+        if ($latitude >= 49.9 && $latitude <= 60.9 && $longitude >= -8.2 && $longitude <= 1.8) {
+            return 'Europe/London';
+        }
+
+        // Frankreich
+        if ($latitude >= 42.3 && $latitude <= 51.1 && $longitude >= -5.1 && $longitude <= 9.6) {
+            return 'Europe/Paris';
+        }
+
+        // Spanien
+        if ($latitude >= 35.2 && $latitude <= 43.8 && $longitude >= -9.3 && $longitude <= 4.3) {
+            return 'Europe/Madrid';
+        }
+
+        // Italien
+        if ($latitude >= 35.5 && $latitude <= 47.1 && $longitude >= 6.6 && $longitude <= 18.5) {
+            return 'Europe/Rome';
+        }
+
+        // Japan
+        if ($latitude >= 24.0 && $latitude <= 46.0 && $longitude >= 123.0 && $longitude <= 146.0) {
+            return 'Asia/Tokyo';
+        }
+
+        // China
+        if ($latitude >= 18.0 && $latitude <= 54.0 && $longitude >= 73.0 && $longitude <= 135.0) {
+            return 'Asia/Shanghai';
+        }
+
+        // Australien
+        if ($latitude >= -44.0 && $latitude <= -10.0 && $longitude >= 113.0 && $longitude <= 154.0) {
+            if ($longitude >= 143.0) return 'Australia/Sydney';      // Eastern
+            if ($longitude >= 129.0) return 'Australia/Adelaide';    // Central
+            return 'Australia/Perth';                                // Western
+        }
+
+        // Brasilien
+        if ($latitude >= -34.0 && $latitude <= 5.3 && $longitude >= -74.0 && $longitude <= -28.8) {
+            if ($longitude >= -38.0) return 'America/Sao_Paulo';     // Brasília Time
+            if ($longitude >= -49.0) return 'America/Campo_Grande';  // Amazon Time
+            if ($longitude >= -58.0) return 'America/Cuiaba';        // Amazon Time
+            return 'America/Rio_Branco';                             // Acre Time
+        }
+
+        // Indien
+        if ($latitude >= 6.0 && $latitude <= 37.1 && $longitude >= 68.1 && $longitude <= 97.4) {
+            return 'Asia/Kolkata';
+        }
+
+        // Russland (vereinfacht)
+        if ($latitude >= 41.0 && $latitude <= 82.0 && $longitude >= 19.6 && $longitude <= -169.0) {
+            if ($longitude >= 142.0) return 'Asia/Vladivostok';      // Vladivostok Time
+            if ($longitude >= 125.0) return 'Asia/Yakutsk';          // Yakutsk Time
+            if ($longitude >= 105.0) return 'Asia/Irkutsk';          // Irkutsk Time
+            if ($longitude >= 85.0) return 'Asia/Krasnoyarsk';       // Krasnoyarsk Time
+            if ($longitude >= 65.0) return 'Asia/Omsk';              // Omsk Time
+            if ($longitude >= 58.0) return 'Asia/Yekaterinburg';     // Yekaterinburg Time
+            return 'Europe/Moscow';                                  // Moscow Time
+        }
+
+        // Afrika - GMT (UTC+0) Zone
+        if ($latitude >= -35.0 && $latitude <= 37.0 && $longitude >= -18.0 && $longitude <= 52.0) {
+            // Westafrika (GMT+0): Ghana, Guinea, Mali, Senegal, etc.
+            if ($longitude <= 1.0) return 'Africa/Accra';           // GMT+0
+            // Zentralafrika (GMT+1): Nigeria, Kamerun, etc.
+            if ($longitude <= 30.0) return 'Africa/Lagos';          // GMT+1
+            // Ostafrika (GMT+3): Kenia, Äthiopien, etc.
+            return 'Africa/Nairobi';                                 // GMT+3
+        }
+
+        return null;
     }
 
     /**

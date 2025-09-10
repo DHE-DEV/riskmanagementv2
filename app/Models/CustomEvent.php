@@ -87,6 +87,36 @@ class CustomEvent extends Model
     }
 
     /**
+     * Get the correct event type code, resolving 'general' from EventType relationship
+     */
+    public function getCorrectEventType()
+    {
+        // Wenn event_type 'general' ist, hole den korrekten Code aus der Beziehung
+        if ($this->attributes['event_type'] === 'general' && $this->event_type_id) {
+            $eventType = EventType::find($this->event_type_id);
+            return $eventType && $eventType->code ? $eventType->code : 'other';
+        }
+        
+        return $this->attributes['event_type'] ?: 'other';
+    }
+
+    /**
+     * Set the event_type automatically when event_type_id is set
+     */
+    public function setEventTypeIdAttribute($value)
+    {
+        $this->attributes['event_type_id'] = $value;
+        
+        // Automatisch event_type aus EventType-Beziehung setzen
+        if ($value) {
+            $eventType = EventType::find($value);
+            if ($eventType && $eventType->code) {
+                $this->attributes['event_type'] = $eventType->code;
+            }
+        }
+    }
+
+    /**
      * Scope a query to only include active events.
      */
     public function scopeActive($query)
