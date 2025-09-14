@@ -54,6 +54,13 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->maxContentWidth('full')
-            ->sidebarCollapsibleOnDesktop();
+            ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups([
+                'Event Management',
+                'Geografische Daten',
+                'API Schnittstellen',
+                'Verwaltung',
+                'System',
+            ]);
     }
 }

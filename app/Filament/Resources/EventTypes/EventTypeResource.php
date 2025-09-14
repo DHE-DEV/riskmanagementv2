@@ -30,7 +30,12 @@ class EventTypeResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Event-Typen';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 2;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Verwaltung';
+    }
 
     public static function form(Schema $schema): Schema
     {

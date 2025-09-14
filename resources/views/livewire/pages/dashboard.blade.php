@@ -795,6 +795,31 @@
             color: #1e293b;
             font-weight: 600;
         }
+
+        /* Event Type Filter Buttons */
+        #eventTypeButtons button:not(#toggleAllEventTypes) {
+            min-height: 60px;
+            max-width: 100%;
+        }
+
+        #eventTypeButtons button span {
+            display: block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        /* Lighter Font Awesome Icons */
+        #eventTypeButtons .font-light {
+            font-weight: 300 !important;
+        }
+
+        #eventTypeButtons i.fa {
+            font-weight: 300;
+        }
     </style>
     
     <!-- GDACS Configuration -->
@@ -960,6 +985,16 @@
                 </div>
                 
                 <div id="filters" class="p-4 space-y-4" style="display: none;">
+                    <!-- Reset Filters Link -->
+                    <div id="resetFiltersContainer">
+                        <a href="#" onclick="window.location.reload(); return false;" class="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Alle Filter zurücksetzen
+                        </a>
+                    </div>
+
                     <!-- Länder -->
                     <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('countriesSection')">
@@ -1039,20 +1074,15 @@
                     <!-- Eventtype -->
                     <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('eventTypeSection')">
-                            <h4 class="text-sm font-medium text-gray-700">Eventtype</h4>
+                            <h4 class="text-sm font-medium text-gray-700">Event-Typen</h4>
                             <svg id="eventTypeToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
                         <div id="eventTypeSection" class="p-3">
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" onclick="toggleAllEventTypes()">Alle ausblenden</button>
-                                <button type="button" id="event-earthquake" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="earthquake" onclick="toggleEventTypeFilter('earthquake', this)">Erdbeben</button>
-                                <button type="button" id="event-tsunami" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="tsunami" onclick="toggleEventTypeFilter('tsunami', this)">Tsunami</button>
-                                <button type="button" id="event-flood" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="flood" onclick="toggleEventTypeFilter('flood', this)">Überschwemmung</button>
-                                <button type="button" id="event-cyclone" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="cyclone" onclick="toggleEventTypeFilter('cyclone', this)">Zyklon</button>
-                                <button type="button" id="event-volcano" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="volcano" onclick="toggleEventTypeFilter('volcano', this)">Vulkan</button>
-                                <button type="button" id="event-wildfire" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-eventtype="wildfire" onclick="toggleEventTypeFilter('wildfire', this)">Waldbrand</button>
+                            <div class="grid grid-cols-2 gap-2 mb-2" id="eventTypeButtons">
+                                <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2" onclick="toggleAllEventTypes()">Alle ausblenden</button>
+                                <!-- Event-Type Buttons werden hier dynamisch eingefügt -->
                             </div>
                         </div>
                     </div>
@@ -1422,8 +1452,8 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.8</span>
-                <span>Build: 2025-09-10</span>
+                <span>Version 1.0.9</span>
+                <span>Build: 2025-09-14</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
@@ -1441,6 +1471,7 @@ let currentEvents = [];
 let selectedContinent = null;
 let selectedCountry = null;
 let isLoading = false;
+let eventTypes = []; // Store loaded event types
 
 // Kontinente
 const continents = [
@@ -1454,8 +1485,9 @@ const continents = [
 ];
 
 // Initialize when the page is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initializeMap();
+    await loadEventTypes(); // Load event types first
     loadInitialData();
     renderContinents();
     updateLastUpdated();
@@ -1672,16 +1704,33 @@ async function loadDashboardData() {
             const allowRisk = window.riskFilter?.[riskLevel] ?? true;
             
             // Eventtype-Filter
-            let eventType = (e.event_type || e.type || '').toLowerCase();
-            // Mapping für verschiedene Bezeichnungen
-            if (eventType.includes('earthquake') || eventType.includes('erdbeben')) eventType = 'earthquake';
-            else if (eventType.includes('tsunami')) eventType = 'tsunami';
-            else if (eventType.includes('flood') || eventType.includes('überschwemmung')) eventType = 'flood';
-            else if (eventType.includes('cyclone') || eventType.includes('hurricane') || eventType.includes('zyklon')) eventType = 'cyclone';
-            else if (eventType.includes('volcano') || eventType.includes('vulkan')) eventType = 'volcano';
-            else if (eventType.includes('fire') || eventType.includes('wildfire') || eventType.includes('waldbrand')) eventType = 'wildfire';
-            
-            const allowEventType = window.eventTypeFilter?.[eventType] ?? true;
+            // For CustomEvents, use event_type_id directly
+            // For GDACS events, map the type to our event types
+            let allowEventType = true;
+
+            if (e.source === 'custom' && e.event_type_id) {
+                // CustomEvent with direct event_type_id
+                allowEventType = window.eventTypeFilter?.[e.event_type_id] ?? true;
+            } else {
+                // GDACS event - try to map to our event types by code
+                let eventTypeStr = (e.event_type || e.type || '').toLowerCase();
+
+                // Find matching event type by code or name
+                const matchedType = eventTypes.find(et => {
+                    const code = et.code.toLowerCase();
+                    const name = et.name.toLowerCase();
+                    return eventTypeStr.includes(code) || eventTypeStr.includes(name) ||
+                           (code === 'flood' && eventTypeStr.includes('überschwemmung')) ||
+                           (code === 'hurricane' && (eventTypeStr.includes('cyclone') || eventTypeStr.includes('zyklon'))) ||
+                           (code === 'wildfire' && (eventTypeStr.includes('fire') || eventTypeStr.includes('waldbrand'))) ||
+                           (code === 'volcano' && eventTypeStr.includes('vulkan')) ||
+                           (code === 'earthquake' && eventTypeStr.includes('erdbeben'));
+                });
+
+                if (matchedType) {
+                    allowEventType = window.eventTypeFilter?.[matchedType.id] ?? true;
+                }
+            }
             
             // Zeitraum-Filter
             let timeMatch = true;
@@ -1786,6 +1835,7 @@ function processCustomEvents(events) {
             source: 'custom',
             // CustomEvents haben andere Feldnamen
             event_type: event.event_type,
+            event_type_name: event.event_type_name,
             // Ländername aus der Beziehung laden
             country_name: event.country_relation ? event.country_relation.name_translations?.de || event.country_relation.name_translations?.en || event.country_relation.iso_code : (event.country || 'Unbekannt'),
             severity: event.severity,
@@ -1939,7 +1989,13 @@ function getCustomEventIcon(markerIcon, eventType) {
 }
 
 // Deutsche Bezeichnungen für Event-Typen
-function mapEventType(type) {
+function mapEventType(type, typeName) {
+    // Wenn ein typeName vorhanden ist (aus der Datenbank), verwende diesen
+    if (typeName) {
+        return typeName;
+    }
+
+    // Fallback auf hardcodierte Map für Legacy-Daten
     const map = {
         'earthquake': 'Erdbeben',
         'hurricane': 'Hurrikan',
@@ -1967,7 +2023,7 @@ function mapEventType(type) {
         'safety': 'Sicherheit',
         'environment': 'Umweltereignisse'
     };
-    
+
     const result = map[type?.toLowerCase()] || (type || 'Unbekannt');
     return result;
 }
@@ -2156,7 +2212,7 @@ async function loadEventDetails(event) {
             title: event.title,
             source: event.source,
             event_type: event.event_type,
-            mapped_type: mapEventType(event.event_type),
+            mapped_type: mapEventType(event.event_type, event.event_type_name),
             priority: event.priority,
             severity: event.severity,
             country: event.country,
@@ -2171,7 +2227,7 @@ async function loadEventDetails(event) {
                 <div class="event-header">
                     <h2 class="event-title">${event.title}</h2>
                     <div class="event-meta">
-                        <span class="event-type">${mapEventType(event.event_type)}</span>
+                        <span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>
                         <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>
                     </div>
                 </div>
@@ -2568,12 +2624,42 @@ function addMarkersToMap() {
     // Bestehende Marker entfernen
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
-    
+
     currentEvents.forEach(event => {
         if (event.latitude && event.longitude) {
-            const marker = createCustomMarker(event);
-            markers.push(marker);
-            marker.addTo(map);
+            // Check if event type should be shown based on filter
+            let shouldShow = true;
+
+            if (event.source === 'custom' && event.event_type_id) {
+                // CustomEvent with direct event_type_id
+                shouldShow = window.eventTypeFilter?.[event.event_type_id] ?? true;
+            } else {
+                // GDACS event - try to map to our event types by code
+                let eventTypeStr = (event.event_type || event.type || '').toLowerCase();
+
+                // Find matching event type by code or name
+                const matchedType = eventTypes.find(et => {
+                    const code = et.code.toLowerCase();
+                    const name = et.name.toLowerCase();
+                    return eventTypeStr.includes(code) || eventTypeStr.includes(name) ||
+                           (code === 'flood' && eventTypeStr.includes('überschwemmung')) ||
+                           (code === 'hurricane' && (eventTypeStr.includes('cyclone') || eventTypeStr.includes('zyklon'))) ||
+                           (code === 'wildfire' && (eventTypeStr.includes('fire') || eventTypeStr.includes('waldbrand'))) ||
+                           (code === 'volcano' && eventTypeStr.includes('vulkan')) ||
+                           (code === 'earthquake' && eventTypeStr.includes('erdbeben'));
+                });
+
+                if (matchedType) {
+                    shouldShow = window.eventTypeFilter?.[matchedType.id] ?? true;
+                }
+            }
+
+            // Only add marker if event type is enabled in filter
+            if (shouldShow) {
+                const marker = createCustomMarker(event);
+                markers.push(marker);
+                marker.addTo(map);
+            }
         }
     });
 }
@@ -2641,7 +2727,7 @@ function createPopupContent(event) {
 			<h3>${event.title}</h3>
 			<div class=\"info-row\">
 				<span class=\"info-label\">Typ:</span>
-				<span class=\"info-value\">${mapEventType(event.event_type)}</span>
+				<span class=\"info-value\">${mapEventType(event.event_type, event.event_type_name)}</span>
 			</div>
 			<div class=\"info-row\">
 				<span class=\"info-label\">Priorität:</span>
@@ -2831,6 +2917,9 @@ function toggleProviderFilter(key, btn) {
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
     }
     // Liste & Statistiken neu berechnen
+    // Check if any filters are active
+    checkActiveFilters();
+
     if (typeof loadDashboardData === 'function') {
         // Nur die Darstellung neu aufbauen, ohne erneut zu laden:
         try {
@@ -2848,6 +2937,9 @@ function toggleProviderFilter(key, btn) {
 function toggleRiskFilter(key, btn) {
     if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true, critical: true };
     window.riskFilter[key] = !window.riskFilter[key];
+
+    // Check if any filters are active
+    checkActiveFilters();
     
     // Button-Style toggeln mit prioritätsbasierten Farben
     if (window.riskFilter[key]) {
@@ -2881,7 +2973,7 @@ function toggleRiskFilter(key, btn) {
         }
     }
     
-    // Liste & Statistiken neu berechnen
+    // Liste & Statistiken neu berechnen und Karte aktualisieren
     if (typeof loadDashboardData === 'function') {
         try {
             const eventsList = document.getElementById('eventsList');
@@ -2889,45 +2981,100 @@ function toggleRiskFilter(key, btn) {
                 loadDashboardData();
             }
         } catch (e) { loadDashboardData(); }
+    }
+
+    // Karte neu zeichnen mit aktualisierten Filtern
+    if (typeof addMarkersToMap === 'function') {
+        addMarkersToMap();
     }
 }
 
-// Event Type Filter Toggle
-function toggleEventTypeFilter(key, btn) {
-    if (!window.eventTypeFilter) window.eventTypeFilter = { 
-        earthquake: true, tsunami: true, flood: true, 
-        cyclone: true, volcano: true, wildfire: true 
-    };
-    window.eventTypeFilter[key] = !window.eventTypeFilter[key];
-    
-    // Button-Style toggeln
-    if (window.eventTypeFilter[key]) {
-        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
-    } else {
-        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+// Load EventTypes from API
+async function loadEventTypes() {
+    try {
+        const response = await fetch('/api/custom-events/event-types');
+        const result = await response.json();
+
+        if (result.success) {
+            eventTypes = result.data;
+            initializeEventTypeFilters();
+        } else {
+            console.error('Failed to load event types:', result.message);
+        }
+    } catch (error) {
+        console.error('Error loading event types:', error);
     }
-    
-    // "Alle einblenden"/"Alle ausblenden" Button aktualisieren
+}
+
+// Initialize Event Type Filters
+function initializeEventTypeFilters() {
+    const container = document.getElementById('eventTypeButtons');
+    if (!container) return;
+
+    // Initialize the filter object with all event types enabled
+    window.eventTypeFilter = {};
+    eventTypes.forEach(eventType => {
+        window.eventTypeFilter[eventType.id] = true;
+    });
+
+    // Clear existing buttons except toggle all
+    container.innerHTML = '';
+
+    // Re-add toggle all button
+    const toggleAllBtn = document.createElement('button');
+    toggleAllBtn.type = 'button';
+    toggleAllBtn.id = 'toggleAllEventTypes';
+    toggleAllBtn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2';
+    toggleAllBtn.textContent = 'Alle ausblenden';
+    toggleAllBtn.onclick = toggleAllEventTypes;
+    container.appendChild(toggleAllBtn);
+
+    // Add buttons for each event type
+    eventTypes.forEach(eventType => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = `event-type-${eventType.id}`;
+        button.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black flex flex-col items-center justify-center gap-1 overflow-hidden';
+        button.innerHTML = `
+            <i class="fa ${eventType.icon} text-sm font-light"></i>
+            <span class="truncate w-full text-center px-1">${eventType.name}</span>
+        `;
+        button.title = eventType.name; // Tooltip für vollen Text
+        button.onclick = () => toggleEventTypeFilter(eventType.id, button);
+        container.appendChild(button);
+    });
+}
+
+// Event Type Filter Toggle
+function toggleEventTypeFilter(eventTypeId, btn) {
+    window.eventTypeFilter[eventTypeId] = !window.eventTypeFilter[eventTypeId];
+
+    // Toggle button style
+    if (window.eventTypeFilter[eventTypeId]) {
+        btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black flex flex-col items-center justify-center gap-1 overflow-hidden';
+    } else {
+        btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50 flex flex-col items-center justify-center gap-1 overflow-hidden';
+    }
+
+    // Check if any filters are active
+    checkActiveFilters();
+
+    // Update "All show/hide" button
     const toggleButton = document.getElementById('toggleAllEventTypes');
     if (toggleButton) {
-        const eventTypeKeys = ['earthquake', 'tsunami', 'flood', 'cyclone', 'volcano', 'wildfire'];
-        const allActive = eventTypeKeys.every(key => window.eventTypeFilter[key]);
-        const allInactive = eventTypeKeys.every(key => !window.eventTypeFilter[key]);
-        
+        const allActive = eventTypes.every(et => window.eventTypeFilter[et.id]);
+        const allInactive = eventTypes.every(et => !window.eventTypeFilter[et.id]);
+
         if (allActive) {
             toggleButton.textContent = 'Alle ausblenden';
-            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
-        } else if (allInactive) {
-            toggleButton.textContent = 'Alle einblenden';
-            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2';
         } else {
-            // Gemischter Zustand
             toggleButton.textContent = 'Alle einblenden';
-            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+            toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 col-span-2';
         }
     }
     
-    // Liste & Statistiken neu berechnen
+    // Liste & Statistiken neu berechnen und Karte aktualisieren
     if (typeof loadDashboardData === 'function') {
         try {
             const eventsList = document.getElementById('eventsList');
@@ -2935,6 +3082,11 @@ function toggleEventTypeFilter(key, btn) {
                 loadDashboardData();
             }
         } catch (e) { loadDashboardData(); }
+    }
+
+    // Karte neu zeichnen mit aktualisierten Filtern
+    if (typeof addMarkersToMap === 'function') {
+        addMarkersToMap();
     }
 }
 
@@ -3000,8 +3152,11 @@ function toggleTimePeriodFilter(key, btn) {
         window.timePeriodFilter = key;
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
     }
-    
-    // Liste & Statistiken neu berechnen
+
+    // Check if any filters are active
+    checkActiveFilters();
+
+    // Liste & Statistiken neu berechnen und Karte aktualisieren
     if (typeof loadDashboardData === 'function') {
         try {
             const eventsList = document.getElementById('eventsList');
@@ -3009,6 +3164,11 @@ function toggleTimePeriodFilter(key, btn) {
                 loadDashboardData();
             }
         } catch (e) { loadDashboardData(); }
+    }
+
+    // Karte neu zeichnen mit aktualisierten Filtern
+    if (typeof addMarkersToMap === 'function') {
+        addMarkersToMap();
     }
 }
 
@@ -3062,8 +3222,11 @@ function toggleAllRiskLevels() {
             }
         });
     }
-    
-    // Liste & Statistiken neu berechnen
+
+    // Check if any filters are active
+    checkActiveFilters();
+
+    // Liste & Statistiken neu berechnen und Karte aktualisieren
     if (typeof loadDashboardData === 'function') {
         try {
             const eventsList = document.getElementById('eventsList');
@@ -3071,60 +3234,48 @@ function toggleAllRiskLevels() {
                 loadDashboardData();
             }
         } catch (e) { loadDashboardData(); }
+    }
+
+    // Karte neu zeichnen mit aktualisierten Filtern
+    if (typeof addMarkersToMap === 'function') {
+        addMarkersToMap();
     }
 }
 
 // Event Type "Alle einblenden"/"Alle ausblenden" Toggle
 function toggleAllEventTypes() {
-    if (!window.eventTypeFilter) window.eventTypeFilter = { 
-        earthquake: true, tsunami: true, flood: true, 
-        cyclone: true, volcano: true, wildfire: true 
-    };
-    
     const toggleButton = document.getElementById('toggleAllEventTypes');
-    const eventTypeButtons = ['event-earthquake', 'event-tsunami', 'event-flood', 'event-cyclone', 'event-volcano', 'event-wildfire'];
-    const eventTypeKeys = ['earthquake', 'tsunami', 'flood', 'cyclone', 'volcano', 'wildfire'];
-    
-    // Prüfen ob alle Event-Typen aktiv sind
-    const allActive = eventTypeKeys.every(key => window.eventTypeFilter[key]);
-    
+
+    // Check if all event types are active
+    const allActive = eventTypes.every(et => window.eventTypeFilter[et.id]);
+
     if (allActive) {
-        // Alle deaktivieren (ausblenden)
+        // Deactivate all
         toggleButton.textContent = 'Alle einblenden';
-        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
-        
-        // Alle Event-Typen deaktivieren
-        eventTypeKeys.forEach(key => {
-            window.eventTypeFilter[key] = false;
-        });
-        
-        // Button-Styles auf inaktiv setzen
-        eventTypeButtons.forEach(id => {
-            const button = document.getElementById(id);
-            if (button) {
-                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 col-span-2';
+
+        eventTypes.forEach(eventType => {
+            window.eventTypeFilter[eventType.id] = false;
+            const btn = document.getElementById(`event-type-${eventType.id}`);
+            if (btn) {
+                btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50 flex flex-col items-center justify-center gap-1 overflow-hidden';
             }
         });
     } else {
-        // Alle aktivieren (einblenden)
+        // Activate all
         toggleButton.textContent = 'Alle ausblenden';
-        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
-        
-        // Alle Event-Typen aktivieren
-        eventTypeKeys.forEach(key => {
-            window.eventTypeFilter[key] = true;
-        });
-        
-        // Button-Styles auf aktiv setzen
-        eventTypeButtons.forEach(id => {
-            const button = document.getElementById(id);
-            if (button) {
-                button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+        toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2';
+
+        eventTypes.forEach(eventType => {
+            window.eventTypeFilter[eventType.id] = true;
+            const btn = document.getElementById(`event-type-${eventType.id}`);
+            if (btn) {
+                btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black flex flex-col items-center justify-center gap-1 overflow-hidden';
             }
         });
     }
     
-    // Liste & Statistiken neu berechnen
+    // Liste & Statistiken neu berechnen und Karte aktualisieren
     if (typeof loadDashboardData === 'function') {
         try {
             const eventsList = document.getElementById('eventsList');
@@ -3132,6 +3283,11 @@ function toggleAllEventTypes() {
                 loadDashboardData();
             }
         } catch (e) { loadDashboardData(); }
+    }
+
+    // Karte neu zeichnen mit aktualisierten Filtern
+    if (typeof addMarkersToMap === 'function') {
+        addMarkersToMap();
     }
 }
 
@@ -3221,7 +3377,7 @@ function createEventElement(event) {
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
-                        <span class="text-xs font-medium uppercase text-gray-800">${mapEventType(event.event_type)}</span>
+                        <span class="text-xs font-medium uppercase text-gray-800">${mapEventType(event.event_type, event.event_type_name)}</span>
                     </div>
                     <div>${rightHtml}</div>
                 </div>
@@ -3297,18 +3453,20 @@ function toggleAllContinents() {
         
         // Filter zurücksetzen
         window.selectedContinents = new Set();
+        checkActiveFilters(); // Check filters after deactivating all
         filterEventsByContinent();
     } else {
         // Alle Kontinente aktivieren
         toggleButton.textContent = 'Alle ausblenden';
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
-        
+
         continentButtons.forEach(button => {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         });
-        
+
         // Alle Kontinente zur Auswahl hinzufügen
         window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]); // Alle Kontinent-IDs
+        checkActiveFilters(); // Check filters after activating all
         filterEventsByContinent();
     }
 }
@@ -3348,9 +3506,12 @@ function selectContinent(continentId) {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 font-medium';
     }
     
+    // Check if any filters are active
+    checkActiveFilters();
+
     // Events nach Kontinent filtern
     filterEventsByContinent();
-    
+
     console.log(`Selected continents: ${Array.from(window.selectedContinents).join(', ') || 'none'}`);
 }
 
@@ -3861,7 +4022,10 @@ function addCountryToFilter(countryName) {
     
     // Ausgewählte Länder anzeigen
     renderSelectedCountries();
-    
+
+    // Check if any filters are active
+    checkActiveFilters();
+
     // Events nach Ländern filtern
     filterEventsByCountry();
 }
@@ -3874,7 +4038,10 @@ function removeCountryFromFilter(countryName) {
     
     // Ausgewählte Länder anzeigen
     renderSelectedCountries();
-    
+
+    // Check if any filters are active
+    checkActiveFilters();
+
     // Events nach Ländern filtern
     filterEventsByCountry();
 }
@@ -3914,7 +4081,10 @@ function clearAllCountryFilters() {
     
     // Ausgewählte Länder anzeigen
     renderSelectedCountries();
-    
+
+    // Check if any filters are active
+    checkActiveFilters();
+
     // Events nach Ländern filtern
     filterEventsByCountry();
 }
@@ -4048,6 +4218,114 @@ function escapeHtml(str) {
 
 function escapeForAttr(str) {
     return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// Check if any filters are active (kept for potential future use)
+function checkActiveFilters() {
+    // Link is now always visible, so this function is no longer needed
+    // Kept empty to avoid breaking existing calls
+}
+
+// Reset all filters to default
+function resetAllFilters() {
+    // Reset Event Type filters - all active by default
+    if (eventTypes && eventTypes.length > 0) {
+        window.eventTypeFilter = {};
+        eventTypes.forEach(eventType => {
+            window.eventTypeFilter[eventType.id] = true;
+            const btn = document.getElementById(`event-type-${eventType.id}`);
+            if (btn) {
+                btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black flex flex-col items-center justify-center gap-1 overflow-hidden';
+            }
+        });
+    }
+
+    // Update Event Type toggle all button
+    const toggleAllBtn = document.getElementById('toggleAllEventTypes');
+    if (toggleAllBtn) {
+        toggleAllBtn.textContent = 'Alle ausblenden';
+        toggleAllBtn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2';
+    }
+
+    // Reset Risk filters - all active by default
+    window.riskFilter = { green: true, orange: true, red: true, critical: true };
+    ['green', 'orange', 'red', 'critical'].forEach(risk => {
+        const btn = document.getElementById(`risk-${risk}`);
+        if (btn) {
+            const colorStyle = risk === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
+                               risk === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
+                               risk === 'red' ? 'background-color: #ff0000; border-color: #ff0000;' :
+                               'background-color: #8b0000; border-color: #8b0000;';
+            btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
+            btn.style = colorStyle;
+        }
+    });
+
+    // Update Risk toggle all button
+    const toggleAllRiskBtn = document.getElementById('toggleAllRiskLevels');
+    if (toggleAllRiskBtn) {
+        toggleAllRiskBtn.textContent = 'Alle ausblenden';
+        toggleAllRiskBtn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2';
+    }
+
+    // Reset Provider filters - based on GDACS_ENABLED configuration
+    window.providerFilter = { gdacs: window.GDACS_ENABLED, custom: true };
+    const gdacsBtn = document.getElementById('provider-gdacs');
+    const customBtn = document.getElementById('provider-custom');
+    if (gdacsBtn) {
+        gdacsBtn.className = window.GDACS_ENABLED ?
+            'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black' :
+            'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+    }
+    if (customBtn) {
+        customBtn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+    }
+
+    // Reset Time Period filter - 'all' is default
+    window.timePeriodFilter = 'all';
+    const allPeriodBtn = document.getElementById('period-all');
+    const period7Btn = document.getElementById('period-7days');
+    const period30Btn = document.getElementById('period-30days');
+
+    if (allPeriodBtn) {
+        allPeriodBtn.textContent = 'Alle ausblenden';
+        allPeriodBtn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+    }
+    if (period7Btn) {
+        period7Btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+    }
+    if (period30Btn) {
+        period30Btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+    }
+
+    // Reset Country filters - empty by default
+    window.selectedCountries = new Set();
+    const countryDisplay = document.getElementById('selectedCountriesFilterDisplay');
+    if (countryDisplay) countryDisplay.innerHTML = '';
+
+    // Reset Continent filters - all 7 continents active by default
+    window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+    // Update continent buttons
+    document.querySelectorAll('[id^="continent-"]').forEach(btn => {
+        btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+    });
+
+    // Update Continent toggle all button
+    const toggleAllContinentsBtn = document.getElementById('toggleAllContinents');
+    if (toggleAllContinentsBtn) {
+        toggleAllContinentsBtn.textContent = 'Alle ausblenden';
+        toggleAllContinentsBtn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2';
+    }
+
+    // Reset link is now always visible, no need to hide it
+
+    // Reload data and map
+    if (typeof loadDashboardData === 'function') {
+        loadDashboardData();
+    }
+    if (typeof addMarkersToMap === 'function') {
+        addMarkersToMap();
+    }
 }
 
 // Dropdowns für Länder/Kontinente initial befüllen

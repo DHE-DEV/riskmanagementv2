@@ -34,10 +34,28 @@ class CustomEventsTable
                     ->searchable()
                     ->sortable()
                     ->placeholder('Nicht zugeordnet'),
-                
+
                 TextColumn::make('category')
                     ->label('Kategorie')
                     ->searchable(),
+
+                TextColumn::make('data_source')
+                    ->label('Quelle')
+                    ->formatStateUsing(fn (?string $state): string => match($state) {
+                        'manual' => 'Manuell',
+                        'passolution_infosystem' => 'PDS Infosystem',
+                        'api_import' => 'API Import',
+                        'other' => 'Andere',
+                        default => 'Manuell'
+                    })
+                    ->badge()
+                    ->color(fn (?string $state): string => match($state) {
+                        'manual' => 'gray',
+                        'passolution_infosystem' => 'success',
+                        'api_import' => 'info',
+                        'other' => 'warning',
+                        default => 'gray'
+                    }),
                 
                 TextColumn::make('priority')
                     ->label('Priorität')

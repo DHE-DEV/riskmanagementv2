@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InfosystemEntry extends Model
 {
@@ -25,6 +26,9 @@ class InfosystemEntry extends Model
         'content',
         'archive',
         'active',
+        'is_published',
+        'published_at',
+        'published_as_event_id',
         'api_created_at',
         'request_id',
         'response_time',
@@ -34,6 +38,8 @@ class InfosystemEntry extends Model
         'country_names' => 'array',
         'archive' => 'boolean',
         'active' => 'boolean',
+        'is_published' => 'boolean',
+        'published_at' => 'datetime',
         'tagdate' => 'date',
         'api_created_at' => 'datetime',
     ];
@@ -108,5 +114,29 @@ class InfosystemEntry extends Model
     public function getPreview(): string
     {
         return \Str::limit($this->content, 150);
+    }
+
+    /**
+     * Get the published event
+     */
+    public function publishedEvent(): BelongsTo
+    {
+        return $this->belongsTo(CustomEvent::class, 'published_as_event_id');
+    }
+
+    /**
+     * Scope to get only published entries
+     */
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true);
+    }
+
+    /**
+     * Scope to get only unpublished entries
+     */
+    public function scopeUnpublished($query)
+    {
+        return $query->where('is_published', false);
     }
 }

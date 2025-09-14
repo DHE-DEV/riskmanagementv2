@@ -21,7 +21,11 @@ class RegionForm
                 
                 Select::make('country_id')
                     ->label('Land')
-                    ->options(Country::pluck('name', 'id'))
+                    ->options(function () {
+                        return Country::all()->mapWithKeys(function ($country) {
+                            return [$country->id => $country->getName('de')];
+                        })->toArray();
+                    })
                     ->required()
                     ->searchable(),
                 

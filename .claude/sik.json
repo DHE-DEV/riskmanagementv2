@@ -1,0 +1,140 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull:*)",
+      "Bash(php artisan serve:*)",
+      "Bash(php artisan test:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(composer show:*)",
+      "Bash(find:*)",
+      "Bash(./vendor/bin/pest:*)",
+      "Bash(php vendor/bin/pest:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(php artisan make:filament-page:*)",
+      "Bash(mkdir:*)",
+      "Bash(timeout:*)",
+      "Bash(true)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan make:model:*)",
+      "Bash(php artisan:*)",
+      "Bash(mv:*)",
+      "Bash(php:*)",
+      "Bash(rm:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(node:*)",
+      "Bash(sed:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npm run test:*)",
+      "Bash(git commit:*)",
+      "Bash(herd:*)",
+      "Bash(herd php:*)",
+      "Bash(herd restart:*)"
+    ],
+    "deny": []
+  },
+  "mcpServers": {
+    "playwright-chromium": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/Playwright",
+        "--browser=chromium",
+        "--viewport-width=1920",
+        "--viewport-height=1080"
+      ]
+    },
+    "playwright-firefox": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/Playwright",
+        "--browser=firefox",
+        "--viewport-width=1920",
+        "--viewport-height=1080"
+      ]
+    },
+    "playwright-webkit": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/Playwright",
+        "--browser=webkit",
+        "--viewport-width=1920",
+        "--viewport-height=1080"
+      ]
+    },
+    "firecrawl": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/firecrawl",
+        "--api-key=fc-30b4243fcae8444c9e1f75eb5a365afd"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/context7",
+        "--api-key=ctx7sk-705b2d39-2d8e-40e8-9b35-fa96929d0a25"
+      ]
+    },
+    "mysql": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/mysql",
+        "--host=127.0.0.1",
+        "--port=3306",
+        "--user=${DB_USER}",
+        "--password=${DB_PASSWORD}",
+        "--database=${DB_NAME}"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/fs",
+        "--root=."
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/git",
+        "--repo=."
+      ]
+    },
+    "openapi": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/openapi",
+        "--spec=./openapi.yaml",
+        "--base-url=${API_BASE_URL}"
+      ]
+    },
+    "rest": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/http",
+        "--base-url=${API_BASE_URL}",
+        "--auth-header=Authorization:Bearer ${API_TOKEN}"
+      ]
+    },
+    "redis": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/redis",
+        "--host=127.0.0.1",
+        "--port=6379",
+        "--password=null"
+      ]
+    },
+    "meilisearch": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/meilisearch",
+        "--host=http://127.0.0.1:7700",
+        "--api-key=LARAVEL-HERD"
+      ]
+    }
+  }
+}

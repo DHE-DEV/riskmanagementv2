@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Cities\Schemas;
 use App\Models\Country;
 use App\Models\Region;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -23,7 +23,11 @@ class CityForm
                 
                 Select::make('country_id')
                     ->label('Land')
-                    ->options(Country::pluck('name', 'id'))
+                    ->options(function () {
+                        return Country::all()->mapWithKeys(function ($country) {
+                            return [$country->id => $country->getName('de')];
+                        })->toArray();
+                    })
                     ->required()
                     ->searchable()
                     ->live()
@@ -36,7 +40,9 @@ class CityForm
                         if (!$countryId) {
                             return [];
                         }
-                        return Region::where('country_id', $countryId)->pluck('name', 'id');
+                        return Region::where('country_id', $countryId)->get()->mapWithKeys(function ($region) {
+                            return [$region->id => $region->getName('de')];
+                        })->toArray();
                     })
                     ->searchable(),
                 

@@ -41,6 +41,7 @@ Route::prefix('custom-events')->group(function () {
     Route::get('/dashboard-events', [CustomEventController::class, 'getDashboardEvents'])->name('custom-events.dashboard-events');
     Route::get('/map-events', [CustomEventController::class, 'getMapEvents'])->name('custom-events.map-events');
     Route::get('/statistics', [CustomEventController::class, 'getStatistics'])->name('custom-events.statistics');
+    Route::get('/event-types', [CustomEventController::class, 'getEventTypes'])->name('custom-events.event-types');
 });
 
 // Airports search

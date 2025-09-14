@@ -24,7 +24,7 @@ class CustomEventResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    protected static ?string $navigationLabel = 'Manuelle Events';
+    protected static ?string $navigationLabel = 'Passolution Events';
 
     protected static ?string $modelLabel = 'Manuelles Event';
 

@@ -54,7 +54,6 @@ class CustomEventForm
                         'codeBlock',
                     ])
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
-                    ->placeholder('Beschreiben Sie hier den Inhalt, der im Popup angezeigt werden soll...')
                     ->columnSpanFull(),
 
                 Select::make('event_type_id')
@@ -244,6 +243,25 @@ class CustomEventForm
                     ->default('medium')
                     ->helperText('Größe des Markers auf der Karte')
                     ->hidden(),
+
+                // Datenquelle am Ende
+                Select::make('data_source')
+                    ->label('Datenquelle')
+                    ->options([
+                        'manual' => 'Manuell erfasst',
+                        'passolution_infosystem' => 'Passolution Infosystem',
+                        'api_import' => 'API Import',
+                        'other' => 'Andere',
+                    ])
+                    ->default('manual')
+                    ->disabled()
+                    ->dehydrated(),
+
+                TextInput::make('data_source_id')
+                    ->label('Datenquellen-ID')
+                    ->disabled()
+                    ->dehydrated()
+                    ->helperText('Referenz-ID aus der Ursprungsdatenquelle'),
 
             ]);
     }

@@ -17,6 +17,8 @@ class CustomEvent extends Model
         'event_type',
         'event_type_id',
         'event_category_id',
+        'data_source',
+        'data_source_id',
         'country_id',
         'latitude',
         'longitude',

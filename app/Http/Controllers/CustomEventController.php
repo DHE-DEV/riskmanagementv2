@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CustomEvent;
+use App\Models\EventType;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -17,6 +18,12 @@ class CustomEventController extends Controller
             $events = CustomEvent::where('is_active', true)
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
+                ->where(function ($query) {
+                    $query->whereHas('eventType', function ($subQuery) {
+                        $subQuery->where('is_active', true);
+                    })
+                    ->orWhereNull('event_type_id');
+                })
                 ->with(['creator', 'updater', 'country', 'eventType'])
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -29,6 +36,8 @@ class CustomEventController extends Controller
                         'title' => $event->title,
                         'description' => $event->description,
                         'event_type' => $event->getCorrectEventType(),
+                        'event_type_id' => $event->event_type_id,
+                        'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',
                         'country_relation' => $event->country,
                         'latitude' => $event->latitude,
@@ -78,6 +87,12 @@ class CustomEventController extends Controller
             $events = CustomEvent::where('is_active', true)
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
+                ->where(function ($query) {
+                    $query->whereHas('eventType', function ($subQuery) {
+                        $subQuery->where('is_active', true);
+                    })
+                    ->orWhereNull('event_type_id');
+                })
                 ->with(['country', 'eventType'])
                 ->get()
                 ->map(function ($event) {
@@ -89,6 +104,8 @@ class CustomEventController extends Controller
                         'title' => $event->title,
                         'description' => $event->description,
                         'event_type' => $event->getCorrectEventType(),
+                        'event_type_id' => $event->event_type_id,
+                        'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),
@@ -125,22 +142,55 @@ class CustomEventController extends Controller
     public function getStatistics(): JsonResponse
     {
         try {
+            // Query for events with active event types or no event type
+            $activeEventTypeQuery = CustomEvent::where(function ($query) {
+                $query->whereHas('eventType', function ($subQuery) {
+                    $subQuery->where('is_active', true);
+                })
+                ->orWhereNull('event_type_id');
+            });
+
             $stats = [
-                'total_events' => CustomEvent::count(),
-                'active_events' => CustomEvent::where('is_active', true)->count(),
+                'total_events' => $activeEventTypeQuery->count(),
+                'active_events' => (clone $activeEventTypeQuery)->where('is_active', true)->count(),
                 'events_by_type' => CustomEvent::selectRaw('event_type, count(*) as count')
+                    ->where(function ($query) {
+                        $query->whereHas('eventType', function ($subQuery) {
+                            $subQuery->where('is_active', true);
+                        })
+                        ->orWhereNull('event_type_id');
+                    })
                     ->groupBy('event_type')
                     ->pluck('count', 'event_type')
                     ->toArray(),
                 'events_by_priority' => CustomEvent::selectRaw('priority, count(*) as count')
+                    ->where(function ($query) {
+                        $query->whereHas('eventType', function ($subQuery) {
+                            $subQuery->where('is_active', true);
+                        })
+                        ->orWhereNull('event_type_id');
+                    })
                     ->groupBy('priority')
                     ->pluck('count', 'priority')
                     ->toArray(),
                 'events_by_severity' => CustomEvent::selectRaw('severity, count(*) as count')
+                    ->where(function ($query) {
+                        $query->whereHas('eventType', function ($subQuery) {
+                            $subQuery->where('is_active', true);
+                        })
+                        ->orWhereNull('event_type_id');
+                    })
                     ->groupBy('severity')
                     ->pluck('count', 'severity')
                     ->toArray(),
-                'recent_events' => CustomEvent::where('created_at', '>=', now()->subDays(7))->count(),
+                'recent_events' => CustomEvent::where(function ($query) {
+                        $query->whereHas('eventType', function ($subQuery) {
+                            $subQuery->where('is_active', true);
+                        })
+                        ->orWhereNull('event_type_id');
+                    })
+                    ->where('created_at', '>=', now()->subDays(7))
+                    ->count(),
             ];
 
             return response()->json([
@@ -157,13 +207,44 @@ class CustomEventController extends Controller
     }
 
     /**
+     * Get all event types for filtering
+     */
+    public function getEventTypes(): JsonResponse
+    {
+        try {
+            $eventTypes = EventType::where('is_active', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(function ($eventType) {
+                    return [
+                        'id' => $eventType->id,
+                        'code' => $eventType->code,
+                        'name' => $eventType->name,
+                        'color' => $eventType->color,
+                        'icon' => $eventType->icon,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $eventTypes,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load event types: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get marker color based on priority
      */
     private function getPriorityColor(string $priority): string
     {
         return match(strtolower($priority)) {
             'low' => '#0fb67f',     // Grün - geringes Risiko
-            'medium' => '#e6a50a',  // Orange - mittleres Risiko  
+            'medium' => '#e6a50a',  // Orange - mittleres Risiko
             'high' => '#ff0000',    // Rot - hohes Risiko
             'critical' => '#8b0000', // Dunkelrot - kritisches Risiko
             default => '#e6a50a'    // Orange als Fallback

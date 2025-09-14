@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\Log;
 class PassolutionApiService
 {
     private string $baseUrl;
+
     private ?string $apiKey;
+
     private ?string $apiSecret;
+
     private array $headers;
 
     public function __construct()
@@ -26,7 +29,7 @@ class PassolutionApiService
 
         // Use API Key as Bearer Token
         if ($this->apiKey) {
-            $this->headers['Authorization'] = 'Bearer ' . $this->apiKey;
+            $this->headers['Authorization'] = 'Bearer '.$this->apiKey;
         }
     }
 
@@ -35,7 +38,7 @@ class PassolutionApiService
      */
     public function hasValidCredentials(): bool
     {
-        return !empty($this->apiKey);
+        return ! empty($this->apiKey);
     }
 
     /**
@@ -43,9 +46,9 @@ class PassolutionApiService
      */
     public function fetchGeneralInfo(string $lang = 'de', int $page = 1): array
     {
-        if (!$this->hasValidCredentials()) {
+        if (! $this->hasValidCredentials()) {
             Log::warning('Passolution API credentials not configured');
-            
+
             return [
                 'success' => false,
                 'error' => 'API-Zugangsdaten nicht konfiguriert. Bitte setzen Sie PASSOLUTION_API_KEY in der .env Datei.',
@@ -61,7 +64,7 @@ class PassolutionApiService
                     'page' => $page,
                 ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::error('Passolution API request failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
@@ -70,7 +73,7 @@ class PassolutionApiService
 
                 return [
                     'success' => false,
-                    'error' => 'API request failed with status: ' . $response->status(),
+                    'error' => 'API request failed with status: '.$response->status(),
                     'data' => null,
                 ];
             }
@@ -98,7 +101,7 @@ class PassolutionApiService
 
             return [
                 'success' => false,
-                'error' => 'API request failed: ' . $e->getMessage(),
+                'error' => 'API request failed: '.$e->getMessage(),
                 'data' => null,
             ];
         }
@@ -109,7 +112,7 @@ class PassolutionApiService
      */
     public function storeApiData(array $apiResponse): int
     {
-        if (!isset($apiResponse['result']['data'])) {
+        if (! isset($apiResponse['result']['data'])) {
             return 0;
         }
 
@@ -167,7 +170,7 @@ class PassolutionApiService
     {
         $apiResponse = $this->fetchGeneralInfo($lang, $page);
 
-        if (!$apiResponse['success']) {
+        if (! $apiResponse['success']) {
             return $apiResponse;
         }
 
@@ -181,6 +184,74 @@ class PassolutionApiService
             'last_page' => $apiResponse['data']['result']['last_page'] ?? 1,
             'request_id' => $apiResponse['request_id'],
             'response_time' => $apiResponse['response_time'],
+        ];
+    }
+
+    /**
+     * Fetch and store multiple pages of data
+     */
+    public function fetchAndStoreMultiple(string $lang = 'de', int $limit = 100): array
+    {
+        $totalStored = 0;
+        $page = 1;
+        $errors = [];
+        $lastPage = null;
+
+        Log::info('Starting multi-page fetch', ['limit' => $limit, 'lang' => $lang]);
+
+        while ($totalStored < $limit) {
+            $apiResponse = $this->fetchGeneralInfo($lang, $page);
+
+            if (! $apiResponse['success']) {
+                $errors[] = "Page {$page}: ".($apiResponse['error'] ?? 'Unknown error');
+                Log::error('Failed to fetch page', ['page' => $page, 'error' => $apiResponse['error'] ?? 'Unknown']);
+                break;
+            }
+
+            $data = $apiResponse['data'];
+            $lastPage = $data['result']['last_page'] ?? 1;
+            $currentPageItems = count($data['result']['data'] ?? []);
+
+            if ($currentPageItems === 0) {
+                Log::info('No more data available', ['page' => $page]);
+                break;
+            }
+
+            // Store only the amount we need to reach the limit
+            $itemsToStore = min($currentPageItems, $limit - $totalStored);
+            if ($itemsToStore < $currentPageItems) {
+                // Slice the data array to store only what we need
+                $data['result']['data'] = array_slice($data['result']['data'], 0, $itemsToStore);
+            }
+
+            $stored = $this->storeApiData($data);
+            $totalStored += $stored;
+
+            Log::info('Fetched and stored page', [
+                'page' => $page,
+                'stored' => $stored,
+                'total_stored' => $totalStored,
+                'limit' => $limit,
+            ]);
+
+            // Check if we've reached the last page or our limit
+            if ($page >= $lastPage || $totalStored >= $limit) {
+                break;
+            }
+
+            $page++;
+
+            // Add a small delay to avoid overwhelming the API
+            usleep(500000); // 0.5 seconds
+        }
+
+        return [
+            'success' => $totalStored > 0,
+            'stored' => $totalStored,
+            'pages_fetched' => $page,
+            'last_page' => $lastPage,
+            'errors' => $errors,
+            'limit' => $limit,
         ];
     }
 

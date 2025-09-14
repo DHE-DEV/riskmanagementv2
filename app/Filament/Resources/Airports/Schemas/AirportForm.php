@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Airports\Schemas;
 use App\Models\City;
 use App\Models\Country;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -45,7 +45,11 @@ class AirportForm
                 
                 Select::make('country_id')
                     ->label('Land')
-                    ->options(Country::pluck('name', 'id'))
+                    ->options(function () {
+                        return Country::all()->mapWithKeys(function ($country) {
+                            return [$country->id => $country->getName('de')];
+                        })->toArray();
+                    })
                     ->required()
                     ->searchable()
                     ->live()
@@ -58,7 +62,9 @@ class AirportForm
                         if (!$countryId) {
                             return [];
                         }
-                        return City::where('country_id', $countryId)->pluck('name', 'id');
+                        return City::where('country_id', $countryId)->get()->mapWithKeys(function ($city) {
+                            return [$city->id => $city->getName('de')];
+                        })->toArray();
                     })
                     ->required()
                     ->searchable(),
