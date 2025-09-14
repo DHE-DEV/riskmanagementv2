@@ -825,6 +825,30 @@
     <!-- GDACS Configuration -->
     <script>
         window.GDACS_ENABLED = {{ config('app.gdacs_enabled') ? 'true' : 'false' }};
+
+        // Check for hide parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hideParam = urlParams.get('hide');
+
+            if (hideParam === 'hf') {
+                // Hide header and footer
+                const header = document.querySelector('.header');
+                const footer = document.querySelector('.footer');
+                const mainContent = document.querySelector('.main-content');
+
+                if (header) {
+                    header.style.display = 'none';
+                }
+                if (footer) {
+                    footer.style.display = 'none';
+                }
+                if (mainContent) {
+                    // Adjust main content to use full height
+                    mainContent.style.height = '100vh';
+                }
+            }
+        });
     </script>
 </head>
 <body>
