@@ -30,6 +30,8 @@ class CustomEvent extends Model
         'start_date',
         'end_date',
         'is_active',
+        'archived',
+        'archived_at',
         'priority',
         'severity',
         'category',
@@ -44,6 +46,8 @@ class CustomEvent extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'is_active' => 'boolean',
+        'archived' => 'boolean',
+        'archived_at' => 'datetime',
         'tags' => 'array',
     ];
 
@@ -136,6 +140,50 @@ class CustomEvent extends Model
     }
 
     /**
+     * Scope a query to only include non-archived events.
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->where('archived', false);
+    }
+
+    /**
+     * Scope a query to only include archived events.
+     */
+    public function scopeArchived($query)
+    {
+        return $query->where('archived', true);
+    }
+
+    /**
+     * Scope a query to include visible events (active and not expired archived).
+     * Archived events are visible for 1 year after their end_date.
+     */
+    public function scopeVisible($query)
+    {
+        return $query->where('is_active', true)
+            ->where(function ($q) {
+                // Nicht-archivierte Events
+                $q->where('archived', false)
+                  // Oder archivierte Events, die noch nicht abgelaufen sind
+                  ->orWhere(function ($subQ) {
+                      $subQ->where('archived', true)
+                           ->where(function ($dateQ) {
+                               // Events mit Enddatum: 1 Jahr nach Enddatum noch sichtbar
+                               $dateQ->whereNotNull('end_date')
+                                     ->where('end_date', '>=', now()->subYear())
+                               // Events ohne Enddatum: 1 Jahr nach Archivierungsdatum noch sichtbar
+                               ->orWhere(function ($archQ) {
+                                   $archQ->whereNull('end_date')
+                                         ->whereNotNull('archived_at')
+                                         ->where('archived_at', '>=', now()->subYear());
+                               });
+                           });
+                  });
+            });
+    }
+
+    /**
      * Scope a query to only include events within a date range.
      */
     public function scopeInDateRange($query, $startDate, $endDate)
@@ -187,7 +235,6 @@ class CustomEvent extends Model
             'low' => 'Niedrig',
             'medium' => 'Mittel',
             'high' => 'Hoch',
-            'critical' => 'Kritisch',
         ];
     }
 
@@ -228,7 +275,70 @@ class CustomEvent extends Model
             'low' => 'Niedrig',
             'medium' => 'Mittel',
             'high' => 'Hoch',
-            'critical' => 'Kritisch',
         ];
+    }
+
+    /**
+     * Archive the event.
+     */
+    public function archive(): void
+    {
+        $this->update([
+            'archived' => true,
+            'archived_at' => now(),
+        ]);
+    }
+
+    /**
+     * Unarchive the event.
+     */
+    public function unarchive(): void
+    {
+        $this->update([
+            'archived' => false,
+            'archived_at' => null,
+        ]);
+    }
+
+    /**
+     * Check if the event is still visible (considering archive rules).
+     */
+    public function isVisible(): bool
+    {
+        if (!$this->is_active) {
+            return false;
+        }
+
+        if (!$this->archived) {
+            return true;
+        }
+
+        // For archived events, check if they're still within the 1-year visibility period
+        $referenceDate = $this->end_date ?: $this->archived_at;
+
+        if (!$referenceDate) {
+            return false;
+        }
+
+        return $referenceDate->gte(now()->subYear());
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Automatically set archived_at when archiving
+        static::updating(function ($event) {
+            if ($event->isDirty('archived')) {
+                if ($event->archived && !$event->archived_at) {
+                    $event->archived_at = now();
+                } elseif (!$event->archived) {
+                    $event->archived_at = null;
+                }
+            }
+        });
     }
 }

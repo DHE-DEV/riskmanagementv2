@@ -115,6 +115,25 @@ class CustomEventForm
                     ->default(true)
                     ->helperText('Event auf der Karte anzeigen'),
 
+                Toggle::make('archived')
+                    ->label('Archiviert')
+                    ->default(false)
+                    ->helperText('Archivierte Events werden noch 1 Jahr nach dem Enddatum auf der Karte angezeigt')
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, $state) {
+                        if ($state) {
+                            $set('archived_at', now());
+                        } else {
+                            $set('archived_at', null);
+                        }
+                    }),
+
+                DateTimePicker::make('archived_at')
+                    ->label('Archiviert am')
+                    ->displayFormat('d.m.Y H:i')
+                    ->disabled()
+                    ->visible(fn (Get $get): bool => (bool) $get('archived')),
+
                 DateTimePicker::make('start_date')
                     ->label('Startdatum')
                     ->required()

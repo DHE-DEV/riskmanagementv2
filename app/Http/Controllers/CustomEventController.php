@@ -15,7 +15,7 @@ class CustomEventController extends Controller
     public function getDashboardEvents(): JsonResponse
     {
         try {
-            $events = CustomEvent::where('is_active', true)
+            $events = CustomEvent::visible()
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where(function ($query) {
@@ -54,6 +54,8 @@ class CustomEventController extends Controller
                         'category' => $event->category,
                         'tags' => $event->tags,
                         'is_active' => $event->is_active,
+                        'archived' => $event->archived,
+                        'archived_at' => $event->archived_at,
                         'created_at' => $event->created_at,
                         'updated_at' => $event->updated_at,
                         'creator_name' => $event->creator?->name,
@@ -84,7 +86,7 @@ class CustomEventController extends Controller
     public function getMapEvents(): JsonResponse
     {
         try {
-            $events = CustomEvent::where('is_active', true)
+            $events = CustomEvent::visible()
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where(function ($query) {
@@ -118,6 +120,8 @@ class CustomEventController extends Controller
                         'severity' => $event->severity,
                         'category' => $event->category,
                         'tags' => $event->tags,
+                        'archived' => $event->archived,
+                        'archived_at' => $event->archived_at,
                         'start_date' => optional($event->start_date)?->toDateTimeString(),
                         'end_date' => $event->end_date,
                     ];

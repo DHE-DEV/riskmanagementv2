@@ -1090,7 +1090,6 @@
                                 <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0fb67f; border-color: #0fb67f;" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
                                 <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #e6a50a; border-color: #e6a50a;" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
                                 <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #ff0000; border-color: #ff0000;" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
-                                <button type="button" id="risk-critical" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #8b0000; border-color: #8b0000;" data-risk="critical" onclick="toggleRiskFilter('critical', this)">Kritisch</button>
                             </div>
                         </div>
                     </div>
@@ -1434,11 +1433,11 @@
                     <div class="space-y-3">
                         <div class="flex items-center space-x-3">
                             <div class="w-3 h-3 rounded-full" style="background-color: #ff0000;"></div>
-                            <span class="text-sm text-gray-700 font-medium">Kritisches Risiko</span>
+                            <span class="text-sm text-gray-700 font-medium">Hohes Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
                             <div class="w-3 h-3 rounded-full" style="background-color: #e6a50a;"></div>
-                            <span class="text-sm text-gray-700 font-medium">Hohes Risiko</span>
+                            <span class="text-sm text-gray-700 font-medium">Mittleres Risiko</span>
                         </div>
                         <div class="flex items-center space-x-3">
                             <div class="w-3 h-3 rounded-full" style="background-color: #0fb67f;"></div>
@@ -1476,8 +1475,8 @@
                 <a href="#" class="hover:text-blue-300 transition-colors">API-Dokumentation</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.9</span>
-                <span>Build: 2025-09-14</span>
+                <span>Version 1.0.10/span>
+                <span>Build: 2025-09-17</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
         </div>
@@ -1688,7 +1687,6 @@ async function loadDashboardData() {
                 if (priority === 'low') riskLevel = 'green';
                 else if (priority === 'medium') riskLevel = 'orange';
                 else if (priority === 'high') riskLevel = 'red';
-                else if (priority === 'critical') riskLevel = 'critical';
                 else riskLevel = 'green';
             } else if (typeof riskLevel === 'string') {
                 riskLevel = riskLevel.toLowerCase();
@@ -2057,8 +2055,7 @@ function mapPriority(priority) {
     const map = {
         'low': 'Niedrig',
         'medium': 'Mittel',
-        'high': 'Hoch',
-        'critical': 'Kritisch'
+        'high': 'Hoch'
     };
     return map[priority] || priority || 'Unbekannt';
 }
@@ -2096,7 +2093,6 @@ function getPriorityColor(priority) {
         'low': '#0fb67f',     // Grün - geringes Risiko
         'medium': '#e6a50a',  // Orange - mittleres Risiko
         'high': '#ff0000',    // Rot - hohes Risiko
-        'critical': '#8b0000', // Dunkelrot - kritisches Risiko
         // Auch severity-Werte für GDACS Events unterstützen
         'green': '#0fb67f',
         'yellow': '#e6a50a',
@@ -2253,6 +2249,7 @@ async function loadEventDetails(event) {
                     <div class="event-meta">
                         <span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>
                         <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>
+                        ${event.archived ? '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-warning text-white ml-2" style="background-color: #f59e0b">Archiviert</span>' : ''}
                     </div>
                 </div>
                 ${event.description ? `
@@ -2299,6 +2296,26 @@ async function loadEventDetails(event) {
                         <span class="info-label">Quelle:</span>
                         <span class="info-value">${event.source === 'custom' ? '<img src="/Passolution-Logo-klein.png" alt="Passolution" style="height:14px; vertical-align:middle;" />' : 'GDACS'}</span>
                     </div>
+                    ${event.archived ? `
+                    <div class="info-item col-span-2">
+                        <span class="info-label">Archiviert am:</span>
+                        <span class="info-value">${event.archived_at ? formatDateTimeDE(event.archived_at) : 'Unbekannt'}</span>
+                    </div>
+                    <div class="info-item col-span-2">
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mt-2">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        Dieses archivierte Event wird noch bis ${event.end_date ? formatDateTimeDE(new Date(new Date(event.end_date).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()) : (event.archived_at ? formatDateTimeDE(new Date(new Date(event.archived_at).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()) : 'unbekannt')} auf der Karte angezeigt.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
         `;
         
@@ -2746,9 +2763,15 @@ function createPopupContent(event) {
 	const sourceValue = event.source === 'custom'
 		? '<img src=\"/Passolution-Logo-klein.png\" alt=\"Passolution\" style=\"height:14px; vertical-align:middle;\" />'
 		: 'GDACS';
+
+	// Archivierungsstatus-Badge
+	const archivedBadge = event.archived
+		? '<span class="badge bg-warning text-white ml-2" style="font-size: 11px; padding: 2px 6px; border-radius: 3px;">Archiviert</span>'
+		: '';
+
 	return `
 		<div class=\"marker-popup\">
-			<h3>${event.title}</h3>
+			<h3>${event.title}${archivedBadge}</h3>
 			<div class=\"info-row\">
 				<span class=\"info-label\">Typ:</span>
 				<span class=\"info-value\">${mapEventType(event.event_type, event.event_type_name)}</span>
@@ -2959,7 +2982,7 @@ function toggleProviderFilter(key, btn) {
 
 // Risk Level Filter Toggle
 function toggleRiskFilter(key, btn) {
-    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true, critical: true };
+    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
     window.riskFilter[key] = !window.riskFilter[key];
 
     // Check if any filters are active
@@ -2967,10 +2990,9 @@ function toggleRiskFilter(key, btn) {
     
     // Button-Style toggeln mit prioritätsbasierten Farben
     if (window.riskFilter[key]) {
-        const colorStyle = key === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' : 
+        const colorStyle = key === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
                           key === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
-                          key === 'red' ? 'background-color: #ff0000; border-color: #ff0000;' :
-                          'background-color: #8b0000; border-color: #8b0000;'; // critical
+                          'background-color: #ff0000; border-color: #ff0000;';
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
         btn.style.cssText = colorStyle;
     } else {
@@ -2981,8 +3003,8 @@ function toggleRiskFilter(key, btn) {
     // "Alle"/"Keine" Button aktualisieren
     const toggleButton = document.getElementById('toggleAllRiskLevels');
     if (toggleButton) {
-        const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red && window.riskFilter.critical;
-        const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red && !window.riskFilter.critical;
+        const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+        const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red;
         
         if (allActive) {
             toggleButton.textContent = 'Alle ausblenden';
@@ -3198,13 +3220,13 @@ function toggleTimePeriodFilter(key, btn) {
 
 // Risk Level "Alle"/"Keine" Toggle
 function toggleAllRiskLevels() {
-    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true, critical: true };
+    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
     
     const toggleButton = document.getElementById('toggleAllRiskLevels');
-    const riskButtons = ['risk-green', 'risk-orange', 'risk-red', 'risk-critical'];
+    const riskButtons = ['risk-green', 'risk-orange', 'risk-red'];
     
     // Prüfen ob alle Risikostufen aktiv sind
-    const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red && window.riskFilter.critical;
+    const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
     
     if (allActive) {
         // Alle deaktivieren
@@ -3212,7 +3234,7 @@ function toggleAllRiskLevels() {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
         
         // Alle Risikostufen deaktivieren
-        window.riskFilter = { green: false, orange: false, red: false, critical: false };
+        window.riskFilter = { green: false, orange: false, red: false };
         
         // Button-Styles auf inaktiv setzen
         riskButtons.forEach(id => {
@@ -3227,14 +3249,13 @@ function toggleAllRiskLevels() {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
         
         // Alle Risikostufen aktivieren
-        window.riskFilter = { green: true, orange: true, red: true, critical: true };
+        window.riskFilter = { green: true, orange: true, red: true };
         
         // Button-Styles auf aktiv setzen mit prioritätsbasierten Farben
         const colorStyles = {
             'risk-green': 'background-color: #0fb67f; border-color: #0fb67f;',
             'risk-orange': 'background-color: #e6a50a; border-color: #e6a50a;',
-            'risk-red': 'background-color: #ff0000; border-color: #ff0000;',
-            'risk-critical': 'background-color: #8b0000; border-color: #8b0000;'
+            'risk-red': 'background-color: #ff0000; border-color: #ff0000;'
         };
         
         riskButtons.forEach(id => {
@@ -3361,13 +3382,6 @@ function createEventElement(event) {
             borderColor: '#ff0000', 
             dot: 'bg-red-500', 
             text: 'text-red-600' 
-        },
-        critical: { 
-            label: 'KRITISCH', 
-            border: 'border-l-4', 
-            borderColor: '#8b0000', 
-            dot: 'bg-red-900', 
-            text: 'text-red-900' 
         },
     };
     const pickSeverity = (e) => {
@@ -4272,14 +4286,13 @@ function resetAllFilters() {
     }
 
     // Reset Risk filters - all active by default
-    window.riskFilter = { green: true, orange: true, red: true, critical: true };
-    ['green', 'orange', 'red', 'critical'].forEach(risk => {
+    window.riskFilter = { green: true, orange: true, red: true };
+    ['green', 'orange', 'red'].forEach(risk => {
         const btn = document.getElementById(`risk-${risk}`);
         if (btn) {
             const colorStyle = risk === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
                                risk === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
-                               risk === 'red' ? 'background-color: #ff0000; border-color: #ff0000;' :
-                               'background-color: #8b0000; border-color: #8b0000;';
+                               'background-color: #ff0000; border-color: #ff0000;';
             btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
             btn.style = colorStyle;
         }

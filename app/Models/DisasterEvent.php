@@ -213,7 +213,6 @@ class DisasterEvent extends Model
             'low' => 'Niedrig',
             'medium' => 'Mittel',
             'high' => 'Hoch',
-            'critical' => 'Kritisch',
         ];
     }
 
@@ -226,7 +225,6 @@ class DisasterEvent extends Model
             'low' => 'Niedrig',
             'medium' => 'Mittel',
             'high' => 'Hoch',
-            'critical' => 'Kritisch',
         ];
     }
 

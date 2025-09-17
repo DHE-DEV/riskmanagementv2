@@ -73,8 +73,22 @@ class CustomEventsTable
                 
                 TextColumn::make('is_active')
                     ->label('Aktiv')
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein'),
-                
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
+                    ->badge()
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+
+                TextColumn::make('archived')
+                    ->label('Archiviert')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
+                    ->badge()
+                    ->color(fn (bool $state): string => $state ? 'warning' : 'gray'),
+
+                TextColumn::make('archived_at')
+                    ->label('Archiviert am')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('created_at')
                     ->label('Erstellt')
                     ->dateTime('d.m.Y H:i')
@@ -98,6 +112,12 @@ class CustomEventsTable
                     ->placeholder('Alle Events')
                     ->trueLabel('Nur aktive')
                     ->falseLabel('Nur inaktive'),
+
+                TernaryFilter::make('archived')
+                    ->label('Archivierte Events')
+                    ->placeholder('Alle Events')
+                    ->trueLabel('Nur archivierte')
+                    ->falseLabel('Nur nicht-archivierte'),
             ])
             ->recordActions([
                 ViewAction::make()
@@ -105,7 +125,7 @@ class CustomEventsTable
                 EditAction::make()
                     ->label('Bearbeiten'),
                 Action::make('duplicate')
-                    ->label('Dublizieren')
+                    ->label('Duplizieren')
                     ->icon('heroicon-o-document-duplicate')
                     ->action(function (CustomEvent $record) {
                         $newEvent = $record->replicate();
@@ -117,8 +137,8 @@ class CustomEventsTable
                         return redirect()->route('filament.admin.resources.custom-events.edit', $newEvent);
                     })
                     ->requiresConfirmation()
-                    ->modalHeading('Event dublizieren')
-                    ->modalSubheading('Möchten Sie dieses Event wirklich dublizieren?'),
+                    ->modalHeading('Event duplizieren')
+                    ->modalSubheading('Möchten Sie dieses Event wirklich duplizieren?'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
