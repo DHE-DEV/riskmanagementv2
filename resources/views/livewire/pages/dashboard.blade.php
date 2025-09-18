@@ -860,7 +860,7 @@
             <div class="flex items-center space-x-4">
                 <div class="flex items-center space-x-2">
                     <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
-                    <!--<span class="text-xl font-semibold text-gray-800">Risk Management</span>-->
+                    <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
                     </div>
                 <!--
                 <div class="relative">
@@ -880,14 +880,7 @@
 
             <!-- Status and Actions -->
             <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2 text-sm text-gray-600">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span id="lastUpdated">Aktualisiert: 1 hour ago</span>
-                </div>
-                
-                <button 
+                <button
                     class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Daten aktualisieren"
                     onclick="refreshData()"
@@ -897,13 +890,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                 </button>
-
-                <a 
-                    href="/admin" 
-                    class="px-4 py-2 bg-gray-300 text-black rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                    Admin
-                </a>
             </div>
         </div>
     </header>
@@ -1468,7 +1454,7 @@
     <footer class="footer">
         <div class="flex items-center justify-between px-4 h-full">
             <div class="flex items-center space-x-6 text-sm">
-                <span>© 2025 Risk Management System</span>
+                <span>© 2025 Global Travel Monitor</span>
                 <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Impressum</a>
                 <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Datenschutz</a>
                 <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
@@ -1491,6 +1477,8 @@ let map;
 let markers = [];
 let currentEvents = [];
 let selectedContinent = null;
+let countryOverlaysLayer = null;
+let countryGeoJsonData = null;
 let selectedCountry = null;
 let isLoading = false;
 let eventTypes = []; // Store loaded event types
@@ -1547,7 +1535,15 @@ function initializeMap() {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(map);
-    
+
+    // Initialize country overlays layer
+    if (!countryOverlaysLayer) {
+        countryOverlaysLayer = L.layerGroup().addTo(map);
+    }
+
+    // Load GeoJSON data for countries
+    loadCountryBoundaries();
+
     // Satelliten-Layer (optional)
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: '© Esri',
@@ -3792,11 +3788,11 @@ async function refreshData() {
 // Letzte Aktualisierung aktualisieren
 function updateLastUpdated() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString('de-DE', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+    const timeString = now.toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit'
     });
-    document.getElementById('lastUpdated').textContent = `Aktualisiert: ${timeString}`;
+    // Update time display removed - element no longer exists
 }
 
 // Sektionen ein-/ausklappen
@@ -4118,20 +4114,25 @@ function removeCountryFromFilter(countryName) {
 function renderSelectedCountries() {
     const displayContainer = document.getElementById('selectedCountriesFilterDisplay');
     if (!displayContainer) return;
-    
+
     if (window.selectedCountries.size === 0) {
         displayContainer.innerHTML = '';
+        // Clear country overlays when no countries selected
+        updateCountryOverlays();
         return;
     }
-    
+
     const countryBadges = Array.from(window.selectedCountries).map(country => `
         <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
             <span>${escapeHtml(country)}</span>
             <button type="button" class="text-blue-700 hover:text-blue-900" onclick="removeCountryFromFilter('${escapeForAttr(country)}')" style="cursor: pointer;">&times;</button>
         </span>
     `).join('');
-    
+
     displayContainer.innerHTML = countryBadges;
+
+    // Update country overlays on map
+    updateCountryOverlays();
 }
 
 function clearAllCountryFilters() {
@@ -5292,6 +5293,230 @@ function updateAirportResultMarkers(list) {
     if (boundsPoints.length) {
         const bounds = L.latLngBounds(boundsPoints);
         try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 7 }); } catch (e) {}
+    }
+}
+
+// Load country boundaries from GeoJSON
+async function loadCountryBoundaries() {
+    console.log('Loading country boundaries...');
+    try {
+        // Using a public GeoJSON service for world countries
+        const response = await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json');
+        if (response.ok) {
+            countryGeoJsonData = await response.json();
+            console.log('Country boundaries loaded successfully');
+            console.log('Sample country properties:', countryGeoJsonData.features[0]?.properties);
+
+            // If countries are already selected, update overlays
+            if (window.selectedCountries && window.selectedCountries.size > 0) {
+                updateCountryOverlays();
+            }
+        }
+    } catch (error) {
+        console.error('Error loading country boundaries:', error);
+        // Fallback to alternative source
+        try {
+            const response = await fetch('https://datahub.io/core/geo-countries/r/countries.geojson');
+            if (response.ok) {
+                countryGeoJsonData = await response.json();
+                console.log('Country boundaries loaded from fallback source');
+                console.log('Sample country properties:', countryGeoJsonData.features[0]?.properties);
+
+                // If countries are already selected, update overlays
+                if (window.selectedCountries && window.selectedCountries.size > 0) {
+                    updateCountryOverlays();
+                }
+            }
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+        }
+    }
+}
+
+// Country name mapping German to English
+const countryNameMapping = {
+    'deutschland': ['germany', 'federal republic of germany', 'bundesrepublik deutschland'],
+    'frankreich': ['france', 'french republic'],
+    'spanien': ['spain', 'kingdom of spain'],
+    'italien': ['italy', 'italian republic'],
+    'österreich': ['austria', 'republic of austria'],
+    'schweiz': ['switzerland', 'swiss confederation'],
+    'niederlande': ['netherlands', 'kingdom of the netherlands', 'holland'],
+    'belgien': ['belgium', 'kingdom of belgium'],
+    'polen': ['poland', 'republic of poland'],
+    'tschechien': ['czech republic', 'czechia'],
+    'dänemark': ['denmark', 'kingdom of denmark'],
+    'schweden': ['sweden', 'kingdom of sweden'],
+    'norwegen': ['norway', 'kingdom of norway'],
+    'finnland': ['finland', 'republic of finland'],
+    'griechenland': ['greece', 'hellenic republic'],
+    'portugal': ['portugal', 'portuguese republic'],
+    'ungarn': ['hungary', 'republic of hungary'],
+    'rumänien': ['romania'],
+    'bulgarien': ['bulgaria', 'republic of bulgaria'],
+    'kroatien': ['croatia', 'republic of croatia'],
+    'serbien': ['serbia', 'republic of serbia'],
+    'slowenien': ['slovenia', 'republic of slovenia'],
+    'slowakei': ['slovakia', 'slovak republic'],
+    'luxemburg': ['luxembourg', 'grand duchy of luxembourg'],
+    'irland': ['ireland', 'republic of ireland'],
+    'vereinigtes königreich': ['united kingdom', 'uk', 'great britain'],
+    'großbritannien': ['united kingdom', 'uk', 'great britain'],
+    'russland': ['russia', 'russian federation'],
+    'ukraine': ['ukraine'],
+    'türkei': ['turkey', 'republic of turkey', 'türkiye'],
+    'usa': ['united states', 'united states of america', 'usa', 'us'],
+    'vereinigte staaten': ['united states', 'united states of america', 'usa', 'us'],
+    'kanada': ['canada'],
+    'mexiko': ['mexico', 'united mexican states'],
+    'brasilien': ['brazil', 'federative republic of brazil'],
+    'argentinien': ['argentina', 'argentine republic'],
+    'chile': ['chile', 'republic of chile'],
+    'peru': ['peru', 'republic of peru'],
+    'kolumbien': ['colombia', 'republic of colombia'],
+    'venezuela': ['venezuela', 'bolivarian republic of venezuela'],
+    'china': ['china', "people's republic of china"],
+    'japan': ['japan'],
+    'südkorea': ['south korea', 'republic of korea', 'korea, south'],
+    'nordkorea': ['north korea', "democratic people's republic of korea", 'korea, north'],
+    'indien': ['india', 'republic of india'],
+    'australien': ['australia', 'commonwealth of australia'],
+    'neuseeland': ['new zealand'],
+    'ägypten': ['egypt', 'arab republic of egypt'],
+    'südafrika': ['south africa', 'republic of south africa'],
+    'marokko': ['morocco', 'kingdom of morocco'],
+    'saudi-arabien': ['saudi arabia', 'kingdom of saudi arabia'],
+    'vereinigte arabische emirate': ['united arab emirates', 'uae'],
+    'israel': ['israel', 'state of israel']
+};
+
+// Update country overlays based on selected countries
+function updateCountryOverlays() {
+    console.log('updateCountryOverlays called');
+    console.log('Selected countries:', Array.from(window.selectedCountries));
+
+    if (!countryOverlaysLayer) {
+        console.error('countryOverlaysLayer not initialized');
+        return;
+    }
+
+    if (!countryGeoJsonData) {
+        console.error('GeoJSON data not loaded yet');
+        // Try to load it again
+        loadCountryBoundaries();
+        return;
+    }
+
+    // Clear existing overlays
+    countryOverlaysLayer.clearLayers();
+
+    if (window.selectedCountries.size === 0) {
+        console.log('No countries selected');
+        return;
+    }
+
+    let matchedCountries = [];
+    let unmatchedSelections = new Set(window.selectedCountries);
+
+    // Add overlays for selected countries
+    countryGeoJsonData.features.forEach(feature => {
+        const props = feature.properties;
+        // Try different property names that might contain the country name
+        const geoJsonName = (props.name || props.NAME || props.ADMIN || props.name_long || props.NAME_LONG || '').toLowerCase().trim();
+
+        // Debug: log first few country names from GeoJSON
+        if (matchedCountries.length < 3) {
+            console.log('GeoJSON country example:', props.name || props.NAME, '- All props:', Object.keys(props));
+        }
+
+        // Check if this country is selected
+        let matchedSelection = null;
+        const isSelected = Array.from(window.selectedCountries).some(selected => {
+            const selectedLower = selected.toLowerCase().trim();
+
+            // Direct match
+            if (geoJsonName === selectedLower) {
+                matchedSelection = selected;
+                return true;
+            }
+
+            // Check if selected is a German name
+            if (countryNameMapping[selectedLower]) {
+                // Check if GeoJSON name matches any of the English variants
+                const matches = countryNameMapping[selectedLower].some(englishName => {
+                    const englishLower = englishName.toLowerCase();
+                    return geoJsonName === englishLower ||
+                           geoJsonName.includes(englishLower) ||
+                           englishLower.includes(geoJsonName);
+                });
+                if (matches) {
+                    matchedSelection = selected;
+                    return true;
+                }
+            }
+
+            // Check reverse mapping (if selected is English, check for German)
+            for (const [germanName, englishNames] of Object.entries(countryNameMapping)) {
+                if (englishNames.some(name => name.toLowerCase() === selectedLower)) {
+                    if (geoJsonName === germanName || englishNames.some(name =>
+                        geoJsonName === name.toLowerCase()
+                    )) {
+                        matchedSelection = selected;
+                        return true;
+                    }
+                }
+            }
+
+            // Partial match as fallback
+            if (geoJsonName.includes(selectedLower) || selectedLower.includes(geoJsonName)) {
+                matchedSelection = selected;
+                return true;
+            }
+
+            return false;
+        });
+
+        if (isSelected && matchedSelection) {
+            const displayName = props.name || props.NAME || props.ADMIN;
+            console.log('Match found! Selected:', matchedSelection, '-> GeoJSON:', displayName);
+            matchedCountries.push(displayName);
+            unmatchedSelections.delete(matchedSelection);
+
+            const countryLayer = L.geoJSON(feature, {
+                style: {
+                    fillColor: '#3B82F6',  // Blue color
+                    fillOpacity: 0.3,      // Slightly more visible
+                    color: '#1E40AF',      // Darker blue border
+                    weight: 3,             // Thicker border
+                    opacity: 0.8
+                },
+                onEachFeature: (feature, layer) => {
+                    layer.bindPopup(`<strong>${displayName}</strong>`);
+                }
+            });
+            countryOverlaysLayer.addLayer(countryLayer);
+        }
+    });
+
+    // Log unmatched selections for debugging
+    if (unmatchedSelections.size > 0) {
+        console.warn('Could not find overlays for:', Array.from(unmatchedSelections));
+    }
+
+    console.log('Successfully matched countries:', matchedCountries);
+
+    // Optionally fit map to show all selected countries
+    if (countryOverlaysLayer.getLayers().length > 0) {
+        try {
+            const bounds = countryOverlaysLayer.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
+            }
+        } catch (e) {
+            console.log('Could not fit bounds to countries:', e);
+        }
+    } else {
+        console.log('No country layers added to map');
     }
 }
 
