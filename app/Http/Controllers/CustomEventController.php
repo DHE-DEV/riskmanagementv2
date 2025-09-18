@@ -16,6 +16,12 @@ class CustomEventController extends Controller
     {
         try {
             $events = CustomEvent::visible()
+                ->where('archived', false)
+                ->where('priority', '!=', 'critical')
+                ->where(function ($query) {
+                    $query->whereNull('end_date')
+                          ->orWhere('end_date', '>=', now()->startOfDay());
+                })
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where(function ($query) {
@@ -24,7 +30,7 @@ class CustomEventController extends Controller
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['creator', 'updater', 'country', 'eventType'])
+                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($event) {
@@ -38,6 +44,8 @@ class CustomEventController extends Controller
                         'event_type' => $event->getCorrectEventType(),
                         'event_type_id' => $event->event_type_id,
                         'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
+                        'event_types' => $event->eventTypes->pluck('name')->toArray(),
+                        'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',
                         'country_relation' => $event->country,
                         'latitude' => $event->latitude,
@@ -87,6 +95,12 @@ class CustomEventController extends Controller
     {
         try {
             $events = CustomEvent::visible()
+                ->where('archived', false)
+                ->where('priority', '!=', 'critical')
+                ->where(function ($query) {
+                    $query->whereNull('end_date')
+                          ->orWhere('end_date', '>=', now()->startOfDay());
+                })
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where(function ($query) {
@@ -95,7 +109,7 @@ class CustomEventController extends Controller
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['country', 'eventType'])
+                ->with(['country', 'eventType', 'eventTypes'])
                 ->get()
                 ->map(function ($event) {
                     // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
@@ -108,6 +122,8 @@ class CustomEventController extends Controller
                         'event_type' => $event->getCorrectEventType(),
                         'event_type_id' => $event->event_type_id,
                         'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
+                        'event_types' => $event->eventTypes->pluck('name')->toArray(),
+                        'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),

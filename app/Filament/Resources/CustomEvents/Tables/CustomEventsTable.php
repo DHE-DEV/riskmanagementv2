@@ -29,34 +29,18 @@ class CustomEventsTable
                     ->sortable()
                     ->limit(50),
                 
-                TextColumn::make('eventType.name')
-                    ->label('Typ')
+                TextColumn::make('eventTypes.name')
+                    ->label('Typen')
+                    ->badge()
+                    ->separator(', ')
                     ->searchable()
-                    ->sortable()
                     ->placeholder('Nicht zugeordnet'),
 
                 TextColumn::make('category')
                     ->label('Kategorie')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('data_source')
-                    ->label('Quelle')
-                    ->formatStateUsing(fn (?string $state): string => match($state) {
-                        'manual' => 'Manuell',
-                        'passolution_infosystem' => 'PDS Infosystem',
-                        'api_import' => 'API Import',
-                        'other' => 'Andere',
-                        default => 'Manuell'
-                    })
-                    ->badge()
-                    ->color(fn (?string $state): string => match($state) {
-                        'manual' => 'gray',
-                        'passolution_infosystem' => 'success',
-                        'api_import' => 'info',
-                        'other' => 'warning',
-                        default => 'gray'
-                    }),
-                
                 TextColumn::make('priority')
                     ->label('Priorität')
                     ->formatStateUsing(fn (string $state): string => CustomEvent::getPriorityOptions()[$state] ?? $state),
@@ -81,7 +65,8 @@ class CustomEventsTable
                     ->label('Archiviert')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
                     ->badge()
-                    ->color(fn (bool $state): string => $state ? 'warning' : 'gray'),
+                    ->color(fn (bool $state): string => $state ? 'warning' : 'gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('archived_at')
                     ->label('Archiviert am')

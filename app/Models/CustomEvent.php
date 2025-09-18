@@ -70,11 +70,20 @@ class CustomEvent extends Model
     }
 
     /**
-     * Event type relation.
+     * Event type relation (single - for backward compatibility).
      */
     public function eventType(): BelongsTo
     {
         return $this->belongsTo(EventType::class);
+    }
+
+    /**
+     * Event types relation (many-to-many).
+     */
+    public function eventTypes()
+    {
+        return $this->belongsToMany(EventType::class, 'custom_event_event_type')
+            ->withTimestamps();
     }
 
     /**

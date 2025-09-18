@@ -9,6 +9,7 @@ use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -56,14 +57,24 @@ class CustomEventForm
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
                     ->columnSpanFull(),
 
+                // Keep single event_type_id for backward compatibility but hide it
                 Select::make('event_type_id')
-                    ->label('Event-Typ')
+                    ->label('Event-Typ (Alt)')
                     ->options(CustomEvent::getEventTypeOptions())
-                    ->required()
                     ->searchable()
                     ->preload()
-                    ->live()
-                    ->afterStateUpdated(fn (Set $set) => $set('event_category_id', null)),
+                    ->hidden(),
+
+                // New many-to-many event types with checkboxes
+                CheckboxList::make('eventTypes')
+                    ->label('Event-Typen')
+                    ->relationship('eventTypes', 'name')
+                    ->options(CustomEvent::getEventTypeOptions())
+                    ->columns(2)
+                    ->gridDirection('row')
+                    ->required()
+                    ->helperText('Wählen Sie einen oder mehrere Event-Typen aus')
+                    ->columnSpanFull(),
 
                 Select::make('event_category_id')
                     ->label('Kategorie')
@@ -72,7 +83,7 @@ class CustomEventForm
                         if (!$eventTypeId) {
                             return [];
                         }
-                        
+
                         return EventCategory::byEventType($eventTypeId)
                             ->active()
                             ->ordered()
@@ -82,7 +93,8 @@ class CustomEventForm
                     ->searchable()
                     ->preload()
                     ->nullable()
-                    ->helperText('Wählen Sie zuerst einen Event-Typ aus'),
+                    ->helperText('Wählen Sie zuerst einen Event-Typ aus')
+                    ->hidden(),
 
                 Select::make('country_id')
                     ->label('Land')
@@ -165,15 +177,21 @@ class CustomEventForm
                     ->label('Breitengrad')
                     ->required()
                     ->numeric()
-                    ->step(0.000000000000001)
-                    ->placeholder('50.1109'),
+                    ->minValue(-90)
+                    ->maxValue(90)
+                    ->step('any')
+                    ->placeholder('50.1109')
+                    ->helperText('Wert zwischen -90 und 90'),
 
                 TextInput::make('longitude')
                     ->label('Längengrad')
                     ->required()
                     ->numeric()
-                    ->step(0.000000000000001)
-                    ->placeholder('8.6821'),
+                    ->minValue(-180)
+                    ->maxValue(180)
+                    ->step('any')
+                    ->placeholder('8.6821')
+                    ->helperText('Wert zwischen -180 und 180'),
 
                 // Marker-Konfiguration
                 ColorPicker::make('marker_color')
@@ -274,13 +292,15 @@ class CustomEventForm
                     ])
                     ->default('manual')
                     ->disabled()
-                    ->dehydrated(),
+                    ->dehydrated()
+                    ->hidden(),
 
                 TextInput::make('data_source_id')
                     ->label('Datenquellen-ID')
                     ->disabled()
                     ->dehydrated()
-                    ->helperText('Referenz-ID aus der Ursprungsdatenquelle'),
+                    ->helperText('Referenz-ID aus der Ursprungsdatenquelle')
+                    ->hidden(),
 
             ]);
     }

@@ -58,6 +58,16 @@ class CustomEventResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('archived', false)
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                      ->orWhere('end_date', '>=', now()->startOfDay());
+            });
+    }
+
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
         return parent::getRecordRouteBindingEloquentQuery()
@@ -68,7 +78,7 @@ class CustomEventResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::active()->count();
+        return static::getModel()::active()->where('archived', false)->count();
     }
 
     public static function getNavigationBadgeColor(): string|array|null

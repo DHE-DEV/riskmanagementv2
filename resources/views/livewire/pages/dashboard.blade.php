@@ -2247,7 +2247,10 @@ async function loadEventDetails(event) {
                 <div class="event-header">
                     <h2 class="event-title">${event.title}</h2>
                     <div class="event-meta">
-                        <span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>
+                        ${event.event_types && event.event_types.length > 0
+                            ? event.event_types.map(type => `<span class="event-type">${type}</span>`).join(' ')
+                            : `<span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>`
+                        }
                         <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>
                         ${event.archived ? '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-warning text-white ml-2" style="background-color: #f59e0b">Archiviert</span>' : ''}
                     </div>
@@ -2750,11 +2753,19 @@ function createCustomMarker(event) {
     });
     
     const marker = L.marker([event.latitude, event.longitude], { icon: icon });
-    
+
     // Popup erstellen
     const popupContent = createPopupContent(event);
     marker.bindPopup(popupContent);
-    
+
+    // Click-Event hinzufügen, um Sidebar zu schließen
+    marker.on('click', function() {
+        const eventSidebar = document.getElementById('eventSidebar');
+        if (eventSidebar && eventSidebar.classList.contains('open')) {
+            eventSidebar.classList.remove('open');
+        }
+    });
+
     return marker;
 }
 
@@ -2769,16 +2780,28 @@ function createPopupContent(event) {
 		? '<span class="badge bg-warning text-white ml-2" style="font-size: 11px; padding: 2px 6px; border-radius: 3px;">Archiviert</span>'
 		: '';
 
+	// Prioritäts-Farbe bestimmen
+	const priorityColor = getPriorityColor(event.priority || event.severity);
+	const priorityLabel = mapPriority(event.priority || event.severity);
+
+	// Event-Typen formatieren
+	let eventTypesDisplay = '';
+	if (event.event_types && event.event_types.length > 0) {
+		eventTypesDisplay = event.event_types.join(', ');
+	} else {
+		eventTypesDisplay = mapEventType(event.event_type, event.event_type_name);
+	}
+
 	return `
 		<div class=\"marker-popup\">
 			<h3>${event.title}${archivedBadge}</h3>
 			<div class=\"info-row\">
-				<span class=\"info-label\">Typ:</span>
-				<span class=\"info-value\">${mapEventType(event.event_type, event.event_type_name)}</span>
+				<span class=\"info-label\">Typ${event.event_types && event.event_types.length > 1 ? 'en' : ''}:</span>
+				<span class=\"info-value\">${eventTypesDisplay}</span>
 			</div>
 			<div class=\"info-row\">
 				<span class=\"info-label\">Priorität:</span>
-				<span class=\"info-value\">${mapPriority(event.priority)}</span>
+				<span class=\"info-value\" style=\"color: ${priorityColor}; font-weight: 600;\">${priorityLabel}</span>
 			</div>
 			<div class=\"info-row mt-2\">
 				<span class=\"info-label\">Quelle:</span>
@@ -3415,14 +3438,17 @@ function createEventElement(event) {
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
-                        <span class="text-xs font-medium uppercase text-gray-800">${mapEventType(event.event_type, event.event_type_name)}</span>
+                        <span class="text-xs font-medium uppercase text-gray-800">${event.country || 'Unbekannt'}</span>
                     </div>
                     <div>${rightHtml}</div>
                 </div>
                 <p class="text-[11px] ${severityTextClass} mt-0.5">${sev.label}</p>
                 <p class="text-sm font-medium text-gray-800 mt-1">${event.title}</p>
                 <p class="text-xs text-gray-600 mt-1">
-                    ${event.country || 'Unbekannt'} • ${displayDate || (event.date || 'Unbekannt')}
+                    ${event.event_types && event.event_types.length > 0
+                        ? event.event_types.join(', ')
+                        : mapEventType(event.event_type, event.event_type_name)
+                    } • ${displayDate || (event.date || 'Unbekannt')}
                     ${event.magnitude ? ` • Magnitude: ${event.magnitude}` : ''}
                 </p>
                 ${event.affected_population ? `<p class="text-xs text-gray-500 mt-1">${event.affected_population}</p>` : ''}
@@ -3432,8 +3458,14 @@ function createEventElement(event) {
     
     // Klick-Event hinzufügen
     div.addEventListener('click', () => {
+        // Schließe zuerst die Sidebar, falls sie offen ist
+        const eventSidebar = document.getElementById('eventSidebar');
+        if (eventSidebar && eventSidebar.classList.contains('open')) {
+            eventSidebar.classList.remove('open');
+        }
+
         if (event.latitude && event.longitude) {
-            map.setView([event.latitude, event.longitude], 8);
+            map.setView([event.latitude, event.longitude], 12);
             // Marker öffnen
             markers.forEach(marker => {
                 if (marker.getLatLng().lat === event.latitude && marker.getLatLng().lng === event.longitude) {
