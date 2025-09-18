@@ -1015,12 +1015,13 @@
                         </div>
                         <div id="countriesSection" class="p-3">
                             <div class="space-y-2">
-                                <input 
-                                    type="text" 
-                                    placeholder="Land suchen (Name oder Code)..." 
+                                <input
+                                    type="text"
+                                    placeholder="Land suchen (Name oder Code)..."
                                     class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     id="countryFilterInput"
-                                    onkeyup="debouncedCountryFilterSearch(this.value)"
+                                    onkeyup="handleCountryFilterKeyup(event)"
+                                    onkeydown="handleCountryFilterKeydown(event)"
                                 >
                                 <div id="countryFilterResults" class="space-y-1 text-sm text-gray-700 max-h-32 overflow-y-auto transition-all duration-200"></div>
                                 <div id="selectedCountriesFilterDisplay" class="mt-2 space-y-1">
@@ -3917,9 +3918,55 @@ function debouncedCountrySearch(query) {
 
 // Länder-Filter-Suche für Event-Filter
 let countryFilterSearchTimer;
+let countryFilterActiveIndex = 0;
+
 function debouncedCountryFilterSearch(query) {
     clearTimeout(countryFilterSearchTimer);
     countryFilterSearchTimer = setTimeout(() => searchCountriesForFilter(query), 250);
+}
+
+// Keyboard navigation for country filter
+function handleCountryFilterKeyup(event) {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') {
+        debouncedCountryFilterSearch(event.target.value);
+    }
+}
+
+function handleCountryFilterKeydown(event) {
+    const box = document.getElementById('countryFilterResults');
+    if (!box) return;
+
+    const items = box.querySelectorAll('.autocomplete-item');
+    if (items.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        countryFilterActiveIndex = Math.min(countryFilterActiveIndex + 1, items.length - 1);
+        setCountryFilterActiveIndex(countryFilterActiveIndex);
+        // Scroll into view if needed
+        items[countryFilterActiveIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        countryFilterActiveIndex = Math.max(countryFilterActiveIndex - 1, 0);
+        setCountryFilterActiveIndex(countryFilterActiveIndex);
+        // Scroll into view if needed
+        items[countryFilterActiveIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const activeItem = items[countryFilterActiveIndex];
+        if (activeItem) {
+            const countryName = activeItem.getAttribute('data-name');
+            if (countryName) {
+                addCountryToFilter(countryName);
+                box.innerHTML = '';
+                event.target.value = '';
+            }
+        }
+    } else if (event.key === 'Escape') {
+        event.preventDefault();
+        box.innerHTML = '';
+        countryFilterActiveIndex = 0;
+    }
 }
 
 async function searchCountries(query) {
@@ -3935,7 +3982,7 @@ async function searchCountries(query) {
         const list = Array.isArray(data.data) ? data.data : [];
         if (!list.length) { box.innerHTML = '<div class="text-xs text-gray-500">Keine Treffer</div>'; return; }
         box.innerHTML = list.map((c, i) => (
-            `<div class="autocomplete-item px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 flex items-center justify-between" data-index="${i}" data-name="${escapeForAttr(c.name)}">
+            `<div class="autocomplete-item px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 flex items-center justify-between ${i === 0 ? 'bg-blue-50 border-blue-300' : ''}" data-index="${i}" data-name="${escapeForAttr(c.name)}">
                 <div>
                     <div class="font-medium">${escapeHtml(c.name)}</div>
                     <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
@@ -3943,20 +3990,27 @@ async function searchCountries(query) {
                 <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-200">Übernehmen</button>
             </div>`
         )).join('');
+
+        // Reset active index to 0 for new search results
+        countryFilterActiveIndex = 0;
         box.querySelectorAll('.autocomplete-item').forEach(el => {
             el.addEventListener('mouseenter', () => {
                 const idx = parseInt(el.getAttribute('data-index'));
-                setCountryActiveIndex(idx);
+                setCountryFilterActiveIndex(idx);
             });
             el.addEventListener('click', (e) => {
                 e.preventDefault();
-                applyCountryFilter(el.getAttribute('data-name'));
+                const countryName = el.getAttribute('data-name');
+                addCountryToFilter(countryName);
                 box.innerHTML = '';
+                document.getElementById('countryFilterInput').value = '';
             });
             el.querySelector('button')?.addEventListener('click', (e) => {
                 e.stopPropagation();
-                applyCountryFilter(el.getAttribute('data-name'));
+                const countryName = el.parentElement.getAttribute('data-name');
+                addCountryToFilter(countryName);
                 box.innerHTML = '';
+                document.getElementById('countryFilterInput').value = '';
             });
         });
     } catch (e) {
@@ -4192,11 +4246,16 @@ async function debugCountrySearch(query) {
 function setCountryFilterActiveIndex(index) {
     const box = document.getElementById('countryFilterResults');
     if (!box) return;
+
+    countryFilterActiveIndex = index;
+
     box.querySelectorAll('.autocomplete-item').forEach((el, i) => {
         if (i === index) {
             el.classList.add('bg-blue-50', 'border-blue-300');
+            el.classList.remove('hover:bg-gray-50');
         } else {
             el.classList.remove('bg-blue-50', 'border-blue-300');
+            el.classList.add('hover:bg-gray-50');
         }
     });
 }
