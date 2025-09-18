@@ -60,12 +60,8 @@ class CustomEventResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->where('archived', false)
-            ->where(function ($query) {
-                $query->whereNull('end_date')
-                      ->orWhere('end_date', '>=', now()->startOfDay());
-            });
+        // Zeige alle Datensätze an, auch archivierte und deaktivierte
+        return parent::getEloquentQuery();
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder
@@ -78,7 +74,7 @@ class CustomEventResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::active()->where('archived', false)->count();
+        return static::getModel()::count();
     }
 
     public static function getNavigationBadgeColor(): string|array|null

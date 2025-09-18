@@ -1074,6 +1074,7 @@
                         <div id="riskLevelSection" class="p-3">
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
+                                <button type="button" id="risk-info" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0066cc; border-color: #0066cc;" data-risk="info" onclick="toggleRiskFilter('info', this)">Information</button>
                                 <button type="button" id="risk-green" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0fb67f; border-color: #0fb67f;" data-risk="green" onclick="toggleRiskFilter('green', this)">Niedrig</button>
                                 <button type="button" id="risk-orange" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #e6a50a; border-color: #e6a50a;" data-risk="orange" onclick="toggleRiskFilter('orange', this)">Mittel</button>
                                 <button type="button" id="risk-red" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #ff0000; border-color: #ff0000;" data-risk="red" onclick="toggleRiskFilter('red', this)">Hoch</button>
@@ -1461,7 +1462,7 @@
                 <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.11</span>
+                <span>Version 1.0.12</span>
                 <span>Build: 2025-09-18</span>
                 <span>Powered by Passolution GmbH</span>
             </div>
@@ -1495,14 +1496,68 @@ const continents = [
     { id: 7, name: "Antarktis", code: "AN" }
 ];
 
+// Load country mappings from database
+async function loadCountryMappingsFromDB() {
+    try {
+        console.log('Loading country mappings from database...');
+        const response = await fetch('/api/countries/mappings');
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+                // Override static mappings with database mappings
+                countryNameMapping = data.data;
+                console.log(`Loaded ${data.count} country mappings from database`);
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load country mappings from database:', error);
+        console.log('Using static country mappings as fallback');
+    }
+    return false;
+}
+
+// Track event clicks
+async function trackEventClick(eventId, clickType) {
+    try {
+        // Only track custom events
+        if (!eventId || typeof eventId !== 'number') {
+            return;
+        }
+
+        const response = await fetch('/api/custom-events/track-click', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                event_id: eventId,
+                click_type: clickType
+            })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to track click');
+        }
+    } catch (error) {
+        console.error('Error tracking click:', error);
+    }
+}
+
 // Initialize when the page is loaded
 document.addEventListener('DOMContentLoaded', async () => {
     initializeMap();
+
+    // Load country mappings from database first
+    await loadCountryMappingsFromDB();
+
     await loadEventTypes(); // Load event types first
     loadInitialData();
     renderContinents();
     updateLastUpdated();
-    
+
     // Automatische Aktualisierung alle 5 Minuten
     setInterval(loadDashboardData, 5 * 60 * 1000);
 
@@ -1523,6 +1578,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Karte initialisieren
+let initialMapView = null;
+
 function initializeMap() {
     // Karte erstellen mit Weltansicht und Zoom-Beschränkungen
     map = L.map('map', {
@@ -1530,16 +1587,22 @@ function initializeMap() {
         maxBounds: [[-90, -180], [90, 180]],
         minZoom: 2  // Verhindert Herauszoomen über Weltansicht hinaus
     }).setView([20, 0], 2);
-    
+
+    // Save initial map view for reset functionality
+    initialMapView = {
+        center: [20, 0],
+        zoom: 2
+    };
+
     // OpenStreetMap Tile Layer mit deutschen Namen hinzufügen
     L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(map);
 
-    // Initialize country overlays layer
+    // Initialize country overlays layer as FeatureGroup (supports getBounds)
     if (!countryOverlaysLayer) {
-        countryOverlaysLayer = L.layerGroup().addTo(map);
+        countryOverlaysLayer = L.featureGroup().addTo(map);
     }
 
     // Load GeoJSON data for countries
@@ -2049,6 +2112,7 @@ function mapEventType(type, typeName) {
 // Deutsche Bezeichnungen für Priorität
 function mapPriority(priority) {
     const map = {
+        'info': 'Information',
         'low': 'Niedrig',
         'medium': 'Mittel',
         'high': 'Hoch'
@@ -2086,6 +2150,7 @@ function getSeverityColor(severity) {
 // Prioritäts-basierte Farben für Marker
 function getPriorityColor(priority) {
     const colors = {
+        'info': '#0066cc',    // Blau - Information
         'low': '#0fb67f',     // Grün - geringes Risiko
         'medium': '#e6a50a',  // Orange - mittleres Risiko
         'high': '#ff0000',    // Rot - hohes Risiko
@@ -2095,7 +2160,7 @@ function getPriorityColor(priority) {
         'orange': '#e6a50a',
         'red': '#ff0000'
     };
-    
+
     return colors[priority?.toLowerCase()] || '#e6a50a';
 }
 
@@ -2122,14 +2187,25 @@ function getWeatherIcon(weatherMain) {
     return icons[weatherMain] || 'fa-cloud-sun';
 }
 
+// Handle Details button click with tracking
+function handleDetailsClick(eventId, isCustom) {
+    // Track click for custom events
+    if (isCustom && eventId) {
+        trackEventClick(eventId, 'details_button');
+    }
+
+    // Open sidebar with event details
+    openEventSidebar(window.eventById[eventId] || {});
+}
+
 // Event Sidebar Funktionen
 function openEventSidebar(event) {
     document.getElementById('sidebarTitle').textContent = 'Erweiterte Informationen';
     document.getElementById('eventSidebar').classList.add('open');
-    
+
     // Button-Zustände initialisieren
     updateSidebarButtons();
-    
+
     // Lade Event-Details in die Seitenleiste
     loadEventDetails(event);
 }
@@ -2754,8 +2830,14 @@ function createCustomMarker(event) {
     const popupContent = createPopupContent(event);
     marker.bindPopup(popupContent);
 
-    // Click-Event hinzufügen, um Sidebar zu schließen
+    // Click-Event hinzufügen
     marker.on('click', function() {
+        // Track click for custom events
+        if (event.source === 'custom' && event.id) {
+            trackEventClick(event.id, 'map_marker');
+        }
+
+        // Sidebar schließen
         const eventSidebar = document.getElementById('eventSidebar');
         if (eventSidebar && eventSidebar.classList.contains('open')) {
             eventSidebar.classList.remove('open');
@@ -2796,7 +2878,7 @@ function createPopupContent(event) {
 				<span class=\"info-value\">${eventTypesDisplay}</span>
 			</div>
 			<div class=\"info-row\">
-				<span class=\"info-label\">Priorität:</span>
+				<span class=\"info-label\">Risikostufe:</span>
 				<span class=\"info-value\" style=\"color: ${priorityColor}; font-weight: 600;\">${priorityLabel}</span>
 			</div>
 			<div class=\"info-row mt-2\">
@@ -2804,7 +2886,7 @@ function createPopupContent(event) {
 				<span class=\"info-value\">${sourceValue}</span>
 			</div>
 			<div class=\"popup-actions\">
-				<button onclick=\"openEventSidebar(window.eventById[${event.id}] || {})\" class=\"details-btn\">
+				<button onclick=\"handleDetailsClick(${event.id}, ${event.source === 'custom' ? 'true' : 'false'})\" class=\"details-btn\">
 					<i class=\"fa-solid fa-circle-info\"></i>
 					Details anzeigen
 				</button>
@@ -3001,7 +3083,7 @@ function toggleProviderFilter(key, btn) {
 
 // Risk Level Filter Toggle
 function toggleRiskFilter(key, btn) {
-    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
+    if (!window.riskFilter) window.riskFilter = { info: true, green: true, orange: true, red: true };
     window.riskFilter[key] = !window.riskFilter[key];
 
     // Check if any filters are active
@@ -3239,13 +3321,13 @@ function toggleTimePeriodFilter(key, btn) {
 
 // Risk Level "Alle"/"Keine" Toggle
 function toggleAllRiskLevels() {
-    if (!window.riskFilter) window.riskFilter = { green: true, orange: true, red: true };
-    
+    if (!window.riskFilter) window.riskFilter = { info: true, green: true, orange: true, red: true };
+
     const toggleButton = document.getElementById('toggleAllRiskLevels');
-    const riskButtons = ['risk-green', 'risk-orange', 'risk-red'];
-    
+    const riskButtons = ['risk-info', 'risk-green', 'risk-orange', 'risk-red'];
+
     // Prüfen ob alle Risikostufen aktiv sind
-    const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+    const allActive = window.riskFilter.info && window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
     
     if (allActive) {
         // Alle deaktivieren
@@ -3253,7 +3335,7 @@ function toggleAllRiskLevels() {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
         
         // Alle Risikostufen deaktivieren
-        window.riskFilter = { green: false, orange: false, red: false };
+        window.riskFilter = { info: false, green: false, orange: false, red: false };
         
         // Button-Styles auf inaktiv setzen
         riskButtons.forEach(id => {
@@ -3268,10 +3350,11 @@ function toggleAllRiskLevels() {
         toggleButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium';
         
         // Alle Risikostufen aktivieren
-        window.riskFilter = { green: true, orange: true, red: true };
-        
+        window.riskFilter = { info: true, green: true, orange: true, red: true };
+
         // Button-Styles auf aktiv setzen mit prioritätsbasierten Farben
         const colorStyles = {
+            'risk-info': 'background-color: #0066cc; border-color: #0066cc;',
             'risk-green': 'background-color: #0fb67f; border-color: #0fb67f;',
             'risk-orange': 'background-color: #e6a50a; border-color: #e6a50a;',
             'risk-red': 'background-color: #ff0000; border-color: #ff0000;'
@@ -3381,26 +3464,33 @@ function createEventElement(event) {
     const div = document.createElement('div');
     // Prioritäts-basierte Farben - exakte hex-Werte verwenden
     const sevMap = {
-        low: { 
-            label: 'NIEDRIG', 
-            border: 'border-l-4', 
-            borderColor: '#0fad78', 
-            dot: 'bg-green-500', 
-            text: 'text-green-600' 
+        info: {
+            label: 'INFORMATION',
+            border: 'border-l-4',
+            borderColor: '#0066cc',
+            dot: 'bg-blue-500',
+            text: 'text-blue-600'
         },
-        medium: { 
-            label: 'MITTEL', 
-            border: 'border-l-4', 
-            borderColor: '#e6a50a', 
-            dot: 'bg-orange-500', 
-            text: 'text-orange-600' 
+        low: {
+            label: 'NIEDRIG',
+            border: 'border-l-4',
+            borderColor: '#0fad78',
+            dot: 'bg-green-500',
+            text: 'text-green-600'
         },
-        high: { 
-            label: 'HOCH', 
-            border: 'border-l-4', 
-            borderColor: '#ff0000', 
-            dot: 'bg-red-500', 
-            text: 'text-red-600' 
+        medium: {
+            label: 'MITTEL',
+            border: 'border-l-4',
+            borderColor: '#e6a50a',
+            dot: 'bg-orange-500',
+            text: 'text-orange-600'
+        },
+        high: {
+            label: 'HOCH',
+            border: 'border-l-4',
+            borderColor: '#ff0000',
+            dot: 'bg-red-500',
+            text: 'text-red-600'
         },
     };
     const pickSeverity = (e) => {
@@ -3454,6 +3544,11 @@ function createEventElement(event) {
     
     // Klick-Event hinzufügen
     div.addEventListener('click', () => {
+        // Track click for custom events only
+        if (event.source === 'custom' && event.id) {
+            trackEventClick(event.id, 'list');
+        }
+
         // Schließe zuerst die Sidebar, falls sie offen ist
         const eventSidebar = document.getElementById('eventSidebar');
         if (eventSidebar && eventSidebar.classList.contains('open')) {
@@ -3609,7 +3704,7 @@ function filterEventsByContinent() {
 // Events nach Land filtern
 function filterEventsByCountry() {
     console.log('filterEventsByCountry called');
-    
+
     // Verwende die zentrale Filterlogik anstatt eigener Implementierung
     if (typeof loadDashboardData === 'function') {
         try {
@@ -3617,12 +3712,67 @@ function filterEventsByCountry() {
             if (eventsList && Array.isArray(allEvents)) {
                 loadDashboardData();
             }
-        } catch (e) { 
-            loadDashboardData(); 
+        } catch (e) {
+            loadDashboardData();
         }
     }
-    
+
     console.log(`Total filtered events: ${currentEvents.length}`);
+
+    // Don't zoom here - let updateCountryOverlays handle the zoom
+    // The zoom should be based on country boundaries, not just events
+}
+
+// Zoom map to show all filtered events
+function zoomToFilteredEvents() {
+    if (!map || !currentEvents || currentEvents.length === 0) return;
+
+    // Get coordinates of all visible events
+    const eventCoordinates = currentEvents
+        .filter(event => event.latitude && event.longitude)
+        .map(event => [event.latitude, event.longitude]);
+
+    if (eventCoordinates.length === 0) return;
+
+    try {
+        // Create bounds from event coordinates
+        const bounds = L.latLngBounds(eventCoordinates);
+
+        // Adjust zoom based on number of events
+        const eventCount = eventCoordinates.length;
+        let maxZoom = 8;
+        let padding = [100, 100];
+
+        if (eventCount === 1) {
+            // Single event - zoom in close
+            maxZoom = 10;
+            padding = [200, 200];
+        } else if (eventCount <= 5) {
+            // Few events - moderate zoom
+            maxZoom = 7;
+            padding = [150, 150];
+        } else if (eventCount <= 20) {
+            // Multiple events - wider view
+            maxZoom = 6;
+            padding = [100, 100];
+        } else {
+            // Many events - country/continent view
+            maxZoom = 5;
+            padding = [80, 80];
+        }
+
+        // Fit map to bounds with animation
+        map.fitBounds(bounds, {
+            padding: padding,
+            maxZoom: maxZoom,
+            animate: true,
+            duration: 0.8
+        });
+
+        console.log(`Map zoomed to show ${eventCount} filtered events`);
+    } catch (e) {
+        console.error('Error zooming to events:', e);
+    }
 }
 
 // Kontinent eines Events bestimmen
@@ -4191,18 +4341,18 @@ function renderSelectedCountries() {
 
 function clearAllCountryFilters() {
     console.log('clearAllCountryFilters called');
-    
+
     // Alle Länder aus der Auswahl entfernen
     window.selectedCountries.clear();
-    
+
     // Suchfeld leeren
     const countryInput = document.getElementById('countryFilterInput');
     if (countryInput) countryInput.value = '';
-    
+
     // Ergebnisse leeren
     const resultsBox = document.getElementById('countryFilterResults');
     if (resultsBox) resultsBox.innerHTML = '';
-    
+
     // Ausgewählte Länder anzeigen
     renderSelectedCountries();
 
@@ -4211,6 +4361,14 @@ function clearAllCountryFilters() {
 
     // Events nach Ländern filtern
     filterEventsByCountry();
+
+    // Reset map view to initial state
+    if (map && initialMapView) {
+        map.setView(initialMapView.center, initialMapView.zoom, {
+            animate: true,
+            duration: 0.8
+        });
+    }
 }
 
 // Test-Funktion für Länder-Suche
@@ -5358,42 +5516,49 @@ function updateAirportResultMarkers(list) {
 // Load country boundaries from GeoJSON
 async function loadCountryBoundaries() {
     console.log('Loading country boundaries...');
+
+    if (countryGeoJsonData) {
+        console.log('Country boundaries already loaded');
+        return true;
+    }
+
     try {
-        // Using a public GeoJSON service for world countries
-        const response = await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json');
+        // Using Natural Earth data - more reliable for country boundaries
+        // This dataset doesn't include overseas territories as separate countries
+        const response = await fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson');
         if (response.ok) {
             countryGeoJsonData = await response.json();
-            console.log('Country boundaries loaded successfully');
+            console.log('Country boundaries loaded from Natural Earth');
+            console.log('Total countries in GeoJSON:', countryGeoJsonData.features.length);
             console.log('Sample country properties:', countryGeoJsonData.features[0]?.properties);
 
-            // If countries are already selected, update overlays
-            if (window.selectedCountries && window.selectedCountries.size > 0) {
-                updateCountryOverlays();
-            }
+            // Don't auto-update overlays here to avoid recursion
+            return true;
         }
     } catch (error) {
-        console.error('Error loading country boundaries:', error);
-        // Fallback to alternative source
+        console.error('Error loading Natural Earth data:', error);
+        // Fallback to original source
         try {
-            const response = await fetch('https://datahub.io/core/geo-countries/r/countries.geojson');
+            const response = await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json');
             if (response.ok) {
                 countryGeoJsonData = await response.json();
                 console.log('Country boundaries loaded from fallback source');
+                console.log('Total countries in GeoJSON:', countryGeoJsonData.features.length);
                 console.log('Sample country properties:', countryGeoJsonData.features[0]?.properties);
 
-                // If countries are already selected, update overlays
-                if (window.selectedCountries && window.selectedCountries.size > 0) {
-                    updateCountryOverlays();
-                }
+                // Don't auto-update overlays here to avoid recursion
+                return true;
             }
         } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
+            console.error('All sources failed:', fallbackError);
+            return false;
         }
     }
+    return false;
 }
 
-// Country name mapping German to English
-const countryNameMapping = {
+// Country name mapping - will be loaded from database
+let countryNameMapping = {
     'deutschland': ['germany', 'federal republic of germany', 'bundesrepublik deutschland'],
     'frankreich': ['france', 'french republic'],
     'spanien': ['spain', 'kingdom of spain'],
@@ -5446,12 +5611,128 @@ const countryNameMapping = {
     'marokko': ['morocco', 'kingdom of morocco'],
     'saudi-arabien': ['saudi arabia', 'kingdom of saudi arabia'],
     'vereinigte arabische emirate': ['united arab emirates', 'uae'],
-    'israel': ['israel', 'state of israel']
+    'israel': ['israel', 'state of israel'],
+    // Weitere wichtige Länder
+    'bangladesch': ['bangladesh', "people's republic of bangladesh"],
+    'kap verde': ['cape verde', 'cabo verde', 'republic of cabo verde'],
+    'kapverden': ['cape verde', 'cabo verde', 'republic of cabo verde'],
+    'kapverdische inseln': ['cape verde', 'cabo verde'],
+    'elfenbeinküste': ['ivory coast', "côte d'ivoire", 'cote divoire'],
+    'tansania': ['tanzania', 'united republic of tanzania'],
+    'kenia': ['kenya', 'republic of kenya'],
+    'äthiopien': ['ethiopia', 'federal democratic republic of ethiopia'],
+    'nigeria': ['nigeria', 'federal republic of nigeria'],
+    'ghana': ['ghana', 'republic of ghana'],
+    'kamerun': ['cameroon', 'republic of cameroon'],
+    'algerien': ['algeria', "people's democratic republic of algeria"],
+    'tunesien': ['tunisia', 'tunisian republic'],
+    'libyen': ['libya', 'state of libya'],
+    'sudan': ['sudan', 'republic of the sudan'],
+    'südsudan': ['south sudan', 'republic of south sudan'],
+    'somalia': ['somalia', 'federal republic of somalia'],
+    'uganda': ['uganda', 'republic of uganda'],
+    'ruanda': ['rwanda', 'republic of rwanda'],
+    'burundi': ['burundi', 'republic of burundi'],
+    'angola': ['angola', 'republic of angola'],
+    'mosambik': ['mozambique', 'republic of mozambique'],
+    'simbabwe': ['zimbabwe', 'republic of zimbabwe'],
+    'sambia': ['zambia', 'republic of zambia'],
+    'malawi': ['malawi', 'republic of malawi'],
+    'madagaskar': ['madagascar', 'republic of madagascar'],
+    'mauritius': ['mauritius', 'republic of mauritius'],
+    'seychellen': ['seychelles', 'republic of seychelles'],
+    'komoren': ['comoros', 'union of the comoros'],
+    // Asien
+    'indonesien': ['indonesia', 'republic of indonesia'],
+    'philippinen': ['philippines', 'republic of the philippines'],
+    'vietnam': ['vietnam', 'socialist republic of vietnam', 'viet nam'],
+    'thailand': ['thailand', 'kingdom of thailand'],
+    'myanmar': ['myanmar', 'republic of the union of myanmar', 'burma'],
+    'malaysia': ['malaysia'],
+    'singapur': ['singapore', 'republic of singapore'],
+    'kambodscha': ['cambodia', 'kingdom of cambodia'],
+    'laos': ['laos', "lao people's democratic republic"],
+    'pakistan': ['pakistan', 'islamic republic of pakistan'],
+    'afghanistan': ['afghanistan', 'islamic republic of afghanistan'],
+    'iran': ['iran', 'islamic republic of iran'],
+    'irak': ['iraq', 'republic of iraq'],
+    'syrien': ['syria', 'syrian arab republic'],
+    'jemen': ['yemen', 'republic of yemen'],
+    'oman': ['oman', 'sultanate of oman'],
+    'katar': ['qatar', 'state of qatar'],
+    'kuwait': ['kuwait', 'state of kuwait'],
+    'bahrain': ['bahrain', 'kingdom of bahrain'],
+    'jordanien': ['jordan', 'hashemite kingdom of jordan'],
+    'libanon': ['lebanon', 'lebanese republic'],
+    'georgien': ['georgia'],
+    'armenien': ['armenia', 'republic of armenia'],
+    'aserbaidschan': ['azerbaijan', 'republic of azerbaijan'],
+    'kasachstan': ['kazakhstan', 'republic of kazakhstan'],
+    'usbekistan': ['uzbekistan', 'republic of uzbekistan'],
+    'turkmenistan': ['turkmenistan'],
+    'tadschikistan': ['tajikistan', 'republic of tajikistan'],
+    'kirgisistan': ['kyrgyzstan', 'kyrgyz republic'],
+    'mongolei': ['mongolia'],
+    'nepal': ['nepal', 'federal democratic republic of nepal'],
+    'bhutan': ['bhutan', 'kingdom of bhutan'],
+    'sri lanka': ['sri lanka', 'democratic socialist republic of sri lanka'],
+    'malediven': ['maldives', 'republic of maldives'],
+    // Mittel- und Südamerika
+    'kuba': ['cuba', 'republic of cuba'],
+    'jamaika': ['jamaica'],
+    'haiti': ['haiti', 'republic of haiti'],
+    'dominikanische republik': ['dominican republic'],
+    'puerto rico': ['puerto rico'],
+    'trinidad und tobago': ['trinidad and tobago', 'republic of trinidad and tobago'],
+    'barbados': ['barbados'],
+    'panama': ['panama', 'republic of panama'],
+    'costa rica': ['costa rica', 'republic of costa rica'],
+    'nicaragua': ['nicaragua', 'republic of nicaragua'],
+    'honduras': ['honduras', 'republic of honduras'],
+    'el salvador': ['el salvador', 'republic of el salvador'],
+    'guatemala': ['guatemala', 'republic of guatemala'],
+    'belize': ['belize'],
+    'ecuador': ['ecuador', 'republic of ecuador'],
+    'bolivien': ['bolivia', 'plurinational state of bolivia'],
+    'paraguay': ['paraguay', 'republic of paraguay'],
+    'uruguay': ['uruguay', 'oriental republic of uruguay'],
+    'guyana': ['guyana', 'co-operative republic of guyana'],
+    'suriname': ['suriname', 'republic of suriname'],
+    'französisch-guayana': ['french guiana', 'guyane'],
+    // Ozeanien
+    'papua-neuguinea': ['papua new guinea', 'independent state of papua new guinea'],
+    'fidschi': ['fiji', 'republic of fiji'],
+    'salomonen': ['solomon islands'],
+    'vanuatu': ['vanuatu', 'republic of vanuatu'],
+    'samoa': ['samoa', 'independent state of samoa'],
+    'tonga': ['tonga', 'kingdom of tonga'],
+    'palau': ['palau', 'republic of palau'],
+    'marshallinseln': ['marshall islands', 'republic of the marshall islands'],
+    'mikronesien': ['micronesia', 'federated states of micronesia'],
+    'nauru': ['nauru', 'republic of nauru'],
+    'tuvalu': ['tuvalu'],
+    'kiribati': ['kiribati', 'republic of kiribati'],
+    // Europa weitere
+    'estland': ['estonia', 'republic of estonia'],
+    'lettland': ['latvia', 'republic of latvia'],
+    'litauen': ['lithuania', 'republic of lithuania'],
+    'weißrussland': ['belarus', 'republic of belarus', 'white russia'],
+    'moldawien': ['moldova', 'republic of moldova', 'moldavia'],
+    'nordmazedonien': ['north macedonia', 'republic of north macedonia', 'macedonia'],
+    'kosovo': ['kosovo', 'republic of kosovo'],
+    'bosnien und herzegowina': ['bosnia and herzegovina'],
+    'montenegro': ['montenegro'],
+    'albanien': ['albania', 'republic of albania'],
+    'malta': ['malta', 'republic of malta'],
+    'zypern': ['cyprus', 'republic of cyprus'],
+    'island': ['iceland', 'republic of iceland'],
+    'färöer': ['faroe islands', 'faroes'],
+    'grönland': ['greenland']
 };
 
 // Update country overlays based on selected countries
-function updateCountryOverlays() {
-    console.log('updateCountryOverlays called');
+async function updateCountryOverlays() {
+    console.log('=== updateCountryOverlays called ===');
     console.log('Selected countries:', Array.from(window.selectedCountries));
 
     if (!countryOverlaysLayer) {
@@ -5460,10 +5741,15 @@ function updateCountryOverlays() {
     }
 
     if (!countryGeoJsonData) {
-        console.error('GeoJSON data not loaded yet');
-        // Try to load it again
-        loadCountryBoundaries();
-        return;
+        console.warn('GeoJSON data not loaded yet, loading now...');
+        // Load and wait for completion
+        await loadCountryBoundaries();
+
+        // Check again after loading
+        if (!countryGeoJsonData) {
+            console.error('Failed to load GeoJSON data');
+            return;
+        }
     }
 
     // Clear existing overlays
@@ -5477,15 +5763,29 @@ function updateCountryOverlays() {
     let matchedCountries = [];
     let unmatchedSelections = new Set(window.selectedCountries);
 
+    // Debug: Log all available countries in GeoJSON
+    if (!window.debuggedCountries) {
+        console.log('Available countries in GeoJSON:');
+        countryGeoJsonData.features.slice(0, 10).forEach(f => {
+            console.log('- ', f.properties.name || f.properties.NAME || f.properties.ADMIN);
+        });
+        window.debuggedCountries = true;
+    }
+
     // Add overlays for selected countries
     countryGeoJsonData.features.forEach(feature => {
         const props = feature.properties;
         // Try different property names that might contain the country name
         const geoJsonName = (props.name || props.NAME || props.ADMIN || props.name_long || props.NAME_LONG || '').toLowerCase().trim();
 
-        // Debug: log first few country names from GeoJSON
-        if (matchedCountries.length < 3) {
-            console.log('GeoJSON country example:', props.name || props.NAME, '- All props:', Object.keys(props));
+        // Special debug for Netherlands/Greenland issue
+        if (geoJsonName.includes('netherland') || geoJsonName.includes('greenland') ||
+            geoJsonName.includes('groenland') || geoJsonName.includes('niederlande')) {
+            console.log('DEBUG - Potential match:', {
+                geoJsonName: geoJsonName,
+                originalName: props.name || props.NAME,
+                allProps: props
+            });
         }
 
         // Check if this country is selected
@@ -5493,7 +5793,7 @@ function updateCountryOverlays() {
         const isSelected = Array.from(window.selectedCountries).some(selected => {
             const selectedLower = selected.toLowerCase().trim();
 
-            // Direct match
+            // Direct EXACT match first
             if (geoJsonName === selectedLower) {
                 matchedSelection = selected;
                 return true;
@@ -5501,12 +5801,11 @@ function updateCountryOverlays() {
 
             // Check if selected is a German name
             if (countryNameMapping[selectedLower]) {
-                // Check if GeoJSON name matches any of the English variants
+                // Check if GeoJSON name matches any of the English variants EXACTLY
                 const matches = countryNameMapping[selectedLower].some(englishName => {
                     const englishLower = englishName.toLowerCase();
-                    return geoJsonName === englishLower ||
-                           geoJsonName.includes(englishLower) ||
-                           englishLower.includes(geoJsonName);
+                    // Only exact matches, no partial matches
+                    return geoJsonName === englishLower;
                 });
                 if (matches) {
                     matchedSelection = selected;
@@ -5526,11 +5825,8 @@ function updateCountryOverlays() {
                 }
             }
 
-            // Partial match as fallback
-            if (geoJsonName.includes(selectedLower) || selectedLower.includes(geoJsonName)) {
-                matchedSelection = selected;
-                return true;
-            }
+            // NO partial matching to avoid false positives
+            // (This was causing issues like "Netherlands" matching "Greenland")
 
             return false;
         });
@@ -5563,23 +5859,203 @@ function updateCountryOverlays() {
     }
 
     console.log('Successfully matched countries:', matchedCountries);
+    console.log('Country overlay layers count:', countryOverlaysLayer.getLayers().length);
 
-    // Optionally fit map to show all selected countries
+    // Auto-zoom to show all selected countries
     if (countryOverlaysLayer.getLayers().length > 0) {
-        try {
-            const bounds = countryOverlaysLayer.getBounds();
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
+        console.log('Preparing to zoom to countries...');
+        // Add a small delay to ensure layers are properly rendered
+        setTimeout(() => {
+            try {
+                console.log('Getting bounds for zoom...');
+
+                // Calculate bounds manually from all layers
+                let bounds = null;
+                const layers = countryOverlaysLayer.getLayers();
+                console.log('Total layers in countryOverlaysLayer:', layers.length);
+
+                layers.forEach((layer, index) => {
+                    console.log(`Layer ${index}:`, layer);
+
+                    // Try different methods to get bounds
+                    let layerBounds = null;
+
+                    if (layer.getBounds) {
+                        // If the layer has getBounds method
+                        layerBounds = layer.getBounds();
+                    } else if (layer._layers) {
+                        // If it's a nested layer group
+                        Object.values(layer._layers).forEach(subLayer => {
+                            if (subLayer.getBounds) {
+                                const subBounds = subLayer.getBounds();
+                                if (!layerBounds) {
+                                    layerBounds = subBounds;
+                                } else {
+                                    layerBounds.extend(subBounds);
+                                }
+                            }
+                        });
+                    }
+
+                    if (layerBounds) {
+                        if (!bounds) {
+                            bounds = layerBounds;
+                        } else {
+                            bounds.extend(layerBounds);
+                        }
+                        console.log(`Added bounds from layer ${index}:`, layerBounds.toBBoxString());
+                    }
+                });
+
+                if (!bounds) {
+                    console.error('No bounds could be calculated from layers');
+                    return;
+                }
+
+                console.log('Calculated combined bounds:', bounds);
+                console.log('Bounds valid:', bounds.isValid());
+                console.log('Bounds details:', {
+                    north: bounds.getNorth(),
+                    south: bounds.getSouth(),
+                    east: bounds.getEast(),
+                    west: bounds.getWest()
+                });
+
+                if (bounds.isValid()) {
+                    // Adjust zoom based on number of countries selected
+                    const countryCount = matchedCountries.length;
+                    let zoomOptions = {};
+
+                    if (countryCount === 1) {
+                        // Single country - zoom in closer
+                        console.log('Zooming to single country...');
+                        zoomOptions = {
+                            padding: [100, 100],
+                            maxZoom: 7,
+                            animate: true,
+                            duration: 0.8
+                        };
+                    } else if (countryCount === 2) {
+                        // Two countries - check if they're far apart
+                        const boundsSize = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
+                        console.log('Distance between countries:', boundsSize);
+
+                        if (boundsSize > 5000000) { // More than 5000km apart
+                            // Far apart countries (e.g., Germany and Canada)
+                            zoomOptions = {
+                                padding: [50, 50],
+                                maxZoom: 4,
+                                animate: true,
+                                duration: 0.8
+                            };
+                        } else {
+                            // Nearby countries
+                            zoomOptions = {
+                                padding: [80, 80],
+                                maxZoom: 6,
+                                animate: true,
+                                duration: 0.8
+                            };
+                        }
+                    } else {
+                        // Multiple countries
+                        zoomOptions = {
+                            padding: [60, 60],
+                            maxZoom: 5,
+                            animate: true,
+                            duration: 0.8
+                        };
+                    }
+
+                    console.log('Zoom options:', zoomOptions);
+                    console.log('Fitting bounds to:', bounds.toBBoxString());
+
+                    // Force the zoom by directly fitting bounds
+                    try {
+                        map.fitBounds(bounds, zoomOptions);
+                        console.log('✓ Map zoom completed');
+
+                        // Double-check zoom happened
+                        setTimeout(() => {
+                            const newZoom = map.getZoom();
+                            const center = map.getCenter();
+                            console.log('New map state - Zoom:', newZoom, 'Center:', center);
+                        }, 1000);
+                    } catch (zoomError) {
+                        console.error('Error during zoom:', zoomError);
+                        // Fallback: try simple setView
+                        const center = bounds.getCenter();
+                        map.setView(center, 5, { animate: true });
+                        console.log('Used fallback zoom to center:', center);
+                    }
+                } else {
+                    console.error('Invalid bounds for country layers');
+                }
+            } catch (e) {
+                console.error('Error fitting bounds to countries:', e);
+                console.error('Error details:', e.stack);
             }
-        } catch (e) {
-            console.log('Could not fit bounds to countries:', e);
-        }
+        }, 100); // Small delay to ensure layers are rendered
     } else {
         console.log('No country layers added to map');
+        // If no countries selected, reset to default view
+        if (window.selectedCountries.size === 0 && initialMapView) {
+            map.setView(initialMapView.center, initialMapView.zoom, {
+                animate: true,
+                duration: 0.8
+            });
+        }
     }
 }
 
+// Test function to manually trigger zoom to Germany
+window.testZoomToGermany = function() {
+    console.log('Testing zoom to Germany...');
+    if (!map) {
+        console.error('Map not initialized');
+        return;
+    }
+
+    // Germany approximate bounds
+    const germanyBounds = L.latLngBounds(
+        [47.2701, 5.8663],  // Southwest
+        [55.0585, 15.0419]  // Northeast
+    );
+
+    console.log('Germany bounds:', germanyBounds);
+
+    try {
+        map.fitBounds(germanyBounds, {
+            padding: [100, 100],
+            maxZoom: 6,
+            animate: true,
+            duration: 1
+        });
+        console.log('Zoom to Germany completed');
+    } catch (e) {
+        console.error('Zoom failed:', e);
+    }
+};
+
+// Test function to check if zoom works at all
+window.testBasicZoom = function(lat, lng, zoomLevel) {
+    console.log(`Testing zoom to ${lat}, ${lng} at level ${zoomLevel}`);
+    if (!map) {
+        console.error('Map not initialized');
+        return;
+    }
+
+    map.setView([lat, lng], zoomLevel, {
+        animate: true,
+        duration: 1
+    });
+    console.log('Basic zoom completed');
+};
+
 console.log('Risk Management Dashboard loaded with GDACS API integration');
+console.log('Test functions available:');
+console.log('- testZoomToGermany() : Zoom to Germany');
+console.log('- testBasicZoom(lat, lng, zoom) : Test basic zoom');
 </script>
 </body>
 </html>

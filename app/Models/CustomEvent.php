@@ -224,6 +224,30 @@ class CustomEvent extends Model
     }
 
     /**
+     * Get the clicks for this event.
+     */
+    public function clicks()
+    {
+        return $this->hasMany(EventClick::class);
+    }
+
+    /**
+     * Get click statistics for this event.
+     */
+    public function getClickStatistics()
+    {
+        return [
+            'total' => $this->clicks()->count(),
+            'list' => $this->clicks()->byType('list')->count(),
+            'map_marker' => $this->clicks()->byType('map_marker')->count(),
+            'details_button' => $this->clicks()->byType('details_button')->count(),
+            'today' => $this->clicks()->whereDate('clicked_at', today())->count(),
+            'this_week' => $this->clicks()->whereBetween('clicked_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'this_month' => $this->clicks()->whereMonth('clicked_at', now()->month)->whereYear('clicked_at', now()->year)->count(),
+        ];
+    }
+
+    /**
      * Get the marker size options.
      */
     public static function getMarkerSizeOptions(): array
@@ -241,6 +265,7 @@ class CustomEvent extends Model
     public static function getPriorityOptions(): array
     {
         return [
+            'info' => 'Information',
             'low' => 'Niedrig',
             'medium' => 'Mittel',
             'high' => 'Hoch',

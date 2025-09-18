@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CustomEvents\Tables;
 
 use App\Models\CustomEvent;
+use App\Models\Country;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -13,8 +14,9 @@ use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
+use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 
 class CustomEventsTable
@@ -28,7 +30,22 @@ class CustomEventsTable
                     ->searchable()
                     ->sortable()
                     ->limit(50),
-                
+
+                TextColumn::make('country.name_translations')
+                    ->label('Land')
+                    ->getStateUsing(fn ($record) => $record->country?->getName('de') ?? 'Nicht zugeordnet')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('country', function ($q) use ($search) {
+                            $q->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))) LIKE ?', ['%' . strtolower($search) . '%'])
+                              ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.en"))) LIKE ?', ['%' . strtolower($search) . '%']);
+                        });
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->leftJoin('countries', 'custom_events.country_id', '=', 'countries.id')
+                            ->orderByRaw('JSON_UNQUOTE(JSON_EXTRACT(countries.name_translations, "$.de")) ' . $direction);
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
+
                 TextColumn::make('eventTypes.name')
                     ->label('Typen')
                     ->badge()
@@ -74,19 +91,78 @@ class CustomEventsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                // Click Statistics Columns
+                TextColumn::make('clicks_count')
+                    ->label('Gesamt-Klicks')
+                    ->counts('clicks')
+                    ->badge()
+                    ->color(fn (int $state): string => match(true) {
+                        $state === 0 => 'gray',
+                        $state < 10 => 'info',
+                        $state < 50 => 'success',
+                        $state < 100 => 'warning',
+                        default => 'danger'
+                    })
+                    ->sortable(),
+
+                TextColumn::make('clicks_today')
+                    ->label('Heute')
+                    ->getStateUsing(function ($record) {
+                        return $record->clicks()
+                            ->whereDate('clicked_at', today())
+                            ->count();
+                    })
+                    ->badge()
+                    ->color('primary')
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                TextColumn::make('clicks_this_week')
+                    ->label('Diese Woche')
+                    ->getStateUsing(function ($record) {
+                        return $record->clicks()
+                            ->whereBetween('clicked_at', [now()->startOfWeek(), now()->endOfWeek()])
+                            ->count();
+                    })
+                    ->badge()
+                    ->color('info')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('last_click')
+                    ->label('Letzter Klick')
+                    ->getStateUsing(function ($record) {
+                        $lastClick = $record->clicks()
+                            ->orderBy('clicked_at', 'desc')
+                            ->first();
+                        return $lastClick?->clicked_at;
+                    })
+                    ->dateTime('d.m.Y H:i')
+                    ->placeholder('Noch keine Klicks')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('created_at')
                     ->label('Erstellt')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
             ])
             ->filters([
-                TrashedFilter::make(),
-                
+                SelectFilter::make('country_id')
+                    ->label('Land')
+                    ->options(function () {
+                        return Country::query()
+                            ->orderByRaw('JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))')
+                            ->get()
+                            ->mapWithKeys(fn (Country $country) => [$country->id => $country->getName('de')])
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->multiple()
+                    ->preload(),
+
                 SelectFilter::make('event_type_id')
                     ->label('Event-Typ')
                     ->relationship('eventType', 'name')
                     ->multiple(),
-                
+
                 SelectFilter::make('priority')
                     ->label('Priorität')
                     ->options(CustomEvent::getPriorityOptions())
@@ -103,6 +179,108 @@ class CustomEventsTable
                     ->placeholder('Alle Events')
                     ->trueLabel('Nur archivierte')
                     ->falseLabel('Nur nicht-archivierte'),
+
+                Filter::make('start_date')
+                    ->label('Startdatum')
+                    ->form([
+                        DatePicker::make('start_from')
+                            ->label('Start von')
+                            ->displayFormat('d.m.Y')
+                            ->placeholder('TT.MM.JJJJ'),
+                        DatePicker::make('start_to')
+                            ->label('Start bis')
+                            ->displayFormat('d.m.Y')
+                            ->placeholder('TT.MM.JJJJ'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['start_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('start_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['start_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('start_date', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicators = [];
+                        if ($data['start_from'] ?? null) {
+                            $indicators[] = 'Start ab: ' . \Carbon\Carbon::parse($data['start_from'])->format('d.m.Y');
+                        }
+                        if ($data['start_to'] ?? null) {
+                            $indicators[] = 'Start bis: ' . \Carbon\Carbon::parse($data['start_to'])->format('d.m.Y');
+                        }
+                        return count($indicators) ? implode(', ', $indicators) : null;
+                    }),
+
+                Filter::make('end_date')
+                    ->label('Enddatum')
+                    ->form([
+                        DatePicker::make('end_from')
+                            ->label('Ende von')
+                            ->displayFormat('d.m.Y')
+                            ->placeholder('TT.MM.JJJJ'),
+                        DatePicker::make('end_to')
+                            ->label('Ende bis')
+                            ->displayFormat('d.m.Y')
+                            ->placeholder('TT.MM.JJJJ'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['end_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['end_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicators = [];
+                        if ($data['end_from'] ?? null) {
+                            $indicators[] = 'Ende ab: ' . \Carbon\Carbon::parse($data['end_from'])->format('d.m.Y');
+                        }
+                        if ($data['end_to'] ?? null) {
+                            $indicators[] = 'Ende bis: ' . \Carbon\Carbon::parse($data['end_to'])->format('d.m.Y');
+                        }
+                        return count($indicators) ? implode(', ', $indicators) : null;
+                    }),
+
+                Filter::make('created_at')
+                    ->label('Erstellungsdatum')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Erstellt von')
+                            ->displayFormat('d.m.Y')
+                            ->placeholder('TT.MM.JJJJ'),
+                        DatePicker::make('created_to')
+                            ->label('Erstellt bis')
+                            ->displayFormat('d.m.Y')
+                            ->placeholder('TT.MM.JJJJ'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicators = [];
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = 'Erstellt ab: ' . \Carbon\Carbon::parse($data['created_from'])->format('d.m.Y');
+                        }
+                        if ($data['created_to'] ?? null) {
+                            $indicators[] = 'Erstellt bis: ' . \Carbon\Carbon::parse($data['created_to'])->format('d.m.Y');
+                        }
+                        return count($indicators) ? implode(', ', $indicators) : null;
+                    }),
             ])
             ->recordActions([
                 ViewAction::make()

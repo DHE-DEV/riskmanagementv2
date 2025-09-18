@@ -42,6 +42,8 @@ Route::prefix('custom-events')->group(function () {
     Route::get('/map-events', [CustomEventController::class, 'getMapEvents'])->name('custom-events.map-events');
     Route::get('/statistics', [CustomEventController::class, 'getStatistics'])->name('custom-events.statistics');
     Route::get('/event-types', [CustomEventController::class, 'getEventTypes'])->name('custom-events.event-types');
+    Route::post('/track-click', [CustomEventController::class, 'trackClick'])->name('custom-events.track-click');
+    Route::get('/{eventId}/click-statistics', [CustomEventController::class, 'getClickStatistics'])->name('custom-events.click-statistics');
 });
 
 // Airports search
@@ -50,6 +52,7 @@ Route::get('/airports/countries', [AirportSearchController::class, 'countries'])
 Route::get('/airports/continents', [AirportSearchController::class, 'continents'])->name('airports.continents');
 Route::get('/countries/search', [AirportSearchController::class, 'countrySearch'])->name('countries.search');
 Route::get('/countries/search-debug', [AirportSearchController::class, 'countrySearchDebug'])->name('countries.search-debug');
+Route::get('/countries/mappings', [AirportSearchController::class, 'getCountryMappings'])->name('countries.mappings');
 Route::get('/countries/locate', [AirportSearchController::class, 'countryLocate'])->name('countries.locate');
 
 // Social links

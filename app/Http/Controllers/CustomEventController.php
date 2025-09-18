@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CustomEvent;
+use App\Models\EventClick;
 use App\Models\EventType;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -263,11 +264,83 @@ class CustomEventController extends Controller
     private function getPriorityColor(string $priority): string
     {
         return match(strtolower($priority)) {
+            'info' => '#0066cc',    // Blau - Information
             'low' => '#0fb67f',     // Grün - geringes Risiko
             'medium' => '#e6a50a',  // Orange - mittleres Risiko
             'high' => '#ff0000',    // Rot - hohes Risiko
             'critical' => '#8b0000', // Dunkelrot - kritisches Risiko
             default => '#e6a50a'    // Orange als Fallback
         };
+    }
+
+    /**
+     * Track click on a custom event
+     */
+    public function trackClick(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'event_id' => 'required|exists:custom_events,id',
+                'click_type' => 'required|in:list,map_marker,details_button',
+            ]);
+
+            EventClick::create([
+                'custom_event_id' => $request->event_id,
+                'click_type' => $request->click_type,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'session_id' => session()->getId(),
+                'user_id' => auth()->id(),
+                'clicked_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Click tracked successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to track click: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get click statistics for a custom event
+     */
+    public function getClickStatistics($eventId): JsonResponse
+    {
+        try {
+            $event = CustomEvent::findOrFail($eventId);
+            $statistics = $event->getClickStatistics();
+
+            // Add recent clicks
+            $recentClicks = $event->clicks()
+                ->with('user')
+                ->orderBy('clicked_at', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function ($click) {
+                    return [
+                        'type' => $click->click_type_label,
+                        'clicked_at' => $click->clicked_at->format('d.m.Y H:i'),
+                        'user' => $click->user?->name ?? 'Anonym',
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'statistics' => $statistics,
+                    'recent_clicks' => $recentClicks,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get statistics: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

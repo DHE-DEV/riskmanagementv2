@@ -279,6 +279,69 @@ class AirportSearchController extends Controller
             'longitude' => $country->lng,
         ]]);
     }
+
+    /**
+     * Get all country name mappings for the frontend
+     */
+    public function getCountryMappings()
+    {
+        try {
+            $countries = Country::all();
+            $mappings = [];
+
+            foreach ($countries as $country) {
+                $translations = $country->name_translations ?? [];
+
+                // Get German and English names
+                $nameDE = $translations['de'] ?? null;
+                $nameEN = $translations['en'] ?? $country->name ?? null;
+
+                // Create mapping entries for all available translations
+                foreach ($translations as $lang => $name) {
+                    if ($name) {
+                        $normalizedName = strtolower(trim($name));
+
+                        // Map to English name as primary
+                        if (!isset($mappings[$normalizedName])) {
+                            $mappings[$normalizedName] = [];
+                        }
+
+                        // Add all possible variations
+                        if ($nameEN && !in_array(strtolower($nameEN), $mappings[$normalizedName])) {
+                            $mappings[$normalizedName][] = strtolower($nameEN);
+                        }
+
+                        // Also add ISO codes
+                        if ($country->iso_code) {
+                            $mappings[$normalizedName][] = strtolower($country->iso_code);
+                        }
+                        if ($country->iso3_code) {
+                            $mappings[$normalizedName][] = strtolower($country->iso3_code);
+                        }
+                    }
+                }
+
+                // Also map ISO codes to country names
+                if ($country->iso_code) {
+                    $mappings[strtolower($country->iso_code)] = [strtolower($nameEN ?? '')];
+                }
+                if ($country->iso3_code) {
+                    $mappings[strtolower($country->iso3_code)] = [strtolower($nameEN ?? '')];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $mappings,
+                'count' => count($mappings)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load country mappings: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
 
 
