@@ -61,6 +61,10 @@ class AdminPanelProvider extends PanelProvider
                 'API Schnittstellen',
                 'Verwaltung',
                 'System',
-            ]);
+            ])
+            ->renderHook(
+                'panels::body.end',
+                fn () => view('filament.admin.navigation-collapse-script')
+            );
     }
 }
