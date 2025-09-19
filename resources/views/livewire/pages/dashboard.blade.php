@@ -1730,7 +1730,7 @@ async function loadDashboardData() {
             let countryMatch = true;
             if (window.selectedCountries && window.selectedCountries.size > 0) {
                 const eventCountry = e.country_name || e.country || '';
-                countryMatch = Array.from(window.selectedCountries).some(selectedCountry => 
+                countryMatch = Array.from(window.selectedCountries.keys()).some(selectedCountry =>
                     eventCountry.toLowerCase().includes(selectedCountry.toLowerCase())
                 );
             }
@@ -3679,7 +3679,8 @@ function selectContinent(continentId) {
 // Globale Variable für alle Events (ungefiltert) - wird in loadDashboardData gesetzt
 
 // Globale Variable für ausgewählte Länder im Event-Filter
-window.selectedCountries = new Set();
+// Now stores objects with {name, iso2} instead of just names
+window.selectedCountries = new Map();
 
 // Events nach Kontinent filtern
 function filterEventsByContinent() {
@@ -4220,7 +4221,7 @@ async function searchCountriesForFilter(query) {
         }
         
         box.innerHTML = list.map((c, i) => (
-            `<div class="autocomplete-item px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 flex items-center justify-between" data-index="${i}" data-name="${escapeForAttr(c.name)}">
+            `<div class="autocomplete-item px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 flex items-center justify-between" data-index="${i}" data-name="${escapeForAttr(c.name)}" data-iso2="${escapeForAttr(c.iso2 || '')}">
                 <div>
                     <div class="font-medium">${escapeHtml(c.name)}</div>
                     <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
@@ -4228,7 +4229,7 @@ async function searchCountriesForFilter(query) {
                 <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-100">Übernehmen</button>
             </div>`
         )).join('');
-        
+
         box.querySelectorAll('.autocomplete-item').forEach(el => {
             el.addEventListener('mouseenter', () => {
                 const idx = parseInt(el.getAttribute('data-index'));
@@ -4237,15 +4238,17 @@ async function searchCountriesForFilter(query) {
             el.addEventListener('click', (e) => {
                 e.preventDefault();
                 const countryName = el.getAttribute('data-name');
-                console.log('Adding country to filter:', countryName);
-                addCountryToFilter(countryName);
+                const iso2 = el.getAttribute('data-iso2');
+                console.log('Adding country to filter:', countryName, 'ISO:', iso2);
+                addCountryToFilter(countryName, iso2);
                 box.innerHTML = '';
             });
             el.querySelector('button')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const countryName = el.getAttribute('data-name');
-                console.log('Adding country to filter via button:', countryName);
-                addCountryToFilter(countryName);
+                const iso2 = el.getAttribute('data-iso2');
+                console.log('Adding country to filter via button:', countryName, 'ISO:', iso2);
+                addCountryToFilter(countryName, iso2);
                 box.innerHTML = '';
             });
         });
@@ -4279,16 +4282,16 @@ function clearSelectedCountry() {
     debouncedAirportSearchWithFilters();
 }
 
-function addCountryToFilter(countryName) {
-    console.log('addCountryToFilter called with:', countryName);
-    
-    // Land zur Auswahl hinzufügen
-    window.selectedCountries.add(countryName);
-    
+function addCountryToFilter(countryName, iso2) {
+    console.log('addCountryToFilter called with:', countryName, iso2);
+
+    // Land zur Auswahl hinzufügen (mit ISO-Code für besseres Matching)
+    window.selectedCountries.set(countryName, { name: countryName, iso2: iso2 || null });
+
     // Suchfeld leeren
     const countryInput = document.getElementById('countryFilterInput');
     if (countryInput) countryInput.value = '';
-    
+
     // Ausgewählte Länder anzeigen
     renderSelectedCountries();
 
@@ -4326,10 +4329,10 @@ function renderSelectedCountries() {
         return;
     }
 
-    const countryBadges = Array.from(window.selectedCountries).map(country => `
+    const countryBadges = Array.from(window.selectedCountries.entries()).map(([name, data]) => `
         <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
-            <span>${escapeHtml(country)}</span>
-            <button type="button" class="text-blue-700 hover:text-blue-900" onclick="removeCountryFromFilter('${escapeForAttr(country)}')" style="cursor: pointer;">&times;</button>
+            <span>${escapeHtml(name)}${data.iso2 ? ' (' + escapeHtml(data.iso2) + ')' : ''}</span>
+            <button type="button" class="text-blue-700 hover:text-blue-900" onclick="removeCountryFromFilter('${escapeForAttr(name)}')" style="cursor: pointer;">&times;</button>
         </span>
     `).join('');
 
@@ -4585,7 +4588,7 @@ function resetAllFilters() {
     }
 
     // Reset Country filters - empty by default
-    window.selectedCountries = new Set();
+    window.selectedCountries = new Map();
     const countryDisplay = document.getElementById('selectedCountriesFilterDisplay');
     if (countryDisplay) countryDisplay.innerHTML = '';
 
@@ -5523,30 +5526,33 @@ async function loadCountryBoundaries() {
     }
 
     try {
-        // Using Natural Earth data - more reliable for country boundaries
-        // This dataset doesn't include overseas territories as separate countries
-        const response = await fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson');
+        // Using local GeoJSON file - faster and more reliable
+        const response = await fetch('/api/countries-geojson');
         if (response.ok) {
             countryGeoJsonData = await response.json();
-            console.log('Country boundaries loaded from Natural Earth');
+            console.log('Country boundaries loaded from local file');
             console.log('Total countries in GeoJSON:', countryGeoJsonData.features.length);
-            console.log('Sample country properties:', countryGeoJsonData.features[0]?.properties);
 
-            // Don't auto-update overlays here to avoid recursion
+            // Log some sample country names to check the data structure
+            if (countryGeoJsonData.features && countryGeoJsonData.features.length > 0) {
+                const sampleCountries = countryGeoJsonData.features.slice(0, 5).map(f => ({
+                    name: f.properties?.name || f.properties?.NAME || f.properties?.ADMIN,
+                    props: Object.keys(f.properties || {})
+                }));
+                console.log('Sample countries:', sampleCountries);
+            }
+
             return true;
         }
     } catch (error) {
-        console.error('Error loading Natural Earth data:', error);
-        // Fallback to original source
+        console.error('Error loading local GeoJSON:', error);
+
+        // Fallback to remote sources if local file fails
         try {
-            const response = await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json');
+            const response = await fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson');
             if (response.ok) {
                 countryGeoJsonData = await response.json();
-                console.log('Country boundaries loaded from fallback source');
-                console.log('Total countries in GeoJSON:', countryGeoJsonData.features.length);
-                console.log('Sample country properties:', countryGeoJsonData.features[0]?.properties);
-
-                // Don't auto-update overlays here to avoid recursion
+                console.log('Country boundaries loaded from Natural Earth (fallback)');
                 return true;
             }
         } catch (fallbackError) {
@@ -5733,7 +5739,7 @@ let countryNameMapping = {
 // Update country overlays based on selected countries
 async function updateCountryOverlays() {
     console.log('=== updateCountryOverlays called ===');
-    console.log('Selected countries:', Array.from(window.selectedCountries));
+    console.log('Selected countries:', Array.from(window.selectedCountries.entries()));
 
     if (!countryOverlaysLayer) {
         console.error('countryOverlaysLayer not initialized');
@@ -5761,13 +5767,14 @@ async function updateCountryOverlays() {
     }
 
     let matchedCountries = [];
-    let unmatchedSelections = new Set(window.selectedCountries);
+    let unmatchedSelections = new Map(window.selectedCountries);
 
     // Debug: Log all available countries in GeoJSON
     if (!window.debuggedCountries) {
-        console.log('Available countries in GeoJSON:');
+        console.log('Available countries in GeoJSON (first 10):');
         countryGeoJsonData.features.slice(0, 10).forEach(f => {
-            console.log('- ', f.properties.name || f.properties.NAME || f.properties.ADMIN);
+            const iso2 = f.properties['ISO3166-1-Alpha-2'] || f.properties.ISO_A2 || f.properties.iso_a2;
+            console.log(`- ${f.properties.name || f.properties.NAME || f.properties.ADMIN} (ISO: ${iso2})`);
         });
         window.debuggedCountries = true;
     }
@@ -5775,7 +5782,9 @@ async function updateCountryOverlays() {
     // Add overlays for selected countries
     countryGeoJsonData.features.forEach(feature => {
         const props = feature.properties;
-        // Try different property names that might contain the country name
+
+        // Get ISO-2 code from GeoJSON (try different possible property names)
+        const geoJsonISO2 = (props['ISO3166-1-Alpha-2'] || props.ISO_A2 || props.iso_a2 || '').toUpperCase();
         const geoJsonName = (props.name || props.NAME || props.ADMIN || props.name_long || props.NAME_LONG || '').toLowerCase().trim();
 
         // Special debug for Netherlands/Greenland issue
@@ -5788,52 +5797,66 @@ async function updateCountryOverlays() {
             });
         }
 
-        // Check if this country is selected
+        // Check if this country is selected by ISO code (much more reliable!)
         let matchedSelection = null;
-        const isSelected = Array.from(window.selectedCountries).some(selected => {
-            const selectedLower = selected.toLowerCase().trim();
+        let isSelected = false;
 
-            // Direct EXACT match first
-            if (geoJsonName === selectedLower) {
-                matchedSelection = selected;
-                return true;
-            }
-
-            // Check if selected is a German name
-            if (countryNameMapping[selectedLower]) {
-                // Check if GeoJSON name matches any of the English variants EXACTLY
-                const matches = countryNameMapping[selectedLower].some(englishName => {
-                    const englishLower = englishName.toLowerCase();
-                    // Only exact matches, no partial matches
-                    return geoJsonName === englishLower;
-                });
-                if (matches) {
-                    matchedSelection = selected;
-                    return true;
+        // First, try to match by ISO-2 code (most reliable method)
+        if (geoJsonISO2) {
+            for (const [name, data] of window.selectedCountries.entries()) {
+                if (data.iso2 && data.iso2.toUpperCase() === geoJsonISO2) {
+                    matchedSelection = name;
+                    isSelected = true;
+                    break;
                 }
             }
+        }
 
-            // Check reverse mapping (if selected is English, check for German)
-            for (const [germanName, englishNames] of Object.entries(countryNameMapping)) {
-                if (englishNames.some(name => name.toLowerCase() === selectedLower)) {
-                    if (geoJsonName === germanName || englishNames.some(name =>
-                        geoJsonName === name.toLowerCase()
-                    )) {
-                        matchedSelection = selected;
-                        return true;
+        // If no ISO match found, fall back to name matching (for countries without ISO codes in our data)
+        if (!isSelected) {
+            for (const [name, data] of window.selectedCountries.entries()) {
+                const selectedLower = name.toLowerCase().trim();
+
+                // Direct EXACT match first
+                if (geoJsonName === selectedLower) {
+                    matchedSelection = name;
+                    isSelected = true;
+                    break;
+                }
+
+                // Check if selected is a German name
+                if (countryNameMapping[selectedLower]) {
+                    // Check if GeoJSON name matches any of the English variants EXACTLY
+                    const matches = countryNameMapping[selectedLower].some(englishName => {
+                        const englishLower = englishName.toLowerCase();
+                        return geoJsonName === englishLower;
+                    });
+                    if (matches) {
+                        matchedSelection = name;
+                        isSelected = true;
+                        break;
                     }
                 }
+
+                // Check reverse mapping (if selected is English, check for German)
+                for (const [germanName, englishNames] of Object.entries(countryNameMapping)) {
+                    if (englishNames.some(n => n.toLowerCase() === selectedLower)) {
+                        if (geoJsonName === germanName || englishNames.some(n =>
+                            geoJsonName === n.toLowerCase()
+                        )) {
+                            matchedSelection = name;
+                            isSelected = true;
+                            break;
+                        }
+                    }
+                }
+                if (isSelected) break;
             }
-
-            // NO partial matching to avoid false positives
-            // (This was causing issues like "Netherlands" matching "Greenland")
-
-            return false;
-        });
+        }
 
         if (isSelected && matchedSelection) {
             const displayName = props.name || props.NAME || props.ADMIN;
-            console.log('Match found! Selected:', matchedSelection, '-> GeoJSON:', displayName);
+            console.log('Match found! Selected:', matchedSelection, '-> GeoJSON:', displayName, 'ISO:', geoJsonISO2);
             matchedCountries.push(displayName);
             unmatchedSelections.delete(matchedSelection);
 

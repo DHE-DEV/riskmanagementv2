@@ -328,6 +328,25 @@ class AirportSearchController extends Controller
                 if ($country->iso3_code) {
                     $mappings[strtolower($country->iso3_code)] = [strtolower($nameEN ?? '')];
                 }
+
+                // Special case for Cape Verde/Cabo Verde
+                if ($country->iso_code === 'CV') {
+                    // Add "Cabo Verde" as a variation for "Kap Verde"
+                    if (isset($mappings['kap verde'])) {
+                        $mappings['kap verde'][] = 'cabo verde';
+                    }
+                    // Also add direct mapping for "Cabo Verde"
+                    $mappings['cabo verde'] = ['cape verde', 'kap verde', 'cv', 'cpv'];
+                }
+
+                // Special case for Czech Republic/Czechia
+                if ($country->iso_code === 'CZ') {
+                    if (isset($mappings['tschechische republik'])) {
+                        $mappings['tschechische republik'][] = 'czechia';
+                    }
+                    $mappings['czechia'] = ['czech republic', 'tschechische republik', 'cz', 'cze'];
+                    $mappings['tschechien'] = ['czechia', 'czech republic', 'cz', 'cze'];
+                }
             }
 
             return response()->json([

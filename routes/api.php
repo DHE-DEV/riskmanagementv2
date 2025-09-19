@@ -65,3 +65,17 @@ Route::prefix('geolocation')->group(function () {
     Route::get('/cities-in-radius', [GeolocationController::class, 'findCitiesInRadius'])->name('geolocation.cities-in-radius');
     Route::get('/test', [GeolocationController::class, 'test'])->name('geolocation.test');
 });
+
+// Countries GeoJSON Route
+Route::get('/countries-geojson', function () {
+    $path = storage_path('app/private/countries.geojson');
+
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'GeoJSON file not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/geo+json',
+        'Cache-Control' => 'public, max-age=86400' // Cache for 24 hours
+    ]);
+})->name('countries.geojson');
