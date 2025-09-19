@@ -4,26 +4,19 @@ namespace App\Filament\Resources\CustomEvents\Pages;
 
 use App\Filament\Resources\CustomEvents\CustomEventResource;
 use App\Filament\Widgets\CustomEventStatsOverview;
+use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Resources\Pages\EditRecord;
+use Filament\Resources\Pages\ViewRecord;
 
-class EditCustomEvent extends EditRecord
+class ViewCustomEvent extends ViewRecord
 {
     protected static string $resource = CustomEventResource::class;
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
-    }
 
     protected function getHeaderActions(): array
     {
         return [
+            EditAction::make(),
             DeleteAction::make(),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
         ];
     }
 

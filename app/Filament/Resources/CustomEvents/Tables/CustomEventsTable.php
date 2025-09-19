@@ -315,6 +315,9 @@ class CustomEventsTable
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()
-            ->paginated([10, 25, 50, 100]);
+            ->paginated([10, 25, 50, 100])
+            ->recordUrl(
+                fn (CustomEvent $record): string => route('filament.admin.resources.custom-events.view', ['record' => $record])
+            );
     }
 }

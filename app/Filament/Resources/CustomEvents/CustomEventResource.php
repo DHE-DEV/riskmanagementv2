@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CustomEvents;
 use App\Filament\Resources\CustomEvents\Pages\CreateCustomEvent;
 use App\Filament\Resources\CustomEvents\Pages\EditCustomEvent;
 use App\Filament\Resources\CustomEvents\Pages\ListCustomEvents;
+use App\Filament\Resources\CustomEvents\Pages\ViewCustomEvent;
 use App\Filament\Resources\CustomEvents\Schemas\CustomEventForm;
 use App\Filament\Resources\CustomEvents\Tables\CustomEventsTable;
 use App\Models\CustomEvent;
@@ -54,6 +55,7 @@ class CustomEventResource extends Resource
         return [
             'index' => ListCustomEvents::route('/'),
             'create' => CreateCustomEvent::route('/create'),
+            'view' => ViewCustomEvent::route('/{record}'),
             'edit' => EditCustomEvent::route('/{record}/edit'),
         ];
     }
