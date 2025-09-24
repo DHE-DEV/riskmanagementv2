@@ -1,0 +1,386 @@
+<?php
+/**
+ * PDF-Generator für Benutzeranleitung
+ * Verwendet TCPDF oder DomPDF wenn verfügbar
+ *
+ * Hinweis: Für die PDF-Generierung muss eine PDF-Bibliothek installiert sein:
+ * composer require tecnickcom/tcpdf
+ * ODER
+ * composer require dompdf/dompdf
+ */
+
+// Prüfe ob Composer-Autoloader existiert
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+
+    // Versuche DomPDF zu verwenden (häufig in Laravel-Projekten vorhanden)
+    if (class_exists('Dompdf\Dompdf')) {
+
+        $html = file_get_contents(__DIR__ . '/Benutzeranleitung.html');
+
+        $dompdf = new Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        file_put_contents(__DIR__ . '/Benutzeranleitung.pdf', $dompdf->output());
+        echo "PDF erfolgreich mit DomPDF erstellt: Benutzeranleitung.pdf\n";
+        exit(0);
+    }
+
+    // Versuche TCPDF zu verwenden
+    if (class_exists('TCPDF')) {
+
+        $html = file_get_contents(__DIR__ . '/Benutzeranleitung.html');
+
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+        $pdf->SetCreator('Passolution');
+        $pdf->SetAuthor('Passolution');
+        $pdf->SetTitle('Benutzeranleitung - Informationssystem Passolution');
+        $pdf->SetSubject('Benutzeranleitung');
+
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->SetAutoPageBreak(TRUE, 15);
+
+        $pdf->AddPage();
+        $pdf->writeHTML($html, true, false, true, false, '');
+
+        $pdf->Output(__DIR__ . '/Benutzeranleitung.pdf', 'F');
+        echo "PDF erfolgreich mit TCPDF erstellt: Benutzeranleitung.pdf\n";
+        exit(0);
+    }
+}
+
+// Alternative: Erstelle ein einfaches PDF-kompatibles HTML mit Print-Styles
+$printHtml = '<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Benutzeranleitung - Informationssystem Passolution</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        @media print {
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 11pt;
+                line-height: 1.5;
+                color: #000;
+            }
+
+            h1 {
+                font-size: 24pt;
+                margin-bottom: 20pt;
+                page-break-after: avoid;
+            }
+
+            h2 {
+                font-size: 18pt;
+                margin-top: 15pt;
+                margin-bottom: 10pt;
+                page-break-after: avoid;
+            }
+
+            h3 {
+                font-size: 14pt;
+                margin-top: 10pt;
+                margin-bottom: 5pt;
+                page-break-after: avoid;
+            }
+
+            p {
+                margin-bottom: 10pt;
+                text-align: justify;
+            }
+
+            ul, ol {
+                margin-left: 20pt;
+                margin-bottom: 10pt;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 15pt 0;
+            }
+
+            th, td {
+                border: 1px solid #000;
+                padding: 5pt;
+            }
+
+            th {
+                background-color: #f0f0f0;
+                font-weight: bold;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .no-break {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Benutzeranleitung - Informationssystem Passolution</h1>
+
+    <div class="page-break"></div>
+
+    <h2>Inhaltsverzeichnis</h2>
+    <ol>
+        <li>Einführung</li>
+        <li>Systemzugang</li>
+        <li>Dashboard-Übersicht</li>
+        <li>Hauptfunktionen</li>
+        <li>Benutzerverwaltung</li>
+        <li>Datenimport und -export</li>
+        <li>Berichterstellung</li>
+        <li>Systemeinstellungen</li>
+        <li>Sicherheitshinweise</li>
+        <li>Häufig gestellte Fragen (FAQ)</li>
+        <li>Support und Kontakt</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>1. Einführung</h2>
+    <p>Das Informationssystem Passolution ist eine webbasierte Plattform zur Verwaltung und Visualisierung von Ereignissen und Informationen. Das System bietet eine intuitive Benutzeroberfläche zur Erfassung, Bearbeitung und Analyse von Daten mit geografischem Bezug.</p>
+
+    <h3>Systemanforderungen</h3>
+    <ul>
+        <li>Moderner Webbrowser (Chrome, Firefox, Safari, Edge - aktuelle Version)</li>
+        <li>Stabile Internetverbindung</li>
+        <li>JavaScript aktiviert</li>
+        <li>Cookies aktiviert für Sitzungsverwaltung</li>
+    </ul>
+
+    <h3>Zugriff auf das System</h3>
+    <p>Das System ist unter folgender Adresse erreichbar: <strong>https://info.passolution.eu/</strong></p>
+
+    <div class="page-break"></div>
+
+    <h2>2. Systemzugang</h2>
+
+    <h3>Anmeldung</h3>
+    <ol>
+        <li>Öffnen Sie Ihren Webbrowser</li>
+        <li>Navigieren Sie zu https://info.passolution.eu/</li>
+        <li>Geben Sie Ihre Zugangsdaten ein</li>
+        <li>Klicken Sie auf "Anmelden"</li>
+    </ol>
+
+    <h3>Passwort zurücksetzen</h3>
+    <p>Falls Sie Ihr Passwort vergessen haben:</p>
+    <ol>
+        <li>Klicken Sie auf "Passwort vergessen?" auf der Anmeldeseite</li>
+        <li>Geben Sie Ihre registrierte E-Mail-Adresse ein</li>
+        <li>Folgen Sie den Anweisungen in der E-Mail zum Zurücksetzen</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>3. Dashboard-Übersicht</h2>
+    <p>Das Dashboard bietet einen schnellen Überblick über alle wichtigen Informationen.</p>
+
+    <h3>Hauptbereiche</h3>
+    <table>
+        <tr>
+            <th>Bereich</th>
+            <th>Position</th>
+            <th>Funktion</th>
+        </tr>
+        <tr>
+            <td>Navigationsleiste</td>
+            <td>Oben</td>
+            <td>Zugriff auf alle Hauptfunktionen</td>
+        </tr>
+        <tr>
+            <td>Seitenleiste</td>
+            <td>Links</td>
+            <td>Schnellzugriff und Filteroptionen</td>
+        </tr>
+        <tr>
+            <td>Hauptbereich</td>
+            <td>Mitte</td>
+            <td>Aktuelle Ereignisse und Karte</td>
+        </tr>
+        <tr>
+            <td>Informationsleiste</td>
+            <td>Rechts</td>
+            <td>Statistiken und Meldungen</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2>4. Hauptfunktionen</h2>
+
+    <h3>Ereignisverwaltung</h3>
+    <p>Die Ereignisverwaltung ist das Herzstück des Systems.</p>
+
+    <h4>Neues Ereignis erstellen</h4>
+    <ol>
+        <li>Klicken Sie auf "Neues Ereignis"</li>
+        <li>Füllen Sie das Formular aus</li>
+        <li>Speichern Sie das Ereignis</li>
+    </ol>
+
+    <h3>Kartenansicht</h3>
+    <p>Die interaktive Karte zeigt alle Ereignisse geografisch an.</p>
+    <ul>
+        <li>Zoomen: Mausrad oder +/- Buttons</li>
+        <li>Verschieben: Klicken und ziehen</li>
+        <li>Vollbild: F11 oder Vollbild-Button</li>
+    </ul>
+
+    <h3>Filteroptionen</h3>
+    <p>Nutzen Sie Filter zur gezielten Anzeige von Ereignissen.</p>
+
+    <div class="page-break"></div>
+
+    <h2>5. Benutzerverwaltung</h2>
+
+    <h3>Profilverwaltung</h3>
+    <p>Verwalten Sie Ihre persönlichen Einstellungen im Benutzerprofil.</p>
+
+    <h3>Passwort ändern</h3>
+    <ol>
+        <li>Navigieren Sie zu Kontoeinstellungen</li>
+        <li>Wählen Sie "Passwort ändern"</li>
+        <li>Geben Sie das alte und neue Passwort ein</li>
+        <li>Bestätigen Sie die Änderung</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>6. Datenimport und -export</h2>
+
+    <h3>Unterstützte Formate</h3>
+    <ul>
+        <li>CSV (Comma-Separated Values)</li>
+        <li>Excel (XLSX)</li>
+        <li>JSON</li>
+        <li>XML</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>7. Berichterstellung</h2>
+    <p>Erstellen Sie aussagekräftige Berichte für Ihre Analysen.</p>
+
+    <h3>Standardberichte</h3>
+    <ul>
+        <li>Tagesbericht</li>
+        <li>Wochenbericht</li>
+        <li>Monatsbericht</li>
+        <li>Jahresbericht</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>8. Systemeinstellungen</h2>
+    <p>Administratoren können das System konfigurieren.</p>
+
+    <h3>Benutzerrollen</h3>
+    <table>
+        <tr>
+            <th>Rolle</th>
+            <th>Berechtigungen</th>
+        </tr>
+        <tr>
+            <td>Administrator</td>
+            <td>Vollzugriff</td>
+        </tr>
+        <tr>
+            <td>Editor</td>
+            <td>Erstellen und Bearbeiten</td>
+        </tr>
+        <tr>
+            <td>Betrachter</td>
+            <td>Nur Lesezugriff</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2>9. Sicherheitshinweise</h2>
+
+    <h3>Passwortrichtlinien</h3>
+    <ul>
+        <li>Mindestens 8 Zeichen</li>
+        <li>Kombination aus Buchstaben, Zahlen und Sonderzeichen</li>
+        <li>Regelmäßige Änderung empfohlen</li>
+        <li>Keine Weitergabe an Dritte</li>
+    </ul>
+
+    <h3>Best Practices</h3>
+    <ol>
+        <li>Melden Sie sich nach der Nutzung ab</li>
+        <li>Verwenden Sie keine öffentlichen Computer</li>
+        <li>Halten Sie Zugangsdaten geheim</li>
+        <li>Melden Sie verdächtige Aktivitäten</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>10. Häufig gestellte Fragen (FAQ)</h2>
+
+    <h3>Wie kann ich mein Passwort zurücksetzen?</h3>
+    <p>Nutzen Sie die "Passwort vergessen"-Funktion auf der Anmeldeseite.</p>
+
+    <h3>Welche Browser werden unterstützt?</h3>
+    <p>Chrome, Firefox, Safari und Edge in den jeweils aktuellen Versionen.</p>
+
+    <h3>Gibt es eine mobile App?</h3>
+    <p>Das System ist mobiloptimiert und funktioniert im Browser auf allen Geräten.</p>
+
+    <div class="page-break"></div>
+
+    <h2>11. Support und Kontakt</h2>
+
+    <h3>E-Mail-Support</h3>
+    <ul>
+        <li>Adresse: support@passolution.eu</li>
+        <li>Antwortzeit: Innerhalb von 24 Stunden an Werktagen</li>
+    </ul>
+
+    <h3>Telefon-Support</h3>
+    <ul>
+        <li>Hotline: +49 (0) XXX XXXXXXX</li>
+        <li>Erreichbarkeit: Mo-Fr 9:00-17:00 Uhr</li>
+    </ul>
+
+    <h3>Schulungen</h3>
+    <p>Termine und Anmeldung unter: https://info.passolution.eu/schulungen</p>
+
+    <div class="page-break"></div>
+
+    <p style="text-align: center; margin-top: 50pt;">
+        <strong>Stand: Januar 2025</strong><br>
+        © 2025 Passolution - Alle Rechte vorbehalten
+    </p>
+</body>
+</html>';
+
+file_put_contents(__DIR__ . '/Benutzeranleitung_print.html', $printHtml);
+
+echo "PDF-Generierung:\n\n";
+echo "Da keine PDF-Bibliothek installiert ist, wurden folgende Dateien erstellt:\n";
+echo "1. Benutzeranleitung_print.html - Optimiert für den Druck als PDF\n";
+echo "2. generate_pdf.php - PHP-Skript zur PDF-Generierung (benötigt DomPDF oder TCPDF)\n\n";
+echo "Um ein PDF zu erstellen, haben Sie folgende Optionen:\n\n";
+echo "Option 1: Browser-Druck\n";
+echo "- Öffnen Sie Benutzeranleitung_print.html im Browser\n";
+echo "- Drucken Sie mit Strg+P (oder Cmd+P auf Mac)\n";
+echo "- Wählen Sie 'Als PDF speichern'\n\n";
+echo "Option 2: PDF-Bibliothek installieren\n";
+echo "- Führen Sie aus: composer require dompdf/dompdf\n";
+echo "- Dann: php generate_pdf.php\n";

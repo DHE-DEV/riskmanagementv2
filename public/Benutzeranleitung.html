@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benutzeranleitung - Informationssystem Passolution</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background-color: #34495e;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #2c3e50;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+            scroll-margin-top: 60px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        h3 {
+            color: #34495e;
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        h4 {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #27ae60;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #2980b9;
+        }
+
+        .step {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .toc {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+        }
+
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 0.5rem;
+        }
+
+        .toc a {
+            color: #34495e;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            color: #3498db;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            nav ul {
+                flex-direction: column;
+            }
+
+            main {
+                padding: 1rem;
+            }
+        }
+
+        @media print {
+            nav {
+                display: none;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+
+            section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Benutzeranleitung</h1>
+            <p>Informationssystem Passolution</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#einfuehrung">Einführung</a></li>
+                <li><a href="#systemzugang">Systemzugang</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#funktionen">Funktionen</a></li>
+                <li><a href="#verwaltung">Verwaltung</a></li>
+                <li><a href="#sicherheit">Sicherheit</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#support">Support</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <div class="toc">
+                <h3>Inhaltsverzeichnis</h3>
+                <ul>
+                    <li><a href="#einfuehrung">1. Einführung</a></li>
+                    <li><a href="#systemzugang">2. Systemzugang</a></li>
+                    <li><a href="#dashboard">3. Dashboard-Übersicht</a></li>
+                    <li><a href="#funktionen">4. Hauptfunktionen</a></li>
+                    <li><a href="#verwaltung">5. Benutzerverwaltung</a></li>
+                    <li><a href="#daten">6. Datenimport und -export</a></li>
+                    <li><a href="#berichte">7. Berichterstellung</a></li>
+                    <li><a href="#einstellungen">8. Systemeinstellungen</a></li>
+                    <li><a href="#sicherheit">9. Sicherheitshinweise</a></li>
+                    <li><a href="#faq">10. Häufig gestellte Fragen</a></li>
+                    <li><a href="#support">11. Support und Kontakt</a></li>
+                </ul>
+            </div>
+
+            <section id="einfuehrung">
+                <h2>1. Einführung</h2>
+                <p>Das Informationssystem Passolution ist eine webbasierte Plattform zur Verwaltung und Visualisierung von Ereignissen und Informationen. Das System bietet eine intuitive Benutzeroberfläche zur Erfassung, Bearbeitung und Analyse von Daten mit geografischem Bezug.</p>
+
+                <div class="info-box">
+                    <h4>Systemanforderungen</h4>
+                    <ul>
+                        <li>Moderner Webbrowser (Chrome, Firefox, Safari, Edge - aktuelle Version)</li>
+                        <li>Stabile Internetverbindung</li>
+                        <li>JavaScript aktiviert</li>
+                        <li>Cookies aktiviert für Sitzungsverwaltung</li>
+                    </ul>
+                </div>
+
+                <h3>Zugriff auf das System</h3>
+                <p>Das System ist unter folgender Adresse erreichbar:</p>
+                <div class="success-box">
+                    <strong>https://info.passolution.eu/</strong>
+                </div>
+            </section>
+
+            <section id="systemzugang">
+                <h2>2. Systemzugang</h2>
+
+                <h3>Anmeldung</h3>
+                <div class="step">
+                    <span class="step-number">1</span>
+                    Öffnen Sie Ihren Webbrowser
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    Navigieren Sie zu https://info.passolution.eu/
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    Geben Sie Ihre Zugangsdaten ein:
+                    <ul style="margin-left: 3rem; margin-top: 0.5rem;">
+                        <li><strong>Benutzername</strong>: Ihr zugewiesener Benutzername</li>
+                        <li><strong>Passwort</strong>: Ihr sicheres Passwort</li>
+                    </ul>
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    Klicken Sie auf "Anmelden"
+                </div>
+
+                <h3>Passwort zurücksetzen</h3>
+                <p>Falls Sie Ihr Passwort vergessen haben:</p>
+                <ol>
+                    <li>Klicken Sie auf "Passwort vergessen?" auf der Anmeldeseite</li>
+                    <li>Geben Sie Ihre registrierte E-Mail-Adresse ein</li>
+                    <li>Folgen Sie den Anweisungen in der E-Mail zum Zurücksetzen</li>
+                </ol>
+
+                <h3>Erste Schritte nach der Anmeldung</h3>
+                <p>Nach erfolgreicher Anmeldung gelangen Sie automatisch zum Dashboard. Nehmen Sie sich Zeit, die verschiedenen Bereiche zu erkunden.</p>
+            </section>
+
+            <section id="dashboard">
+                <h2>3. Dashboard-Übersicht</h2>
+                <p>Das Dashboard bietet einen schnellen Überblick über alle wichtigen Informationen:</p>
+
+                <h3>Hauptbereiche</h3>
+                <table>
+                    <tr>
+                        <th>Bereich</th>
+                        <th>Position</th>
+                        <th>Funktion</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Navigationsleiste</strong></td>
+                        <td>Oben</td>
+                        <td>Zugriff auf alle Hauptfunktionen, Benutzermenü, Benachrichtigungen</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Seitenleiste</strong></td>
+                        <td>Links</td>
+                        <td>Schnellzugriff, Filteroptionen, Kategorieauswahl</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hauptbereich</strong></td>
+                        <td>Mitte</td>
+                        <td>Aktuelle Ereignisse, Interaktive Karte, Detailansichten</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Informationsleiste</strong></td>
+                        <td>Rechts</td>
+                        <td>Statistiken, Aktuelle Meldungen, Systemnachrichten</td>
+                    </tr>
+                </table>
+
+                <h3>Widget-Bereiche</h3>
+                <ul>
+                    <li><strong>Ereigniszähler</strong>: Zeigt die Anzahl aktiver Ereignisse</li>
+                    <li><strong>Kartenübersicht</strong>: Geografische Verteilung der Ereignisse</li>
+                    <li><strong>Zeitliche Verteilung</strong>: Chronologische Darstellung</li>
+                    <li><strong>Prioritätsanzeige</strong>: Ereignisse nach Dringlichkeit</li>
+                </ul>
+            </section>
+
+            <section id="funktionen">
+                <h2>4. Hauptfunktionen</h2>
+
+                <h3>Ereignisverwaltung</h3>
+
+                <h4>Neues Ereignis erstellen</h4>
+                <ol>
+                    <li>Klicken Sie auf "Neues Ereignis" in der Navigationsleiste</li>
+                    <li>Füllen Sie das Formular aus:
+                        <ul>
+                            <li><strong>Titel</strong>: Kurze, prägnante Bezeichnung</li>
+                            <li><strong>Beschreibung</strong>: Detaillierte Informationen</li>
+                            <li><strong>Kategorie</strong>: Wählen Sie aus vordefinierten Kategorien</li>
+                            <li><strong>Standort</strong>: Geografische Position (kann auf Karte gewählt werden)</li>
+                            <li><strong>Priorität</strong>: Niedrig, Mittel, Hoch</li>
+                            <li><strong>Zeitraum</strong>: Start- und Enddatum</li>
+                        </ul>
+                    </li>
+                    <li>Klicken Sie auf "Speichern"</li>
+                </ol>
+
+                <h4>Ereignis bearbeiten</h4>
+                <ol>
+                    <li>Navigieren Sie zur Ereignisliste</li>
+                    <li>Klicken Sie auf das Bearbeitungssymbol neben dem Ereignis</li>
+                    <li>Nehmen Sie die gewünschten Änderungen vor</li>
+                    <li>Speichern Sie die Änderungen</li>
+                </ol>
+
+                <h4>Ereignis archivieren</h4>
+                <ol>
+                    <li>Wählen Sie das Ereignis aus</li>
+                    <li>Klicken Sie auf "Aktionen" → "Archivieren"</li>
+                    <li>Bestätigen Sie die Aktion</li>
+                </ol>
+
+                <h3>Kartenansicht</h3>
+
+                <h4>Navigation auf der Karte</h4>
+                <ul>
+                    <li><strong>Zoomen</strong>: Mausrad oder +/- Buttons</li>
+                    <li><strong>Verschieben</strong>: Klicken und ziehen</li>
+                    <li><strong>Vollbild</strong>: F11 oder Vollbild-Button</li>
+                </ul>
+
+                <h4>Marker-Funktionen</h4>
+                <ul>
+                    <li><strong>Klick auf Marker</strong>: Öffnet Detailinformationen</li>
+                    <li><strong>Hover über Marker</strong>: Zeigt Kurzinformation</li>
+                    <li><strong>Marker-Farben</strong>: Repräsentieren verschiedene Kategorien</li>
+                </ul>
+
+                <h4>Layer-Steuerung</h4>
+                <ol>
+                    <li>Klicken Sie auf das Layer-Symbol (rechts oben auf der Karte)</li>
+                    <li>Wählen Sie die anzuzeigenden Ebenen:
+                        <ul>
+                            <li>Ereignisse</li>
+                            <li>Regionen</li>
+                            <li>Zusatzinformationen</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>Filteroptionen</h3>
+
+                <h4>Verfügbare Filter</h4>
+                <div class="info-box">
+                    <ul>
+                        <li><strong>Zeitraum</strong>: Datum von/bis</li>
+                        <li><strong>Kategorie</strong>: Mehrfachauswahl möglich</li>
+                        <li><strong>Priorität</strong>: Nach Dringlichkeit</li>
+                        <li><strong>Status</strong>: Aktiv, Archiviert, Alle</li>
+                        <li><strong>Region</strong>: Nach geografischen Gebieten</li>
+                        <li><strong>Schlagwörter</strong>: Freitextsuche</li>
+                    </ul>
+                </div>
+
+                <h4>Filter anwenden</h4>
+                <ol>
+                    <li>Öffnen Sie das Filtermenü (Seitenleiste)</li>
+                    <li>Wählen Sie die gewünschten Kriterien</li>
+                    <li>Klicken Sie auf "Filter anwenden"</li>
+                    <li>Zum Zurücksetzen: "Filter löschen"</li>
+                </ol>
+            </section>
+
+            <section id="verwaltung">
+                <h2>5. Benutzerverwaltung</h2>
+
+                <h3>Profilverwaltung</h3>
+                <ol>
+                    <li>Klicken Sie auf Ihren Benutzernamen (rechts oben)</li>
+                    <li>Wählen Sie "Profil bearbeiten"</li>
+                    <li>Aktualisierbare Informationen:
+                        <ul>
+                            <li>Name</li>
+                            <li>E-Mail-Adresse</li>
+                            <li>Telefonnummer</li>
+                            <li>Benachrichtigungseinstellungen</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>Passwort ändern</h3>
+                <ol>
+                    <li>Navigieren Sie zu "Kontoeinstellungen"</li>
+                    <li>Wählen Sie "Passwort ändern"</li>
+                    <li>Geben Sie Ihr aktuelles Passwort ein</li>
+                    <li>Geben Sie das neue Passwort zweimal ein</li>
+                    <li>Klicken Sie auf "Ändern"</li>
+                </ol>
+
+                <h3>Benachrichtigungen</h3>
+                <p>Konfigurieren Sie Ihre Benachrichtigungen:</p>
+                <ul>
+                    <li>E-Mail-Benachrichtigungen</li>
+                    <li>System-Benachrichtigungen</li>
+                    <li>Häufigkeit der Updates</li>
+                </ul>
+            </section>
+
+            <section id="daten">
+                <h2>6. Datenimport und -export</h2>
+
+                <h3>Datenimport</h3>
+
+                <h4>Unterstützte Formate</h4>
+                <ul>
+                    <li>CSV (Comma-Separated Values)</li>
+                    <li>Excel (XLSX)</li>
+                    <li>JSON</li>
+                    <li>XML</li>
+                </ul>
+
+                <h4>Import-Prozess</h4>
+                <ol>
+                    <li>Navigieren Sie zu "Daten" → "Import"</li>
+                    <li>Wählen Sie die Datei aus</li>
+                    <li>Ordnen Sie die Spalten den Systemfeldern zu</li>
+                    <li>Überprüfen Sie die Vorschau</li>
+                    <li>Starten Sie den Import</li>
+                </ol>
+
+                <h3>Datenexport</h3>
+                <ol>
+                    <li>Wählen Sie die zu exportierenden Daten</li>
+                    <li>Klicken Sie auf "Export"</li>
+                    <li>Wählen Sie das Format</li>
+                    <li>Konfigurieren Sie die Exportoptionen</li>
+                    <li>Download startet automatisch</li>
+                </ol>
+            </section>
+
+            <section id="berichte">
+                <h2>7. Berichterstellung</h2>
+
+                <h3>Standardberichte</h3>
+                <p>Das System bietet vorkonfigurierte Berichte:</p>
+                <ul>
+                    <li>Tagesbericht</li>
+                    <li>Wochenbericht</li>
+                    <li>Monatsbericht</li>
+                    <li>Jahresbericht</li>
+                </ul>
+
+                <h3>Benutzerdefinierten Bericht erstellen</h3>
+                <ol>
+                    <li>Navigieren Sie zu "Berichte" → "Neu"</li>
+                    <li>Wählen Sie die Datenquellen</li>
+                    <li>Definieren Sie Filter und Zeiträume</li>
+                    <li>Wählen Sie das Layout</li>
+                    <li>Speichern Sie als Vorlage (optional)</li>
+                </ol>
+
+                <h3>Bericht planen</h3>
+                <ol>
+                    <li>Wählen Sie einen Bericht</li>
+                    <li>Klicken Sie auf "Planung"</li>
+                    <li>Definieren Sie:
+                        <ul>
+                            <li>Häufigkeit (täglich, wöchentlich, monatlich)</li>
+                            <li>Empfänger</li>
+                            <li>Format</li>
+                        </ul>
+                    </li>
+                </ol>
+            </section>
+
+            <section id="einstellungen">
+                <h2>8. Systemeinstellungen</h2>
+
+                <h3>Allgemeine Einstellungen</h3>
+                <p>Nur für Administratoren zugänglich:</p>
+                <ul>
+                    <li>Systemsprache</li>
+                    <li>Zeitzone</li>
+                    <li>Datumsformat</li>
+                    <li>Währung</li>
+                </ul>
+
+                <h3>Kategorieverwaltung</h3>
+                <ol>
+                    <li>Navigieren Sie zu "Einstellungen" → "Kategorien"</li>
+                    <li>Funktionen:
+                        <ul>
+                            <li>Neue Kategorie hinzufügen</li>
+                            <li>Bestehende bearbeiten</li>
+                            <li>Reihenfolge ändern</li>
+                            <li>Farben zuweisen</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>Benutzerrollen</h3>
+                <table>
+                    <tr>
+                        <th>Rolle</th>
+                        <th>Berechtigungen</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Administrator</strong></td>
+                        <td>Vollzugriff auf alle Funktionen</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Editor</strong></td>
+                        <td>Erstellen und Bearbeiten von Inhalten</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Betrachter</strong></td>
+                        <td>Nur Lesezugriff</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section id="sicherheit">
+                <h2>9. Sicherheitshinweise</h2>
+
+                <h3>Passwortrichtlinien</h3>
+                <div class="warning-box">
+                    <ul>
+                        <li>Mindestens 8 Zeichen</li>
+                        <li>Kombination aus Buchstaben, Zahlen und Sonderzeichen</li>
+                        <li>Regelmäßige Änderung empfohlen</li>
+                        <li>Keine Weitergabe an Dritte</li>
+                    </ul>
+                </div>
+
+                <h3>Datenschutz</h3>
+                <ul>
+                    <li>Alle Übertragungen sind SSL-verschlüsselt</li>
+                    <li>Regelmäßige Sicherheitsupdates</li>
+                    <li>Datensicherung erfolgt automatisch</li>
+                    <li>DSGVO-konform</li>
+                </ul>
+
+                <h3>Best Practices</h3>
+                <ol>
+                    <li>Melden Sie sich nach der Nutzung ab</li>
+                    <li>Verwenden Sie keine öffentlichen Computer für sensible Daten</li>
+                    <li>Halten Sie Ihre Zugangsdaten geheim</li>
+                    <li>Melden Sie verdächtige Aktivitäten</li>
+                </ol>
+            </section>
+
+            <section id="faq">
+                <h2>10. Häufig gestellte Fragen (FAQ)</h2>
+
+                <h3>Allgemeine Fragen</h3>
+
+                <div class="info-box">
+                    <p><strong>F: Wie kann ich mein Passwort zurücksetzen?</strong></p>
+                    <p>A: Nutzen Sie die "Passwort vergessen"-Funktion auf der Anmeldeseite.</p>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>F: Warum werden manche Ereignisse nicht angezeigt?</strong></p>
+                    <p>A: Überprüfen Sie Ihre Filtereinstellungen und Berechtigungen.</p>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>F: Kann ich Daten offline bearbeiten?</strong></p>
+                    <p>A: Nein, das System benötigt eine aktive Internetverbindung.</p>
+                </div>
+
+                <h3>Technische Fragen</h3>
+
+                <div class="info-box">
+                    <p><strong>F: Welche Browser werden unterstützt?</strong></p>
+                    <p>A: Chrome, Firefox, Safari und Edge in den jeweils aktuellen Versionen.</p>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>F: Wie oft werden die Daten aktualisiert?</strong></p>
+                    <p>A: Die Daten werden in Echtzeit aktualisiert.</p>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>F: Gibt es eine mobile App?</strong></p>
+                    <p>A: Das System ist mobiloptimiert und funktioniert im Browser auf allen Geräten.</p>
+                </div>
+
+                <h3>Fehlerbehebung</h3>
+
+                <div class="warning-box">
+                    <p><strong>F: Die Karte wird nicht geladen</strong></p>
+                    <p>A: Prüfen Sie Ihre Internetverbindung und JavaScript-Einstellungen.</p>
+                </div>
+
+                <div class="warning-box">
+                    <p><strong>F: Export funktioniert nicht</strong></p>
+                    <p>A: Deaktivieren Sie Pop-up-Blocker für diese Seite.</p>
+                </div>
+
+                <div class="warning-box">
+                    <p><strong>F: Anmeldung schlägt fehl</strong></p>
+                    <p>A: Überprüfen Sie Benutzername/Passwort und Caps-Lock-Taste.</p>
+                </div>
+            </section>
+
+            <section id="support">
+                <h2>11. Support und Kontakt</h2>
+
+                <h3>Support-Optionen</h3>
+
+                <div class="success-box">
+                    <h4>E-Mail-Support</h4>
+                    <ul>
+                        <li><strong>Adresse</strong>: support@passolution.eu</li>
+                        <li><strong>Antwortzeit</strong>: Innerhalb von 24 Stunden an Werktagen</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Telefon-Support</h4>
+                    <ul>
+                        <li><strong>Hotline</strong>: +49 (0) XXX XXXXXXX</li>
+                        <li><strong>Erreichbarkeit</strong>: Mo-Fr 9:00-17:00 Uhr</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Online-Hilfe</h4>
+                    <ul>
+                        <li>Integrierte Hilfe-Funktion im System</li>
+                        <li>Tooltips und Kontexthilfe</li>
+                        <li>Video-Tutorials (im Hilfebereich)</li>
+                    </ul>
+                </div>
+
+                <h3>Feedback und Verbesserungsvorschläge</h3>
+                <p>Wir freuen uns über Ihr Feedback:</p>
+                <ul>
+                    <li>Nutzen Sie das Feedback-Formular im System</li>
+                    <li>Senden Sie Vorschläge an feedback@passolution.eu</li>
+                </ul>
+
+                <h3>Schulungen</h3>
+                <p>Regelmäßige Schulungen werden angeboten:</p>
+                <ul>
+                    <li>Grundlagenschulung für neue Benutzer</li>
+                    <li>Fortgeschrittenen-Schulung</li>
+                    <li>Administrator-Schulung</li>
+                </ul>
+                <p>Termine und Anmeldung unter: <strong>https://info.passolution.eu/schulungen</strong></p>
+            </section>
+
+            <section id="anhang">
+                <h2>Anhang</h2>
+
+                <h3>Tastaturkürzel</h3>
+                <table>
+                    <tr>
+                        <th>Aktion</th>
+                        <th>Windows/Linux</th>
+                        <th>Mac</th>
+                    </tr>
+                    <tr>
+                        <td>Suche</td>
+                        <td>Strg + K</td>
+                        <td>Cmd + K</td>
+                    </tr>
+                    <tr>
+                        <td>Neues Ereignis</td>
+                        <td>Strg + N</td>
+                        <td>Cmd + N</td>
+                    </tr>
+                    <tr>
+                        <td>Speichern</td>
+                        <td>Strg + S</td>
+                        <td>Cmd + S</td>
+                    </tr>
+                    <tr>
+                        <td>Filter</td>
+                        <td>Strg + F</td>
+                        <td>Cmd + F</td>
+                    </tr>
+                    <tr>
+                        <td>Hilfe</td>
+                        <td>F1</td>
+                        <td>F1</td>
+                    </tr>
+                </table>
+
+                <h3>Glossar</h3>
+                <dl>
+                    <dt><strong>Dashboard</strong></dt>
+                    <dd>Hauptübersichtsseite</dd>
+
+                    <dt><strong>Ereignis</strong></dt>
+                    <dd>Einzelner Datensatz im System</dd>
+
+                    <dt><strong>Layer</strong></dt>
+                    <dd>Ebene auf der Karte</dd>
+
+                    <dt><strong>Widget</strong></dt>
+                    <dd>Einzelnes Informationselement auf dem Dashboard</dd>
+
+                    <dt><strong>Archivierung</strong></dt>
+                    <dd>Langzeitspeicherung inaktiver Ereignisse</dd>
+                </dl>
+
+                <h3>Versionshinweise</h3>
+                <div class="info-box">
+                    <h4>Version 2.0 (Aktuell)</h4>
+                    <ul>
+                        <li>Verbesserte Kartensteuerung</li>
+                        <li>Erweiterte Filteroptionen</li>
+                        <li>Neue Statistik-Widgets</li>
+                        <li>Performance-Optimierungen</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Stand: Januar 2025</p>
+            <p>&copy; 2025 Passolution - Alle Rechte vorbehalten</p>
+        </footer>
+    </div>
+</body>
+</html>
