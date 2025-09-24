@@ -1444,8 +1444,8 @@
                 <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.13</span>
-                <span>Build: 2025-09-19</span>
+                <span>Version 1.0.14</span>
+                <span>Build: 2025-09-24</span>
             </div>
         </div>
     </footer>
@@ -1742,10 +1742,11 @@ async function loadDashboardData() {
             // Priorität von CustomEvents hat Vorrang
             if (e.source === 'custom' && originalPriority) {
                 const priority = originalPriority.toLowerCase();
-                if (priority === 'low') riskLevel = 'green';
+                if (priority === 'info') riskLevel = 'info';
+                else if (priority === 'low') riskLevel = 'green';
                 else if (priority === 'medium') riskLevel = 'orange';
                 else if (priority === 'high') riskLevel = 'red';
-                else riskLevel = 'green';
+                else riskLevel = 'info';  // Default to info instead of green
             } else if (typeof riskLevel === 'string') {
                 riskLevel = riskLevel.toLowerCase();
                 // Exakte Matches für GDACS Events
@@ -1788,9 +1789,15 @@ async function loadDashboardData() {
             // For GDACS events, map the type to our event types
             let allowEventType = true;
 
-            if (e.source === 'custom' && e.event_type_id) {
-                // CustomEvent with direct event_type_id
-                allowEventType = window.eventTypeFilter?.[e.event_type_id] ?? true;
+            if (e.source === 'custom') {
+                // CustomEvent - check if any of the event type IDs are enabled
+                if (e.event_type_ids && e.event_type_ids.length > 0) {
+                    // Many-to-many relationship: check if any of the event types are enabled
+                    allowEventType = e.event_type_ids.some(typeId => window.eventTypeFilter?.[typeId] ?? true);
+                } else if (e.event_type_id) {
+                    // Legacy single event type
+                    allowEventType = window.eventTypeFilter?.[e.event_type_id] ?? true;
+                }
             } else {
                 // GDACS event - try to map to our event types by code
                 let eventTypeStr = (e.event_type || e.type || '').toLowerCase();
@@ -2745,9 +2752,15 @@ function addMarkersToMap() {
             // Check if event type should be shown based on filter
             let shouldShow = true;
 
-            if (event.source === 'custom' && event.event_type_id) {
-                // CustomEvent with direct event_type_id
-                shouldShow = window.eventTypeFilter?.[event.event_type_id] ?? true;
+            if (event.source === 'custom') {
+                // CustomEvent - check if any of the event type IDs are enabled
+                if (event.event_type_ids && event.event_type_ids.length > 0) {
+                    // Many-to-many relationship: check if any of the event types are enabled
+                    shouldShow = event.event_type_ids.some(typeId => window.eventTypeFilter?.[typeId] ?? true);
+                } else if (event.event_type_id) {
+                    // Legacy single event type
+                    shouldShow = window.eventTypeFilter?.[event.event_type_id] ?? true;
+                }
             } else {
                 // GDACS event - try to map to our event types by code
                 let eventTypeStr = (event.event_type || event.type || '').toLowerCase();
@@ -3090,7 +3103,8 @@ function toggleRiskFilter(key, btn) {
     
     // Button-Style toggeln mit prioritätsbasierten Farben
     if (window.riskFilter[key]) {
-        const colorStyle = key === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
+        const colorStyle = key === 'info' ? 'background-color: #0066cc; border-color: #0066cc;' :
+                          key === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
                           key === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
                           'background-color: #ff0000; border-color: #ff0000;';
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
@@ -3103,8 +3117,8 @@ function toggleRiskFilter(key, btn) {
     // "Alle"/"Keine" Button aktualisieren
     const toggleButton = document.getElementById('toggleAllRiskLevels');
     if (toggleButton) {
-        const allActive = window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
-        const allInactive = !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red;
+        const allActive = window.riskFilter.info && window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+        const allInactive = !window.riskFilter.info && !window.riskFilter.green && !window.riskFilter.orange && !window.riskFilter.red;
         
         if (allActive) {
             toggleButton.textContent = 'Alle ausblenden';
@@ -3341,6 +3355,7 @@ function toggleAllRiskLevels() {
             const button = document.getElementById(id);
             if (button) {
                 button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+                button.style.cssText = '';  // Inline-Styles entfernen für weißen Hintergrund
             }
         });
     } else {
@@ -4537,11 +4552,12 @@ function resetAllFilters() {
     }
 
     // Reset Risk filters - all active by default
-    window.riskFilter = { green: true, orange: true, red: true };
-    ['green', 'orange', 'red'].forEach(risk => {
+    window.riskFilter = { info: true, green: true, orange: true, red: true };
+    ['info', 'green', 'orange', 'red'].forEach(risk => {
         const btn = document.getElementById(`risk-${risk}`);
         if (btn) {
-            const colorStyle = risk === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
+            const colorStyle = risk === 'info' ? 'background-color: #0066cc; border-color: #0066cc;' :
+                               risk === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
                                risk === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
                                'background-color: #ff0000; border-color: #ff0000;';
             btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';

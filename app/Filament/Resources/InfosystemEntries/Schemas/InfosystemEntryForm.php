@@ -53,7 +53,8 @@ class InfosystemEntryForm
                 TextInput::make('published_as_event_id')
                     ->numeric(),
                 Toggle::make('active')
-                    ->required(),
+                    ->required()
+                    ->default(true),
                 DateTimePicker::make('api_created_at'),
                 TextInput::make('request_id'),
                 TextInput::make('response_time')

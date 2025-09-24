@@ -63,7 +63,8 @@ class CustomEventResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         // Zeige alle Datensätze an, auch archivierte und deaktivierte
-        return parent::getEloquentQuery();
+        return parent::getEloquentQuery()
+            ->withCount('clicks');
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

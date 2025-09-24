@@ -44,6 +44,10 @@ class InfosystemEntry extends Model
         'api_created_at' => 'datetime',
     ];
 
+    protected $attributes = [
+        'active' => true,
+    ];
+
     /**
      * Scope to get only active entries
      */

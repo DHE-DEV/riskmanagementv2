@@ -35,9 +35,15 @@ class CustomEventController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($event) {
-                    // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
-                    $eventTypeIcon = $event->eventType?->icon;
-                    
+                    // Bei Many-to-Many: Verwende Icon vom ersten EventType falls verfügbar
+                    $eventTypeIcon = null;
+                    if ($event->eventTypes->isNotEmpty()) {
+                        $eventTypeIcon = $event->eventTypes->first()->icon;
+                    } elseif ($event->eventType) {
+                        // Fallback auf legacy single eventType
+                        $eventTypeIcon = $event->eventType->icon;
+                    }
+
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
@@ -47,6 +53,7 @@ class CustomEventController extends Controller
                         'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
                         'event_types' => $event->eventTypes->pluck('name')->toArray(),
                         'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
+                        'event_type_ids' => $event->eventTypes->pluck('id')->toArray(),
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',
                         'country_relation' => $event->country,
                         'latitude' => $event->latitude,
@@ -113,9 +120,15 @@ class CustomEventController extends Controller
                 ->with(['country', 'eventType', 'eventTypes'])
                 ->get()
                 ->map(function ($event) {
-                    // Verwende EventType Icon falls verfügbar, sonst Fallback auf marker_icon
-                    $eventTypeIcon = $event->eventType?->icon;
-                    
+                    // Bei Many-to-Many: Verwende Icon vom ersten EventType falls verfügbar
+                    $eventTypeIcon = null;
+                    if ($event->eventTypes->isNotEmpty()) {
+                        $eventTypeIcon = $event->eventTypes->first()->icon;
+                    } elseif ($event->eventType) {
+                        // Fallback auf legacy single eventType
+                        $eventTypeIcon = $event->eventType->icon;
+                    }
+
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
@@ -125,6 +138,7 @@ class CustomEventController extends Controller
                         'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
                         'event_types' => $event->eventTypes->pluck('name')->toArray(),
                         'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
+                        'event_type_ids' => $event->eventTypes->pluck('id')->toArray(),
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),

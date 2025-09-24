@@ -291,12 +291,17 @@ class CustomEventsTable
                     ->label('Duplizieren')
                     ->icon('heroicon-o-document-duplicate')
                     ->action(function (CustomEvent $record) {
-                        $newEvent = $record->replicate();
+                        $newEvent = $record->replicate(['clicks_count']);
                         $newEvent->title = $record->title . ' (Kopie)';
                         $newEvent->created_by = auth()->id();
                         $newEvent->updated_by = auth()->id();
                         $newEvent->save();
-                        
+
+                        // Copy event types relationship
+                        if ($record->eventTypes()->exists()) {
+                            $newEvent->eventTypes()->sync($record->eventTypes->pluck('id'));
+                        }
+
                         return redirect()->route('filament.admin.resources.custom-events.edit', $newEvent);
                     })
                     ->requiresConfirmation()

@@ -198,11 +198,10 @@ class CustomEventForm
                 ColorPicker::make('marker_color')
                     ->label('Marker-Farbe')
                     ->default('#FF0000')
-                    ->helperText('Hauptfarbe des Markers')
-                    ->hidden(),
+                    ->helperText('Hauptfarbe des Markers auf der Karte'),
 
                 Select::make('marker_icon')
-                    ->label('FontAwesome Symbol')
+                    ->label('Marker Symbol')
                     ->options([
                         'fa-map-marker' => '📍 Standard Marker',
                         'fa-exclamation-triangle' => '⚠️ Warnung',
@@ -266,21 +265,18 @@ class CustomEventForm
                     ])
                     ->default('fa-map-marker')
                     ->searchable()
-                    ->helperText('Symbol für den Marker')
-                    ->hidden(),
+                    ->helperText('Symbol für den Marker auf der Karte'),
 
                 ColorPicker::make('icon_color')
                     ->label('Symbol-Farbe')
                     ->default('#FFFFFF')
-                    ->helperText('Farbe des Symbols')
-                    ->hidden(),
+                    ->helperText('Farbe des Symbols im Marker'),
 
                 Select::make('marker_size')
                     ->label('Marker-Größe')
                     ->options(CustomEvent::getMarkerSizeOptions())
                     ->default('medium')
-                    ->helperText('Größe des Markers auf der Karte')
-                    ->hidden(),
+                    ->helperText('Größe des Markers auf der Karte'),
 
                 // Datenquelle am Ende
                 Select::make('data_source')

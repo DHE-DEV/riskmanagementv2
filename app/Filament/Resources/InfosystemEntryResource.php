@@ -223,7 +223,7 @@ class InfosystemEntryResource extends Resource
                     ->icon('heroicon-o-plus-circle')
                     ->color('success')
                     ->url(fn ($record) => CustomEventResource::getUrl('create') . '?' . http_build_query(array_filter([
-                        'title' => $record->header,
+                        'title' => self::processTitle($record->header),
                         'description' => $record->content,
                         'start_date' => $record->tagdate ? $record->tagdate->format('Y-m-d') : null,
                         'country_code' => $record->country_code ?? null,
@@ -261,5 +261,28 @@ class InfosystemEntryResource extends Resource
     {
         return parent::getEloquentQuery()
             ->latest();
+    }
+
+    /**
+     * Process the title to remove text before the first dash
+     */
+    protected static function processTitle(?string $title): ?string
+    {
+        if (!$title) {
+            return $title;
+        }
+
+        // Check if the title contains a dash
+        if (str_contains($title, '-')) {
+            // Split by the first dash and take the part after it
+            $parts = explode('-', $title, 2);
+            if (count($parts) > 1) {
+                // Return the second part, trimming any leading/trailing whitespace
+                return trim($parts[1]);
+            }
+        }
+
+        // If no dash found, return the original title
+        return $title;
     }
 }

@@ -110,6 +110,9 @@ class CreateCustomEvent extends CreateRecord
         // Map is_active status
         if ($request->has('is_active')) {
             $data['is_active'] = (bool) $request->get('is_active');
+        } elseif ($request->has('source') && $request->get('source') === 'infosystem') {
+            // When creating from InfosystemEntry, always set is_active to true
+            $data['is_active'] = true;
         }
 
         // Fill the form with the mapped data
