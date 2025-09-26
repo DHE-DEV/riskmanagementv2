@@ -14,6 +14,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <!-- Font Awesome Einbindung: 1) Kit per .env (bevorzugt), 2) lokal (Zip entpackt), 3) CDN-Fallback -->
     @php($faKit = config('services.fontawesome.kit'))
     @if(!empty($faKit))
@@ -1460,11 +1463,13 @@
 
 <!-- Leaflet JavaScript -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
 // Globale Variablen
 let map;
 let markers = [];
+let markerClusterGroup = null;
 let currentEvents = [];
 let selectedContinent = null;
 let countryOverlaysLayer = null;
@@ -2320,20 +2325,32 @@ function getWeatherIcon(weatherMain) {
 
 // Handle Details button click with tracking
 function handleDetailsClick(eventId, isCustom) {
-    // Bei Events mit mehreren Ländern ist die eventId im Format "originalId_country_index"
-    // Extrahiere die Original-ID für das Tracking
-    let trackingId = eventId;
-    if (typeof eventId === 'string' && eventId.includes('_country_')) {
-        trackingId = eventId.split('_country_')[0];
-    }
-
     // Track click for custom events
-    if (isCustom && trackingId) {
-        trackEventClick(trackingId, 'details_button');
+    if (isCustom && eventId) {
+        trackEventClick(eventId, 'details_button');
     }
 
-    // Hole das Event mit der modifizierten ID oder der Original-ID
-    const event = window.eventById[eventId] || window.eventById[trackingId] || {};
+    // Finde das richtige Event basierend auf der Original-ID
+    let event = null;
+
+    // Zuerst versuche direkt über die ID zu finden
+    event = window.eventById[eventId];
+
+    // Falls nicht gefunden, suche nach Events mit dieser original_event_id
+    if (!event) {
+        // Durchsuche alle Events nach der Original-ID
+        for (const [key, value] of Object.entries(window.eventById)) {
+            if (value.original_event_id === eventId || value.id === eventId) {
+                event = value;
+                break;
+            }
+        }
+    }
+
+    // Fallback auf leeres Objekt
+    if (!event) {
+        event = {};
+    }
 
     // Open sidebar with event details
     openEventSidebar(event);
@@ -2882,6 +2899,43 @@ function addMarkersToMap() {
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
 
+    // MarkerCluster-Gruppe entfernen falls vorhanden
+    if (markerClusterGroup) {
+        map.removeLayer(markerClusterGroup);
+    }
+
+    // Neue MarkerCluster-Gruppe erstellen mit angepassten Einstellungen
+    markerClusterGroup = L.markerClusterGroup({
+        maxClusterRadius: 40,  // Kleinerer Radius für engeres Clustering
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,  // Aktiviere automatisches Zoomen beim Click wieder
+        disableClusteringAtZoom: 17,  // Bei höherem Zoom-Level Clustering deaktivieren
+        spiderfyDistanceMultiplier: 2.5,  // Größere Distanz beim Spiderfy
+        spiderLegPolylineOptions: { weight: 2, color: '#222', opacity: 0.5 },
+        animateAddingMarkers: false,  // Deaktiviere Animation beim Hinzufügen
+        iconCreateFunction: function(cluster) {
+            const childCount = cluster.getChildCount();
+            let c = ' marker-cluster-';
+            let size = 40;
+            if (childCount < 10) {
+                c += 'small';
+                size = 35;
+            } else if (childCount < 100) {
+                c += 'medium';
+                size = 40;
+            } else {
+                c += 'large';
+                size = 45;
+            }
+            return new L.DivIcon({
+                html: '<div style="background: #ff6b6b; color: white; border-radius: 50%; width: ' + size + 'px; height: ' + size + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"><span>' + childCount + '</span></div>',
+                className: 'custom-cluster-icon',
+                iconSize: new L.Point(size, size)
+            });
+        }
+    });
+
     currentEvents.forEach(event => {
         if (event.latitude && event.longitude) {
             // Check if event type should be shown based on filter
@@ -2921,10 +2975,14 @@ function addMarkersToMap() {
             if (shouldShow) {
                 const marker = createCustomMarker(event);
                 markers.push(marker);
-                marker.addTo(map);
+                // Marker zur Cluster-Gruppe hinzufügen statt direkt zur Karte
+                markerClusterGroup.addLayer(marker);
             }
         }
     });
+
+    // MarkerCluster-Gruppe zur Karte hinzufügen
+    map.addLayer(markerClusterGroup);
 }
 
 // Benutzerdefinierten Marker erstellen
@@ -2973,15 +3031,25 @@ function createCustomMarker(event) {
     
     const marker = L.marker([event.latitude, event.longitude], { icon: icon });
 
+    // Store event reference on the marker for later access
+    // Stelle sicher, dass die Original-Event-ID erhalten bleibt
+    marker.eventData = {
+        ...event,
+        original_id: event.original_event_id || event.id
+    };
+
     // Popup erstellen
     const popupContent = createPopupContent(event);
     marker.bindPopup(popupContent);
 
     // Click-Event hinzufügen
     marker.on('click', function() {
-        // Track click for custom events
-        if (event.source === 'custom' && event.id) {
-            trackEventClick(event.id, 'map_marker');
+        // Track click for custom events - verwende Original-ID falls vorhanden
+        if (event.source === 'custom') {
+            const trackId = event.original_event_id || event.id;
+            if (trackId) {
+                trackEventClick(trackId, 'map_marker');
+            }
         }
 
         // Sidebar schließen
@@ -3033,7 +3101,7 @@ function createPopupContent(event) {
 				<span class=\"info-value\">${sourceValue}</span>
 			</div>
 			<div class=\"popup-actions\">
-				<button onclick=\"handleDetailsClick('${event.id}', ${event.source === 'custom' ? 'true' : 'false'})\" class=\"details-btn\">
+				<button onclick=\"handleDetailsClick('${event.original_event_id || event.id}', ${event.source === 'custom' ? 'true' : 'false'})\" class=\"details-btn\">
 					<i class=\"fa-solid fa-circle-info\"></i>
 					Details anzeigen
 				</button>
@@ -3613,12 +3681,12 @@ function renderEvents() {
                 // Erstelle ein zusammengefasstes Event für die Anzeige
                 const mainEvent = {...event};
                 mainEvent.id = mainEventId;
+                mainEvent.original_event_id = mainEventId; // Behalte die Original-ID für die Marker-Suche
                 mainEvent.countries_list = [event.country_name || event.country];
                 // Bereinige den Titel - entferne Länder-Suffixe
                 if (mainEvent.title && mainEvent.title.includes(' - ')) {
                     mainEvent.title = mainEvent.title.split(' - ')[0];
                 }
-                delete mainEvent.original_event_id;
                 uniqueEvents.set(mainEventId, mainEvent);
             } else {
                 // Füge das Land zur Liste hinzu
@@ -3761,13 +3829,99 @@ function createEventElement(event) {
         }
 
         if (event.latitude && event.longitude) {
-            map.setView([event.latitude, event.longitude], 12);
-            // Marker öffnen
+            // Marker öffnen - suche nach Event ID statt Koordinaten
+            let targetMarker = null;
+
+            // Finde den richtigen Marker
+            console.log('Suche Marker für Event:', event.title, 'ID:', event.id, 'Original-ID:', event.original_event_id);
+
+            // Array für alle passenden Marker
+            const matchingMarkers = [];
+
             markers.forEach(marker => {
-                if (marker.getLatLng().lat === event.latitude && marker.getLatLng().lng === event.longitude) {
-                    marker.openPopup();
+                // Prüfe ob der Marker zu diesem Event gehört
+                if (marker.eventData) {
+                    const markerId = marker.eventData.original_id || marker.eventData.original_event_id || marker.eventData.id;
+                    const eventId = event.original_event_id || event.id;
+
+                    // Debug-Ausgabe für jeden Marker
+                    if (marker.eventData.title && (marker.eventData.title.includes('Hundetaxe') || marker.eventData.title.includes('Chikungunya'))) {
+                        console.log('Prüfe Marker:', marker.eventData.title,
+                            'Marker-ID:', marker.eventData.id,
+                            'Original-ID:', marker.eventData.original_event_id,
+                            'Original_id:', marker.eventData.original_id,
+                            'Vergleiche mit Event-ID:', eventId);
+                    }
+
+                    // Prüfe verschiedene ID-Kombinationen
+                    if (markerId == eventId || // == statt === für String/Number-Vergleich
+                        marker.eventData.id == event.id ||
+                        (marker.eventData.original_event_id && marker.eventData.original_event_id == eventId) ||
+                        (marker.eventData.original_id && marker.eventData.original_id == eventId)) {
+                        console.log('MATCH gefunden für:', marker.eventData.title);
+                        matchingMarkers.push(marker);
+                    }
                 }
             });
+
+            // Wenn mehrere Marker gefunden wurden, nimm den mit dem passenden Titel
+            if (matchingMarkers.length > 0) {
+                // Versuche den Marker mit dem exakt passenden Titel zu finden
+                targetMarker = matchingMarkers.find(m => m.eventData.title === event.title) || matchingMarkers[0];
+                console.log('Gewählter Marker:', targetMarker.eventData?.title);
+            }
+
+            // Fallback: Falls kein Marker über ID gefunden, versuche Koordinaten-Matching
+            if (!targetMarker) {
+                markers.forEach(marker => {
+                    if (Math.abs(marker.getLatLng().lat - event.latitude) < 0.0001 &&
+                        Math.abs(marker.getLatLng().lng - event.longitude) < 0.0001) {
+                        targetMarker = marker;
+                    }
+                });
+            }
+
+            if (targetMarker && markerClusterGroup) {
+                console.log('Ziel-Marker gefunden:', targetMarker.eventData?.title || 'Unbekannt');
+
+                // Verwende die eingebaute zoomToShowLayer Methode
+                // Diese zoomt automatisch und löst Cluster auf wenn nötig
+                markerClusterGroup.zoomToShowLayer(targetMarker, function() {
+                    console.log('zoomToShowLayer Callback aufgerufen');
+
+                    // Kleine Verzögerung für Animation
+                    setTimeout(() => {
+                        // Prüfe ob der Marker in einem Cluster ist
+                        const cluster = markerClusterGroup.getVisibleParent(targetMarker);
+                        console.log('Visible parent:', cluster);
+
+                        if (cluster && cluster !== targetMarker) {
+                            console.log('Marker ist in einem Cluster - versuche Spiderfy');
+                            // Marker ist immer noch in einem Cluster
+                            // Simuliere einen Klick auf den Cluster
+                            cluster.fire('click');
+
+                            // Warte auf Spiderfy und öffne dann Popup
+                            setTimeout(() => {
+                                targetMarker.openPopup();
+                            }, 500);
+                        } else {
+                            console.log('Marker ist direkt sichtbar - öffne Popup');
+                            // Marker ist direkt sichtbar
+                            targetMarker.openPopup();
+                        }
+                    }, 300);
+                });
+            } else if (targetMarker) {
+                // Kein Clustering aktiv
+                map.setView([event.latitude, event.longitude], 12, { animate: true });
+                setTimeout(() => {
+                    targetMarker.openPopup();
+                }, 300);
+            } else {
+                // Kein Marker gefunden, nur zur Position zoomen
+                map.setView([event.latitude, event.longitude], 12, { animate: true });
+            }
         }
     });
     
