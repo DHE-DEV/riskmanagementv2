@@ -1657,18 +1657,11 @@ function initializeMap() {
         maxZoom: 19
     });
 
-    // Dunkler Layer
-    const darkLayer = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-        attribution: '© Stadia Maps',
-        maxZoom: 20
-    });
-
     // Layer Control für Kartenansichten
     const baseMaps = {
         "Straße": osmLayer,
         "Satellit": satelliteLayer,
-        "Terrain": terrainLayer,
-        "Dunkel": darkLayer
+        "Terrain": terrainLayer
     };
 
     // Layer Control hinzufügen (nur Basiskarten, keine Overlays)
