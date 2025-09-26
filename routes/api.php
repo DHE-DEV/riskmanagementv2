@@ -44,6 +44,7 @@ Route::prefix('custom-events')->group(function () {
     Route::get('/event-types', [CustomEventController::class, 'getEventTypes'])->name('custom-events.event-types');
     Route::post('/track-click', [CustomEventController::class, 'trackClick'])->name('custom-events.track-click');
     Route::get('/{eventId}/click-statistics', [CustomEventController::class, 'getClickStatistics'])->name('custom-events.click-statistics');
+    Route::get('/{eventId}', [CustomEventController::class, 'getEvent'])->name('custom-events.get-event');
 });
 
 // Airports search

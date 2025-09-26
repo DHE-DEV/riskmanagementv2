@@ -415,4 +415,91 @@ class CustomEventController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get a single custom event by ID
+     */
+    public function getEvent($eventId): JsonResponse
+    {
+        try {
+            $event = CustomEvent::with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries'])
+                ->findOrFail($eventId);
+
+            // Format the event data similar to getDashboardEvents
+            $eventTypeIcon = null;
+            if ($event->eventTypes->isNotEmpty()) {
+                $eventTypeIcon = $event->eventTypes->first()->icon;
+            } elseif ($event->eventType) {
+                $eventTypeIcon = $event->eventType->icon;
+            }
+
+            // Format countries data
+            $countriesData = $event->countries->map(function ($country) use ($event) {
+                $lat = $country->pivot->use_default_coordinates ? $country->lat : $country->pivot->latitude;
+                $lng = $country->pivot->use_default_coordinates ? $country->lng : $country->pivot->longitude;
+
+                // Use event coordinates as fallback
+                if (!$lat && !$lng && $event->latitude && $event->longitude) {
+                    $lat = $event->latitude;
+                    $lng = $event->longitude;
+                }
+
+                return [
+                    'id' => $country->id,
+                    'name' => $country->getName('de'),
+                    'iso_code' => $country->iso_code,
+                    'latitude' => $lat ? (float) $lat : null,
+                    'longitude' => $lng ? (float) $lng : null,
+                    'location_note' => $country->pivot->location_note,
+                    'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                ];
+            })->toArray();
+
+            $data = [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'event_type' => $event->getCorrectEventType(),
+                'event_type_id' => $event->event_type_id,
+                'event_type_name' => $event->eventType?->name ?? $event->getCorrectEventType(),
+                'event_types' => $event->eventTypes->pluck('name')->toArray(),
+                'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
+                'event_type_ids' => $event->eventTypes->pluck('id')->toArray(),
+                'country' => $event->country?->getName('de') ?? 'Unbekannt',
+                'country_relation' => $event->country,
+                'countries' => $countriesData,
+                'latitude' => $event->latitude,
+                'longitude' => $event->longitude,
+                'marker_color' => $this->getPriorityColor($event->priority),
+                'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
+                'icon_color' => $event->icon_color,
+                'marker_size' => $event->marker_size,
+                'popup_content' => $event->popup_content,
+                'start_date' => optional($event->start_date)?->toDateTimeString(),
+                'end_date' => $event->end_date,
+                'priority' => $event->priority,
+                'severity' => $event->severity,
+                'category' => $event->category,
+                'tags' => $event->tags,
+                'is_active' => $event->is_active,
+                'archived' => $event->archived,
+                'archived_at' => $event->archived_at,
+                'created_at' => $event->created_at,
+                'updated_at' => $event->updated_at,
+                'creator_name' => $event->creator?->name,
+                'updater_name' => $event->updater?->name,
+                'source' => 'custom',
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get event: ' . $e->getMessage()
+            ], 404);
+        }
+    }
 }

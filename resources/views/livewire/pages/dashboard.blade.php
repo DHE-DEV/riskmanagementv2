@@ -2325,6 +2325,8 @@ function getWeatherIcon(weatherMain) {
 
 // Handle Details button click with tracking
 function handleDetailsClick(eventId, isCustom) {
+    console.log('handleDetailsClick aufgerufen mit eventId:', eventId);
+
     // Track click for custom events
     if (isCustom && eventId) {
         trackEventClick(eventId, 'details_button');
@@ -2336,19 +2338,53 @@ function handleDetailsClick(eventId, isCustom) {
     // Zuerst versuche direkt über die ID zu finden
     event = window.eventById[eventId];
 
-    // Falls nicht gefunden, suche nach Events mit dieser original_event_id
+    if (event) {
+        console.log('Event direkt gefunden:', event.title, 'ID:', event.id);
+    }
+
+    // Falls nicht gefunden, suche nur nach der exakten original_event_id (nicht nach id)
+    // Dies verhindert, dass das falsche Event gefunden wird
     if (!event) {
-        // Durchsuche alle Events nach der Original-ID
+        // Sammle alle passenden Events
+        const matchingEvents = [];
         for (const [key, value] of Object.entries(window.eventById)) {
-            if (value.original_event_id === eventId || value.id === eventId) {
-                event = value;
-                break;
+            // Nur nach original_event_id suchen, NICHT nach id
+            if (value.original_event_id == eventId) {
+                matchingEvents.push(value);
             }
         }
+
+        if (matchingEvents.length > 0) {
+            // Nimm das erste gefundene Event (alle sollten dieselben Basis-Daten haben)
+            event = matchingEvents[0];
+            console.log('Event über original_event_id gefunden:', event.title, 'aus', matchingEvents.length, 'Matches');
+        }
+    }
+
+    // Wenn immer noch nicht gefunden, versuche API-Call für Custom Events
+    if (!event && isCustom && eventId) {
+        console.log('Event nicht im Cache, lade von API...');
+        // Lade Event direkt von der API
+        fetch(`/api/custom-events/${eventId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    openEventSidebar(data.data);
+                } else {
+                    console.error('Fehler beim Laden des Events');
+                    openEventSidebar({});
+                }
+            })
+            .catch(error => {
+                console.error('API-Fehler:', error);
+                openEventSidebar({});
+            });
+        return;
     }
 
     // Fallback auf leeres Objekt
     if (!event) {
+        console.warn('Event nicht gefunden für ID:', eventId);
         event = {};
     }
 
