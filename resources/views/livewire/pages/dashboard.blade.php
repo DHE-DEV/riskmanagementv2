@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Risk Management System</title>
+    <title>Global Travel Monitor</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -1535,9 +1542,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadCountryMappingsFromDB();
 
     await loadEventTypes(); // Load event types first
-    loadInitialData();
+    await loadInitialData();
     renderContinents();
     updateLastUpdated();
+
+    // URL-Parameter prüfen für direkten Zoom
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    const zoom = urlParams.get('zoom');
+    const eventId = urlParams.get('event');
+    const showMarker = urlParams.get('marker');
+
+    if (lat && lng) {
+        // Zur angegebenen Position zoomen
+        const zoomLevel = zoom ? parseInt(zoom) : 12;
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lng);
+        map.setView([latitude, longitude], zoomLevel);
+
+        // Wenn marker=true, einen temporären Marker anzeigen
+        if (showMarker === 'true') {
+            // Erstelle einen roten Marker an der Position
+            const tempMarker = L.marker([latitude, longitude], {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div style="background-color: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);"></div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map);
+
+            // Popup mit Koordinaten hinzufügen
+            tempMarker.bindPopup(`
+                <div class="p-2">
+                    <strong>Standort</strong><br>
+                    Breite: ${latitude.toFixed(6)}<br>
+                    Länge: ${longitude.toFixed(6)}
+                </div>
+            `).openPopup();
+        }
+
+        // Optional: Marker für das spezifische Event öffnen
+        if (eventId) {
+            setTimeout(() => {
+                markers.forEach(marker => {
+                    // Prüfe ob dieser Marker zum Event gehört
+                    const markerLatLng = marker.getLatLng();
+                    if (Math.abs(markerLatLng.lat - latitude) < 0.0001 &&
+                        Math.abs(markerLatLng.lng - longitude) < 0.0001) {
+                        marker.openPopup();
+                    }
+                });
+            }, 1000); // Warte bis Marker geladen sind
+        }
+    }
 
     // Automatische Aktualisierung alle 5 Minuten
     setInterval(loadDashboardData, 5 * 60 * 1000);
@@ -1553,7 +1612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     syncSectionToggleIcon('currentEvents');
     syncSectionToggleIcon('liveStatistics');
     syncSectionToggleIcon('mapControl');
-    
+
     // Filter Unterbereiche Zustand wiederherstellen
     restoreFilterSubSections();
 });
@@ -1855,7 +1914,21 @@ async function loadDashboardData() {
 
 // GDACS-Events mit echten Koordinaten verarbeiten
 function processGdacsEvents(events) {
-    return events.map(event => {
+    const now = new Date();
+
+    return events
+        .filter(event => {
+            // Prüfe ob das Event-Enddatum überschritten ist
+            if (event.end_date) {
+                const endDate = new Date(event.end_date);
+                if (endDate < now) {
+                    // Event ist abgelaufen - herausfiltern
+                    return false;
+                }
+            }
+            return true;
+        })
+        .map(event => {
         // Echte Koordinaten aus der Datenbank verwenden
         let latitude = null;
         let longitude = null;
@@ -1912,36 +1985,88 @@ window.eventById = window.eventById || {};
 
 // CustomEvents verarbeiten
 function processCustomEvents(events) {
-    return events.map(event => {
-        const mapped = {
-            ...event,
-            latitude: parseFloat(event.latitude),
-            longitude: parseFloat(event.longitude),
-            icon: getCustomEventIcon(event.marker_icon, event.event_type),
-            iconColor: event.marker_color,
-            source: 'custom',
-            // CustomEvents haben andere Feldnamen
-            event_type: event.event_type,
-            event_type_name: event.event_type_name,
-            // Ländername aus der Beziehung laden
-            country_name: event.country_relation ? event.country_relation.name_translations?.de || event.country_relation.name_translations?.en || event.country_relation.iso_code : (event.country || 'Unbekannt'),
-            severity: event.severity,
-            priority: event.priority,
-            country: event.country || 'Unbekannt',
-            title: event.title,
-            description: event.description,
-            start_date: event.start_date,
-            end_date: event.end_date,
-            category: event.category,
-            tags: event.tags,
-            popup_content: event.popup_content,
-            marker_size: event.marker_size
-        };
-        if (mapped.id != null) {
-            window.eventById[mapped.id] = mapped;
+    const processedEvents = [];
+    const now = new Date();
+
+    events.forEach(event => {
+        // Prüfe ob das Event-Enddatum überschritten ist
+        if (event.end_date) {
+            const endDate = new Date(event.end_date);
+            if (endDate < now) {
+                // Event ist abgelaufen - überspringen
+                return;
+            }
         }
-        return mapped;
+        // Wenn Event mehrere Länder hat, erstelle einen Marker pro Land
+        if (event.countries && event.countries.length > 0) {
+            event.countries.forEach((country, index) => {
+                const mapped = {
+                    ...event,
+                    // Eindeutige ID für jeden Marker
+                    id: `${event.id}_country_${index}`,
+                    original_event_id: event.id,
+                    latitude: parseFloat(country.latitude),
+                    longitude: parseFloat(country.longitude),
+                    icon: getCustomEventIcon(event.marker_icon, event.event_type),
+                    iconColor: event.marker_color,
+                    source: 'custom',
+                    event_type: event.event_type,
+                    event_type_name: event.event_type_name,
+                    // Ländername und Standort-Info
+                    country_name: country.name,
+                    country_iso: country.iso_code,
+                    location_note: country.location_note,
+                    severity: event.severity,
+                    priority: event.priority,
+                    country: country.name,
+                    title: event.title,
+                    description: event.description,
+                    start_date: event.start_date,
+                    end_date: event.end_date,
+                    category: event.category,
+                    tags: event.tags,
+                    popup_content: event.popup_content,
+                    marker_size: event.marker_size
+                };
+
+                if (mapped.id != null) {
+                    window.eventById[mapped.id] = mapped;
+                }
+                processedEvents.push(mapped);
+            });
+        } else if (event.latitude && event.longitude) {
+            // Fallback auf alte Single-Location-Logik
+            const mapped = {
+                ...event,
+                latitude: parseFloat(event.latitude),
+                longitude: parseFloat(event.longitude),
+                icon: getCustomEventIcon(event.marker_icon, event.event_type),
+                iconColor: event.marker_color,
+                source: 'custom',
+                event_type: event.event_type,
+                event_type_name: event.event_type_name,
+                country_name: event.country_relation ? event.country_relation.name_translations?.de || event.country_relation.name_translations?.en || event.country_relation.iso_code : (event.country || 'Unbekannt'),
+                severity: event.severity,
+                priority: event.priority,
+                country: event.country || 'Unbekannt',
+                title: event.title,
+                description: event.description,
+                start_date: event.start_date,
+                end_date: event.end_date,
+                category: event.category,
+                tags: event.tags,
+                popup_content: event.popup_content,
+                marker_size: event.marker_size
+            };
+
+            if (mapped.id != null) {
+                window.eventById[mapped.id] = mapped;
+            }
+            processedEvents.push(mapped);
+        }
     });
+
+    return processedEvents;
 }
 
 // Länder-Koordinaten für Fallback
@@ -2195,13 +2320,23 @@ function getWeatherIcon(weatherMain) {
 
 // Handle Details button click with tracking
 function handleDetailsClick(eventId, isCustom) {
-    // Track click for custom events
-    if (isCustom && eventId) {
-        trackEventClick(eventId, 'details_button');
+    // Bei Events mit mehreren Ländern ist die eventId im Format "originalId_country_index"
+    // Extrahiere die Original-ID für das Tracking
+    let trackingId = eventId;
+    if (typeof eventId === 'string' && eventId.includes('_country_')) {
+        trackingId = eventId.split('_country_')[0];
     }
 
+    // Track click for custom events
+    if (isCustom && trackingId) {
+        trackEventClick(trackingId, 'details_button');
+    }
+
+    // Hole das Event mit der modifizierten ID oder der Original-ID
+    const event = window.eventById[eventId] || window.eventById[trackingId] || {};
+
     // Open sidebar with event details
-    openEventSidebar(window.eventById[eventId] || {});
+    openEventSidebar(event);
 }
 
 // Event Sidebar Funktionen
@@ -2898,7 +3033,7 @@ function createPopupContent(event) {
 				<span class=\"info-value\">${sourceValue}</span>
 			</div>
 			<div class=\"popup-actions\">
-				<button onclick=\"handleDetailsClick(${event.id}, ${event.source === 'custom' ? 'true' : 'false'})\" class=\"details-btn\">
+				<button onclick=\"handleDetailsClick('${event.id}', ${event.source === 'custom' ? 'true' : 'false'})\" class=\"details-btn\">
 					<i class=\"fa-solid fa-circle-info\"></i>
 					Details anzeigen
 				</button>
@@ -3466,8 +3601,44 @@ function updateStatisticsFromApi(stats) {
 function renderEvents() {
     const eventsList = document.getElementById('eventsList');
     eventsList.innerHTML = '';
-    
+
+    // Gruppiere Events nach ihrer Original-ID oder ihrer eigenen ID
+    const uniqueEvents = new Map();
+
     currentEvents.forEach(event => {
+        if (event.source === 'custom' && event.original_event_id) {
+            // Dies ist ein Länder-spezifischer Marker - füge ihn zur Haupt-Event-Gruppe hinzu
+            const mainEventId = event.original_event_id.toString().split('_')[0];
+            if (!uniqueEvents.has(mainEventId)) {
+                // Erstelle ein zusammengefasstes Event für die Anzeige
+                const mainEvent = {...event};
+                mainEvent.id = mainEventId;
+                mainEvent.countries_list = [event.country_name || event.country];
+                // Bereinige den Titel - entferne Länder-Suffixe
+                if (mainEvent.title && mainEvent.title.includes(' - ')) {
+                    mainEvent.title = mainEvent.title.split(' - ')[0];
+                }
+                delete mainEvent.original_event_id;
+                uniqueEvents.set(mainEventId, mainEvent);
+            } else {
+                // Füge das Land zur Liste hinzu
+                const mainEvent = uniqueEvents.get(mainEventId);
+                if (!mainEvent.countries_list.includes(event.country_name || event.country)) {
+                    mainEvent.countries_list.push(event.country_name || event.country);
+                }
+            }
+        } else if (!event.original_event_id) {
+            // Normales Event ohne mehrere Länder
+            uniqueEvents.set(event.id, event);
+        }
+    });
+
+    // Rendere die eindeutigen Events
+    uniqueEvents.forEach(event => {
+        // Wenn es mehrere Länder gibt, zeige sie kommagetrennt
+        if (event.countries_list && event.countries_list.length > 0) {
+            event.country = event.countries_list.join(', ');
+        }
         const eventElement = createEventElement(event);
         eventsList.appendChild(eventElement);
     });
@@ -3529,6 +3700,26 @@ function createEventElement(event) {
     const displayDate = event.source === 'custom'
         ? (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : ''))
         : (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date_iso ? new Date(event.date_iso).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : '')));
+
+    // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel
+    // Ansonsten sammle alle Länder für die Anzeige
+    let countryDisplay = event.country || 'Unbekannt';
+    if (event.original_event_id && event.countries_summary) {
+        // Dies ist ein individueller Marker für ein Multi-Country-Event
+        countryDisplay = event.countries_summary;
+    } else if (!event.original_event_id && window.eventById && event.id) {
+        // Dies ist das Haupt-Event in der Liste - sammle alle Länder
+        const allCountriesForEvent = [];
+        // Durchsuche alle Events nach solchen mit der gleichen original_event_id
+        Object.values(window.eventById).forEach(e => {
+            if (e.original_event_id == event.id && e.country_name) {
+                allCountriesForEvent.push(e.country_name);
+            }
+        });
+        if (allCountriesForEvent.length > 0) {
+            countryDisplay = [...new Set(allCountriesForEvent)].join(', ');
+        }
+    }
     
     div.className = `bg-gray-50 rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-100 transition-colors`;
     div.style.borderLeftColor = severityBorderColor;
@@ -3538,7 +3729,7 @@ function createEventElement(event) {
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
-                        <span class="text-xs font-medium uppercase text-gray-800">${event.country || 'Unbekannt'}</span>
+                        <span class="text-xs font-medium uppercase text-gray-800">${countryDisplay}</span>
                     </div>
                     <div>${rightHtml}</div>
                 </div>

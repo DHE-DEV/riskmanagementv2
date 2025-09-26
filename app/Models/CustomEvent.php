@@ -62,11 +62,21 @@ class CustomEvent extends Model
     ];
 
     /**
-     * Country relation.
+     * Country relation (single - for backward compatibility).
      */
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * Countries relation (many-to-many).
+     */
+    public function countries()
+    {
+        return $this->belongsToMany(Country::class, 'country_custom_event')
+            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates'])
+            ->withTimestamps();
     }
 
     /**

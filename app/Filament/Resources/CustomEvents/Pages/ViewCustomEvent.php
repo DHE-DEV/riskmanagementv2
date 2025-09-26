@@ -33,4 +33,11 @@ class ViewCustomEvent extends ViewRecord
             'record' => $this->record,
         ];
     }
+
+    public function getRelationManagers(): array
+    {
+        return [
+            \App\Filament\Resources\CustomEvents\RelationManagers\CountriesRelationManager::class,
+        ];
+    }
 }

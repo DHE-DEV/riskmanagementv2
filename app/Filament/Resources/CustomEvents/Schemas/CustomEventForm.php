@@ -97,8 +97,9 @@ class CustomEventForm
                     ->helperText('Wählen Sie zuerst einen Event-Typ aus')
                     ->hidden(),
 
+                // Keep single country for backward compatibility but hide it
                 Select::make('country_id')
-                    ->label('Land')
+                    ->label('Land (Alt)')
                     ->options(fn () => Country::query()
                         ->select('id', 'name_translations')
                         ->get()
@@ -107,7 +108,7 @@ class CustomEventForm
                     )
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->hidden(),
 
                 Select::make('priority')
                     ->label('Priorität')
@@ -194,11 +195,12 @@ class CustomEventForm
                     ->placeholder('8.6821')
                     ->helperText('Wert zwischen -180 und 180'),
 
-                // Marker-Konfiguration
+                // Marker-Konfiguration - ausgeblendet für normale Nutzung
                 ColorPicker::make('marker_color')
                     ->label('Marker-Farbe')
                     ->default('#FF0000')
-                    ->helperText('Hauptfarbe des Markers auf der Karte'),
+                    ->helperText('Hauptfarbe des Markers auf der Karte')
+                    ->hidden(),
 
                 Select::make('marker_icon')
                     ->label('Marker Symbol')
@@ -265,18 +267,21 @@ class CustomEventForm
                     ])
                     ->default('fa-map-marker')
                     ->searchable()
-                    ->helperText('Symbol für den Marker auf der Karte'),
+                    ->helperText('Symbol für den Marker auf der Karte')
+                    ->hidden(),
 
                 ColorPicker::make('icon_color')
                     ->label('Symbol-Farbe')
                     ->default('#FFFFFF')
-                    ->helperText('Farbe des Symbols im Marker'),
+                    ->helperText('Farbe des Symbols im Marker')
+                    ->hidden(),
 
                 Select::make('marker_size')
                     ->label('Marker-Größe')
                     ->options(CustomEvent::getMarkerSizeOptions())
                     ->default('medium')
-                    ->helperText('Größe des Markers auf der Karte'),
+                    ->helperText('Größe des Markers auf der Karte')
+                    ->hidden(),
 
                 // Datenquelle am Ende
                 Select::make('data_source')

@@ -89,6 +89,16 @@ class Country extends Model
     }
 
     /**
+     * Get the custom events for this country (many-to-many).
+     */
+    public function customEvents()
+    {
+        return $this->belongsToMany(CustomEvent::class, 'country_custom_event')
+            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates'])
+            ->withTimestamps();
+    }
+
+    /**
      * Get the name in a specific language.
      */
     public function getName(string $language = 'de'): string

@@ -5,7 +5,9 @@ namespace App\Filament\Resources\CustomEvents;
 use App\Filament\Resources\CustomEvents\Pages\CreateCustomEvent;
 use App\Filament\Resources\CustomEvents\Pages\EditCustomEvent;
 use App\Filament\Resources\CustomEvents\Pages\ListCustomEvents;
+use App\Filament\Resources\CustomEvents\Pages\ManageEventCountries;
 use App\Filament\Resources\CustomEvents\Pages\ViewCustomEvent;
+use App\Filament\Resources\CustomEvents\RelationManagers\CountriesRelationManager;
 use App\Filament\Resources\CustomEvents\Schemas\CustomEventForm;
 use App\Filament\Resources\CustomEvents\Tables\CustomEventsTable;
 use App\Models\CustomEvent;
@@ -46,7 +48,7 @@ class CustomEventResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            CountriesRelationManager::class,
         ];
     }
 
@@ -57,6 +59,7 @@ class CustomEventResource extends Resource
             'create' => CreateCustomEvent::route('/create'),
             'view' => ViewCustomEvent::route('/{record}'),
             'edit' => EditCustomEvent::route('/{record}/edit'),
+            'manage-countries' => ManageEventCountries::route('/{record}/countries'),
         ];
     }
 

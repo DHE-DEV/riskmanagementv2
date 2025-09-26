@@ -23,15 +23,21 @@ class CustomEventController extends Controller
                     $query->whereNull('end_date')
                           ->orWhere('end_date', '>=', now()->startOfDay());
                 })
-                ->whereNotNull('latitude')
-                ->whereNotNull('longitude')
+                ->where(function ($query) {
+                    // Event hat entweder direkte Koordinaten ODER zugeordnete Länder
+                    $query->where(function ($q) {
+                        $q->whereNotNull('latitude')
+                          ->whereNotNull('longitude');
+                    })
+                    ->orWhereHas('countries');
+                })
                 ->where(function ($query) {
                     $query->whereHas('eventType', function ($subQuery) {
                         $subQuery->where('is_active', true);
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes'])
+                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($event) {
@@ -43,6 +49,28 @@ class CustomEventController extends Controller
                         // Fallback auf legacy single eventType
                         $eventTypeIcon = $event->eventType->icon;
                     }
+
+                    // Länder mit ihren individuellen Koordinaten sammeln
+                    $countriesData = $event->countries->map(function ($country) use ($event) {
+                        $lat = $country->pivot->use_default_coordinates ? $country->lat : $country->pivot->latitude;
+                        $lng = $country->pivot->use_default_coordinates ? $country->lng : $country->pivot->longitude;
+
+                        // Falls keine Koordinaten vorhanden sind, verwende die Event-Koordinaten als Fallback
+                        if (!$lat && !$lng && $event->latitude && $event->longitude) {
+                            $lat = $event->latitude;
+                            $lng = $event->longitude;
+                        }
+
+                        return [
+                            'id' => $country->id,
+                            'name' => $country->getName('de'),
+                            'iso_code' => $country->iso_code,
+                            'latitude' => $lat ? (float) $lat : null,
+                            'longitude' => $lng ? (float) $lng : null,
+                            'location_note' => $country->pivot->location_note,
+                            'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                        ];
+                    })->toArray();
 
                     return [
                         'id' => $event->id,
@@ -56,6 +84,7 @@ class CustomEventController extends Controller
                         'event_type_ids' => $event->eventTypes->pluck('id')->toArray(),
                         'country' => $event->country?->getName('de') ?? 'Unbekannt',
                         'country_relation' => $event->country,
+                        'countries' => $countriesData, // Neue Länder-Daten mit individuellen Koordinaten
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),
@@ -109,15 +138,21 @@ class CustomEventController extends Controller
                     $query->whereNull('end_date')
                           ->orWhere('end_date', '>=', now()->startOfDay());
                 })
-                ->whereNotNull('latitude')
-                ->whereNotNull('longitude')
+                ->where(function ($query) {
+                    // Event hat entweder direkte Koordinaten ODER zugeordnete Länder
+                    $query->where(function ($q) {
+                        $q->whereNotNull('latitude')
+                          ->whereNotNull('longitude');
+                    })
+                    ->orWhereHas('countries');
+                })
                 ->where(function ($query) {
                     $query->whereHas('eventType', function ($subQuery) {
                         $subQuery->where('is_active', true);
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['country', 'eventType', 'eventTypes'])
+                ->with(['country', 'eventType', 'eventTypes', 'countries'])
                 ->get()
                 ->map(function ($event) {
                     // Bei Many-to-Many: Verwende Icon vom ersten EventType falls verfügbar
@@ -129,6 +164,28 @@ class CustomEventController extends Controller
                         $eventTypeIcon = $event->eventType->icon;
                     }
 
+                    // Länder mit ihren individuellen Koordinaten sammeln
+                    $countriesData = $event->countries->map(function ($country) use ($event) {
+                        $lat = $country->pivot->use_default_coordinates ? $country->lat : $country->pivot->latitude;
+                        $lng = $country->pivot->use_default_coordinates ? $country->lng : $country->pivot->longitude;
+
+                        // Falls keine Koordinaten vorhanden sind, verwende die Event-Koordinaten als Fallback
+                        if (!$lat && !$lng && $event->latitude && $event->longitude) {
+                            $lat = $event->latitude;
+                            $lng = $event->longitude;
+                        }
+
+                        return [
+                            'id' => $country->id,
+                            'name' => $country->getName('de'),
+                            'iso_code' => $country->iso_code,
+                            'latitude' => $lat ? (float) $lat : null,
+                            'longitude' => $lng ? (float) $lng : null,
+                            'location_note' => $country->pivot->location_note,
+                            'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                        ];
+                    })->toArray();
+
                     return [
                         'id' => $event->id,
                         'title' => $event->title,
@@ -139,6 +196,7 @@ class CustomEventController extends Controller
                         'event_types' => $event->eventTypes->pluck('name')->toArray(),
                         'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
                         'event_type_ids' => $event->eventTypes->pluck('id')->toArray(),
+                        'countries' => $countriesData, // Länder-Daten mit Koordinaten
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),

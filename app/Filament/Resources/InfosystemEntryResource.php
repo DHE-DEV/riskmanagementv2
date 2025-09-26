@@ -31,15 +31,15 @@ class InfosystemEntryResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-information-circle';
 
-    protected static UnitEnum|string|null $navigationGroup = 'System';
+    protected static UnitEnum|string|null $navigationGroup = 'Event Management';
 
     protected static ?string $modelLabel = 'Infosystem Entry';
 
     protected static ?string $pluralModelLabel = 'Infosystem Entries';
 
-    protected static ?string $navigationLabel = 'PDS Infosystem';
+    protected static ?string $navigationLabel = 'Passolution Infosystem API';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 3;
 
     public static function shouldRegisterNavigation(): bool
     {
