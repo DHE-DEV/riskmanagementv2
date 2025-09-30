@@ -42,10 +42,20 @@ class CitiesTable
                         return $query->join('countries', 'cities.country_id', '=', 'countries.id')
                                     ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(countries.name_translations, '$.de')) {$direction}");
                     }),
-                TextColumn::make('region.id')
-                    ->label('Region ID')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('region_name')
+                    ->label('Region')
+                    ->getStateUsing(fn ($record) => $record->region ? $record->region->getName('de') : 'Keine Region')
+                    ->searchable(query: function ($query, string $search): Builder {
+                        return $query->whereHas('region', function ($q) use ($search) {
+                            $q->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                              ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"])
+                              ->orWhere('code', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function ($query, string $direction): Builder {
+                        return $query->join('regions', 'cities.region_id', '=', 'regions.id', 'left')
+                                    ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(regions.name_translations, '$.de')) {$direction}");
+                    }),
                 TextColumn::make('population')
                     ->label('Bevölkerung')
                     ->numeric()

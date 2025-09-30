@@ -31,7 +31,7 @@ class CityForm
                     ->required()
                     ->searchable()
                     ->live()
-                    ->afterStateUpdated(fn () => $this->form->fill(['region_id' => null])),
+                    ->afterStateUpdated(fn (callable $set) => $set('region_id', null)),
                 
                 Select::make('region_id')
                     ->label('Region')

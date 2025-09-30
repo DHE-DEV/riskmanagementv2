@@ -1044,7 +1044,7 @@
                     <!-- Continents -->
                     <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('continentsSection')">
-                            <h4 class="text-sm font-medium text-gray-700">Kontinente</h4>
+                            <h4 class="text-sm font-medium text-gray-700">Welt Regionen</h4>
                             <svg id="continentsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
@@ -1221,7 +1221,7 @@
                 <div id="filterContent" class="p-4 space-y-4">
                     <!-- Continents -->
                     <div>
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Kontinente</h4>
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Welt Regionen</h4>
                         <div class="grid grid-cols-2 gap-2" id="filterContinentsList">
                             <!-- Kontinente werden hier dynamisch eingefügt -->
                         </div>
@@ -1454,7 +1454,7 @@
                 <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
             </div>
             <div class="flex items-center space-x-4 text-sm">
-                <span>Version 1.0.16</span>
+                <span>Version 1.0.17</span>
                 <span>Build: 2025-09-30</span>
             </div>
         </div>

@@ -26,6 +26,16 @@ class CountryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'iso_code';
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['iso_code', 'iso3_code', 'name_translations'];
+    }
+
+    public static function getGlobalSearchResultTitle($record): string
+    {
+        return $record->getName('de') ?? $record->getName('en') ?? $record->iso_code;
+    }
+
     protected static ?string $navigationLabel = 'Länder';
 
     protected static ?string $modelLabel = 'Land';

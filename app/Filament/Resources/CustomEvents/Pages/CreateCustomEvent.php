@@ -89,6 +89,8 @@ class CreateCustomEvent extends CreateRecord
             $eventTypeId = $this->mapTagtypeToEventType($request->get('tagtype'));
             if ($eventTypeId) {
                 $data['event_type_id'] = $eventTypeId;
+                // Also set for many-to-many relationship
+                $data['eventTypes'] = [$eventTypeId];
             }
         }
 
@@ -123,20 +125,24 @@ class CreateCustomEvent extends CreateRecord
 
     /**
      * Map InfosystemEntry tagtype to EventType
-     * Based on actual data analysis:
-     * - tagtype 3: Often visa/entry related topics
-     * - tagtype 4: Often travel/strike related topics
+     * Mapping:
+     * - tagtype 1: Umweltereignisse (environment)
+     * - tagtype 2: Reiseverkehr (travel)
+     * - tagtype 3: Sicherheit (safety)
+     * - tagtype 4: Einreisebestimmungen (entry)
+     * - tagtype 5: Allgemein (general)
+     * - tagtype 6: Gesundheit (health)
      */
     protected function mapTagtypeToEventType(?string $tagtype): ?int
     {
         // Map InfosystemEntry tagtype to EventType code
         $mappings = [
-            '1' => 'entry',       // entry -> Einreisebestimmungen
-            '2' => 'safety',      // safety -> Sicherheit
-            '3' => 'entry',       // visa/entry topics -> Einreisebestimmungen
-            '4' => 'travel',      // travel/strikes -> Reiseverkehr
-            '5' => 'health',      // health -> Gesundheit
-            '6' => 'general',     // other -> Allgemein
+            '1' => 'environment',  // Umweltereignisse
+            '2' => 'travel',       // Reiseverkehr
+            '3' => 'safety',       // Sicherheit
+            '4' => 'entry',        // Einreisebestimmungen
+            '5' => 'general',      // Allgemein
+            '6' => 'health',       // Gesundheit
         ];
 
         $code = $mappings[$tagtype] ?? 'general';

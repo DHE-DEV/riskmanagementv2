@@ -21,23 +21,30 @@ class CountriesTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                // Globale Suche für JSON-Felder
+                return $query;
+            })
             ->columns([
                 TextColumn::make('german_name')
                     ->label('Name')
                     ->getStateUsing(fn ($record) => $record->getName('de'))
                     ->searchable(query: function ($query, string $search): Builder {
-                        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"]);
+                        return $query->where(function ($q) use ($search) {
+                            $q->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                              ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"])
+                              ->orWhere('iso_code', 'like', "%{$search}%")
+                              ->orWhere('iso3_code', 'like', "%{$search}%");
+                        });
                     })
                     ->sortable(query: function ($query, string $direction): Builder {
                         return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) {$direction}");
                     }),
                 TextColumn::make('iso_code')
                     ->label('ISO Code')
-                    ->searchable()
                     ->sortable(),
                 TextColumn::make('iso3_code')
                     ->label('ISO3 Code')
-                    ->searchable()
                     ->sortable(),
                 IconColumn::make('is_eu_member')
                     ->label('EU')
