@@ -47,6 +47,21 @@ Route::prefix('custom-events')->group(function () {
     Route::get('/{eventId}', [CustomEventController::class, 'getEvent'])->name('custom-events.get-event');
 });
 
+// Continents API
+Route::get('/continents', function () {
+    return response()->json([
+        'success' => true,
+        'data' => \App\Models\Continent::orderBy('code')->get(['id', 'code', 'name_translations'])->map(function ($continent) {
+            return [
+                'id' => $continent->id,
+                'code' => $continent->code,
+                'name' => $continent->getName('de'),
+                'name_en' => $continent->getName('en'),
+            ];
+        })
+    ]);
+})->name('continents.list');
+
 // Airports search
 Route::get('/airports/search', [AirportSearchController::class, 'search'])->name('airports.search');
 Route::get('/airports/countries', [AirportSearchController::class, 'countries'])->name('airports.countries');

@@ -1478,16 +1478,29 @@ let selectedCountry = null;
 let isLoading = false;
 let eventTypes = []; // Store loaded event types
 
-// Kontinente
-const continents = [
-    { id: 1, name: "Europa", code: "EU" },
-    { id: 2, name: "Asien", code: "AS" },
-    { id: 3, name: "Afrika", code: "AF" },
-    { id: 4, name: "Nordamerika", code: "NA" },
-    { id: 5, name: "Südamerika", code: "SA" },
-    { id: 6, name: "Australien/Ozeanien", code: "OC" },
-    { id: 7, name: "Antarktis", code: "AN" }
-];
+// Kontinente - werden dynamisch von der API geladen
+let continents = [];
+
+// Load continents from database
+async function loadContinentsFromDB() {
+    try {
+        console.log('Loading continents from database...');
+        const response = await fetch('/api/continents');
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+                continents = data.data;
+                console.log(`Loaded ${continents.length} continents from database`);
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load continents from database:', error);
+        console.log('Using empty continents array as fallback');
+    }
+    return false;
+}
 
 // Load country mappings from database
 async function loadCountryMappingsFromDB() {
@@ -1543,7 +1556,8 @@ async function trackEventClick(eventId, clickType) {
 document.addEventListener('DOMContentLoaded', async () => {
     initializeMap();
 
-    // Load country mappings from database first
+    // Load continents and country mappings from database first
+    await loadContinentsFromDB();
     await loadCountryMappingsFromDB();
 
     await loadEventTypes(); // Load event types first
@@ -1741,9 +1755,9 @@ async function loadDashboardData() {
             if (window.selectedContinents.size === 0) {
                 // Keine Kontinente ausgewählt - keine Events anzeigen
                 filteredByContinent = [];
-            } else {
-                const allContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
-                const isAllContinentsSelected = allContinents.size === window.selectedContinents.size && 
+            } else if (continents && continents.length > 0) {
+                const allContinents = new Set(continents.map(c => c.id));
+                const isAllContinentsSelected = allContinents.size === window.selectedContinents.size &&
                                                Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
                 
                 if (!isAllContinentsSelected) {
@@ -3960,13 +3974,22 @@ function createEventElement(event) {
 // Kontinente rendern
 function renderContinents() {
     const continentsList = document.getElementById('continentsList');
+    if (!continentsList) {
+        return;
+    }
+
     continentsList.innerHTML = '';
-    
+
+    if (continents.length === 0) {
+        return;
+    }
+
     // Globale Variable für ausgewählte Kontinente initialisieren (falls noch nicht gesetzt)
     if (!window.selectedContinents) {
-        window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+        // Initialisiere mit allen Kontinent-IDs aus der Datenbank
+        window.selectedContinents = new Set(continents.map(c => c.id));
     }
-    
+
     // "Alle einblenden/ausblenden" Schaltfläche hinzufügen
     const toggleAllButton = document.createElement('button');
     toggleAllButton.id = 'toggleAllContinents';
@@ -3974,7 +3997,7 @@ function renderContinents() {
     toggleAllButton.textContent = 'Alle ausblenden';
     toggleAllButton.onclick = toggleAllContinents;
     continentsList.appendChild(toggleAllButton);
-    
+
     continents.forEach(continent => {
         const button = document.createElement('button');
         // Alle Kontinente sind initial aktiviert
@@ -4014,7 +4037,7 @@ function toggleAllContinents() {
         });
 
         // Alle Kontinente zur Auswahl hinzufügen
-        window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]); // Alle Kontinent-IDs
+        window.selectedContinents = new Set(continents.map(c => c.id)); // Alle Kontinent-IDs aus Datenbank
         checkActiveFilters(); // Check filters after activating all
         filterEventsByContinent();
     }
@@ -4025,7 +4048,7 @@ function selectContinent(continentId) {
     // Globale Variable für ausgewählte Kontinente initialisieren
     if (!window.selectedContinents) {
         // Beim ersten Aufruf alle Kontinente aktivieren
-        window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+        window.selectedContinents = new Set(continents.map(c => c.id));
     }
     
     // Kontinent zur Auswahl hinzufügen oder entfernen
@@ -4040,8 +4063,9 @@ function selectContinent(continentId) {
     // Button-Styles aktualisieren (ohne die "Alle einblenden/ausblenden" Schaltfläche)
     const buttons = document.querySelectorAll('#continentsList button:not(#toggleAllContinents)');
     buttons.forEach((button, index) => {
-        const buttonContinentId = index + 1; // Kontinent-IDs beginnen bei 1
-        if (window.selectedContinents.has(buttonContinentId)) {
+        // Hole die tatsächliche ID aus dem continents Array
+        const buttonContinentId = continents[index]?.id;
+        if (buttonContinentId && window.selectedContinents.has(buttonContinentId)) {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
         } else {
             button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
@@ -4981,8 +5005,8 @@ function resetAllFilters() {
     const countryDisplay = document.getElementById('selectedCountriesFilterDisplay');
     if (countryDisplay) countryDisplay.innerHTML = '';
 
-    // Reset Continent filters - all 7 continents active by default
-    window.selectedContinents = new Set([1, 2, 3, 4, 5, 6, 7]);
+    // Reset Continent filters - all continents active by default
+    window.selectedContinents = new Set(continents.map(c => c.id));
     // Update continent buttons
     document.querySelectorAll('[id^="continent-"]').forEach(btn => {
         btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
