@@ -7,6 +7,7 @@ use App\Models\CustomEvent;
 use App\Models\EventCategory;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\CheckboxList;
@@ -17,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 
 class CustomEventForm
 {
@@ -182,7 +184,8 @@ class CustomEventForm
                     ->maxValue(90)
                     ->step('any')
                     ->placeholder('50.1109')
-                    ->helperText('Optional - Wert zwischen -90 und 90. Wenn leer, werden Länder-Koordinaten verwendet.'),
+                    ->helperText('Optional - Wert zwischen -90 und 90. Wenn leer, werden Länder-Koordinaten verwendet.')
+                    ->live(onBlur: true),
 
                 TextInput::make('longitude')
                     ->label('Längengrad')
@@ -191,7 +194,30 @@ class CustomEventForm
                     ->maxValue(180)
                     ->step('any')
                     ->placeholder('8.6821')
-                    ->helperText('Optional - Wert zwischen -180 und 180. Wenn leer, werden Länder-Koordinaten verwendet.'),
+                    ->helperText('Optional - Wert zwischen -180 und 180. Wenn leer, werden Länder-Koordinaten verwendet.')
+                    ->live(onBlur: true),
+
+                Placeholder::make('osm_link')
+                    ->label('')
+                    ->content(function (Get $get) {
+                        $lat = $get('latitude');
+                        $lng = $get('longitude');
+
+                        if ($lat && $lng) {
+                            $zoom = 15;
+                            $url = "https://www.openstreetmap.org/?mlat={$lat}&mlon={$lng}#map={$zoom}/{$lat}/{$lng}";
+
+                            return new HtmlString(
+                                '<a href="' . $url . '" target="_blank" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-500 rounded-lg transition-colors">
+                                    Auf OpenStreetMap anzeigen
+                                </a>'
+                            );
+                        }
+
+                        return new HtmlString(
+                            '<span class="text-gray-500 text-sm">Geben Sie Koordinaten ein, um die Position auf OpenStreetMap anzuzeigen.</span>'
+                        );
+                    }),
 
                 // Marker-Konfiguration - ausgeblendet für normale Nutzung
                 ColorPicker::make('marker_color')
