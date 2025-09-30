@@ -96,9 +96,6 @@ class CountriesTable
                 TextColumn::make('lng')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('continent.id')
-                    ->numeric()
-                    ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
