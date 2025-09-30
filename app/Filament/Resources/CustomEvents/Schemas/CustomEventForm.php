@@ -177,23 +177,21 @@ class CustomEventForm
 
                 TextInput::make('latitude')
                     ->label('Breitengrad')
-                    ->required()
                     ->numeric()
                     ->minValue(-90)
                     ->maxValue(90)
                     ->step('any')
                     ->placeholder('50.1109')
-                    ->helperText('Wert zwischen -90 und 90'),
+                    ->helperText('Optional - Wert zwischen -90 und 90. Wenn leer, werden Länder-Koordinaten verwendet.'),
 
                 TextInput::make('longitude')
                     ->label('Längengrad')
-                    ->required()
                     ->numeric()
                     ->minValue(-180)
                     ->maxValue(180)
                     ->step('any')
                     ->placeholder('8.6821')
-                    ->helperText('Wert zwischen -180 und 180'),
+                    ->helperText('Optional - Wert zwischen -180 und 180. Wenn leer, werden Länder-Koordinaten verwendet.'),
 
                 // Marker-Konfiguration - ausgeblendet für normale Nutzung
                 ColorPicker::make('marker_color')

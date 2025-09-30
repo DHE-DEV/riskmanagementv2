@@ -16,17 +16,35 @@ class EditCustomEvent extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        return $this->previousUrl ?? $this->getResource()::getUrl('index');
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getSaveFormAction(),
+            $this->getSaveAndListFormAction(),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getSaveAndListFormAction(): Action
+    {
+        return Action::make('saveAndList')
+            ->label('Save & List')
+            ->action('saveAndList')
+            ->keyBindings(['mod+shift+s']);
+    }
+
+    public function saveAndList(): void
+    {
+        $this->save();
+        $this->redirect($this->getResource()::getUrl('index'));
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('manageCountries')
-                ->label('Länder & Standorte verwalten')
-                ->icon('heroicon-o-globe-alt')
-                ->color('success')
-                ->url(fn () => CustomEventResource::getUrl('manage-countries', ['record' => $this->record])),
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),

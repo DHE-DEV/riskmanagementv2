@@ -41,7 +41,7 @@ class CreateCustomEvent extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
     public function mount(): void
@@ -136,10 +136,10 @@ class CreateCustomEvent extends CreateRecord
             '3' => 'entry',       // visa/entry topics -> Einreisebestimmungen
             '4' => 'travel',      // travel/strikes -> Reiseverkehr
             '5' => 'health',      // health -> Gesundheit
-            '6' => 'other',       // other -> Sonstiges
+            '6' => 'general',     // other -> Allgemein
         ];
 
-        $code = $mappings[$tagtype] ?? 'other';
+        $code = $mappings[$tagtype] ?? 'general';
 
         $eventType = EventType::where('code', $code)->first();
 
