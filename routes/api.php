@@ -51,12 +51,13 @@ Route::prefix('custom-events')->group(function () {
 Route::get('/continents', function () {
     return response()->json([
         'success' => true,
-        'data' => \App\Models\Continent::orderBy('code')->get(['id', 'code', 'name_translations'])->map(function ($continent) {
+        'data' => \App\Models\Continent::orderBy('sort_order')->get(['id', 'code', 'name_translations', 'sort_order'])->map(function ($continent) {
             return [
                 'id' => $continent->id,
                 'code' => $continent->code,
                 'name' => $continent->getName('de'),
                 'name_en' => $continent->getName('en'),
+                'sort_order' => $continent->sort_order,
             ];
         })
     ]);

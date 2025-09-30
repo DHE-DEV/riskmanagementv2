@@ -14,6 +14,7 @@ class Continent extends Model
     protected $fillable = [
         'name_translations',
         'code',
+        'sort_order',
         'description',
         'keywords',
         'lat',
@@ -22,6 +23,7 @@ class Continent extends Model
 
     protected $casts = [
         'name_translations' => 'array',
+        'sort_order' => 'integer',
         'lat' => 'decimal:6',
         'lng' => 'decimal:6',
         'keywords' => 'array',
@@ -42,6 +44,14 @@ class Continent extends Model
     {
         $translations = $this->name_translations ?? [];
         return $translations[$language] ?? $translations['en'] ?? $this->code ?? 'Unknown';
+    }
+
+    /**
+     * Scope a query to order continents by sort_order.
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order');
     }
 
     /**

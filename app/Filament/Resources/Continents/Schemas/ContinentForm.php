@@ -18,6 +18,12 @@ class ContinentForm
                     ->maxLength(10)
                     ->helperText('Eindeutiger Code für den Kontinent (z.B. EU für Europa)'),
 
+                TextInput::make('sort_order')
+                    ->label('Sortierung')
+                    ->numeric()
+                    ->default(0)
+                    ->helperText('Niedrigere Werte werden zuerst angezeigt'),
+
                 TextInput::make('name_translations.de')
                     ->label('Name (Deutsch)')
                     ->required()

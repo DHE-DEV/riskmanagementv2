@@ -18,6 +18,10 @@ class ContinentsTable
     {
         return $table
             ->columns([
+                TextColumn::make('sort_order')
+                    ->label('#')
+                    ->sortable()
+                    ->width(50),
                 TextColumn::make('german_name')
                     ->label('Name')
                     ->getStateUsing(fn ($record) => $record->name_translations['de'] ?? $record->name_translations['en'] ?? $record->code)
@@ -62,6 +66,8 @@ class ContinentsTable
             ->recordUrl(
                 fn ($record): string => route('filament.admin.resources.continents.view', $record)
             )
+            ->defaultSort('sort_order')
+            ->reorderable('sort_order')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
