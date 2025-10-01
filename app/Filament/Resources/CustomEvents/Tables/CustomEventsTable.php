@@ -31,20 +31,23 @@ class CustomEventsTable
                     ->sortable()
                     ->limit(50),
 
-                TextColumn::make('country.name_translations')
-                    ->label('Land')
-                    ->getStateUsing(fn ($record) => $record->country?->getName('de') ?? 'Nicht zugeordnet')
+                TextColumn::make('countries.name_translations')
+                    ->label('Länder')
+                    ->getStateUsing(function ($record) {
+                        $countries = $record->countries;
+                        if ($countries->isEmpty()) {
+                            return 'Nicht zugeordnet';
+                        }
+                        return $countries->map(fn($country) => $country->getName('de'))->implode(', ');
+                    })
                     ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('country', function ($q) use ($search) {
+                        return $query->whereHas('countries', function ($q) use ($search) {
                             $q->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))) LIKE ?', ['%' . strtolower($search) . '%'])
                               ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.en"))) LIKE ?', ['%' . strtolower($search) . '%']);
                         });
                     })
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query->leftJoin('countries', 'custom_events.country_id', '=', 'countries.id')
-                            ->orderByRaw('JSON_UNQUOTE(JSON_EXTRACT(countries.name_translations, "$.de")) ' . $direction);
-                    })
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->wrap(),
 
                 TextColumn::make('eventTypes.name')
                     ->label('Typen')
