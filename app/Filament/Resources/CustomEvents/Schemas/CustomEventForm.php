@@ -161,7 +161,7 @@ class CustomEventForm
                     ->displayFormat('d.m.Y H:i')
                     ->helperText('Optional - für zeitlich begrenzte Events'),
 
-                // Koordinaten
+                // Koordinaten - ausgeblendet, da jetzt über Länder-Zuordnung verwaltet
                 TextInput::make('coordinates_paste')
                     ->label('Google Maps Koordinaten einfügen')
                     ->placeholder('z.B. 50.1109, 8.6821 oder 50°06\'39.2"N 8°40\'55.6"E')
@@ -175,7 +175,8 @@ class CustomEventForm
                                 $set('longitude', $coordinates['lng']);
                             }
                         }
-                    }),
+                    })
+                    ->hidden(),
 
                 TextInput::make('latitude')
                     ->label('Breitengrad')
@@ -185,7 +186,8 @@ class CustomEventForm
                     ->step('any')
                     ->placeholder('50.1109')
                     ->helperText('Optional - Wert zwischen -90 und 90. Wenn leer, werden Länder-Koordinaten verwendet.')
-                    ->live(onBlur: true),
+                    ->live(onBlur: true)
+                    ->hidden(),
 
                 TextInput::make('longitude')
                     ->label('Längengrad')
@@ -195,7 +197,8 @@ class CustomEventForm
                     ->step('any')
                     ->placeholder('8.6821')
                     ->helperText('Optional - Wert zwischen -180 und 180. Wenn leer, werden Länder-Koordinaten verwendet.')
-                    ->live(onBlur: true),
+                    ->live(onBlur: true)
+                    ->hidden(),
 
                 Placeholder::make('osm_link')
                     ->label('')
@@ -217,7 +220,8 @@ class CustomEventForm
                         return new HtmlString(
                             '<span class="text-gray-500 text-sm">Geben Sie Koordinaten ein, um die Position auf OpenStreetMap anzuzeigen.</span>'
                         );
-                    }),
+                    })
+                    ->hidden(),
 
                 // Marker-Konfiguration - ausgeblendet für normale Nutzung
                 ColorPicker::make('marker_color')
