@@ -125,24 +125,27 @@ class CustomEventForm
                     ->helperText('Tags durch Kommas getrennt eingeben')
                     ->hidden(),
 
-                // Status & Zeit
-                Toggle::make('is_active')
-                    ->label('Aktiv')
-                    ->default(true)
-                    ->helperText('Event auf der Karte anzeigen'),
+                // Status - nebeneinander in 2 Spalten
+                \Filament\Schemas\Components\Grid::make(2)
+                    ->schema([
+                        Toggle::make('is_active')
+                            ->label('Aktiv')
+                            ->default(true)
+                            ->helperText('Event auf der Karte anzeigen'),
 
-                Toggle::make('archived')
-                    ->label('Archiviert')
-                    ->default(false)
-                    ->helperText('Archivierte Events werden noch 1 Jahr nach dem Enddatum auf der Karte angezeigt')
-                    ->live()
-                    ->afterStateUpdated(function (Set $set, $state) {
-                        if ($state) {
-                            $set('archived_at', now());
-                        } else {
-                            $set('archived_at', null);
-                        }
-                    }),
+                        Toggle::make('archived')
+                            ->label('Archiviert')
+                            ->default(false)
+                            ->helperText('Archivierte Events werden noch 1 Jahr nach dem Enddatum auf der Karte angezeigt')
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, $state) {
+                                if ($state) {
+                                    $set('archived_at', now());
+                                } else {
+                                    $set('archived_at', null);
+                                }
+                            }),
+                    ]),
 
                 DateTimePicker::make('archived_at')
                     ->label('Archiviert am')
