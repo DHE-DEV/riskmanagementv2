@@ -264,14 +264,31 @@ class CountriesRelationManager extends RelationManager
                     ->modalCancelActionLabel('Abbrechen')
                     ->preloadRecordSelect()
                     ->recordSelectOptionsQuery(function (Builder $query) {
-                        return $query->orderBy('name_translations->de');
+                        $ownerRecord = $this->getOwnerRecord();
+                        $existingIds = $ownerRecord->countries()->pluck('countries.id')->toArray();
+
+                        return $query->whereNotIn('countries.id', $existingIds)
+                            ->orderBy('name_translations->de')
+                            ->limit(50);
                     })
                     ->form(fn (\Filament\Actions\AttachAction $action): array => [
-                        $action->getRecordSelect()
+                        Select::make('recordId')
                             ->label('Land auswählen')
+                            ->options(function () {
+                                $ownerRecord = $this->getOwnerRecord();
+                                $existingIds = $ownerRecord->countries()->pluck('countries.id')->toArray();
+
+                                return Country::query()
+                                    ->whereNotIn('id', $existingIds)
+                                    ->orderBy('name_translations->de')
+                                    ->limit(50)
+                                    ->get()
+                                    ->mapWithKeys(fn (Country $c) => [$c->id => $c->getName('de') . ' (' . $c->iso_code . ')'])
+                                    ->toArray();
+                            })
                             ->searchable()
-                            ->getSearchResultsUsing(function (string $search) use ($action) {
-                                // Get the owner record from the relationship manager
+                            ->required()
+                            ->getSearchResultsUsing(function (string $search) {
                                 $ownerRecord = $this->getOwnerRecord();
                                 $existingIds = $ownerRecord->countries()->pluck('countries.id')->toArray();
 
