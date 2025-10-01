@@ -305,23 +305,54 @@ class CountriesRelationManager extends RelationManager
                                 TextInput::make('latitude')
                                     ->label('Breitengrad')
                                     ->numeric()
-                                    ->minValue(-90)
-                                    ->maxValue(90)
                                     ->step('any')
-                                    ->disabled(fn (SchemaGet $get): bool => (bool) $get('use_default_coordinates'))
-                                    ->required(fn (SchemaGet $get): bool => !(bool) $get('use_default_coordinates'))
-                                    ->placeholder('50.1109'),
+                                    ->disabled(fn ($get) => (bool) $get('use_default_coordinates'))
+                                    ->required(fn ($get) => !(bool) $get('use_default_coordinates'))
+                                    ->placeholder('50.1109')
+                                    ->prefix('Lat:'),
 
                                 TextInput::make('longitude')
                                     ->label('Längengrad')
                                     ->numeric()
-                                    ->minValue(-180)
-                                    ->maxValue(180)
                                     ->step('any')
-                                    ->disabled(fn (SchemaGet $get): bool => (bool) $get('use_default_coordinates'))
-                                    ->required(fn (SchemaGet $get): bool => !(bool) $get('use_default_coordinates'))
-                                    ->placeholder('8.6821'),
+                                    ->disabled(fn ($get) => (bool) $get('use_default_coordinates'))
+                                    ->required(fn ($get) => !(bool) $get('use_default_coordinates'))
+                                    ->placeholder('8.6821')
+                                    ->prefix('Lng:'),
                             ]),
+
+                        TextInput::make('google_maps_coordinates')
+                            ->label('Google Maps Koordinaten einfügen')
+                            ->placeholder('z.B. 50.1109, 8.6821')
+                            ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme')
+                            ->disabled(fn ($get) => (bool) $get('use_default_coordinates'))
+                            ->live(onBlur: true)
+                            ->dehydrated(false)
+                            ->afterStateUpdated(function ($set, $get, ?string $state) {
+                                if (!$state || $get('use_default_coordinates')) {
+                                    return;
+                                }
+
+                                // Parse Google Maps coordinate formats
+                                $cleaned = preg_replace('/[^\d.,\-]/', ' ', $state);
+                                $cleaned = preg_replace('/\s+/', ' ', trim($cleaned));
+
+                                if (strpos($cleaned, ',') !== false) {
+                                    $parts = explode(',', $cleaned);
+                                } else {
+                                    $parts = explode(' ', $cleaned);
+                                }
+
+                                if (count($parts) >= 2) {
+                                    $lat = trim($parts[0]);
+                                    $lng = trim($parts[1]);
+
+                                    if (is_numeric($lat) && is_numeric($lng)) {
+                                        $set('latitude', $lat);
+                                        $set('longitude', $lng);
+                                    }
+                                }
+                            }),
 
                         Textarea::make('location_note')
                             ->label('Standort-Notiz')
@@ -356,21 +387,51 @@ class CountriesRelationManager extends RelationManager
                                 TextInput::make('latitude')
                                     ->label('Breitengrad')
                                     ->numeric()
-                                    ->minValue(-90)
-                                    ->maxValue(90)
                                     ->step('any')
-                                    ->disabled(fn (SchemaGet $get): bool => (bool) $get('use_default_coordinates'))
-                                    ->required(fn (SchemaGet $get): bool => !(bool) $get('use_default_coordinates')),
+                                    ->disabled(fn ($get) => (bool) $get('use_default_coordinates'))
+                                    ->required(fn ($get) => !(bool) $get('use_default_coordinates'))
+                                    ->prefix('Lat:'),
 
                                 TextInput::make('longitude')
                                     ->label('Längengrad')
                                     ->numeric()
-                                    ->minValue(-180)
-                                    ->maxValue(180)
                                     ->step('any')
-                                    ->disabled(fn (SchemaGet $get): bool => (bool) $get('use_default_coordinates'))
-                                    ->required(fn (SchemaGet $get): bool => !(bool) $get('use_default_coordinates')),
+                                    ->disabled(fn ($get) => (bool) $get('use_default_coordinates'))
+                                    ->required(fn ($get) => !(bool) $get('use_default_coordinates'))
+                                    ->prefix('Lng:'),
                             ]),
+
+                        TextInput::make('google_maps_coordinates')
+                            ->label('Google Maps Koordinaten einfügen')
+                            ->placeholder('z.B. 50.1109, 8.6821')
+                            ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme')
+                            ->disabled(fn ($get) => (bool) $get('use_default_coordinates'))
+                            ->live(onBlur: true)
+                            ->dehydrated(false)
+                            ->afterStateUpdated(function ($set, $get, ?string $state) {
+                                if (!$state || $get('use_default_coordinates')) {
+                                    return;
+                                }
+
+                                $cleaned = preg_replace('/[^\d.,\-]/', ' ', $state);
+                                $cleaned = preg_replace('/\s+/', ' ', trim($cleaned));
+
+                                if (strpos($cleaned, ',') !== false) {
+                                    $parts = explode(',', $cleaned);
+                                } else {
+                                    $parts = explode(' ', $cleaned);
+                                }
+
+                                if (count($parts) >= 2) {
+                                    $lat = trim($parts[0]);
+                                    $lng = trim($parts[1]);
+
+                                    if (is_numeric($lat) && is_numeric($lng)) {
+                                        $set('latitude', $lat);
+                                        $set('longitude', $lng);
+                                    }
+                                }
+                            }),
 
                         Textarea::make('location_note')
                             ->label('Standort-Notiz')

@@ -87,7 +87,7 @@ class ManageEventCountries extends Page implements HasForms
                                         ->columnSpan(2),
 
                                     Toggle::make('use_default_coordinates')
-                                        ->label('Standard-Koordinaten verwenden')
+                                        ->label('Standard-Koordinaten des Landes verwenden')
                                         ->default(true)
                                         ->reactive()
                                         ->afterStateUpdated(function (Get $get, Set $set, ?bool $state) {
@@ -98,28 +98,65 @@ class ManageEventCountries extends Page implements HasForms
                                                     $set('longitude', $country->lng);
                                                 }
                                             }
+                                            // Clear Google Maps field when toggling
+                                            $set('google_maps_coordinates', null);
                                         })
                                         ->columnSpan(2),
 
                                     TextInput::make('latitude')
                                         ->label('Breitengrad')
                                         ->numeric()
-                                        ->minValue(-90)
-                                        ->maxValue(90)
                                         ->step('any')
                                         ->disabled(fn (Get $get): bool => (bool) $get('use_default_coordinates'))
                                         ->required(fn (Get $get): bool => !(bool) $get('use_default_coordinates'))
-                                        ->placeholder('50.1109'),
+                                        ->placeholder('50.1109')
+                                        ->prefix('Lat:'),
 
                                     TextInput::make('longitude')
                                         ->label('Längengrad')
                                         ->numeric()
-                                        ->minValue(-180)
-                                        ->maxValue(180)
                                         ->step('any')
                                         ->disabled(fn (Get $get): bool => (bool) $get('use_default_coordinates'))
                                         ->required(fn (Get $get): bool => !(bool) $get('use_default_coordinates'))
-                                        ->placeholder('8.6821'),
+                                        ->placeholder('8.6821')
+                                        ->prefix('Lng:'),
+
+                                    TextInput::make('google_maps_coordinates')
+                                        ->label('Google Maps Koordinaten einfügen (Lat, Lng)')
+                                        ->placeholder('z.B. 50.1109, 8.6821')
+                                        ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme in Breiten- und Längengrad')
+                                        ->live(onBlur: true)
+                                        ->dehydrated(false)
+                                        ->disabled(fn (Get $get): bool => (bool) $get('use_default_coordinates'))
+                                        ->afterStateUpdated(function (Set $set, Get $get, ?string $state) {
+                                            if (!$state || $get('use_default_coordinates')) {
+                                                return;
+                                            }
+
+                                            // Parse different Google Maps coordinate formats
+                                            // Examples: "50.1109, 8.6821", "50.1109,8.6821", "50.1109 8.6821"
+                                            $cleaned = preg_replace('/[^\d.,\-]/', ' ', $state);
+                                            $cleaned = preg_replace('/\s+/', ' ', trim($cleaned));
+
+                                            // Try comma separator first
+                                            if (strpos($cleaned, ',') !== false) {
+                                                $parts = explode(',', $cleaned);
+                                            } else {
+                                                // Try space separator
+                                                $parts = explode(' ', $cleaned);
+                                            }
+
+                                            if (count($parts) >= 2) {
+                                                $lat = trim($parts[0]);
+                                                $lng = trim($parts[1]);
+
+                                                if (is_numeric($lat) && is_numeric($lng)) {
+                                                    $set('latitude', $lat);
+                                                    $set('longitude', $lng);
+                                                }
+                                            }
+                                        })
+                                        ->columnSpan(2),
 
                                     Textarea::make('location_note')
                                         ->label('Standort-Notiz')
