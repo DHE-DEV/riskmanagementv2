@@ -125,7 +125,8 @@ class CountryForm
                                                 'lat' => $get('lat'),
                                                 'lng' => $get('lng'),
                                             ]),
-                                    ]),
+                                    ])
+                                    ->hidden(),
                             ])
                             ->columnSpan(1),
 

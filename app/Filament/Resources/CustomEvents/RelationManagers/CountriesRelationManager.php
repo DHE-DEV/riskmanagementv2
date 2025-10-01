@@ -71,7 +71,7 @@ class CountriesRelationManager extends RelationManager
                     ->description('Geben Sie spezifische Koordinaten für diesen Standort an oder verwenden Sie die Standard-Koordinaten des Landes.')
                     ->schema([
                         Toggle::make('use_default_coordinates')
-                            ->label('Standard-Koordinaten des Landes verwenden')
+                            ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
                             ->default(true)
                             ->reactive()
                             ->afterStateUpdated(function (Get $get, Set $set, ?bool $state) {
@@ -313,7 +313,7 @@ class CountriesRelationManager extends RelationManager
                             ),
 
                         Toggle::make('use_default_coordinates')
-                            ->label('Standard-Koordinaten des Landes verwenden')
+                            ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
                             ->default(true)
                             ->reactive(),
 
@@ -396,7 +396,7 @@ class CountriesRelationManager extends RelationManager
                     ->modalSubmitActionLabel('Speichern')
                     ->form([
                         Toggle::make('use_default_coordinates')
-                            ->label('Standard-Koordinaten des Landes verwenden')
+                            ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
                             ->reactive(),
 
                         Grid::make(2)

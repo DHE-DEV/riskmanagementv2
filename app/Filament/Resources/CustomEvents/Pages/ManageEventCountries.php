@@ -87,7 +87,7 @@ class ManageEventCountries extends Page implements HasForms
                                         ->columnSpan(2),
 
                                     Toggle::make('use_default_coordinates')
-                                        ->label('Standard-Koordinaten des Landes verwenden')
+                                        ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
                                         ->default(true)
                                         ->reactive()
                                         ->afterStateUpdated(function (Get $get, Set $set, ?bool $state) {
