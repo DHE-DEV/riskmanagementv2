@@ -73,6 +73,14 @@ class Country extends Model
     }
 
     /**
+     * Get the capital city for this country.
+     */
+    public function capital()
+    {
+        return $this->hasOne(City::class)->where('is_capital', true);
+    }
+
+    /**
      * Get the airports for this country.
      */
     public function airports(): HasMany

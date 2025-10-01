@@ -37,7 +37,7 @@ class CustomEventController extends Controller
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries'])
+                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($event) {
@@ -52,10 +52,17 @@ class CustomEventController extends Controller
 
                     // Länder mit ihren individuellen Koordinaten sammeln
                     $countriesData = $event->countries->map(function ($country) use ($event) {
+                        // Verwende individuelle Koordinaten oder Standard-Koordinaten des Landes
                         $lat = $country->pivot->use_default_coordinates ? $country->lat : $country->pivot->latitude;
                         $lng = $country->pivot->use_default_coordinates ? $country->lng : $country->pivot->longitude;
 
-                        // Falls keine Koordinaten vorhanden sind, verwende die Event-Koordinaten als Fallback
+                        // Falls keine Koordinaten vorhanden sind, verwende Hauptstadt-Koordinaten
+                        if ((!$lat || !$lng) && $country->capital) {
+                            $lat = $country->capital->lat;
+                            $lng = $country->capital->lng;
+                        }
+
+                        // Fallback auf Event-Koordinaten
                         if (!$lat && !$lng && $event->latitude && $event->longitude) {
                             $lat = $event->latitude;
                             $lng = $event->longitude;
@@ -152,7 +159,7 @@ class CustomEventController extends Controller
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['country', 'eventType', 'eventTypes', 'countries'])
+                ->with(['country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->get()
                 ->map(function ($event) {
                     // Bei Many-to-Many: Verwende Icon vom ersten EventType falls verfügbar
@@ -166,10 +173,17 @@ class CustomEventController extends Controller
 
                     // Länder mit ihren individuellen Koordinaten sammeln
                     $countriesData = $event->countries->map(function ($country) use ($event) {
+                        // Verwende individuelle Koordinaten oder Standard-Koordinaten des Landes
                         $lat = $country->pivot->use_default_coordinates ? $country->lat : $country->pivot->latitude;
                         $lng = $country->pivot->use_default_coordinates ? $country->lng : $country->pivot->longitude;
 
-                        // Falls keine Koordinaten vorhanden sind, verwende die Event-Koordinaten als Fallback
+                        // Falls keine Koordinaten vorhanden sind, verwende Hauptstadt-Koordinaten
+                        if ((!$lat || !$lng) && $country->capital) {
+                            $lat = $country->capital->lat;
+                            $lng = $country->capital->lng;
+                        }
+
+                        // Fallback auf Event-Koordinaten
                         if (!$lat && !$lng && $event->latitude && $event->longitude) {
                             $lat = $event->latitude;
                             $lng = $event->longitude;
@@ -422,7 +436,7 @@ class CustomEventController extends Controller
     public function getEvent($eventId): JsonResponse
     {
         try {
-            $event = CustomEvent::with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries'])
+            $event = CustomEvent::with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->findOrFail($eventId);
 
             // Format the event data similar to getDashboardEvents
