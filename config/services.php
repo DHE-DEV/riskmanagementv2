@@ -48,4 +48,8 @@ return [
         'api_secret' => env('PASSOLUTION_API_SECRET'),
     ],
 
+    'openai' => [
+        'key' => env('RISK_CHARGPT_KEY'),
+    ],
+
 ];
