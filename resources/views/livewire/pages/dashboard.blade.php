@@ -2100,6 +2100,35 @@ function processCustomEvents(events) {
                 window.eventById[mapped.id] = mapped;
             }
             processedEvents.push(mapped);
+        } else {
+            // Events ohne Koordinaten und ohne Länder (nur für Liste)
+            const mapped = {
+                ...event,
+                latitude: null,
+                longitude: null,
+                icon: getCustomEventIcon(event.marker_icon, event.event_type),
+                iconColor: event.marker_color,
+                source: 'custom',
+                event_type: event.event_type,
+                event_type_name: event.event_type_name,
+                country_name: null,
+                severity: event.severity,
+                priority: event.priority,
+                country: event.country || null,
+                title: event.title,
+                description: event.description,
+                start_date: event.start_date,
+                end_date: event.end_date,
+                category: event.category,
+                tags: event.tags,
+                popup_content: event.popup_content,
+                marker_size: event.marker_size
+            };
+
+            if (mapped.id != null) {
+                window.eventById[mapped.id] = mapped;
+            }
+            processedEvents.push(mapped);
         }
     });
 
