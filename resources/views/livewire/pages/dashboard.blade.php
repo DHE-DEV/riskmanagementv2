@@ -2554,20 +2554,23 @@ async function loadEventDetails(event) {
     `;
     
     try {
-        // Lade Wetter- und Zeitzonen-Daten
-        const response = await fetch('/api/gdacs/event-details', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ 
-                latitude: event.latitude, 
-                longitude: event.longitude 
-            })
-        });
-        
-        const result = await response.json();
+        // Lade Wetter- und Zeitzonen-Daten nur wenn Koordinaten vorhanden sind
+        let result = { success: false };
+        if (event.latitude && event.longitude) {
+            const response = await fetch('/api/gdacs/event-details', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    latitude: event.latitude,
+                    longitude: event.longitude
+                })
+            });
+
+            result = await response.json();
+        }
         
         // Debug-Logging
         console.log('Event Details Debug:', {
@@ -2666,65 +2669,66 @@ async function loadEventDetails(event) {
                     ` : ''}
                 </div>
         `;
-        
-        // Wetter-Daten hinzufügen
-        if (result.success && result.data.weather) {
-            const weather = result.data.weather;
-            detailsHtml += `
-                <div class="mt-2"><i class="fa-regular fa-cloud-sun"></i> Aktuelles Wetter</div>
-                <div class="sidebar-weather-display">
-                    <div class="sidebar-weather-main">
-                        <div class="sidebar-weather-icon">
-                            <i class="fa-regular ${getWeatherIcon(weather.main)}"></i>
+
+        // Wetter- und Zeitzonen-Daten nur anzeigen wenn Koordinaten vorhanden sind
+        if (event.latitude && event.longitude) {
+            // Wetter-Daten hinzufügen
+            if (result.success && result.data.weather) {
+                const weather = result.data.weather;
+                detailsHtml += `
+                    <div class="mt-2"><i class="fa-regular fa-cloud-sun"></i> Aktuelles Wetter</div>
+                    <div class="sidebar-weather-display">
+                        <div class="sidebar-weather-main">
+                            <div class="sidebar-weather-icon">
+                                <i class="fa-regular ${getWeatherIcon(weather.main)}"></i>
+                            </div>
+                            <div>
+                                <div class="sidebar-temperature">${weather.temperature}°C</div>
+                                <div class="weather-description">${weather.description}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="sidebar-temperature">${weather.temperature}°C</div>
-                            <div class="weather-description">${weather.description}</div>
+                        <div class="sidebar-weather-details">
+                            <div class="sidebar-weather-item">
+                                <i class="fa-regular fa-thermometer-half"></i>
+                                <div>
+                                    <div class="sidebar-weather-label">Gefühlt</div>
+                                    <div class="sidebar-weather-value">${weather.feels_like}°C</div>
+                                </div>
+                            </div>
+                            <div class="sidebar-weather-item">
+                                <i class="fa-regular fa-tint"></i>
+                                <div>
+                                    <div class="sidebar-weather-label">Luftfeuchtigkeit</div>
+                                    <div class="sidebar-weather-value">${weather.humidity}%</div>
+                                </div>
+                            </div>
+                            <div class="sidebar-weather-item">
+                                <i class="fa-regular fa-wind"></i>
+                                <div>
+                                    <div class="sidebar-weather-label">Wind</div>
+                                    <div class="sidebar-weather-value">${weather.wind_speed} km/h</div>
+                                </div>
+                            </div>
+                            <div class="sidebar-weather-item">
+                                <i class="fa-regular fa-eye"></i>
+                                <div>
+                                    <div class="sidebar-weather-label">Sichtweite</div>
+                                    <div class="sidebar-weather-value">${weather.visibility} km</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="sidebar-weather-details">
-                        <div class="sidebar-weather-item">
-                            <i class="fa-regular fa-thermometer-half"></i>
-                            <div>
-                                <div class="sidebar-weather-label">Gefühlt</div>
-                                <div class="sidebar-weather-value">${weather.feels_like}°C</div>
-                            </div>
-                        </div>
-                        <div class="sidebar-weather-item">
-                            <i class="fa-regular fa-tint"></i>
-                            <div>
-                                <div class="sidebar-weather-label">Luftfeuchtigkeit</div>
-                                <div class="sidebar-weather-value">${weather.humidity}%</div>
-                            </div>
-                        </div>
-                        <div class="sidebar-weather-item">
-                            <i class="fa-regular fa-wind"></i>
-                            <div>
-                                <div class="sidebar-weather-label">Wind</div>
-                                <div class="sidebar-weather-value">${weather.wind_speed} km/h</div>
-                            </div>
-                        </div>
-                        <div class="sidebar-weather-item">
-                            <i class="fa-regular fa-eye"></i>
-                            <div>
-                                <div class="sidebar-weather-label">Sichtweite</div>
-                                <div class="sidebar-weather-value">${weather.visibility} km</div>
-                            </div>
-                        </div>
+                `;
+            } else {
+                detailsHtml += `
+                    <div class="weather-notice">
+                        <i class="fa-regular fa-circle-info"></i>
+                        <span>Wetter-Daten nicht verfügbar</span>
                     </div>
-                </div>
-            `;
-        } else {
-            detailsHtml += `
-                <div class="weather-notice">
-                    <i class="fa-regular fa-circle-info"></i>
-                    <span>Wetter-Daten nicht verfügbar</span>
-                </div>
-            `;
-        }
-        
-        // Zeitzonen-Daten: immer einen Abschnitt einfügen (unabhängig von Wetter/API)
-        {
+                `;
+            }
+
+            // Zeitzonen-Daten
             detailsHtml += `
                 <div class="timezone-section">
                     <h4><i class="fa-regular fa-clock"></i> Lokale Zeit</h4>
@@ -2747,92 +2751,94 @@ async function loadEventDetails(event) {
         
         sidebarContent.innerHTML = detailsHtml;
 
-        // Live-Uhr starten (zunächst mit Fallback), anschließend ggf. mit API-Werten überschreiben
-        try {
-            const timeEl = document.getElementById('local-time-display');
-            const dateEl = document.getElementById('local-date-display');
-            const zoneEl = document.getElementById('tz-zone');
-            const abbrEl = document.getElementById('tz-abbr');
-            const diffEl = document.getElementById('tz-berlin-diff');
+        // Live-Uhr nur starten wenn Koordinaten vorhanden sind
+        if (event.latitude && event.longitude) {
+            try {
+                const timeEl = document.getElementById('local-time-display');
+                const dateEl = document.getElementById('local-date-display');
+                const zoneEl = document.getElementById('tz-zone');
+                const abbrEl = document.getElementById('tz-abbr');
+                const diffEl = document.getElementById('tz-berlin-diff');
 
-            // Prüfe geografische Lage für Zeitzone (nicht mehr automatisch Berlin für CustomEvents)
-            const isInGermany = (event.latitude >= 47 && event.latitude <= 55.2 && event.longitude >= 5.5 && event.longitude <= 15.7);
-            const isInSpain = (event.latitude >= 36 && event.latitude <= 43.8 && event.longitude >= -9.3 && event.longitude <= 3.3);
-            
-            // Setze Zeitzonen basierend auf tatsächlichen Koordinaten, nicht auf Event-Typ
-            let tzName = null;
-            if (isInGermany) {
-                tzName = 'Europe/Berlin';
-            } else if (isInSpain) {
-                tzName = 'Europe/Madrid';
-            }
-            // Für alle anderen Standorte (inkl. CustomEvents): Lass die API die korrekte Zeitzone bestimmen
-            
-            let offset = tzName ? null : Math.round((event.longitude || 0) / 15);
+                // Prüfe geografische Lage für Zeitzone (nicht mehr automatisch Berlin für CustomEvents)
+                const isInGermany = (event.latitude >= 47 && event.latitude <= 55.2 && event.longitude >= 5.5 && event.longitude <= 15.7);
+                const isInSpain = (event.latitude >= 36 && event.latitude <= 43.8 && event.longitude >= -9.3 && event.longitude <= 3.3);
 
-            const formatDiff = (hours) => {
-                if (hours === 0) return 'Berlin: Gleiche Zeit';
-                const sign = hours > 0 ? '+' : '-';
-                const abs = Math.abs(hours);
-                return `Berlin: ${sign}${abs} ${abs === 1 ? 'Stunde' : 'Stunden'}`;
-            };
-
-            // Berlin Offset ermitteln (DST-aware)
-            const getBerlinOffset = () => {
-                const now = new Date();
-                const berlin = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
-                const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
-                return (berlin - utc) / 3600000;
-            };
-            
-            // Zeitunterschied zwischen zwei Zeitzonen berechnen (DST-aware)
-            const getTimezoneOffset = (timezoneName) => {
-                const now = new Date();
-                const targetTime = new Date(now.toLocaleString('en-US', { timeZone: timezoneName }));
-                const berlinTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
-                return (targetTime - berlinTime) / 3600000;
-            };
-
-            const tick = () => {
-                const now = new Date();
-                if (tzName) {
-                    const timeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, hour: '2-digit', minute: '2-digit', hour12: false });
-                    const dateFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, day: '2-digit', month: '2-digit', year: 'numeric' });
-                    if (timeEl) timeEl.textContent = timeFmt.format(now);
-                    if (dateEl) dateEl.textContent = dateFmt.format(now);
-                    if (zoneEl) zoneEl.textContent = tzName;
-                    if (abbrEl) abbrEl.textContent = '';
-                    // Korrekte Zeitdifferenz zu Berlin berechnen
-                    if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
-                } else {
-                    const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
-                    const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
-                    const hh = String(local.getHours()).padStart(2, '0');
-                    const mm = String(local.getMinutes()).padStart(2, '0');
-                    const dd = String(local.getDate()).padStart(2, '0');
-                    const mo = String(local.getMonth() + 1).padStart(2, '0');
-                    const yyyy = local.getFullYear();
-                    if (timeEl) timeEl.textContent = `${hh}:${mm}`;
-                    if (dateEl) dateEl.textContent = `${dd}.${mo}.${yyyy}`;
-                    if (zoneEl) zoneEl.textContent = `UTC${offset >= 0 ? '+' : ''}${offset || 0}`;
-                    if (abbrEl) abbrEl.textContent = '';
-                    if (diffEl) diffEl.textContent = formatDiff((offset || 0) - getBerlinOffset());
+                // Setze Zeitzonen basierend auf tatsächlichen Koordinaten, nicht auf Event-Typ
+                let tzName = null;
+                if (isInGermany) {
+                    tzName = 'Europe/Berlin';
+                } else if (isInSpain) {
+                    tzName = 'Europe/Madrid';
                 }
-            };
-            window.clearInterval(window.__localClockInterval);
-            tick();
-            window.__localClockInterval = window.setInterval(tick, 1000);
+                // Für alle anderen Standorte (inkl. CustomEvents): Lass die API die korrekte Zeitzone bestimmen
 
-            // Wenn API-Zeitzone vorhanden, auf diese umstellen (nicht überschreiben, wenn Berlin erzwungen wurde)
-            if (result.success && result.data.timezone) {
-                const tz = result.data.timezone;
-                if (!tzName && tz.timezone) tzName = tz.timezone;
-                offset = (typeof tz.utc_offset_hours === 'number') ? tz.utc_offset_hours : offset;
-                if (zoneEl && tz.timezone) zoneEl.textContent = tz.timezone;
-                if (abbrEl && tz.abbreviation) abbrEl.textContent = tz.abbreviation;
-                if (diffEl && typeof offset === 'number') diffEl.textContent = formatDiff(offset - getBerlinOffset());
-            }
-        } catch (e) { /* noop */ }
+                let offset = tzName ? null : Math.round((event.longitude || 0) / 15);
+
+                const formatDiff = (hours) => {
+                    if (hours === 0) return 'Berlin: Gleiche Zeit';
+                    const sign = hours > 0 ? '+' : '-';
+                    const abs = Math.abs(hours);
+                    return `Berlin: ${sign}${abs} ${abs === 1 ? 'Stunde' : 'Stunden'}`;
+                };
+
+                // Berlin Offset ermitteln (DST-aware)
+                const getBerlinOffset = () => {
+                    const now = new Date();
+                    const berlin = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+                    const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+                    return (berlin - utc) / 3600000;
+                };
+
+                // Zeitunterschied zwischen zwei Zeitzonen berechnen (DST-aware)
+                const getTimezoneOffset = (timezoneName) => {
+                    const now = new Date();
+                    const targetTime = new Date(now.toLocaleString('en-US', { timeZone: timezoneName }));
+                    const berlinTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+                    return (targetTime - berlinTime) / 3600000;
+                };
+
+                const tick = () => {
+                    const now = new Date();
+                    if (tzName) {
+                        const timeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, hour: '2-digit', minute: '2-digit', hour12: false });
+                        const dateFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, day: '2-digit', month: '2-digit', year: 'numeric' });
+                        if (timeEl) timeEl.textContent = timeFmt.format(now);
+                        if (dateEl) dateEl.textContent = dateFmt.format(now);
+                        if (zoneEl) zoneEl.textContent = tzName;
+                        if (abbrEl) abbrEl.textContent = '';
+                        // Korrekte Zeitdifferenz zu Berlin berechnen
+                        if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
+                    } else {
+                        const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+                        const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
+                        const hh = String(local.getHours()).padStart(2, '0');
+                        const mm = String(local.getMinutes()).padStart(2, '0');
+                        const dd = String(local.getDate()).padStart(2, '0');
+                        const mo = String(local.getMonth() + 1).padStart(2, '0');
+                        const yyyy = local.getFullYear();
+                        if (timeEl) timeEl.textContent = `${hh}:${mm}`;
+                        if (dateEl) dateEl.textContent = `${dd}.${mo}.${yyyy}`;
+                        if (zoneEl) zoneEl.textContent = `UTC${offset >= 0 ? '+' : ''}${offset || 0}`;
+                        if (abbrEl) abbrEl.textContent = '';
+                        if (diffEl) diffEl.textContent = formatDiff((offset || 0) - getBerlinOffset());
+                    }
+                };
+                window.clearInterval(window.__localClockInterval);
+                tick();
+                window.__localClockInterval = window.setInterval(tick, 1000);
+
+                // Wenn API-Zeitzone vorhanden, auf diese umstellen (nicht überschreiben, wenn Berlin erzwungen wurde)
+                if (result.success && result.data.timezone) {
+                    const tz = result.data.timezone;
+                    if (!tzName && tz.timezone) tzName = tz.timezone;
+                    offset = (typeof tz.utc_offset_hours === 'number') ? tz.utc_offset_hours : offset;
+                    if (zoneEl && tz.timezone) zoneEl.textContent = tz.timezone;
+                    if (abbrEl && tz.abbreviation) abbrEl.textContent = tz.abbreviation;
+                    if (diffEl && typeof offset === 'number') diffEl.textContent = formatDiff(offset - getBerlinOffset());
+                }
+            } catch (e) { /* noop */ }
+        }
         
     } catch (error) {
         console.error('Error loading event details:', error);
