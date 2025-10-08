@@ -1782,6 +1782,8 @@ async function loadDashboardData() {
                     // Nur spezifische Kontinente ausgewählt
                     filteredByContinent = allEvents.filter(event => {
                         const eventContinent = getEventContinent(event);
+                        // Events ohne Kontinent (null) werden immer angezeigt
+                        if (eventContinent === null) return true;
                         return window.selectedContinents.has(eventContinent);
                     });
                 }
@@ -1818,9 +1820,14 @@ async function loadDashboardData() {
             let countryMatch = true;
             if (window.selectedCountries && window.selectedCountries.size > 0) {
                 const eventCountry = e.country_name || e.country || '';
-                countryMatch = Array.from(window.selectedCountries.keys()).some(selectedCountry =>
-                    eventCountry.toLowerCase().includes(selectedCountry.toLowerCase())
-                );
+                // Events ohne Land werden immer angezeigt
+                if (eventCountry === '') {
+                    countryMatch = true;
+                } else {
+                    countryMatch = Array.from(window.selectedCountries.keys()).some(selectedCountry =>
+                        eventCountry.toLowerCase().includes(selectedCountry.toLowerCase())
+                    );
+                }
             }
             
             // Risikostufe-Filter
