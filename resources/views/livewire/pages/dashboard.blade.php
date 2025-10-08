@@ -3916,7 +3916,7 @@ function createEventElement(event) {
 
     // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel
     // Ansonsten sammle alle Länder für die Anzeige
-    let countryDisplay = event.country || 'Unbekannt';
+    let countryDisplay = event.country || event.country_name || 'Kein Land zugewiesen';
     if (event.original_event_id && event.countries_summary) {
         // Dies ist ein individueller Marker für ein Multi-Country-Event
         countryDisplay = event.countries_summary;
@@ -3967,106 +3967,111 @@ function createEventElement(event) {
             trackEventClick(event.id, 'list');
         }
 
+        // Wenn kein Land/keine Koordinaten zugewiesen: Direkt Details anzeigen
+        if (!event.latitude || !event.longitude) {
+            console.log('Event ohne Koordinaten - öffne direkt Details:', event.title);
+            handleDetailsClick(event.original_event_id || event.id, event.source === 'custom');
+            return;
+        }
+
         // Schließe zuerst die Sidebar, falls sie offen ist
         const eventSidebar = document.getElementById('eventSidebar');
         if (eventSidebar && eventSidebar.classList.contains('open')) {
             eventSidebar.classList.remove('open');
         }
 
-        if (event.latitude && event.longitude) {
-            // Marker öffnen - suche nach Event ID statt Koordinaten
-            let targetMarker = null;
+        // Marker öffnen - suche nach Event ID statt Koordinaten
+        let targetMarker = null;
 
-            // Finde den richtigen Marker
-            console.log('Suche Marker für Event:', event.title, 'ID:', event.id, 'Original-ID:', event.original_event_id);
+        // Finde den richtigen Marker
+        console.log('Suche Marker für Event:', event.title, 'ID:', event.id, 'Original-ID:', event.original_event_id);
 
-            // Array für alle passenden Marker
-            const matchingMarkers = [];
+        // Array für alle passenden Marker
+        const matchingMarkers = [];
 
+        markers.forEach(marker => {
+            // Prüfe ob der Marker zu diesem Event gehört
+            if (marker.eventData) {
+                const markerId = marker.eventData.original_id || marker.eventData.original_event_id || marker.eventData.id;
+                const eventId = event.original_event_id || event.id;
+
+                // Debug-Ausgabe für jeden Marker
+                if (marker.eventData.title && (marker.eventData.title.includes('Hundetaxe') || marker.eventData.title.includes('Chikungunya'))) {
+                    console.log('Prüfe Marker:', marker.eventData.title,
+                        'Marker-ID:', marker.eventData.id,
+                        'Original-ID:', marker.eventData.original_event_id,
+                        'Original_id:', marker.eventData.original_id,
+                        'Vergleiche mit Event-ID:', eventId);
+                }
+
+                // Prüfe verschiedene ID-Kombinationen
+                if (markerId == eventId || // == statt === für String/Number-Vergleich
+                    marker.eventData.id == event.id ||
+                    (marker.eventData.original_event_id && marker.eventData.original_event_id == eventId) ||
+                    (marker.eventData.original_id && marker.eventData.original_id == eventId)) {
+                    console.log('MATCH gefunden für:', marker.eventData.title);
+                    matchingMarkers.push(marker);
+                }
+            }
+        });
+
+        // Wenn mehrere Marker gefunden wurden, nimm den mit dem passenden Titel
+        if (matchingMarkers.length > 0) {
+            // Versuche den Marker mit dem exakt passenden Titel zu finden
+            targetMarker = matchingMarkers.find(m => m.eventData.title === event.title) || matchingMarkers[0];
+            console.log('Gewählter Marker:', targetMarker.eventData?.title);
+        }
+
+        // Fallback: Falls kein Marker über ID gefunden, versuche Koordinaten-Matching
+        if (!targetMarker) {
             markers.forEach(marker => {
-                // Prüfe ob der Marker zu diesem Event gehört
-                if (marker.eventData) {
-                    const markerId = marker.eventData.original_id || marker.eventData.original_event_id || marker.eventData.id;
-                    const eventId = event.original_event_id || event.id;
-
-                    // Debug-Ausgabe für jeden Marker
-                    if (marker.eventData.title && (marker.eventData.title.includes('Hundetaxe') || marker.eventData.title.includes('Chikungunya'))) {
-                        console.log('Prüfe Marker:', marker.eventData.title,
-                            'Marker-ID:', marker.eventData.id,
-                            'Original-ID:', marker.eventData.original_event_id,
-                            'Original_id:', marker.eventData.original_id,
-                            'Vergleiche mit Event-ID:', eventId);
-                    }
-
-                    // Prüfe verschiedene ID-Kombinationen
-                    if (markerId == eventId || // == statt === für String/Number-Vergleich
-                        marker.eventData.id == event.id ||
-                        (marker.eventData.original_event_id && marker.eventData.original_event_id == eventId) ||
-                        (marker.eventData.original_id && marker.eventData.original_id == eventId)) {
-                        console.log('MATCH gefunden für:', marker.eventData.title);
-                        matchingMarkers.push(marker);
-                    }
+                if (Math.abs(marker.getLatLng().lat - event.latitude) < 0.0001 &&
+                    Math.abs(marker.getLatLng().lng - event.longitude) < 0.0001) {
+                    targetMarker = marker;
                 }
             });
+        }
 
-            // Wenn mehrere Marker gefunden wurden, nimm den mit dem passenden Titel
-            if (matchingMarkers.length > 0) {
-                // Versuche den Marker mit dem exakt passenden Titel zu finden
-                targetMarker = matchingMarkers.find(m => m.eventData.title === event.title) || matchingMarkers[0];
-                console.log('Gewählter Marker:', targetMarker.eventData?.title);
-            }
+        if (targetMarker && markerClusterGroup) {
+            console.log('Ziel-Marker gefunden:', targetMarker.eventData?.title || 'Unbekannt');
 
-            // Fallback: Falls kein Marker über ID gefunden, versuche Koordinaten-Matching
-            if (!targetMarker) {
-                markers.forEach(marker => {
-                    if (Math.abs(marker.getLatLng().lat - event.latitude) < 0.0001 &&
-                        Math.abs(marker.getLatLng().lng - event.longitude) < 0.0001) {
-                        targetMarker = marker;
-                    }
-                });
-            }
+            // Verwende die eingebaute zoomToShowLayer Methode
+            // Diese zoomt automatisch und löst Cluster auf wenn nötig
+            markerClusterGroup.zoomToShowLayer(targetMarker, function() {
+                console.log('zoomToShowLayer Callback aufgerufen');
 
-            if (targetMarker && markerClusterGroup) {
-                console.log('Ziel-Marker gefunden:', targetMarker.eventData?.title || 'Unbekannt');
-
-                // Verwende die eingebaute zoomToShowLayer Methode
-                // Diese zoomt automatisch und löst Cluster auf wenn nötig
-                markerClusterGroup.zoomToShowLayer(targetMarker, function() {
-                    console.log('zoomToShowLayer Callback aufgerufen');
-
-                    // Kleine Verzögerung für Animation
-                    setTimeout(() => {
-                        // Prüfe ob der Marker in einem Cluster ist
-                        const cluster = markerClusterGroup.getVisibleParent(targetMarker);
-                        console.log('Visible parent:', cluster);
-
-                        if (cluster && cluster !== targetMarker) {
-                            console.log('Marker ist in einem Cluster - versuche Spiderfy');
-                            // Marker ist immer noch in einem Cluster
-                            // Simuliere einen Klick auf den Cluster
-                            cluster.fire('click');
-
-                            // Warte auf Spiderfy und öffne dann Popup
-                            setTimeout(() => {
-                                targetMarker.openPopup();
-                            }, 500);
-                        } else {
-                            console.log('Marker ist direkt sichtbar - öffne Popup');
-                            // Marker ist direkt sichtbar
-                            targetMarker.openPopup();
-                        }
-                    }, 300);
-                });
-            } else if (targetMarker) {
-                // Kein Clustering aktiv
-                map.setView([event.latitude, event.longitude], 12, { animate: true });
+                // Kleine Verzögerung für Animation
                 setTimeout(() => {
-                    targetMarker.openPopup();
+                    // Prüfe ob der Marker in einem Cluster ist
+                    const cluster = markerClusterGroup.getVisibleParent(targetMarker);
+                    console.log('Visible parent:', cluster);
+
+                    if (cluster && cluster !== targetMarker) {
+                        console.log('Marker ist in einem Cluster - versuche Spiderfy');
+                        // Marker ist immer noch in einem Cluster
+                        // Simuliere einen Klick auf den Cluster
+                        cluster.fire('click');
+
+                        // Warte auf Spiderfy und öffne dann Popup
+                        setTimeout(() => {
+                            targetMarker.openPopup();
+                        }, 500);
+                    } else {
+                        console.log('Marker ist direkt sichtbar - öffne Popup');
+                        // Marker ist direkt sichtbar
+                        targetMarker.openPopup();
+                    }
                 }, 300);
-            } else {
-                // Kein Marker gefunden, nur zur Position zoomen
-                map.setView([event.latitude, event.longitude], 12, { animate: true });
-            }
+            });
+        } else if (targetMarker) {
+            // Kein Clustering aktiv
+            map.setView([event.latitude, event.longitude], 12, { animate: true });
+            setTimeout(() => {
+                targetMarker.openPopup();
+            }, 300);
+        } else {
+            // Kein Marker gefunden, nur zur Position zoomen
+            map.setView([event.latitude, event.longitude], 12, { animate: true });
         }
     });
     

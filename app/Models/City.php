@@ -20,6 +20,7 @@ class City extends Model
         'lat',
         'lng',
         'is_capital',
+        'is_regional_capital',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class City extends Model
         'lat' => 'decimal:6',
         'lng' => 'decimal:6',
         'is_capital' => 'boolean',
+        'is_regional_capital' => 'boolean',
     ];
 
     /**

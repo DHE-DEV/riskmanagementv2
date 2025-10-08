@@ -71,6 +71,10 @@ class CityForm
                     ->label('Hauptstadt')
                     ->default(false),
 
+                Toggle::make('is_regional_capital')
+                    ->label('Region-Hauptstadt')
+                    ->default(false),
+
                 TextInput::make('population')
                     ->label('Bevölkerung')
                     ->numeric(),
