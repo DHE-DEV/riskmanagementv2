@@ -1771,13 +1771,16 @@ async function loadDashboardData() {
         let filteredByContinent = [...allEvents];
         if (window.selectedContinents) {
             if (window.selectedContinents.size === 0) {
-                // Keine Kontinente ausgewählt - keine Events anzeigen
-                filteredByContinent = [];
+                // Keine Kontinente ausgewählt - nur Events ohne Kontinent anzeigen
+                filteredByContinent = allEvents.filter(event => {
+                    const eventContinent = getEventContinent(event);
+                    return eventContinent === null;
+                });
             } else if (continents && continents.length > 0) {
                 const allContinents = new Set(continents.map(c => c.id));
                 const isAllContinentsSelected = allContinents.size === window.selectedContinents.size &&
                                                Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
-                
+
                 if (!isAllContinentsSelected) {
                     // Nur spezifische Kontinente ausgewählt
                     filteredByContinent = allEvents.filter(event => {
