@@ -51,6 +51,9 @@ class CitiesRelationManager extends RelationManager
                 Toggle::make('is_capital')
                     ->label('Hauptstadt'),
 
+                Toggle::make('is_regional_capital')
+                    ->label('Region-Hauptstadt'),
+
                 TextInput::make('population')
                     ->label('Bevölkerung')
                     ->numeric(),
@@ -124,6 +127,9 @@ class CitiesRelationManager extends RelationManager
                 Tables\Columns\IconColumn::make('is_capital')
                     ->label('Hauptstadt')
                     ->boolean(),
+                Tables\Columns\IconColumn::make('is_regional_capital')
+                    ->label('Region-Hauptstadt')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('population')
                     ->label('Bevölkerung')
                     ->numeric()
@@ -144,6 +150,10 @@ class CitiesRelationManager extends RelationManager
                 Tables\Filters\Filter::make('is_capital')
                     ->label('Nur Hauptstädte')
                     ->query(fn (Builder $query): Builder => $query->where('is_capital', true))
+                    ->toggle(),
+                Tables\Filters\Filter::make('is_regional_capital')
+                    ->label('Nur Region-Hauptstädte')
+                    ->query(fn (Builder $query): Builder => $query->where('is_regional_capital', true))
                     ->toggle(),
             ])
             ->headerActions([
