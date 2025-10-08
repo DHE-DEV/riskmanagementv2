@@ -53,7 +53,16 @@ class CountryForm
 
                                         Select::make('continent_id')
                                             ->label('Kontinent')
-                                            ->relationship('continent', 'code')
+                                            ->relationship(
+                                                name: 'continent',
+                                                titleAttribute: 'code',
+                                                modifyQueryUsing: fn ($query, $search) => $query->when(
+                                                    $search,
+                                                    fn ($q) => $q->where('code', 'like', "%{$search}%")
+                                                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) COLLATE utf8mb4_unicode_ci LIKE ?", ["%{$search}%"])
+                                                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) COLLATE utf8mb4_unicode_ci LIKE ?", ["%{$search}%"])
+                                                )
+                                            )
                                             ->getOptionLabelFromRecordUsing(fn ($record) => $record->name_translations['de'] ?? $record->name_translations['en'] ?? $record->code)
                                             ->required()
                                             ->searchable()

@@ -11,6 +11,9 @@ class CreateCustomEvent extends CreateRecord
 {
     protected static string $resource = CustomEventResource::class;
 
+    public ?string $infosystemSource = null;
+    public ?string $infosystemSourceId = null;
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Set data source if coming from InfosystemEntry
@@ -27,8 +30,9 @@ class CreateCustomEvent extends CreateRecord
     protected function afterCreate(): void
     {
         // Mark InfosystemEntry as published if created from there
-        if (request()->has('source_id') && request()->get('source') === 'infosystem') {
-            $infosystemEntry = \App\Models\InfosystemEntry::where('api_id', request()->get('source_id'))->first();
+        if ($this->infosystemSourceId && $this->infosystemSource === 'infosystem') {
+            $infosystemEntry = \App\Models\InfosystemEntry::where('api_id', $this->infosystemSourceId)->first();
+
             if ($infosystemEntry) {
                 $infosystemEntry->update([
                     'is_published' => true,
@@ -50,6 +54,13 @@ class CreateCustomEvent extends CreateRecord
 
         // Get URL parameters and fill form
         $request = request();
+
+        // Store source info for later use in afterCreate
+        if ($request->has('source') && $request->get('source') === 'infosystem') {
+            $this->infosystemSource = $request->get('source');
+            $this->infosystemSourceId = $request->get('source_id');
+        }
+
         $data = [];
 
         // Map title from URL parameter

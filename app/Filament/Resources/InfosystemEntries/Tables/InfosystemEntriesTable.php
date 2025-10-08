@@ -43,16 +43,23 @@ class InfosystemEntriesTable
                 TextColumn::make('header')
                     ->searchable(),
                 IconColumn::make('archive')
+                    ->label('Archiviert')
                     ->boolean(),
                 IconColumn::make('is_published')
-                    ->boolean(),
+                    ->label('Veröffentlicht')
+                    ->boolean()
+                    ->sortable(),
                 TextColumn::make('published_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('published_as_event_id')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('Veröffentlicht am')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable()
+                    ->placeholder('—'),
+                TextColumn::make('publishedEvent.title')
+                    ->label('Event-Titel')
+                    ->placeholder('—')
+                    ->limit(40),
                 IconColumn::make('active')
+                    ->label('Aktiv')
                     ->boolean(),
                 TextColumn::make('api_created_at')
                     ->dateTime()

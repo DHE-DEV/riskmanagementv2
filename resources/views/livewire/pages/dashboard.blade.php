@@ -1134,7 +1134,7 @@
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('currentEvents')">
                     <h3 class="font-semibold text-gray-800 flex items-center gap-2">
                         <i class="fa-regular fa-brake-warning"></i>
-                        <span>Aktuelle Ereignisse (<span id="currentEventsCount">0</span>)</span>
+                        <span>Ereignisse (<span id="currentEventsCount">0</span>)</span>
                     </h3>
                     <!--
                     <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('currentEvents')">
@@ -1144,10 +1144,26 @@
                     </button>-->
                 </div>
                 
-                <div id="currentEvents" class="p-2" style="display: none;">
-                    <p class="text-xs text-gray-500 px-2 mb-2">Neueste Events zuerst</p>
-                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 60px; margin-bottom: 60px;">
-                        <!-- Events werden hier dynamisch eingefügt -->
+                <div id="currentEvents" class="p-2" style="display: none; padding-bottom: 170px;">
+                    <div id="futureEventsSection" style="display: none;">
+                        <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('futureEvents')">
+                            <p class="text-xs text-gray-700 font-medium">Zukünftige Ereignisse (<span id="futureEventsCount">0</span>)</p>
+                            <svg id="futureEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="futureEventsList" class="space-y-2" style="display: none; padding-top: 10px; padding-bottom: 20px; margin-bottom: 20px;">
+                            <!-- Zukünftige Events werden hier dynamisch eingefügt -->
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('currentPastEvents')" style="position: relative; z-index: 2;">
+                        <p class="text-xs text-gray-700 font-medium">Aktuelle Ereignisse (<span id="currentPastEventsCount">0</span>)</p>
+                        <svg id="currentPastEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 60px; margin-bottom: 60px; padding-top: 10px; display: block;">
+                        <!-- Aktuelle/vergangene Events werden hier dynamisch eingefügt -->
                     </div>
                 </div>
             </div>
@@ -2331,8 +2347,8 @@ function getWeatherIcon(weatherMain) {
 }
 
 // Handle Details button click with tracking
-function handleDetailsClick(eventId, isCustom) {
-    console.log('handleDetailsClick aufgerufen mit eventId:', eventId);
+function handleDetailsClick(eventId, isCustom, countryName = null) {
+    console.log('handleDetailsClick aufgerufen mit eventId:', eventId, 'countryName:', countryName);
 
     // Track click for custom events
     if (isCustom && eventId) {
@@ -2362,9 +2378,22 @@ function handleDetailsClick(eventId, isCustom) {
         }
 
         if (matchingEvents.length > 0) {
-            // Nimm das erste gefundene Event (alle sollten dieselben Basis-Daten haben)
-            event = matchingEvents[0];
-            console.log('Event über original_event_id gefunden:', event.title, 'aus', matchingEvents.length, 'Matches');
+            // Wenn ein countryName übergeben wurde, versuche das passende Event zu finden
+            if (countryName) {
+                const countryMatch = matchingEvents.find(e => e.country_name === countryName);
+                if (countryMatch) {
+                    event = countryMatch;
+                    console.log('Event mit passendem Land gefunden:', event.title, 'Land:', countryName);
+                } else {
+                    // Fallback: erstes Event
+                    event = matchingEvents[0];
+                    console.log('Kein Event mit Land gefunden, verwende erstes:', event.title);
+                }
+            } else {
+                // Nimm das erste gefundene Event (alle sollten dieselben Basis-Daten haben)
+                event = matchingEvents[0];
+                console.log('Event über original_event_id gefunden:', event.title, 'aus', matchingEvents.length, 'Matches');
+            }
         }
     }
 
@@ -2972,7 +3001,7 @@ function addMarkersToMap() {
                 size = 45;
             }
             return new L.DivIcon({
-                html: '<div style="background: #ff6b6b; color: white; border-radius: 50%; width: ' + size + 'px; height: ' + size + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"><span>' + childCount + '</span></div>',
+                html: '<div style="background: #3B4154; color: white; border-radius: 50%; width: ' + size + 'px; height: ' + size + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"><span>' + childCount + '</span></div>',
                 className: 'custom-cluster-icon',
                 iconSize: new L.Point(size, size)
             });
@@ -3128,6 +3157,9 @@ function createPopupContent(event) {
 		eventTypesDisplay = mapEventType(event.event_type, event.event_type_name);
 	}
 
+	// Escape country_name for safe usage in onclick handler
+	const countryNameEscaped = (event.country_name || event.country || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+
 	return `
 		<div class=\"marker-popup\">
 			<h3>${event.title}${archivedBadge}</h3>
@@ -3144,7 +3176,7 @@ function createPopupContent(event) {
 				<span class=\"info-value\">${sourceValue}</span>
 			</div>
 			<div class=\"popup-actions\">
-				<button onclick=\"handleDetailsClick('${event.original_event_id || event.id}', ${event.source === 'custom' ? 'true' : 'false'})\" class=\"details-btn\">
+				<button onclick=\"handleDetailsClick('${event.original_event_id || event.id}', ${event.source === 'custom' ? 'true' : 'false'}, '${countryNameEscaped}')\" class=\"details-btn\">
 					<i class=\"fa-solid fa-circle-info\"></i>
 					Details anzeigen
 				</button>
@@ -3303,14 +3335,30 @@ function updateStatistics() {
     const lastWeekEvents = Math.floor(Math.random() * 10) + 5; // Simuliert
     const highRiskEvents = currentEvents.filter(e => e.severity === 'red' || e.severity === 'orange').length;
     const gdacsEvents = currentEvents.filter(e => e.is_gdacs).length;
-    
+
+    // Berechne die Anzahl eindeutiger Events (gleiche Logik wie in renderEvents)
+    const uniqueEvents = new Set();
+    if (window.allEvents) {
+        window.allEvents.forEach(event => {
+            if (event.source === 'custom' && event.original_event_id) {
+                // Verwende die original_event_id für Multi-Country Events
+                const mainEventId = event.original_event_id.toString().split('_')[0];
+                uniqueEvents.add(mainEventId);
+            } else if (!event.original_event_id) {
+                // Normales Event ohne mehrere Länder
+                uniqueEvents.add(event.id);
+            }
+        });
+    }
+    const allEventsCount = uniqueEvents.size > 0 ? uniqueEvents.size : currentEvents.length;
+
     // Alle Elemente mit den gleichen IDs aktualisieren
     document.querySelectorAll('#totalEvents').forEach(el => el.textContent = totalEvents);
     document.querySelectorAll('#activeEvents').forEach(el => el.textContent = activeEvents);
     document.querySelectorAll('#lastWeekEvents').forEach(el => el.textContent = lastWeekEvents);
     document.querySelectorAll('#highRiskEvents').forEach(el => el.textContent = highRiskEvents);
     document.querySelectorAll('#gdacsEvents').forEach(el => el.textContent = gdacsEvents);
-    document.querySelectorAll('#currentEventsCount').forEach(el => el.textContent = currentEvents.length);
+    document.querySelectorAll('#currentEventsCount').forEach(el => el.textContent = allEventsCount);
 }
 
 function toggleProviderFilter(key, btn) {
@@ -3711,7 +3759,11 @@ function updateStatisticsFromApi(stats) {
 // Events in der Sidebar rendern
 function renderEvents() {
     const eventsList = document.getElementById('eventsList');
+    const futureEventsList = document.getElementById('futureEventsList');
+    const futureEventsSection = document.getElementById('futureEventsSection');
+
     eventsList.innerHTML = '';
+    futureEventsList.innerHTML = '';
 
     // Gruppiere Events nach ihrer Original-ID oder ihrer eigenen ID
     const uniqueEvents = new Map();
@@ -3744,12 +3796,57 @@ function renderEvents() {
         }
     });
 
-    // Rendere die eindeutigen Events
+    // Trenne zukünftige von aktuellen/vergangenen Events
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Auf Mitternacht setzen für Datumsvergleich
+    const futureEvents = [];
+    const currentPastEvents = [];
+
     uniqueEvents.forEach(event => {
         // Wenn es mehrere Länder gibt, zeige sie kommagetrennt
         if (event.countries_list && event.countries_list.length > 0) {
             event.country = event.countries_list.join(', ');
         }
+
+        // Bestimme das Event-Datum
+        const eventDate = event.start_date || event.date_iso || event.date || event.event_date;
+        if (eventDate) {
+            const eventDateObj = new Date(eventDate);
+            eventDateObj.setHours(0, 0, 0, 0);
+
+            if (eventDateObj > now) {
+                futureEvents.push(event);
+            } else {
+                currentPastEvents.push(event);
+            }
+        } else {
+            // Ohne Datum zu aktuellen Events hinzufügen
+            currentPastEvents.push(event);
+        }
+    });
+
+    // Sortiere zukünftige Events (älteste zuerst = nächste zuerst)
+    futureEvents.sort((a, b) => {
+        const dateA = new Date(a.start_date || a.date_iso || a.date || a.event_date);
+        const dateB = new Date(b.start_date || b.date_iso || b.date || b.event_date);
+        return dateA - dateB;
+    });
+
+    // Rendere zukünftige Events
+    if (futureEvents.length > 0) {
+        futureEventsSection.style.display = 'block';
+        document.getElementById('futureEventsCount').textContent = futureEvents.length;
+        futureEvents.forEach(event => {
+            const eventElement = createEventElement(event);
+            futureEventsList.appendChild(eventElement);
+        });
+    } else {
+        futureEventsSection.style.display = 'none';
+    }
+
+    // Rendere aktuelle/vergangene Events (bereits nach Datum sortiert durch currentEvents)
+    document.getElementById('currentPastEventsCount').textContent = currentPastEvents.length;
+    currentPastEvents.forEach(event => {
         const eventElement = createEventElement(event);
         eventsList.appendChild(eventElement);
     });
@@ -3838,11 +3935,11 @@ function createEventElement(event) {
         <div class="flex items-start space-x-2">
             <div class="w-2 h-2 rounded-full mt-2 ${severityColor}"></div>
             <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-xs font-medium uppercase text-gray-800">${countryDisplay}</span>
+                <div class="flex items-start gap-2">
+                    <div class="flex-1 min-w-0" style="max-width: 66.666%;">
+                        <span class="text-xs font-medium uppercase text-gray-800 break-words">${countryDisplay}</span>
                     </div>
-                    <div>${rightHtml}</div>
+                    <div class="flex-shrink-0 flex items-start justify-end" style="width: 33.333%; padding-top: 5px;">${rightHtml}</div>
                 </div>
                 <p class="text-[11px] ${severityTextClass} mt-0.5">${sev.label}</p>
                 <p class="text-sm font-medium text-gray-800 mt-1">${event.title}</p>
@@ -4363,17 +4460,56 @@ function updateLastUpdated() {
 function toggleSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (!section) return;
-    
+
     if (section.style.display === 'none') {
         section.style.display = 'block';
     } else {
         section.style.display = 'none';
     }
-    
+
     syncSectionToggleIcon(sectionId);
 
     // Höhe dynamisch aufteilen: wenn Filter zugeklappt -> Events bekommt volle Höhe, sonst 50/50
     adjustSidebarLayout();
+}
+
+function toggleEventSection(sectionId) {
+    const listId = sectionId === 'futureEvents' ? 'futureEventsList' : 'eventsList';
+    const iconId = sectionId === 'futureEvents' ? 'futureEventsToggleIcon' : 'currentPastEventsToggleIcon';
+
+    const list = document.getElementById(listId);
+    const icon = document.getElementById(iconId);
+
+    if (!list || !icon) return;
+
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        list.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+
+    // Adjust container padding based on open sections
+    adjustEventContainerPadding();
+}
+
+function adjustEventContainerPadding() {
+    const futureEventsList = document.getElementById('futureEventsList');
+    const eventsList = document.getElementById('eventsList');
+    const currentEventsContainer = document.getElementById('currentEvents');
+
+    if (!futureEventsList || !eventsList || !currentEventsContainer) return;
+
+    const isFutureOpen = futureEventsList.style.display !== 'none';
+    const isCurrentOpen = eventsList.style.display !== 'none';
+
+    // Wenn beide zugeklappt sind, weniger Padding
+    if (!isFutureOpen && !isCurrentOpen) {
+        currentEventsContainer.style.paddingBottom = '30px';
+    } else {
+        currentEventsContainer.style.paddingBottom = '170px';
+    }
 }
 
 function adjustSidebarLayout() {
