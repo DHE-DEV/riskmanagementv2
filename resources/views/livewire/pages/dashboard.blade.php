@@ -2002,7 +2002,7 @@ function processGdacsEvents(events) {
             source: 'gdacs',
             is_gdacs: true,
             // Ländername aus der Beziehung laden - Backend liefert bereits den Namen
-            country_name: event.country || 'Unbekannt',
+            country_name: event.country || 'ALLGEMEIN',
             // GDACS Date Added verfügbar machen
             gdacs_date_added: event.gdacs_date_added || null,
             // Startdatum für einheitliche Anzeige - verwende date_iso vom Backend
@@ -2085,10 +2085,10 @@ function processCustomEvents(events) {
                 source: 'custom',
                 event_type: event.event_type,
                 event_type_name: event.event_type_name,
-                country_name: event.country_relation ? event.country_relation.name_translations?.de || event.country_relation.name_translations?.en || event.country_relation.iso_code : (event.country || 'Unbekannt'),
+                country_name: event.country_relation ? event.country_relation.name_translations?.de || event.country_relation.name_translations?.en || event.country_relation.iso_code : (event.country || 'ALLGEMEIN'),
                 severity: event.severity,
                 priority: event.priority,
-                country: event.country || 'Unbekannt',
+                country: event.country || 'ALLGEMEIN',
                 title: event.title,
                 description: event.description,
                 start_date: event.start_date,
@@ -2614,7 +2614,7 @@ async function loadEventDetails(event) {
                 <div class="event-info-grid">
                     <div class="info-item">
                         <span class="info-label">Land:</span>
-                        <span class="info-value">${event.country_name || event.country || 'Unbekannt'}</span>
+                        <span class="info-value">${event.country_name || event.country || 'ALLGEMEIN'}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Startdatum:</span>
@@ -3955,7 +3955,7 @@ function createEventElement(event) {
 
     // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel
     // Ansonsten sammle alle Länder für die Anzeige
-    let countryDisplay = event.country || event.country_name || 'Kein Land zugewiesen';
+    let countryDisplay = event.country || event.country_name || 'ALLGEMEIN';
     if (event.original_event_id && event.countries_summary) {
         // Dies ist ein individueller Marker für ein Multi-Country-Event
         countryDisplay = event.countries_summary;

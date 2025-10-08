@@ -89,7 +89,7 @@ class CustomEventController extends Controller
                         'event_types' => $event->eventTypes->pluck('name')->toArray(),
                         'event_types_codes' => $event->eventTypes->pluck('code')->toArray(),
                         'event_type_ids' => $event->eventTypes->pluck('id')->toArray(),
-                        'country' => $event->country?->getName('de') ?? 'Unbekannt',
+                        'country' => $event->country?->getName('de') ?? 'ALLGEMEIN',
                         'country_relation' => $event->country,
                         'countries' => $countriesData, // Neue Länder-Daten mit individuellen Koordinaten
                         'latitude' => $event->latitude,
