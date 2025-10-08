@@ -24,14 +24,6 @@ class CustomEventController extends Controller
                           ->orWhere('end_date', '>=', now()->startOfDay());
                 })
                 ->where(function ($query) {
-                    // Event hat entweder direkte Koordinaten ODER zugeordnete Länder
-                    $query->where(function ($q) {
-                        $q->whereNotNull('latitude')
-                          ->whereNotNull('longitude');
-                    })
-                    ->orWhereHas('countries');
-                })
-                ->where(function ($query) {
                     $query->whereHas('eventType', function ($subQuery) {
                         $subQuery->where('is_active', true);
                     })
