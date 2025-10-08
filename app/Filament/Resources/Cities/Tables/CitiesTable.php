@@ -63,6 +63,9 @@ class CitiesTable
                 IconColumn::make('is_capital')
                     ->label('Hauptstadt')
                     ->boolean(),
+                IconColumn::make('is_regional_capital')
+                    ->label('Reg.-HStadt')
+                    ->boolean(),
                 TextColumn::make('lat')
                     ->label('Breitengrad')
                     ->numeric()
@@ -87,6 +90,14 @@ class CitiesTable
             ->defaultSort('city_name', 'asc')
             ->filters([
                 TrashedFilter::make(),
+                \Filament\Tables\Filters\Filter::make('is_capital')
+                    ->label('Nur Hauptstädte')
+                    ->query(fn (Builder $query): Builder => $query->where('is_capital', true))
+                    ->toggle(),
+                \Filament\Tables\Filters\Filter::make('is_regional_capital')
+                    ->label('Nur Region-Hauptstädte')
+                    ->query(fn (Builder $query): Builder => $query->where('is_regional_capital', true))
+                    ->toggle(),
             ])
             ->recordActions([
                 EditAction::make(),
