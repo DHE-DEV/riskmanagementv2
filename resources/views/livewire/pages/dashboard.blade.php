@@ -1922,9 +1922,9 @@ async function loadDashboardData() {
                 timeMatch = false;
             } else if (window.timePeriodFilter && window.timePeriodFilter !== 'all') {
                 const now = new Date();
-                const eventDate = new Date(e.event_date || e.created_at || e.date);
+                const eventDate = new Date(e.start_date || e.event_date || e.created_at || e.date);
                 const daysDiff = Math.floor((now - eventDate) / (1000 * 60 * 60 * 24));
-                
+
                 if (window.timePeriodFilter === '7days') {
                     timeMatch = daysDiff <= 7;
                 } else if (window.timePeriodFilter === '30days') {

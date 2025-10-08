@@ -24,10 +24,18 @@ class CustomEventController extends Controller
                           ->orWhere('end_date', '>=', now()->startOfDay());
                 })
                 ->where(function ($query) {
+                    // Prüfe ob das Event aktive EventTypes hat (alte Single- oder neue Many-to-Many Beziehung)
                     $query->whereHas('eventType', function ($subQuery) {
                         $subQuery->where('is_active', true);
                     })
-                    ->orWhereNull('event_type_id');
+                    ->orWhereHas('eventTypes', function ($subQuery) {
+                        $subQuery->where('is_active', true);
+                    })
+                    ->orWhere(function ($q) {
+                        // Erlaubt Events ohne EventType
+                        $q->whereNull('event_type_id')
+                          ->whereDoesntHave('eventTypes');
+                    });
                 })
                 ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->orderBy('created_at', 'desc')
