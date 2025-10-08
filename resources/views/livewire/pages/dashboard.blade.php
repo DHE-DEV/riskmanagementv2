@@ -2612,10 +2612,12 @@ async function loadEventDetails(event) {
                 ` : ''}
                 
                 <div class="event-info-grid">
+                    ${event.country_name && event.country_name !== 'ALLGEMEIN' || event.country && event.country !== 'ALLGEMEIN' ? `
                     <div class="info-item">
                         <span class="info-label">Land:</span>
-                        <span class="info-value">${event.country_name || event.country || 'ALLGEMEIN'}</span>
+                        <span class="info-value">${event.country_name || event.country}</span>
                     </div>
+                    ` : ''}
                     <div class="info-item">
                         <span class="info-label">Startdatum:</span>
                         <span class="info-value">${event.start_date ? formatDateTimeDE(event.start_date) : (event.date_iso ? formatDateTimeDE(event.date_iso) : (event.date ? formatDateTimeDE(event.date) : 'Unbekannt'))}</span>
