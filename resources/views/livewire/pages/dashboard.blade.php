@@ -996,6 +996,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                         </svg>
                         <span>Filter</span>
+                        <span id="activeFilterIndicator" class="hidden ml-2 px-2 py-0.5 text-xs font-semibold bg-blue-500 text-white rounded-full">Aktiv</span>
                     </h3>
                     <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('filters')">
                         <svg id="filtersToggleIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1580,6 +1581,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadInitialData();
     renderContinents();
     updateLastUpdated();
+    updateFilterIndicator(); // Check initial filter state
 
     // URL-Parameter prüfen für direkten Zoom
     const urlParams = new URLSearchParams(window.location.search);
@@ -3729,7 +3731,10 @@ function toggleAllEventTypes() {
             }
         });
     }
-    
+
+    // Check if any filters are active
+    checkActiveFilters();
+
     // Liste & Statistiken neu berechnen und Karte aktualisieren
     if (typeof loadDashboardData === 'function') {
         try {
@@ -5060,8 +5065,70 @@ function escapeForAttr(str) {
 
 // Check if any filters are active (kept for potential future use)
 function checkActiveFilters() {
-    // Link is now always visible, so this function is no longer needed
-    // Kept empty to avoid breaking existing calls
+    updateFilterIndicator();
+}
+
+function updateFilterIndicator() {
+    const indicator = document.getElementById('activeFilterIndicator');
+    if (!indicator) return;
+
+    let hasActiveFilters = false;
+
+    // Check Provider filters - only if custom is deactivated
+    // (GDACS can be off by default due to config)
+    if (window.providerFilter) {
+        if (!window.providerFilter.custom) {
+            hasActiveFilters = true;
+        }
+        // Only check GDACS if it's enabled in config
+        if (window.GDACS_ENABLED && !window.providerFilter.gdacs) {
+            hasActiveFilters = true;
+        }
+    }
+
+    // Check Risk filters
+    if (window.riskFilter) {
+        const allRisksActive = window.riskFilter.info && window.riskFilter.green &&
+                                window.riskFilter.orange && window.riskFilter.red;
+        if (!allRisksActive) {
+            hasActiveFilters = true;
+        }
+    }
+
+    // Check Event Type filters
+    if (window.eventTypeFilter && eventTypes && eventTypes.length > 0) {
+        const allTypesActive = eventTypes.every(type => window.eventTypeFilter[type.id] === true);
+        if (!allTypesActive) {
+            hasActiveFilters = true;
+        }
+    }
+
+    // Check Continent filters (Weltregionen)
+    if (window.selectedContinents && continents && continents.length > 0) {
+        const allContinents = new Set(continents.map(c => c.id));
+        const isAllContinentsSelected = allContinents.size === window.selectedContinents.size &&
+                                       Array.from(allContinents).every(continent => window.selectedContinents.has(continent));
+        if (!isAllContinentsSelected) {
+            hasActiveFilters = true;
+        }
+    }
+
+    // Check Country filter
+    if (window.selectedCountries && window.selectedCountries.size > 0) {
+        hasActiveFilters = true;
+    }
+
+    // Check Time Period filter
+    if (window.timePeriodFilter && window.timePeriodFilter !== 'all') {
+        hasActiveFilters = true;
+    }
+
+    // Show or hide indicator
+    if (hasActiveFilters) {
+        indicator.classList.remove('hidden');
+    } else {
+        indicator.classList.add('hidden');
+    }
 }
 
 // Reset all filters to default
