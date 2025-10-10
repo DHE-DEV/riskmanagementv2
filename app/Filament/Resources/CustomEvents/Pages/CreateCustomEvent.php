@@ -41,6 +41,19 @@ class CreateCustomEvent extends CreateRecord
                 ]);
             }
         }
+
+        // Update marker_icon from the first EventType
+        $this->record->refresh();
+        $this->record->load('eventTypes');
+
+        if ($this->record->eventTypes->isNotEmpty()) {
+            $firstEventType = $this->record->eventTypes->first();
+
+            $this->record->updateQuietly([
+                'marker_icon' => $firstEventType->icon,
+                'event_type_id' => $firstEventType->id,
+            ]);
+        }
     }
 
     protected function getRedirectUrl(): string

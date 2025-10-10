@@ -3028,10 +3028,10 @@ function addMarkersToMap() {
     // Neue MarkerCluster-Gruppe erstellen mit angepassten Einstellungen
     markerClusterGroup = L.markerClusterGroup({
         maxClusterRadius: 40,  // Kleinerer Radius für engeres Clustering
-        spiderfyOnMaxZoom: true,
+        spiderfyOnMaxZoom: true,  // Cluster bei höchster Zoom-Stufe aufklappen
         showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,  // Aktiviere automatisches Zoomen beim Click wieder
-        disableClusteringAtZoom: 17,  // Bei höherem Zoom-Level Clustering deaktivieren
+        zoomToBoundsOnClick: true,  // Automatisches Zoomen beim Click
+        // Clustering bleibt auf allen Zoom-Stufen aktiv
         spiderfyDistanceMultiplier: 2.5,  // Größere Distanz beim Spiderfy
         spiderLegPolylineOptions: { weight: 2, color: '#222', opacity: 0.5 },
         animateAddingMarkers: false,  // Deaktiviere Animation beim Hinzufügen
@@ -4017,6 +4017,12 @@ function createEventElement(event) {
         // Wenn kein Land/keine Koordinaten zugewiesen: Direkt Details anzeigen
         if (!event.latitude || !event.longitude) {
             console.log('Event ohne Koordinaten - öffne direkt Details:', event.title);
+
+            // Schließe alle geöffneten Popups auf der Karte
+            if (map) {
+                map.closePopup();
+            }
+
             handleDetailsClick(event.original_event_id || event.id, event.source === 'custom');
             return;
         }
@@ -4093,16 +4099,23 @@ function createEventElement(event) {
                     const cluster = markerClusterGroup.getVisibleParent(targetMarker);
                     console.log('Visible parent:', cluster);
 
-                    if (cluster && cluster !== targetMarker) {
-                        console.log('Marker ist in einem Cluster - versuche Spiderfy');
-                        // Marker ist immer noch in einem Cluster
-                        // Simuliere einen Klick auf den Cluster
-                        cluster.fire('click');
+                    if (cluster && cluster !== targetMarker && cluster.spiderfy) {
+                        console.log('Marker ist in einem Cluster - öffne Cluster automatisch');
 
-                        // Warte auf Spiderfy und öffne dann Popup
+                        // Unspiderfy alle anderen Cluster zuerst
+                        markerClusterGroup.unspiderfy();
+
+                        // Kleine Verzögerung, dann Cluster aufklappen
                         setTimeout(() => {
-                            targetMarker.openPopup();
-                        }, 500);
+                            // Klicke auf das Cluster, um es aufzuklappen
+                            cluster.fire('click');
+
+                            // Nach dem Spiderfy das spezifische Popup öffnen
+                            setTimeout(() => {
+                                console.log('Öffne Popup nach Spiderfy');
+                                targetMarker.openPopup();
+                            }, 400);
+                        }, 100);
                     } else {
                         console.log('Marker ist direkt sichtbar - öffne Popup');
                         // Marker ist direkt sichtbar
