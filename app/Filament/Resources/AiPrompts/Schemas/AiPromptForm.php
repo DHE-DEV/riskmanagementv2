@@ -93,16 +93,68 @@ class AiPromptForm
                                 };
                             })
                             ->helperText(function ($get) {
-                                return match ($get('model_type')) {
-                                    'Country' => 'Verfügbare Platzhalter: {name}, {name_en}, {iso_code}, {iso3_code}, {continent}, {is_eu_member}, {is_schengen_member}, {currency_code}, {currency_name}, {phone_prefix}, {population}, {area_km2}',
-                                    'Continent' => 'Verfügbare Platzhalter: {name}, {name_en}, {code}, {description}',
-                                    'Region' => 'Verfügbare Platzhalter: {name}, {name_en}, {code}, {country}, {country_code}',
-                                    'City' => 'Verfügbare Platzhalter: {name}, {name_en}, {country}, {country_code}, {region}, {population}, {is_capital}, {timezone}',
-                                    'Airport' => 'Verfügbare Platzhalter: {name}, {name_en}, {iata_code}, {icao_code}, {city}, {country}, {country_code}, {timezone}, {elevation}',
-                                    'CustomEvent' => 'Verfügbare Platzhalter: {title}, {description}, {event_type}, {risk_level}, {start_date}, {end_date}, {is_active}, {archived}, {countries}',
-                                    'PassolutionEvent' => 'Verfügbare Platzhalter: {title}, {description}, {category}, {event_date}, {countries}, {regions}, {cities}',
-                                    default => 'Wählen Sie einen Model-Typ aus, um verfügbare Platzhalter zu sehen.'
+                                $modelType = $get('model_type');
+                                if (!$modelType) {
+                                    return 'Wählen Sie einen Model-Typ aus, um verfügbare Platzhalter zu sehen.';
+                                }
+
+                                $placeholders = match ($modelType) {
+                                    'Country' => [
+                                        'Allgemein' => ['{name}', '{name_en}', '{iso_code}', '{iso3_code}'],
+                                        'Geografie' => ['{continent}', '{area_km2}'],
+                                        'Mitgliedschaften' => ['{is_eu_member}', '{is_schengen_member}'],
+                                        'Finanzen' => ['{currency_code}', '{currency_name}'],
+                                        'Kontakt' => ['{phone_prefix}'],
+                                        'Bevölkerung' => ['{population}'],
+                                    ],
+                                    'Continent' => [
+                                        'Allgemein' => ['{name}', '{name_en}', '{code}', '{description}'],
+                                    ],
+                                    'Region' => [
+                                        'Allgemein' => ['{name}', '{name_en}', '{code}'],
+                                        'Land' => ['{country}', '{country_en}'],
+                                        'Details' => ['{description}', '{keywords}'],
+                                        'Koordinaten' => ['{lat}', '{lng}'],
+                                        'Statistik' => ['{cities_count}'],
+                                    ],
+                                    'City' => [
+                                        'Allgemein' => ['{name}', '{name_en}'],
+                                        'Zuordnung' => ['{country}', '{country_code}', '{region}'],
+                                        'Details' => ['{population}', '{is_capital}', '{timezone}'],
+                                    ],
+                                    'Airport' => [
+                                        'Allgemein' => ['{name}', '{name_en}'],
+                                        'Codes' => ['{iata_code}', '{icao_code}'],
+                                        'Zuordnung' => ['{city}', '{country}', '{country_code}'],
+                                        'Details' => ['{timezone}', '{elevation}'],
+                                    ],
+                                    'CustomEvent' => [
+                                        'Allgemein' => ['{title}', '{description}'],
+                                        'Typ' => ['{event_type}', '{risk_level}'],
+                                        'Zeitraum' => ['{start_date}', '{end_date}'],
+                                        'Status' => ['{is_active}', '{archived}'],
+                                        'Zuordnung' => ['{countries}'],
+                                    ],
+                                    'PassolutionEvent' => [
+                                        'Allgemein' => ['{title}', '{description}', '{category}'],
+                                        'Zeitraum' => ['{event_date}'],
+                                        'Zuordnung' => ['{countries}', '{regions}', '{cities}'],
+                                    ],
+                                    default => []
                                 };
+
+                                if (empty($placeholders)) {
+                                    return 'Keine Platzhalter verfügbar.';
+                                }
+
+                                $output = '<div class="text-sm"><strong>Verfügbare Platzhalter:</strong><br>';
+                                foreach ($placeholders as $category => $items) {
+                                    $output .= '<strong class="text-gray-700 dark:text-gray-300">' . $category . ':</strong> ';
+                                    $output .= implode(', ', $items) . '<br>';
+                                }
+                                $output .= '</div>';
+
+                                return new \Illuminate\Support\HtmlString($output);
                             }),
                     ]),
             ]);
