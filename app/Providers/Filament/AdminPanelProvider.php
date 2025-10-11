@@ -73,7 +73,7 @@ class AdminPanelProvider extends PanelProvider
                 fn () => '<style>
                     /* Breitere Notifications für längere Inhalte (z.B. KI-Assistent) */
                     .fi-no-notification {
-                        max-width: 600px !important;
+                        max-width: 400px !important;
                     }
                 </style>'
             );
