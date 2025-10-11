@@ -38,6 +38,7 @@ class CustomEvent extends Model
         'tags',
         'created_by',
         'updated_by',
+        'selected_display_event_type_id',
     ];
 
     protected $casts = [
@@ -130,8 +131,82 @@ class CustomEvent extends Model
             $eventType = EventType::find($this->event_type_id);
             return $eventType && $eventType->code ? $eventType->code : 'other';
         }
-        
+
         return $this->attributes['event_type'] ?: 'other';
+    }
+
+    /**
+     * Get the display icon based on settings and selected event types
+     * Returns always a string (never an array)
+     */
+    public function getDisplayIcon()
+    {
+        $settings = EventDisplaySetting::current();
+
+        // Wenn mehrere Event-Typen ausgewählt sind
+        if ($this->eventTypes && $this->eventTypes->count() > 1) {
+            // Strategie: manual_select - Verwende manuell ausgewähltes Icon
+            if ($settings->shouldShowManualSelection() && $this->selected_display_event_type_id) {
+                $selectedEventType = EventType::find($this->selected_display_event_type_id);
+                if ($selectedEventType && $selectedEventType->icon) {
+                    return $selectedEventType->icon;
+                }
+            }
+
+            // Strategie: multi_event_type - Verwende spezielles Multi-Event Icon
+            if ($settings->shouldUseMultiEventType() && $settings->multi_event_type_id) {
+                $multiEventType = EventType::find($settings->multi_event_type_id);
+                if ($multiEventType && $multiEventType->icon) {
+                    return $multiEventType->icon;
+                }
+            }
+
+            // Strategie: show_all - Verwende erstes Icon (alle Icons in getAllIcons())
+            if ($settings->shouldShowAllIcons()) {
+                $firstIcon = $this->eventTypes->first()->icon;
+                if ($firstIcon) {
+                    return $firstIcon;
+                }
+            }
+        }
+
+        // Standard: Erstes Icon oder Fallback
+        if ($this->eventTypes && $this->eventTypes->isNotEmpty()) {
+            $firstIcon = $this->eventTypes->first()->icon;
+            if ($firstIcon) {
+                return $firstIcon;
+            }
+        }
+
+        // Legacy: Single event type
+        if ($this->eventType && $this->eventType->icon) {
+            return $this->eventType->icon;
+        }
+
+        // Fallback auf marker_icon
+        return $this->marker_icon ?? 'fa-map-marker';
+    }
+
+    /**
+     * Get all icons for multi-event display (for show_all strategy)
+     */
+    public function getAllIcons(): array
+    {
+        if ($this->eventTypes && $this->eventTypes->isNotEmpty()) {
+            return $this->eventTypes->map(function ($eventType) {
+                return [
+                    'icon' => $eventType->icon ?? 'fa-map-marker',
+                    'color' => $eventType->color ?? '#FF0000',
+                    'name' => $eventType->name,
+                ];
+            })->toArray();
+        }
+
+        return [[
+            'icon' => $this->marker_icon ?? 'fa-map-marker',
+            'color' => $this->marker_color ?? '#FF0000',
+            'name' => $this->eventType?->name ?? 'Standard',
+        ]];
     }
 
     /**

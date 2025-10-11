@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CustomEvent;
 use App\Models\EventClick;
+use App\Models\EventDisplaySetting;
 use App\Models\EventType;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,9 @@ class CustomEventController extends Controller
     public function getDashboardEvents(): JsonResponse
     {
         try {
+            // Lade Settings einmal für alle Events
+            $settings = EventDisplaySetting::current();
+
             $events = CustomEvent::visible()
                 ->where('archived', false)
                 ->where('priority', '!=', 'critical')
@@ -40,15 +44,12 @@ class CustomEventController extends Controller
                 ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->orderBy('created_at', 'desc')
                 ->get()
-                ->map(function ($event) {
-                    // Bei Many-to-Many: Verwende Icon vom ersten EventType falls verfügbar
-                    $eventTypeIcon = null;
-                    if ($event->eventTypes->isNotEmpty()) {
-                        $eventTypeIcon = $event->eventTypes->first()->icon;
-                    } elseif ($event->eventType) {
-                        // Fallback auf legacy single eventType
-                        $eventTypeIcon = $event->eventType->icon;
-                    }
+                ->map(function ($event) use ($settings) {
+                    // Verwende neue getDisplayIcon() Methode für intelligente Icon-Auswahl
+                    $displayIcon = $event->getDisplayIcon();
+
+                    // all_icons nur bei "show_all" Strategy zurückgeben
+                    $allIcons = $settings->shouldShowAllIcons() ? $event->getAllIcons() : null;
 
                     // Länder mit ihren individuellen Koordinaten sammeln
                     $countriesData = $event->countries->map(function ($country) use ($event) {
@@ -95,7 +96,8 @@ class CustomEventController extends Controller
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),
-                        'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
+                        'marker_icon' => $displayIcon,
+                        'all_icons' => $allIcons,
                         'icon_color' => $event->icon_color,
                         'marker_size' => $event->marker_size,
                         'popup_content' => $event->popup_content,
@@ -138,6 +140,9 @@ class CustomEventController extends Controller
     public function getMapEvents(): JsonResponse
     {
         try {
+            // Lade Settings einmal für alle Events
+            $settings = EventDisplaySetting::current();
+
             $events = CustomEvent::visible()
                 ->where('archived', false)
                 ->where('priority', '!=', 'critical')
@@ -161,15 +166,12 @@ class CustomEventController extends Controller
                 })
                 ->with(['country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->get()
-                ->map(function ($event) {
-                    // Bei Many-to-Many: Verwende Icon vom ersten EventType falls verfügbar
-                    $eventTypeIcon = null;
-                    if ($event->eventTypes->isNotEmpty()) {
-                        $eventTypeIcon = $event->eventTypes->first()->icon;
-                    } elseif ($event->eventType) {
-                        // Fallback auf legacy single eventType
-                        $eventTypeIcon = $event->eventType->icon;
-                    }
+                ->map(function ($event) use ($settings) {
+                    // Verwende neue getDisplayIcon() Methode für intelligente Icon-Auswahl
+                    $displayIcon = $event->getDisplayIcon();
+
+                    // all_icons nur bei "show_all" Strategy zurückgeben
+                    $allIcons = $settings->shouldShowAllIcons() ? $event->getAllIcons() : null;
 
                     // Länder mit ihren individuellen Koordinaten sammeln
                     $countriesData = $event->countries->map(function ($country) use ($event) {
@@ -214,7 +216,8 @@ class CustomEventController extends Controller
                         'latitude' => $event->latitude,
                         'longitude' => $event->longitude,
                         'marker_color' => $this->getPriorityColor($event->priority),
-                        'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
+                        'marker_icon' => $displayIcon,
+                        'all_icons' => $allIcons,
                         'icon_color' => $event->icon_color,
                         'marker_size' => $event->marker_size,
                         'popup_content' => $event->popup_content,
@@ -436,16 +439,17 @@ class CustomEventController extends Controller
     public function getEvent($eventId): JsonResponse
     {
         try {
+            // Lade Settings
+            $settings = EventDisplaySetting::current();
+
             $event = CustomEvent::with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
                 ->findOrFail($eventId);
 
             // Format the event data similar to getDashboardEvents
-            $eventTypeIcon = null;
-            if ($event->eventTypes->isNotEmpty()) {
-                $eventTypeIcon = $event->eventTypes->first()->icon;
-            } elseif ($event->eventType) {
-                $eventTypeIcon = $event->eventType->icon;
-            }
+            $displayIcon = $event->getDisplayIcon();
+
+            // all_icons nur bei "show_all" Strategy zurückgeben
+            $allIcons = $settings->shouldShowAllIcons() ? $event->getAllIcons() : null;
 
             // Format countries data
             $countriesData = $event->countries->map(function ($country) use ($event) {

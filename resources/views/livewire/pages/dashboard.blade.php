@@ -2049,6 +2049,7 @@ function processCustomEvents(events) {
                     longitude: parseFloat(country.longitude),
                     icon: getCustomEventIcon(event.marker_icon, event.event_type),
                     iconColor: event.marker_color,
+                    all_icons: event.all_icons, // Multi-Icon Support
                     source: 'custom',
                     event_type: event.event_type,
                     event_type_name: event.event_type_name,
@@ -2082,6 +2083,7 @@ function processCustomEvents(events) {
                 longitude: parseFloat(event.longitude),
                 icon: getCustomEventIcon(event.marker_icon, event.event_type),
                 iconColor: event.marker_color,
+                all_icons: event.all_icons, // Multi-Icon Support
                 source: 'custom',
                 event_type: event.event_type,
                 event_type_name: event.event_type_name,
@@ -2111,6 +2113,7 @@ function processCustomEvents(events) {
                 longitude: null,
                 icon: getCustomEventIcon(event.marker_icon, event.event_type),
                 iconColor: event.marker_color,
+                all_icons: event.all_icons, // Multi-Icon Support
                 source: 'custom',
                 event_type: event.event_type,
                 event_type_name: event.event_type_name,
@@ -3110,44 +3113,135 @@ function addMarkersToMap() {
 function createCustomMarker(event) {
     let iconHtml;
     let iconSize = 28; // Einheitliche Größe für alle Events
-    
-    // Bestimme Icon und Farbe basierend auf Event-Typ
-    let iconClass, markerColor;
-    
-    if (event.source === 'custom') {
-        // CustomEvent: Verwende normalisiertes Icon und prioritätsbasierte Farbe
-        iconClass = event.icon || event.marker_icon || 'fa-solid fa-location-pin';
-        markerColor = event.marker_color || getPriorityColor(event.priority);
+
+    // Prüfe, ob mehrere Icons angezeigt werden sollen (show_all strategy)
+    // all_icons ist nur gesetzt, wenn die Strategy "show_all" aktiv ist
+    if (event.all_icons && Array.isArray(event.all_icons) && event.all_icons.length > 1) {
+        // Multi-Icon-Anzeige: Icons horizontal nebeneinander darstellen
+        const iconsToShow = Math.min(event.all_icons.length, 3); // Maximal 3 Icons anzeigen
+        const singleIconSize = 20; // Kleinere Icons für kompakte Darstellung
+        const gap = 2; // Abstand zwischen Icons
+        const containerWidth = (singleIconSize * iconsToShow) + (gap * (iconsToShow - 1));
+
+        // Hauptcontainer mit allen Icons horizontal
+        let iconsHtml = '';
+        for (let i = 0; i < iconsToShow; i++) {
+            const iconData = event.all_icons[i];
+            let iconClass = iconData.icon || 'fa-solid fa-location-pin';
+
+            // Stelle sicher, dass fa-solid Präfix vorhanden ist
+            if (!iconClass.includes('fa-solid') && !iconClass.includes('fa-regular') && !iconClass.includes('fa-brands')) {
+                iconClass = 'fa-solid ' + iconClass;
+            }
+
+            const iconColor = iconData.color || '#FF0000';
+
+            iconsHtml += `
+                <div style="
+                    background-color: ${iconColor};
+                    border: 1px solid white;
+                    border-radius: 50%;
+                    width: ${singleIconSize}px;
+                    height: ${singleIconSize}px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                    ${i > 0 ? 'margin-left: ' + gap + 'px;' : ''}
+                ">
+                    <i class="${iconClass}" style="color: #FFFFFF; font-size: ${singleIconSize * 0.5}px;"></i>
+                </div>
+            `;
+        }
+
+        // Container mit Badge falls mehr als 3 Icons
+        iconHtml = `
+            <div style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(255,255,255,0.95);
+                padding: 3px;
+                border-radius: 14px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            ">
+                ${iconsHtml}
+                ${event.all_icons.length > 3 ? `
+                    <div style="
+                        background-color: #333;
+                        color: white;
+                        border-radius: 50%;
+                        width: 16px;
+                        height: 16px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 9px;
+                        font-weight: bold;
+                        margin-left: ${gap}px;
+                    ">+${event.all_icons.length - 3}</div>
+                ` : ''}
+            </div>
+        `;
     } else {
-        // GDACS-Event: Verwende prioritätsbasierte Farbe basierend auf Severity
-        iconClass = event.icon || 'fa-solid fa-circle-exclamation';
-        markerColor = event.iconColor || getPriorityColor(event.severity);
+        // Einzelnes Icon (Standard-Verhalten)
+        let iconClass, markerColor;
+
+        if (event.source === 'custom') {
+            // CustomEvent: Verwende normalisiertes Icon und prioritätsbasierte Farbe
+            iconClass = event.icon || event.marker_icon || 'fa-solid fa-location-pin';
+            markerColor = event.marker_color || getPriorityColor(event.priority);
+        } else {
+            // GDACS-Event: Verwende prioritätsbasierte Farbe basierend auf Severity
+            iconClass = event.icon || 'fa-solid fa-circle-exclamation';
+            markerColor = event.iconColor || getPriorityColor(event.severity);
+        }
+
+        // Einheitliches Kreis-Design für alle Events
+        iconHtml = `
+            <div style="
+                background-color: ${markerColor};
+                border: 2px solid white;
+                border-radius: 50%;
+                width: ${iconSize}px;
+                height: ${iconSize}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="${iconClass}" style="color: #FFFFFF; font-size: ${iconSize * 0.5}px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);"></i>
+            </div>
+        `;
     }
     
-    // Einheitliches Kreis-Design für alle Events
-    iconHtml = `
-        <div style="
-            background-color: ${markerColor}; 
-            border: 2px solid white; 
-            border-radius: 50%; 
-            width: ${iconSize}px; 
-            height: ${iconSize}px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-            <i class="${iconClass}" style="color: #FFFFFF; font-size: ${iconSize * 0.5}px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);"></i>
-        </div>
-    `;
-    
+    // Berechne Icon-Größe basierend auf Multi-Icon-Anzeige
+    let divIconSize, divIconAnchor;
+
+    if (event.all_icons && Array.isArray(event.all_icons) && event.all_icons.length > 1) {
+        // Multi-Icon: Breiter Marker für horizontale Icons
+        const iconsToShow = Math.min(event.all_icons.length, 3);
+        const singleIconSize = 20;
+        const gap = 2;
+        const badgeWidth = event.all_icons.length > 3 ? 18 : 0;
+        const width = (singleIconSize * iconsToShow) + (gap * (iconsToShow - 1)) + badgeWidth + 6; // +6 für padding
+        const height = singleIconSize + 6; // +6 für padding
+
+        divIconSize = [width, height];
+        divIconAnchor = [width / 2, height / 2];
+    } else {
+        // Standard: Quadratisches Icon
+        divIconSize = [iconSize, iconSize];
+        divIconAnchor = [iconSize / 2, iconSize / 2];
+    }
+
     const icon = L.divIcon({
         className: 'custom-marker',
         html: iconHtml,
-        iconSize: [iconSize, iconSize],
-        iconAnchor: [iconSize / 2, iconSize / 2]
+        iconSize: divIconSize,
+        iconAnchor: divIconAnchor
     });
     
     const marker = L.marker([event.latitude, event.longitude], { icon: icon });

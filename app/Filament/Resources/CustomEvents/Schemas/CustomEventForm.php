@@ -5,6 +5,8 @@ namespace App\Filament\Resources\CustomEvents\Schemas;
 use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\EventCategory;
+use App\Models\EventDisplaySetting;
+use App\Models\EventType;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
@@ -76,7 +78,62 @@ class CustomEventForm
                     ->columns(2)
                     ->gridDirection('row')
                     ->required()
+                    ->live()
                     ->helperText('Wählen Sie einen oder mehrere Event-Typen aus')
+                    ->columnSpanFull(),
+
+                // Manual icon selection (nur wenn Settings es erlauben und mehrere Event-Typen gewählt)
+                Select::make('selected_display_event_type_id')
+                    ->label('Anzuzeigendes Icon')
+                    ->options(function (Get $get) {
+                        $selectedEventTypeIds = $get('eventTypes') ?? [];
+                        if (empty($selectedEventTypeIds)) {
+                            return [];
+                        }
+                        return EventType::whereIn('id', $selectedEventTypeIds)
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->visible(function (Get $get): bool {
+                        $settings = EventDisplaySetting::current();
+                        $selectedEventTypeIds = $get('eventTypes') ?? [];
+                        return $settings->shouldShowManualSelection() &&
+                               count($selectedEventTypeIds) > 1;
+                    })
+                    ->helperText('Wählen Sie, welches Icon auf der Karte angezeigt werden soll')
+                    ->columnSpanFull(),
+
+                // Icon-Vorschau (nur wenn Settings es erlauben)
+                Placeholder::make('event_types_preview')
+                    ->label('Gewählte Event-Typen & Icons')
+                    ->content(function (Get $get) {
+                        $selectedEventTypeIds = $get('eventTypes') ?? [];
+                        if (empty($selectedEventTypeIds)) {
+                            return new HtmlString('<span class="text-gray-500 text-sm">Keine Event-Typen ausgewählt</span>');
+                        }
+
+                        $eventTypes = EventType::whereIn('id', $selectedEventTypeIds)->get();
+                        $html = '<div class="flex flex-wrap gap-3">';
+
+                        foreach ($eventTypes as $eventType) {
+                            $icon = $eventType->icon ?? 'fa-map-marker';
+                            $color = $eventType->color ?? '#FF0000';
+
+                            $html .= '<div class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">';
+                            $html .= '<i class="fas ' . htmlspecialchars($icon) . '" style="color: ' . htmlspecialchars($color) . '; font-size: 18px;"></i>';
+                            $html .= '<span class="text-sm font-medium">' . htmlspecialchars($eventType->name) . '</span>';
+                            $html .= '</div>';
+                        }
+
+                        $html .= '</div>';
+                        return new HtmlString($html);
+                    })
+                    ->visible(function (Get $get): bool {
+                        $settings = EventDisplaySetting::current();
+                        $selectedEventTypeIds = $get('eventTypes') ?? [];
+                        return $settings->shouldShowIconPreview() && !empty($selectedEventTypeIds);
+                    })
                     ->columnSpanFull(),
 
                 Select::make('event_category_id')
