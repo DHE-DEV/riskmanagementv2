@@ -9,7 +9,6 @@ use App\Models\EventCategory;
 use App\Models\EventDisplaySetting;
 use App\Models\EventType;
 use App\Services\ChatGptService;
-use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
@@ -38,13 +37,16 @@ class CustomEventForm
                     ->required()
                     ->maxLength(255)
                     ->placeholder('z.B. Brandschutzübung Frankfurt')
-                    ->suffixAction(
-                        Actions\Action::make('improve_title')
+                    ->hint('KI-Verbesserung verfügbar')
+                    ->hintIcon('heroicon-o-sparkles')
+                    ->hintColor('primary')
+                    ->hintAction(
+                        \Filament\Forms\Components\Actions\Action::make('improve_title')
+                            ->label('Mit KI verbessern')
                             ->icon('heroicon-o-sparkles')
-                            ->tooltip('Text mit KI verbessern')
                             ->requiresConfirmation()
                             ->modalHeading('Text mit KI verbessern')
-                            ->modalDescription(fn (Get $get) => new HtmlString('<div class="text-sm text-gray-600 dark:text-gray-400 mb-4">Aktueller Text wird an die KI gesendet und verbessert.</div>'))
+                            ->modalDescription('Der aktuelle Titel wird an die KI gesendet und verbessert.')
                             ->modalSubmitActionLabel('Verbessern')
                             ->action(function (Set $set, Get $get, $state) {
                                 if (empty($state)) {
@@ -154,13 +156,16 @@ class CustomEventForm
                         'codeBlock',
                     ])
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
-                    ->suffixAction(
-                        Actions\Action::make('improve_description')
+                    ->hint('KI-Verbesserung verfügbar')
+                    ->hintIcon('heroicon-o-sparkles')
+                    ->hintColor('primary')
+                    ->hintAction(
+                        \Filament\Forms\Components\Actions\Action::make('improve_description')
+                            ->label('Mit KI verbessern')
                             ->icon('heroicon-o-sparkles')
-                            ->tooltip('Text mit KI verbessern')
                             ->requiresConfirmation()
                             ->modalHeading('Text mit KI verbessern')
-                            ->modalDescription(fn (Get $get) => new HtmlString('<div class="text-sm text-gray-600 dark:text-gray-400 mb-4">Aktueller Text wird an die KI gesendet und verbessert.</div>'))
+                            ->modalDescription('Die aktuelle Beschreibung wird an die KI gesendet und verbessert.')
                             ->modalSubmitActionLabel('Verbessern')
                             ->action(function (Set $set, Get $get, $state) {
                                 // Strip HTML tags for the prompt
