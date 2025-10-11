@@ -2,13 +2,11 @@
 
 namespace App\Filament\Resources\CustomEvents\Schemas;
 
-use App\Models\AiPrompt;
 use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\EventCategory;
 use App\Models\EventDisplaySetting;
 use App\Models\EventType;
-use App\Services\ChatGptService;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
@@ -18,7 +16,6 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -37,99 +34,6 @@ class CustomEventForm
                     ->required()
                     ->maxLength(255)
                     ->placeholder('z.B. Brandschutzübung Frankfurt')
-                    ->hint('KI-Verbesserung verfügbar')
-                    ->hintIcon('heroicon-o-sparkles')
-                    ->hintColor('primary')
-                    ->hintAction(
-                        \Filament\Forms\Components\Actions\Action::make('improve_title')
-                            ->label('Mit KI verbessern')
-                            ->icon('heroicon-o-sparkles')
-                            ->requiresConfirmation()
-                            ->modalHeading('Text mit KI verbessern')
-                            ->modalDescription('Der aktuelle Titel wird an die KI gesendet und verbessert.')
-                            ->modalSubmitActionLabel('Verbessern')
-                            ->action(function (Set $set, Get $get, $state) {
-                                if (empty($state)) {
-                                    Notification::make()
-                                        ->warning()
-                                        ->title('Kein Text vorhanden')
-                                        ->body('Bitte geben Sie zuerst einen Text ein.')
-                                        ->send();
-                                    return;
-                                }
-
-                                // Prompt aus Datenbank laden
-                                $prompt = AiPrompt::active()
-                                    ->forModel('TextImprovement_Title')
-                                    ->ordered()
-                                    ->first();
-
-                                if (!$prompt) {
-                                    Notification::make()
-                                        ->danger()
-                                        ->title('Kein KI-Prompt konfiguriert')
-                                        ->body('Bitte konfigurieren Sie einen KI-Prompt für "Textverbesserung: Titel" in der Verwaltung.')
-                                        ->send();
-                                    return;
-                                }
-
-                                // Kontext-Daten sammeln
-                                $description = strip_tags($get('popup_content') ?? '');
-                                $selectedEventTypeIds = $get('eventTypes') ?? [];
-
-                                // Ausgewählte Event-Typen Namen holen
-                                $selectedEventTypes = 'Keine ausgewählt';
-                                if (!empty($selectedEventTypeIds)) {
-                                    $selectedTypes = EventType::whereIn('id', $selectedEventTypeIds)
-                                        ->pluck('name')
-                                        ->toArray();
-                                    $selectedEventTypes = implode(', ', $selectedTypes);
-                                }
-
-                                // Alle verfügbaren Event-Typen
-                                $availableEventTypes = EventType::active()
-                                    ->ordered()
-                                    ->pluck('name')
-                                    ->implode(', ');
-
-                                // ChatGPT Service verwenden
-                                try {
-                                    $chatGptService = app(ChatGptService::class);
-                                    $result = $chatGptService->processPrompt($prompt, [
-                                        'text' => $state,
-                                        'description' => $description ?: 'Keine Beschreibung vorhanden',
-                                        'selected_event_types' => $selectedEventTypes,
-                                        'available_event_types' => $availableEventTypes,
-                                    ]);
-
-                                    // Ergebnis in Confirmation anzeigen
-                                    Notification::make()
-                                        ->success()
-                                        ->title('Text wurde verbessert')
-                                        ->body(new HtmlString('<div class="font-mono text-sm">' . nl2br(e($result)) . '</div>'))
-                                        ->actions([
-                                            \Filament\Notifications\Actions\Action::make('apply')
-                                                ->label('Übernehmen')
-                                                ->button()
-                                                ->close()
-                                                ->action(function () use ($set, $result) {
-                                                    $set('title', trim($result));
-                                                }),
-                                            \Filament\Notifications\Actions\Action::make('cancel')
-                                                ->label('Abbrechen')
-                                                ->close(),
-                                        ])
-                                        ->persistent()
-                                        ->send();
-                                } catch (\Exception $e) {
-                                    Notification::make()
-                                        ->danger()
-                                        ->title('Fehler bei der KI-Verarbeitung')
-                                        ->body($e->getMessage())
-                                        ->send();
-                                }
-                            })
-                    )
                     ->columnSpanFull(),
 
                 // Beschreibung-Feld ausgeblendet
@@ -156,78 +60,6 @@ class CustomEventForm
                         'codeBlock',
                     ])
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
-                    ->hint('KI-Verbesserung verfügbar')
-                    ->hintIcon('heroicon-o-sparkles')
-                    ->hintColor('primary')
-                    ->hintAction(
-                        \Filament\Forms\Components\Actions\Action::make('improve_description')
-                            ->label('Mit KI verbessern')
-                            ->icon('heroicon-o-sparkles')
-                            ->requiresConfirmation()
-                            ->modalHeading('Text mit KI verbessern')
-                            ->modalDescription('Die aktuelle Beschreibung wird an die KI gesendet und verbessert.')
-                            ->modalSubmitActionLabel('Verbessern')
-                            ->action(function (Set $set, Get $get, $state) {
-                                // Strip HTML tags for the prompt
-                                $plainText = strip_tags($state);
-
-                                if (empty($plainText)) {
-                                    Notification::make()
-                                        ->warning()
-                                        ->title('Kein Text vorhanden')
-                                        ->body('Bitte geben Sie zuerst einen Text ein.')
-                                        ->send();
-                                    return;
-                                }
-
-                                // Prompt aus Datenbank laden
-                                $prompt = AiPrompt::active()
-                                    ->forModel('TextImprovement_Description')
-                                    ->ordered()
-                                    ->first();
-
-                                if (!$prompt) {
-                                    Notification::make()
-                                        ->danger()
-                                        ->title('Kein KI-Prompt konfiguriert')
-                                        ->body('Bitte konfigurieren Sie einen KI-Prompt für "Textverbesserung: Beschreibung" in der Verwaltung.')
-                                        ->send();
-                                    return;
-                                }
-
-                                // ChatGPT Service verwenden
-                                try {
-                                    $chatGptService = app(ChatGptService::class);
-                                    $result = $chatGptService->processPrompt($prompt, ['text' => $plainText]);
-
-                                    // Ergebnis in Confirmation anzeigen
-                                    Notification::make()
-                                        ->success()
-                                        ->title('Text wurde verbessert')
-                                        ->body(new HtmlString('<div class="prose prose-sm dark:prose-invert max-w-none">' . $result . '</div>'))
-                                        ->actions([
-                                            \Filament\Notifications\Actions\Action::make('apply')
-                                                ->label('Übernehmen')
-                                                ->button()
-                                                ->close()
-                                                ->action(function () use ($set, $result) {
-                                                    $set('popup_content', $result);
-                                                }),
-                                            \Filament\Notifications\Actions\Action::make('cancel')
-                                                ->label('Abbrechen')
-                                                ->close(),
-                                        ])
-                                        ->persistent()
-                                        ->send();
-                                } catch (\Exception $e) {
-                                    Notification::make()
-                                        ->danger()
-                                        ->title('Fehler bei der KI-Verarbeitung')
-                                        ->body($e->getMessage())
-                                        ->send();
-                                }
-                            })
-                    )
                     ->columnSpanFull(),
 
                 // Keep single event_type_id for backward compatibility but hide it
