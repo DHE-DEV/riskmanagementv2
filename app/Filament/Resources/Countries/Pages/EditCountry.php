@@ -14,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\HtmlString;
 
 class EditCountry extends EditRecord
 {
@@ -82,10 +83,10 @@ class EditCountry extends EditRecord
                     $chatGptService = app(ChatGptService::class);
                     $result = $chatGptService->processPrompt($prompt, $countryData);
 
-                    // Ergebnis in Notification anzeigen
+                    // Ergebnis in Notification anzeigen mit HTML-Unterstützung
                     Notification::make()
                         ->title($prompt->name)
-                        ->body($result)
+                        ->body(new HtmlString($result))
                         ->success()
                         ->duration(null) // Bleibt offen bis manuell geschlossen
                         ->send();
