@@ -3123,6 +3123,14 @@ function createCustomMarker(event) {
         const gap = 2; // Abstand zwischen Icons
         const containerWidth = (singleIconSize * iconsToShow) + (gap * (iconsToShow - 1));
 
+        // Bestimme Farbe basierend auf Risikostufe (wie bei einzelnem Icon)
+        let baseMarkerColor;
+        if (event.source === 'custom') {
+            baseMarkerColor = event.marker_color || getPriorityColor(event.priority);
+        } else {
+            baseMarkerColor = event.iconColor || getPriorityColor(event.severity);
+        }
+
         // Hauptcontainer mit allen Icons horizontal
         let iconsHtml = '';
         for (let i = 0; i < iconsToShow; i++) {
@@ -3134,7 +3142,8 @@ function createCustomMarker(event) {
                 iconClass = 'fa-solid ' + iconClass;
             }
 
-            const iconColor = iconData.color || '#FF0000';
+            // Verwende Risikostufen-Farbe statt Event-Typ-Farbe
+            const iconColor = baseMarkerColor;
 
             iconsHtml += `
                 <div style="
