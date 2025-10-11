@@ -71,10 +71,34 @@ class CustomEventForm
                                     return;
                                 }
 
+                                // Kontext-Daten sammeln
+                                $description = strip_tags($get('popup_content') ?? '');
+                                $selectedEventTypeIds = $get('eventTypes') ?? [];
+
+                                // Ausgewählte Event-Typen Namen holen
+                                $selectedEventTypes = 'Keine ausgewählt';
+                                if (!empty($selectedEventTypeIds)) {
+                                    $selectedTypes = EventType::whereIn('id', $selectedEventTypeIds)
+                                        ->pluck('name')
+                                        ->toArray();
+                                    $selectedEventTypes = implode(', ', $selectedTypes);
+                                }
+
+                                // Alle verfügbaren Event-Typen
+                                $availableEventTypes = EventType::active()
+                                    ->ordered()
+                                    ->pluck('name')
+                                    ->implode(', ');
+
                                 // ChatGPT Service verwenden
                                 try {
                                     $chatGptService = app(ChatGptService::class);
-                                    $result = $chatGptService->processPrompt($prompt, ['text' => $state]);
+                                    $result = $chatGptService->processPrompt($prompt, [
+                                        'text' => $state,
+                                        'description' => $description ?: 'Keine Beschreibung vorhanden',
+                                        'selected_event_types' => $selectedEventTypes,
+                                        'available_event_types' => $availableEventTypes,
+                                    ]);
 
                                     // Ergebnis in Confirmation anzeigen
                                     Notification::make()

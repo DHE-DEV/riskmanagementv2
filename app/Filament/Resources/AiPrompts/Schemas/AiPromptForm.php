@@ -91,7 +91,7 @@ class AiPromptForm
                                     'Airport' => "Beispiel für Flughäfen:\n\nAnalysiere den Flughafen {name}.\n\nFlughafendaten:\n- IATA-Code: {iata_code}\n- ICAO-Code: {icao_code}\n- Stadt: {city}\n- Land: {country}",
                                     'CustomEvent' => "Beispiel für Benutzerdefinierte Events:\n\nAnalysiere das Event {title}.\n\nEvent-Daten:\n- Beschreibung: {description}\n- Typ: {event_type}\n- Risiko-Level: {risk_level}\n- Start: {start_date}\n- Ende: {end_date}",
                                     'PassolutionEvent' => "Beispiel für Passolution Events:\n\nAnalysiere das Event {title}.\n\nEvent-Daten:\n- Beschreibung: {description}\n- Kategorie: {category}\n- Länder: {countries}",
-                                    'TextImprovement_Title' => "Beispiel für Titel-Verbesserung:\n\nVerbessere folgenden Titel:\n\n{text}\n\nBitte mache ihn prägnanter, professioneller und informativer. Antworte nur mit dem verbesserten Titel, ohne zusätzliche Erklärungen.",
+                                    'TextImprovement_Title' => "Beispiel für Titel-Verbesserung:\n\nVerbessere folgenden Titel:\n\n{text}\n\nKontext:\n- Beschreibung: {description}\n- Ausgewählte Event-Typen: {selected_event_types}\n- Verfügbare Event-Typen: {available_event_types}\n\nBitte mache den Titel prägnanter, professioneller und informativer basierend auf dem Kontext. Antworte nur mit dem verbesserten Titel, ohne zusätzliche Erklärungen.",
                                     'TextImprovement_Description' => "Beispiel für Beschreibungs-Verbesserung:\n\nVerbessere folgende Beschreibung:\n\n{text}\n\nBitte mache sie klarer, strukturierter und informativer. Behalte wichtige Details bei und formatiere den Text mit HTML (verwende <strong>, <em>, <ul>, <li>, <p>). Antworte nur mit der verbesserten Beschreibung.",
                                     default => "Wählen Sie einen Model-Typ aus, um ein Beispiel zu sehen."
                                 };
@@ -149,6 +149,7 @@ class AiPromptForm
                                     ],
                                     'TextImprovement_Title' => [
                                         'Eingabe' => ['{text}'],
+                                        'Kontext' => ['{description}', '{selected_event_types}', '{available_event_types}'],
                                     ],
                                     'TextImprovement_Description' => [
                                         'Eingabe' => ['{text}'],
