@@ -89,9 +89,6 @@ class EditCountry extends EditRecord
                         ->body(new HtmlString($result))
                         ->success()
                         ->duration(null) // Bleibt offen bis manuell geschlossen
-                        ->extraAttributes([
-                            'style' => 'max-width: 600px; width: 600px;'
-                        ])
                         ->send();
                 })
                 ->modalWidth('3xl')

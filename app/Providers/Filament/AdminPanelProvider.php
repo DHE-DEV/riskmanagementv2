@@ -67,6 +67,15 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::body.end',
                 fn () => view('filament.admin.navigation-collapse-script')
+            )
+            ->renderHook(
+                'panels::head.end',
+                fn () => '<style>
+                    /* Breitere Notifications für längere Inhalte (z.B. KI-Assistent) */
+                    .fi-no-notification {
+                        max-width: 600px !important;
+                    }
+                </style>'
             );
     }
 }
