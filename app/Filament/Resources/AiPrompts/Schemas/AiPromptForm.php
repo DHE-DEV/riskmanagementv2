@@ -109,6 +109,7 @@ class AiPromptForm
                                     ],
                                     'Continent' => [
                                         'Allgemein' => ['{name}', '{name_en}', '{code}', '{description}'],
+                                        'Statistik' => ['{countries_count}'],
                                     ],
                                     'Region' => [
                                         'Allgemein' => ['{name}', '{name_en}', '{code}'],
@@ -119,21 +120,23 @@ class AiPromptForm
                                     ],
                                     'City' => [
                                         'Allgemein' => ['{name}', '{name_en}'],
-                                        'Zuordnung' => ['{country}', '{country_code}', '{region}'],
-                                        'Details' => ['{population}', '{is_capital}', '{timezone}'],
+                                        'Zuordnung' => ['{country}', '{country_en}', '{country_code}', '{region}', '{region_en}'],
+                                        'Details' => ['{population}', '{is_capital}', '{is_regional_capital}'],
+                                        'Koordinaten' => ['{lat}', '{lng}'],
                                     ],
                                     'Airport' => [
-                                        'Allgemein' => ['{name}', '{name_en}'],
+                                        'Allgemein' => ['{name}'],
                                         'Codes' => ['{iata_code}', '{icao_code}'],
-                                        'Zuordnung' => ['{city}', '{country}', '{country_code}'],
-                                        'Details' => ['{timezone}', '{elevation}'],
+                                        'Zuordnung' => ['{city}', '{city_en}', '{country}', '{country_en}', '{country_code}'],
+                                        'Details' => ['{timezone}', '{dst_timezone}', '{altitude}', '{type}'],
+                                        'Koordinaten' => ['{lat}', '{lng}'],
                                     ],
                                     'CustomEvent' => [
                                         'Allgemein' => ['{title}', '{description}'],
-                                        'Typ' => ['{event_type}', '{risk_level}'],
+                                        'Typ' => ['{event_type}', '{event_types}', '{priority}', '{severity}'],
                                         'Zeitraum' => ['{start_date}', '{end_date}'],
                                         'Status' => ['{is_active}', '{archived}'],
-                                        'Zuordnung' => ['{countries}'],
+                                        'Zuordnung' => ['{countries}', '{data_source}'],
                                     ],
                                     'PassolutionEvent' => [
                                         'Allgemein' => ['{title}', '{description}', '{category}'],

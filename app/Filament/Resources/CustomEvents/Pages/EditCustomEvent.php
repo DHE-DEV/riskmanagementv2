@@ -45,6 +45,78 @@ class EditCustomEvent extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('ai_assistant')
+                ->label('KI-Assistent')
+                ->icon('heroicon-o-sparkles')
+                ->color('primary')
+                ->form([
+                    \Filament\Forms\Components\Select::make('prompt_id')
+                        ->label('Aufgabe auswählen')
+                        ->options(function () {
+                            return \App\Models\AiPrompt::active()
+                                ->forModel('CustomEvent')
+                                ->ordered()
+                                ->get()
+                                ->mapWithKeys(fn ($prompt) => [
+                                    $prompt->id => $prompt->name . ($prompt->description ? ' - ' . $prompt->description : '')
+                                ]);
+                        })
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->live(),
+
+                    \Filament\Forms\Components\Placeholder::make('prompt_preview')
+                        ->label('Prompt-Vorschau')
+                        ->content(function ($get) {
+                            if (!$get('prompt_id')) {
+                                return 'Wählen Sie eine Aufgabe aus, um eine Vorschau zu sehen.';
+                            }
+
+                            $prompt = \App\Models\AiPrompt::find($get('prompt_id'));
+                            if (!$prompt) {
+                                return '';
+                            }
+
+                            return nl2br(e($prompt->prompt_template));
+                        }),
+                ])
+                ->action(function (array $data) {
+                    $prompt = \App\Models\AiPrompt::findOrFail($data['prompt_id']);
+                    $event = $this->record;
+
+                    // Event-Daten für Platzhalter vorbereiten
+                    $eventData = [
+                        'title' => $event->title,
+                        'description' => $event->description ?? 'N/A',
+                        'event_type' => $event->eventType?->name ?? 'N/A',
+                        'event_types' => $event->eventTypes->pluck('name')->implode(', ') ?: 'N/A',
+                        'priority' => $event->priority ?? 'N/A',
+                        'severity' => $event->severity ?? 'N/A',
+                        'start_date' => $event->start_date?->format('d.m.Y H:i') ?? 'N/A',
+                        'end_date' => $event->end_date?->format('d.m.Y H:i') ?? 'N/A',
+                        'is_active' => $event->is_active ? 'Ja' : 'Nein',
+                        'archived' => $event->archived ? 'Ja' : 'Nein',
+                        'countries' => $event->countries->map(fn($c) => $c->getName('de'))->implode(', ') ?: 'N/A',
+                        'data_source' => $event->data_source ?? 'N/A',
+                    ];
+
+                    // ChatGPT Service verwenden
+                    $chatGptService = app(\App\Services\ChatGptService::class);
+                    $result = $chatGptService->processPrompt($prompt, $eventData);
+
+                    // Ergebnis in Notification anzeigen mit HTML-Unterstützung
+                    \Filament\Notifications\Notification::make()
+                        ->title($prompt->name)
+                        ->body(new \Illuminate\Support\HtmlString($result))
+                        ->success()
+                        ->duration(null) // Bleibt offen bis manuell geschlossen
+                        ->send();
+                })
+                ->modalWidth('3xl')
+                ->modalSubmitActionLabel('KI ausführen')
+                ->modalCancelActionLabel('Schließen'),
+
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
