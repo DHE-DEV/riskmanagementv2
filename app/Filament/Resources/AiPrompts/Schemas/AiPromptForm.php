@@ -38,6 +38,8 @@ class AiPromptForm
                                         'Airport' => 'Flughäfen',
                                         'CustomEvent' => 'Benutzerdefinierte Events',
                                         'PassolutionEvent' => 'Passolution Events',
+                                        'TextImprovement_Title' => 'Textverbesserung: Titel',
+                                        'TextImprovement_Description' => 'Textverbesserung: Beschreibung',
                                     ])
                                     ->required()
                                     ->searchable()
@@ -89,6 +91,8 @@ class AiPromptForm
                                     'Airport' => "Beispiel für Flughäfen:\n\nAnalysiere den Flughafen {name}.\n\nFlughafendaten:\n- IATA-Code: {iata_code}\n- ICAO-Code: {icao_code}\n- Stadt: {city}\n- Land: {country}",
                                     'CustomEvent' => "Beispiel für Benutzerdefinierte Events:\n\nAnalysiere das Event {title}.\n\nEvent-Daten:\n- Beschreibung: {description}\n- Typ: {event_type}\n- Risiko-Level: {risk_level}\n- Start: {start_date}\n- Ende: {end_date}",
                                     'PassolutionEvent' => "Beispiel für Passolution Events:\n\nAnalysiere das Event {title}.\n\nEvent-Daten:\n- Beschreibung: {description}\n- Kategorie: {category}\n- Länder: {countries}",
+                                    'TextImprovement_Title' => "Beispiel für Titel-Verbesserung:\n\nVerbessere folgenden Titel:\n\n{text}\n\nBitte mache ihn prägnanter, professioneller und informativer. Antworte nur mit dem verbesserten Titel, ohne zusätzliche Erklärungen.",
+                                    'TextImprovement_Description' => "Beispiel für Beschreibungs-Verbesserung:\n\nVerbessere folgende Beschreibung:\n\n{text}\n\nBitte mache sie klarer, strukturierter und informativer. Behalte wichtige Details bei und formatiere den Text mit HTML (verwende <strong>, <em>, <ul>, <li>, <p>). Antworte nur mit der verbesserten Beschreibung.",
                                     default => "Wählen Sie einen Model-Typ aus, um ein Beispiel zu sehen."
                                 };
                             })
@@ -142,6 +146,12 @@ class AiPromptForm
                                         'Allgemein' => ['{title}', '{description}', '{category}'],
                                         'Zeitraum' => ['{event_date}'],
                                         'Zuordnung' => ['{countries}', '{regions}', '{cities}'],
+                                    ],
+                                    'TextImprovement_Title' => [
+                                        'Eingabe' => ['{text}'],
+                                    ],
+                                    'TextImprovement_Description' => [
+                                        'Eingabe' => ['{text}'],
                                     ],
                                     default => []
                                 };
