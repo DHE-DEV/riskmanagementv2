@@ -54,7 +54,7 @@ class EditCustomEvent extends EditRecord
                         ->label('Aufgabe auswählen')
                         ->options(function () {
                             return \App\Models\AiPrompt::active()
-                                ->forModel('CustomEvent')
+                                ->whereIn('model_type', ['CustomEvent', 'TextImprovement_Title', 'TextImprovement_Description'])
                                 ->ordered()
                                 ->get()
                                 ->mapWithKeys(fn ($prompt) => [
@@ -88,7 +88,7 @@ class EditCustomEvent extends EditRecord
                     // Event-Daten für Platzhalter vorbereiten
                     $eventData = [
                         'title' => $event->title,
-                        'description' => $event->description ?? 'N/A',
+                        'description' => strip_tags($event->popup_content ?? $event->description ?? ''),
                         'event_type' => $event->eventType?->name ?? 'N/A',
                         'event_types' => $event->eventTypes->pluck('name')->implode(', ') ?: 'N/A',
                         'priority' => $event->priority ?? 'N/A',
@@ -99,6 +99,11 @@ class EditCustomEvent extends EditRecord
                         'archived' => $event->archived ? 'Ja' : 'Nein',
                         'countries' => $event->countries->map(fn($c) => $c->getName('de'))->implode(', ') ?: 'N/A',
                         'data_source' => $event->data_source ?? 'N/A',
+
+                        // Für TextImprovement-Prompts
+                        'text' => $event->title, // Standard: Titel als Text
+                        'selected_event_types' => $event->eventTypes->pluck('name')->implode(', ') ?: 'Keine ausgewählt',
+                        'available_event_types' => \App\Models\EventType::active()->ordered()->pluck('name')->implode(', '),
                     ];
 
                     // ChatGPT Service verwenden
