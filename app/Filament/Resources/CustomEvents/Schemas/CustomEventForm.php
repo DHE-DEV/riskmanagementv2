@@ -9,7 +9,7 @@ use App\Models\EventCategory;
 use App\Models\EventDisplaySetting;
 use App\Models\EventType;
 use App\Services\ChatGptService;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
@@ -39,7 +39,7 @@ class CustomEventForm
                     ->maxLength(255)
                     ->placeholder('z.B. Brandschutzübung Frankfurt')
                     ->suffixAction(
-                        Action::make('improve_title')
+                        Actions\Action::make('improve_title')
                             ->icon('heroicon-o-sparkles')
                             ->tooltip('Text mit KI verbessern')
                             ->requiresConfirmation()
@@ -155,7 +155,7 @@ class CustomEventForm
                     ])
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
                     ->suffixAction(
-                        Action::make('improve_description')
+                        Actions\Action::make('improve_description')
                             ->icon('heroicon-o-sparkles')
                             ->tooltip('Text mit KI verbessern')
                             ->requiresConfirmation()
