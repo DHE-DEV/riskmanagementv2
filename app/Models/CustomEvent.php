@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Feed\Feedable;
+use Spatie\Feed\FeedItem;
 
-class CustomEvent extends Model
+class CustomEvent extends Model implements Feedable
 {
     use HasFactory, SoftDeletes;
 
@@ -440,6 +442,112 @@ class CustomEvent extends Model
         }
 
         return $referenceDate->gte(now()->subYear());
+    }
+
+    /**
+     * Get all active events for the main feed.
+     */
+    public static function getFeedItems()
+    {
+        return static::active()
+            ->notArchived()
+            ->with(['country', 'eventTypes', 'creator'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get high-priority events for the critical feed.
+     */
+    public static function getCriticalFeedItems()
+    {
+        return static::active()
+            ->notArchived()
+            ->whereIn('priority', ['high'])
+            ->with(['country', 'eventTypes', 'creator'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Convert the event to a FeedItem.
+     */
+    public function toFeedItem(): FeedItem
+    {
+        return FeedItem::create()
+            ->id($this->id)
+            ->title($this->getFeedTitle())
+            ->summary($this->getFeedSummary())
+            ->updated($this->updated_at)
+            ->link(url("/events/{$this->id}"))
+            ->authorName($this->creator?->name ?? 'System')
+            ->category($this->getFeedCategories());
+    }
+
+    /**
+     * Get formatted title with country name for feed.
+     */
+    public function getFeedTitle(): string
+    {
+        $title = $this->title;
+
+        // Add country name if available
+        if ($this->country) {
+            $title .= ' - ' . $this->country->name;
+        } elseif ($this->countries && $this->countries->count() > 0) {
+            $countryNames = $this->countries->pluck('name')->take(3)->implode(', ');
+            if ($this->countries->count() > 3) {
+                $countryNames .= ' +' . ($this->countries->count() - 3);
+            }
+            $title .= ' - ' . $countryNames;
+        }
+
+        return $title;
+    }
+
+    /**
+     * Get sanitized description suitable for feeds.
+     */
+    public function getFeedSummary(): string
+    {
+        if (empty($this->description)) {
+            return 'No description available.';
+        }
+
+        // Strip HTML tags and decode entities
+        $summary = strip_tags($this->description);
+        $summary = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Limit length to 500 characters
+        if (strlen($summary) > 500) {
+            $summary = substr($summary, 0, 497) . '...';
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Get array of event type names for feed categories.
+     */
+    public function getFeedCategories(): string
+    {
+        $categories = [];
+
+        // Add event types from many-to-many relationship
+        if ($this->eventTypes && $this->eventTypes->isNotEmpty()) {
+            $categories = $this->eventTypes->pluck('name')->toArray();
+        }
+        // Fallback to single event type
+        elseif ($this->eventType) {
+            $categories[] = $this->eventType->name;
+        }
+
+        // Add priority as category
+        if ($this->priority) {
+            $categories[] = ucfirst($this->priority) . ' Priority';
+        }
+
+        return implode(', ', $categories);
     }
 
     /**

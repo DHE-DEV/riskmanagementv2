@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\FeedController;
 
 Route::get('/', function () {
     return view('livewire.pages.dashboard');
@@ -11,6 +12,25 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('livewire.pages.dashboard');
 })->name('dashboard');
+
+// RSS/Atom Feed Routes
+Route::prefix('feed')->name('feed.')->group(function () {
+    // All events feeds
+    Route::get('events.xml', [FeedController::class, 'allEvents'])->name('events.rss');
+    Route::get('events.atom', [FeedController::class, 'allEventsAtom'])->name('events.atom');
+
+    // Critical/high priority events
+    Route::get('critical.xml', [FeedController::class, 'criticalEvents'])->name('critical');
+
+    // Events by country (ISO code)
+    Route::get('countries/{code}.xml', [FeedController::class, 'byCountry'])->name('countries');
+
+    // Events by type
+    Route::get('types/{type}.xml', [FeedController::class, 'byEventType'])->name('types');
+
+    // Events by region
+    Route::get('regions/{region}.xml', [FeedController::class, 'byRegion'])->name('regions');
+});
 
 
 

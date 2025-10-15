@@ -12,5 +12,10 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
+{{-- RSS/Atom Feed Discovery --}}
+<link rel="alternate" type="application/rss+xml" title="All Events (RSS)" href="{{ route('feed.events.rss') }}">
+<link rel="alternate" type="application/atom+xml" title="All Events (Atom)" href="{{ route('feed.events.atom') }}">
+<link rel="alternate" type="application/rss+xml" title="Critical Events (RSS)" href="{{ route('feed.critical') }}">
+
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @fluxAppearance

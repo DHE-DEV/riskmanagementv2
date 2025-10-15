@@ -37,6 +37,12 @@
     @else
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     @endif
+
+    {{-- RSS/Atom Feed Discovery --}}
+    <link rel="alternate" type="application/rss+xml" title="All Events (RSS)" href="{{ route('feed.events.rss') }}">
+    <link rel="alternate" type="application/atom+xml" title="All Events (Atom)" href="{{ route('feed.events.atom') }}">
+    <link rel="alternate" type="application/rss+xml" title="Critical Events (RSS)" href="{{ route('feed.critical') }}">
+
     <style>
         /* Basis-Layout */
         body {
