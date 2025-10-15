@@ -26,6 +26,7 @@ class InfosystemEntry extends Model
         'content',
         'archive',
         'active',
+        'categories',
         'is_published',
         'published_at',
         'published_as_event_id',
@@ -36,6 +37,7 @@ class InfosystemEntry extends Model
 
     protected $casts = [
         'country_names' => 'array',
+        'categories' => 'array',
         'archive' => 'boolean',
         'active' => 'boolean',
         'is_published' => 'boolean',

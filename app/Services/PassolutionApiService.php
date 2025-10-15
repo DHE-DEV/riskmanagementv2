@@ -139,6 +139,7 @@ class PassolutionApiService
                         'content' => $entry['content'],
                         'archive' => (bool) $entry['archive'],
                         'active' => (bool) $entry['active'],
+                        'categories' => $entry['categories'] ?? null,
                         'api_created_at' => $entry['created_at'],
                         'request_id' => $requestId,
                         'response_time' => $responseTime,

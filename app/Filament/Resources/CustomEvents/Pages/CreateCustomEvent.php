@@ -108,8 +108,16 @@ class CreateCustomEvent extends CreateRecord
             }
         }
 
-        // Map InfosystemEntry tagtype to EventType
-        if ($request->has('tagtype') && $request->get('tagtype')) {
+        // Map InfosystemEntry categories to EventTypes (new method, preferred)
+        if ($request->has('categories') && $request->get('categories')) {
+            $eventTypeIds = $this->mapCategoriesToEventTypes($request->get('categories'));
+            if (!empty($eventTypeIds)) {
+                $data['event_type_id'] = $eventTypeIds[0]; // Set first as primary
+                $data['eventTypes'] = $eventTypeIds; // Set all for many-to-many
+            }
+        }
+        // Fallback: Map InfosystemEntry tagtype to EventType (legacy method)
+        elseif ($request->has('tagtype') && $request->get('tagtype')) {
             $eventTypeId = $this->mapTagtypeToEventType($request->get('tagtype'));
             if ($eventTypeId) {
                 $data['event_type_id'] = $eventTypeId;
@@ -148,7 +156,66 @@ class CreateCustomEvent extends CreateRecord
     }
 
     /**
-     * Map InfosystemEntry tagtype to EventType
+     * Map InfosystemEntry categories to EventTypes
+     * Maps category names from Passolution API to EventType codes
+     *
+     * @param string|array $categories JSON string or array of categories
+     * @return array Array of EventType IDs
+     */
+    protected function mapCategoriesToEventTypes($categories): array
+    {
+        // Parse categories if it's a JSON string
+        if (is_string($categories)) {
+            $categories = json_decode($categories, true);
+        }
+
+        if (!is_array($categories) || empty($categories)) {
+            return [];
+        }
+
+        // Map category names to EventType codes
+        $categoryMappings = [
+            'Allgemein' => 'general',
+            'Reiseverkehr' => 'travel',
+            'Sicherheit' => 'safety',
+            'Einreisebestimmungen' => 'entry',
+            'Umweltereignisse' => 'environment',
+            'Gesundheit' => 'health',
+        ];
+
+        $eventTypeIds = [];
+
+        foreach ($categories as $category) {
+            $categoryName = $category['name'] ?? null;
+
+            if (!$categoryName) {
+                continue;
+            }
+
+            // Get the EventType code from mapping
+            $code = $categoryMappings[$categoryName] ?? null;
+
+            if ($code) {
+                $eventType = EventType::where('code', $code)->first();
+                if ($eventType) {
+                    $eventTypeIds[] = $eventType->id;
+                }
+            }
+        }
+
+        // If no categories were mapped, default to 'general'
+        if (empty($eventTypeIds)) {
+            $generalEventType = EventType::where('code', 'general')->first();
+            if ($generalEventType) {
+                $eventTypeIds[] = $generalEventType->id;
+            }
+        }
+
+        return $eventTypeIds;
+    }
+
+    /**
+     * Map InfosystemEntry tagtype to EventType (legacy method)
      * Mapping:
      * - tagtype 1: Umweltereignisse (environment)
      * - tagtype 2: Reiseverkehr (travel)

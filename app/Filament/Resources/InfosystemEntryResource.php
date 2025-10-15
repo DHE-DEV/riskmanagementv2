@@ -228,7 +228,8 @@ class InfosystemEntryResource extends Resource
                         'start_date' => $record->tagdate ? $record->tagdate->format('Y-m-d') : null,
                         'country_code' => $record->country_code ?? null,
                         'country_name' => isset($record->country_names['de']) ? $record->country_names['de'] : null,
-                        'tagtype' => $record->tagtype ?? null,
+                        'categories' => $record->categories ? json_encode($record->categories) : null,
+                        'tagtype' => $record->tagtype ?? null, // Fallback for legacy data
                         'source' => 'infosystem',
                         'source_id' => $record->api_id,
                     ])))
