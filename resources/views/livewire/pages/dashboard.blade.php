@@ -1077,14 +1077,33 @@
                         </label>
                     </div>
 
-                    <!-- Reset Button -->
-                    <div class="pt-2">
+                    <!-- Action Buttons -->
+                    <div class="pt-2 space-y-2">
+                        <button onclick="searchEntryConditions()" class="w-full px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Suchen
+                        </button>
                         <button onclick="resetEntryConditionsFilters()" class="w-full px-3 py-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
                             Filter zurücksetzen
                         </button>
+                    </div>
+
+                    <!-- Search Results -->
+                    <div id="entry-conditions-search-results" class="mt-3" style="display: none;">
+                        <div class="border-t border-gray-200 pt-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-semibold text-gray-700">Suchergebnisse</p>
+                                <span id="results-count" class="text-xs text-gray-500">0 Länder</span>
+                            </div>
+                            <div id="results-list" class="space-y-1 max-h-64 overflow-y-auto">
+                                <!-- Results will be inserted here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -6596,7 +6615,175 @@ function resetEntryConditionsFilters() {
     // Filter anwenden (wird alle deaktivieren)
     applyEntryConditionsFilters();
 
+    // Suchergebnisse ausblenden
+    const resultsContainer = document.getElementById('entry-conditions-search-results');
+    if (resultsContainer) {
+        resultsContainer.style.display = 'none';
+    }
+
     console.log('Entry Conditions Filters reset');
+}
+
+// Einreisebestimmungen suchen
+async function searchEntryConditions() {
+    try {
+        // Filter-Werte sammeln
+        const filters = {
+            passport: document.getElementById('filter-passport')?.checked || false,
+            idCard: document.getElementById('filter-id-card')?.checked || false,
+            tempPassport: document.getElementById('filter-temp-passport')?.checked || false,
+            tempIdCard: document.getElementById('filter-temp-id-card')?.checked || false,
+            childPassport: document.getElementById('filter-child-passport')?.checked || false,
+            visaFree: document.getElementById('filter-visa-free')?.checked || false,
+            eVisa: document.getElementById('filter-e-visa')?.checked || false,
+            visaOnArrival: document.getElementById('filter-visa-on-arrival')?.checked || false,
+            noInsurance: document.getElementById('filter-no-insurance')?.checked || false,
+            noEntryForm: document.getElementById('filter-no-entry-form')?.checked || false,
+        };
+
+        console.log('Searching with filters:', filters);
+
+        // Lade-Anzeige einblenden
+        const resultsContainer = document.getElementById('entry-conditions-search-results');
+        const resultsList = document.getElementById('results-list');
+        const resultsCount = document.getElementById('results-count');
+
+        if (resultsContainer) resultsContainer.style.display = 'block';
+        if (resultsList) resultsList.innerHTML = '<div class="text-xs text-gray-500 p-2">Suche läuft...</div>';
+
+        // API-Aufruf
+        const response = await fetch('/api/entry-conditions/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({ filters })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            displaySearchResults(data.destinations || []);
+        } else {
+            console.error('Search failed:', data.message);
+            if (resultsList) {
+                resultsList.innerHTML = `<div class="text-xs text-red-500 p-2">Fehler: ${data.message || 'Suche fehlgeschlagen'}</div>`;
+            }
+        }
+
+    } catch (error) {
+        console.error('Error searching entry conditions:', error);
+        const resultsList = document.getElementById('results-list');
+        if (resultsList) {
+            resultsList.innerHTML = '<div class="text-xs text-red-500 p-2">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</div>';
+        }
+    }
+}
+
+// Suchergebnisse anzeigen
+function displaySearchResults(destinations) {
+    const resultsList = document.getElementById('results-list');
+    const resultsCount = document.getElementById('results-count');
+
+    if (!resultsList) return;
+
+    if (destinations.length === 0) {
+        resultsList.innerHTML = '<div class="text-xs text-gray-500 p-2">Keine Ergebnisse gefunden</div>';
+        if (resultsCount) resultsCount.textContent = '0 Länder';
+        return;
+    }
+
+    // Ergebnisanzahl aktualisieren
+    if (resultsCount) {
+        resultsCount.textContent = `${destinations.length} ${destinations.length === 1 ? 'Land' : 'Länder'}`;
+    }
+
+    // Länderliste erstellen
+    resultsList.innerHTML = destinations.map(destination => `
+        <div class="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+             onclick="loadCountryEntryConditions('${destination.code}', '${destination.name}')">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">${getFlagEmoji(destination.code)}</span>
+                    <span class="text-xs font-medium text-gray-800">${destination.name}</span>
+                </div>
+                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            ${destination.travel_advisory && destination.travel_advisory.type ?
+                `<div class="mt-1 ml-7">
+                    <span class="text-xs px-1.5 py-0.5 rounded ${getTravelAdvisoryClass(destination.travel_advisory.type)}">
+                        ${destination.travel_advisory.type}
+                    </span>
+                </div>` : ''}
+        </div>
+    `).join('');
+}
+
+// Hilfs-Funktion für Flaggen-Emojis
+function getFlagEmoji(countryCode) {
+    if (!countryCode || countryCode.length !== 2) return '🌍';
+    const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+}
+
+// Hilfs-Funktion für Travel Advisory CSS-Klassen
+function getTravelAdvisoryClass(type) {
+    const classes = {
+        'inactive': 'bg-green-100 text-green-800',
+        'warning': 'bg-yellow-100 text-yellow-800',
+        'alert': 'bg-orange-100 text-orange-800',
+        'danger': 'bg-red-100 text-red-800'
+    };
+    return classes[type] || 'bg-gray-100 text-gray-800';
+}
+
+// Land-Details in der rechten Sidebar laden
+function loadCountryEntryConditions(countryCode, countryName) {
+    console.log(`Loading entry conditions for ${countryName} (${countryCode})`);
+
+    const sidebar = document.getElementById('sidebar-entry-conditions');
+    if (!sidebar) return;
+
+    // TODO: Detaillierte Einreisebestimmungen für das ausgewählte Land laden
+    // Dies würde einen weiteren API-Aufruf erfordern (z.B. /information/search)
+
+    // Vorläufig: Zeige Land-Info an
+    sidebar.innerHTML = `
+        <div class="p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-800">Einreisebestimmungen</h3>
+                <button onclick="document.getElementById('sidebar-entry-conditions').style.display='none'"
+                        class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">${getFlagEmoji(countryCode)}</span>
+                    <div>
+                        <h4 class="text-sm font-semibold">${countryName}</h4>
+                        <p class="text-xs text-gray-500">${countryCode}</p>
+                    </div>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p class="text-xs text-blue-800">
+                        Detaillierte Einreisebestimmungen werden geladen...
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    sidebar.style.display = 'block';
 }
 
 // Aktuell sichtbaren rechten Container (neben der schwarzen Leiste) ein-/ausblenden

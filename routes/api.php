@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AirportSearchController;
+use App\Http\Controllers\Api\EntryConditionsController;
 use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
@@ -81,6 +82,11 @@ Route::prefix('geolocation')->group(function () {
     Route::get('/nearest-city', [GeolocationController::class, 'findNearestCity'])->name('geolocation.nearest-city');
     Route::get('/cities-in-radius', [GeolocationController::class, 'findCitiesInRadius'])->name('geolocation.cities-in-radius');
     Route::get('/test', [GeolocationController::class, 'test'])->name('geolocation.test');
+});
+
+// Entry Conditions API Routes
+Route::prefix('entry-conditions')->group(function () {
+    Route::post('/search', [EntryConditionsController::class, 'search'])->name('entry-conditions.search');
 });
 
 // Countries GeoJSON Route
