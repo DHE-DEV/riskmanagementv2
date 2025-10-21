@@ -151,8 +151,8 @@ class CitiesRelationManager extends RelationManager
                     ->url(fn ($record): string => route('filament.admin.resources.cities.view', $record))
                     ->openUrlInNewTab()
                     ->searchable(query: function ($query, string $search): Builder {
-                        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
-                                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                        return $query->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                                    ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"]);
                     })
                     ->sortable(query: function ($query, string $direction): Builder {
                         return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) {$direction}");
@@ -162,8 +162,8 @@ class CitiesRelationManager extends RelationManager
                     ->getStateUsing(fn ($record) => $record->region ? $record->region->getName('de') : 'Keine Region')
                     ->searchable(query: function ($query, string $search): Builder {
                         return $query->whereHas('region', function ($q) use ($search) {
-                            $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
-                              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                            $q->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                              ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"]);
                         });
                     })
                     ->sortable(query: function ($query, string $direction): Builder {
