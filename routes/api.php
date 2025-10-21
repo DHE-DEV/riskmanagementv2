@@ -86,6 +86,7 @@ Route::prefix('geolocation')->group(function () {
 
 // Entry Conditions API Routes
 Route::prefix('entry-conditions')->group(function () {
+    Route::get('/countries', [EntryConditionsController::class, 'getCountries'])->name('entry-conditions.countries');
     Route::post('/search', [EntryConditionsController::class, 'search'])->name('entry-conditions.search');
 });
 

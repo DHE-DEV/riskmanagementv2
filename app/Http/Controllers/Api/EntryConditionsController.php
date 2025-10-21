@@ -10,6 +10,42 @@ use Illuminate\Support\Facades\Log;
 class EntryConditionsController extends Controller
 {
     /**
+     * Get list of countries for nationality selection
+     */
+    public function getCountries()
+    {
+        try {
+            $countries = \DB::table('countries')
+                ->select('iso_code as code', 'name_translations')
+                ->get()
+                ->map(function ($country) {
+                    $nameTranslations = json_decode($country->name_translations, true);
+                    return [
+                        'code' => $country->code,
+                        'name' => $nameTranslations['de'] ?? $nameTranslations['en'] ?? $country->code,
+                    ];
+                })
+                ->sortBy('name')
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'countries' => $countries
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching countries', [
+                'message' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching countries',
+                'countries' => []
+            ], 500);
+        }
+    }
+
+    /**
      * Search destinations based on entry condition filters
      */
     public function search(Request $request)
@@ -39,6 +75,12 @@ class EntryConditionsController extends Controller
                 'lang' => 'de',
                 'nationalities' => $nationality
             ];
+
+            // Log the request body for debugging
+            Log::info('Passolution API Request Body', [
+                'body' => $requestBody,
+                'query' => $queryParams
+            ]);
 
             // Make request to Passolution API
             $response = Http::withHeaders([

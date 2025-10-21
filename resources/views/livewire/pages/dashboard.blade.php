@@ -1007,6 +1007,16 @@
                 </div>
 
                 <div id="entryConditionsFilter" class="p-2 space-y-2" style="display: block;">
+                    <!-- Nationalität -->
+                    <div class="px-2 pb-3 border-b border-gray-200">
+                        <label for="nationality-select" class="block text-xs font-medium text-gray-700 mb-1">
+                            Nationalität
+                        </label>
+                        <select id="nationality-select" class="w-full text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                            <option value="DE">Deutschland</option>
+                        </select>
+                    </div>
+
                     <!-- Einreise möglich -->
                     <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('entryPossible')">
                         <p class="text-xs text-gray-700 font-medium">Einreise möglich</p>
@@ -6306,6 +6316,9 @@ function showEntryConditions() {
         if (entryConditionsFilterSection) {
             entryConditionsFilterSection.style.display = 'block';
         }
+
+        // Länder für Nationalitäten-Dropdown laden
+        loadNationalitiesDropdown();
     } else {
         console.error('Entry filter sidebar not found!');
     }
@@ -6316,6 +6329,41 @@ function showEntryConditions() {
             map.invalidateSize();
         }
     }, 300);
+}
+
+// Länder für Nationalitäten-Dropdown laden
+async function loadNationalitiesDropdown() {
+    const select = document.getElementById('nationality-select');
+    if (!select || select.options.length > 1) return; // Bereits geladen
+
+    try {
+        const response = await fetch('/api/entry-conditions/countries');
+        const data = await response.json();
+
+        if (data.success && data.countries) {
+            // Entferne "Deutschland" Platzhalter
+            select.innerHTML = '';
+
+            // Deutschland zuerst hinzufügen
+            const deOption = document.createElement('option');
+            deOption.value = 'DE';
+            deOption.textContent = 'Deutschland';
+            deOption.selected = true;
+            select.appendChild(deOption);
+
+            // Alle anderen Länder hinzufügen
+            data.countries.forEach(country => {
+                if (country.code !== 'DE') {
+                    const option = document.createElement('option');
+                    option.value = country.code;
+                    option.textContent = country.name;
+                    select.appendChild(option);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading nationalities:', error);
+    }
 }
 
 // Einreisebestimmungen Sidebar erstellen
@@ -6641,7 +6689,10 @@ async function searchEntryConditions() {
             noEntryForm: document.getElementById('filter-no-entry-form')?.checked || false,
         };
 
-        console.log('Searching with filters:', filters);
+        // Nationalität auslesen
+        const nationality = document.getElementById('nationality-select')?.value || 'DE';
+
+        console.log('Searching with filters:', filters, 'Nationality:', nationality);
 
         // Lade-Anzeige einblenden
         const resultsContainer = document.getElementById('entry-conditions-search-results');
@@ -6659,7 +6710,10 @@ async function searchEntryConditions() {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            body: JSON.stringify({ filters })
+            body: JSON.stringify({
+                filters,
+                nationality
+            })
         });
 
         const data = await response.json();
