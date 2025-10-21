@@ -89,46 +89,145 @@ class EntryConditionsController extends Controller
     {
         $body = [];
 
-        // Entry documents filter
-        $documents = [];
-        if (!empty($filters['passport'])) {
-            $documents['passport'] = ['entry_allowed' => true];
-        }
-        if (!empty($filters['idCard'])) {
-            $documents['id_card'] = ['entry_allowed' => true];
-        }
-        if (!empty($filters['tempPassport'])) {
-            $documents['temp_passport'] = ['entry_allowed' => true];
-        }
-        if (!empty($filters['tempIdCard'])) {
-            $documents['temp_id_card'] = ['entry_allowed' => true];
-        }
-        if (!empty($filters['childPassport'])) {
-            $documents['child_passport'] = ['entry_allowed' => true];
-        }
+        // Build entry filters (documents)
+        $entryFilters = [];
 
-        if (!empty($documents)) {
-            $body['entry']['documents'] = $documents;
-        }
-
-        // Visa filters
-        if (!empty($filters['visaFree'])) {
-            $body['visa']['required']['status'] = 'not_required';
-        }
-        if (!empty($filters['eVisa'])) {
-            $body['visa']['application']['e_visa']['available'] = true;
-        }
-        if (!empty($filters['visaOnArrival'])) {
-            $body['visa']['application']['on_arrival']['available'] = true;
-        }
-
-        // Additional filters
+        // Additional info that applies to all entry filters
+        $additionalInfo = [];
         if (!empty($filters['noEntryForm'])) {
-            $body['entry']['additional_info']['list']['registration']['status'] = 'not_required';
+            $additionalInfo = [
+                'additional_info' => [
+                    'list' => [
+                        'registration' => [
+                            'status' => 'not_required'
+                        ]
+                    ]
+                ]
+            ];
         }
 
-        // Note: Insurance requirement filter not directly available in API
-        // We'll need to filter this on the client side or request all and filter
+        if (!empty($filters['passport'])) {
+            $entryFilters[] = array_merge([
+                'documents' => [
+                    'passport' => [
+                        'entry_allowed' => true
+                    ]
+                ]
+            ], $additionalInfo);
+        }
+
+        if (!empty($filters['idCard'])) {
+            $entryFilters[] = array_merge([
+                'documents' => [
+                    'id_card' => [
+                        'entry_allowed' => true
+                    ]
+                ]
+            ], $additionalInfo);
+        }
+
+        if (!empty($filters['tempPassport'])) {
+            $entryFilters[] = array_merge([
+                'documents' => [
+                    'temporary_passport' => [
+                        'entry_allowed' => true
+                    ]
+                ]
+            ], $additionalInfo);
+        }
+
+        if (!empty($filters['tempIdCard'])) {
+            $entryFilters[] = array_merge([
+                'documents' => [
+                    'temporary_id_card' => [
+                        'entry_allowed' => true
+                    ]
+                ]
+            ], $additionalInfo);
+        }
+
+        if (!empty($filters['childPassport'])) {
+            $entryFilters[] = array_merge([
+                'documents' => [
+                    'child_passport' => [
+                        'entry_allowed' => true
+                    ]
+                ]
+            ], $additionalInfo);
+        }
+
+        if (!empty($entryFilters)) {
+            $body['entry'] = [
+                'operator' => 'OR',
+                'filters' => $entryFilters
+            ];
+        }
+
+        // Build visa filters
+        $visaFilters = [];
+
+        if (!empty($filters['visaFree'])) {
+            $visaFilters[] = [
+                'required' => [
+                    'status' => 'not_required'
+                ]
+            ];
+        }
+
+        if (!empty($filters['eVisa'])) {
+            $visaFilters[] = [
+                'application' => [
+                    'e_visa' => [
+                        'available' => true
+                    ]
+                ],
+                'required' => [
+                    'status' => 'not_required'
+                ]
+            ];
+        }
+
+        if (!empty($filters['visaOnArrival'])) {
+            $visaFilters[] = [
+                'application' => [
+                    'on_arrival' => [
+                        'available' => true
+                    ]
+                ],
+                'required' => [
+                    'status' => 'not_required'
+                ]
+            ];
+        }
+
+        if (!empty($visaFilters)) {
+            $body['visa'] = [
+                'operator' => 'OR',
+                'filters' => $visaFilters
+            ];
+        }
+
+        // Build health filters (insurance requirement)
+        if (!empty($filters['noInsurance'])) {
+            $body['health'] = [
+                'operator' => 'AND',
+                'filters' => [
+                    [
+                        'medication' => [
+                            'information' => [
+                                'insurance' => [
+                                    'status' => 'not_required'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+        }
+
+        // Add language and sort
+        $body['language'] = 'de';
+        $body['sort_by'] = 'name';
 
         return $body;
     }
