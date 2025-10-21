@@ -6271,6 +6271,12 @@ function showEntryConditions() {
         entryConditionsSidebar.style.display = 'block';
     }
 
+    // Linke Sidebar (gray sidebar) anzeigen
+    const leftSidebar = document.querySelector('.sidebar.overflow-y-auto');
+    if (leftSidebar) {
+        leftSidebar.style.display = 'block';
+    }
+
     // Andere linke Sidebar-Container ausblenden
     const liveStatisticsContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
     if (liveStatisticsContainer) {
