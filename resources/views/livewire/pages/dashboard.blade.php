@@ -6271,6 +6271,12 @@ function showEntryConditions() {
         entryConditionsSidebar.style.display = 'block';
     }
 
+    // Andere linke Sidebar-Container ausblenden
+    const liveStatisticsContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
+    if (liveStatisticsContainer) {
+        liveStatisticsContainer.style.display = 'none';
+    }
+
     // Linke Sidebar (Filter) anzeigen
     if (entryFilterSidebar) {
         entryFilterSidebar.style.display = 'block';
@@ -6279,6 +6285,8 @@ function showEntryConditions() {
         if (entryConditionsFilterSection) {
             entryConditionsFilterSection.style.display = 'block';
         }
+    } else {
+        console.error('Entry filter sidebar not found!');
     }
 
     // Karte nach Animation neu zeichnen
