@@ -927,6 +927,10 @@
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events" onclick="showSidebarLiveStatistics()">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </button>
+
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen" onclick="showEntryConditions()">
+                    <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
+                </button>
                 <!--
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flugzeuge" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
@@ -6131,25 +6135,245 @@ function showSidebarLiveStatistics() {
     const statisticsContainer = document.getElementById('statisticsContainer');
     const airportSidebar = document.getElementById('sidebar-airport');
     const socialSidebar = document.getElementById('sidebar-social-links');
-    
+
     // Airport-Sidebar ausblenden, Standard-Sidebar anzeigen, Statistiken ausblenden (nur Live-Stats Sektion sichtbar)
     if (airportSidebar) airportSidebar.style.display = 'none';
     if (socialSidebar) socialSidebar.style.display = 'none';
     if (sidebar) sidebar.style.display = 'block';
     statisticsContainer.style.display = 'none';
-    
+
     // Sicherstellen, dass die Live Statistics Sektion sichtbar ist
     const liveStatisticsSection = document.getElementById('liveStatistics');
     if (liveStatisticsSection) {
         liveStatisticsSection.style.display = 'block';
     }
-    
+
     // Karte nach Animation neu zeichnen
     setTimeout(() => {
         if (map) {
             map.invalidateSize();
         }
     }, 300);
+}
+
+// Einreisebestimmungen anzeigen
+function showEntryConditions() {
+    hideAllRightContainers();
+
+    const entryConditionsSidebar = document.getElementById('sidebar-entry-conditions');
+
+    // Falls Sidebar noch nicht existiert, erstellen
+    if (!entryConditionsSidebar) {
+        createEntryConditionsSidebar();
+    } else {
+        entryConditionsSidebar.style.display = 'block';
+    }
+
+    // Karte nach Animation neu zeichnen
+    setTimeout(() => {
+        if (map) {
+            map.invalidateSize();
+        }
+    }, 300);
+}
+
+// Einreisebestimmungen Sidebar erstellen
+function createEntryConditionsSidebar() {
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
+
+    // Prüfen ob Sidebar bereits existiert
+    let sidebar = document.getElementById('sidebar-entry-conditions');
+    if (sidebar) {
+        sidebar.style.display = 'block';
+        return;
+    }
+
+    // Neue Sidebar erstellen
+    sidebar = document.createElement('aside');
+    sidebar.id = 'sidebar-entry-conditions';
+    sidebar.className = 'sidebar overflow-y-auto';
+    sidebar.style.display = 'block';
+
+    sidebar.innerHTML = `
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Einreisebestimmungen</h2>
+                <button onclick="hideAllRightContainers()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fa-regular fa-info-circle text-blue-500 text-xl mt-0.5 mr-3"></i>
+                        <div>
+                            <h3 class="font-semibold text-blue-900 mb-1">Wie funktioniert's?</h3>
+                            <p class="text-sm text-blue-800">Klicken Sie auf ein Land auf der Karte, um die aktuellen Einreisebestimmungen anzuzeigen.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="entry-conditions-content" class="space-y-4">
+                    <div class="text-center text-gray-500 py-12">
+                        <i class="fa-regular fa-passport text-6xl mb-4 text-gray-300"></i>
+                        <p class="text-lg">Wählen Sie ein Land auf der Karte aus</p>
+                        <p class="text-sm mt-2">Die Einreisebestimmungen werden hier angezeigt</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Sidebar zur Main Content Area hinzufügen
+    mainContent.appendChild(sidebar);
+
+    // Map neu zeichnen
+    setTimeout(() => {
+        if (map) {
+            map.invalidateSize();
+        }
+    }, 300);
+}
+
+// Einreisebestimmungen für ein Land laden
+async function loadEntryConditionsForCountry(countryName, iso2Code) {
+    const content = document.getElementById('entry-conditions-content');
+    if (!content) return;
+
+    // Sidebar anzeigen falls nicht sichtbar
+    const sidebar = document.getElementById('sidebar-entry-conditions');
+    if (!sidebar || sidebar.style.display === 'none') {
+        showEntryConditions();
+    }
+
+    // Loading-Anzeige
+    content.innerHTML = `
+        <div class="text-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600">Lade Einreisebestimmungen für ${countryName}...</p>
+        </div>
+    `;
+
+    try {
+        // API-Call zum Laden der Einreisebestimmungen
+        // TODO: Hier muss die richtige API-Route erstellt werden
+        const response = await fetch(`/api/countries/${iso2Code}/entry-conditions`);
+
+        if (!response.ok) {
+            throw new Error('Fehler beim Laden der Daten');
+        }
+
+        const data = await response.json();
+
+        // Daten anzeigen
+        content.innerHTML = `
+            <div class="space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-4">
+                        <i class="fa-regular fa-flag text-3xl text-blue-500 mr-4"></i>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">${countryName}</h3>
+                            <p class="text-sm text-gray-500">ISO: ${iso2Code}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fa-regular fa-passport mr-2 text-blue-500"></i>
+                        Reisedokumente
+                    </h4>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        <p><strong>Reisepass:</strong> ${data.passport_required ? 'Erforderlich' : 'Nicht erforderlich'}</p>
+                        <p><strong>Visum:</strong> ${data.visa_required ? 'Erforderlich' : 'Nicht erforderlich'}</p>
+                        ${data.visa_on_arrival ? '<p class="text-green-600"><i class="fa-solid fa-check mr-1"></i>Visum bei Ankunft möglich</p>' : ''}
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fa-regular fa-syringe mr-2 text-blue-500"></i>
+                        Gesundheitsanforderungen
+                    </h4>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        ${data.vaccinations && data.vaccinations.length > 0 ?
+                            '<p><strong>Empfohlene Impfungen:</strong> ' + data.vaccinations.join(', ') + '</p>' :
+                            '<p>Keine besonderen Impfungen erforderlich</p>'
+                        }
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fa-regular fa-info-circle mr-2 text-blue-500"></i>
+                        Weitere Informationen
+                    </h4>
+                    <div class="text-sm text-gray-700">
+                        ${data.additional_info || 'Keine weiteren Informationen verfügbar'}
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fa-regular fa-triangle-exclamation text-yellow-600 text-xl mt-0.5 mr-3"></i>
+                        <div>
+                            <h4 class="font-semibold text-yellow-900 mb-1">Hinweis</h4>
+                            <p class="text-sm text-yellow-800">Diese Informationen dienen nur als Orientierung. Bitte überprüfen Sie die aktuellen Einreisebestimmungen beim Auswärtigen Amt oder der Botschaft des Ziellandes.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-500 text-center">
+                    Stand: ${new Date().toLocaleDateString('de-DE')}
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error loading entry conditions:', error);
+
+        // Fehleranzeige mit Platzhalter-Daten
+        content.innerHTML = `
+            <div class="space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-4">
+                        <i class="fa-regular fa-flag text-3xl text-blue-500 mr-4"></i>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">${countryName}</h3>
+                            <p class="text-sm text-gray-500">ISO: ${iso2Code || 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fa-regular fa-triangle-exclamation text-yellow-600 text-xl mt-0.5 mr-3"></i>
+                        <div>
+                            <h4 class="font-semibold text-yellow-900 mb-1">Daten werden geladen</h4>
+                            <p class="text-sm text-yellow-800">Die Einreisebestimmungen für dieses Land werden derzeit aufbereitet. Bitte überprüfen Sie in der Zwischenzeit die aktuellen Informationen beim Auswärtigen Amt.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fa-regular fa-link mr-2 text-blue-500"></i>
+                        Nützliche Links
+                    </h4>
+                    <div class="space-y-2">
+                        <a href="https://www.auswaertiges-amt.de/de/service/laender" target="_blank" class="block text-sm text-blue-600 hover:text-blue-800">
+                            <i class="fa-regular fa-external-link mr-1"></i>
+                            Auswärtiges Amt - Reise- und Sicherheitshinweise
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Aktuell sichtbaren rechten Container (neben der schwarzen Leiste) ein-/ausblenden
@@ -6160,7 +6384,7 @@ function getDefaultSidebar() {
     const mainContent = document.querySelector('.main-content');
     if (!mainContent) return null;
     // Erste Sidebar rechts neben der Navigation, die nicht einer der speziellen Container ist
-    return mainContent.querySelector('aside.sidebar:not(#filter-container):not(#new-filter-sidebar):not(#sidebar-airport):not(#sidebar-social-links):not(#sidebar-settings)');
+    return mainContent.querySelector('aside.sidebar:not(#filter-container):not(#new-filter-sidebar):not(#sidebar-airport):not(#sidebar-social-links):not(#sidebar-settings):not(#sidebar-entry-conditions)');
 }
 
 function isElementVisible(el) {
@@ -6178,6 +6402,7 @@ function findVisibleRightContainer() {
         document.getElementById('sidebar-airport'),
         document.getElementById('sidebar-social-links'),
         document.getElementById('sidebar-settings'),
+        document.getElementById('sidebar-entry-conditions'),
     ];
     for (const el of candidates) {
         if (isElementVisible(el)) return el;
@@ -6196,6 +6421,7 @@ function hideAllRightContainers() {
         document.getElementById('sidebar-airport'),
         document.getElementById('sidebar-social-links'),
         document.getElementById('sidebar-settings'),
+        document.getElementById('sidebar-entry-conditions'),
     ].filter(Boolean);
     all.forEach(el => el.style.display = 'none');
 }
@@ -6654,6 +6880,9 @@ async function updateCountryOverlays() {
                 },
                 onEachFeature: (feature, layer) => {
                     layer.bindPopup(`<strong>${displayName}</strong>`);
+                    layer.on('click', () => {
+                        loadEntryConditionsForCountry(displayName, geoJsonISO2);
+                    });
                 }
             });
             countryOverlaysLayer.addLayer(countryLayer);
