@@ -1006,89 +1006,85 @@
                     </button>
                 </div>
 
-                <div id="entryConditionsFilter" class="p-4 space-y-4">
-                    <!-- Visa-Anforderungen -->
-                    <div class="border border-gray-200 rounded-lg bg-gray-50">
-                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onclick="toggleFilterSubSection('visaRequirementsSection')">
-                            <h4 class="text-sm font-medium text-gray-700">Visa-Anforderungen</h4>
-                            <svg id="visaRequirementsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                        <div id="visaRequirementsSection" class="p-3 space-y-2">
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-required" onchange="applyEntryConditionsFilters()">
-                                <span>Visum erforderlich</span>
-                            </label>
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-free" onchange="applyEntryConditionsFilters()">
-                                <span>Visumsfrei</span>
-                            </label>
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-on-arrival" onchange="applyEntryConditionsFilters()">
-                                <span>Visum bei Ankunft</span>
-                            </label>
-                        </div>
+                <div id="entryConditionsFilter" class="p-2 space-y-2" style="display: block;">
+                    <!-- Einreise möglich -->
+                    <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('entryPossible')">
+                        <p class="text-xs text-gray-700 font-medium">Einreise möglich</p>
+                        <svg id="entryPossibleToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div id="entryPossibleList" class="space-y-1 px-2 pb-2" style="display: block;">
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport" onchange="applyEntryConditionsFilters()">
+                            <span>mit Reisepass</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-id-card" onchange="applyEntryConditionsFilters()">
+                            <span>mit Personalausweis</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-passport" onchange="applyEntryConditionsFilters()">
+                            <span>mit vorläufigem Reisepass</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()">
+                            <span>mit vorläufigem Personalausweis</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-child-passport" onchange="applyEntryConditionsFilters()">
+                            <span>mit Kinderreisepass</span>
+                        </label>
                     </div>
 
-                    <!-- Reisedokumente -->
-                    <div class="border border-gray-200 rounded-lg bg-gray-50">
-                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onclick="toggleFilterSubSection('travelDocumentsSection')">
-                            <h4 class="text-sm font-medium text-gray-700">Reisedokumente</h4>
-                            <svg id="travelDocumentsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                        <div id="travelDocumentsSection" class="p-3 space-y-2">
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport-required" onchange="applyEntryConditionsFilters()">
-                                <span>Reisepass erforderlich</span>
-                            </label>
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-id-card-sufficient" onchange="applyEntryConditionsFilters()">
-                                <span>Personalausweis ausreichend</span>
-                            </label>
-                        </div>
+                    <!-- Visa -->
+                    <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('visa')">
+                        <p class="text-xs text-gray-700 font-medium">Visa</p>
+                        <svg id="visaToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div id="visaList" class="space-y-1 px-2 pb-2" style="display: block;">
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-free" onchange="applyEntryConditionsFilters()">
+                            <span>Einreise ohne Visum möglich</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-e-visa" onchange="applyEntryConditionsFilters()">
+                            <span>E-Visum</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-on-arrival" onchange="applyEntryConditionsFilters()">
+                            <span>Visum bei Ankunft</span>
+                        </label>
                     </div>
 
-                    <!-- Gesundheitsanforderungen -->
-                    <div class="border border-gray-200 rounded-lg bg-gray-50">
-                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onclick="toggleFilterSubSection('healthRequirementsSection')">
-                            <h4 class="text-sm font-medium text-gray-700">Gesundheit</h4>
-                            <svg id="healthRequirementsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                        <div id="healthRequirementsSection" class="p-3 space-y-2">
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-vaccination-required" onchange="applyEntryConditionsFilters()">
-                                <span>Impfungen erforderlich</span>
-                            </label>
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-covid-test" onchange="applyEntryConditionsFilters()">
-                                <span>COVID-Test erforderlich</span>
-                            </label>
-                        </div>
+                    <!-- Weitere Filter -->
+                    <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('additionalFilters')">
+                        <p class="text-xs text-gray-700 font-medium">Weitere Filter</p>
+                        <svg id="additionalFiltersToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div id="additionalFiltersList" class="space-y-1 px-2 pb-2" style="display: block;">
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-insurance" onchange="applyEntryConditionsFilters()">
+                            <span>Keine Versicherung erforderlich</span>
+                        </label>
+                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
+                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-entry-form" onchange="applyEntryConditionsFilters()">
+                            <span>Kein Einreiseformular erforderlich</span>
+                        </label>
                     </div>
 
-                    <!-- Aktionen -->
-                    <div class="pt-3 border-t border-gray-200">
-                        <button onclick="resetEntryConditionsFilters()" class="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <!-- Reset Button -->
+                    <div class="pt-2">
+                        <button onclick="resetEntryConditionsFilters()" class="w-full px-3 py-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
                             Filter zurücksetzen
                         </button>
-                    </div>
-
-                    <!-- Info Box -->
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
-                        <div class="flex items-start">
-                            <i class="fa-regular fa-info-circle text-blue-500 text-sm mt-0.5 mr-2"></i>
-                            <div>
-                                <p class="text-xs text-blue-800">Die Filter werden auf die Kartenansicht angewendet und helfen Ihnen, Länder nach Einreisebestimmungen zu finden.</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -6502,17 +6498,48 @@ async function loadEntryConditionsForCountry(countryName, iso2Code) {
     }
 }
 
+// Toggle Entry Filter Sections
+function toggleEntryFilterSection(sectionId) {
+    const sectionMap = {
+        'entryPossible': { list: 'entryPossibleList', icon: 'entryPossibleToggleIcon' },
+        'visa': { list: 'visaList', icon: 'visaToggleIcon' },
+        'additionalFilters': { list: 'additionalFiltersList', icon: 'additionalFiltersToggleIcon' }
+    };
+
+    const section = sectionMap[sectionId];
+    if (!section) return;
+
+    const list = document.getElementById(section.list);
+    const icon = document.getElementById(section.icon);
+
+    if (!list || !icon) return;
+
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        list.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
 // Einreisebestimmungen Filter anwenden
 function applyEntryConditionsFilters() {
     // Filter-Werte auslesen
     const filters = {
-        visaRequired: document.getElementById('filter-visa-required')?.checked,
+        // Einreise möglich
+        passport: document.getElementById('filter-passport')?.checked,
+        idCard: document.getElementById('filter-id-card')?.checked,
+        tempPassport: document.getElementById('filter-temp-passport')?.checked,
+        tempIdCard: document.getElementById('filter-temp-id-card')?.checked,
+        childPassport: document.getElementById('filter-child-passport')?.checked,
+        // Visa
         visaFree: document.getElementById('filter-visa-free')?.checked,
+        eVisa: document.getElementById('filter-e-visa')?.checked,
         visaOnArrival: document.getElementById('filter-visa-on-arrival')?.checked,
-        passportRequired: document.getElementById('filter-passport-required')?.checked,
-        idCardSufficient: document.getElementById('filter-id-card-sufficient')?.checked,
-        vaccinationRequired: document.getElementById('filter-vaccination-required')?.checked,
-        covidTest: document.getElementById('filter-covid-test')?.checked,
+        // Weitere Filter
+        noInsurance: document.getElementById('filter-no-insurance')?.checked,
+        noEntryForm: document.getElementById('filter-no-entry-form')?.checked,
     };
 
     console.log('Entry Conditions Filters applied:', filters);
@@ -6547,13 +6574,16 @@ function applyEntryConditionsFilters() {
 function resetEntryConditionsFilters() {
     // Alle Checkboxen deaktivieren
     const checkboxIds = [
-        'filter-visa-required',
+        'filter-passport',
+        'filter-id-card',
+        'filter-temp-passport',
+        'filter-temp-id-card',
+        'filter-child-passport',
         'filter-visa-free',
+        'filter-e-visa',
         'filter-visa-on-arrival',
-        'filter-passport-required',
-        'filter-id-card-sufficient',
-        'filter-vaccination-required',
-        'filter-covid-test',
+        'filter-no-insurance',
+        'filter-no-entry-form',
     ];
 
     checkboxIds.forEach(id => {
