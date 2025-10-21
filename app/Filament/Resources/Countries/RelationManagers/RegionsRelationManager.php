@@ -112,8 +112,8 @@ class RegionsRelationManager extends RelationManager
                     ->url(fn ($record): string => route('filament.admin.resources.regions.view', $record))
                     ->openUrlInNewTab()
                     ->searchable(query: function ($query, string $search): Builder {
-                        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
-                                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                        return $query->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                                    ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"]);
                     })
                     ->sortable(query: function ($query, string $direction): Builder {
                         return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) {$direction}");

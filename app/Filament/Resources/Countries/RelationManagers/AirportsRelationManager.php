@@ -172,8 +172,8 @@ class AirportsRelationManager extends RelationManager
                     ->getStateUsing(fn ($record) => $record->city ? $record->city->getName('de') : 'Keine Stadt')
                     ->searchable(query: function ($query, string $search): Builder {
                         return $query->whereHas('city', function ($q) use ($search) {
-                            $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
-                              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                            $q->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ["%{$search}%"])
+                              ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"]);
                         });
                     })
                     ->sortable(query: function ($query, string $direction): Builder {
