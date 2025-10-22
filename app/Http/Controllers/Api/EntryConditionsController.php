@@ -72,7 +72,7 @@ class EntryConditionsController extends Controller
 
             // Get API credentials from config
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
-            $apiKey = env('PDS_KEY');
+            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
 
             if (!$apiKey) {
                 if ($loggingEnabled) {
@@ -189,7 +189,7 @@ class EntryConditionsController extends Controller
 
             // Get API credentials from config
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
-            $apiKey = env('PDS_KEY');
+            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
 
             if (!$apiKey) {
                 return response()->json([
