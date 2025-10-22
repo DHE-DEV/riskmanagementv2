@@ -1556,8 +1556,8 @@
                 const response = await fetch(`/api/entry-conditions/details?from=${nationality}&to=${iso2Code}`);
                 const data = await response.json();
 
-                if (data.success && data.details) {
-                    displayEntryConditionsDetails(countryName, data.details);
+                if (data.success && data.content) {
+                    displayEntryConditionsContent(countryName, data.content);
                 } else {
                     content.innerHTML = `
                         <div class="text-center text-gray-500 py-8">
@@ -1575,7 +1575,35 @@
             }
         }
 
-        // Details anzeigen
+        // Details anzeigen (HTML Content direkt von API)
+        function displayEntryConditionsContent(countryName, htmlContent) {
+            const content = document.getElementById('entry-conditions-content');
+            if (!content) return;
+
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">${countryName}</h3>
+                        <button onclick="hideDetailsSidebar()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa-regular fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="entry-conditions-html-content">
+                        ${htmlContent}
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                        <p class="text-sm text-yellow-800">
+                            <i class="fa-regular fa-info-circle mr-2"></i>
+                            Diese Informationen dienen nur als Orientierung. Bitte überprüfen Sie die aktuellen Einreisebestimmungen beim Auswärtigen Amt oder der Botschaft des Ziellandes.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Details anzeigen (Legacy - strukturierte Daten)
         function displayEntryConditionsDetails(countryName, details) {
             const content = document.getElementById('entry-conditions-content');
             if (!content) return;
