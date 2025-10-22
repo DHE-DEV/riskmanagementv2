@@ -12,6 +12,10 @@ Route::get('/dashboard', function () {
     return view('livewire.pages.dashboard');
 })->name('dashboard');
 
+Route::get('/entry-conditions', function () {
+    return view('livewire.pages.entry-conditions');
+})->name('entry-conditions');
+
 
 
 Route::middleware([

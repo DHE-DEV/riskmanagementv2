@@ -93,6 +93,8 @@
             background: #e5e7eb;
             overflow-y: auto;
             height: 100vh;
+            position: relative;
+            z-index: 10;
         }
         
         /* Statistics Container - gleiche Größe wie Sidebar */
@@ -928,9 +930,9 @@
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </button>
 
-                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen" onclick="showEntryConditions()">
+                <a href="{{ route('entry-conditions') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Einreisebestimmungen">
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
-                </button>
+                </a>
                 <!--
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flugzeuge" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
@@ -989,132 +991,6 @@
 
                 <div id="liveStatistics" class="p-4">
                     <p class="text-sm text-gray-500 text-center">Live-Statistiken werden hier nicht angezeigt</p>
-                </div>
-            </div>
-
-            <!-- Entry Conditions Filter -->
-            <div id="sidebar-entry-filter" class="bg-white rounded-lg shadow-sm" style="display: none;">
-                <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('entryConditionsFilter')">
-                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
-                        <i class="fa-regular fa-passport text-blue-500"></i>
-                        Einreisebestimmungen Filter
-                    </h3>
-                    <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('entryConditionsFilter')">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                </div>
-
-                <div id="entryConditionsFilter" class="p-2 space-y-2" style="display: block;">
-                    <!-- Nationalität -->
-                    <div class="px-2 pb-3 border-b border-gray-200">
-                        <label for="nationality-select" class="block text-xs font-medium text-gray-700 mb-1">
-                            Nationalität
-                        </label>
-                        <select id="nationality-select" class="w-full text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                            <option value="DE">Deutschland</option>
-                        </select>
-                    </div>
-
-                    <!-- Einreise möglich -->
-                    <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('entryPossible')">
-                        <p class="text-xs text-gray-700 font-medium">Einreise möglich</p>
-                        <svg id="entryPossibleToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-                    <div id="entryPossibleList" class="space-y-1 px-2 pb-2" style="display: block;">
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport" onchange="applyEntryConditionsFilters()">
-                            <span>mit Reisepass</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-id-card" onchange="applyEntryConditionsFilters()">
-                            <span>mit Personalausweis</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-passport" onchange="applyEntryConditionsFilters()">
-                            <span>mit vorläufigem Reisepass</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()">
-                            <span>mit vorläufigem Personalausweis</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-child-passport" onchange="applyEntryConditionsFilters()">
-                            <span>mit Kinderreisepass</span>
-                        </label>
-                    </div>
-
-                    <!-- Visa -->
-                    <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('visa')">
-                        <p class="text-xs text-gray-700 font-medium">Visa</p>
-                        <svg id="visaToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-                    <div id="visaList" class="space-y-1 px-2 pb-2" style="display: block;">
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-free" onchange="applyEntryConditionsFilters()">
-                            <span>Einreise ohne Visum möglich</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-e-visa" onchange="applyEntryConditionsFilters()">
-                            <span>E-Visum</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-on-arrival" onchange="applyEntryConditionsFilters()">
-                            <span>Visum bei Ankunft</span>
-                        </label>
-                    </div>
-
-                    <!-- Weitere Filter -->
-                    <div class="flex items-center justify-between px-2 py-2 mb-1 cursor-pointer bg-gray-200 rounded" onclick="toggleEntryFilterSection('additionalFilters')">
-                        <p class="text-xs text-gray-700 font-medium">Weitere Filter</p>
-                        <svg id="additionalFiltersToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-                    <div id="additionalFiltersList" class="space-y-1 px-2 pb-2" style="display: block;">
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-insurance" onchange="applyEntryConditionsFilters()">
-                            <span>Keine Versicherung erforderlich</span>
-                        </label>
-                        <label class="flex items-center text-xs text-gray-700 cursor-pointer hover:text-gray-900">
-                            <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-entry-form" onchange="applyEntryConditionsFilters()">
-                            <span>Kein Einreiseformular erforderlich</span>
-                        </label>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="pt-2 space-y-2">
-                        <button onclick="searchEntryConditions()" class="w-full px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                            Suchen
-                        </button>
-                        <button onclick="resetEntryConditionsFilters()" class="w-full px-3 py-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            Filter zurücksetzen
-                        </button>
-                    </div>
-
-                    <!-- Search Results -->
-                    <div id="entry-conditions-search-results" class="mt-3" style="display: none;">
-                        <div class="border-t border-gray-200 pt-3">
-                            <div class="flex items-center justify-between mb-2">
-                                <p class="text-xs font-semibold text-gray-700">Suchergebnisse</p>
-                                <span id="results-count" class="text-xs text-gray-500">0 Länder</span>
-                            </div>
-                            <div id="results-list" class="space-y-1 max-h-64 overflow-y-auto">
-                                <!-- Results will be inserted here -->
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -6284,44 +6160,42 @@ function showSidebarLiveStatistics() {
 
 // Einreisebestimmungen anzeigen
 function showEntryConditions() {
-    hideAllRightContainers();
+    console.log('showEntryConditions called');
 
-    const entryConditionsSidebar = document.getElementById('sidebar-entry-conditions');
-    const entryFilterSidebar = document.getElementById('sidebar-entry-filter');
-
-    // Falls rechte Sidebar noch nicht existiert, erstellen
-    if (!entryConditionsSidebar) {
-        createEntryConditionsSidebar();
-    } else {
-        entryConditionsSidebar.style.display = 'block';
-    }
-
-    // Linke Sidebar (gray sidebar) anzeigen
+    // Linke Sidebar für Einreisebestimmungen erstellen/anzeigen
     const leftSidebar = document.querySelector('.sidebar.overflow-y-auto');
-    if (leftSidebar) {
-        leftSidebar.style.display = 'block';
+    console.log('Left sidebar found:', leftSidebar);
+
+    if (!leftSidebar) {
+        console.error('Left sidebar not found!');
+        return;
     }
 
-    // Andere linke Sidebar-Container ausblenden
-    const liveStatisticsContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
-    if (liveStatisticsContainer) {
-        liveStatisticsContainer.style.display = 'none';
-    }
+    const entryFilterContainer = document.getElementById('entry-conditions-filter-container');
+    console.log('Entry filter container found:', entryFilterContainer);
 
-    // Linke Sidebar (Filter) anzeigen
-    if (entryFilterSidebar) {
-        entryFilterSidebar.style.display = 'block';
-        // Filter-Section aufklappen
-        const entryConditionsFilterSection = document.getElementById('entryConditionsFilter');
-        if (entryConditionsFilterSection) {
-            entryConditionsFilterSection.style.display = 'block';
-        }
+    // Alle anderen Container in der linken Sidebar ausblenden
+    const allContainers = leftSidebar.querySelectorAll('.bg-white.rounded-lg.shadow-sm, #filtersWrapper');
+    console.log('Found containers to hide:', allContainers.length);
+    allContainers.forEach(container => {
+        container.style.display = 'none';
+    });
 
-        // Länder für Nationalitäten-Dropdown laden
-        loadNationalitiesDropdown();
+    // Linke Sidebar anzeigen
+    leftSidebar.style.display = 'block';
+    console.log('Left sidebar display set to block');
+
+    // Entry Conditions Filter Container erstellen oder anzeigen
+    if (!entryFilterContainer) {
+        console.log('Creating new entry conditions filter container');
+        createEntryConditionsFilterContainer();
     } else {
-        console.error('Entry filter sidebar not found!');
+        console.log('Showing existing entry conditions filter container');
+        entryFilterContainer.style.display = 'block';
     }
+
+    // Rechte Sidebar ausblenden
+    hideAllRightContainers();
 
     // Karte nach Animation neu zeichnen
     setTimeout(() => {
@@ -6329,6 +6203,155 @@ function showEntryConditions() {
             map.invalidateSize();
         }
     }, 300);
+}
+
+// Entry Conditions Filter Container erstellen
+function createEntryConditionsFilterContainer() {
+    console.log('createEntryConditionsFilterContainer called');
+    const leftSidebar = document.querySelector('.sidebar.overflow-y-auto');
+    console.log('Left sidebar in create function:', leftSidebar);
+    if (!leftSidebar) {
+        console.error('Cannot create entry conditions container - left sidebar not found');
+        return;
+    }
+
+    const container = document.createElement('div');
+    container.id = 'entry-conditions-filter-container';
+    container.className = 'bg-white rounded-lg shadow-sm';
+    container.style.display = 'block';
+
+    container.innerHTML = `
+        <div class="p-4 border-b border-gray-200">
+            <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                <i class="fa-regular fa-passport text-blue-500"></i>
+                Einreisebestimmungen Filter
+            </h3>
+        </div>
+        <div class="p-4 space-y-4">
+            <!-- Nationalität -->
+            <div class="pb-3 border-b border-gray-200">
+                <label for="nationality-select" class="block text-sm font-medium text-gray-700 mb-2">
+                    Nationalität
+                </label>
+                <select id="nationality-select" class="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                    <option value="DE">Deutschland</option>
+                </select>
+            </div>
+
+            <!-- Einreise möglich -->
+            <div>
+                <div class="flex items-center justify-between px-3 py-2 mb-2 cursor-pointer bg-gray-100 hover:bg-gray-200 rounded" onclick="toggleEntryFilterSection('entryPossible')">
+                    <p class="text-sm text-gray-700 font-medium">Einreise möglich</p>
+                    <svg id="entryPossibleToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div id="entryPossibleList" class="space-y-2 px-1" style="display: block;">
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport" onchange="applyEntryConditionsFilters()">
+                        <span>mit Reisepass</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-id-card" onchange="applyEntryConditionsFilters()">
+                        <span>mit Personalausweis</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-passport" onchange="applyEntryConditionsFilters()">
+                        <span>mit vorläufigem Reisepass</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()">
+                        <span>mit vorläufigem Personalausweis</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-child-passport" onchange="applyEntryConditionsFilters()">
+                        <span>mit Kinderreisepass</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Visa -->
+            <div>
+                <div class="flex items-center justify-between px-3 py-2 mb-2 cursor-pointer bg-gray-100 hover:bg-gray-200 rounded" onclick="toggleEntryFilterSection('visa')">
+                    <p class="text-sm text-gray-700 font-medium">Visa</p>
+                    <svg id="visaToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div id="visaList" class="space-y-2 px-1" style="display: block;">
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-free" onchange="applyEntryConditionsFilters()">
+                        <span>Einreise ohne Visum möglich</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-e-visa" onchange="applyEntryConditionsFilters()">
+                        <span>E-Visum</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-on-arrival" onchange="applyEntryConditionsFilters()">
+                        <span>Visum bei Ankunft</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Weitere Filter -->
+            <div>
+                <div class="flex items-center justify-between px-3 py-2 mb-2 cursor-pointer bg-gray-100 hover:bg-gray-200 rounded" onclick="toggleEntryFilterSection('additionalFilters')">
+                    <p class="text-sm text-gray-700 font-medium">Weitere Filter</p>
+                    <svg id="additionalFiltersToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div id="additionalFiltersList" class="space-y-2 px-1" style="display: block;">
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-insurance" onchange="applyEntryConditionsFilters()">
+                        <span>Keine Versicherung erforderlich</span>
+                    </label>
+                    <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
+                        <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-entry-form" onchange="applyEntryConditionsFilters()">
+                        <span>Kein Einreiseformular erforderlich</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-3 space-y-2 border-t border-gray-200">
+                <button onclick="searchEntryConditions()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Suchen
+                </button>
+                <button onclick="resetEntryConditionsFilters()" class="w-full px-4 py-2.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Filter zurücksetzen
+                </button>
+            </div>
+
+            <!-- Search Results -->
+            <div id="entry-conditions-search-results" class="mt-4 border-t border-gray-200 pt-4" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-sm font-semibold text-gray-700">Suchergebnisse</p>
+                    <span id="results-count" class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">0 Länder</span>
+                </div>
+                <div id="results-list" class="space-y-2 max-h-96 overflow-y-auto">
+                    <!-- Results will be inserted here -->
+                </div>
+            </div>
+        </div>
+    `;
+
+    leftSidebar.appendChild(container);
+    console.log('Entry conditions container appended to sidebar');
+    console.log('Container display style:', container.style.display);
+    console.log('Sidebar display style:', leftSidebar.style.display);
+
+    // Länder für Nationalitäten-Dropdown laden
+    setTimeout(() => {
+        loadNationalitiesDropdown();
+    }, 100);
 }
 
 // Länder für Nationalitäten-Dropdown laden
@@ -6387,7 +6410,7 @@ function createEntryConditionsSidebar() {
     sidebar.innerHTML = `
         <div class="p-6">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Einreisebestimmungen</h2>
+                <h2 class="text-2xl font-bold text-gray-800">Länderdetails</h2>
                 <button onclick="hideAllRightContainers()" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -6395,23 +6418,11 @@ function createEntryConditionsSidebar() {
                 </button>
             </div>
 
-            <div class="space-y-6">
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <div class="flex items-start">
-                        <i class="fa-regular fa-info-circle text-blue-500 text-xl mt-0.5 mr-3"></i>
-                        <div>
-                            <h3 class="font-semibold text-blue-900 mb-1">Wie funktioniert's?</h3>
-                            <p class="text-sm text-blue-800">Klicken Sie auf ein Land auf der Karte, um die aktuellen Einreisebestimmungen anzuzeigen.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="entry-conditions-content" class="space-y-4">
-                    <div class="text-center text-gray-500 py-12">
-                        <i class="fa-regular fa-passport text-6xl mb-4 text-gray-300"></i>
-                        <p class="text-lg">Wählen Sie ein Land auf der Karte aus</p>
-                        <p class="text-sm mt-2">Die Einreisebestimmungen werden hier angezeigt</p>
-                    </div>
+            <div id="entry-conditions-content" class="space-y-4">
+                <div class="text-center text-gray-500 py-12">
+                    <i class="fa-regular fa-map-location-dot text-6xl mb-4 text-gray-300"></i>
+                    <p class="text-lg">Klicken Sie ein Land in der Suchergebnisliste an</p>
+                    <p class="text-sm mt-2">um detaillierte Informationen anzuzeigen</p>
                 </div>
             </div>
         </div>
