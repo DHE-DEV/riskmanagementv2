@@ -1,0 +1,121 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - img "Logo" [ref=e7]
+        - generic [ref=e8]: Global Travel Monitor
+      - button "Daten aktualisieren" [ref=e10] [cursor=pointer]:
+        - img [ref=e11] [cursor=pointer]
+  - generic [ref=e13]:
+    - navigation [ref=e14]:
+      - generic [ref=e15]:
+        - button "Menü" [ref=e16] [cursor=pointer]:
+          - img [ref=e17] [cursor=pointer]
+        - button "Events" [ref=e19] [cursor=pointer]
+        - button "Einreisebestimmungen" [active] [ref=e20] [cursor=pointer]:
+          - generic [ref=e21] [cursor=pointer]: 
+      - button "Karte zentrieren" [ref=e23] [cursor=pointer]:
+        - img [ref=e24] [cursor=pointer]
+    - text:       
+    - main [ref=e26]:
+      - generic [ref=e27]:
+        - generic:
+          - generic:
+            - button "" [ref=e28] [cursor=pointer]:
+              - generic [ref=e30] [cursor=pointer]: 
+            - button "" [ref=e31] [cursor=pointer]:
+              - generic [ref=e33] [cursor=pointer]: 
+            - button "" [ref=e34] [cursor=pointer]:
+              - generic [ref=e36] [cursor=pointer]: 
+            - button "" [ref=e37] [cursor=pointer]:
+              - generic [ref=e39] [cursor=pointer]: 
+            - button "" [ref=e40] [cursor=pointer]:
+              - generic [ref=e42] [cursor=pointer]: 
+            - button "" [ref=e43] [cursor=pointer]:
+              - generic [ref=e45] [cursor=pointer]: 
+            - button "" [ref=e46] [cursor=pointer]:
+              - generic [ref=e48] [cursor=pointer]: 
+            - button "" [ref=e49] [cursor=pointer]:
+              - generic [ref=e51] [cursor=pointer]: 
+            - button "" [ref=e52] [cursor=pointer]:
+              - generic [ref=e54] [cursor=pointer]: 
+            - button "" [ref=e55] [cursor=pointer]:
+              - generic [ref=e57] [cursor=pointer]: 
+            - button "" [ref=e58] [cursor=pointer]:
+              - generic [ref=e60] [cursor=pointer]: 
+            - button "" [ref=e61] [cursor=pointer]:
+              - generic [ref=e63] [cursor=pointer]: 
+            - button "" [ref=e64] [cursor=pointer]:
+              - generic [ref=e66] [cursor=pointer]: 
+            - button "2" [ref=e67] [cursor=pointer]:
+              - generic [ref=e69] [cursor=pointer]: "2"
+            - button "2" [ref=e70] [cursor=pointer]:
+              - generic [ref=e72] [cursor=pointer]: "2"
+            - button "3" [ref=e73] [cursor=pointer]:
+              - generic [ref=e75] [cursor=pointer]: "3"
+            - button "3" [ref=e76] [cursor=pointer]:
+              - generic [ref=e78] [cursor=pointer]: "3"
+            - button "3" [ref=e79] [cursor=pointer]:
+              - generic [ref=e81] [cursor=pointer]: "3"
+            - button "2" [ref=e82] [cursor=pointer]:
+              - generic [ref=e84] [cursor=pointer]: "2"
+            - button "7" [ref=e85] [cursor=pointer]:
+              - generic [ref=e87] [cursor=pointer]: "7"
+            - button "3" [ref=e88] [cursor=pointer]:
+              - generic [ref=e90] [cursor=pointer]: "3"
+            - button "2" [ref=e91] [cursor=pointer]:
+              - generic [ref=e93] [cursor=pointer]: "2"
+            - button "2" [ref=e94] [cursor=pointer]:
+              - generic [ref=e96] [cursor=pointer]: "2"
+            - button "3" [ref=e97] [cursor=pointer]:
+              - generic [ref=e99] [cursor=pointer]: "3"
+            - button "3" [ref=e100] [cursor=pointer]:
+              - generic [ref=e102] [cursor=pointer]: "3"
+            - button "4" [ref=e103] [cursor=pointer]:
+              - generic [ref=e105] [cursor=pointer]: "4"
+            - button "18" [ref=e106] [cursor=pointer]:
+              - generic [ref=e108] [cursor=pointer]: "18"
+            - button "14" [ref=e109] [cursor=pointer]:
+              - generic [ref=e111] [cursor=pointer]: "14"
+        - generic:
+          - generic [ref=e112]:
+            - button "Zoom in" [ref=e113] [cursor=pointer]:
+              - generic [ref=e114] [cursor=pointer]: +
+            - button "Zoom out" [disabled] [ref=e115]:
+              - generic [ref=e116]: −
+          - button "Layers" [ref=e118] [cursor=pointer]
+          - generic [ref=e119]:
+            - link "Leaflet" [ref=e120] [cursor=pointer]:
+              - /url: https://leafletjs.com
+              - img [ref=e121] [cursor=pointer]
+              - text: Leaflet
+            - generic [ref=e125]: "|"
+            - text: © OpenStreetMap contributors
+      - generic [ref=e127]:
+        - generic [ref=e128]:
+          - heading "Erweiterte Informationen" [level=3] [ref=e129]
+          - generic [ref=e130]:
+            - button "" [ref=e131] [cursor=pointer]:
+              - generic [ref=e132] [cursor=pointer]: 
+            - button "" [ref=e133] [cursor=pointer]:
+              - generic [ref=e134] [cursor=pointer]: 
+        - button "" [ref=e135] [cursor=pointer]:
+          - generic [ref=e136] [cursor=pointer]: 
+      - generic [ref=e138]: Leaflet | OpenStreetMap Deutschland - Kartendaten © OpenStreetMap-Mitwirkende
+  - contentinfo [ref=e139]:
+    - generic [ref=e140]:
+      - generic [ref=e141]:
+        - generic [ref=e142]: © 2025 Passolution GmbH
+        - link "Impressum" [ref=e143] [cursor=pointer]:
+          - /url: https://www.passolution.de/impressum/
+        - link "Datenschutz" [ref=e144] [cursor=pointer]:
+          - /url: https://www.passolution.de/datenschutz/
+        - link "AGB" [ref=e145] [cursor=pointer]:
+          - /url: https://www.passolution.de/agb/
+      - generic [ref=e146]:
+        - generic [ref=e147]: Version 1.0.17
+        - generic [ref=e148]: "Build: 2025-09-30"
+```
