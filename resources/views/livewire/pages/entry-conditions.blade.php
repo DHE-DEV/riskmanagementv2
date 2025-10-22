@@ -1145,6 +1145,50 @@
         // Filter anwenden
         function applyEntryConditionsFilters() {
             console.log('Filters applied');
+
+            // Prüfe ob mindestens ein Filter aktiv ist
+            const hasActiveFilters =
+                document.getElementById('filter-passport')?.checked ||
+                document.getElementById('filter-id-card')?.checked ||
+                document.getElementById('filter-temp-passport')?.checked ||
+                document.getElementById('filter-temp-id-card')?.checked ||
+                document.getElementById('filter-child-passport')?.checked ||
+                document.getElementById('filter-visa-free')?.checked ||
+                document.getElementById('filter-e-visa')?.checked ||
+                document.getElementById('filter-visa-on-arrival')?.checked ||
+                document.getElementById('filter-no-insurance')?.checked ||
+                document.getElementById('filter-no-entry-form')?.checked;
+
+            const destinationsInput = document.getElementById('destinationsFilterInput');
+            const selectedDestinationsDisplay = document.getElementById('selectedDestinationsDisplay');
+
+            if (hasActiveFilters) {
+                // Filter aktiv: Reiseziele-Feld deaktivieren und ausgrauen
+                if (destinationsInput) {
+                    destinationsInput.disabled = true;
+                    destinationsInput.classList.add('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+                    destinationsInput.placeholder = 'Filter aktiv - bitte Suchen klicken';
+                }
+
+                // Ausgewählte Reiseziele leeren
+                if (window.selectedDestinations) {
+                    window.selectedDestinations.clear();
+                    renderSelectedDestinations();
+                }
+
+                // Such-Ergebnisse ausblenden
+                const resultsDiv = document.getElementById('entry-conditions-search-results');
+                if (resultsDiv) {
+                    resultsDiv.style.display = 'none';
+                }
+            } else {
+                // Keine Filter: Reiseziele-Feld wieder aktivieren
+                if (destinationsInput) {
+                    destinationsInput.disabled = false;
+                    destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+                    destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+                }
+            }
         }
 
         // Filter zurücksetzen
