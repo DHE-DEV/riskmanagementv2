@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         // Fix: Add AUTO_INCREMENT to id column which was missing
-        DB::statement('ALTER TABLE infosystem_entries MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY');
+        // Note: PRIMARY KEY already exists, so we only add AUTO_INCREMENT
+        DB::statement('ALTER TABLE infosystem_entries MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT');
     }
 
     /**
