@@ -171,6 +171,126 @@ class EntryConditionsController extends Controller
     }
 
     /**
+     * Get entry conditions details for a specific country and nationality
+     */
+    public function getDetails(Request $request)
+    {
+        try {
+            $from = $request->input('from'); // Nationality code
+            $to = $request->input('to'); // Destination country code
+
+            // Validate that both are provided
+            if (empty($from) || empty($to)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Both from (nationality) and to (destination) are required'
+                ], 400);
+            }
+
+            // Get API credentials from config
+            $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
+            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
+
+            if (!$apiKey) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'API key not configured'
+                ], 500);
+            }
+
+            // Build query parameters
+            $queryParams = [
+                'lang' => 'de',
+                'countries' => $to,
+                'nat' => $from,
+            ];
+
+            Log::info('Passolution Details API Request', [
+                'query' => $queryParams
+            ]);
+
+            // Make request to Passolution API
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Accept' => 'text/html, application/json',
+            ])->get($apiUrl . '/content/overview/html?' . http_build_query($queryParams));
+
+            if ($response->successful()) {
+                $contentType = $response->header('Content-Type');
+                $body = $response->body();
+
+                Log::info('Passolution Details API Response', [
+                    'content_type' => $contentType,
+                    'body_preview' => substr($body, 0, 200)
+                ]);
+
+                // Check if response is JSON or HTML
+                if (strpos($contentType, 'application/json') !== false) {
+                    // Response is JSON, try to extract HTML content
+                    $jsonData = $response->json();
+
+                    // Check for Passolution API structure: records array
+                    if (isset($jsonData['records']) && is_array($jsonData['records']) && count($jsonData['records']) > 0) {
+                        // Combine all records content
+                        $htmlContent = '';
+                        foreach ($jsonData['records'] as $record) {
+                            if (isset($record['content'])) {
+                                $htmlContent .= $record['content'];
+                            }
+                        }
+
+                        if (empty($htmlContent)) {
+                            $htmlContent = '<p class="text-gray-500 text-sm">Keine Informationen verfügbar</p>';
+                        }
+                    } elseif (isset($jsonData['html'])) {
+                        $htmlContent = $jsonData['html'];
+                    } elseif (isset($jsonData['content'])) {
+                        $htmlContent = $jsonData['content'];
+                    } elseif (isset($jsonData['data'])) {
+                        $htmlContent = is_string($jsonData['data']) ? $jsonData['data'] : json_encode($jsonData['data']);
+                    } else {
+                        // If no recognizable structure, format the JSON nicely
+                        $htmlContent = '<pre class="bg-gray-50 p-4 rounded text-xs overflow-auto">' .
+                                     htmlspecialchars(json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) .
+                                     '</pre>';
+                    }
+                } else {
+                    // Response is HTML
+                    $htmlContent = $body;
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'content' => $htmlContent,
+                ]);
+            } else {
+                Log::error('Passolution Details API error', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'API request failed',
+                    'error' => $response->body()
+                ], $response->status());
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Entry conditions details error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching details',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get entry conditions content for selected countries and nationalities
      */
     public function getContent(Request $request)
