@@ -160,5 +160,6 @@ return [
     */
 
     'dashboard_airports_enabled' => env('DASHBOARD_AIRPORTS_ENABLED', true),
+    'dashboard_booking_enabled' => env('DASHBOARD_BOOKING_ENABLED', true),
 
 ];

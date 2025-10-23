@@ -17,6 +17,9 @@ Route::get('/entry-conditions', function () {
 })->name('entry-conditions');
 
 Route::get('/booking', function () {
+    if (!config('app.dashboard_booking_enabled', true)) {
+        abort(404);
+    }
     return view('livewire.pages.booking');
 })->name('booking');
 
