@@ -670,7 +670,7 @@
         });
 
         // Prüfe ob Filter aktiv sind und führe automatisch Suche aus
-        function checkAndAutoSearch() {
+        async function checkAndAutoSearch() {
             // Prüfe ob mindestens ein Filter aktiv ist
             const hasActiveFilters =
                 document.getElementById('filter-passport')?.checked ||
@@ -688,7 +688,32 @@
             if (hasActiveFilters) {
                 console.log('Auto-search: Filters detected, executing search automatically');
                 searchEntryConditions();
+            } else {
+                // Wenn keine Filter aktiv sind, alle verfügbaren Länder anzeigen
+                console.log('No filters active, displaying all available countries');
+                await displayAllCountries();
             }
+        }
+
+        // Alle verfügbaren Länder anzeigen (ohne Filter)
+        async function displayAllCountries() {
+            // Alle Länder aus der Map holen (bereits in loadCountryCoordinates geladen)
+            const allCountries = Array.from(window.countryCoordinates.entries()).map(([code, data]) => ({
+                code: code,
+                name: data.name,
+                lat: data.lat,
+                lng: data.lng,
+                capital_name: data.capital_name
+            }));
+
+            // Sortiere Länder alphabetisch nach Name
+            allCountries.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
+            // Zeige Länder in der Liste
+            displaySearchResults(allCountries);
+
+            // Zeige Länder auf der Karte
+            displayCountriesOnMap(allCountries);
         }
 
         // Länder-Koordinaten aus der API laden (alle Länder für Reiseziele)
