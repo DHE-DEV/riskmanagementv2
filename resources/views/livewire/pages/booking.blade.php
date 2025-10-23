@@ -374,7 +374,7 @@
                 <div class="bg-white shadow-sm mt-4">
                     <div class="p-4 text-center">
                         <p class="text-sm text-gray-600 mb-3">Sie möchten hier gelistet sein?</p>
-                        <a href="#" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm w-full">
+                        <a href="#" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors shadow-sm w-full">
                             <i class="fa-solid fa-user-plus"></i>
                             Kostenlos registrieren
                         </a>
