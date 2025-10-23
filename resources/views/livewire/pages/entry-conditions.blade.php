@@ -474,6 +474,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
+                            <div id="selectedEntryPossibleDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
+                                <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
+                            </div>
                             <div id="entryPossibleSection" class="px-2 space-y-2" style="display: block;">
                                 <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
                                     <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport" onchange="applyEntryConditionsFilters()" checked>
@@ -506,6 +509,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
+                            <div id="selectedVisaDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
+                                <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
+                            </div>
                             <div id="visaSection" class="px-2 space-y-2" style="display: none;">
                                 <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
                                     <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-free" onchange="applyEntryConditionsFilters()">
@@ -529,6 +535,9 @@
                                 <svg id="additionalFiltersToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
+                            </div>
+                            <div id="selectedAdditionalFiltersDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
+                                <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
                             </div>
                             <div id="additionalFiltersSection" class="px-2 space-y-2" style="display: none;">
                                 <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
@@ -844,6 +853,12 @@
                 displayId = 'selectedNationalityDisplay';
             } else if (sectionId === 'destinationsSection') {
                 displayId = 'selectedDestinationsDisplay';
+            } else if (sectionId === 'entryPossibleSection') {
+                displayId = 'selectedEntryPossibleDisplay';
+            } else if (sectionId === 'visaSection') {
+                displayId = 'selectedVisaDisplay';
+            } else if (sectionId === 'additionalFiltersSection') {
+                displayId = 'selectedAdditionalFiltersDisplay';
             }
 
             if (!displayId) return;
@@ -1283,6 +1298,98 @@
             updateDisplayPadding('destinationsSection');
         }
 
+        // Render Filter Badges
+        function renderSelectedFilters() {
+            renderEntryPossibleFilters();
+            renderVisaFilters();
+            renderAdditionalFilters();
+        }
+
+        function renderEntryPossibleFilters() {
+            const displayContainer = document.getElementById('selectedEntryPossibleDisplay');
+            if (!displayContainer) return;
+
+            const filters = [
+                { id: 'filter-passport', label: 'Reisepass' },
+                { id: 'filter-id-card', label: 'Personalausweis' },
+                { id: 'filter-temp-passport', label: 'Vorl. Reisepass' },
+                { id: 'filter-temp-id-card', label: 'Vorl. Personalausweis' },
+                { id: 'filter-child-passport', label: 'Kinderreisepass' }
+            ];
+
+            const activeFilters = filters.filter(f => document.getElementById(f.id)?.checked);
+
+            if (activeFilters.length === 0) {
+                displayContainer.innerHTML = '';
+                updateDisplayPadding('entryPossibleSection');
+                return;
+            }
+
+            const badges = activeFilters.map(f => `
+                <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs">
+                    <span>${escapeHtml(f.label)}</span>
+                </span>
+            `).join('');
+
+            displayContainer.innerHTML = badges;
+            updateDisplayPadding('entryPossibleSection');
+        }
+
+        function renderVisaFilters() {
+            const displayContainer = document.getElementById('selectedVisaDisplay');
+            if (!displayContainer) return;
+
+            const filters = [
+                { id: 'filter-visa-free', label: 'Ohne Visum' },
+                { id: 'filter-e-visa', label: 'E-Visum' },
+                { id: 'filter-visa-on-arrival', label: 'Visum bei Ankunft' }
+            ];
+
+            const activeFilters = filters.filter(f => document.getElementById(f.id)?.checked);
+
+            if (activeFilters.length === 0) {
+                displayContainer.innerHTML = '';
+                updateDisplayPadding('visaSection');
+                return;
+            }
+
+            const badges = activeFilters.map(f => `
+                <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs">
+                    <span>${escapeHtml(f.label)}</span>
+                </span>
+            `).join('');
+
+            displayContainer.innerHTML = badges;
+            updateDisplayPadding('visaSection');
+        }
+
+        function renderAdditionalFilters() {
+            const displayContainer = document.getElementById('selectedAdditionalFiltersDisplay');
+            if (!displayContainer) return;
+
+            const filters = [
+                { id: 'filter-no-insurance', label: 'Keine Versicherung' },
+                { id: 'filter-no-entry-form', label: 'Kein Einreiseformular' }
+            ];
+
+            const activeFilters = filters.filter(f => document.getElementById(f.id)?.checked);
+
+            if (activeFilters.length === 0) {
+                displayContainer.innerHTML = '';
+                updateDisplayPadding('additionalFiltersSection');
+                return;
+            }
+
+            const badges = activeFilters.map(f => `
+                <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs">
+                    <span>${escapeHtml(f.label)}</span>
+                </span>
+            `).join('');
+
+            displayContainer.innerHTML = badges;
+            updateDisplayPadding('additionalFiltersSection');
+        }
+
         // Filter anwenden
         async function applyEntryConditionsFilters() {
             console.log('Filters applied');
@@ -1305,6 +1412,9 @@
                 document.getElementById('filter-no-entry-form')?.checked;
 
             const hasActiveFilters = hasEntryFilters || hasVisaFilters || hasAdditionalFilters;
+
+            // Render Filter Badges
+            renderSelectedFilters();
 
             // Update Filter-Indikatoren
             updateFilterIndicator('entryPossibleSection', hasEntryFilters);
