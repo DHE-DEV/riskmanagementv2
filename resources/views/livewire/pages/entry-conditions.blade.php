@@ -477,27 +477,18 @@
                             <div id="selectedEntryPossibleDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
                                 <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
                             </div>
-                            <div id="entryPossibleSection" class="px-2 space-y-2" style="display: none;">
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport" onchange="applyEntryConditionsFilters()" checked>
-                                    <span>mit Reisepass</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-id-card" onchange="applyEntryConditionsFilters()">
-                                    <span>mit Personalausweis</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-passport" onchange="applyEntryConditionsFilters()">
-                                    <span>mit vorläufigem Reisepass</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()">
-                                    <span>mit vorläufigem Personalausweis</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-child-passport" onchange="applyEntryConditionsFilters()">
-                                    <span>mit Kinderreisepass</span>
-                                </label>
+                            <div id="entryPossibleSection" class="px-2 py-2" style="display: none;">
+                                <!-- Hidden checkboxes for state management -->
+                                <input type="checkbox" id="filter-passport" onchange="applyEntryConditionsFilters()" checked style="display: none;">
+                                <input type="checkbox" id="filter-id-card" onchange="applyEntryConditionsFilters()" style="display: none;">
+                                <input type="checkbox" id="filter-temp-passport" onchange="applyEntryConditionsFilters()" style="display: none;">
+                                <input type="checkbox" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()" style="display: none;">
+                                <input type="checkbox" id="filter-child-passport" onchange="applyEntryConditionsFilters()" style="display: none;">
+
+                                <!-- Available filters as badges -->
+                                <div id="entryPossibleAvailableFilters" class="flex flex-wrap gap-2">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
                             </div>
                         </div>
 
@@ -512,19 +503,16 @@
                             <div id="selectedVisaDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
                                 <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
                             </div>
-                            <div id="visaSection" class="px-2 space-y-2" style="display: none;">
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-free" onchange="applyEntryConditionsFilters()">
-                                    <span>Einreise ohne Visum möglich</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-e-visa" onchange="applyEntryConditionsFilters()">
-                                    <span>E-Visum</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-visa-on-arrival" onchange="applyEntryConditionsFilters()">
-                                    <span>Visum bei Ankunft</span>
-                                </label>
+                            <div id="visaSection" class="px-2 py-2" style="display: none;">
+                                <!-- Hidden checkboxes for state management -->
+                                <input type="checkbox" id="filter-visa-free" onchange="applyEntryConditionsFilters()" style="display: none;">
+                                <input type="checkbox" id="filter-e-visa" onchange="applyEntryConditionsFilters()" style="display: none;">
+                                <input type="checkbox" id="filter-visa-on-arrival" onchange="applyEntryConditionsFilters()" style="display: none;">
+
+                                <!-- Available filters as badges -->
+                                <div id="visaAvailableFilters" class="flex flex-wrap gap-2">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
                             </div>
                         </div>
 
@@ -539,15 +527,15 @@
                             <div id="selectedAdditionalFiltersDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
                                 <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
                             </div>
-                            <div id="additionalFiltersSection" class="px-2 space-y-2" style="display: none;">
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-insurance" onchange="applyEntryConditionsFilters()">
-                                    <span>Keine Versicherung erforderlich</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
-                                    <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-no-entry-form" onchange="applyEntryConditionsFilters()">
-                                    <span>Kein Einreiseformular erforderlich</span>
-                                </label>
+                            <div id="additionalFiltersSection" class="px-2 py-2" style="display: none;">
+                                <!-- Hidden checkboxes for state management -->
+                                <input type="checkbox" id="filter-no-insurance" onchange="applyEntryConditionsFilters()" style="display: none;">
+                                <input type="checkbox" id="filter-no-entry-form" onchange="applyEntryConditionsFilters()" style="display: none;">
+
+                                <!-- Available filters as badges -->
+                                <div id="additionalFiltersAvailableFilters" class="flex flex-wrap gap-2">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
                             </div>
                         </div>
 
@@ -1319,7 +1307,8 @@
 
         function renderEntryPossibleFilters() {
             const displayContainer = document.getElementById('selectedEntryPossibleDisplay');
-            if (!displayContainer) return;
+            const availableContainer = document.getElementById('entryPossibleAvailableFilters');
+            if (!displayContainer || !availableContainer) return;
 
             const filters = [
                 { id: 'filter-passport', label: 'Reisepass' },
@@ -1330,26 +1319,47 @@
             ];
 
             const activeFilters = filters.filter(f => document.getElementById(f.id)?.checked);
+            const inactiveFilters = filters.filter(f => !document.getElementById(f.id)?.checked);
 
+            // Render active filters (green badges)
             if (activeFilters.length === 0) {
                 displayContainer.innerHTML = '';
-                updateDisplayPadding('entryPossibleSection');
-                return;
+            } else {
+                const activeBadges = activeFilters.map(f => `
+                    <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-green-100" onclick="toggleFilter('${f.id}')">
+                        <span>${escapeHtml(f.label)}</span>
+                    </span>
+                `).join('');
+                displayContainer.innerHTML = activeBadges;
             }
 
-            const badges = activeFilters.map(f => `
-                <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs">
-                    <span>${escapeHtml(f.label)}</span>
-                </span>
-            `).join('');
+            // Render inactive filters (white badges in section)
+            if (inactiveFilters.length === 0) {
+                availableContainer.innerHTML = '<span class="text-xs text-gray-500">Alle Filter ausgewählt</span>';
+            } else {
+                const inactiveBadges = inactiveFilters.map(f => `
+                    <span class="inline-flex items-center gap-1 bg-white text-gray-700 border border-gray-300 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50" onclick="toggleFilter('${f.id}')">
+                        <span>${escapeHtml(f.label)}</span>
+                    </span>
+                `).join('');
+                availableContainer.innerHTML = inactiveBadges;
+            }
 
-            displayContainer.innerHTML = badges;
             updateDisplayPadding('entryPossibleSection');
+        }
+
+        function toggleFilter(filterId) {
+            const checkbox = document.getElementById(filterId);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
         }
 
         function renderVisaFilters() {
             const displayContainer = document.getElementById('selectedVisaDisplay');
-            if (!displayContainer) return;
+            const availableContainer = document.getElementById('visaAvailableFilters');
+            if (!displayContainer || !availableContainer) return;
 
             const filters = [
                 { id: 'filter-visa-free', label: 'Ohne Visum' },
@@ -1358,26 +1368,39 @@
             ];
 
             const activeFilters = filters.filter(f => document.getElementById(f.id)?.checked);
+            const inactiveFilters = filters.filter(f => !document.getElementById(f.id)?.checked);
 
+            // Render active filters (green badges)
             if (activeFilters.length === 0) {
                 displayContainer.innerHTML = '';
-                updateDisplayPadding('visaSection');
-                return;
+            } else {
+                const activeBadges = activeFilters.map(f => `
+                    <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-green-100" onclick="toggleFilter('${f.id}')">
+                        <span>${escapeHtml(f.label)}</span>
+                    </span>
+                `).join('');
+                displayContainer.innerHTML = activeBadges;
             }
 
-            const badges = activeFilters.map(f => `
-                <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs">
-                    <span>${escapeHtml(f.label)}</span>
-                </span>
-            `).join('');
+            // Render inactive filters (white badges in section)
+            if (inactiveFilters.length === 0) {
+                availableContainer.innerHTML = '<span class="text-xs text-gray-500">Alle Filter ausgewählt</span>';
+            } else {
+                const inactiveBadges = inactiveFilters.map(f => `
+                    <span class="inline-flex items-center gap-1 bg-white text-gray-700 border border-gray-300 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50" onclick="toggleFilter('${f.id}')">
+                        <span>${escapeHtml(f.label)}</span>
+                    </span>
+                `).join('');
+                availableContainer.innerHTML = inactiveBadges;
+            }
 
-            displayContainer.innerHTML = badges;
             updateDisplayPadding('visaSection');
         }
 
         function renderAdditionalFilters() {
             const displayContainer = document.getElementById('selectedAdditionalFiltersDisplay');
-            if (!displayContainer) return;
+            const availableContainer = document.getElementById('additionalFiltersAvailableFilters');
+            if (!displayContainer || !availableContainer) return;
 
             const filters = [
                 { id: 'filter-no-insurance', label: 'Keine Versicherung' },
@@ -1385,20 +1408,32 @@
             ];
 
             const activeFilters = filters.filter(f => document.getElementById(f.id)?.checked);
+            const inactiveFilters = filters.filter(f => !document.getElementById(f.id)?.checked);
 
+            // Render active filters (green badges)
             if (activeFilters.length === 0) {
                 displayContainer.innerHTML = '';
-                updateDisplayPadding('additionalFiltersSection');
-                return;
+            } else {
+                const activeBadges = activeFilters.map(f => `
+                    <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-green-100" onclick="toggleFilter('${f.id}')">
+                        <span>${escapeHtml(f.label)}</span>
+                    </span>
+                `).join('');
+                displayContainer.innerHTML = activeBadges;
             }
 
-            const badges = activeFilters.map(f => `
-                <span class="inline-flex items-center gap-1 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-xs">
-                    <span>${escapeHtml(f.label)}</span>
-                </span>
-            `).join('');
+            // Render inactive filters (white badges in section)
+            if (inactiveFilters.length === 0) {
+                availableContainer.innerHTML = '<span class="text-xs text-gray-500">Alle Filter ausgewählt</span>';
+            } else {
+                const inactiveBadges = inactiveFilters.map(f => `
+                    <span class="inline-flex items-center gap-1 bg-white text-gray-700 border border-gray-300 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50" onclick="toggleFilter('${f.id}')">
+                        <span>${escapeHtml(f.label)}</span>
+                    </span>
+                `).join('');
+                availableContainer.innerHTML = inactiveBadges;
+            }
 
-            displayContainer.innerHTML = badges;
             updateDisplayPadding('additionalFiltersSection');
         }
 
