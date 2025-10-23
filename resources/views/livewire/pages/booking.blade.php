@@ -205,7 +205,10 @@
         <header class="header">
             <div class="flex items-center justify-between px-6 h-full">
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-xl font-bold text-gray-800">Global Travel Monitor</h1>
+                    <div class="flex items-center space-x-2">
+                        <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
+                        <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
+                    </div>
                 </div>
             </div>
         </header>
