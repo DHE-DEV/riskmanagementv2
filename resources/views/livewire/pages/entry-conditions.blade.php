@@ -422,6 +422,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
+                            <div id="selectedNationalityDisplay" class="px-3 pt-3 space-y-1">
+                                <!-- Ausgewählte Nationalität wird hier dynamisch eingefügt -->
+                            </div>
                             <div id="nationalitySection" class="p-3" style="display: block;">
                                 <div class="space-y-2">
                                     <input
@@ -433,9 +436,6 @@
                                         onkeydown="handleNationalityFilterKeydown(event)"
                                     >
                                     <div id="nationalityFilterResults" class="space-y-1 text-sm text-gray-700 max-h-96 overflow-y-auto transition-all duration-200"></div>
-                                    <div id="selectedNationalityDisplay" class="mt-2 space-y-1">
-                                        <!-- Ausgewählte Nationalität wird hier dynamisch eingefügt -->
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -448,6 +448,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
+                            <div id="selectedDestinationsDisplay" class="px-3 pt-3 space-y-1">
+                                <!-- Ausgewählte Reiseziele werden hier dynamisch eingefügt -->
+                            </div>
                             <div id="destinationsSection" class="p-3" style="display: block;">
                                 <div class="space-y-2">
                                     <input
@@ -459,9 +462,6 @@
                                         onkeydown="handleDestinationsFilterKeydown(event)"
                                     >
                                     <div id="destinationsFilterResults" class="space-y-1 text-sm text-gray-700 max-h-96 overflow-y-auto transition-all duration-200"></div>
-                                    <div id="selectedDestinationsDisplay" class="mt-2 space-y-1">
-                                        <!-- Ausgewählte Reiseziele werden hier dynamisch eingefügt -->
-                                    </div>
                                 </div>
                             </div>
                         </div>
