@@ -554,7 +554,7 @@
 
                 if (location.latitude && location.longitude) {
                     const marker = L.marker([location.latitude, location.longitude], {
-                        icon: greenIcon,
+                        icon: blueIcon,
                     });
 
                     let popupContent = `
