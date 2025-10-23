@@ -135,7 +135,13 @@ class BookingLocationController extends Controller
     private function getCoordinatesFromPostalCode(string $postalCode): ?array
     {
         try {
-            $response = Http::timeout(10)->get('https://nominatim.openstreetmap.org/search', [
+            // User-Agent Header für Nominatim (erforderlich)
+            $headers = [
+                'User-Agent' => 'Global Travel Monitor/1.0 (Laravel)',
+            ];
+
+            // Versuch 1: Mit postalcode Parameter
+            $response = Http::timeout(10)->withHeaders($headers)->get('https://nominatim.openstreetmap.org/search', [
                 'postalcode' => $postalCode,
                 'country' => 'Germany',
                 'format' => 'json',
@@ -145,6 +151,54 @@ class BookingLocationController extends Controller
             if ($response->successful() && count($response->json()) > 0) {
                 $result = $response->json()[0];
 
+                return [
+                    'lat' => (float) $result['lat'],
+                    'lng' => (float) $result['lon'],
+                    'display_name' => $result['display_name'] ?? null,
+                ];
+            }
+
+            // Versuch 2: Mit Q-Parameter (freie Textsuche)
+            $response = Http::timeout(10)->withHeaders($headers)->get('https://nominatim.openstreetmap.org/search', [
+                'q' => $postalCode . ', Deutschland',
+                'format' => 'json',
+                'limit' => 1,
+                'addressdetails' => 1,
+            ]);
+
+            if ($response->successful() && count($response->json()) > 0) {
+                $result = $response->json()[0];
+
+                return [
+                    'lat' => (float) $result['lat'],
+                    'lng' => (float) $result['lon'],
+                    'display_name' => $result['display_name'] ?? null,
+                ];
+            }
+
+            // Versuch 3: Mit strukturierter Suche
+            $response = Http::timeout(10)->withHeaders($headers)->get('https://nominatim.openstreetmap.org/search', [
+                'format' => 'json',
+                'postalcode' => $postalCode,
+                'countrycodes' => 'de',
+                'addressdetails' => 1,
+                'limit' => 5,
+            ]);
+
+            if ($response->successful() && count($response->json()) > 0) {
+                // Nimm das erste Ergebnis mit matching postal code
+                foreach ($response->json() as $result) {
+                    if (isset($result['address']['postcode']) && $result['address']['postcode'] === $postalCode) {
+                        return [
+                            'lat' => (float) $result['lat'],
+                            'lng' => (float) $result['lon'],
+                            'display_name' => $result['display_name'] ?? null,
+                        ];
+                    }
+                }
+
+                // Fallback: Nimm erstes Ergebnis
+                $result = $response->json()[0];
                 return [
                     'lat' => (float) $result['lat'],
                     'lng' => (float) $result['lon'],
