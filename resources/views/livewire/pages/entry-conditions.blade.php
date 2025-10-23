@@ -466,10 +466,10 @@
                             </div>
                         </div>
 
-                        <!-- Einreise möglich -->
+                        <!-- Einreise möglich mit -->
                         <div>
                             <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleFilterSubSection('entryPossibleSection')">
-                                <p class="text-xs text-gray-700 font-medium">Einreise möglich</p>
+                                <p class="text-xs text-gray-700 font-medium">Einreise möglich mit</p>
                                 <svg id="entryPossibleToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
