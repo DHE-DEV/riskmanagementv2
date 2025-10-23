@@ -1581,16 +1581,19 @@
                 window.entryConditionsMap.setView([20, 0], 2);
             }
 
-            // Filter-Indikatoren entfernen
-            updateFilterIndicator('entryPossibleSection', false);
-            updateFilterIndicator('visaSection', false);
-            updateFilterIndicator('additionalFiltersSection', false);
+            // Filter-Badges neu rendern (zeigt alle Filter als inaktiv/weiß)
+            renderSelectedFilters();
 
             // Reset-Button Sichtbarkeit aktualisieren
             updateResetButtonVisibility();
 
             // Reiseziele-Feld wieder aktivieren
-            applyEntryConditionsFilters();
+            const destinationsInput = document.getElementById('destinationsFilterInput');
+            if (destinationsInput) {
+                destinationsInput.disabled = false;
+                destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+                destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+            }
         }
 
         // Suche mit Validierung ob Reiseziel in Ergebnissen vorkommt
