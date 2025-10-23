@@ -824,12 +824,46 @@
                         icon.style.transform = 'rotate(180deg)';
                     }
                 }
+                // Entferne bottom padding wenn Section geöffnet ist
+                updateDisplayPadding(sectionId);
             } else {
                 section.style.display = 'none';
                 if (icon) {
                     // Für alle Sections: 0deg = geschlossen (Pfeil nach unten)
                     icon.style.transform = 'rotate(0deg)';
                 }
+                // Füge bottom padding hinzu wenn Section geschlossen ist und Inhalte vorhanden sind
+                updateDisplayPadding(sectionId);
+            }
+        }
+
+        // Update padding für Display-Bereiche basierend auf Section-Status und Inhalten
+        function updateDisplayPadding(sectionId) {
+            let displayId = '';
+            if (sectionId === 'nationalitySection') {
+                displayId = 'selectedNationalityDisplay';
+            } else if (sectionId === 'destinationsSection') {
+                displayId = 'selectedDestinationsDisplay';
+            }
+
+            if (!displayId) return;
+
+            const displayElement = document.getElementById(displayId);
+            const section = document.getElementById(sectionId);
+
+            if (!displayElement || !section) return;
+
+            // Prüfe ob Section geschlossen ist
+            const isClosed = section.style.display === 'none';
+
+            // Prüfe ob Inhalte vorhanden sind (mehr als nur der Kommentar)
+            const hasContent = displayElement.children.length > 0;
+
+            // Setze padding-bottom nur wenn Section geschlossen ist UND Inhalte vorhanden sind
+            if (isClosed && hasContent) {
+                displayElement.style.paddingBottom = '5px';
+            } else {
+                displayElement.style.paddingBottom = '0';
             }
         }
 
@@ -1043,6 +1077,7 @@
             if (window.selectedNationalities.size === 0) {
                 displayContainer.innerHTML = '';
                 updateResetButtonVisibility();
+                updateDisplayPadding('nationalitySection');
                 return;
             }
 
@@ -1055,6 +1090,7 @@
 
             displayContainer.innerHTML = badges;
             updateResetButtonVisibility();
+            updateDisplayPadding('nationalitySection');
         }
 
         // ==================== DESTINATIONS FILTER FUNCTIONS ====================
@@ -1220,6 +1256,7 @@
             if (window.selectedDestinations.size === 0) {
                 displayContainer.innerHTML = '';
                 updateResetButtonVisibility();
+                updateDisplayPadding('destinationsSection');
                 return;
             }
 
@@ -1243,6 +1280,7 @@
 
             displayContainer.innerHTML = badges;
             updateResetButtonVisibility();
+            updateDisplayPadding('destinationsSection');
         }
 
         // Filter anwenden
