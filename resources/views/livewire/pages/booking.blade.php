@@ -352,6 +352,7 @@
         // Map initialisieren
         let bookingMap = null;
         let markersLayer = null;
+        let searchAreaLayer = null; // Für PLZ-Gebiet und Suchkreis
 
         document.addEventListener('DOMContentLoaded', function() {
             // Map initialisieren
@@ -389,6 +390,9 @@
                     });
                 }
             }).addTo(bookingMap);
+
+            // Layer für Suchbereich (PLZ-Gebiet + Kreis)
+            searchAreaLayer = L.layerGroup().addTo(bookingMap);
 
             // Initial badge styling setzen
             updateRadiusBadges();
@@ -499,6 +503,9 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    // PLZ-Gebiet und Suchkreis laden
+                    await loadPostalCodeArea(postalCode, data.center, parseInt(radius));
+
                     displayLocations(data.data, data.center);
                     displayResults(data);
 
@@ -511,6 +518,89 @@
                 console.error('Fehler bei der Suche:', error);
                 alert('Fehler bei der Suche. Bitte versuchen Sie es erneut.');
             }
+        }
+
+        // PLZ-Gebiet und Suchkreis laden
+        async function loadPostalCodeArea(postalCode, center, radiusKm) {
+            // Alte Suchbereiche entfernen
+            searchAreaLayer.clearLayers();
+
+            if (!center || !center.lat || !center.lng) {
+                return;
+            }
+
+            try {
+                // Overpass API Query für Postleitzahlgebiet
+                const overpassQuery = `
+                    [out:json][timeout:25];
+                    (
+                        relation["boundary"="postal_code"]["postal_code"="${postalCode}"]["addr:country"="DE"];
+                        area["boundary"="postal_code"]["postal_code"="${postalCode}"]["addr:country"="DE"];
+                    );
+                    out geom;
+                `;
+
+                const overpassUrl = 'https://overpass-api.de/api/interpreter';
+                const overpassResponse = await fetch(overpassUrl, {
+                    method: 'POST',
+                    body: overpassQuery,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                if (overpassResponse.ok) {
+                    const overpassData = await overpassResponse.json();
+
+                    // PLZ-Gebiet zeichnen
+                    if (overpassData.elements && overpassData.elements.length > 0) {
+                        overpassData.elements.forEach(element => {
+                            if (element.type === 'relation' && element.members) {
+                                const coordinates = [];
+
+                                element.members.forEach(member => {
+                                    if (member.role === 'outer' && member.geometry) {
+                                        const ring = member.geometry.map(node => [node.lat, node.lon]);
+                                        if (ring.length > 0) {
+                                            coordinates.push(ring);
+                                        }
+                                    }
+                                });
+
+                                if (coordinates.length > 0) {
+                                    const polygon = L.polygon(coordinates, {
+                                        color: '#3b82f6',
+                                        fillColor: '#3b82f6',
+                                        fillOpacity: 0.1,
+                                        weight: 2,
+                                        dashArray: '5, 5'
+                                    }).bindPopup(`Postleitzahl ${postalCode}`);
+
+                                    searchAreaLayer.addLayer(polygon);
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.warn('Overpass API Fehler (PLZ-Gebiet wird nicht angezeigt):', error);
+            }
+
+            // Suchkreis zeichnen
+            const radiusInMeters = radiusKm * 1000;
+            const circle = L.circle([center.lat, center.lng], {
+                color: '#ef4444',
+                fillColor: '#ef4444',
+                fillOpacity: 0.15,
+                weight: 2,
+                radius: radiusInMeters
+            }).bindPopup(`Suchradius: ${radiusKm} km`);
+
+            searchAreaLayer.addLayer(circle);
+
+            // Zoom auf den Suchbereich
+            const circleBounds = circle.getBounds();
+            bookingMap.fitBounds(circleBounds, { padding: [50, 50] });
         }
 
         // Standorte auf Karte anzeigen
@@ -573,11 +663,8 @@
                 }
             });
 
-            // Karte auf Center zoomen, wenn vorhanden
+            // Center-Marker hinzufügen, wenn vorhanden (aber nicht mehr zoomen - das macht loadPostalCodeArea)
             if (center && center.lat && center.lng) {
-                bookingMap.setView([center.lat, center.lng], 10);
-
-                // Center-Marker (rot für Suchzentrum)
                 const centerMarker = L.marker([center.lat, center.lng], {
                     icon: redIcon
                 }).bindPopup('Suchzentrum');
@@ -652,6 +739,9 @@
             // Badge-Styling aktualisieren
             updateRadiusBadges();
             updateBookingTypeBadges();
+
+            // Suchbereich entfernen (PLZ-Gebiet + Kreis)
+            searchAreaLayer.clearLayers();
 
             // Ergebnisse und Reset-Button ausblenden
             const resultsDiv = document.getElementById('booking-search-results');
