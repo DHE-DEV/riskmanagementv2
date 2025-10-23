@@ -418,14 +418,14 @@
                         <div class="bg-gray-100">
                             <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('nationalitySection')">
                                 <h4 class="text-sm font-medium text-gray-700">Nationalitäten</h4>
-                                <svg id="nationalityToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
+                                <svg id="nationalityToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
                             <div id="selectedNationalityDisplay" class="px-3 pt-3 space-y-1">
                                 <!-- Ausgewählte Nationalität wird hier dynamisch eingefügt -->
                             </div>
-                            <div id="nationalitySection" class="p-3" style="display: none;">
+                            <div id="nationalitySection" class="p-3" style="display: block;">
                                 <div class="space-y-2">
                                     <input
                                         type="text"
@@ -444,14 +444,14 @@
                         <div class="bg-gray-100">
                             <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('destinationsSection')">
                                 <h4 class="text-sm font-medium text-gray-700">Reiseziele</h4>
-                                <svg id="destinationsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
+                                <svg id="destinationsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
                             <div id="selectedDestinationsDisplay" class="px-3 pt-3 space-y-1">
                                 <!-- Ausgewählte Reiseziele werden hier dynamisch eingefügt -->
                             </div>
-                            <div id="destinationsSection" class="p-3" style="display: none;">
+                            <div id="destinationsSection" class="p-3" style="display: block;">
                                 <div class="space-y-2">
                                     <input
                                         type="text"
