@@ -1228,7 +1228,7 @@
         }
 
         // Filter anwenden
-        function applyEntryConditionsFilters() {
+        async function applyEntryConditionsFilters() {
             console.log('Filters applied');
 
             // Prüfe ob mindestens ein Filter aktiv ist in den verschiedenen Kategorien
@@ -1257,6 +1257,12 @@
 
             // Update Reset-Button Sichtbarkeit
             updateResetButtonVisibility();
+
+            // Auto-Suche wenn Reiseziel(e) und Filter gesetzt sind
+            if (hasActiveFilters && window.selectedDestinations.size > 0) {
+                console.log('Auto-triggering search with destination and filters');
+                await searchWithDestinationValidation();
+            }
 
             const destinationsInput = document.getElementById('destinationsFilterInput');
             const selectedDestinationsDisplay = document.getElementById('selectedDestinationsDisplay');
@@ -1400,6 +1406,131 @@
 
             // Reiseziele-Feld wieder aktivieren
             applyEntryConditionsFilters();
+        }
+
+        // Suche mit Validierung ob Reiseziel in Ergebnissen vorkommt
+        async function searchWithDestinationValidation() {
+            const nationalityCodes = Array.from(window.selectedNationalities.keys());
+            const destinationCodes = Array.from(window.selectedDestinations.keys());
+
+            if (nationalityCodes.length === 0 || destinationCodes.length === 0) {
+                return; // Nichts zu tun
+            }
+
+            // Filter sammeln
+            const filters = {
+                passport: document.getElementById('filter-passport')?.checked || false,
+                idCard: document.getElementById('filter-id-card')?.checked || false,
+                tempPassport: document.getElementById('filter-temp-passport')?.checked || false,
+                tempIdCard: document.getElementById('filter-temp-id-card')?.checked || false,
+                childPassport: document.getElementById('filter-child-passport')?.checked || false,
+                visaFree: document.getElementById('filter-visa-free')?.checked || false,
+                eVisa: document.getElementById('filter-e-visa')?.checked || false,
+                visaOnArrival: document.getElementById('filter-visa-on-arrival')?.checked || false,
+                noInsurance: document.getElementById('filter-no-insurance')?.checked || false,
+                noEntryForm: document.getElementById('filter-no-entry-form')?.checked || false
+            };
+
+            // Sidebar vorbereiten
+            const sidebar = document.getElementById('details-sidebar');
+            const content = document.getElementById('entry-conditions-content');
+
+            if (!sidebar || !content) return;
+
+            sidebar.style.display = 'block';
+            content.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p class="text-gray-600 mt-4">Prüfe Einreisebestimmungen...</p>
+                </div>
+            `;
+
+            try {
+                // Filtersuche durchführen
+                const allDestinations = new Map();
+
+                for (const nationality of nationalityCodes) {
+                    const response = await fetch('/api/entry-conditions/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            nationality: nationality,
+                            filters: filters
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.destinations) {
+                        data.destinations.forEach(dest => {
+                            const key = dest.code || dest.name;
+                            if (!allDestinations.has(key)) {
+                                allDestinations.set(key, dest);
+                            }
+                        });
+                    }
+                }
+
+                // Prüfen ob gewähltes Reiseziel in den Ergebnissen ist
+                let foundDestinations = [];
+                let notFoundDestinations = [];
+
+                for (const destCode of destinationCodes) {
+                    if (allDestinations.has(destCode)) {
+                        foundDestinations.push(destCode);
+                    } else {
+                        const destData = window.selectedDestinations.get(destCode);
+                        notFoundDestinations.push(destData ? destData.name : destCode);
+                    }
+                }
+
+                // Ergebnis anzeigen
+                if (foundDestinations.length > 0) {
+                    // Gefundene Länder: Details anzeigen
+                    await loadEntryConditionsContent(nationalityCodes, foundDestinations);
+
+                    // Auf Karte markieren
+                    highlightCountriesOnMap(foundDestinations);
+                } else {
+                    // Kein Land gefunden: Fehlermeldung anzeigen
+                    const destNames = destinationCodes.map(code => {
+                        const data = window.selectedDestinations.get(code);
+                        return data ? data.name : code;
+                    }).join(', ');
+
+                    content.innerHTML = `
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fa-solid fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800">
+                                        Keine Einreise mit den gewählten Filterkriterien möglich
+                                    </h3>
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <p>Das gewählte Reiseziel <strong>${escapeHtml(destNames)}</strong> erfüllt nicht die ausgewählten Filterkriterien.</p>
+                                        <p class="mt-2">Bitte ändern Sie die Filter oder wählen Sie ein anderes Reiseziel.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error in searchWithDestinationValidation:', error);
+                content.innerHTML = `
+                    <div class="text-center text-red-500 py-8">
+                        <i class="fa-solid fa-circle-exclamation text-4xl mb-4"></i>
+                        <p>Fehler bei der Suche. Bitte versuchen Sie es erneut.</p>
+                    </div>
+                `;
+            }
         }
 
         // Einreisebestimmungen suchen
