@@ -2035,27 +2035,6 @@
             });
 
             resultsDiv.style.display = 'block';
-
-            // Automatisch zur "Einreise möglich" Sektion scrollen
-            scrollToEntryPossibleSection();
-        }
-
-        // Zur "Einreise möglich" Sektion scrollen
-        function scrollToEntryPossibleSection() {
-            const entryPossibleHeader = document.querySelector('[onclick*="toggleFilterSubSection(\'entryPossibleSection\')"]');
-            if (!entryPossibleHeader) return;
-
-            const sidebar = document.querySelector('.sidebar');
-            if (!sidebar) return;
-
-            // Berechne die Position des Elements relativ zum Sidebar-Container
-            const headerTop = entryPossibleHeader.offsetTop;
-
-            // Scrolle die Sidebar so, dass "Einreise möglich" oben ist
-            sidebar.scrollTo({
-                top: headerTop,
-                behavior: 'smooth'
-            });
         }
 
         // Länder auf Karte anzeigen (mit Hauptstadt-Koordinaten)
