@@ -4,12 +4,10 @@ namespace App\Filament\Resources\EntryConditionsLogs;
 
 use App\Filament\Resources\EntryConditionsLogs\Pages\ListEntryConditionsLogs;
 use App\Filament\Resources\EntryConditionsLogs\Pages\ViewEntryConditionsLog;
-use App\Filament\Resources\EntryConditionsLogs\Schemas\EntryConditionsLogForm;
 use App\Filament\Resources\EntryConditionsLogs\Tables\EntryConditionsLogsTable;
 use App\Models\EntryConditionsLog;
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
@@ -24,11 +22,6 @@ class EntryConditionsLogResource extends Resource
     protected static ?string $modelLabel = 'Einreisebestimmungen Log';
 
     protected static ?string $pluralModelLabel = 'Einreisebestimmungen Logs';
-
-    public static function form(Schema $schema): Schema
-    {
-        return EntryConditionsLogForm::configure($schema);
-    }
 
     public static function table(Table $table): Table
     {

@@ -905,25 +905,34 @@
 
             try {
                 box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
-                const res = await fetch('/api/countries/search?q=' + encodeURIComponent(q), {
+                // Use entry-conditions endpoint which filters by available nationalities
+                const res = await fetch('/api/entry-conditions/countries', {
                     headers: { 'Accept': 'application/json' }
                 });
 
                 if (!res.ok) throw new Error('Network error');
 
                 const data = await res.json();
-                const list = Array.isArray(data.data) ? data.data : [];
+                const allCountries = Array.isArray(data.countries) ? data.countries : [];
+
+                // Filter countries based on search query (name or code)
+                const qLower = q.toLowerCase();
+                const list = allCountries.filter(c => {
+                    const nameLower = (c.name || '').toLowerCase();
+                    const codeLower = (c.code || '').toLowerCase();
+                    return nameLower.includes(qLower) || codeLower.includes(qLower);
+                });
 
                 if (!list.length) {
-                    box.innerHTML = '<div class="text-xs text-gray-500">Keine Treffer</div>';
+                    box.innerHTML = '<div class="text-xs text-gray-600 bg-yellow-50 border border-yellow-200 rounded px-3 py-2"><i class="fa-solid fa-lock mr-1 text-yellow-600"></i> Diese Nationalität kann in der kostenlosen Version nicht abgefragt werden.</div>';
                     return;
                 }
 
                 box.innerHTML = list.map((c, i) => (
-                    `<div class="autocomplete-item px-2 py-1 rounded border hover:bg-gray-50 flex items-center justify-between bg-white ${i === 0 ? 'border-blue-300' : 'border-gray-200'}" data-index="${i}" data-name="${escapeForAttr(c.name)}" data-iso2="${escapeForAttr(c.iso2 || '')}">
+                    `<div class="autocomplete-item px-2 py-1 rounded border hover:bg-gray-50 flex items-center justify-between bg-white ${i === 0 ? 'border-blue-300' : 'border-gray-200'}" data-index="${i}" data-name="${escapeForAttr(c.name)}" data-iso2="${escapeForAttr(c.code || '')}">
                         <div>
                             <div class="font-medium">${escapeHtml(c.name)}</div>
-                            <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(c.code || '')}</div>
                         </div>
                         <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-100">Übernehmen</button>
                     </div>`

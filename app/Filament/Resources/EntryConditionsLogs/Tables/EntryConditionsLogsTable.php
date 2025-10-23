@@ -45,7 +45,8 @@ class EntryConditionsLogsTable
                 TextColumn::make('filters')
                     ->label('Filter')
                     ->formatStateUsing(function ($state) {
-                        if (empty($state)) {
+                        // Defensive check: ensure $state is an array
+                        if (empty($state) || !is_array($state)) {
                             return '-';
                         }
                         $activeFilters = [];
@@ -66,7 +67,7 @@ class EntryConditionsLogsTable
                                 };
                             }
                         }
-                        return implode(', ', $activeFilters);
+                        return empty($activeFilters) ? '-' : implode(', ', $activeFilters);
                     })
                     ->wrap()
                     ->limit(50),

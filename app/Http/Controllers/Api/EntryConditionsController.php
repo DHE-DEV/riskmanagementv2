@@ -16,9 +16,22 @@ class EntryConditionsController extends Controller
     public function getCountries()
     {
         try {
-            $countries = \DB::table('countries')
-                ->select('iso_code as code', 'name_translations')
-                ->get()
+            // Get available nationalities from config
+            $availableNationalities = config('app.entry_conditions_available_nationalities',
+                env('ENTRY_CONDITIONS_AVAILABLE_NATIONALITIES', 'DE,AT,CH'));
+
+            // Convert to array of country codes
+            $allowedCodes = array_map('trim', explode(',', $availableNationalities));
+
+            $query = \DB::table('countries')
+                ->select('iso_code as code', 'name_translations');
+
+            // Filter by allowed country codes if configuration is set
+            if (!empty($allowedCodes) && !in_array('*', $allowedCodes)) {
+                $query->whereIn('iso_code', $allowedCodes);
+            }
+
+            $countries = $query->get()
                 ->map(function ($country) {
                     $nameTranslations = json_decode($country->name_translations, true);
                     return [
