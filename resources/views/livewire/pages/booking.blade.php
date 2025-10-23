@@ -161,12 +161,6 @@
             background-color: rgba(239, 68, 68, 0.8);
             color: white;
         }
-
-        /* Custom Marker Icons */
-        .custom-div-icon {
-            background: none;
-            border: none;
-        }
     </style>
 </head>
 <body>
@@ -524,19 +518,32 @@
             // Alte Marker entfernen
             markersLayer.clearLayers();
 
-            // Icons für verschiedene Typen
-            const onlineIcon = L.divIcon({
-                html: '<i class="fa-solid fa-laptop text-blue-600" style="font-size: 20px;"></i>',
-                className: 'custom-div-icon',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15],
+            // Icons für verschiedene Typen - Standard Leaflet Marker
+            const blueIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
             });
 
-            const stationaryIcon = L.divIcon({
-                html: '<i class="fa-solid fa-store text-green-600" style="font-size: 20px;"></i>',
-                className: 'custom-div-icon',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15],
+            const greenIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            const redIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
             });
 
             locations.forEach(location => {
@@ -547,7 +554,7 @@
 
                 if (location.latitude && location.longitude) {
                     const marker = L.marker([location.latitude, location.longitude], {
-                        icon: location.type === 'online' ? onlineIcon : stationaryIcon,
+                        icon: greenIcon,
                     });
 
                     let popupContent = `
@@ -570,14 +577,9 @@
             if (center && center.lat && center.lng) {
                 bookingMap.setView([center.lat, center.lng], 10);
 
-                // Center-Marker
+                // Center-Marker (rot für Suchzentrum)
                 const centerMarker = L.marker([center.lat, center.lng], {
-                    icon: L.divIcon({
-                        html: '<i class="fa-solid fa-crosshairs text-red-600" style="font-size: 24px;"></i>',
-                        className: 'custom-div-icon',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15],
-                    })
+                    icon: redIcon
                 }).bindPopup('Suchzentrum');
                 markersLayer.addLayer(centerMarker);
             }
