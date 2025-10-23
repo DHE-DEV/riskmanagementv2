@@ -389,6 +389,12 @@
                 <button class="p-3 bg-gray-800 text-white rounded-lg" title="Einreisebestimmungen">
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
                 </button>
+
+                @if(config('app.dashboard_airports_enabled', true))
+                <a href="/?airports=1" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen">
+                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
+                </a>
+                @endif
             </nav>
 
             <!-- Filter Sidebar -->
