@@ -1634,8 +1634,8 @@
                 // Ergebnisse als Array
                 let destinationsArray = Array.from(allDestinations.values());
 
-                // Falls Reiseziele ausgewählt wurden, nur diese anzeigen
-                if (window.selectedDestinations.size > 0) {
+                // Falls spezifische Reiseziele ausgewählt wurden (nicht "*"), nur diese anzeigen
+                if (window.selectedDestinations.size > 0 && !window.selectedDestinations.has('*')) {
                     const selectedDestinationCodes = Array.from(window.selectedDestinations.keys());
                     destinationsArray = destinationsArray.filter(dest =>
                         selectedDestinationCodes.includes(dest.code)
