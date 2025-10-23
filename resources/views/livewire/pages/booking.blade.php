@@ -220,7 +220,7 @@
                 <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Dashboard">
                     <i class="fa-regular fa-home text-2xl" aria-hidden="true"></i>
                 </a>
-                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events">
+                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </a>
                 <a href="/entry-conditions" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen">

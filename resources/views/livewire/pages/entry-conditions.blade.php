@@ -382,7 +382,7 @@
                     </svg>
                 </a>
 
-                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events" onclick="window.location.href='/'">
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse" onclick="window.location.href='/'">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </button>
 
