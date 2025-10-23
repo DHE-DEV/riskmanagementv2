@@ -11,6 +11,48 @@ use Illuminate\Support\Facades\Log;
 class EntryConditionsController extends Controller
 {
     /**
+     * Get all country coordinates for map markers (all destinations)
+     */
+    public function getAllCountryCoordinates()
+    {
+        try {
+            // Get all countries with capital coordinates
+            $countries = \App\Models\Country::with('capital')
+                ->get()
+                ->map(function ($country) {
+                    $capital = $country->capital;
+                    return [
+                        'code' => $country->iso_code,
+                        'name' => $country->getName('de'),
+                        'lat' => $capital ? (float) $capital->lat : null,
+                        'lng' => $capital ? (float) $capital->lng : null,
+                        'capital_name' => $capital ? ($capital->name_translations['de'] ?? $capital->name_translations['en'] ?? null) : null,
+                    ];
+                })
+                ->filter(function ($country) {
+                    // Only return countries with coordinates
+                    return $country['lat'] !== null && $country['lng'] !== null;
+                })
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'countries' => $countries
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching all country coordinates', [
+                'message' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching country coordinates',
+                'countries' => []
+            ], 500);
+        }
+    }
+
+    /**
      * Get list of countries for nationality selection
      */
     public function getCountries()

@@ -682,10 +682,11 @@
             }
         }
 
-        // Länder-Koordinaten aus der API laden
+        // Länder-Koordinaten aus der API laden (alle Länder für Reiseziele)
         async function loadCountryCoordinates() {
             try {
-                const response = await fetch('/api/entry-conditions/countries');
+                // Use all-coordinates endpoint to get ALL countries, not just available nationalities
+                const response = await fetch('/api/entry-conditions/all-coordinates');
                 const data = await response.json();
 
                 if (data.success && data.countries) {
