@@ -665,8 +665,20 @@
             // Render initial filter badges
             renderSelectedFilters();
 
-            // Prüfe beim Laden, ob Filter aktiv sind und stelle UI entsprechend ein (ohne Suche auszulösen)
+            // Prüfe beim Laden, ob Filter aktiv sind und stelle UI entsprechend ein
             updateResetButtonVisibility();
+
+            // Scroll-Position speichern vor automatischer Suche
+            const sidebar = document.querySelector('.sidebar');
+            const initialScrollTop = sidebar ? sidebar.scrollTop : 0;
+
+            // Automatische Suche beim Laden (mit vorausgewähltem Filter)
+            await checkAndAutoSearch();
+
+            // Scroll-Position wiederherstellen nach der Suche
+            if (sidebar) {
+                sidebar.scrollTop = initialScrollTop;
+            }
         });
 
         // Prüfe ob Filter aktiv sind und führe automatisch Suche aus
