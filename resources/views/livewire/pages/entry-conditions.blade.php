@@ -1424,12 +1424,6 @@
             // Update Reset-Button Sichtbarkeit
             updateResetButtonVisibility();
 
-            // Auto-Suche wenn Reiseziel(e) und Filter gesetzt sind
-            if (hasActiveFilters && window.selectedDestinations.size > 0) {
-                console.log('Auto-triggering search with destination and filters');
-                await searchWithDestinationValidation();
-            }
-
             const destinationsInput = document.getElementById('destinationsFilterInput');
             const selectedDestinationsDisplay = document.getElementById('selectedDestinationsDisplay');
 
@@ -1441,14 +1435,21 @@
                     destinationsInput.placeholder = 'Filter aktiv - Reiseziel bleibt erhalten';
                 }
 
-                // Such-Ergebnisse bleiben sichtbar (werden durch searchWithDestinationValidation aktualisiert)
-                // NICHT mehr ausblenden, da wir bei "Beliebiges Reiseziel" die Liste zeigen wollen
+                // Automatische Suche mit allen aktiven Filtern durchführen
+                console.log('Auto-triggering search with active filters');
+                await searchWithDestinationValidation();
             } else {
                 // Keine Filter: Reiseziele-Feld wieder aktivieren
                 if (destinationsInput) {
                     destinationsInput.disabled = false;
                     destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
                     destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+                }
+
+                // Wenn keine Filter mehr aktiv sind, Ergebnisse ausblenden
+                const resultsDiv = document.getElementById('entry-conditions-search-results');
+                if (resultsDiv) {
+                    resultsDiv.style.display = 'none';
                 }
             }
         }
