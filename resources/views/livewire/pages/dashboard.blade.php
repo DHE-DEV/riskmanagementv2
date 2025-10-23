@@ -934,6 +934,10 @@
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
                 </a>
 
+                <a href="/booking" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Buchungsmöglichkeit">
+                    <i class="fa-regular fa-calendar-check text-2xl" aria-hidden="true"></i>
+                </a>
+
                 @if(config('app.dashboard_airports_enabled', true))
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>

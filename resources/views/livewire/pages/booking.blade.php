@@ -161,6 +161,42 @@
             background-color: rgba(239, 68, 68, 0.8);
             color: white;
         }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
     </style>
 </head>
 <body>
@@ -170,7 +206,6 @@
             <div class="flex items-center justify-between px-6 h-full">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-xl font-bold text-gray-800">Global Travel Monitor</h1>
-                    <span class="text-sm text-gray-500">Buchungsmöglichkeit</span>
                 </div>
             </div>
         </header>
@@ -181,6 +216,9 @@
             <nav class="navigation flex flex-col items-center py-4 space-y-4">
                 <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Dashboard">
                     <i class="fa-regular fa-home text-2xl" aria-hidden="true"></i>
+                </a>
+                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Events">
+                    <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </a>
                 <a href="/entry-conditions" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen">
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
@@ -201,13 +239,13 @@
                 <div class="bg-white shadow-sm">
                     <div class="flex items-center justify-between p-4 border-b border-gray-200">
                         <h3 class="font-semibold text-gray-800 flex items-center gap-2">
-                            <i class="fa-regular fa-filter text-blue-500"></i>
-                            <span>Suchfilter</span>
+                            <i class="fa-regular fa-calendar-check text-blue-500"></i>
+                            <span>Buchungsmöglichkeit</span>
                         </h3>
                     </div>
 
                     <div class="p-4 space-y-4">
-                        <!-- Postleitzahl -->
+                        <!-- Postleitzahl und Umkreis -->
                         <div class="bg-gray-100 p-4 rounded">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Postleitzahl
@@ -219,35 +257,30 @@
                                 pattern="[0-9]{5}"
                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 id="postalCodeInput"
+                                onkeypress="if(event.key === 'Enter') searchBookingOptions()"
                             >
-                        </div>
 
-                        <!-- Umkreis -->
-                        <div class="bg-gray-100 p-4 rounded">
-                            <label class="block text-sm font-medium text-gray-700 mb-3">
-                                Umkreis
-                            </label>
                             <!-- Hidden radio buttons for state management -->
                             <input type="radio" name="radius" value="5" id="radius-5" style="display: none;">
                             <input type="radio" name="radius" value="10" id="radius-10" checked style="display: none;">
                             <input type="radio" name="radius" value="20" id="radius-20" style="display: none;">
 
                             <!-- Radius badges -->
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex flex-wrap gap-1.5 mt-3">
                                 <span
-                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge"
+                                    class="inline-flex items-center px-2.5 py-1.5 text-xs cursor-pointer rounded-md transition-colors radius-badge"
                                     data-radius="5"
                                     onclick="selectRadius(5)">
                                     <span>+ 5 km</span>
                                 </span>
                                 <span
-                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge active"
+                                    class="inline-flex items-center px-2.5 py-1.5 text-xs cursor-pointer rounded-md transition-colors radius-badge active"
                                     data-radius="10"
                                     onclick="selectRadius(10)">
                                     <span>+ 10 km</span>
                                 </span>
                                 <span
-                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge"
+                                    class="inline-flex items-center px-2.5 py-1.5 text-xs cursor-pointer rounded-md transition-colors radius-badge"
                                     data-radius="20"
                                     onclick="selectRadius(20)">
                                     <span>+ 20 km</span>
@@ -289,20 +322,35 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="pt-3 space-y-2 border-t border-gray-200">
-                            <button onclick="searchBookingOptions()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                                Suchen
-                            </button>
-                            <button id="reset-filters-button" onclick="resetFilters()" class="w-full px-4 py-2.5 text-sm text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-2" style="display: none;">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                                Filter zurücksetzen
-                            </button>
+                        <div class="pt-3 border-t border-gray-200">
+                            <div class="flex gap-2">
+                                <button id="search-button" onclick="searchBookingOptions()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    Suchen
+                                </button>
+                                <button id="reset-filters-button" onclick="resetFilters()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-1.5" style="display: none;">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Zurücksetzen
+                                </button>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Sponsored Section -->
+                <div id="sponsored-section" class="bg-white shadow-sm mt-4" style="display: none;">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-yellow-50">
+                        <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-star text-yellow-500"></i>
+                            <span>Gesponsert</span>
+                        </h3>
+                    </div>
+                    <div id="sponsored-list" class="p-2 space-y-2 bg-yellow-50/30">
+                        <!-- Sponsored items will be inserted here -->
                     </div>
                 </div>
 
@@ -323,6 +371,13 @@
             <!-- Map Container -->
             <div class="map-container">
                 <div id="booking-map"></div>
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="loading-overlay" style="display: none;">
+                    <div style="text-align: center;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Suche läuft...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -486,6 +541,16 @@
                 return;
             }
 
+            // Loading-Overlay anzeigen und Button deaktivieren
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const searchButton = document.getElementById('search-button');
+
+            loadingOverlay.style.display = 'flex';
+            searchButton.disabled = true;
+            searchButton.classList.remove('hover:bg-blue-700');
+            searchButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+            searchButton.style.opacity = '0.6';
+
             try {
                 const response = await fetch('/api/booking-locations/search', {
                     method: 'POST',
@@ -506,6 +571,9 @@
                     // PLZ-Gebiet und Suchkreis laden
                     await loadPostalCodeArea(postalCode, data.center, parseInt(radius));
 
+                    // Gesponserte Einträge anzeigen (nur für PLZ 40227)
+                    displaySponsored(postalCode);
+
                     displayLocations(data.data, data.center);
                     displayResults(data);
 
@@ -517,6 +585,13 @@
             } catch (error) {
                 console.error('Fehler bei der Suche:', error);
                 alert('Fehler bei der Suche. Bitte versuchen Sie es erneut.');
+            } finally {
+                // Loading-Overlay ausblenden und Button wieder aktivieren
+                loadingOverlay.style.display = 'none';
+                searchButton.disabled = false;
+                searchButton.classList.add('hover:bg-blue-700');
+                searchButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                searchButton.style.opacity = '1';
             }
         }
 
@@ -672,6 +747,85 @@
             }
         }
 
+        // Gesponserte Einträge anzeigen
+        function displaySponsored(postalCode) {
+            const sponsoredSection = document.getElementById('sponsored-section');
+            const sponsoredList = document.getElementById('sponsored-list');
+
+            // Nur für PLZ 40227 (Düsseldorf) gesponserte Einträge anzeigen
+            if (postalCode !== '40227') {
+                sponsoredSection.style.display = 'none';
+                return;
+            }
+
+            const sponsoredItems = [
+                {
+                    name: 'Premium Reisen Düsseldorf',
+                    description: 'Exklusive Reiseangebote und persönliche VIP-Betreuung',
+                    address: 'Königsallee 30',
+                    city: 'Düsseldorf',
+                    postal_code: '40212',
+                    phone: '+49 211 123456',
+                    url: 'https://www.premium-reisen-duesseldorf.de',
+                    type: 'stationary'
+                },
+                {
+                    name: 'TUI Premium Partner Düsseldorf City',
+                    description: 'Ihr TUI Reisecenter mit Bestpreis-Garantie',
+                    address: 'Schadowstraße 11',
+                    city: 'Düsseldorf',
+                    postal_code: '40212',
+                    phone: '+49 211 987654',
+                    url: 'https://www.tui.com',
+                    type: 'stationary'
+                },
+                {
+                    name: 'Luxusreisen24.de',
+                    description: 'Premium Online-Buchungsportal für gehobene Ansprüche',
+                    url: 'https://www.luxusreisen24.de',
+                    type: 'online'
+                }
+            ];
+
+            sponsoredList.innerHTML = '';
+
+            sponsoredItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white border-2 border-yellow-300 rounded-lg p-3 hover:shadow-md transition-shadow relative';
+
+                // Sponsored Badge
+                const badge = document.createElement('div');
+                badge.className = 'absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded';
+                badge.textContent = 'Anzeige';
+                card.appendChild(badge);
+
+                let cardContent = `
+                    <div class="flex items-start gap-3 mt-1">
+                        <div class="flex-shrink-0">
+                            ${item.type === 'online'
+                                ? '<i class="fa-solid fa-laptop text-yellow-600 text-xl"></i>'
+                                : '<i class="fa-solid fa-store text-yellow-600 text-xl"></i>'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-sm text-gray-900 truncate">${escapeHtml(item.name)}</h4>
+                            ${item.description ? `<p class="text-xs text-gray-600 mt-1">${escapeHtml(item.description)}</p>` : ''}
+                            ${item.type === 'stationary' ? `
+                                <p class="text-xs text-gray-600 mt-1">${escapeHtml(item.address || '')}</p>
+                                <p class="text-xs text-gray-600">${escapeHtml(item.postal_code || '')} ${escapeHtml(item.city || '')}</p>
+                                ${item.phone ? `<p class="text-xs text-gray-600 mt-1"><i class="fa-solid fa-phone"></i> ${escapeHtml(item.phone)}</p>` : ''}
+                            ` : ''}
+                            ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" class="text-xs text-yellow-700 hover:underline font-semibold mt-1 inline-block"><i class="fa-solid fa-external-link"></i> Website öffnen</a>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = cardContent;
+                sponsoredList.appendChild(card);
+            });
+
+            sponsoredSection.style.display = 'block';
+        }
+
         // Ergebnisse in Sidebar anzeigen
         function displayResults(data) {
             const resultsDiv = document.getElementById('booking-search-results');
@@ -743,10 +897,14 @@
             // Suchbereich entfernen (PLZ-Gebiet + Kreis)
             searchAreaLayer.clearLayers();
 
-            // Ergebnisse und Reset-Button ausblenden
+            // Ergebnisse, gesponserte Sektion und Reset-Button ausblenden
             const resultsDiv = document.getElementById('booking-search-results');
             if (resultsDiv) {
                 resultsDiv.style.display = 'none';
+            }
+            const sponsoredSection = document.getElementById('sponsored-section');
+            if (sponsoredSection) {
+                sponsoredSection.style.display = 'none';
             }
             document.getElementById('reset-filters-button').style.display = 'none';
 
