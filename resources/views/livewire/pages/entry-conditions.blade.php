@@ -1423,11 +1423,6 @@
             // Render Filter Badges
             renderSelectedFilters();
 
-            // Update Filter-Indikatoren
-            updateFilterIndicator('entryPossibleSection', hasEntryFilters);
-            updateFilterIndicator('visaSection', hasVisaFilters);
-            updateFilterIndicator('additionalFiltersSection', hasAdditionalFilters);
-
             // Update Reset-Button Sichtbarkeit
             updateResetButtonVisibility();
 
@@ -1492,39 +1487,6 @@
                 resetButton.style.display = 'flex';
             } else {
                 resetButton.style.display = 'none';
-            }
-        }
-
-        // Filter-Indikator aktualisieren
-        function updateFilterIndicator(sectionId, hasActiveFilters) {
-            const header = document.querySelector(`#${sectionId}`);
-            if (!header || !header.previousElementSibling) return;
-
-            const headerElement = header.previousElementSibling;
-            let indicator = headerElement.querySelector('.filter-active-indicator');
-
-            if (hasActiveFilters) {
-                // Indikator hinzufügen, falls noch nicht vorhanden
-                if (!indicator) {
-                    indicator = document.createElement('span');
-                    indicator.className = 'filter-active-indicator inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full ml-2';
-                    indicator.textContent = '●';
-
-                    // Suche nach dem <p> Element im Header
-                    const pElement = headerElement.querySelector('p');
-                    if (pElement) {
-                        pElement.appendChild(indicator);
-                    } else {
-                        // Fallback: Füge direkt zum Header hinzu
-                        console.warn('No <p> element found in header, appending to header directly');
-                        headerElement.appendChild(indicator);
-                    }
-                }
-            } else {
-                // Indikator entfernen, falls vorhanden
-                if (indicator) {
-                    indicator.remove();
-                }
             }
         }
 
