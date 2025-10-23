@@ -840,6 +840,8 @@
 
         // Destinations Filter Variables - Als window properties für Testbarkeit
         window.selectedDestinations = new Map();
+        // Standard: "Beliebiges Reiseziel" beim Laden auswählen
+        window.selectedDestinations.set('*', { code: '*', name: 'Beliebiges Reiseziel' });
         let destinationsFilterActiveIndex = 0;
 
         // Helper Functions
@@ -1182,6 +1184,11 @@
                 return; // Bereits ausgewählt, nichts tun
             }
 
+            // Wenn ein spezifisches Land hinzugefügt wird, "Beliebiges Reiseziel" entfernen
+            if (window.selectedDestinations.has('*')) {
+                window.selectedDestinations.delete('*');
+            }
+
             // Reiseziel hinzufügen
             window.selectedDestinations.set(code, {
                 name: countryName,
@@ -1216,12 +1223,23 @@
                 return;
             }
 
-            const badges = Array.from(window.selectedDestinations.entries()).map(([code, data]) => `
-                <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
-                    <span>${escapeHtml(data.name)} (${escapeHtml(data.code)})</span>
-                    <button type="button" class="text-blue-700 hover:text-blue-900" onclick="removeDestination('${escapeForAttr(code)}')" style="cursor: pointer;">&times;</button>
-                </span>
-            `).join('');
+            const badges = Array.from(window.selectedDestinations.entries()).map(([code, data]) => {
+                // "Beliebiges Reiseziel" (*) ohne X-Button anzeigen
+                if (code === '*') {
+                    return `
+                        <span class="inline-flex items-center gap-2 bg-gray-100 text-gray-700 border border-gray-300 rounded px-2 py-1 text-sm">
+                            <span>${escapeHtml(data.name)}</span>
+                        </span>
+                    `;
+                }
+                // Andere Reiseziele mit X-Button
+                return `
+                    <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
+                        <span>${escapeHtml(data.name)} (${escapeHtml(data.code)})</span>
+                        <button type="button" class="text-blue-700 hover:text-blue-900" onclick="removeDestination('${escapeForAttr(code)}')" style="cursor: pointer;">&times;</button>
+                    </span>
+                `;
+            }).join('');
 
             displayContainer.innerHTML = badges;
             updateResetButtonVisibility();
@@ -1357,8 +1375,9 @@
             window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
             renderSelectedNationalities();
 
-            // Reiseziele zurücksetzen
+            // Reiseziele zurücksetzen auf "Beliebiges Reiseziel"
             window.selectedDestinations.clear();
+            window.selectedDestinations.set('*', { code: '*', name: 'Beliebiges Reiseziel' });
             renderSelectedDestinations();
 
             // Suchfelder leeren
@@ -1409,6 +1428,13 @@
 
             if (nationalityCodes.length === 0 || destinationCodes.length === 0) {
                 return; // Nichts zu tun
+            }
+
+            // Wenn "Beliebiges Reiseziel" (*) ausgewählt ist, normale Filtersuche durchführen
+            if (destinationCodes.length === 1 && destinationCodes[0] === '*') {
+                // Führe normale Suche aus und zeige alle Ergebnisse in der Liste
+                await searchEntryConditions();
+                return;
             }
 
             // Filter sammeln
