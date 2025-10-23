@@ -416,7 +416,7 @@
                     <div id="entryFilters" class="p-4 space-y-4" style="display: block;">
                         <!-- Nationalitäten -->
                         <div class="bg-gray-100">
-                            <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('nationalitySection')">
+                            <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer bg-gray-200 hover:bg-gray-300" onclick="toggleFilterSubSection('nationalitySection')">
                                 <h4 class="text-sm font-medium text-gray-700">Nationalitäten</h4>
                                 <svg id="nationalityToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -442,7 +442,7 @@
 
                         <!-- Reiseziele -->
                         <div class="bg-gray-100">
-                            <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('destinationsSection')">
+                            <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer bg-gray-200 hover:bg-gray-300" onclick="toggleFilterSubSection('destinationsSection')">
                                 <h4 class="text-sm font-medium text-gray-700">Reiseziele</h4>
                                 <svg id="destinationsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
