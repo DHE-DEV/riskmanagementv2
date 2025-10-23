@@ -15,6 +15,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <!-- Font Awesome Einbindung -->
     @php($faKit = config('services.fontawesome.kit'))
     @if(!empty($faKit))
@@ -106,6 +109,63 @@
         #booking-map {
             width: 100%;
             height: 100%;
+        }
+
+        /* Marker Cluster Custom Styling */
+        .marker-cluster {
+            background-clip: padding-box;
+            border-radius: 20px;
+        }
+
+        .marker-cluster div {
+            width: 40px;
+            height: 40px;
+            margin-left: 0;
+            margin-top: 0;
+            text-align: center;
+            border-radius: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-cluster span {
+            line-height: 40px;
+            font-size: 14px;
+        }
+
+        .marker-cluster-small {
+            background-color: rgba(34, 197, 94, 0.6);
+        }
+
+        .marker-cluster-small div {
+            background-color: rgba(34, 197, 94, 0.8);
+            color: white;
+        }
+
+        .marker-cluster-medium {
+            background-color: rgba(59, 130, 246, 0.6);
+        }
+
+        .marker-cluster-medium div {
+            background-color: rgba(59, 130, 246, 0.8);
+            color: white;
+        }
+
+        .marker-cluster-large {
+            background-color: rgba(239, 68, 68, 0.6);
+        }
+
+        .marker-cluster-large div {
+            background-color: rgba(239, 68, 68, 0.8);
+            color: white;
+        }
+
+        /* Custom Marker Icons */
+        .custom-div-icon {
+            background: none;
+            border: none;
         }
     </style>
 </head>
@@ -291,6 +351,8 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet MarkerCluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <script>
         // Map initialisieren
@@ -306,8 +368,33 @@
                 maxZoom: 19
             }).addTo(bookingMap);
 
-            // Marker-Layer für einfaches Entfernen
-            markersLayer = L.layerGroup().addTo(bookingMap);
+            // Marker-Cluster-Layer statt normalem LayerGroup
+            markersLayer = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                spiderfyOnMaxZoom: true,
+                removeOutsideVisibleBounds: true,
+                maxClusterRadius: 80,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    let size = 'small';
+                    let className = 'marker-cluster-small';
+
+                    if (count > 50) {
+                        size = 'large';
+                        className = 'marker-cluster-large';
+                    } else if (count > 10) {
+                        size = 'medium';
+                        className = 'marker-cluster-medium';
+                    }
+
+                    return L.divIcon({
+                        html: '<div><span>' + count + '</span></div>',
+                        className: 'marker-cluster ' + className,
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            }).addTo(bookingMap);
 
             // Initial badge styling setzen
             updateRadiusBadges();
