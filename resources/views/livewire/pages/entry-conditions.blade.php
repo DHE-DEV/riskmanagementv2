@@ -624,8 +624,9 @@
         window.entryConditionsMarkers = L.markerClusterGroup();
         window.countryLayersGroup = null;
         window.countriesGeoJSON = null;
+        window.countryCoordinates = new Map(); // Map von ISO-Code zu {name, lat, lng, capital_name}
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Map initialisieren
             window.entryConditionsMap = L.map('entry-conditions-map').setView([20, 0], 2);
 
@@ -639,8 +640,8 @@
             // Layer Group für Länder-Highlighting
             window.countryLayersGroup = L.layerGroup().addTo(window.entryConditionsMap);
 
-            // GeoJSON-Daten für Länder laden
-            loadCountriesGeoJSON();
+            // Länder-Koordinaten laden
+            await loadCountryCoordinates();
 
             // Initial Nationalitäten und Reiseziele anzeigen
             renderSelectedNationalities();
@@ -675,13 +676,37 @@
             }
         }
 
+        // Länder-Koordinaten aus der API laden
+        async function loadCountryCoordinates() {
+            try {
+                const response = await fetch('/api/entry-conditions/countries');
+                const data = await response.json();
+
+                if (data.success && data.countries) {
+                    data.countries.forEach(country => {
+                        if (country.lat && country.lng) {
+                            window.countryCoordinates.set(country.code, {
+                                name: country.name,
+                                lat: country.lat,
+                                lng: country.lng,
+                                capital_name: country.capital_name
+                            });
+                        }
+                    });
+                    console.log('Loaded coordinates for', window.countryCoordinates.size, 'countries');
+                }
+            } catch (error) {
+                console.error('Error loading country coordinates:', error);
+            }
+        }
+
         // GeoJSON-Daten für Länder laden - NICHT VERWENDET, da keine GeoJSON-Datei vorhanden
         async function loadCountriesGeoJSON() {
             // Deaktiviert - wir verwenden stattdessen Marker-basiertes Highlighting
             console.log('GeoJSON loading skipped - using marker-based highlighting instead');
         }
 
-        // Länder auf der Karte hervorheben mit Markern
+        // Länder auf der Karte hervorheben mit Markern (Hauptstadt-Koordinaten)
         async function highlightCountriesOnMap(countryCodes) {
             try {
                 console.log('highlightCountriesOnMap called with:', countryCodes);
@@ -696,37 +721,35 @@
 
                 const bounds = [];
 
-                // Für jedes ausgewählte Land die Koordinaten holen und einen Marker setzen
+                // Für jedes ausgewählte Land die Hauptstadt-Koordinaten verwenden
                 for (const countryCode of countryCodes) {
                     try {
-                        console.log('Fetching location for:', countryCode);
+                        console.log('Looking up coordinates for:', countryCode);
 
-                        // Verwende die countries/locate API um Koordinaten zu bekommen
-                        const response = await fetch(`/api/countries/locate?q=${countryCode}`);
-                        const data = await response.json();
+                        // Prüfe ob wir Koordinaten für dieses Land haben
+                        const countryData = window.countryCoordinates.get(countryCode);
 
-                        if (data.data && data.data.latitude && data.data.longitude) {
-                            const lat = data.data.latitude;
-                            const lng = data.data.longitude;
+                        if (countryData && countryData.lat && countryData.lng) {
+                            const lat = countryData.lat;
+                            const lng = countryData.lng;
 
-                            console.log('Got coordinates for', countryCode, ':', lat, lng);
+                            console.log('Got capital coordinates for', countryCode, ':', lat, lng, '(', countryData.capital_name, ')');
 
-                            // Erstelle einen großen blauen Kreis-Marker
+                            // Erstelle einen großen blauen Kreis-Marker um die Hauptstadt
                             const circle = L.circle([lat, lng], {
                                 color: '#1d4ed8',
                                 fillColor: '#3b82f6',
-                                fillOpacity: 0.5,
+                                fillOpacity: 0.4,
                                 radius: 300000, // 300km Radius
-                                weight: 3
+                                weight: 2
                             });
 
                             circle.addTo(window.countryLayersGroup);
 
-                            // Optional: Popup mit Ländername
-                            const countryData = window.selectedDestinations.get(countryCode);
-                            if (countryData) {
-                                circle.bindPopup(`<b>${countryData.name}</b><br>ISO: ${countryCode}`);
-                            }
+                            // Popup mit Land- und Hauptstadtname
+                            const selectedCountry = window.selectedDestinations.get(countryCode);
+                            const countryName = selectedCountry ? selectedCountry.name : countryData.name;
+                            circle.bindPopup(`<b>${countryName}</b><br>Hauptstadt: ${countryData.capital_name}<br>ISO: ${countryCode}`);
 
                             // Bounds hinzufügen
                             bounds.push([lat, lng]);
@@ -1686,25 +1709,27 @@
             });
         }
 
-        // Länder auf Karte anzeigen
+        // Länder auf Karte anzeigen (mit Hauptstadt-Koordinaten)
         async function displayCountriesOnMap(destinations) {
             window.entryConditionsMarkers.clearLayers();
 
-            // Für jedes Ziel versuchen wir, die Koordinaten aus unserer Datenbank zu holen
+            // Für jedes Ziel die Hauptstadt-Koordinaten verwenden
             for (const destination of destinations) {
                 const countryCode = destination.code || destination.iso2;
                 if (!countryCode) continue;
 
                 try {
-                    // Verwende unsere Country Locate API
-                    const response = await fetch(`/api/countries/locate?iso2=${countryCode}`);
-                    const data = await response.json();
+                    // Prüfe ob wir Koordinaten für dieses Land haben
+                    const countryData = window.countryCoordinates.get(countryCode);
 
-                    if (data.lat && data.lng) {
-                        const marker = L.marker([data.lat, data.lng]);
-                        marker.bindPopup(`<b>${destination.name || countryCode}</b>`);
+                    if (countryData && countryData.lat && countryData.lng) {
+                        // Marker an Hauptstadt-Position setzen
+                        const marker = L.marker([countryData.lat, countryData.lng]);
+                        marker.bindPopup(`<b>${destination.name || countryCode}</b><br>Hauptstadt: ${countryData.capital_name}`);
                         marker.on('click', () => loadEntryConditionsForCountry(destination.name, countryCode));
                         window.entryConditionsMarkers.addLayer(marker);
+                    } else {
+                        console.warn(`No coordinates found for ${countryCode}`);
                     }
                 } catch (error) {
                     console.error(`Error loading coordinates for ${countryCode}:`, error);

@@ -23,8 +23,8 @@ class EntryConditionsController extends Controller
             // Convert to array of country codes
             $allowedCodes = array_map('trim', explode(',', $availableNationalities));
 
-            $query = \DB::table('countries')
-                ->select('iso_code as code', 'name_translations');
+            // Use Eloquent to get countries with capital coordinates
+            $query = \App\Models\Country::with('capital');
 
             // Filter by allowed country codes if configuration is set
             if (!empty($allowedCodes) && !in_array('*', $allowedCodes)) {
@@ -33,10 +33,13 @@ class EntryConditionsController extends Controller
 
             $countries = $query->get()
                 ->map(function ($country) {
-                    $nameTranslations = json_decode($country->name_translations, true);
+                    $capital = $country->capital;
                     return [
-                        'code' => $country->code,
-                        'name' => $nameTranslations['de'] ?? $nameTranslations['en'] ?? $country->code,
+                        'code' => $country->iso_code,
+                        'name' => $country->getName('de'),
+                        'lat' => $capital ? (float) $capital->lat : null,
+                        'lng' => $capital ? (float) $capital->lng : null,
+                        'capital_name' => $capital ? ($capital->name_translations['de'] ?? $capital->name_translations['en'] ?? null) : null,
                     ];
                 })
                 ->sortBy('name')
