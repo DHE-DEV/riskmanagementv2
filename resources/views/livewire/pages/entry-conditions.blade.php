@@ -1276,10 +1276,10 @@
             }
 
             const badges = Array.from(window.selectedDestinations.entries()).map(([code, data]) => {
-                // "Beliebiges Reiseziel" (*) ohne X-Button anzeigen
+                // "Beliebiges Reiseziel" (*) ohne X-Button anzeigen (gleiches Design wie Nationalität)
                 if (code === '*') {
                     return `
-                        <span class="inline-flex items-center gap-2 bg-gray-100 text-gray-700 border border-gray-300 rounded px-2 py-1 text-sm">
+                        <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
                             <span>${escapeHtml(data.name)}</span>
                         </span>
                     `;
