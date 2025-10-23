@@ -1272,16 +1272,10 @@
                 if (destinationsInput) {
                     destinationsInput.disabled = true;
                     destinationsInput.classList.add('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
-                    destinationsInput.placeholder = 'Filter aktiv - bitte Suchen klicken';
+                    destinationsInput.placeholder = 'Filter aktiv - Reiseziel bleibt erhalten';
                 }
 
-                // Ausgewählte Reiseziele leeren
-                if (window.selectedDestinations) {
-                    window.selectedDestinations.clear();
-                    renderSelectedDestinations();
-                }
-
-                // Such-Ergebnisse ausblenden
+                // Such-Ergebnisse ausblenden (Reiseziele NICHT leeren!)
                 const resultsDiv = document.getElementById('entry-conditions-search-results');
                 if (resultsDiv) {
                     resultsDiv.style.display = 'none';
