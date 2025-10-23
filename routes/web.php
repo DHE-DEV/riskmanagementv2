@@ -16,7 +16,9 @@ Route::get('/entry-conditions', function () {
     return view('livewire.pages.entry-conditions');
 })->name('entry-conditions');
 
-
+Route::get('/booking', function () {
+    return view('livewire.pages.booking');
+})->name('booking');
 
 Route::middleware([
     'auth:sanctum',
