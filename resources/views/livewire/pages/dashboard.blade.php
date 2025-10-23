@@ -933,10 +933,12 @@
                 <a href="{{ route('entry-conditions') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Einreisebestimmungen">
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
                 </a>
-                <!--
-                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flugzeuge" onclick="createAirportSidebar()">
+
+                @if(config('app.dashboard_airports_enabled', true))
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </button>-->
+                </button>
+                @endif
 <!--
                 <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Social Media" onclick="createSocialSidebar()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

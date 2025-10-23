@@ -150,4 +150,15 @@ return [
     'entry_conditions_logging_enabled' => env('ENTRY_CONDITIONS_LOGGING_ENABLED', false),
     'entry_conditions_available_nationalities' => env('ENTRY_CONDITIONS_AVAILABLE_NATIONALITIES', 'DE,AT,CH'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard Feature Toggles
+    |--------------------------------------------------------------------------
+    |
+    | These options control which features are enabled on the dashboard.
+    |
+    */
+
+    'dashboard_airports_enabled' => env('DASHBOARD_AIRPORTS_ENABLED', true),
+
 ];
