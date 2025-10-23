@@ -1572,8 +1572,24 @@
             const nationalityCodes = Array.from(window.selectedNationalities.keys());
             const destinationCodes = Array.from(window.selectedDestinations.keys());
 
-            if (nationalityCodes.length === 0 || destinationCodes.length === 0) {
-                return; // Nichts zu tun
+            console.log('searchWithDestinationValidation called:', {
+                nationalityCodes,
+                destinationCodes,
+                nationalitiesCount: nationalityCodes.length,
+                destinationsCount: destinationCodes.length
+            });
+
+            if (nationalityCodes.length === 0) {
+                console.log('No nationalities selected, aborting search');
+                return; // Keine Nationalität ausgewählt
+            }
+
+            // Wenn keine Reiseziele ausgewählt sind, setze "Beliebiges Reiseziel" als Standard
+            if (destinationCodes.length === 0) {
+                console.log('No destinations selected, setting default "*"');
+                window.selectedDestinations.set('*', { code: '*', name: 'Beliebiges Reiseziel' });
+                renderSelectedDestinations();
+                destinationCodes.push('*');
             }
 
             // Wenn "Beliebiges Reiseziel" (*) ausgewählt ist, normale Filtersuche durchführen
