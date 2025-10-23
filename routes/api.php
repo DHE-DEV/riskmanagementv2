@@ -94,6 +94,12 @@ Route::prefix('entry-conditions')->group(function () {
     Route::get('/pdf', [EntryConditionsController::class, 'getPDF'])->name('entry-conditions.pdf');
 });
 
+// Booking Locations API Routes
+Route::prefix('booking-locations')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\BookingLocationController::class, 'index'])->name('booking-locations.index');
+    Route::post('/search', [\App\Http\Controllers\Api\BookingLocationController::class, 'search'])->name('booking-locations.search');
+});
+
 // Countries GeoJSON Route
 Route::get('/countries-geojson', function () {
     $path = storage_path('app/private/countries.geojson');

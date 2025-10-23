@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Buchungsmöglichkeit - Global Travel Monitor</title>
 
     <!-- Favicons -->
@@ -172,28 +173,65 @@
                             <label class="block text-sm font-medium text-gray-700 mb-3">
                                 Umkreis
                             </label>
-                            <div class="space-y-2">
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" name="radius" value="5" class="mr-2 text-blue-600 focus:ring-blue-500" id="radius-5">
+                            <!-- Hidden radio buttons for state management -->
+                            <input type="radio" name="radius" value="5" id="radius-5" style="display: none;">
+                            <input type="radio" name="radius" value="10" id="radius-10" checked style="display: none;">
+                            <input type="radio" name="radius" value="20" id="radius-20" style="display: none;">
+
+                            <!-- Radius badges -->
+                            <div class="flex flex-wrap gap-2">
+                                <span
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge"
+                                    data-radius="5"
+                                    onclick="selectRadius(5)">
                                     <span>+ 5 km</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" name="radius" value="10" class="mr-2 text-blue-600 focus:ring-blue-500" id="radius-10" checked>
+                                </span>
+                                <span
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge active"
+                                    data-radius="10"
+                                    onclick="selectRadius(10)">
                                     <span>+ 10 km</span>
-                                </label>
-                                <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" name="radius" value="20" class="mr-2 text-blue-600 focus:ring-blue-500" id="radius-20">
+                                </span>
+                                <span
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge"
+                                    data-radius="20"
+                                    onclick="selectRadius(20)">
                                     <span>+ 20 km</span>
-                                </label>
+                                </span>
                             </div>
                         </div>
 
-                        <!-- Online-Buchung -->
+                        <!-- Buchungsart -->
                         <div class="bg-gray-100 p-4 rounded">
-                            <label class="flex items-center text-sm text-gray-700 cursor-pointer">
-                                <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="onlineBooking">
-                                <span class="font-medium">Nur Online-Buchung</span>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                Buchungsart
                             </label>
+                            <!-- Hidden radio buttons for state management -->
+                            <input type="radio" name="bookingType" value="stationary" id="bookingType-stationary" style="display: none;">
+                            <input type="radio" name="bookingType" value="online" id="bookingType-online" style="display: none;">
+                            <input type="radio" name="bookingType" value="any" id="bookingType-any" checked style="display: none;">
+
+                            <!-- Booking type badges -->
+                            <div class="flex flex-wrap gap-2">
+                                <span
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors bookingtype-badge"
+                                    data-bookingtype="stationary"
+                                    onclick="selectBookingType('stationary')">
+                                    <span>Stationär</span>
+                                </span>
+                                <span
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors bookingtype-badge"
+                                    data-bookingtype="online"
+                                    onclick="selectBookingType('online')">
+                                    <span>Online</span>
+                                </span>
+                                <span
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors bookingtype-badge active"
+                                    data-bookingtype="any"
+                                    onclick="selectBookingType('any')">
+                                    <span>Egal</span>
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Action Buttons -->
@@ -257,6 +295,7 @@
     <script>
         // Map initialisieren
         let bookingMap = null;
+        let markersLayer = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Map initialisieren
@@ -266,30 +305,277 @@
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(bookingMap);
+
+            // Marker-Layer für einfaches Entfernen
+            markersLayer = L.layerGroup().addTo(bookingMap);
+
+            // Initial badge styling setzen
+            updateRadiusBadges();
+            updateBookingTypeBadges();
+
+            // Alle Standorte beim Laden anzeigen
+            loadAllLocations();
         });
 
+        // Umkreis-Auswahl
+        function selectRadius(radius) {
+            // Hidden radio button aktualisieren
+            const radioButton = document.getElementById('radius-' + radius);
+            if (radioButton) {
+                radioButton.checked = true;
+            }
+
+            // Badge-Styling aktualisieren
+            updateRadiusBadges();
+        }
+
+        // Badge-Styling aktualisieren
+        function updateRadiusBadges() {
+            const badges = document.querySelectorAll('.radius-badge');
+            const selectedRadius = document.querySelector('input[name="radius"]:checked')?.value;
+
+            badges.forEach(badge => {
+                const badgeRadius = badge.getAttribute('data-radius');
+                if (badgeRadius === selectedRadius) {
+                    // Aktiv: Grüner Badge
+                    badge.className = 'inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge active bg-green-50 text-green-800 border border-green-200 font-medium';
+                } else {
+                    // Inaktiv: Weißer Badge
+                    badge.className = 'inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors radius-badge bg-white text-gray-700 border border-gray-300 hover:bg-gray-50';
+                }
+            });
+        }
+
+        // Buchungsart-Auswahl
+        function selectBookingType(bookingType) {
+            // Hidden radio button aktualisieren
+            const radioButton = document.getElementById('bookingType-' + bookingType);
+            if (radioButton) {
+                radioButton.checked = true;
+            }
+
+            // Badge-Styling aktualisieren
+            updateBookingTypeBadges();
+        }
+
+        // Buchungsart Badge-Styling aktualisieren
+        function updateBookingTypeBadges() {
+            const badges = document.querySelectorAll('.bookingtype-badge');
+            const selectedType = document.querySelector('input[name="bookingType"]:checked')?.value;
+
+            badges.forEach(badge => {
+                const badgeType = badge.getAttribute('data-bookingtype');
+                if (badgeType === selectedType) {
+                    // Aktiv: Grüner Badge
+                    badge.className = 'inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors bookingtype-badge active bg-green-50 text-green-800 border border-green-200 font-medium';
+                } else {
+                    // Inaktiv: Weißer Badge
+                    badge.className = 'inline-flex items-center gap-1 px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors bookingtype-badge bg-white text-gray-700 border border-gray-300 hover:bg-gray-50';
+                }
+            });
+        }
+
+        // Alle Standorte laden (Initial)
+        async function loadAllLocations() {
+            try {
+                const response = await fetch('/api/booking-locations');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLocations(data.data);
+                    console.log(`${data.count} Buchungsstandorte geladen`);
+                }
+            } catch (error) {
+                console.error('Fehler beim Laden der Standorte:', error);
+            }
+        }
+
         // Suche nach Buchungsmöglichkeiten
-        function searchBookingOptions() {
+        async function searchBookingOptions() {
             const postalCode = document.getElementById('postalCodeInput').value;
             const radius = document.querySelector('input[name="radius"]:checked')?.value || '10';
-            const onlineOnly = document.getElementById('onlineBooking').checked;
+            const bookingType = document.querySelector('input[name="bookingType"]:checked')?.value || 'any';
 
-            console.log('Search booking options:', { postalCode, radius, onlineOnly });
+            if (!postalCode || postalCode.length !== 5) {
+                alert('Bitte geben Sie eine gültige 5-stellige Postleitzahl ein.');
+                return;
+            }
 
-            // TODO: API-Call implementieren
-            alert('Suche wird implementiert. PLZ: ' + postalCode + ', Umkreis: ' + radius + 'km, Online: ' + onlineOnly);
+            try {
+                const response = await fetch('/api/booking-locations/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    },
+                    body: JSON.stringify({
+                        postal_code: postalCode,
+                        radius: parseInt(radius),
+                        booking_type: bookingType,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLocations(data.data, data.center);
+                    displayResults(data);
+
+                    // Zeige Reset-Button
+                    document.getElementById('reset-filters-button').style.display = 'block';
+                } else {
+                    alert(data.message || 'Fehler bei der Suche');
+                }
+            } catch (error) {
+                console.error('Fehler bei der Suche:', error);
+                alert('Fehler bei der Suche. Bitte versuchen Sie es erneut.');
+            }
+        }
+
+        // Standorte auf Karte anzeigen
+        function displayLocations(locations, center = null) {
+            // Alte Marker entfernen
+            markersLayer.clearLayers();
+
+            // Icons für verschiedene Typen
+            const onlineIcon = L.divIcon({
+                html: '<i class="fa-solid fa-laptop text-blue-600" style="font-size: 20px;"></i>',
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+            });
+
+            const stationaryIcon = L.divIcon({
+                html: '<i class="fa-solid fa-store text-green-600" style="font-size: 20px;"></i>',
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+            });
+
+            locations.forEach(location => {
+                if (location.type === 'online') {
+                    // Online-Buchungen haben keine Koordinaten, zeige in Sidebar
+                    return;
+                }
+
+                if (location.latitude && location.longitude) {
+                    const marker = L.marker([location.latitude, location.longitude], {
+                        icon: location.type === 'online' ? onlineIcon : stationaryIcon,
+                    });
+
+                    let popupContent = `
+                        <div style="min-width: 200px;">
+                            <h3 style="font-weight: bold; margin-bottom: 8px;">${escapeHtml(location.name)}</h3>
+                            ${location.description ? `<p style="font-size: 12px; color: #666; margin-bottom: 8px;">${escapeHtml(location.description)}</p>` : ''}
+                            ${location.address ? `<p style="font-size: 12px;"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(location.address)}</p>` : ''}
+                            ${location.postal_code && location.city ? `<p style="font-size: 12px;">${escapeHtml(location.postal_code)} ${escapeHtml(location.city)}</p>` : ''}
+                            ${location.phone ? `<p style="font-size: 12px;"><i class="fa-solid fa-phone"></i> ${escapeHtml(location.phone)}</p>` : ''}
+                            ${location.distance ? `<p style="font-size: 12px; color: #059669; font-weight: bold;"><i class="fa-solid fa-route"></i> ${parseFloat(location.distance).toFixed(1)} km</p>` : ''}
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    markersLayer.addLayer(marker);
+                }
+            });
+
+            // Karte auf Center zoomen, wenn vorhanden
+            if (center && center.lat && center.lng) {
+                bookingMap.setView([center.lat, center.lng], 10);
+
+                // Center-Marker
+                const centerMarker = L.marker([center.lat, center.lng], {
+                    icon: L.divIcon({
+                        html: '<i class="fa-solid fa-crosshairs text-red-600" style="font-size: 24px;"></i>',
+                        className: 'custom-div-icon',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15],
+                    })
+                }).bindPopup('Suchzentrum');
+                markersLayer.addLayer(centerMarker);
+            }
+        }
+
+        // Ergebnisse in Sidebar anzeigen
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('booking-search-results');
+            const resultsCount = document.getElementById('results-count');
+            const resultsList = document.getElementById('results-list');
+
+            resultsCount.textContent = data.count;
+            resultsList.innerHTML = '';
+
+            const locations = data.data || [];
+
+            locations.forEach(location => {
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer';
+
+                let cardContent = `
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0">
+                            ${location.type === 'online'
+                                ? '<i class="fa-solid fa-laptop text-blue-600 text-xl"></i>'
+                                : '<i class="fa-solid fa-store text-green-600 text-xl"></i>'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-sm text-gray-900 truncate">${escapeHtml(location.name)}</h4>
+                            ${location.description ? `<p class="text-xs text-gray-600 mt-1">${escapeHtml(location.description)}</p>` : ''}
+                            ${location.type === 'online' && location.url ? `<a href="${escapeHtml(location.url)}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block"><i class="fa-solid fa-external-link"></i> Website öffnen</a>` : ''}
+                            ${location.type === 'stationary' ? `
+                                <p class="text-xs text-gray-600 mt-1">${escapeHtml(location.address || '')}</p>
+                                <p class="text-xs text-gray-600">${escapeHtml(location.postal_code || '')} ${escapeHtml(location.city || '')}</p>
+                                ${location.distance ? `<p class="text-xs text-green-600 font-semibold mt-1"><i class="fa-solid fa-route"></i> ${parseFloat(location.distance).toFixed(1)} km</p>` : ''}
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = cardContent;
+
+                // Click-Handler für stationäre Standorte
+                if (location.type === 'stationary' && location.latitude && location.longitude) {
+                    card.addEventListener('click', () => {
+                        bookingMap.setView([location.latitude, location.longitude], 15);
+                    });
+                }
+
+                resultsList.appendChild(card);
+            });
+
+            resultsDiv.style.display = 'block';
+        }
+
+        // HTML Escape-Funktion
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Filter zurücksetzen
         function resetFilters() {
             document.getElementById('postalCodeInput').value = '';
             document.getElementById('radius-10').checked = true;
-            document.getElementById('onlineBooking').checked = false;
+            document.getElementById('bookingType-any').checked = true;
 
+            // Badge-Styling aktualisieren
+            updateRadiusBadges();
+            updateBookingTypeBadges();
+
+            // Ergebnisse und Reset-Button ausblenden
             const resultsDiv = document.getElementById('booking-search-results');
             if (resultsDiv) {
                 resultsDiv.style.display = 'none';
             }
+            document.getElementById('reset-filters-button').style.display = 'none';
+
+            // Alle Standorte wieder laden
+            loadAllLocations();
+
+            // Karte zurück auf Deutschland zentrieren
+            bookingMap.setView([51.1657, 10.4515], 6);
         }
     </script>
 </body>
