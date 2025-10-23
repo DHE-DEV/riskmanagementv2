@@ -1392,7 +1392,7 @@
 
         // Filter anwenden
         async function applyEntryConditionsFilters() {
-            console.log('Filters applied');
+            console.log('=== applyEntryConditionsFilters called ===');
 
             // Prüfe ob mindestens ein Filter aktiv ist in den verschiedenen Kategorien
             const hasEntryFilters =
@@ -1412,6 +1412,13 @@
                 document.getElementById('filter-no-entry-form')?.checked;
 
             const hasActiveFilters = hasEntryFilters || hasVisaFilters || hasAdditionalFilters;
+
+            console.log('Filter status:', {
+                hasEntryFilters,
+                hasVisaFilters,
+                hasAdditionalFilters,
+                hasActiveFilters
+            });
 
             // Render Filter Badges
             renderSelectedFilters();
@@ -1436,8 +1443,9 @@
                 }
 
                 // Automatische Suche mit allen aktiven Filtern durchführen
-                console.log('Auto-triggering search with active filters');
+                console.log('=== Triggering automatic search ===');
                 await searchWithDestinationValidation();
+                console.log('=== Search completed ===');
             } else {
                 // Keine Filter: Reiseziele-Feld wieder aktivieren
                 if (destinationsInput) {
@@ -1594,8 +1602,10 @@
 
             // Wenn "Beliebiges Reiseziel" (*) ausgewählt ist, normale Filtersuche durchführen
             if (destinationCodes.length === 1 && destinationCodes[0] === '*') {
+                console.log('Using wildcard destination (*), calling searchEntryConditions()');
                 // Führe normale Suche aus und zeige alle Ergebnisse in der Liste
                 await searchEntryConditions();
+                console.log('searchEntryConditions() completed');
                 return;
             }
 
