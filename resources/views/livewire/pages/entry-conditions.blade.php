@@ -418,14 +418,14 @@
                         <div class="bg-gray-100">
                             <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('nationalitySection')">
                                 <h4 class="text-sm font-medium text-gray-700">Nationalitäten</h4>
-                                <svg id="nationalityToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                                <svg id="nationalityToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
                             <div id="selectedNationalityDisplay" class="px-3 pt-3 space-y-1">
                                 <!-- Ausgewählte Nationalität wird hier dynamisch eingefügt -->
                             </div>
-                            <div id="nationalitySection" class="p-3" style="display: block;">
+                            <div id="nationalitySection" class="p-3" style="display: none;">
                                 <div class="space-y-2">
                                     <input
                                         type="text"
@@ -444,14 +444,14 @@
                         <div class="bg-gray-100">
                             <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('destinationsSection')">
                                 <h4 class="text-sm font-medium text-gray-700">Reiseziele</h4>
-                                <svg id="destinationsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                                <svg id="destinationsToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
                             <div id="selectedDestinationsDisplay" class="px-3 pt-3 space-y-1">
                                 <!-- Ausgewählte Reiseziele werden hier dynamisch eingefügt -->
                             </div>
-                            <div id="destinationsSection" class="p-3" style="display: block;">
+                            <div id="destinationsSection" class="p-3" style="display: none;">
                                 <div class="space-y-2">
                                     <input
                                         type="text"
@@ -470,14 +470,14 @@
                         <div>
                             <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleFilterSubSection('entryPossibleSection')">
                                 <p class="text-xs text-gray-700 font-medium">Einreise möglich</p>
-                                <svg id="entryPossibleToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                                <svg id="entryPossibleToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
                             <div id="selectedEntryPossibleDisplay" class="px-2 pt-2 space-y-1" style="padding-bottom: 0;">
                                 <!-- Ausgewählte Filter werden hier dynamisch eingefügt -->
                             </div>
-                            <div id="entryPossibleSection" class="px-2 space-y-2" style="display: block;">
+                            <div id="entryPossibleSection" class="px-2 space-y-2" style="display: none;">
                                 <label class="flex items-center text-sm text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-50 p-2 rounded">
                                     <input type="checkbox" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" id="filter-passport" onchange="applyEntryConditionsFilters()" checked>
                                     <span>mit Reisepass</span>
