@@ -1557,7 +1557,13 @@
             if (nationalityInput) nationalityInput.value = '';
 
             const destinationsInput = document.getElementById('destinationsFilterInput');
-            if (destinationsInput) destinationsInput.value = '';
+            if (destinationsInput) {
+                destinationsInput.value = '';
+                // Reiseziele-Feld wieder aktivieren
+                destinationsInput.disabled = false;
+                destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+                destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+            }
 
             // Suchergebnisse ausblenden
             const resultsDiv = document.getElementById('entry-conditions-search-results');
@@ -1586,14 +1592,6 @@
 
             // Reset-Button Sichtbarkeit aktualisieren
             updateResetButtonVisibility();
-
-            // Reiseziele-Feld wieder aktivieren
-            const destinationsInput = document.getElementById('destinationsFilterInput');
-            if (destinationsInput) {
-                destinationsInput.disabled = false;
-                destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
-                destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
-            }
         }
 
         // Suche mit Validierung ob Reiseziel in Ergebnissen vorkommt
