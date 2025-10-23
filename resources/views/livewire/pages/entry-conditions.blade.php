@@ -1563,7 +1563,8 @@
 
             console.log('Nationalities:', nationalityCodes, 'Destinations:', destinationCodes);
 
-            if (nationalityCodes.length > 0 && destinationCodes.length > 0) {
+            // Wenn spezifisches Reiseziel (nicht "*") gesetzt ist, Content API verwenden
+            if (nationalityCodes.length > 0 && destinationCodes.length > 0 && !destinationCodes.includes('*')) {
                 console.log('Using new content API');
 
                 // Länder auf der Karte hervorheben
@@ -1574,7 +1575,7 @@
                 return;
             }
 
-            console.log('Using old filter-based search');
+            console.log('Using filter-based search (for "Beliebiges Reiseziel" or no destination)');
 
             // Alte Logik: Filter-basierte Suche wenn keine oder nur eine Auswahl getroffen wurde
             // Filter sammeln (camelCase für API)
