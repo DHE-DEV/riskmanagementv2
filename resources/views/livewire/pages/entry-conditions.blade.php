@@ -1293,11 +1293,8 @@
                     destinationsInput.placeholder = 'Filter aktiv - Reiseziel bleibt erhalten';
                 }
 
-                // Such-Ergebnisse ausblenden (Reiseziele NICHT leeren!)
-                const resultsDiv = document.getElementById('entry-conditions-search-results');
-                if (resultsDiv) {
-                    resultsDiv.style.display = 'none';
-                }
+                // Such-Ergebnisse bleiben sichtbar (werden durch searchWithDestinationValidation aktualisiert)
+                // NICHT mehr ausblenden, da wir bei "Beliebiges Reiseziel" die Liste zeigen wollen
             } else {
                 // Keine Filter: Reiseziele-Feld wieder aktivieren
                 if (destinationsInput) {
