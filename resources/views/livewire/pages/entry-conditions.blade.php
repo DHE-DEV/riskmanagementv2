@@ -1509,7 +1509,16 @@
                     indicator = document.createElement('span');
                     indicator.className = 'filter-active-indicator inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full ml-2';
                     indicator.textContent = '●';
-                    headerElement.querySelector('p').appendChild(indicator);
+
+                    // Suche nach dem <p> Element im Header
+                    const pElement = headerElement.querySelector('p');
+                    if (pElement) {
+                        pElement.appendChild(indicator);
+                    } else {
+                        // Fallback: Füge direkt zum Header hinzu
+                        console.warn('No <p> element found in header, appending to header directly');
+                        headerElement.appendChild(indicator);
+                    }
                 }
             } else {
                 // Indikator entfernen, falls vorhanden
