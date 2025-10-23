@@ -175,12 +175,35 @@ class EntryConditionsController extends Controller
      */
     public function getDetails(Request $request)
     {
+        $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
+        $logData = [];
+
         try {
             $from = $request->input('from'); // Nationality code
             $to = $request->input('to'); // Destination country code
 
+            // Prepare log data
+            if ($loggingEnabled) {
+                $logData = [
+                    'nationality' => $from,
+                    'filters' => [],
+                    'request_body' => [
+                        'endpoint' => 'getDetails',
+                        'from' => $from,
+                        'to' => $to,
+                    ],
+                ];
+            }
+
             // Validate that both are provided
             if (empty($from) || empty($to)) {
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'success' => false,
+                        'error_message' => 'Both from (nationality) and to (destination) are required',
+                    ]));
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Both from (nationality) and to (destination) are required'
@@ -192,6 +215,13 @@ class EntryConditionsController extends Controller
             $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
 
             if (!$apiKey) {
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'success' => false,
+                        'error_message' => 'API key not configured',
+                    ]));
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'API key not configured'
@@ -259,6 +289,16 @@ class EntryConditionsController extends Controller
                     $htmlContent = $body;
                 }
 
+                // Log successful request
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'response_data' => strpos($contentType, 'application/json') !== false ? $response->json() : ['html_content' => substr($body, 0, 500)],
+                        'response_status' => $response->status(),
+                        'results_count' => 1,
+                        'success' => true,
+                    ]));
+                }
+
                 return response()->json([
                     'success' => true,
                     'content' => $htmlContent,
@@ -268,6 +308,15 @@ class EntryConditionsController extends Controller
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
+
+                // Log failed request
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'response_status' => $response->status(),
+                        'success' => false,
+                        'error_message' => 'API request failed: ' . $response->body(),
+                    ]));
+                }
 
                 return response()->json([
                     'success' => false,
@@ -282,6 +331,14 @@ class EntryConditionsController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
+            // Log exception
+            if ($loggingEnabled && !empty($logData)) {
+                EntryConditionsLog::create(array_merge($logData, [
+                    'success' => false,
+                    'error_message' => $e->getMessage(),
+                ]));
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching details',
@@ -295,12 +352,35 @@ class EntryConditionsController extends Controller
      */
     public function getContent(Request $request)
     {
+        $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
+        $logData = [];
+
         try {
             $countries = $request->input('countries', []); // Array of country codes
             $nationalities = $request->input('nationalities', []); // Array of nationality codes
 
+            // Prepare log data
+            if ($loggingEnabled) {
+                $logData = [
+                    'nationality' => is_array($nationalities) ? implode(',', $nationalities) : $nationalities,
+                    'filters' => [],
+                    'request_body' => [
+                        'endpoint' => 'getContent',
+                        'countries' => $countries,
+                        'nationalities' => $nationalities,
+                    ],
+                ];
+            }
+
             // Validate that both are provided
             if (empty($countries) || empty($nationalities)) {
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'success' => false,
+                        'error_message' => 'Both countries and nationalities are required',
+                    ]));
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Both countries and nationalities are required'
@@ -312,6 +392,13 @@ class EntryConditionsController extends Controller
             $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
 
             if (!$apiKey) {
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'success' => false,
+                        'error_message' => 'API key not configured',
+                    ]));
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'API key not configured'
@@ -381,6 +468,22 @@ class EntryConditionsController extends Controller
                     $htmlContent = $body;
                 }
 
+                // Log successful request
+                if ($loggingEnabled) {
+                    $recordsCount = 0;
+                    if (strpos($contentType, 'application/json') !== false) {
+                        $jsonData = $response->json();
+                        $recordsCount = isset($jsonData['records']) ? count($jsonData['records']) : 0;
+                    }
+
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'response_data' => strpos($contentType, 'application/json') !== false ? $response->json() : ['html_content' => substr($body, 0, 500)],
+                        'response_status' => $response->status(),
+                        'results_count' => $recordsCount,
+                        'success' => true,
+                    ]));
+                }
+
                 return response()->json([
                     'success' => true,
                     'content' => $htmlContent,
@@ -390,6 +493,15 @@ class EntryConditionsController extends Controller
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
+
+                // Log failed request
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'response_status' => $response->status(),
+                        'success' => false,
+                        'error_message' => 'API request failed: ' . $response->body(),
+                    ]));
+                }
 
                 return response()->json([
                     'success' => false,
@@ -404,9 +516,217 @@ class EntryConditionsController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
+            // Log exception
+            if ($loggingEnabled && !empty($logData)) {
+                EntryConditionsLog::create(array_merge($logData, [
+                    'success' => false,
+                    'error_message' => $e->getMessage(),
+                ]));
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching content',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get PDF content for selected countries and nationalities
+     */
+    public function getPDF(Request $request)
+    {
+        $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
+        $logData = [];
+
+        try {
+            $countries = $request->input('countries', ''); // Comma-separated country codes
+            $nationalities = $request->input('nat', ''); // Comma-separated nationality codes
+            $lang = $request->input('lang', 'de');
+
+            // Prepare log data
+            if ($loggingEnabled) {
+                $logData = [
+                    'nationality' => $nationalities,
+                    'filters' => [],
+                    'request_body' => [
+                        'endpoint' => 'getPDF',
+                        'countries' => $countries,
+                        'nationalities' => $nationalities,
+                        'lang' => $lang,
+                    ],
+                ];
+            }
+
+            // Validate that both are provided
+            if (empty($countries) || empty($nationalities)) {
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'success' => false,
+                        'error_message' => 'Both countries and nationalities are required',
+                    ]));
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Both countries and nationalities are required'
+                ], 400);
+            }
+
+            // Get API credentials from config
+            $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
+            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
+
+            if (!$apiKey) {
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'success' => false,
+                        'error_message' => 'API key not configured',
+                    ]));
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'API key not configured'
+                ], 500);
+            }
+
+            // Build query parameters
+            $queryParams = [
+                'lang' => $lang,
+                'countries' => $countries,
+                'nat' => $nationalities,
+            ];
+
+            Log::info('Passolution PDF API Request', [
+                'query' => $queryParams
+            ]);
+
+            // Make request to Passolution API
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Accept' => 'text/html, application/json',
+            ])->get($apiUrl . '/content/all/pdf?' . http_build_query($queryParams));
+
+            if ($response->successful()) {
+                $contentType = $response->header('Content-Type');
+                $body = $response->body();
+
+                Log::info('Passolution PDF API Response', [
+                    'content_type' => $contentType,
+                    'body_preview' => substr($body, 0, 200)
+                ]);
+
+                // Check if response is JSON or HTML
+                if (strpos($contentType, 'application/json') !== false) {
+                    // Response is JSON, try to extract HTML content
+                    $jsonData = $response->json();
+
+                    // Check for Passolution API structure
+                    if (isset($jsonData['records']) && is_array($jsonData['records']) && count($jsonData['records']) > 0) {
+                        // Combine all records content
+                        $htmlContent = '';
+                        foreach ($jsonData['records'] as $record) {
+                            if (isset($record['content'])) {
+                                $htmlContent .= $record['content'];
+                            }
+                        }
+
+                        if (empty($htmlContent)) {
+                            $htmlContent = '<p class="text-gray-500 text-sm">Keine Informationen verfügbar</p>';
+                        }
+                    } elseif (isset($jsonData['html'])) {
+                        $htmlContent = $jsonData['html'];
+                    } elseif (isset($jsonData['content'])) {
+                        $htmlContent = $jsonData['content'];
+                    } elseif (isset($jsonData['data'])) {
+                        $htmlContent = is_string($jsonData['data']) ? $jsonData['data'] : json_encode($jsonData['data']);
+                    } else {
+                        // If no recognizable structure, format the JSON nicely
+                        $htmlContent = '<pre class="bg-gray-50 p-4 rounded text-xs overflow-auto">' .
+                                     htmlspecialchars(json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) .
+                                     '</pre>';
+                    }
+                } else {
+                    // Response is HTML
+                    $htmlContent = $body;
+                }
+
+                // Log successful request
+                if ($loggingEnabled) {
+                    $recordsCount = 0;
+                    if (strpos($contentType, 'application/json') !== false) {
+                        $recordsCount = isset($jsonData['records']) ? count($jsonData['records']) : 0;
+                    }
+
+                    try {
+                        EntryConditionsLog::create(array_merge($logData, [
+                            'response_data' => ['pdf_content_length' => strlen($body)],
+                            'response_status' => $response->status(),
+                            'results_count' => $recordsCount,
+                            'success' => true,
+                        ]));
+                    } catch (\Exception $logException) {
+                        Log::warning('Failed to log PDF request', ['error' => $logException->getMessage()]);
+                    }
+                }
+
+                // Prüfe ob die Antwort ein PDF ist
+                if (strpos($contentType, 'application/pdf') !== false) {
+                    // Gebe PDF direkt zurück
+                    return response($body, 200, [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'inline; filename="einreisebestimmungen.pdf"',
+                    ]);
+                }
+
+                // Bereinige HTML-Content von ungültigen UTF-8 Zeichen
+                $cleanContent = mb_convert_encoding($htmlContent, 'UTF-8', 'UTF-8');
+
+                return response()->json([
+                    'success' => true,
+                    'content' => $cleanContent,
+                ]);
+            } else {
+                Log::error('Passolution PDF API error', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+
+                // Log failed request
+                if ($loggingEnabled) {
+                    EntryConditionsLog::create(array_merge($logData, [
+                        'response_status' => $response->status(),
+                        'success' => false,
+                        'error_message' => 'API request failed: ' . $response->body(),
+                    ]));
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'API request failed',
+                    'error' => $response->body()
+                ], $response->status());
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Entry conditions PDF error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Log exception
+            if ($loggingEnabled && !empty($logData)) {
+                EntryConditionsLog::create(array_merge($logData, [
+                    'success' => false,
+                    'error_message' => $e->getMessage(),
+                ]));
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching PDF content',
                 'error' => $e->getMessage()
             ], 500);
         }

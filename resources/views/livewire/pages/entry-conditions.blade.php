@@ -221,6 +221,20 @@
             border: none;
         }
 
+        /* Schnellübersicht Überschrift */
+        .entry-conditions-content-body h2 {
+            background-color: #4b5563;
+            color: #040404;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+            font-size: 1.125rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+        }
+
         .entry-conditions-content-body .pds-embed__info-table tbody tr {
             border: none;
         }
@@ -530,7 +544,7 @@
                                 </svg>
                                 Suchen
                             </button>
-                            <button onclick="resetEntryConditionsFilters()" class="w-full px-4 py-2.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <button id="reset-filters-button" onclick="resetEntryConditionsFilters()" class="w-full px-4 py-2.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2" style="display: none;">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                 </svg>
@@ -548,7 +562,7 @@
                             <span>Suchergebnisse (<span id="results-count">0</span>)</span>
                         </h3>
                     </div>
-                    <div id="results-list" class="p-2 space-y-2 bg-white overflow-y-auto" style="max-height: 28rem;">
+                    <div id="results-list" class="p-2 space-y-2 bg-white">
                         <!-- Results will be inserted here -->
                     </div>
                 </div>
@@ -631,7 +645,35 @@
             // Initial Nationalitäten und Reiseziele anzeigen
             renderSelectedNationalities();
             renderSelectedDestinations();
+
+            // Prüfe beim Laden, ob Filter aktiv sind und deaktiviere Reiseziele-Feld entsprechend
+            applyEntryConditionsFilters();
+
+            // Prüfe ob Filter aktiv sind und führe automatisch Suche aus
+            checkAndAutoSearch();
         });
+
+        // Prüfe ob Filter aktiv sind und führe automatisch Suche aus
+        function checkAndAutoSearch() {
+            // Prüfe ob mindestens ein Filter aktiv ist
+            const hasActiveFilters =
+                document.getElementById('filter-passport')?.checked ||
+                document.getElementById('filter-id-card')?.checked ||
+                document.getElementById('filter-temp-passport')?.checked ||
+                document.getElementById('filter-temp-id-card')?.checked ||
+                document.getElementById('filter-child-passport')?.checked ||
+                document.getElementById('filter-visa-free')?.checked ||
+                document.getElementById('filter-e-visa')?.checked ||
+                document.getElementById('filter-visa-on-arrival')?.checked ||
+                document.getElementById('filter-no-insurance')?.checked ||
+                document.getElementById('filter-no-entry-form')?.checked;
+
+            // Wenn Filter aktiv sind, automatisch Suche ausführen
+            if (hasActiveFilters) {
+                console.log('Auto-search: Filters detected, executing search automatically');
+                searchEntryConditions();
+            }
+        }
 
         // GeoJSON-Daten für Länder laden - NICHT VERWENDET, da keine GeoJSON-Datei vorhanden
         async function loadCountriesGeoJSON() {
@@ -903,8 +945,8 @@
                     });
                     el.querySelector('button')?.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const countryName = el.parentElement.getAttribute('data-name');
-                        const iso2 = el.parentElement.getAttribute('data-iso2');
+                        const countryName = el.getAttribute('data-name');
+                        const iso2 = el.getAttribute('data-iso2');
                         setNationality(countryName, iso2);
                         box.innerHTML = '';
                         document.getElementById('nationalityFilterInput').value = '';
@@ -959,6 +1001,7 @@
 
             if (window.selectedNationalities.size === 0) {
                 displayContainer.innerHTML = '';
+                updateResetButtonVisibility();
                 return;
             }
 
@@ -970,6 +1013,7 @@
             `).join('');
 
             displayContainer.innerHTML = badges;
+            updateResetButtonVisibility();
         }
 
         // ==================== DESTINATIONS FILTER FUNCTIONS ====================
@@ -1078,8 +1122,8 @@
                     });
                     el.querySelector('button')?.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const countryName = el.parentElement.getAttribute('data-name');
-                        const iso2 = el.parentElement.getAttribute('data-iso2');
+                        const countryName = el.getAttribute('data-name');
+                        const iso2 = el.getAttribute('data-iso2');
                         setDestination(countryName, iso2);
                         box.innerHTML = '';
                         document.getElementById('destinationsFilterInput').value = '';
@@ -1129,6 +1173,7 @@
 
             if (window.selectedDestinations.size === 0) {
                 displayContainer.innerHTML = '';
+                updateResetButtonVisibility();
                 return;
             }
 
@@ -1140,24 +1185,39 @@
             `).join('');
 
             displayContainer.innerHTML = badges;
+            updateResetButtonVisibility();
         }
 
         // Filter anwenden
         function applyEntryConditionsFilters() {
             console.log('Filters applied');
 
-            // Prüfe ob mindestens ein Filter aktiv ist
-            const hasActiveFilters =
+            // Prüfe ob mindestens ein Filter aktiv ist in den verschiedenen Kategorien
+            const hasEntryFilters =
                 document.getElementById('filter-passport')?.checked ||
                 document.getElementById('filter-id-card')?.checked ||
                 document.getElementById('filter-temp-passport')?.checked ||
                 document.getElementById('filter-temp-id-card')?.checked ||
-                document.getElementById('filter-child-passport')?.checked ||
+                document.getElementById('filter-child-passport')?.checked;
+
+            const hasVisaFilters =
                 document.getElementById('filter-visa-free')?.checked ||
                 document.getElementById('filter-e-visa')?.checked ||
-                document.getElementById('filter-visa-on-arrival')?.checked ||
+                document.getElementById('filter-visa-on-arrival')?.checked;
+
+            const hasAdditionalFilters =
                 document.getElementById('filter-no-insurance')?.checked ||
                 document.getElementById('filter-no-entry-form')?.checked;
+
+            const hasActiveFilters = hasEntryFilters || hasVisaFilters || hasAdditionalFilters;
+
+            // Update Filter-Indikatoren
+            updateFilterIndicator('entryPossibleSection', hasEntryFilters);
+            updateFilterIndicator('visaSection', hasVisaFilters);
+            updateFilterIndicator('additionalFiltersSection', hasAdditionalFilters);
+
+            // Update Reset-Button Sichtbarkeit
+            updateResetButtonVisibility();
 
             const destinationsInput = document.getElementById('destinationsFilterInput');
             const selectedDestinationsDisplay = document.getElementById('selectedDestinationsDisplay');
@@ -1187,6 +1247,63 @@
                     destinationsInput.disabled = false;
                     destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
                     destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+                }
+            }
+        }
+
+        // Reset-Button Sichtbarkeit aktualisieren
+        function updateResetButtonVisibility() {
+            const resetButton = document.getElementById('reset-filters-button');
+            if (!resetButton) return;
+
+            // Prüfe ob mehrere Nationalitäten ausgewählt sind (mehr als nur Deutschland)
+            const hasMultipleNationalities = window.selectedNationalities.size > 1 ||
+                (window.selectedNationalities.size === 1 && !window.selectedNationalities.has('DE'));
+
+            // Prüfe ob Reiseziele ausgewählt sind
+            const hasDestinations = window.selectedDestinations.size > 0;
+
+            // Prüfe ob Filter aktiv sind
+            const hasActiveFilters =
+                document.getElementById('filter-passport')?.checked ||
+                document.getElementById('filter-id-card')?.checked ||
+                document.getElementById('filter-temp-passport')?.checked ||
+                document.getElementById('filter-temp-id-card')?.checked ||
+                document.getElementById('filter-child-passport')?.checked ||
+                document.getElementById('filter-visa-free')?.checked ||
+                document.getElementById('filter-e-visa')?.checked ||
+                document.getElementById('filter-visa-on-arrival')?.checked ||
+                document.getElementById('filter-no-insurance')?.checked ||
+                document.getElementById('filter-no-entry-form')?.checked;
+
+            // Button anzeigen wenn eine der Bedingungen erfüllt ist
+            if (hasMultipleNationalities || hasDestinations || hasActiveFilters) {
+                resetButton.style.display = 'flex';
+            } else {
+                resetButton.style.display = 'none';
+            }
+        }
+
+        // Filter-Indikator aktualisieren
+        function updateFilterIndicator(sectionId, hasActiveFilters) {
+            const header = document.querySelector(`#${sectionId}`);
+            if (!header || !header.previousElementSibling) return;
+
+            const headerElement = header.previousElementSibling;
+            let indicator = headerElement.querySelector('.filter-active-indicator');
+
+            if (hasActiveFilters) {
+                // Indikator hinzufügen, falls noch nicht vorhanden
+                if (!indicator) {
+                    indicator = document.createElement('span');
+                    indicator.className = 'filter-active-indicator inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full ml-2';
+                    indicator.textContent = '●';
+                    headerElement.querySelector('p').appendChild(indicator);
+                }
+            } else {
+                // Indikator entfernen, falls vorhanden
+                if (indicator) {
+                    indicator.remove();
                 }
             }
         }
@@ -1233,6 +1350,17 @@
             if (window.entryConditionsMap) {
                 window.entryConditionsMap.setView([20, 0], 2);
             }
+
+            // Filter-Indikatoren entfernen
+            updateFilterIndicator('entryPossibleSection', false);
+            updateFilterIndicator('visaSection', false);
+            updateFilterIndicator('additionalFiltersSection', false);
+
+            // Reset-Button Sichtbarkeit aktualisieren
+            updateResetButtonVisibility();
+
+            // Reiseziele-Feld wieder aktivieren
+            applyEntryConditionsFilters();
         }
 
         // Einreisebestimmungen suchen
@@ -1399,31 +1527,46 @@
                             contentHtml = `<p class="text-red-500 text-sm">${escapeHtml(data.message)}</p>`;
                         }
 
+                        // Entferne h2-Überschriften (wie "Schnellübersicht") aus dem Content
+                        let cleanedContentHtml = contentHtml.replace(/<h2[^>]*>.*?<\/h2>/gi, '');
+
+                        // Entferne thead-Bereiche mit "Schnellübersicht" aus Tabellen
+                        cleanedContentHtml = cleanedContentHtml.replace(/<thead[^>]*>[\s\S]*?<\/thead>/gi, '');
+
                         allResultsHtml += `
                             <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
-                                <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-blue-200">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-xs font-semibold text-blue-700 uppercase">Nationalität:</span>
-                                        <span class="text-sm font-bold text-blue-900">${escapeHtml(nationalityName)}</span>
-                                        <img src="https://flagcdn.com/w40/${escapeForAttr(natCode.toLowerCase())}.png"
-                                             alt="${escapeHtml(nationalityName)}"
-                                             class="country-flag"
-                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                                        <span class="flag-fallback" style="display:none;">${escapeHtml(natCode)}</span>
+                                <div style="background-color: #f4f4f4;" class="px-4 py-3 border-b border-gray-200">
+                                    <div class="mb-2">
+                                        <span class="text-base font-bold text-gray-800">Schnellübersicht für</span>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-semibold text-blue-700 uppercase">Reiseziel:</span>
-                                        <span class="text-sm font-bold text-blue-900">${escapeHtml(destinationName)}</span>
-                                        <img src="https://flagcdn.com/w40/${escapeForAttr(destCode.toLowerCase())}.png"
-                                             alt="${escapeHtml(destinationName)}"
-                                             class="country-flag"
-                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                                        <span class="flag-fallback" style="display:none;">${escapeHtml(destCode)}</span>
+                                    <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-semibold text-gray-800 uppercase">Nationalität:</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <img src="https://flagcdn.com/w40/${escapeForAttr(natCode.toLowerCase())}.png"
+                                                 alt="${escapeHtml(nationalityName)}"
+                                                 class="country-flag"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                            <span class="flag-fallback" style="display:none;">${escapeHtml(natCode)}</span>
+                                            <span class="text-sm font-bold text-gray-800">${escapeHtml(nationalityName)}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-semibold text-gray-800 uppercase">Reiseziel:</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <img src="https://flagcdn.com/w40/${escapeForAttr(destCode.toLowerCase())}.png"
+                                                 alt="${escapeHtml(destinationName)}"
+                                                 class="country-flag"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                            <span class="flag-fallback" style="display:none;">${escapeHtml(destCode)}</span>
+                                            <span class="text-sm font-bold text-gray-800">${escapeHtml(destinationName)}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="p-4">
                                     <div class="entry-conditions-content-body text-sm text-gray-700 leading-relaxed">
-                                        ${contentHtml}
+                                        ${cleanedContentHtml}
                                     </div>
                                 </div>
                             </div>
@@ -1431,9 +1574,23 @@
                     }
                 }
 
-                // Alle Ergebnisse anzeigen
+                // Alle Ergebnisse anzeigen mit zentraler Warnung
                 if (allResultsHtml) {
-                    content.innerHTML = allResultsHtml;
+                    content.innerHTML = `
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fa-solid fa-exclamation-triangle text-yellow-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs text-yellow-800 leading-relaxed">
+                                        Bei der Schnellübersicht handelt es sich um eine grobe Übersicht für Pauschalreisen. Die kompletten Einreisebestimmungen für Reisende mit der betreffenden Nationalität erhalten Sie, wenn Sie auf die jeweilige Schaltfläche "PDF Download" klicken. <strong>Alle Informationen sind unverbindlich. Keine Haftung!</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        ${allResultsHtml}
+                    `;
                 } else {
                     content.innerHTML = `
                         <div class="text-center text-gray-500 py-8">
@@ -1482,7 +1639,11 @@
                 item.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 font-mono">${countryCode}</span>
+                            <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png"
+                                 alt="${countryName}"
+                                 class="country-flag"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                            <span class="flag-fallback" style="display:none;">${countryCode}</span>
                             <span class="font-medium text-gray-800">${countryName}</span>
                         </div>
                         <i class="fa-regular fa-chevron-right text-gray-400"></i>
@@ -1493,6 +1654,27 @@
             });
 
             resultsDiv.style.display = 'block';
+
+            // Automatisch zur "Einreise möglich" Sektion scrollen
+            scrollToEntryPossibleSection();
+        }
+
+        // Zur "Einreise möglich" Sektion scrollen
+        function scrollToEntryPossibleSection() {
+            const entryPossibleHeader = document.querySelector('[onclick*="toggleFilterSubSection(\'entryPossibleSection\')"]');
+            if (!entryPossibleHeader) return;
+
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+
+            // Berechne die Position des Elements relativ zum Sidebar-Container
+            const headerTop = entryPossibleHeader.offsetTop;
+
+            // Scrolle die Sidebar so, dass "Einreise möglich" oben ist
+            sidebar.scrollTo({
+                top: headerTop,
+                behavior: 'smooth'
+            });
         }
 
         // Länder auf Karte anzeigen
@@ -1528,51 +1710,29 @@
 
         // Einreisebestimmungen für ein Land laden
         async function loadEntryConditionsForCountry(countryName, iso2Code) {
-            const content = document.getElementById('entry-conditions-content');
-            const sidebar = document.getElementById('details-sidebar');
+            console.log('loadEntryConditionsForCountry called with:', countryName, iso2Code);
 
-            if (!content || !sidebar) return;
+            // Alle bisherigen Reiseziele entfernen
+            window.selectedDestinations.clear();
 
-            // Sidebar anzeigen
-            sidebar.style.display = 'block';
+            // Neues Land als Reiseziel auswählen
+            window.selectedDestinations.set(iso2Code, {
+                name: countryName,
+                code: iso2Code
+            });
+            renderSelectedDestinations();
 
-            // Loading anzeigen
-            content.innerHTML = `
-                <div class="text-center py-8">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p class="text-gray-600 mt-4">Lade Einreisebestimmungen für ${countryName}...</p>
-                </div>
-            `;
+            // Nationalitäten holen (sollte Deutschland sein)
+            const nationalityCodes = Array.from(window.selectedNationalities.keys());
+            const destinationCodes = [iso2Code];
 
-            // Karte neu zeichnen
-            setTimeout(() => {
-                if (window.entryConditionsMap) {
-                    window.entryConditionsMap.invalidateSize();
-                }
-            }, 300);
+            console.log('Loading content for nationalities:', nationalityCodes, 'and destination:', destinationCodes);
 
-            try {
-                const nationality = document.getElementById('nationality-select').value;
-                const response = await fetch(`/api/entry-conditions/details?from=${nationality}&to=${iso2Code}`);
-                const data = await response.json();
+            // Länder auf der Karte hervorheben
+            highlightCountriesOnMap(destinationCodes);
 
-                if (data.success && data.content) {
-                    displayEntryConditionsContent(countryName, data.content);
-                } else {
-                    content.innerHTML = `
-                        <div class="text-center text-gray-500 py-8">
-                            <p>Keine Details verfügbar für ${countryName}</p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading entry conditions:', error);
-                content.innerHTML = `
-                    <div class="text-center text-red-500 py-8">
-                        <p>Fehler beim Laden der Einreisebestimmungen</p>
-                    </div>
-                `;
-            }
+            // Content API aufrufen
+            await loadEntryConditionsContent(nationalityCodes, destinationCodes);
         }
 
         // Details anzeigen (HTML Content direkt von API)
@@ -1643,12 +1803,30 @@
             }
         }
 
-        // PDF Download Funktion (Platzhalter)
+        // PDF Download Funktion
         function downloadPDF() {
-            // TODO: Implementiere PDF-Download-Funktionalität
-            alert('PDF-Download wird vorbereitet...');
-            console.log('PDF Download requested');
-            // Hier könnte später eine API-Anfrage zum PDF-Download erfolgen
+            // Hole die aktuell ausgewählten Nationalitäten und Reiseziele
+            const nationalityCodes = Array.from(window.selectedNationalities.keys());
+            const destinationCodes = Array.from(window.selectedDestinations.keys());
+
+            if (nationalityCodes.length === 0 || destinationCodes.length === 0) {
+                alert('Bitte wählen Sie zuerst eine Nationalität und ein Reiseziel aus.');
+                return;
+            }
+
+            // Build URL für unsere API (die als Proxy fungiert)
+            const queryParams = new URLSearchParams({
+                lang: 'de',
+                countries: destinationCodes.join(','),
+                nat: nationalityCodes.join(',')
+            });
+
+            const pdfUrl = `/api/entry-conditions/pdf?${queryParams.toString()}`;
+
+            console.log('PDF Download requested:', pdfUrl);
+
+            // Öffne PDF in neuem Tab
+            window.open(pdfUrl, '_blank');
         }
     </script>
 </body>

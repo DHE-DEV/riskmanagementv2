@@ -90,6 +90,7 @@ Route::prefix('entry-conditions')->group(function () {
     Route::post('/search', [EntryConditionsController::class, 'search'])->name('entry-conditions.search');
     Route::post('/content', [EntryConditionsController::class, 'getContent'])->name('entry-conditions.content');
     Route::get('/details', [EntryConditionsController::class, 'getDetails'])->name('entry-conditions.details');
+    Route::get('/pdf', [EntryConditionsController::class, 'getPDF'])->name('entry-conditions.pdf');
 });
 
 // Countries GeoJSON Route
