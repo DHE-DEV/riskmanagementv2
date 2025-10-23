@@ -662,11 +662,11 @@
             renderSelectedNationalities();
             renderSelectedDestinations();
 
-            // Prüfe beim Laden, ob Filter aktiv sind und deaktiviere Reiseziele-Feld entsprechend
-            applyEntryConditionsFilters();
+            // Render initial filter badges
+            renderSelectedFilters();
 
-            // Prüfe ob Filter aktiv sind und führe automatisch Suche aus
-            checkAndAutoSearch();
+            // Prüfe beim Laden, ob Filter aktiv sind und stelle UI entsprechend ein (ohne Suche auszulösen)
+            updateResetButtonVisibility();
         });
 
         // Prüfe ob Filter aktiv sind und führe automatisch Suche aus
