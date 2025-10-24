@@ -56,6 +56,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::post('/profile/hide-profile-completion', [\App\Http\Controllers\Customer\ProfileController::class, 'toggleHideProfileCompletion'])
             ->name('profile.hide-profile-completion');
 
+        Route::post('/profile/toggle-directory-listing', [\App\Http\Controllers\Customer\ProfileController::class, 'toggleDirectoryListing'])
+            ->name('profile.toggle-directory-listing');
+
         // Passolution OAuth routes
         Route::get('/passolution/authorize', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'redirect'])
             ->name('passolution.authorize');

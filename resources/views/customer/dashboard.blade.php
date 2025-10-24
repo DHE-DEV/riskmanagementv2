@@ -952,16 +952,41 @@
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-data="{
+                             isActive: {{ auth('customer')->user()->directory_listing_active ? 'true' : 'false' }},
+                             async toggleListing() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.toggle-directory-listing') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({ active: !this.isActive })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         this.isActive = data.directory_listing_active;
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                     alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+                                 }
+                             }
+                         }">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Adressverzeichnis
                         </h3>
                         <p class="text-sm text-gray-600 mb-4">
-                            Wenn Sie im Adressverzeichnis gelistet sein möchten, kann dies hier aktiviert werden. Um als gesponsort zu erscheinen, können Sie ein Abo abschließen.
+                            Wenn Sie im Adressverzeichnis gelistet sein möchten, kann dies hier aktiviert werden.
                         </p>
                         <div>
-                            <button class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors">
-                                Aktivieren
+                            <button @click="toggleListing()"
+                                    :class="isActive ? 'bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                                    class="px-3 py-1 text-xs font-medium rounded border transition-colors">
+                                <span x-text="isActive ? 'Deaktivieren' : 'Aktivieren'"></span>
                             </button>
                         </div>
                     </div>

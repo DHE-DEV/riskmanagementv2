@@ -154,4 +154,20 @@ class ProfileController extends Controller
             'hide_profile_completion' => $customer->hide_profile_completion
         ]);
     }
+
+    public function toggleDirectoryListing(Request $request)
+    {
+        $request->validate([
+            'active' => 'required|boolean'
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->directory_listing_active = $request->active;
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'directory_listing_active' => $customer->directory_listing_active
+        ]);
+    }
 }

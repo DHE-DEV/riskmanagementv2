@@ -47,6 +47,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'passolution_features',
         'passolution_subscription_updated_at',
         'hide_profile_completion',
+        'directory_listing_active',
     ];
 
     protected $hidden = [
