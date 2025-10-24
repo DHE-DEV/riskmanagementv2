@@ -35,7 +35,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
                          x-data="{
                              customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
-                             businessType: '{{ auth('customer')->user()->business_type ?? '' }}',
+                             businessTypes: {{ json_encode(auth('customer')->user()->business_type ?? []) }},
                              saving: false,
                              async updateCustomerType(type) {
                                  console.log('Updating customer type to:', type);
@@ -75,9 +75,17 @@
                                      this.saving = false;
                                  }
                              },
-                             async updateBusinessType(type) {
-                                 console.log('Updating business type to:', type);
-                                 this.businessType = type;
+                             toggleBusinessType(type) {
+                                 const index = this.businessTypes.indexOf(type);
+                                 if (index > -1) {
+                                     this.businessTypes.splice(index, 1);
+                                 } else {
+                                     this.businessTypes.push(type);
+                                 }
+                                 this.saveBusinessTypes();
+                             },
+                             async saveBusinessTypes() {
+                                 console.log('Saving business types:', this.businessTypes);
                                  try {
                                      const response = await fetch('{{ route('customer.profile.update-business-type') }}', {
                                          method: 'POST',
@@ -86,21 +94,24 @@
                                              'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                              'Accept': 'application/json'
                                          },
-                                         body: JSON.stringify({ business_type: type })
+                                         body: JSON.stringify({ business_types: this.businessTypes })
                                      });
                                      const data = await response.json();
-                                     console.log('Business type response:', data);
+                                     console.log('Business types response:', data);
                                      if (data.success) {
                                          window.dispatchEvent(new CustomEvent('business-type-updated', {
                                              detail: {
-                                                 type: data.business_type,
-                                                 label: data.business_type_label
+                                                 types: data.business_types,
+                                                 labels: data.business_type_labels
                                              }
                                          }));
                                      }
                                  } catch (error) {
                                      console.error('Fehler beim Speichern:', error);
                                  }
+                             },
+                             isBusinessTypeSelected(type) {
+                                 return this.businessTypes.includes(type);
                              }
                          }">
                         <div class="block p-4 bg-white rounded-lg border border-gray-200">
@@ -127,25 +138,25 @@
                              x-show="customerType === 'business'"
                              x-transition>
                             <h3 class="font-semibold text-gray-900 mb-2">Geschäftstype</h3>
-                            <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie den Tätigkeitsbereich aus.</p>
+                            <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie den Tätigkeitsbereich aus (Mehrfachauswahl möglich).</p>
                             <div class="flex gap-3 flex-wrap">
                                 <button
-                                    @click="updateBusinessType('travel_agency')"
-                                    :class="businessType === 'travel_agency' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    @click="toggleBusinessType('travel_agency')"
+                                    :class="isBusinessTypeSelected('travel_agency') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
                                     Reisebüro
                                 </button>
                                 <button
-                                    @click="updateBusinessType('organizer')"
-                                    :class="businessType === 'organizer' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    @click="toggleBusinessType('organizer')"
+                                    :class="isBusinessTypeSelected('organizer') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
                                     Veranstalter
                                 </button>
                                 <button
-                                    @click="updateBusinessType('online_provider')"
-                                    :class="businessType === 'online_provider' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    @click="toggleBusinessType('online_provider')"
+                                    :class="isBusinessTypeSelected('online_provider') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
                                     Online Anbieter
@@ -158,11 +169,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
-                             customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
+                             customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}',
+                             businessTypeLabels: {{ json_encode(array_map(function($type) {
+                                 $labels = ['travel_agency' => 'Reisebüro', 'organizer' => 'Veranstalter', 'online_provider' => 'Online Anbieter'];
+                                 return $labels[$type] ?? $type;
+                             }, auth('customer')->user()->business_type ?? [])) }}
                          }"
                          @customer-type-updated.window="
                              console.log('Event received in profile:', $event.detail);
                              customerTypeLabel = $event.detail.label;
+                         "
+                         @business-type-updated.window="
+                             console.log('Business type event received in profile:', $event.detail);
+                             businessTypeLabels = $event.detail.labels;
                          ">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Profil
@@ -177,6 +196,9 @@
                         @endif
                         <p class="text-xs text-gray-700 mt-2">
                             Kundentyp: <span x-text="customerTypeLabel"></span>
+                        </p>
+                        <p class="text-xs text-gray-700 mt-2" x-show="businessTypeLabels.length > 0">
+                            Geschäftstype: <span x-text="businessTypeLabels.join(', ')"></span>
                         </p>
                     </div>
 

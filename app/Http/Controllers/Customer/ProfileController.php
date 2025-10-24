@@ -27,11 +27,12 @@ class ProfileController extends Controller
     public function updateBusinessType(Request $request)
     {
         $request->validate([
-            'business_type' => 'required|in:travel_agency,organizer,online_provider'
+            'business_types' => 'required|array',
+            'business_types.*' => 'in:travel_agency,organizer,online_provider'
         ]);
 
         $customer = auth('customer')->user();
-        $customer->business_type = $request->business_type;
+        $customer->business_type = $request->business_types;
         $customer->save();
 
         $labels = [
@@ -40,10 +41,14 @@ class ProfileController extends Controller
             'online_provider' => 'Online Anbieter'
         ];
 
+        $businessTypeLabels = array_map(function($type) use ($labels) {
+            return $labels[$type] ?? $type;
+        }, $customer->business_type ?? []);
+
         return response()->json([
             'success' => true,
-            'business_type' => $customer->business_type,
-            'business_type_label' => $labels[$customer->business_type] ?? $customer->business_type
+            'business_types' => $customer->business_type,
+            'business_type_labels' => $businessTypeLabels
         ]);
     }
 }
