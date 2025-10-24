@@ -686,9 +686,6 @@
                                 <span class="text-sm text-gray-700">Passolution:</span>
                                 @if(auth('customer')->user()->hasActivePassolution())
                                     <div class="flex items-center gap-2">
-                                        <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                            Aktiv
-                                        </span>
                                         <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
                                             @csrf
                                             <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline"
@@ -696,6 +693,9 @@
                                                 Trennen
                                             </button>
                                         </form>
+                                        <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                            Aktiv
+                                        </span>
                                     </div>
                                 @else
                                     <a href="{{ route('customer.passolution.authorize') }}"
