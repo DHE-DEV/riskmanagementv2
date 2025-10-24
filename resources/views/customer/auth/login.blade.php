@@ -18,8 +18,8 @@
                         <div class="px-8 py-8 sm:px-10">
                             <!-- Header -->
                             <div class="flex w-full flex-col text-center mb-8">
-                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Welcome back</h1>
-                                <p class="text-sm text-stone-600 dark:text-stone-400">Sign in to your customer account</p>
+                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Willkommen zurück</h1>
+                                <p class="text-sm text-stone-600 dark:text-stone-400">Melden Sie sich bei Ihrem Kundenkonto an</p>
                             </div>
 
                             <!-- Session Status -->
@@ -72,7 +72,7 @@
                                         <div class="w-full border-t border-stone-300 dark:border-stone-700"></div>
                                     </div>
                                     <div class="relative flex justify-center text-sm">
-                                        <span class="bg-white dark:bg-stone-950 px-4 text-stone-500 dark:text-stone-400">Or continue with email</span>
+                                        <span class="bg-white dark:bg-stone-950 px-4 text-stone-500 dark:text-stone-400">Oder fortfahren mit E-Mail</span>
                                     </div>
                                 </div>
                             @endif
@@ -84,7 +84,7 @@
                                 <!-- Email -->
                                 <div>
                                     <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                        Email address
+                                        E-Mail-Adresse
                                     </label>
                                     <input
                                         id="email"
@@ -94,7 +94,7 @@
                                         required
                                         autofocus
                                         autocomplete="email"
-                                        placeholder="email@example.com"
+                                        placeholder="email@beispiel.de"
                                         class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                     >
                                     @error('email')
@@ -106,10 +106,10 @@
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
                                         <label for="password" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
-                                            Password
+                                            Passwort
                                         </label>
                                         <a href="{{ route('customer.password.request') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                                            Forgot password?
+                                            Passwort vergessen?
                                         </a>
                                     </div>
                                     <input
@@ -118,7 +118,7 @@
                                         name="password"
                                         required
                                         autocomplete="current-password"
-                                        placeholder="Enter your password"
+                                        placeholder="Geben Sie Ihr Passwort ein"
                                         class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                     >
                                     @error('password')
@@ -135,7 +135,7 @@
                                         class="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-blue-600 focus:ring-2 focus:ring-blue-500/20 dark:bg-stone-900"
                                     >
                                     <label for="remember" class="ml-2 block text-sm text-stone-700 dark:text-stone-300">
-                                        Remember me for 30 days
+                                        Angemeldet bleiben für 30 Tage
                                     </label>
                                 </div>
 
@@ -144,7 +144,7 @@
                                     type="submit"
                                     class="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950"
                                 >
-                                    Sign in
+                                    Anmelden
                                 </button>
                             </form>
                         </div>
@@ -152,9 +152,9 @@
 
                     <!-- Register Link -->
                     <div class="text-center text-sm text-stone-600 dark:text-stone-400">
-                        Don't have an account?
+                        Sie haben noch kein Konto?
                         <a href="{{ route('customer.register') }}" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                            Create account
+                            Konto erstellen
                         </a>
                     </div>
                 </div>

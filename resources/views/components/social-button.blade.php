@@ -34,5 +34,5 @@
     <span class="flex-shrink-0">
         {!! $config['icon'] !!}
     </span>
-    <span>{{ $slot->isEmpty() ? 'Continue with ' . $config['label'] : $slot }}</span>
+    <span>{{ $slot->isEmpty() ? 'Fortfahren mit ' . $config['label'] : $slot }}</span>
 </a>
