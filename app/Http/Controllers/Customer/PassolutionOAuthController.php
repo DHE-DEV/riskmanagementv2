@@ -56,10 +56,12 @@ class PassolutionOAuthController extends Controller
 
         // Exchange authorization code for access token
         try {
-            $response = Http::asForm()->post('https://web.passolution.eu/oauth/token', [
+            // Try with Basic Auth first (most common for OAuth2)
+            $response = Http::withBasicAuth(
+                config('services.passolution.client_id'),
+                config('services.passolution.client_secret')
+            )->asForm()->post('https://web.passolution.eu/oauth/token', [
                 'grant_type' => 'authorization_code',
-                'client_id' => config('services.passolution.client_id'),
-                'client_secret' => config('services.passolution.client_secret'),
                 'redirect_uri' => url('/customer/passolution/callback'),
                 'code' => $request->code,
             ]);
@@ -136,10 +138,11 @@ class PassolutionOAuthController extends Controller
         }
 
         try {
-            $response = Http::asForm()->post('https://web.passolution.eu/oauth/token/refresh', [
+            $response = Http::withBasicAuth(
+                config('services.passolution.client_id'),
+                config('services.passolution.client_secret')
+            )->asForm()->post('https://web.passolution.eu/oauth/token/refresh', [
                 'grant_type' => 'refresh_token',
-                'client_id' => config('services.passolution.client_id'),
-                'client_secret' => config('services.passolution.client_secret'),
                 'refresh_token' => $customer->passolution_refresh_token,
             ]);
 
