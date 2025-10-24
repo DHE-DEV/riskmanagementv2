@@ -58,6 +58,10 @@ class AirportForm
                                     ->placeholder('https://example.com/timeslot-booking')
                                     ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster')
                                     ->maxLength(2048),
+
+                                Toggle::make('is_active')
+                                    ->label('Aktiv')
+                                    ->default(true),
                             ]),
 
                         // Rechte Spalte
@@ -143,10 +147,6 @@ class AirportForm
                                     ->prefix('Lng:'),
                             ]),
                     ]),
-
-                Toggle::make('is_active')
-                    ->label('Aktiv')
-                    ->default(true),
             ]);
     }
 }
