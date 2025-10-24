@@ -215,7 +215,10 @@
                                      }
                                  }
                              }">
-                            <h3 class="font-semibold text-gray-900 mb-2">Firmenanschrift</h3>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-semibold text-gray-900">Firmenanschrift</h3>
+                                <span class="px-2 py-1 bg-orange-50 text-orange-700 text-xs font-medium rounded border border-orange-200">Angabe empfohlen</span>
+                            </div>
                             <p class="text-sm text-gray-600 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein.</p>
                             <div class="space-y-3">
                                 <input type="text" x-model="companyName" @blur="saveCompanyAddress()"
@@ -275,7 +278,10 @@
                                      }
                                  }
                              }">
-                            <h3 class="font-semibold text-gray-900 mb-2">Rechnungsadresse</h3>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-semibold text-gray-900">Rechnungsadresse</h3>
+                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">Freiwillige Angabe</span>
+                            </div>
                             <p class="text-sm text-gray-600 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein.</p>
                             <div class="space-y-3">
                                 <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()"
