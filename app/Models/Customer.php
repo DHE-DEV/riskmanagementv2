@@ -25,6 +25,16 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'customer_type',
         'business_type',
+        'company_name',
+        'company_street',
+        'company_postal_code',
+        'company_city',
+        'company_country',
+        'billing_company_name',
+        'billing_street',
+        'billing_postal_code',
+        'billing_city',
+        'billing_country',
     ];
 
     protected $hidden = [

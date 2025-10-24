@@ -179,6 +179,125 @@
                     </div>
                 </div>
 
+                <!-- Firmenanschrift und Rechnungsadresse -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8"
+                     x-show="customerType === 'business'"
+                     x-transition>
+                    <!-- Firmenanschrift -->
+                    <div class="block p-4 bg-white rounded-lg border border-gray-200"
+                         x-data="{
+                             companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
+                             companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
+                             companyPostalCode: '{{ auth('customer')->user()->company_postal_code ?? '' }}',
+                             companyCity: '{{ auth('customer')->user()->company_city ?? '' }}',
+                             companyCountry: '{{ auth('customer')->user()->company_country ?? '' }}',
+                             async saveCompanyAddress() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.update-company-address') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({
+                                             company_name: this.companyName,
+                                             company_street: this.companyStreet,
+                                             company_postal_code: this.companyPostalCode,
+                                             company_city: this.companyCity,
+                                             company_country: this.companyCountry
+                                         })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         console.log('Firmenanschrift gespeichert');
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                 }
+                             }
+                         }">
+                        <h3 class="font-semibold text-gray-900 mb-2">Firmenanschrift</h3>
+                        <p class="text-sm text-gray-600 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein.</p>
+                        <div class="space-y-3">
+                            <input type="text" x-model="companyName" @blur="saveCompanyAddress()"
+                                   placeholder="Firmenname"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()"
+                                   placeholder="Straße und Hausnummer"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="text" x-model="companyPostalCode" @blur="saveCompanyAddress()"
+                                       placeholder="PLZ"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="companyCity" @blur="saveCompanyAddress()"
+                                       placeholder="Stadt"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <input type="text" x-model="companyCountry" @blur="saveCompanyAddress()"
+                                   placeholder="Land"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Rechnungsadresse -->
+                    <div class="block p-4 bg-white rounded-lg border border-gray-200"
+                         x-data="{
+                             billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
+                             billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
+                             billingPostalCode: '{{ auth('customer')->user()->billing_postal_code ?? '' }}',
+                             billingCity: '{{ auth('customer')->user()->billing_city ?? '' }}',
+                             billingCountry: '{{ auth('customer')->user()->billing_country ?? '' }}',
+                             async saveBillingAddress() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.update-billing-address') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({
+                                             billing_company_name: this.billingCompanyName,
+                                             billing_street: this.billingStreet,
+                                             billing_postal_code: this.billingPostalCode,
+                                             billing_city: this.billingCity,
+                                             billing_country: this.billingCountry
+                                         })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         console.log('Rechnungsadresse gespeichert');
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                 }
+                             }
+                         }">
+                        <h3 class="font-semibold text-gray-900 mb-2">Rechnungsadresse</h3>
+                        <p class="text-sm text-gray-600 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein.</p>
+                        <div class="space-y-3">
+                            <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()"
+                                   placeholder="Firmenname"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" x-model="billingStreet" @blur="saveBillingAddress()"
+                                   placeholder="Straße und Hausnummer"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="text" x-model="billingPostalCode" @blur="saveBillingAddress()"
+                                       placeholder="PLZ"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="billingCity" @blur="saveBillingAddress()"
+                                       placeholder="Stadt"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <input type="text" x-model="billingCountry" @blur="saveBillingAddress()"
+                                   placeholder="Land"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{

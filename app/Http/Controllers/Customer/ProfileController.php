@@ -52,4 +52,54 @@ class ProfileController extends Controller
             'business_type_labels' => $businessTypeLabels
         ]);
     }
+
+    public function updateCompanyAddress(Request $request)
+    {
+        $request->validate([
+            'company_name' => 'nullable|string|max:255',
+            'company_street' => 'nullable|string|max:255',
+            'company_postal_code' => 'nullable|string|max:20',
+            'company_city' => 'nullable|string|max:255',
+            'company_country' => 'nullable|string|max:255',
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->update($request->only([
+            'company_name',
+            'company_street',
+            'company_postal_code',
+            'company_city',
+            'company_country',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Firmenanschrift erfolgreich gespeichert'
+        ]);
+    }
+
+    public function updateBillingAddress(Request $request)
+    {
+        $request->validate([
+            'billing_company_name' => 'nullable|string|max:255',
+            'billing_street' => 'nullable|string|max:255',
+            'billing_postal_code' => 'nullable|string|max:20',
+            'billing_city' => 'nullable|string|max:255',
+            'billing_country' => 'nullable|string|max:255',
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->update($request->only([
+            'billing_company_name',
+            'billing_street',
+            'billing_postal_code',
+            'billing_city',
+            'billing_country',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rechnungsadresse erfolgreich gespeichert'
+        ]);
+    }
 }
