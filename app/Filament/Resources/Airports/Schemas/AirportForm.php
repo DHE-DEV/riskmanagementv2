@@ -127,25 +127,26 @@ class AirportForm
                                         }
                                     }),
 
-                                TextInput::make('latitude')
-                                    ->label('Breitengrad')
-                                    ->numeric()
-                                    ->step('any')
-                                    ->minValue(-90)
-                                    ->maxValue(90)
-                                    ->placeholder('z.B. 50.1109 oder -76.5467')
-                                    ->helperText('Werte zwischen -90 und +90')
-                                    ->prefix('Lat:'),
+                                \Filament\Schemas\Components\Grid::make(2)
+                                    ->schema([
+                                        TextInput::make('latitude')
+                                            ->label('Breitengrad')
+                                            ->numeric()
+                                            ->step('any')
+                                            ->minValue(-90)
+                                            ->maxValue(90)
+                                            ->placeholder('z.B. 50.1109 oder -76.5467')
+                                            ->helperText('Werte zwischen -90 und +90'),
 
-                                TextInput::make('longitude')
-                                    ->label('Längengrad')
-                                    ->numeric()
-                                    ->step('any')
-                                    ->minValue(-180)
-                                    ->maxValue(180)
-                                    ->placeholder('z.B. 8.6821 oder -76.5467')
-                                    ->helperText('Werte zwischen -180 und +180')
-                                    ->prefix('Lng:'),
+                                        TextInput::make('longitude')
+                                            ->label('Längengrad')
+                                            ->numeric()
+                                            ->step('any')
+                                            ->minValue(-180)
+                                            ->maxValue(180)
+                                            ->placeholder('z.B. 8.6821 oder -76.5467')
+                                            ->helperText('Werte zwischen -180 und +180'),
+                                    ]),
                             ]),
                     ]),
             ]);
