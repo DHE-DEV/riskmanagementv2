@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Einreisebestimmungen - Global Travel Monitor</title>
 
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -59,7 +62,7 @@
             background: white;
             border-bottom: 1px solid #e5e7eb;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 50;
+            z-index: 10000;
         }
 
         /* Footer - feststehend */
@@ -68,7 +71,7 @@
             height: 32px;
             background: white;
             color: black;
-            z-index: 50;
+            z-index: 9999;
             border-top: 1px solid #e5e7eb;
         }
 
@@ -347,30 +350,7 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="header">
-            <div class="flex items-center justify-between h-full px-4">
-                <!-- Logo and Title -->
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
-                        <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center space-x-4">
-                    <button
-                        class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Daten aktualisieren"
-                        onclick="window.location.reload()"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </header>
+        <x-public-header />
 
         <!-- Main Content -->
         <div class="main-content">
@@ -606,20 +586,7 @@
         </div>
 
         <!-- Footer -->
-        <footer class="footer">
-            <div class="flex items-center justify-between px-4 h-full">
-                <div class="flex items-center space-x-6 text-sm">
-                    <span>© 2025 Passolution GmbH</span>
-                    <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Impressum</a>
-                    <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Datenschutz</a>
-                    <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
-                </div>
-                <div class="flex items-center space-x-4 text-sm">
-                    <span>Version 1.0.17</span>
-                    <span>Build: 2025-09-30</span>
-                </div>
-            </div>
-        </footer>
+        <x-public-footer />
     </div>
 
     <!-- Leaflet JS -->

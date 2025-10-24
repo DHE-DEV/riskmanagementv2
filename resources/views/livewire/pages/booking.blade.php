@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Buchungsmöglichkeit - Global Travel Monitor</title>
 
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -60,7 +63,7 @@
             background: white;
             border-bottom: 1px solid #e5e7eb;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 50;
+            z-index: 10000;
         }
 
         /* Footer - feststehend */
@@ -69,7 +72,7 @@
             height: 32px;
             background: white;
             color: black;
-            z-index: 50;
+            z-index: 9999;
             border-top: 1px solid #e5e7eb;
         }
 
@@ -202,16 +205,7 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="header">
-            <div class="flex items-center justify-between px-6 h-full">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
-                        <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <x-public-header />
 
         <!-- Main Content Area -->
         <div class="main-content">
@@ -398,20 +392,7 @@
         </div>
 
         <!-- Footer -->
-        <footer class="footer">
-            <div class="flex items-center justify-between px-4 h-full">
-                <div class="flex items-center space-x-6 text-sm">
-                    <span>© 2025 Passolution GmbH</span>
-                    <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Impressum</a>
-                    <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Datenschutz</a>
-                    <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
-                </div>
-                <div class="flex items-center space-x-4 text-sm">
-                    <span>Version 1.0.17</span>
-                    <span>Build: 2025-09-30</span>
-                </div>
-            </div>
-        </footer>
+        <x-public-footer />
     </div>
 
     <!-- Leaflet JS -->

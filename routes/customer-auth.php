@@ -46,8 +46,6 @@ Route::middleware('auth:customer')->prefix('customer')->name('customer.')->group
     // Logout
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
-    // Dashboard
-    Route::get('dashboard', function () {
-        return view('customer.dashboard');
-    })->name('dashboard');
+    // Dashboard (handled by routes/customer.php to avoid duplication)
+    // Route::get('dashboard', ...)->name('dashboard');
 });
