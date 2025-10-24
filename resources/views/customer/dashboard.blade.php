@@ -138,11 +138,11 @@
                         </p>
                     </div>
 
-                    <div class="bg-green-50 p-6 rounded-lg border border-green-200">
-                        <h3 class="text-lg font-semibold text-green-900 mb-2">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             E-Mail Status
                         </h3>
-                        <p class="text-sm text-green-700">
+                        <p class="text-sm text-gray-700">
                             @if(auth('customer')->user()->hasVerifiedEmail())
                                 <span class="inline-flex items-center">
                                     <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -156,11 +156,11 @@
                         </p>
                     </div>
 
-                    <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
-                        <h3 class="text-lg font-semibold text-purple-900 mb-2">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Mitglied seit
                         </h3>
-                        <p class="text-sm text-purple-700">
+                        <p class="text-sm text-gray-700">
                             {{ auth('customer')->user()->created_at->format('d.m.Y') }}
                         </p>
                     </div>
