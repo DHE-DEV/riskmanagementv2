@@ -42,6 +42,12 @@
                                  this.customerType = type;
                                  this.saving = true;
 
+                                 // Wenn Privatkunde gewählt wird, Geschäftstypen leeren
+                                 if (type === 'private' && this.businessTypes.length > 0) {
+                                     this.businessTypes = [];
+                                     await this.saveBusinessTypes();
+                                 }
+
                                  try {
                                      const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
                                          method: 'POST',

@@ -27,12 +27,12 @@ class ProfileController extends Controller
     public function updateBusinessType(Request $request)
     {
         $request->validate([
-            'business_types' => 'required|array',
+            'business_types' => 'array',
             'business_types.*' => 'in:travel_agency,organizer,online_provider,mobile_travel_consultant'
         ]);
 
         $customer = auth('customer')->user();
-        $customer->business_type = $request->business_types;
+        $customer->business_type = $request->business_types ?? [];
         $customer->save();
 
         $labels = [
