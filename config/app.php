@@ -142,11 +142,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | These options control the Entry Conditions (Einreisebestimmungen) feature.
-    | You can enable/disable logging and specify which nationalities are available
-    | for searching (comma-separated 2-letter ISO country codes).
+    | You can enable/disable the feature entirely, enable/disable logging, and
+    | specify which nationalities are available for searching (comma-separated
+    | 2-letter ISO country codes).
     |
     */
 
+    'entry_conditions_enabled' => env('ENTRY_CONDITIONS_ENABLED', true),
     'entry_conditions_logging_enabled' => env('ENTRY_CONDITIONS_LOGGING_ENABLED', false),
     'entry_conditions_available_nationalities' => env('ENTRY_CONDITIONS_AVAILABLE_NATIONALITIES', 'DE,AT,CH'),
 

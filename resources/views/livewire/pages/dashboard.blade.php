@@ -930,9 +930,11 @@
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </button>
 
+                @if(config('app.entry_conditions_enabled', true))
                 <a href="{{ route('entry-conditions') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Einreisebestimmungen">
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
                 </a>
+                @endif
 
                 @if(config('app.dashboard_booking_enabled', true))
                 <a href="/booking" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Buchungsmöglichkeit">

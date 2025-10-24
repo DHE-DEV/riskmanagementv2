@@ -223,9 +223,11 @@
                 <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse">
                     <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
                 </a>
+                @if(config('app.entry_conditions_enabled', true))
                 <a href="/entry-conditions" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen">
                     <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
                 </a>
+                @endif
                 <a href="/booking" class="p-3 text-white bg-gray-800 rounded-lg transition-colors" title="Buchungsmöglichkeit">
                     <i class="fa-regular fa-calendar-check text-2xl" aria-hidden="true"></i>
                 </a>

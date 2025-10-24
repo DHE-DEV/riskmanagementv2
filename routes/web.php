@@ -13,6 +13,9 @@ Route::get('/dashboard', function () {
 })->name('dashboard');
 
 Route::get('/entry-conditions', function () {
+    if (!config('app.entry_conditions_enabled', true)) {
+        abort(404);
+    }
     return view('livewire.pages.entry-conditions');
 })->name('entry-conditions');
 
