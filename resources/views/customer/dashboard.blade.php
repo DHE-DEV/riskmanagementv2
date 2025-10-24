@@ -684,18 +684,24 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Passolution:</span>
-                                @php
-                                    // TODO: Später durch Datenbankabfrage ersetzen
-                                    $passolutionActive = false;
-                                @endphp
-                                @if($passolutionActive)
-                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                        Aktiv
-                                    </span>
+                                @if(auth('customer')->user()->hasActivePassolution())
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                            Aktiv
+                                        </span>
+                                        <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline"
+                                                    onclick="return confirm('Möchten Sie die Passolution-Integration wirklich deaktivieren?')">
+                                                Trennen
+                                            </button>
+                                        </form>
+                                    </div>
                                 @else
-                                    <button class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors">
+                                    <a href="{{ route('customer.passolution.authorize') }}"
+                                       class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors inline-block">
                                         Aktivieren
-                                    </button>
+                                    </a>
                                 @endif
                             </div>
                         </div>

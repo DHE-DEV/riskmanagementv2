@@ -42,6 +42,19 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::get('/profile/countries', [\App\Http\Controllers\Customer\ProfileController::class, 'getCountries'])
             ->name('profile.get-countries');
+
+        // Passolution OAuth routes
+        Route::get('/passolution/authorize', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'redirect'])
+            ->name('passolution.authorize');
+
+        Route::get('/passolution/callback', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'callback'])
+            ->name('passolution.callback');
+
+        Route::post('/passolution/disconnect', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'disconnect'])
+            ->name('passolution.disconnect');
+
+        Route::post('/passolution/refresh-token', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'refreshToken'])
+            ->name('passolution.refresh-token');
     });
 
     // Authentication Routes

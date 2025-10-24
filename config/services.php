@@ -46,6 +46,8 @@ return [
         'api_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
         'api_key' => env('PASSOLUTION_API_KEY'),
         'api_secret' => env('PASSOLUTION_API_SECRET'),
+        'client_id' => env('PASSOLUTION_OAUTH_CLIENT_ID'),
+        'client_secret' => env('PASSOLUTION_OAUTH_CLIENT_SECRET'),
     ],
 
     'openai' => [

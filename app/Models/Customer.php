@@ -39,6 +39,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'billing_postal_code',
         'billing_city',
         'billing_country',
+        'passolution_access_token',
+        'passolution_token_expires_at',
+        'passolution_refresh_token',
+        'passolution_refresh_token_expires_at',
     ];
 
     protected $hidden = [
@@ -52,6 +56,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
         'business_type' => 'array',
+        'passolution_token_expires_at' => 'datetime',
+        'passolution_refresh_token_expires_at' => 'datetime',
     ];
 
     /**
@@ -68,5 +74,15 @@ class Customer extends Authenticatable implements MustVerifyEmail
     public function isSocialLogin(): bool
     {
         return !is_null($this->provider);
+    }
+
+    /**
+     * Check if Passolution integration is active and token is valid
+     */
+    public function hasActivePassolution(): bool
+    {
+        return !is_null($this->passolution_access_token)
+            && !is_null($this->passolution_token_expires_at)
+            && $this->passolution_token_expires_at->isFuture();
     }
 }
