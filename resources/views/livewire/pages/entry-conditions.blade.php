@@ -569,6 +569,9 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <script>
+        // Customer Passolution Status - Als window property für Testbarkeit
+        window.hasPassolutionAccess = {{ auth('customer')->check() && auth('customer')->user()->hasActivePassolution() ? 'true' : 'false' }};
+
         // Map initialisieren - Als window properties für Testbarkeit
         window.entryConditionsMap = null;
         window.entryConditionsMarkers = L.markerClusterGroup();
@@ -858,7 +861,10 @@
 
         // Nationality Filter Variables - Als window properties für Testbarkeit
         window.selectedNationalities = new Map();
-        window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
+        // Deutschland als Standard nur wenn kein Passolution-Zugang
+        if (!window.hasPassolutionAccess) {
+            window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
+        }
         let nationalityFilterActiveIndex = 0;
 
         // Destinations Filter Variables - Als window properties für Testbarkeit
@@ -1052,8 +1058,8 @@
             // Nationalität entfernen
             window.selectedNationalities.delete(code);
 
-            // Wenn keine Nationalität mehr ausgewählt ist, Deutschland als Standard setzen
-            if (window.selectedNationalities.size === 0) {
+            // Wenn keine Nationalität mehr ausgewählt ist und kein Passolution-Zugang, Deutschland als Standard setzen
+            if (window.selectedNationalities.size === 0 && !window.hasPassolutionAccess) {
                 window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
             }
 
