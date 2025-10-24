@@ -33,10 +33,26 @@
                         Es fehlen nur noch wenige Schritte, bis Ihr Profil vollständig erfasst ist. Um den vollen Funktionsumfang nutzen zu können, führen Sie bitte die ausstehenden Aktionen aus.
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <a href="#" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
-                            <h3 class="font-semibold text-gray-900">Kundentype</h3>
-                            <p class="text-sm text-gray-600">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p>
-                        </a>
+                        <div class="block p-4 bg-white rounded-lg border border-gray-200" x-data="{ customerType: '' }">
+                            <h3 class="font-semibold text-gray-900 mb-2">Kundentype</h3>
+                            <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p>
+                            <div class="flex gap-3">
+                                <button
+                                    @click="customerType = 'business'"
+                                    :class="customerType === 'business' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Firmenkunde
+                                </button>
+                                <button
+                                    @click="customerType = 'private'"
+                                    :class="customerType === 'private' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Privatkunde
+                                </button>
+                            </div>
+                        </div>
                         <a href="https://stage.global-travel-monitor.eu/entry-conditions" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
                             <h3 class="font-semibold text-gray-900">Einreisebestimmungen</h3>
                             <p class="text-sm text-gray-600">Bestimmungen prüfen</p>
