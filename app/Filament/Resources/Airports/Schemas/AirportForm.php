@@ -125,7 +125,15 @@ class AirportForm
                             }
                         }
                     }),
-                
+
+                TextInput::make('security_timeslot_url')
+                    ->label('Zeitfenster-Reservierung für Sicherheitskontrolle')
+                    ->url()
+                    ->placeholder('https://example.com/timeslot-booking')
+                    ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster')
+                    ->maxLength(2048)
+                    ->columnSpanFull(),
+
                 Toggle::make('is_active')
                     ->label('Aktiv')
                     ->default(true),

@@ -24,6 +24,7 @@ class Airport extends Model
         'dst_timezone',
         'type',
         'source',
+        'security_timeslot_url',
     ];
 
     protected $casts = [
