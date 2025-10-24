@@ -85,7 +85,8 @@ Route::prefix('geolocation')->group(function () {
 });
 
 // Entry Conditions API Routes
-Route::prefix('entry-conditions')->group(function () {
+// Using web middleware to support session-based customer authentication
+Route::prefix('entry-conditions')->middleware('web')->group(function () {
     Route::get('/countries', [EntryConditionsController::class, 'getCountries'])->name('entry-conditions.countries');
     Route::get('/all-coordinates', [EntryConditionsController::class, 'getAllCountryCoordinates'])->name('entry-conditions.all-coordinates');
     Route::post('/search', [EntryConditionsController::class, 'search'])->name('entry-conditions.search');

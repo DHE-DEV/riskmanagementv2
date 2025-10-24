@@ -667,7 +667,9 @@
         async function loadCountryCoordinates() {
             try {
                 // Use all-coordinates endpoint to get ALL countries, not just available nationalities
-                const response = await fetch('/api/entry-conditions/all-coordinates');
+                const response = await fetch('/api/entry-conditions/all-coordinates', {
+                    credentials: 'same-origin'
+                });
                 const data = await response.json();
 
                 if (data.success && data.countries) {
@@ -960,7 +962,8 @@
                 box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
                 // Use entry-conditions endpoint which filters by available nationalities
                 const res = await fetch('/api/entry-conditions/countries', {
-                    headers: { 'Accept': 'application/json' }
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
                 });
 
                 if (!res.ok) throw new Error('Network error');
@@ -1640,6 +1643,7 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({
                             nationality: nationality,
                             filters: filters
@@ -1775,6 +1779,7 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({
                             nationality: nationality,
                             filters: filters
@@ -1863,6 +1868,7 @@
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
+                            credentials: 'same-origin',
                             body: JSON.stringify({
                                 countries: [destCode],
                                 nationalities: [natCode]
