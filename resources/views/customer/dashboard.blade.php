@@ -560,6 +560,7 @@
                     </div>
                 </div>
 
+                @if(auth('customer')->user()->customer_type === 'business')
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
@@ -737,7 +738,25 @@
                             @endif
                         </div>
                     </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Adressverzeichnis
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Wenn Sie im Adressverzeichnis gelistet sein möchten, kann dies hier aktiviert werden. Um als gesponsort zu erscheinen, können Sie ein Abo abschließen.
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Status:</span>
+                                <button class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors">
+                                    Aktivieren
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
