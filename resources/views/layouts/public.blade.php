@@ -92,7 +92,7 @@
             left: 0;
             top: 64px;
             bottom: 56px;
-            width: 80px;
+            width: 64px;
             background: black;
             color: white;
             z-index: 10;
@@ -100,7 +100,7 @@
 
         .main-content {
             margin-top: 64px;
-            margin-left: 80px;
+            margin-left: 64px;
             margin-bottom: 56px;
             height: calc(100vh - 120px);
             overflow-y: auto;
