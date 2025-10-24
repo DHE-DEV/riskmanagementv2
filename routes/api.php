@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AirportSearchController;
+use App\Http\Controllers\Api\EntryConditionsController;
 use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
@@ -81,6 +82,22 @@ Route::prefix('geolocation')->group(function () {
     Route::get('/nearest-city', [GeolocationController::class, 'findNearestCity'])->name('geolocation.nearest-city');
     Route::get('/cities-in-radius', [GeolocationController::class, 'findCitiesInRadius'])->name('geolocation.cities-in-radius');
     Route::get('/test', [GeolocationController::class, 'test'])->name('geolocation.test');
+});
+
+// Entry Conditions API Routes
+Route::prefix('entry-conditions')->group(function () {
+    Route::get('/countries', [EntryConditionsController::class, 'getCountries'])->name('entry-conditions.countries');
+    Route::get('/all-coordinates', [EntryConditionsController::class, 'getAllCountryCoordinates'])->name('entry-conditions.all-coordinates');
+    Route::post('/search', [EntryConditionsController::class, 'search'])->name('entry-conditions.search');
+    Route::post('/content', [EntryConditionsController::class, 'getContent'])->name('entry-conditions.content');
+    Route::get('/details', [EntryConditionsController::class, 'getDetails'])->name('entry-conditions.details');
+    Route::get('/pdf', [EntryConditionsController::class, 'getPDF'])->name('entry-conditions.pdf');
+});
+
+// Booking Locations API Routes
+Route::prefix('booking-locations')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\BookingLocationController::class, 'index'])->name('booking-locations.index');
+    Route::post('/search', [\App\Http\Controllers\Api\BookingLocationController::class, 'search'])->name('booking-locations.search');
 });
 
 // Countries GeoJSON Route

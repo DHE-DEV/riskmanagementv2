@@ -13,6 +13,13 @@ Route::get('/dashboard', function () {
     return view('livewire.pages.dashboard');
 })->name('dashboard');
 
+Route::get('/entry-conditions', function () {
+    if (!config('app.entry_conditions_enabled', true)) {
+        abort(404);
+    }
+    return view('livewire.pages.entry-conditions');
+})->name('entry-conditions');
+
 // RSS/Atom Feed Routes
 Route::prefix('feed')->name('feed.')->group(function () {
     // All events feeds
@@ -32,7 +39,12 @@ Route::prefix('feed')->name('feed.')->group(function () {
     Route::get('regions/{region}.xml', [FeedController::class, 'byRegion'])->name('regions');
 });
 
-
+Route::get('/booking', function () {
+    if (!config('app.dashboard_booking_enabled', true)) {
+        abort(404);
+    }
+    return view('livewire.pages.booking');
+})->name('booking');
 
 Route::middleware([
     'auth:sanctum',

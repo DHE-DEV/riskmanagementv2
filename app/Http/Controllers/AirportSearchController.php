@@ -167,14 +167,22 @@ class AirportSearchController extends Controller
                 ->orderBy('iso_code')
                 ->get();
 
-            $filteredCountries = $allCountries->filter(function (Country $country) use ($q) {
+            // Normalize search query for better matching
+            $normalizedQ = $this->normalizeString($q);
+
+            $filteredCountries = $allCountries->filter(function (Country $country) use ($q, $normalizedQ) {
                 $name = $country->getName('de');
                 $iso2 = $country->iso_code;
                 $iso3 = $country->iso3_code;
-                
-                return stripos($name, $q) !== false || 
-                       stripos($iso2, $q) !== false || 
-                       stripos($iso3, $q) !== false;
+
+                // Normalize country name for comparison
+                $normalizedName = $this->normalizeString($name);
+
+                // Check both original and normalized strings
+                return stripos($name, $q) !== false ||
+                       stripos($iso2, $q) !== false ||
+                       stripos($iso3, $q) !== false ||
+                       stripos($normalizedName, $normalizedQ) !== false;
             })->take(20)->map(function (Country $c) {
                 return [
                     'id' => $c->id,
@@ -189,6 +197,28 @@ class AirportSearchController extends Controller
             \Log::error('Country search error: ' . $e->getMessage());
             return response()->json(['data' => [], 'error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Normalize string by removing diacritics and special characters for better search matching
+     */
+    private function normalizeString(string $str): string
+    {
+        // Convert to lowercase
+        $str = mb_strtolower($str, 'UTF-8');
+
+        // Replace common German umlauts and special characters
+        $replacements = [
+            'ä' => 'a', 'ö' => 'o', 'ü' => 'u', 'ß' => 'ss',
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u',
+            'ñ' => 'n', 'ç' => 'c', 'ø' => 'o', 'æ' => 'ae',
+        ];
+
+        return strtr($str, $replacements);
     }
 
     public function countrySearchDebug(Request $request): JsonResponse
@@ -238,37 +268,55 @@ class AirportSearchController extends Controller
         $countryId = (int) $request->query('country_id', 0);
         $q = trim((string) $request->query('q', ''));
 
-        $query = Country::query()->withoutGlobalScopes();
+        // First try exact match on iso_code or iso3_code
+        $upper = strtoupper($q);
+        $country = null;
+
         if ($countryId > 0) {
-            $query->where('id', $countryId);
+            $country = Country::withoutGlobalScopes()
+                ->where('id', $countryId)
+                ->select(['id', 'lat', 'lng'])
+                ->first();
         } elseif ($q !== '') {
-            $upper = strtoupper($q);
-            $query->where(function ($qb) use ($q, $upper) {
-                if (Schema::hasColumn('countries', 'name')) {
-                    $qb->orWhere('name', 'like', "%{$q}%");
-                }
-                if (Schema::hasColumn('countries', 'name_translations')) {
-                    $qb->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$q}%"]) 
-                       ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$q}%"]);
-                }
-                if (Schema::hasColumn('countries', 'iso_code')) {
-                    $qb->orWhere('iso_code', 'like', "%{$upper}%");
-                }
-                if (Schema::hasColumn('countries', 'iso3_code')) {
-                    $qb->orWhere('iso3_code', 'like', "%{$upper}%");
-                }
-                if (Schema::hasColumn('countries', 'code')) {
-                    $qb->orWhere('code', 'like', "%{$upper}%");
-                }
-                if (Schema::hasColumn('countries', 'iso3')) {
-                    $qb->orWhere('iso3', 'like', "%{$upper}%");
-                }
-            });
+            // Try exact match first
+            if (Schema::hasColumn('countries', 'iso_code')) {
+                $country = Country::withoutGlobalScopes()
+                    ->where('iso_code', $upper)
+                    ->select(['id', 'lat', 'lng'])
+                    ->first();
+            }
+
+            // If no exact match, try iso3_code
+            if (!$country && Schema::hasColumn('countries', 'iso3_code')) {
+                $country = Country::withoutGlobalScopes()
+                    ->where('iso3_code', $upper)
+                    ->select(['id', 'lat', 'lng'])
+                    ->first();
+            }
+
+            // If still no match, try fuzzy search
+            if (!$country) {
+                $query = Country::query()->withoutGlobalScopes();
+                $query->where(function ($qb) use ($q, $upper) {
+                    if (Schema::hasColumn('countries', 'name')) {
+                        $qb->orWhere('name', 'like', "%{$q}%");
+                    }
+                    if (Schema::hasColumn('countries', 'name_translations')) {
+                        $qb->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$q}%"])
+                           ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$q}%"]);
+                    }
+                    if (Schema::hasColumn('countries', 'iso_code')) {
+                        $qb->orWhere('iso_code', 'like', "%{$upper}%");
+                    }
+                    if (Schema::hasColumn('countries', 'iso3_code')) {
+                        $qb->orWhere('iso3_code', 'like', "%{$upper}%");
+                    }
+                });
+                $country = $query->select(['id', 'lat', 'lng'])->first();
+            }
         } else {
             return response()->json(['data' => null]);
         }
-
-        $country = $query->select(['id', 'lat', 'lng'])->first();
         if (!$country) {
             return response()->json(['data' => null]);
         }
