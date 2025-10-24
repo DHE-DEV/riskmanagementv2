@@ -25,6 +25,16 @@ Route::prefix('customer')->name('customer.')->group(function () {
     // Customer Dashboard Route
     Route::middleware(['auth:'.config('fortify.guard')])->group(function () {
         Route::get('/dashboard', function () {
+            $customer = auth('customer')->user();
+            $passolutionService = app(\App\Services\PassolutionService::class);
+
+            // Update subscription if Passolution is active and data is stale
+            if ($customer->hasActivePassolution() && $passolutionService->needsUpdate($customer)) {
+                $passolutionService->updateSubscription($customer);
+                // Refresh customer data after update
+                $customer->refresh();
+            }
+
             return view('customer.dashboard');
         })->name('dashboard');
 

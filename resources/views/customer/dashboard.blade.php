@@ -681,7 +681,7 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Schnittstellen
                         </h3>
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Passolution:</span>
                                 @if(auth('customer')->user()->hasActivePassolution())
@@ -704,6 +704,37 @@
                                     </a>
                                 @endif
                             </div>
+
+                            @if(auth('customer')->user()->hasActivePassolution())
+                                @php
+                                    $customer = auth('customer')->user();
+                                    $passolutionService = app(\App\Services\PassolutionService::class);
+                                @endphp
+
+                                @if($customer->passolution_subscription_type)
+                                    <div class="pt-2 border-t border-gray-200">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="text-xs text-gray-600">Abonnement:</span>
+                                            <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                                {{ ucfirst($customer->passolution_subscription_type) }}
+                                            </span>
+                                        </div>
+
+                                        @if($customer->passolution_features && count($customer->passolution_features) > 0)
+                                            <div class="mt-2">
+                                                <span class="text-xs text-gray-600 block mb-2">Freigeschaltete Features:</span>
+                                                <div class="flex flex-wrap gap-1">
+                                                    @foreach($passolutionService->getFeatureLabels($customer->passolution_features) as $featureLabel)
+                                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300">
+                                                            {{ $featureLabel }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endif
                         </div>
                     </div>
                 </div>

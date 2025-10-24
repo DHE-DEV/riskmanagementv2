@@ -43,6 +43,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'passolution_token_expires_at',
         'passolution_refresh_token',
         'passolution_refresh_token_expires_at',
+        'passolution_subscription_type',
+        'passolution_features',
+        'passolution_subscription_updated_at',
     ];
 
     protected $hidden = [
@@ -58,6 +61,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'business_type' => 'array',
         'passolution_token_expires_at' => 'datetime',
         'passolution_refresh_token_expires_at' => 'datetime',
+        'passolution_features' => 'array',
+        'passolution_subscription_updated_at' => 'datetime',
     ];
 
     /**
