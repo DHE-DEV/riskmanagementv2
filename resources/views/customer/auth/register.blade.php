@@ -23,30 +23,52 @@
                             </div>
 
                             <!-- Social Registration Buttons -->
-                            <div class="mb-6 space-y-3">
-                                <x-social-button provider="google" href="{{ route('customer.auth.redirect', 'google') }}" />
-                                <x-social-button provider="facebook" href="{{ route('customer.auth.redirect', 'facebook') }}" />
-                                <div class="grid grid-cols-2 gap-3">
-                                    <x-social-button provider="linkedin" href="{{ route('customer.auth.redirect', 'linkedin') }}">
-                                        <span class="hidden sm:inline">LinkedIn</span>
-                                        <span class="sm:hidden">In</span>
-                                    </x-social-button>
-                                    <x-social-button provider="twitter" href="{{ route('customer.auth.redirect', 'twitter') }}">
-                                        <span class="hidden sm:inline">X</span>
-                                        <span class="sm:hidden">X</span>
-                                    </x-social-button>
-                                </div>
-                            </div>
+                            @php
+                                $hasSocialLogin = config('services.google.client_id')
+                                    || config('services.facebook.client_id')
+                                    || config('services.linkedin.client_id')
+                                    || config('services.twitter.client_id');
+                            @endphp
 
-                            <!-- Divider -->
-                            <div class="relative mb-6">
-                                <div class="absolute inset-0 flex items-center">
-                                    <div class="w-full border-t border-stone-300 dark:border-stone-700"></div>
+                            @if($hasSocialLogin)
+                                <div class="mb-6 space-y-3">
+                                    @if(config('services.google.client_id'))
+                                        <x-social-button provider="google" href="{{ route('customer.auth.redirect', 'google') }}" />
+                                    @endif
+
+                                    @if(config('services.facebook.client_id'))
+                                        <x-social-button provider="facebook" href="{{ route('customer.auth.redirect', 'facebook') }}" />
+                                    @endif
+
+                                    @if(config('services.linkedin.client_id') || config('services.twitter.client_id'))
+                                        <div class="grid grid-cols-2 gap-3">
+                                            @if(config('services.linkedin.client_id'))
+                                                <x-social-button provider="linkedin" href="{{ route('customer.auth.redirect', 'linkedin') }}">
+                                                    <span class="hidden sm:inline">LinkedIn</span>
+                                                    <span class="sm:hidden">In</span>
+                                                </x-social-button>
+                                            @endif
+
+                                            @if(config('services.twitter.client_id'))
+                                                <x-social-button provider="twitter" href="{{ route('customer.auth.redirect', 'twitter') }}">
+                                                    <span class="hidden sm:inline">X</span>
+                                                    <span class="sm:hidden">X</span>
+                                                </x-social-button>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
-                                <div class="relative flex justify-center text-sm">
-                                    <span class="bg-white dark:bg-stone-950 px-4 text-stone-500 dark:text-stone-400">Or register with email</span>
+
+                                <!-- Divider -->
+                                <div class="relative mb-6">
+                                    <div class="absolute inset-0 flex items-center">
+                                        <div class="w-full border-t border-stone-300 dark:border-stone-700"></div>
+                                    </div>
+                                    <div class="relative flex justify-center text-sm">
+                                        <span class="bg-white dark:bg-stone-950 px-4 text-stone-500 dark:text-stone-400">Or register with email</span>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
 
                             <!-- Registration Form -->
                             <form method="POST" action="{{ route('customer.register') }}" class="space-y-5">
