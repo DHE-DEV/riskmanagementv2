@@ -70,14 +70,17 @@
 
                 <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                        Schnellzugriff
+                        Profil vervollständigen
                     </h2>
+                    <p class="text-gray-700 mb-6">
+                        Es fehlen nur noch wenige Schritte, bis Ihr Profil vollständig erfasst ist. Um den vollen Funktionsumfang nutzen zu können, führen Sie bitte die ausstehenden Aktionen aus.
+                    </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <a href="{{ route('home') }}" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
+                        <a href="https://stage.global-travel-monitor.eu" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
                             <h3 class="font-semibold text-gray-900">Reisewarnungen</h3>
                             <p class="text-sm text-gray-600">Aktuelle Warnungen ansehen</p>
                         </a>
-                        <a href="{{ route('entry-conditions') }}" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
+                        <a href="https://stage.global-travel-monitor.eu/entry-conditions" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
                             <h3 class="font-semibold text-gray-900">Einreisebestimmungen</h3>
                             <p class="text-sm text-gray-600">Bestimmungen prüfen</p>
                         </a>
