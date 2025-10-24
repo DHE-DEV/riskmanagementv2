@@ -9,10 +9,7 @@
 @section('content')
     <div class="p-8">
         <div class="max-w-7xl mx-auto">
-            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200"
-                 x-data="{
-                     customerType: '{{ auth('customer')->user()->customer_type ?? '' }}'
-                 }">
+            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                 <div class="mb-6">
                     <h1 class="text-xl font-bold text-gray-900">
                         Willkommen, {{ auth('customer')->user()->name }}!
@@ -37,12 +34,12 @@
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
                          x-data="{
+                             customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
                              businessTypes: {{ json_encode(auth('customer')->user()->business_type ?? []) }},
                              saving: false,
                              async updateCustomerType(type) {
                                  console.log('Updating customer type to:', type);
-                                 // Update parent scope customerType
-                                 this.$parent.customerType = type;
+                                 this.customerType = type;
                                  this.saving = true;
 
                                  // Wenn Privatkunde gewählt wird, Geschäftstypen leeren
@@ -564,8 +561,10 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6"
-                     x-show="customerType === 'business'"
-                     x-transition>
+                     x-data="{ showBusinessBoxes: '{{ auth('customer')->user()->customer_type ?? '' }}' === 'business' }"
+                     x-show="showBusinessBoxes"
+                     x-transition
+                     @customer-type-updated.window="showBusinessBoxes = ($event.detail.type === 'business')">
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
                              companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
