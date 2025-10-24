@@ -261,6 +261,17 @@
                                          const data = await response.json();
                                          if (data.success) {
                                              console.log('Firmenanschrift gespeichert');
+                                             window.dispatchEvent(new CustomEvent('company-address-updated', {
+                                                 detail: {
+                                                     companyName: this.companyName,
+                                                     companyAdditional: this.companyAdditional,
+                                                     companyStreet: this.companyStreet,
+                                                     companyHouseNumber: this.companyHouseNumber,
+                                                     companyPostalCode: this.companyPostalCode,
+                                                     companyCity: this.companyCity,
+                                                     companyCountry: this.companyCountry
+                                                 }
+                                             }));
                                          }
                                      } catch (error) {
                                          console.error('Fehler beim Speichern:', error);
@@ -278,25 +289,25 @@
                             </div>
                             <p class="text-sm text-gray-400 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein. Diese Anschrift wird zur Veröffentlichung verwendet, wenn Sie dem Zustimmen.</p>
                             <div class="space-y-3">
-                                <input type="text" x-model="companyName" @blur="saveCompanyAddress()"
+                                <input type="text" x-model="companyName" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
                                        placeholder="Firmenname"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <input type="text" x-model="companyAdditional" @blur="saveCompanyAddress()"
+                                <input type="text" x-model="companyAdditional" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
                                        placeholder="Zusatz"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <div class="grid grid-cols-3 gap-3">
-                                    <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()"
+                                    <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
                                            placeholder="Straße"
                                            class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="companyHouseNumber" @blur="saveCompanyAddress()"
+                                    <input type="text" x-model="companyHouseNumber" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
                                            placeholder="Nr."
                                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <input type="text" x-model="companyPostalCode" @blur="saveCompanyAddress()"
+                                    <input type="text" x-model="companyPostalCode" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
                                            placeholder="PLZ"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="companyCity" @blur="saveCompanyAddress()"
+                                    <input type="text" x-model="companyCity" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
                                            placeholder="Stadt"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
@@ -403,6 +414,17 @@
                                          const data = await response.json();
                                          if (data.success) {
                                              console.log('Rechnungsadresse gespeichert');
+                                             window.dispatchEvent(new CustomEvent('billing-address-updated', {
+                                                 detail: {
+                                                     billingCompanyName: this.billingCompanyName,
+                                                     billingAdditional: this.billingAdditional,
+                                                     billingStreet: this.billingStreet,
+                                                     billingHouseNumber: this.billingHouseNumber,
+                                                     billingPostalCode: this.billingPostalCode,
+                                                     billingCity: this.billingCity,
+                                                     billingCountry: this.billingCountry
+                                                 }
+                                             }));
                                          }
                                      } catch (error) {
                                          console.error('Fehler beim Speichern:', error);
@@ -420,25 +442,25 @@
                             </div>
                             <p class="text-sm text-gray-400 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein. Diese Anschrift wird nur verwendet, wenn Sie kostenpflichtige Abos abschließen.</p>
                             <div class="space-y-3">
-                                <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()"
+                                <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
                                        placeholder="Firmenname"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <input type="text" x-model="billingAdditional" @blur="saveBillingAddress()"
+                                <input type="text" x-model="billingAdditional" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
                                        placeholder="Zusatz"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <div class="grid grid-cols-3 gap-3">
-                                    <input type="text" x-model="billingStreet" @blur="saveBillingAddress()"
+                                    <input type="text" x-model="billingStreet" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
                                            placeholder="Straße"
                                            class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="billingHouseNumber" @blur="saveBillingAddress()"
+                                    <input type="text" x-model="billingHouseNumber" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
                                            placeholder="Nr."
                                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <input type="text" x-model="billingPostalCode" @blur="saveBillingAddress()"
+                                    <input type="text" x-model="billingPostalCode" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
                                            placeholder="PLZ"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="billingCity" @blur="saveBillingAddress()"
+                                    <input type="text" x-model="billingCity" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
                                            placeholder="Stadt"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
@@ -539,68 +561,82 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-data="{
+                             companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
+                             companyAdditional: '{{ auth('customer')->user()->company_additional ?? '' }}',
+                             companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
+                             companyHouseNumber: '{{ auth('customer')->user()->company_house_number ?? '' }}',
+                             companyPostalCode: '{{ auth('customer')->user()->company_postal_code ?? '' }}',
+                             companyCity: '{{ auth('customer')->user()->company_city ?? '' }}',
+                             companyCountry: '{{ auth('customer')->user()->company_country ?? '' }}'
+                         }"
+                         @company-address-updated.window="
+                             companyName = $event.detail.companyName;
+                             companyAdditional = $event.detail.companyAdditional;
+                             companyStreet = $event.detail.companyStreet;
+                             companyHouseNumber = $event.detail.companyHouseNumber;
+                             companyPostalCode = $event.detail.companyPostalCode;
+                             companyCity = $event.detail.companyCity;
+                             companyCountry = $event.detail.companyCountry;
+                         ">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Firmenadresse
                         </h3>
-                        @if(auth('customer')->user()->company_name)
+                        <div x-show="companyName">
                             <p class="text-sm text-gray-700">
-                                <strong>{{ auth('customer')->user()->company_name }}</strong>
+                                <strong x-text="companyName"></strong>
                             </p>
-                            @if(auth('customer')->user()->company_additional)
-                                <p class="text-sm text-gray-600">{{ auth('customer')->user()->company_additional }}</p>
-                            @endif
-                            @if(auth('customer')->user()->company_street || auth('customer')->user()->company_house_number)
-                                <p class="text-sm text-gray-700 mt-1">
-                                    {{ auth('customer')->user()->company_street }}
-                                    @if(auth('customer')->user()->company_house_number)
-                                        {{ auth('customer')->user()->company_house_number }}
-                                    @endif
-                                </p>
-                            @endif
-                            @if(auth('customer')->user()->company_postal_code || auth('customer')->user()->company_city)
-                                <p class="text-sm text-gray-700">
-                                    {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}
-                                </p>
-                            @endif
-                            @if(auth('customer')->user()->company_country)
-                                <p class="text-sm text-gray-700">{{ auth('customer')->user()->company_country }}</p>
-                            @endif
-                        @else
-                            <p class="text-sm text-gray-500 italic">Keine Firmenadresse hinterlegt</p>
-                        @endif
+                            <p x-show="companyAdditional" x-text="companyAdditional" class="text-sm text-gray-600"></p>
+                            <p x-show="companyStreet || companyHouseNumber" class="text-sm text-gray-700 mt-1">
+                                <span x-text="companyStreet"></span>
+                                <span x-show="companyHouseNumber" x-text="' ' + companyHouseNumber"></span>
+                            </p>
+                            <p x-show="companyPostalCode || companyCity" class="text-sm text-gray-700">
+                                <span x-text="companyPostalCode"></span> <span x-text="companyCity"></span>
+                            </p>
+                            <p x-show="companyCountry" x-text="companyCountry" class="text-sm text-gray-700"></p>
+                        </div>
+                        <p x-show="!companyName" class="text-sm text-gray-500 italic">Keine Firmenadresse hinterlegt</p>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-data="{
+                             billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
+                             billingAdditional: '{{ auth('customer')->user()->billing_additional ?? '' }}',
+                             billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
+                             billingHouseNumber: '{{ auth('customer')->user()->billing_house_number ?? '' }}',
+                             billingPostalCode: '{{ auth('customer')->user()->billing_postal_code ?? '' }}',
+                             billingCity: '{{ auth('customer')->user()->billing_city ?? '' }}',
+                             billingCountry: '{{ auth('customer')->user()->billing_country ?? '' }}'
+                         }"
+                         @billing-address-updated.window="
+                             billingCompanyName = $event.detail.billingCompanyName;
+                             billingAdditional = $event.detail.billingAdditional;
+                             billingStreet = $event.detail.billingStreet;
+                             billingHouseNumber = $event.detail.billingHouseNumber;
+                             billingPostalCode = $event.detail.billingPostalCode;
+                             billingCity = $event.detail.billingCity;
+                             billingCountry = $event.detail.billingCountry;
+                         ">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Rechnungsadresse
                         </h3>
-                        @if(auth('customer')->user()->billing_company_name)
+                        <div x-show="billingCompanyName">
                             <p class="text-sm text-gray-700">
-                                <strong>{{ auth('customer')->user()->billing_company_name }}</strong>
+                                <strong x-text="billingCompanyName"></strong>
                             </p>
-                            @if(auth('customer')->user()->billing_additional)
-                                <p class="text-sm text-gray-600">{{ auth('customer')->user()->billing_additional }}</p>
-                            @endif
-                            @if(auth('customer')->user()->billing_street || auth('customer')->user()->billing_house_number)
-                                <p class="text-sm text-gray-700 mt-1">
-                                    {{ auth('customer')->user()->billing_street }}
-                                    @if(auth('customer')->user()->billing_house_number)
-                                        {{ auth('customer')->user()->billing_house_number }}
-                                    @endif
-                                </p>
-                            @endif
-                            @if(auth('customer')->user()->billing_postal_code || auth('customer')->user()->billing_city)
-                                <p class="text-sm text-gray-700">
-                                    {{ auth('customer')->user()->billing_postal_code }} {{ auth('customer')->user()->billing_city }}
-                                </p>
-                            @endif
-                            @if(auth('customer')->user()->billing_country)
-                                <p class="text-sm text-gray-700">{{ auth('customer')->user()->billing_country }}</p>
-                            @endif
-                        @else
-                            <p class="text-sm text-gray-500 italic">Keine Rechnungsadresse hinterlegt</p>
-                        @endif
+                            <p x-show="billingAdditional" x-text="billingAdditional" class="text-sm text-gray-600"></p>
+                            <p x-show="billingStreet || billingHouseNumber" class="text-sm text-gray-700 mt-1">
+                                <span x-text="billingStreet"></span>
+                                <span x-show="billingHouseNumber" x-text="' ' + billingHouseNumber"></span>
+                            </p>
+                            <p x-show="billingPostalCode || billingCity" class="text-sm text-gray-700">
+                                <span x-text="billingPostalCode"></span> <span x-text="billingCity"></span>
+                            </p>
+                            <p x-show="billingCountry" x-text="billingCountry" class="text-sm text-gray-700"></p>
+                        </div>
+                        <p x-show="!billingCompanyName" class="text-sm text-gray-500 italic">Keine Rechnungsadresse hinterlegt</p>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
