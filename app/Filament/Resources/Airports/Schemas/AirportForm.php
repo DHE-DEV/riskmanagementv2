@@ -53,6 +53,13 @@ class AirportForm
                                     ->required()
                                     ->searchable(),
 
+                                TextInput::make('website')
+                                    ->label('Website')
+                                    ->url()
+                                    ->placeholder('https://example.com')
+                                    ->helperText('Offizielle Website des Flughafens')
+                                    ->maxLength(2048),
+
                                 TextInput::make('security_timeslot_url')
                                     ->label('Zeitfenster-Reservierung für Sicherheitskontrolle')
                                     ->url()

@@ -17,6 +17,7 @@ class Airport extends Model
         'icao_code',
         'city_id',
         'country_id',
+        'website',
         'lat',
         'lng',
         'altitude',
