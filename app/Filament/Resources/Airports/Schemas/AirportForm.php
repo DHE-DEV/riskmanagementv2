@@ -58,14 +58,26 @@ class AirportForm
                                     ->url()
                                     ->placeholder('https://example.com')
                                     ->helperText('Offizielle Website des Flughafens')
-                                    ->maxLength(2048),
+                                    ->maxLength(2048)
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('open_website')
+                                            ->icon('heroicon-o-arrow-top-right-on-square')
+                                            ->url(fn ($state) => $state ?: null, shouldOpenInNewTab: true)
+                                            ->hidden(fn ($state) => empty($state))
+                                    ),
 
                                 TextInput::make('security_timeslot_url')
                                     ->label('Zeitfenster-Reservierung für Sicherheitskontrolle')
                                     ->url()
                                     ->placeholder('https://example.com/timeslot-booking')
                                     ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster')
-                                    ->maxLength(2048),
+                                    ->maxLength(2048)
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('open_timeslot')
+                                            ->icon('heroicon-o-arrow-top-right-on-square')
+                                            ->url(fn ($state) => $state ?: null, shouldOpenInNewTab: true)
+                                            ->hidden(fn ($state) => empty($state))
+                                    ),
 
                                 Toggle::make('is_active')
                                     ->label('Aktiv')
