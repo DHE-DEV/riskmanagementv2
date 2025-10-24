@@ -25,101 +25,101 @@
                     </div>
                 @endif
 
-                <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200"
+                     x-data="{
+                         customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
+                         businessTypes: {{ json_encode(auth('customer')->user()->business_type ?? []) }},
+                         saving: false,
+                         async updateCustomerType(type) {
+                             console.log('Updating customer type to:', type);
+                             this.customerType = type;
+                             this.saving = true;
+
+                             // Wenn Privatkunde gewählt wird, Geschäftstypen leeren
+                             if (type === 'private' && this.businessTypes.length > 0) {
+                                 this.businessTypes = [];
+                                 await this.saveBusinessTypes();
+                             }
+
+                             try {
+                                 const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
+                                     method: 'POST',
+                                     headers: {
+                                         'Content-Type': 'application/json',
+                                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                         'Accept': 'application/json'
+                                     },
+                                     body: JSON.stringify({ customer_type: type })
+                                 });
+
+                                 console.log('Response status:', response.status);
+                                 const data = await response.json();
+                                 console.log('Response data:', data);
+
+                                 if (data.success) {
+                                     console.log('Dispatching event with label:', data.customer_type_label);
+                                     window.dispatchEvent(new CustomEvent('customer-type-updated', {
+                                         detail: {
+                                             type: data.customer_type,
+                                             label: data.customer_type_label
+                                         }
+                                     }));
+                                 } else {
+                                     console.error('Save failed:', data);
+                                 }
+                             } catch (error) {
+                                 console.error('Fehler beim Speichern:', error);
+                                 alert('Fehler beim Speichern des Kundentyps. Bitte versuchen Sie es erneut.');
+                             } finally {
+                                 this.saving = false;
+                             }
+                         },
+                         toggleBusinessType(type) {
+                             const index = this.businessTypes.indexOf(type);
+                             if (index > -1) {
+                                 this.businessTypes.splice(index, 1);
+                             } else {
+                                 this.businessTypes.push(type);
+                             }
+                             this.saveBusinessTypes();
+                         },
+                         async saveBusinessTypes() {
+                             console.log('Saving business types:', this.businessTypes);
+                             try {
+                                 const response = await fetch('{{ route('customer.profile.update-business-type') }}', {
+                                     method: 'POST',
+                                     headers: {
+                                         'Content-Type': 'application/json',
+                                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                         'Accept': 'application/json'
+                                     },
+                                     body: JSON.stringify({ business_types: this.businessTypes })
+                                 });
+                                 const data = await response.json();
+                                 console.log('Business types response:', data);
+                                 if (data.success) {
+                                     window.dispatchEvent(new CustomEvent('business-type-updated', {
+                                         detail: {
+                                             types: data.business_types,
+                                             labels: data.business_type_labels
+                                         }
+                                     }));
+                                 }
+                             } catch (error) {
+                                 console.error('Fehler beim Speichern:', error);
+                             }
+                         },
+                         isBusinessTypeSelected(type) {
+                             return this.businessTypes.includes(type);
+                         }
+                     }">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">
                         Profil vervollständigen
                     </h2>
                     <p class="text-gray-700 mb-6">
                         Es fehlen nur noch wenige Schritte, bis Ihr Profil vollständig erfasst ist. Um den vollen Funktionsumfang nutzen zu können, führen Sie bitte die ausstehenden Aktionen aus.
                     </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
-                         x-data="{
-                             customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
-                             businessTypes: {{ json_encode(auth('customer')->user()->business_type ?? []) }},
-                             saving: false,
-                             async updateCustomerType(type) {
-                                 console.log('Updating customer type to:', type);
-                                 this.customerType = type;
-                                 this.saving = true;
-
-                                 // Wenn Privatkunde gewählt wird, Geschäftstypen leeren
-                                 if (type === 'private' && this.businessTypes.length > 0) {
-                                     this.businessTypes = [];
-                                     await this.saveBusinessTypes();
-                                 }
-
-                                 try {
-                                     const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
-                                         method: 'POST',
-                                         headers: {
-                                             'Content-Type': 'application/json',
-                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                             'Accept': 'application/json'
-                                         },
-                                         body: JSON.stringify({ customer_type: type })
-                                     });
-
-                                     console.log('Response status:', response.status);
-                                     const data = await response.json();
-                                     console.log('Response data:', data);
-
-                                     if (data.success) {
-                                         console.log('Dispatching event with label:', data.customer_type_label);
-                                         window.dispatchEvent(new CustomEvent('customer-type-updated', {
-                                             detail: {
-                                                 type: data.customer_type,
-                                                 label: data.customer_type_label
-                                             }
-                                         }));
-                                     } else {
-                                         console.error('Save failed:', data);
-                                     }
-                                 } catch (error) {
-                                     console.error('Fehler beim Speichern:', error);
-                                     alert('Fehler beim Speichern des Kundentyps. Bitte versuchen Sie es erneut.');
-                                 } finally {
-                                     this.saving = false;
-                                 }
-                             },
-                             toggleBusinessType(type) {
-                                 const index = this.businessTypes.indexOf(type);
-                                 if (index > -1) {
-                                     this.businessTypes.splice(index, 1);
-                                 } else {
-                                     this.businessTypes.push(type);
-                                 }
-                                 this.saveBusinessTypes();
-                             },
-                             async saveBusinessTypes() {
-                                 console.log('Saving business types:', this.businessTypes);
-                                 try {
-                                     const response = await fetch('{{ route('customer.profile.update-business-type') }}', {
-                                         method: 'POST',
-                                         headers: {
-                                             'Content-Type': 'application/json',
-                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                             'Accept': 'application/json'
-                                         },
-                                         body: JSON.stringify({ business_types: this.businessTypes })
-                                     });
-                                     const data = await response.json();
-                                     console.log('Business types response:', data);
-                                     if (data.success) {
-                                         window.dispatchEvent(new CustomEvent('business-type-updated', {
-                                             detail: {
-                                                 types: data.business_types,
-                                                 labels: data.business_type_labels
-                                             }
-                                         }));
-                                     }
-                                 } catch (error) {
-                                     console.error('Fehler beim Speichern:', error);
-                                 }
-                             },
-                             isBusinessTypeSelected(type) {
-                                 return this.businessTypes.includes(type);
-                             }
-                         }">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div class="block p-4 bg-white rounded-lg border border-gray-200">
                             <h3 class="font-semibold text-gray-900 mb-2">Kundentype</h3>
                             <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p>
