@@ -185,6 +185,7 @@
                                  companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
                                  companyAdditional: '{{ auth('customer')->user()->company_additional ?? '' }}',
                                  companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
+                                 companyHouseNumber: '{{ auth('customer')->user()->company_house_number ?? '' }}',
                                  companyPostalCode: '{{ auth('customer')->user()->company_postal_code ?? '' }}',
                                  companyCity: '{{ auth('customer')->user()->company_city ?? '' }}',
                                  companyCountry: '{{ auth('customer')->user()->company_country ?? '' }}',
@@ -251,6 +252,7 @@
                                                  company_name: this.companyName,
                                                  company_additional: this.companyAdditional,
                                                  company_street: this.companyStreet,
+                                                 company_house_number: this.companyHouseNumber,
                                                  company_postal_code: this.companyPostalCode,
                                                  company_city: this.companyCity,
                                                  company_country: this.companyCountry
@@ -282,9 +284,14 @@
                                 <input type="text" x-model="companyAdditional" @blur="saveCompanyAddress()"
                                        placeholder="Zusatz"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()"
-                                       placeholder="Straße und Hausnummer"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="grid grid-cols-3 gap-3">
+                                    <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()"
+                                           placeholder="Straße"
+                                           class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" x-model="companyHouseNumber" @blur="saveCompanyAddress()"
+                                           placeholder="Nr."
+                                           class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <input type="text" x-model="companyPostalCode" @blur="saveCompanyAddress()"
                                            placeholder="PLZ"
@@ -320,6 +327,7 @@
                                  billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
                                  billingAdditional: '{{ auth('customer')->user()->billing_additional ?? '' }}',
                                  billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
+                                 billingHouseNumber: '{{ auth('customer')->user()->billing_house_number ?? '' }}',
                                  billingPostalCode: '{{ auth('customer')->user()->billing_postal_code ?? '' }}',
                                  billingCity: '{{ auth('customer')->user()->billing_city ?? '' }}',
                                  billingCountry: '{{ auth('customer')->user()->billing_country ?? '' }}',
@@ -386,6 +394,7 @@
                                                  billing_company_name: this.billingCompanyName,
                                                  billing_additional: this.billingAdditional,
                                                  billing_street: this.billingStreet,
+                                                 billing_house_number: this.billingHouseNumber,
                                                  billing_postal_code: this.billingPostalCode,
                                                  billing_city: this.billingCity,
                                                  billing_country: this.billingCountry
@@ -417,9 +426,14 @@
                                 <input type="text" x-model="billingAdditional" @blur="saveBillingAddress()"
                                        placeholder="Zusatz"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <input type="text" x-model="billingStreet" @blur="saveBillingAddress()"
-                                       placeholder="Straße und Hausnummer"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="grid grid-cols-3 gap-3">
+                                    <input type="text" x-model="billingStreet" @blur="saveBillingAddress()"
+                                           placeholder="Straße"
+                                           class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" x-model="billingHouseNumber" @blur="saveBillingAddress()"
+                                           placeholder="Nr."
+                                           class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <input type="text" x-model="billingPostalCode" @blur="saveBillingAddress()"
                                            placeholder="PLZ"
