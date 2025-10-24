@@ -3,14 +3,12 @@
 <nav class="navigation flex flex-col items-center justify-between py-4 h-full">
     <!-- Top Buttons -->
     <div class="flex flex-col items-center space-y-6">
-        <!-- Menü Button (nur für Dashboard mit Sidebar-Funktionalität) -->
-        @if($active === 'dashboard')
+        <!-- Menü Button -->
         <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Menü" onclick="toggleRightContainer()">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
-        @endif
 
         <!-- Ereignisse Button (nur für Dashboard) -->
         @php
