@@ -17,6 +17,7 @@ class AirportForm
         return $schema
             ->components([
                 \Filament\Schemas\Components\Grid::make(2)
+                    ->columnSpanFull()
                     ->schema([
                         // Linke Spalte
                         \Filament\Schemas\Components\Grid::make(1)
