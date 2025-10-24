@@ -39,14 +39,14 @@
                             <div class="flex gap-3">
                                 <button
                                     @click="customerType = 'business'"
-                                    :class="customerType === 'business' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'"
+                                    :class="customerType === 'business' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
                                     Firmenkunde
                                 </button>
                                 <button
                                     @click="customerType = 'private'"
-                                    :class="customerType === 'private' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'"
+                                    :class="customerType === 'private' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
                                     Privatkunde
