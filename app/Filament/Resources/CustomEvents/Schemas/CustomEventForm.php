@@ -175,6 +175,28 @@ class CustomEventForm
                     ->default('medium')
                     ->required(),
 
+                // Location Section: Länder, Regionen, Städte
+                \Filament\Schemas\Components\Section::make('Zuordnung zu Ländern, Regionen und Städten')
+                    ->description('Ordnen Sie das Event geografischen Standorten zu. Hinweis: Die Zuordnung erfolgt über die Relations-Manager nach dem Speichern.')
+                    ->collapsed()
+                    ->schema([
+                        Placeholder::make('location_info')
+                            ->label('Standortzuordnung')
+                            ->content(new HtmlString('
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    <p class="mb-2">Nach dem Speichern des Events können Sie über die folgenden Tabs Standorte zuordnen:</p>
+                                    <ul class="list-disc list-inside space-y-1 ml-2">
+                                        <li><strong>Länder:</strong> Ordnen Sie das Event einem oder mehreren Ländern zu</li>
+                                        <li><strong>Regionen:</strong> Ordnen Sie das Event spezifischen Regionen zu</li>
+                                        <li><strong>Städte:</strong> Ordnen Sie das Event einzelnen Städten zu</li>
+                                    </ul>
+                                    <p class="mt-3 text-xs text-gray-500">
+                                        Für jeden Standort können Sie individuelle Koordinaten und Notizen hinterlegen.
+                                    </p>
+                                </div>
+                            ')),
+                    ])
+                    ->columnSpanFull(),
 
                 TextInput::make('tags')
                     ->label('Tags')

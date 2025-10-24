@@ -83,6 +83,26 @@ class CustomEvent extends Model implements Feedable
     }
 
     /**
+     * Regions relation (many-to-many).
+     */
+    public function regions()
+    {
+        return $this->belongsToMany(Region::class, 'custom_event_region')
+            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Cities relation (many-to-many).
+     */
+    public function cities()
+    {
+        return $this->belongsToMany(City::class, 'city_custom_event')
+            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates'])
+            ->withTimestamps();
+    }
+
+    /**
      * Event type relation (single - for backward compatibility).
      */
     public function eventType(): BelongsTo
