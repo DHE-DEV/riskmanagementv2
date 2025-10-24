@@ -59,7 +59,12 @@ class AirportForm
                                     ->placeholder('https://example.com')
                                     ->helperText('Offizielle Website des Flughafens')
                                     ->maxLength(2048)
-                                    ->suffix(fn ($state) => $state ? view('components.external-link-icon', ['url' => $state]) : null),
+                                    ->suffixIcon('heroicon-o-arrow-top-right-on-square')
+                                    ->suffixIconColor('primary')
+                                    ->extraInputAttributes([
+                                        'x-data' => '{}',
+                                        'x-on:click' => 'if ($event.target.closest(".fi-input-wrp-suffix")) { if ($el.value) window.open($el.value, "_blank") }',
+                                    ]),
 
                                 TextInput::make('security_timeslot_url')
                                     ->label('Zeitfenster-Reservierung für Sicherheitskontrolle')
@@ -67,7 +72,12 @@ class AirportForm
                                     ->placeholder('https://example.com/timeslot-booking')
                                     ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster')
                                     ->maxLength(2048)
-                                    ->suffix(fn ($state) => $state ? view('components.external-link-icon', ['url' => $state]) : null),
+                                    ->suffixIcon('heroicon-o-arrow-top-right-on-square')
+                                    ->suffixIconColor('primary')
+                                    ->extraInputAttributes([
+                                        'x-data' => '{}',
+                                        'x-on:click' => 'if ($event.target.closest(".fi-input-wrp-suffix")) { if ($el.value) window.open($el.value, "_blank") }',
+                                    ]),
 
                                 Toggle::make('is_active')
                                     ->label('Aktiv')
