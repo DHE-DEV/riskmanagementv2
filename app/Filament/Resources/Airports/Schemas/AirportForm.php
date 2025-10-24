@@ -61,9 +61,23 @@ class AirportForm
                                     ->maxLength(2048)
                                     ->suffixIcon('heroicon-o-arrow-top-right-on-square')
                                     ->suffixIconColor('primary')
-                                    ->extraInputAttributes([
-                                        'x-data' => '{}',
-                                        'x-on:click' => 'if ($event.target.closest(".fi-input-wrp-suffix")) { if ($el.value) window.open($el.value, "_blank") }',
+                                    ->extraAttributes([
+                                        'x-data' => '{
+                                            init() {
+                                                this.$nextTick(() => {
+                                                    const suffix = this.$el.querySelector(".fi-input-wrp-suffix");
+                                                    if (suffix) {
+                                                        suffix.style.cursor = "pointer";
+                                                        suffix.addEventListener("click", (e) => {
+                                                            const input = this.$el.querySelector("input");
+                                                            if (input && input.value) {
+                                                                window.open(input.value, "_blank");
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }',
                                     ]),
 
                                 TextInput::make('security_timeslot_url')
@@ -74,9 +88,23 @@ class AirportForm
                                     ->maxLength(2048)
                                     ->suffixIcon('heroicon-o-arrow-top-right-on-square')
                                     ->suffixIconColor('primary')
-                                    ->extraInputAttributes([
-                                        'x-data' => '{}',
-                                        'x-on:click' => 'if ($event.target.closest(".fi-input-wrp-suffix")) { if ($el.value) window.open($el.value, "_blank") }',
+                                    ->extraAttributes([
+                                        'x-data' => '{
+                                            init() {
+                                                this.$nextTick(() => {
+                                                    const suffix = this.$el.querySelector(".fi-input-wrp-suffix");
+                                                    if (suffix) {
+                                                        suffix.style.cursor = "pointer";
+                                                        suffix.addEventListener("click", (e) => {
+                                                            const input = this.$el.querySelector("input");
+                                                            if (input && input.value) {
+                                                                window.open(input.value, "_blank");
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }',
                                     ]),
 
                                 Toggle::make('is_active')
