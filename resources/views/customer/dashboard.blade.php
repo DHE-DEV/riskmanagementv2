@@ -276,7 +276,7 @@
                                     Angabe empfohlen
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein.</p>
+                            <p class="text-sm text-gray-400 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein. Diese Anschrift wird zur Veröffentlichung verwendet, wenn Sie dem Zustimmen.</p>
                             <div class="space-y-3">
                                 <input type="text" x-model="companyName" @blur="saveCompanyAddress()"
                                        placeholder="Firmenname"
@@ -418,7 +418,7 @@
                                     Freiwillige Angabe
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein.</p>
+                            <p class="text-sm text-gray-400 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein. Diese Anschrift wird nur verwendet, wenn Sie kostenpflichtige Abos abschließen.</p>
                             <div class="space-y-3">
                                 <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()"
                                        placeholder="Firmenname"
@@ -535,6 +535,110 @@
                         <p class="text-sm text-gray-700">
                             {{ auth('customer')->user()->created_at->format('d.m.Y') }}
                         </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Firmenadresse
+                        </h3>
+                        @if(auth('customer')->user()->company_name)
+                            <p class="text-sm text-gray-700">
+                                <strong>{{ auth('customer')->user()->company_name }}</strong>
+                            </p>
+                            @if(auth('customer')->user()->company_additional)
+                                <p class="text-sm text-gray-600">{{ auth('customer')->user()->company_additional }}</p>
+                            @endif
+                            @if(auth('customer')->user()->company_street || auth('customer')->user()->company_house_number)
+                                <p class="text-sm text-gray-700 mt-1">
+                                    {{ auth('customer')->user()->company_street }}
+                                    @if(auth('customer')->user()->company_house_number)
+                                        {{ auth('customer')->user()->company_house_number }}
+                                    @endif
+                                </p>
+                            @endif
+                            @if(auth('customer')->user()->company_postal_code || auth('customer')->user()->company_city)
+                                <p class="text-sm text-gray-700">
+                                    {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}
+                                </p>
+                            @endif
+                            @if(auth('customer')->user()->company_country)
+                                <p class="text-sm text-gray-700">{{ auth('customer')->user()->company_country }}</p>
+                            @endif
+                        @else
+                            <p class="text-sm text-gray-500 italic">Keine Firmenadresse hinterlegt</p>
+                        @endif
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Rechnungsadresse
+                        </h3>
+                        @if(auth('customer')->user()->billing_company_name)
+                            <p class="text-sm text-gray-700">
+                                <strong>{{ auth('customer')->user()->billing_company_name }}</strong>
+                            </p>
+                            @if(auth('customer')->user()->billing_additional)
+                                <p class="text-sm text-gray-600">{{ auth('customer')->user()->billing_additional }}</p>
+                            @endif
+                            @if(auth('customer')->user()->billing_street || auth('customer')->user()->billing_house_number)
+                                <p class="text-sm text-gray-700 mt-1">
+                                    {{ auth('customer')->user()->billing_street }}
+                                    @if(auth('customer')->user()->billing_house_number)
+                                        {{ auth('customer')->user()->billing_house_number }}
+                                    @endif
+                                </p>
+                            @endif
+                            @if(auth('customer')->user()->billing_postal_code || auth('customer')->user()->billing_city)
+                                <p class="text-sm text-gray-700">
+                                    {{ auth('customer')->user()->billing_postal_code }} {{ auth('customer')->user()->billing_city }}
+                                </p>
+                            @endif
+                            @if(auth('customer')->user()->billing_country)
+                                <p class="text-sm text-gray-700">{{ auth('customer')->user()->billing_country }}</p>
+                            @endif
+                        @else
+                            <p class="text-sm text-gray-500 italic">Keine Rechnungsadresse hinterlegt</p>
+                        @endif
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Status
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Profil:</span>
+                                @if(auth('customer')->user()->customer_type)
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Vollständig
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Unvollständig
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">E-Mail:</span>
+                                @if(auth('customer')->user()->hasVerifiedEmail())
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Verifiziert
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Nicht verifiziert
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Konto:</span>
+                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                    Aktiv
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
