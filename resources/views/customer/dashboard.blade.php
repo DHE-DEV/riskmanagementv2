@@ -96,10 +96,64 @@
                                 </button>
                             </div>
                         </div>
-                        <a href="https://stage.global-travel-monitor.eu/entry-conditions" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
-                            <h3 class="font-semibold text-gray-900">Einreisebestimmungen</h3>
-                            <p class="text-sm text-gray-600">Bestimmungen prüfen</p>
-                        </a>
+                        <div class="block p-4 bg-white rounded-lg border border-gray-200"
+                             x-show="customerType === 'business'"
+                             x-data="{
+                                 businessType: '{{ auth('customer')->user()->business_type ?? '' }}',
+                                 async updateBusinessType(type) {
+                                     console.log('Updating business type to:', type);
+                                     this.businessType = type;
+                                     try {
+                                         const response = await fetch('{{ route('customer.profile.update-business-type') }}', {
+                                             method: 'POST',
+                                             headers: {
+                                                 'Content-Type': 'application/json',
+                                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                 'Accept': 'application/json'
+                                             },
+                                             body: JSON.stringify({ business_type: type })
+                                         });
+                                         const data = await response.json();
+                                         console.log('Business type response:', data);
+                                         if (data.success) {
+                                             window.dispatchEvent(new CustomEvent('business-type-updated', {
+                                                 detail: {
+                                                     type: data.business_type,
+                                                     label: data.business_type_label
+                                                 }
+                                             }));
+                                         }
+                                     } catch (error) {
+                                         console.error('Fehler beim Speichern:', error);
+                                     }
+                                 }
+                             }">
+                            <h3 class="font-semibold text-gray-900 mb-2">Geschäftstype</h3>
+                            <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie den Tätigkeitsbereich aus.</p>
+                            <div class="flex gap-3 flex-wrap">
+                                <button
+                                    @click="updateBusinessType('travel_agency')"
+                                    :class="businessType === 'travel_agency' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Reisebüro
+                                </button>
+                                <button
+                                    @click="updateBusinessType('organizer')"
+                                    :class="businessType === 'organizer' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Veranstalter
+                                </button>
+                                <button
+                                    @click="updateBusinessType('online_provider')"
+                                    :class="businessType === 'online_provider' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Online Anbieter
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -24,6 +24,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'provider_refresh_token',
         'email_verified_at',
         'customer_type',
+        'business_type',
     ];
 
     protected $hidden = [

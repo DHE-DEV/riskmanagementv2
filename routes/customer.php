@@ -30,6 +30,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::post('/profile/customer-type', [\App\Http\Controllers\Customer\ProfileController::class, 'updateCustomerType'])
             ->name('profile.update-customer-type');
+
+        Route::post('/profile/business-type', [\App\Http\Controllers\Customer\ProfileController::class, 'updateBusinessType'])
+            ->name('profile.update-business-type');
     });
 
     // Authentication Routes

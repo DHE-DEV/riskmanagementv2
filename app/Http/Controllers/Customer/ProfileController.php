@@ -23,4 +23,27 @@ class ProfileController extends Controller
             'customer_type_label' => $customer->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde'
         ]);
     }
+
+    public function updateBusinessType(Request $request)
+    {
+        $request->validate([
+            'business_type' => 'required|in:travel_agency,organizer,online_provider'
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->business_type = $request->business_type;
+        $customer->save();
+
+        $labels = [
+            'travel_agency' => 'Reisebüro',
+            'organizer' => 'Veranstalter',
+            'online_provider' => 'Online Anbieter'
+        ];
+
+        return response()->json([
+            'success' => true,
+            'business_type' => $customer->business_type,
+            'business_type_label' => $labels[$customer->business_type] ?? $customer->business_type
+        ]);
+    }
 }
