@@ -15,7 +15,7 @@
                         Willkommen, {{ auth('customer')->user()->name }}!
                     </h1>
                     <p class="text-gray-600 mt-1">
-                        Dies ist Ihr Customer Dashboard
+                        Das ist Ihr persönliches Dashboard.
                     </p>
                 </div>
 
