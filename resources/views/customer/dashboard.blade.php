@@ -681,7 +681,24 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Schnittstellen
                         </h3>
-                        <p class="text-sm text-gray-500 italic">Keine Schnittstellen konfiguriert</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Passolution:</span>
+                                @php
+                                    // TODO: Später durch Datenbankabfrage ersetzen
+                                    $passolutionActive = false;
+                                @endphp
+                                @if($passolutionActive)
+                                    <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Aktiv
+                                    </span>
+                                @else
+                                    <button class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors">
+                                        Aktivieren
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
