@@ -69,15 +69,56 @@ class AirportForm
                     ->required()
                     ->searchable(),
                 
-                TextInput::make('latitude')
-                    ->label('Breitengrad')
-                    ->numeric()
-                    ->step(0.000001),
-                
-                TextInput::make('longitude')
-                    ->label('Längengrad')
-                    ->numeric()
-                    ->step(0.000001),
+                \Filament\Schemas\Components\Grid::make(2)
+                    ->schema([
+                        TextInput::make('latitude')
+                            ->label('Breitengrad')
+                            ->numeric()
+                            ->step(0.000001)
+                            ->placeholder('z.B. 50.1109')
+                            ->prefix('Lat:'),
+
+                        TextInput::make('longitude')
+                            ->label('Längengrad')
+                            ->numeric()
+                            ->step(0.000001)
+                            ->placeholder('z.B. 8.6821')
+                            ->prefix('Lng:'),
+                    ]),
+
+                TextInput::make('google_maps_coordinates')
+                    ->label('Google Maps Koordinaten einfügen')
+                    ->placeholder('z.B. 50.1109, 8.6821 oder 50.1109 8.6821')
+                    ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme in Breiten- und Längengrad')
+                    ->live(onBlur: true)
+                    ->dehydrated(false)
+                    ->afterStateUpdated(function ($set, ?string $state) {
+                        if (!$state) {
+                            return;
+                        }
+
+                        // Parse Google Maps coordinate formats
+                        // Entferne alle Zeichen außer Zahlen, Punkt, Komma und Minus
+                        $cleaned = preg_replace('/[^\d.,\-]/', ' ', $state);
+                        $cleaned = preg_replace('/\s+/', ' ', trim($cleaned));
+
+                        // Trenne nach Komma oder Leerzeichen
+                        if (strpos($cleaned, ',') !== false) {
+                            $parts = explode(',', $cleaned);
+                        } else {
+                            $parts = explode(' ', $cleaned);
+                        }
+
+                        if (count($parts) >= 2) {
+                            $lat = trim($parts[0]);
+                            $lng = trim($parts[1]);
+
+                            if (is_numeric($lat) && is_numeric($lng)) {
+                                $set('latitude', $lat);
+                                $set('longitude', $lng);
+                            }
+                        }
+                    }),
                 
                 Toggle::make('is_active')
                     ->label('Aktiv')
