@@ -106,4 +106,32 @@ class ProfileController extends Controller
             'message' => 'Rechnungsadresse erfolgreich gespeichert'
         ]);
     }
+
+    public function getCountries(Request $request)
+    {
+        $search = $request->get('search', '');
+
+        $countries = \App\Models\Country::whereNotNull('name_translations')
+            ->get()
+            ->map(function($country) {
+                $translations = is_string($country->name_translations)
+                    ? json_decode($country->name_translations, true)
+                    : $country->name_translations;
+                return [
+                    'id' => $country->id,
+                    'name' => $translations['de'] ?? $translations['en'] ?? 'Unknown',
+                    'iso_code' => $country->iso_code
+                ];
+            })
+            ->filter(function($country) use ($search) {
+                if (empty($search)) {
+                    return true;
+                }
+                return stripos($country['name'], $search) !== false;
+            })
+            ->sortBy('name')
+            ->values();
+
+        return response()->json($countries);
+    }
 }

@@ -39,6 +39,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::post('/profile/billing-address', [\App\Http\Controllers\Customer\ProfileController::class, 'updateBillingAddress'])
             ->name('profile.update-billing-address');
+
+        Route::get('/profile/countries', [\App\Http\Controllers\Customer\ProfileController::class, 'getCountries'])
+            ->name('profile.get-countries');
     });
 
     // Authentication Routes

@@ -188,6 +188,31 @@
                                  companyPostalCode: '{{ auth('customer')->user()->company_postal_code ?? '' }}',
                                  companyCity: '{{ auth('customer')->user()->company_city ?? '' }}',
                                  companyCountry: '{{ auth('customer')->user()->company_country ?? '' }}',
+                                 countries: [],
+                                 filteredCountries: [],
+                                 showCountryDropdown: false,
+                                 async loadCountries() {
+                                     if (this.countries.length === 0) {
+                                         const response = await fetch('{{ route('customer.profile.get-countries') }}');
+                                         this.countries = await response.json();
+                                     }
+                                 },
+                                 filterCountries() {
+                                     if (this.companyCountry.length > 0) {
+                                         this.filteredCountries = this.countries.filter(c =>
+                                             c.name.toLowerCase().includes(this.companyCountry.toLowerCase())
+                                         ).slice(0, 10);
+                                         this.showCountryDropdown = this.filteredCountries.length > 0;
+                                     } else {
+                                         this.filteredCountries = [];
+                                         this.showCountryDropdown = false;
+                                     }
+                                 },
+                                 selectCountry(countryName) {
+                                     this.companyCountry = countryName;
+                                     this.showCountryDropdown = false;
+                                     this.saveCompanyAddress();
+                                 },
                                  async saveCompanyAddress() {
                                      try {
                                          const response = await fetch('{{ route('customer.profile.update-company-address') }}', {
@@ -243,9 +268,24 @@
                                            placeholder="Stadt"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
-                                <input type="text" x-model="companyCountry" @blur="saveCompanyAddress()"
-                                       placeholder="Land"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="relative">
+                                    <input type="text"
+                                           x-model="companyCountry"
+                                           @input="filterCountries()"
+                                           @focus="loadCountries(); filterCountries()"
+                                           @blur="setTimeout(() => showCountryDropdown = false, 200)"
+                                           placeholder="Land"
+                                           autocomplete="off"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <div x-show="showCountryDropdown"
+                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                        <template x-for="country in filteredCountries" :key="country.id">
+                                            <div @click="selectCountry(country.name)"
+                                                 class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                                                 x-text="country.name"></div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="block p-4 bg-white rounded-lg border border-gray-200" id="RegisterCompanyInvoiceAddress"
@@ -256,6 +296,31 @@
                                  billingPostalCode: '{{ auth('customer')->user()->billing_postal_code ?? '' }}',
                                  billingCity: '{{ auth('customer')->user()->billing_city ?? '' }}',
                                  billingCountry: '{{ auth('customer')->user()->billing_country ?? '' }}',
+                                 countries: [],
+                                 filteredBillingCountries: [],
+                                 showBillingCountryDropdown: false,
+                                 async loadCountries() {
+                                     if (this.countries.length === 0) {
+                                         const response = await fetch('{{ route('customer.profile.get-countries') }}');
+                                         this.countries = await response.json();
+                                     }
+                                 },
+                                 filterBillingCountries() {
+                                     if (this.billingCountry.length > 0) {
+                                         this.filteredBillingCountries = this.countries.filter(c =>
+                                             c.name.toLowerCase().includes(this.billingCountry.toLowerCase())
+                                         ).slice(0, 10);
+                                         this.showBillingCountryDropdown = this.filteredBillingCountries.length > 0;
+                                     } else {
+                                         this.filteredBillingCountries = [];
+                                         this.showBillingCountryDropdown = false;
+                                     }
+                                 },
+                                 selectBillingCountry(countryName) {
+                                     this.billingCountry = countryName;
+                                     this.showBillingCountryDropdown = false;
+                                     this.saveBillingAddress();
+                                 },
                                  async saveBillingAddress() {
                                      try {
                                          const response = await fetch('{{ route('customer.profile.update-billing-address') }}', {
@@ -311,9 +376,24 @@
                                            placeholder="Stadt"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
-                                <input type="text" x-model="billingCountry" @blur="saveBillingAddress()"
-                                       placeholder="Land"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="relative">
+                                    <input type="text"
+                                           x-model="billingCountry"
+                                           @input="filterBillingCountries()"
+                                           @focus="loadCountries(); filterBillingCountries()"
+                                           @blur="setTimeout(() => showBillingCountryDropdown = false, 200)"
+                                           placeholder="Land"
+                                           autocomplete="off"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <div x-show="showBillingCountryDropdown"
+                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                        <template x-for="country in filteredBillingCountries" :key="country.id">
+                                            <div @click="selectBillingCountry(country.name)"
+                                                 class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                                                 x-text="country.name"></div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
