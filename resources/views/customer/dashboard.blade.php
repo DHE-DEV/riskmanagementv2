@@ -191,6 +191,7 @@
                                  countries: [],
                                  filteredCountries: [],
                                  showCountryDropdown: false,
+                                 selectedCountryIndex: -1,
                                  async loadCountries() {
                                      if (this.countries.length === 0) {
                                          const response = await fetch('{{ route('customer.profile.get-countries') }}');
@@ -203,15 +204,39 @@
                                              c.name.toLowerCase().includes(this.companyCountry.toLowerCase())
                                          ).slice(0, 10);
                                          this.showCountryDropdown = this.filteredCountries.length > 0;
+                                         this.selectedCountryIndex = -1;
                                      } else {
                                          this.filteredCountries = [];
                                          this.showCountryDropdown = false;
+                                         this.selectedCountryIndex = -1;
                                      }
                                  },
                                  selectCountry(countryName) {
                                      this.companyCountry = countryName;
                                      this.showCountryDropdown = false;
+                                     this.selectedCountryIndex = -1;
                                      this.saveCompanyAddress();
+                                 },
+                                 handleCountryKeydown(event) {
+                                     if (!this.showCountryDropdown || this.filteredCountries.length === 0) return;
+
+                                     if (event.key === 'ArrowDown') {
+                                         event.preventDefault();
+                                         this.selectedCountryIndex = (this.selectedCountryIndex + 1) % this.filteredCountries.length;
+                                     } else if (event.key === 'ArrowUp') {
+                                         event.preventDefault();
+                                         this.selectedCountryIndex = this.selectedCountryIndex <= 0
+                                             ? this.filteredCountries.length - 1
+                                             : this.selectedCountryIndex - 1;
+                                     } else if (event.key === 'Enter') {
+                                         event.preventDefault();
+                                         if (this.selectedCountryIndex >= 0) {
+                                             this.selectCountry(this.filteredCountries[this.selectedCountryIndex].name);
+                                         }
+                                     } else if (event.key === 'Escape') {
+                                         this.showCountryDropdown = false;
+                                         this.selectedCountryIndex = -1;
+                                     }
                                  },
                                  async saveCompanyAddress() {
                                      try {
@@ -272,6 +297,7 @@
                                     <input type="text"
                                            x-model="companyCountry"
                                            @input="filterCountries()"
+                                           @keydown="handleCountryKeydown($event)"
                                            @focus="loadCountries(); filterCountries()"
                                            @blur="setTimeout(() => showCountryDropdown = false, 200)"
                                            placeholder="Land"
@@ -279,9 +305,10 @@
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <div x-show="showCountryDropdown"
                                          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                        <template x-for="country in filteredCountries" :key="country.id">
+                                        <template x-for="(country, index) in filteredCountries" :key="country.id">
                                             <div @click="selectCountry(country.name)"
-                                                 class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                                                 :class="index === selectedCountryIndex ? 'bg-blue-100' : 'hover:bg-blue-50'"
+                                                 class="px-3 py-2 cursor-pointer text-sm"
                                                  x-text="country.name"></div>
                                         </template>
                                     </div>
@@ -299,6 +326,7 @@
                                  countries: [],
                                  filteredBillingCountries: [],
                                  showBillingCountryDropdown: false,
+                                 selectedBillingCountryIndex: -1,
                                  async loadCountries() {
                                      if (this.countries.length === 0) {
                                          const response = await fetch('{{ route('customer.profile.get-countries') }}');
@@ -311,15 +339,39 @@
                                              c.name.toLowerCase().includes(this.billingCountry.toLowerCase())
                                          ).slice(0, 10);
                                          this.showBillingCountryDropdown = this.filteredBillingCountries.length > 0;
+                                         this.selectedBillingCountryIndex = -1;
                                      } else {
                                          this.filteredBillingCountries = [];
                                          this.showBillingCountryDropdown = false;
+                                         this.selectedBillingCountryIndex = -1;
                                      }
                                  },
                                  selectBillingCountry(countryName) {
                                      this.billingCountry = countryName;
                                      this.showBillingCountryDropdown = false;
+                                     this.selectedBillingCountryIndex = -1;
                                      this.saveBillingAddress();
+                                 },
+                                 handleBillingCountryKeydown(event) {
+                                     if (!this.showBillingCountryDropdown || this.filteredBillingCountries.length === 0) return;
+
+                                     if (event.key === 'ArrowDown') {
+                                         event.preventDefault();
+                                         this.selectedBillingCountryIndex = (this.selectedBillingCountryIndex + 1) % this.filteredBillingCountries.length;
+                                     } else if (event.key === 'ArrowUp') {
+                                         event.preventDefault();
+                                         this.selectedBillingCountryIndex = this.selectedBillingCountryIndex <= 0
+                                             ? this.filteredBillingCountries.length - 1
+                                             : this.selectedBillingCountryIndex - 1;
+                                     } else if (event.key === 'Enter') {
+                                         event.preventDefault();
+                                         if (this.selectedBillingCountryIndex >= 0) {
+                                             this.selectBillingCountry(this.filteredBillingCountries[this.selectedBillingCountryIndex].name);
+                                         }
+                                     } else if (event.key === 'Escape') {
+                                         this.showBillingCountryDropdown = false;
+                                         this.selectedBillingCountryIndex = -1;
+                                     }
                                  },
                                  async saveBillingAddress() {
                                      try {
@@ -380,6 +432,7 @@
                                     <input type="text"
                                            x-model="billingCountry"
                                            @input="filterBillingCountries()"
+                                           @keydown="handleBillingCountryKeydown($event)"
                                            @focus="loadCountries(); filterBillingCountries()"
                                            @blur="setTimeout(() => showBillingCountryDropdown = false, 200)"
                                            placeholder="Land"
@@ -387,9 +440,10 @@
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <div x-show="showBillingCountryDropdown"
                                          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                        <template x-for="country in filteredBillingCountries" :key="country.id">
+                                        <template x-for="(country, index) in filteredBillingCountries" :key="country.id">
                                             <div @click="selectBillingCountry(country.name)"
-                                                 class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                                                 :class="index === selectedBillingCountryIndex ? 'bg-blue-100' : 'hover:bg-blue-50'"
+                                                 class="px-3 py-2 cursor-pointer text-sm"
                                                  x-text="country.name"></div>
                                         </template>
                                     </div>
