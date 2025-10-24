@@ -27,6 +27,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::get('/dashboard', function () {
             return view('customer.dashboard');
         })->name('dashboard');
+
+        Route::post('/profile/customer-type', [\App\Http\Controllers\Customer\ProfileController::class, 'updateCustomerType'])
+            ->name('profile.update-customer-type');
     });
 
     // Authentication Routes

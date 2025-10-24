@@ -33,19 +33,47 @@
                         Es fehlen nur noch wenige Schritte, bis Ihr Profil vollständig erfasst ist. Um den vollen Funktionsumfang nutzen zu können, führen Sie bitte die ausstehenden Aktionen aus.
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="block p-4 bg-white rounded-lg border border-gray-200" x-data="{ customerType: '' }">
+                        <div class="block p-4 bg-white rounded-lg border border-gray-200"
+                             x-data="{
+                                 customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
+                                 async updateCustomerType(type) {
+                                     this.customerType = type;
+                                     try {
+                                         const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
+                                             method: 'POST',
+                                             headers: {
+                                                 'Content-Type': 'application/json',
+                                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                             },
+                                             body: JSON.stringify({ customer_type: type })
+                                         });
+                                         const data = await response.json();
+                                         if (data.success) {
+                                             // Dispatch event für Profil-Update
+                                             window.dispatchEvent(new CustomEvent('customer-type-updated', {
+                                                 detail: {
+                                                     type: data.customer_type,
+                                                     label: data.customer_type_label
+                                                 }
+                                             }));
+                                         }
+                                     } catch (error) {
+                                         console.error('Fehler beim Speichern:', error);
+                                     }
+                                 }
+                             }">
                             <h3 class="font-semibold text-gray-900 mb-2">Kundentype</h3>
                             <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p>
                             <div class="flex gap-3">
                                 <button
-                                    @click="customerType = 'business'"
+                                    @click="updateCustomerType('business')"
                                     :class="customerType === 'business' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
                                     Firmenkunde
                                 </button>
                                 <button
-                                    @click="customerType = 'private'"
+                                    @click="updateCustomerType('private')"
                                     :class="customerType === 'private' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
                                     class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
                                 >
@@ -71,7 +99,11 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200"
+                         x-data="{
+                             customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
+                         }"
+                         @customer-type-updated.window="customerTypeLabel = $event.detail.label">
                         <h3 class="text-lg font-semibold text-blue-900 mb-2">
                             Profil
                         </h3>
@@ -83,6 +115,9 @@
                                 Angemeldet mit: {{ ucfirst(auth('customer')->user()->provider) }}
                             </p>
                         @endif
+                        <p class="text-xs text-blue-600 mt-2">
+                            Kundentyp: <span x-text="customerTypeLabel"></span>
+                        </p>
                     </div>
 
                     <div class="bg-green-50 p-6 rounded-lg border border-green-200">
