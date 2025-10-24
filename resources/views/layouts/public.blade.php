@@ -121,21 +121,7 @@
     <!-- Main Content Area -->
     <div class="main-content">
         <!-- Black Navigation Bar -->
-        <nav class="navigation flex flex-col items-center py-4 space-y-3">
-            <a href="{{ route('home') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Dashboard">
-                <i class="fas fa-globe text-xl"></i>
-            </a>
-            @if(config('app.entry_conditions_enabled', true))
-                <a href="{{ route('entry-conditions') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen">
-                    <i class="fas fa-passport text-xl"></i>
-                </a>
-            @endif
-            @if(config('app.dashboard_booking_enabled', true))
-                <a href="{{ route('booking') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Buchung">
-                    <i class="fas fa-calendar-check text-xl"></i>
-                </a>
-            @endif
-        </nav>
+        <x-public-navigation :active="$active ?? 'dashboard'" />
 
         <!-- Page Content -->
         @yield('content')

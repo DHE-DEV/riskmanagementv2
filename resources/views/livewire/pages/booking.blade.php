@@ -210,27 +210,7 @@
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->
-            <nav class="navigation flex flex-col items-center py-4 space-y-4">
-                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Dashboard">
-                    <i class="fa-regular fa-home text-2xl" aria-hidden="true"></i>
-                </a>
-                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse">
-                    <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
-                </a>
-                @if(config('app.entry_conditions_enabled', true))
-                <a href="/entry-conditions" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen">
-                    <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
-                </a>
-                @endif
-                <a href="/booking" class="p-3 text-white bg-gray-800 rounded-lg transition-colors" title="Buchungsmöglichkeit">
-                    <i class="fa-regular fa-calendar-check text-2xl" aria-hidden="true"></i>
-                </a>
-                @if(config('app.dashboard_airports_enabled', true))
-                <a href="/?airports=1" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen">
-                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </a>
-                @endif
-            </nav>
+            <x-public-navigation active="booking" />
 
             <!-- Filter Sidebar -->
             <aside class="sidebar">

@@ -2,6 +2,10 @@
 
 @section('title', 'Customer Dashboard - Global Travel Monitor')
 
+@php
+    $active = 'dashboard';
+@endphp
+
 @section('content')
     <div class="p-8">
         <div class="max-w-7xl mx-auto">
