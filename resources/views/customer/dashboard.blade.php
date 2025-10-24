@@ -658,7 +658,7 @@
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Firmenadresse
                             </h3>
-                            <button @click="document.getElementById('RegisterCompanyAddress').scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { document.querySelector('#RegisterCompanyAddress button').click(); }, 500);"
+                            <button @click="const el = document.getElementById('RegisterCompanyAddress'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { const btn = document.querySelector('#RegisterCompanyAddress button'); if (btn) btn.click(); }, 500); }"
                                     class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
@@ -705,7 +705,7 @@
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Rechnungsadresse
                             </h3>
-                            <button @click="document.getElementById('RegisterCompanyInvoiceAddress').scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { document.querySelector('#RegisterCompanyInvoiceAddress button').click(); }, 500);"
+                            <button @click="const el = document.getElementById('RegisterCompanyInvoiceAddress'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { const btn = document.querySelector('#RegisterCompanyInvoiceAddress button'); if (btn) btn.click(); }, 500); }"
                                     class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
