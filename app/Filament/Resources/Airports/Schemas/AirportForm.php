@@ -57,55 +57,15 @@ class AirportForm
                                     ->label('Website')
                                     ->url()
                                     ->placeholder('https://example.com')
-                                    ->helperText('Offizielle Website des Flughafens')
-                                    ->maxLength(2048)
-                                    ->suffixIcon('heroicon-o-arrow-top-right-on-square')
-                                    ->suffixIconColor('primary')
-                                    ->extraAttributes([
-                                        'x-data' => '{
-                                            init() {
-                                                this.$nextTick(() => {
-                                                    const suffix = this.$el.querySelector(".fi-input-wrp-suffix");
-                                                    if (suffix) {
-                                                        suffix.style.cursor = "pointer";
-                                                        suffix.addEventListener("click", (e) => {
-                                                            const input = this.$el.querySelector("input");
-                                                            if (input && input.value) {
-                                                                window.open(input.value, "_blank");
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        }',
-                                    ]),
+                                    ->helperText('Offizielle Website des Flughafens (Strg+Klick zum Öffnen)')
+                                    ->maxLength(2048),
 
                                 TextInput::make('security_timeslot_url')
                                     ->label('Zeitfenster-Reservierung für Sicherheitskontrolle')
                                     ->url()
                                     ->placeholder('https://example.com/timeslot-booking')
-                                    ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster')
-                                    ->maxLength(2048)
-                                    ->suffixIcon('heroicon-o-arrow-top-right-on-square')
-                                    ->suffixIconColor('primary')
-                                    ->extraAttributes([
-                                        'x-data' => '{
-                                            init() {
-                                                this.$nextTick(() => {
-                                                    const suffix = this.$el.querySelector(".fi-input-wrp-suffix");
-                                                    if (suffix) {
-                                                        suffix.style.cursor = "pointer";
-                                                        suffix.addEventListener("click", (e) => {
-                                                            const input = this.$el.querySelector("input");
-                                                            if (input && input.value) {
-                                                                window.open(input.value, "_blank");
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        }',
-                                    ]),
+                                    ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster (Strg+Klick zum Öffnen)')
+                                    ->maxLength(2048),
 
                                 Toggle::make('is_active')
                                     ->label('Aktiv')
