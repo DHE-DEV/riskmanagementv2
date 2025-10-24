@@ -114,7 +114,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200"
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
                              customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
                          }"
@@ -122,18 +122,18 @@
                              console.log('Event received in profile:', $event.detail);
                              customerTypeLabel = $event.detail.label;
                          ">
-                        <h3 class="text-lg font-semibold text-blue-900 mb-2">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Profil
                         </h3>
-                        <p class="text-sm text-blue-700">
+                        <p class="text-sm text-gray-700">
                             {{ auth('customer')->user()->email }}
                         </p>
                         @if(auth('customer')->user()->isSocialLogin())
-                            <p class="text-xs text-blue-600 mt-2">
+                            <p class="text-xs text-gray-700 mt-2">
                                 Angemeldet mit: {{ ucfirst(auth('customer')->user()->provider) }}
                             </p>
                         @endif
-                        <p class="text-xs text-blue-600 mt-2">
+                        <p class="text-xs text-gray-700 mt-2">
                             Kundentyp: <span x-text="customerTypeLabel"></span>
                         </p>
                     </div>
