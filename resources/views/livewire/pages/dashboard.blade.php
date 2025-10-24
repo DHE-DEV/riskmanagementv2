@@ -5843,8 +5843,41 @@ function createNewFilterSidebar() {
     }, 300);
 }
 
+// Navigation Active State aktualisieren
+function updateNavigationActiveState(activeButton) {
+    // Alle Navigation Buttons finden
+    const navButtons = document.querySelectorAll('.navigation button, .navigation a');
+
+    navButtons.forEach(button => {
+        // Entferne aktive Klassen
+        button.classList.remove('bg-white', 'text-black');
+        // Füge inaktive Klassen hinzu
+        if (!button.classList.contains('text-white')) {
+            button.classList.add('text-white');
+        }
+    });
+
+    // Setze den aktiven Button
+    if (activeButton === 'events') {
+        const eventsButton = document.querySelector('.navigation button[title="Ereignisse"]');
+        if (eventsButton) {
+            eventsButton.classList.remove('text-white');
+            eventsButton.classList.add('bg-white', 'text-black');
+        }
+    } else if (activeButton === 'airports') {
+        const airportsButton = document.querySelector('.navigation button[title="Flughäfen"]');
+        if (airportsButton) {
+            airportsButton.classList.remove('text-white');
+            airportsButton.classList.add('bg-white', 'text-black');
+        }
+    }
+}
+
 // Neue Airport Sidebar erstellen und anzeigen
 function createAirportSidebar() {
+    // Navigation Active State aktualisieren
+    updateNavigationActiveState('airports');
+
     // Alle anderen Container ausblenden
     hideAllRightContainers();
     const existingAirport = document.getElementById('sidebar-airport');
@@ -6032,6 +6065,9 @@ function restoreFilterSubSections() {
 
 // Sidebar Live Statistics anzeigen
 function showSidebarLiveStatistics() {
+    // Navigation Active State aktualisieren
+    updateNavigationActiveState('events');
+
     const sidebar = getDefaultSidebar();
     const statisticsContainer = document.getElementById('statisticsContainer');
     const airportSidebar = document.getElementById('sidebar-airport');
