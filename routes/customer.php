@@ -53,6 +53,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::get('/profile/countries', [\App\Http\Controllers\Customer\ProfileController::class, 'getCountries'])
             ->name('profile.get-countries');
 
+        Route::post('/profile/hide-profile-completion', [\App\Http\Controllers\Customer\ProfileController::class, 'toggleHideProfileCompletion'])
+            ->name('profile.hide-profile-completion');
+
         // Passolution OAuth routes
         Route::get('/passolution/authorize', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'redirect'])
             ->name('passolution.authorize');

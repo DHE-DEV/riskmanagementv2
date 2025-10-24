@@ -25,11 +25,13 @@
                     </div>
                 @endif
 
+                @if(!auth('customer')->user()->hide_profile_completion)
                 <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200"
                      x-data="{
                          customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
                          businessTypes: {{ json_encode(auth('customer')->user()->business_type ?? []) }},
                          saving: false,
+                         hideProfileCompletion: false,
                          async updateCustomerType(type) {
                              console.log('Updating customer type to:', type);
                              this.customerType = type;
@@ -111,6 +113,31 @@
                          },
                          isBusinessTypeSelected(type) {
                              return this.businessTypes.includes(type);
+                         },
+                         async toggleHideProfileCompletion() {
+                             this.hideProfileCompletion = !this.hideProfileCompletion;
+
+                             if (this.hideProfileCompletion) {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.hide-profile-completion') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({ hide: true })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         // Seite neu laden um den Bereich auszublenden
+                                         window.location.reload();
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                     this.hideProfileCompletion = false;
+                                 }
+                             }
                          }
                      }">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">
@@ -487,7 +514,19 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Checkbox zum Ausblenden des Profil vervollständigen Bereichs -->
+                    <div class="mt-6 pt-6 border-t border-gray-300">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox"
+                                   x-model="hideProfileCompletion"
+                                   @change="toggleHideProfileCompletion()"
+                                   class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">Diesen Bereich nicht mehr anzeigen</span>
+                        </label>
+                    </div>
                 </div>
+                @endif
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                     <div class="bg-white p-6 rounded-lg border border-gray-200"

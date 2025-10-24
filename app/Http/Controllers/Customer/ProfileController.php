@@ -138,4 +138,20 @@ class ProfileController extends Controller
 
         return response()->json($countries);
     }
+
+    public function toggleHideProfileCompletion(Request $request)
+    {
+        $request->validate([
+            'hide' => 'required|boolean'
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->hide_profile_completion = $request->hide;
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'hide_profile_completion' => $customer->hide_profile_completion
+        ]);
+    }
 }
