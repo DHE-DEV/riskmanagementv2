@@ -30,7 +30,7 @@
     $config = $providers[$provider] ?? $providers['google'];
 @endphp
 
-<a href="{{ $href }}" {{ $attributes->merge(['class' => 'inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-stone-950 focus:ring-stone-400 ' . $config['bg']]) }}>
+<a href="{{ $href }}" {{ $attributes->merge(['class' => 'flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-stone-950 focus:ring-stone-400 ' . $config['bg']]) }}>
     <span class="flex-shrink-0">
         {!! $config['icon'] !!}
     </span>
