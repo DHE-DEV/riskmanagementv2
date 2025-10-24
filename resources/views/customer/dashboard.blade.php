@@ -631,7 +631,10 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6"
-                     x-data="{ showBusinessBoxes: '{{ auth('customer')->user()->customer_type ?? '' }}' === 'business' }"
+                     x-data="{
+                         showBusinessBoxes: '{{ auth('customer')->user()->customer_type ?? '' }}' === 'business',
+                         directoryListingActive: {{ auth('customer')->user()->directory_listing_active ? 'true' : 'false' }}
+                     }"
                      x-show="showBusinessBoxes"
                      x-transition
                      @customer-type-updated.window="showBusinessBoxes = ($event.detail.type === 'business')">
@@ -954,7 +957,6 @@
 
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
-                             isActive: {{ auth('customer')->user()->directory_listing_active ? 'true' : 'false' }},
                              async toggleListing() {
                                  try {
                                      const response = await fetch('{{ route('customer.profile.toggle-directory-listing') }}', {
@@ -964,11 +966,11 @@
                                              'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                              'Accept': 'application/json'
                                          },
-                                         body: JSON.stringify({ active: !this.isActive })
+                                         body: JSON.stringify({ active: !$parent.directoryListingActive })
                                      });
                                      const data = await response.json();
                                      if (data.success) {
-                                         this.isActive = data.directory_listing_active;
+                                         $parent.directoryListingActive = data.directory_listing_active;
                                      }
                                  } catch (error) {
                                      console.error('Fehler beim Speichern:', error);
@@ -984,9 +986,45 @@
                         </p>
                         <div>
                             <button @click="toggleListing()"
-                                    :class="isActive ? 'bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                                    :class="$parent.directoryListingActive ? 'bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
                                     class="px-3 py-1 text-xs font-medium rounded border transition-colors">
-                                <span x-text="isActive ? 'Deaktivieren' : 'Aktivieren'"></span>
+                                <span x-text="$parent.directoryListingActive ? 'Deaktivieren' : 'Aktivieren'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-show="$parent.directoryListingActive"
+                         x-transition
+                         x-data="{
+                             selectedPlan: null,
+                             plans: [
+                                 { days: 7, price: 9, label: '7 Tage / 9 EUR' },
+                                 { days: 30, price: 25, label: '30 Tage / 25 EUR' },
+                                 { days: 90, price: 69, label: '90 Tage / 69 EUR' }
+                             ],
+                             selectPlan(index) {
+                                 this.selectedPlan = index;
+                             }
+                         }">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Adresse hervorheben
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Meine Adresse kostenpflichtig hervorheben.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="(plan, index) in plans" :key="index">
+                                <button @click="selectPlan(index)"
+                                        :class="selectedPlan === index ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                                        class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
+                                        x-text="plan.label">
+                                </button>
+                            </template>
+                        </div>
+                        <div x-show="selectedPlan !== null" class="mt-4 pt-4 border-t border-gray-200">
+                            <button class="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                Jetzt buchen
                             </button>
                         </div>
                     </div>
