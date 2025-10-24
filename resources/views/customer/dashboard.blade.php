@@ -959,13 +959,10 @@
                         <p class="text-sm text-gray-600 mb-4">
                             Wenn Sie im Adressverzeichnis gelistet sein möchten, kann dies hier aktiviert werden. Um als gesponsort zu erscheinen, können Sie ein Abo abschließen.
                         </p>
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Status:</span>
-                                <button class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors">
-                                    Aktivieren
-                                </button>
-                            </div>
+                        <div>
+                            <button class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors">
+                                Aktivieren
+                            </button>
                         </div>
                     </div>
                 </div>
