@@ -637,13 +637,52 @@
                      @customer-type-updated.window="showBusinessBoxes = ($event.detail.type === 'business')">
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
+                             isEditing: false,
                              companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
                              companyAdditional: '{{ auth('customer')->user()->company_additional ?? '' }}',
                              companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
                              companyHouseNumber: '{{ auth('customer')->user()->company_house_number ?? '' }}',
                              companyPostalCode: '{{ auth('customer')->user()->company_postal_code ?? '' }}',
                              companyCity: '{{ auth('customer')->user()->company_city ?? '' }}',
-                             companyCountry: '{{ auth('customer')->user()->company_country ?? '' }}'
+                             companyCountry: '{{ auth('customer')->user()->company_country ?? '' }}',
+                             async saveCompanyAddress() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.update-company-address') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({
+                                             company_name: this.companyName,
+                                             company_additional: this.companyAdditional,
+                                             company_street: this.companyStreet,
+                                             company_house_number: this.companyHouseNumber,
+                                             company_postal_code: this.companyPostalCode,
+                                             company_city: this.companyCity,
+                                             company_country: this.companyCountry
+                                         })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         this.isEditing = false;
+                                         window.dispatchEvent(new CustomEvent('company-address-updated', {
+                                             detail: {
+                                                 companyName: this.companyName,
+                                                 companyAdditional: this.companyAdditional,
+                                                 companyStreet: this.companyStreet,
+                                                 companyHouseNumber: this.companyHouseNumber,
+                                                 companyPostalCode: this.companyPostalCode,
+                                                 companyCity: this.companyCity,
+                                                 companyCountry: this.companyCountry
+                                             }
+                                         }));
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                 }
+                             }
                          }"
                          @company-address-updated.window="
                              companyName = $event.detail.companyName;
@@ -654,43 +693,105 @@
                              companyCity = $event.detail.companyCity;
                              companyCountry = $event.detail.companyCountry;
                          ">
-                        <div class="flex justify-between items-center mb-2">
+                        <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Firmenadresse
                             </h3>
-                            <button @click="const el = document.getElementById('RegisterCompanyAddress'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { const btn = document.querySelector('#RegisterCompanyAddress button'); if (btn) btn.click(); }, 500); }"
+                            <button @click="isEditing = !isEditing"
                                     class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                 </svg>
                             </button>
                         </div>
-                        <div x-show="companyName">
-                            <p class="text-sm text-gray-700">
-                                <strong x-text="companyName"></strong>
-                            </p>
-                            <p x-show="companyAdditional" x-text="companyAdditional" class="text-sm text-gray-600"></p>
-                            <p x-show="companyStreet || companyHouseNumber" class="text-sm text-gray-700 mt-1">
-                                <span x-text="companyStreet"></span>
-                                <span x-show="companyHouseNumber" x-text="' ' + companyHouseNumber"></span>
-                            </p>
-                            <p x-show="companyPostalCode || companyCity" class="text-sm text-gray-700">
-                                <span x-text="companyPostalCode"></span> <span x-text="companyCity"></span>
-                            </p>
-                            <p x-show="companyCountry" x-text="companyCountry" class="text-sm text-gray-700"></p>
+
+                        <!-- Anzeigemodus -->
+                        <div x-show="!isEditing">
+                            <div x-show="companyName">
+                                <p class="text-sm text-gray-700">
+                                    <strong x-text="companyName"></strong>
+                                </p>
+                                <p x-show="companyAdditional" x-text="companyAdditional" class="text-sm text-gray-600"></p>
+                                <p x-show="companyStreet || companyHouseNumber" class="text-sm text-gray-700 mt-1">
+                                    <span x-text="companyStreet"></span>
+                                    <span x-show="companyHouseNumber" x-text="' ' + companyHouseNumber"></span>
+                                </p>
+                                <p x-show="companyPostalCode || companyCity" class="text-sm text-gray-700">
+                                    <span x-text="companyPostalCode"></span> <span x-text="companyCity"></span>
+                                </p>
+                                <p x-show="companyCountry" x-text="companyCountry" class="text-sm text-gray-700"></p>
+                            </div>
+                            <p x-show="!companyName" class="text-sm text-gray-500 italic">Keine Firmenadresse hinterlegt</p>
                         </div>
-                        <p x-show="!companyName" class="text-sm text-gray-500 italic">Keine Firmenadresse hinterlegt</p>
+
+                        <!-- Bearbeitungsmodus -->
+                        <div x-show="isEditing" class="space-y-3">
+                            <input type="text" x-model="companyName" placeholder="Firmenname" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" x-model="companyAdditional" placeholder="Zusatz" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" x-model="companyStreet" placeholder="Straße" class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="companyHouseNumber" placeholder="Nr." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" x-model="companyPostalCode" placeholder="PLZ" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="companyCity" placeholder="Stadt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <input type="text" x-model="companyCountry" placeholder="Land" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex gap-2 pt-2">
+                                <button @click="saveCompanyAddress()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">Speichern</button>
+                                <button @click="isEditing = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors">Abbrechen</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
+                             isEditing: false,
                              billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
                              billingAdditional: '{{ auth('customer')->user()->billing_additional ?? '' }}',
                              billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
                              billingHouseNumber: '{{ auth('customer')->user()->billing_house_number ?? '' }}',
                              billingPostalCode: '{{ auth('customer')->user()->billing_postal_code ?? '' }}',
                              billingCity: '{{ auth('customer')->user()->billing_city ?? '' }}',
-                             billingCountry: '{{ auth('customer')->user()->billing_country ?? '' }}'
+                             billingCountry: '{{ auth('customer')->user()->billing_country ?? '' }}',
+                             async saveBillingAddress() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.update-billing-address') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({
+                                             billing_company_name: this.billingCompanyName,
+                                             billing_additional: this.billingAdditional,
+                                             billing_street: this.billingStreet,
+                                             billing_house_number: this.billingHouseNumber,
+                                             billing_postal_code: this.billingPostalCode,
+                                             billing_city: this.billingCity,
+                                             billing_country: this.billingCountry
+                                         })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         this.isEditing = false;
+                                         window.dispatchEvent(new CustomEvent('billing-address-updated', {
+                                             detail: {
+                                                 billingCompanyName: this.billingCompanyName,
+                                                 billingAdditional: this.billingAdditional,
+                                                 billingStreet: this.billingStreet,
+                                                 billingHouseNumber: this.billingHouseNumber,
+                                                 billingPostalCode: this.billingPostalCode,
+                                                 billingCity: this.billingCity,
+                                                 billingCountry: this.billingCountry
+                                             }
+                                         }));
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                 }
+                             }
                          }"
                          @billing-address-updated.window="
                              billingCompanyName = $event.detail.billingCompanyName;
@@ -701,32 +802,55 @@
                              billingCity = $event.detail.billingCity;
                              billingCountry = $event.detail.billingCountry;
                          ">
-                        <div class="flex justify-between items-center mb-2">
+                        <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Rechnungsadresse
                             </h3>
-                            <button @click="const el = document.getElementById('RegisterCompanyInvoiceAddress'); if (el) { el.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { const btn = document.querySelector('#RegisterCompanyInvoiceAddress button'); if (btn) btn.click(); }, 500); }"
+                            <button @click="isEditing = !isEditing"
                                     class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                 </svg>
                             </button>
                         </div>
-                        <div x-show="billingCompanyName">
-                            <p class="text-sm text-gray-700">
-                                <strong x-text="billingCompanyName"></strong>
-                            </p>
-                            <p x-show="billingAdditional" x-text="billingAdditional" class="text-sm text-gray-600"></p>
-                            <p x-show="billingStreet || billingHouseNumber" class="text-sm text-gray-700 mt-1">
-                                <span x-text="billingStreet"></span>
-                                <span x-show="billingHouseNumber" x-text="' ' + billingHouseNumber"></span>
-                            </p>
-                            <p x-show="billingPostalCode || billingCity" class="text-sm text-gray-700">
-                                <span x-text="billingPostalCode"></span> <span x-text="billingCity"></span>
-                            </p>
-                            <p x-show="billingCountry" x-text="billingCountry" class="text-sm text-gray-700"></p>
+
+                        <!-- Anzeigemodus -->
+                        <div x-show="!isEditing">
+                            <div x-show="billingCompanyName">
+                                <p class="text-sm text-gray-700">
+                                    <strong x-text="billingCompanyName"></strong>
+                                </p>
+                                <p x-show="billingAdditional" x-text="billingAdditional" class="text-sm text-gray-600"></p>
+                                <p x-show="billingStreet || billingHouseNumber" class="text-sm text-gray-700 mt-1">
+                                    <span x-text="billingStreet"></span>
+                                    <span x-show="billingHouseNumber" x-text="' ' + billingHouseNumber"></span>
+                                </p>
+                                <p x-show="billingPostalCode || billingCity" class="text-sm text-gray-700">
+                                    <span x-text="billingPostalCode"></span> <span x-text="billingCity"></span>
+                                </p>
+                                <p x-show="billingCountry" x-text="billingCountry" class="text-sm text-gray-700"></p>
+                            </div>
+                            <p x-show="!billingCompanyName" class="text-sm text-gray-500 italic">Keine Rechnungsadresse hinterlegt</p>
                         </div>
-                        <p x-show="!billingCompanyName" class="text-sm text-gray-500 italic">Keine Rechnungsadresse hinterlegt</p>
+
+                        <!-- Bearbeitungsmodus -->
+                        <div x-show="isEditing" class="space-y-3">
+                            <input type="text" x-model="billingCompanyName" placeholder="Firmenname" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" x-model="billingAdditional" placeholder="Zusatz" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" x-model="billingStreet" placeholder="Straße" class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="billingHouseNumber" placeholder="Nr." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" x-model="billingPostalCode" placeholder="PLZ" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="billingCity" placeholder="Stadt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <input type="text" x-model="billingCountry" placeholder="Land" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex gap-2 pt-2">
+                                <button @click="saveBillingAddress()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">Speichern</button>
+                                <button @click="isEditing = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors">Abbrechen</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
