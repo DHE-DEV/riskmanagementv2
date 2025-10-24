@@ -548,7 +548,7 @@
                     </div>
 
                     <!-- Checkbox zum Ausblenden des Profil vervollständigen Bereichs -->
-                    <div class="mt-6 pt-6 border-t border-gray-300">
+                    <div class="mt-6 pt-6">
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox"
                                    @change="toggleHideProfileCompletion($event)"
@@ -983,7 +983,7 @@
                             Adressverzeichnis
                         </h3>
                         <p class="text-sm text-gray-600 mb-4">
-                            Wenn Sie im Adressverzeichnis gelistet sein möchten, kann dies hier aktiviert werden.
+                            Wenn Sie im Adressverzeichnis <b>kostenlos</b> gelistet sein möchten, kann dies hier aktiviert werden.
                         </p>
                         <div>
                             <button @click="toggleListing()"
