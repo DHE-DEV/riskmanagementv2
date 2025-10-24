@@ -18,7 +18,7 @@
                         <div class="px-8 py-8 sm:px-10">
                             <!-- Header -->
                             <div class="flex w-full flex-col text-center mb-8">
-                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Willkommen zurück</h1>
+                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Global Travel Monitor</h1>
                                 <p class="text-sm text-stone-600 dark:text-stone-400">Melden Sie sich bei Ihrem Kundenkonto an</p>
                             </div>
 
