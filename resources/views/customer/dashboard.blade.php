@@ -11,7 +11,7 @@
         <div class="max-w-7xl mx-auto">
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                 <div class="mb-6">
-                    <h1 class="text-3xl font-bold text-gray-900">
+                    <h1 class="text-xl font-bold text-gray-900">
                         Willkommen, {{ auth('customer')->user()->name }}!
                     </h1>
                     <p class="text-gray-600 mt-1">
