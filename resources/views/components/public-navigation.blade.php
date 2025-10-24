@@ -37,11 +37,17 @@
         </a>
         @endif
 
-        <!-- Flughäfen Button (nur für Dashboard) -->
-        @if(config('app.dashboard_airports_enabled', true) && $active === 'dashboard')
-        <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
-            <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-        </button>
+        <!-- Flughäfen -->
+        @if(config('app.dashboard_airports_enabled', true))
+            @if($active === 'dashboard')
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
+                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
+                </button>
+            @else
+                <a href="/?airports=1" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Flughäfen">
+                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
+                </a>
+            @endif
         @endif
     </div>
 
