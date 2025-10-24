@@ -28,7 +28,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'business_types' => 'required|array',
-            'business_types.*' => 'in:travel_agency,organizer,online_provider'
+            'business_types.*' => 'in:travel_agency,organizer,online_provider,mobile_travel_consultant'
         ]);
 
         $customer = auth('customer')->user();
@@ -38,7 +38,8 @@ class ProfileController extends Controller
         $labels = [
             'travel_agency' => 'Reisebüro',
             'organizer' => 'Veranstalter',
-            'online_provider' => 'Online Anbieter'
+            'online_provider' => 'Online Anbieter',
+            'mobile_travel_consultant' => 'Mobiler Reiseberater'
         ];
 
         $businessTypeLabels = array_map(function($type) use ($labels) {
