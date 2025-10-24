@@ -101,16 +101,6 @@
                             <p class="text-sm text-gray-600">Bestimmungen prüfen</p>
                         </a>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <a href="https://stage.global-travel-monitor.eu" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
-                            <h3 class="font-semibold text-gray-900">Reisewarnungen</h3>
-                            <p class="text-sm text-gray-600">Aktuelle Warnungen ansehen</p>
-                        </a>
-                        <a href="https://stage.global-travel-monitor.eu/entry-conditions" class="block p-4 bg-white rounded-lg hover:shadow-md transition border border-gray-200">
-                            <h3 class="font-semibold text-gray-900">Einreisebestimmungen</h3>
-                            <p class="text-sm text-gray-600">Bestimmungen prüfen</p>
-                        </a>
-                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
