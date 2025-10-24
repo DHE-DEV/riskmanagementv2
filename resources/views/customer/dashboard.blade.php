@@ -176,11 +176,15 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Firmenanschrift -->
-                        <div class="block p-4 bg-white rounded-lg border border-gray-200"
-                             x-show="customerType === 'business'"
-                             x-transition
+                <!-- Firmenanschrift und Rechnungsadresse -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8"
+                     x-show="customerType === 'business'"
+                     x-transition>
+                    <!-- Firmenanschrift -->
+                    <div class="block p-4 bg-white rounded-lg border border-gray-200"
                          x-data="{
                              companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
                              companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
@@ -234,11 +238,10 @@
                                    placeholder="Land"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
+                    </div>
 
-                        <!-- Rechnungsadresse -->
-                        <div class="block p-4 bg-white rounded-lg border border-gray-200"
-                             x-show="customerType === 'business'"
-                             x-transition
+                    <!-- Rechnungsadresse -->
+                    <div class="block p-4 bg-white rounded-lg border border-gray-200"
                          x-data="{
                              billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
                              billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
