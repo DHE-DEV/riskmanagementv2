@@ -57,6 +57,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'company_name' => 'nullable|string|max:255',
+            'company_additional' => 'nullable|string|max:255',
             'company_street' => 'nullable|string|max:255',
             'company_postal_code' => 'nullable|string|max:20',
             'company_city' => 'nullable|string|max:255',
@@ -66,6 +67,7 @@ class ProfileController extends Controller
         $customer = auth('customer')->user();
         $customer->update($request->only([
             'company_name',
+            'company_additional',
             'company_street',
             'company_postal_code',
             'company_city',
@@ -82,6 +84,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'billing_company_name' => 'nullable|string|max:255',
+            'billing_additional' => 'nullable|string|max:255',
             'billing_street' => 'nullable|string|max:255',
             'billing_postal_code' => 'nullable|string|max:20',
             'billing_city' => 'nullable|string|max:255',
@@ -91,6 +94,7 @@ class ProfileController extends Controller
         $customer = auth('customer')->user();
         $customer->update($request->only([
             'billing_company_name',
+            'billing_additional',
             'billing_street',
             'billing_postal_code',
             'billing_city',

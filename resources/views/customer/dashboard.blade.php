@@ -183,6 +183,7 @@
                         <div class="block p-4 bg-white rounded-lg border border-gray-200" id="RegisterCompanyAddress"
                              x-data="{
                                  companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
+                                 companyAdditional: '{{ auth('customer')->user()->company_additional ?? '' }}',
                                  companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
                                  companyPostalCode: '{{ auth('customer')->user()->company_postal_code ?? '' }}',
                                  companyCity: '{{ auth('customer')->user()->company_city ?? '' }}',
@@ -198,6 +199,7 @@
                                              },
                                              body: JSON.stringify({
                                                  company_name: this.companyName,
+                                                 company_additional: this.companyAdditional,
                                                  company_street: this.companyStreet,
                                                  company_postal_code: this.companyPostalCode,
                                                  company_city: this.companyCity,
@@ -219,6 +221,9 @@
                                 <input type="text" x-model="companyName" @blur="saveCompanyAddress()"
                                        placeholder="Firmenname"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="companyAdditional" @blur="saveCompanyAddress()"
+                                       placeholder="Zusatz"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()"
                                        placeholder="Straße und Hausnummer"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -238,6 +243,7 @@
                         <div class="block p-4 bg-white rounded-lg border border-gray-200" id="RegisterCompanyInvoiceAddress"
                              x-data="{
                                  billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
+                                 billingAdditional: '{{ auth('customer')->user()->billing_additional ?? '' }}',
                                  billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
                                  billingPostalCode: '{{ auth('customer')->user()->billing_postal_code ?? '' }}',
                                  billingCity: '{{ auth('customer')->user()->billing_city ?? '' }}',
@@ -253,6 +259,7 @@
                                              },
                                              body: JSON.stringify({
                                                  billing_company_name: this.billingCompanyName,
+                                                 billing_additional: this.billingAdditional,
                                                  billing_street: this.billingStreet,
                                                  billing_postal_code: this.billingPostalCode,
                                                  billing_city: this.billingCity,
@@ -273,6 +280,9 @@
                             <div class="space-y-3">
                                 <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()"
                                        placeholder="Firmenname"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="billingAdditional" @blur="saveBillingAddress()"
+                                       placeholder="Zusatz"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <input type="text" x-model="billingStreet" @blur="saveBillingAddress()"
                                        placeholder="Straße und Hausnummer"
