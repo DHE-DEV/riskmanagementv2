@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Airports\Schemas;
 
+use App\Forms\Components\UrlWithLink;
 use App\Models\City;
 use App\Models\Country;
 use Filament\Forms\Components\Select;
@@ -53,18 +54,16 @@ class AirportForm
                                     ->required()
                                     ->searchable(),
 
-                                TextInput::make('website')
+                                UrlWithLink::make('website')
                                     ->label('Website')
-                                    ->url()
                                     ->placeholder('https://example.com')
-                                    ->helperText('Offizielle Website des Flughafens (Strg+Klick zum Öffnen)')
+                                    ->helperText('Offizielle Website des Flughafens')
                                     ->maxLength(2048),
 
-                                TextInput::make('security_timeslot_url')
+                                UrlWithLink::make('security_timeslot_url')
                                     ->label('Zeitfenster-Reservierung für Sicherheitskontrolle')
-                                    ->url()
                                     ->placeholder('https://example.com/timeslot-booking')
-                                    ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster (Strg+Klick zum Öffnen)')
+                                    ->helperText('URL zum Buchungssystem für Sicherheitskontroll-Zeitfenster')
                                     ->maxLength(2048),
 
                                 Toggle::make('is_active')
