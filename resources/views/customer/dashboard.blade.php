@@ -11,11 +11,8 @@
         <div class="max-w-7xl mx-auto">
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                 <div class="mb-6">
-                    <h1 class="text-xl font-bold text-gray-900">
-                        Willkommen, {{ auth('customer')->user()->name }}!
-                    </h1>
                     <p class="text-gray-600 mt-1">
-                        Das ist Ihr persönliches Dashboard.
+                        Willkommen, {{ auth('customer')->user()->name }}!
                     </p>
                 </div>
 
@@ -208,6 +205,7 @@
                             x-transition>
                         <div class="block p-4 bg-white rounded-lg border border-gray-200" id="RegisterCompanyAddress"
                              x-data="{
+                                 isEditing: false,
                                  companyName: '{{ auth('customer')->user()->company_name ?? '' }}',
                                  companyAdditional: '{{ auth('customer')->user()->company_additional ?? '' }}',
                                  companyStreet: '{{ auth('customer')->user()->company_street ?? '' }}',
@@ -304,48 +302,65 @@
                                      }
                                  }
                              }">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold text-gray-900">Firmenanschrift</h3>
-                                <span class="px-2 py-1 bg-orange-50 text-orange-700 text-xs font-medium rounded border border-orange-200 flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"/>
-                                    </svg>
-                                    Angabe empfohlen
-                                </span>
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900">Firmenanschrift</h3>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 bg-orange-50 text-orange-700 text-xs font-medium rounded border border-orange-200 flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"/>
+                                        </svg>
+                                        Angabe empfohlen
+                                    </span>
+                                    <button @click="isEditing = !isEditing" class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             <p class="text-sm text-gray-400 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein. Diese Anschrift wird zur Veröffentlichung verwendet, wenn Sie dem Zustimmen.</p>
                             <div class="space-y-3">
-                                <input type="text" x-model="companyName" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
+                                <input type="text" x-model="companyName" :disabled="!isEditing" @blur="isEditing && saveCompanyAddress()" @keydown.enter="isEditing && saveCompanyAddress()"
                                        placeholder="Firmenname"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <input type="text" x-model="companyAdditional" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
+                                <input type="text" x-model="companyAdditional" :disabled="!isEditing" @blur="isEditing && saveCompanyAddress()" @keydown.enter="isEditing && saveCompanyAddress()"
                                        placeholder="Zusatz"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <div class="grid grid-cols-3 gap-3">
-                                    <input type="text" x-model="companyStreet" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
+                                    <input type="text" x-model="companyStreet" :disabled="!isEditing" @blur="isEditing && saveCompanyAddress()" @keydown.enter="isEditing && saveCompanyAddress()"
                                            placeholder="Straße"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="companyHouseNumber" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
+                                    <input type="text" x-model="companyHouseNumber" :disabled="!isEditing" @blur="isEditing && saveCompanyAddress()" @keydown.enter="isEditing && saveCompanyAddress()"
                                            placeholder="Nr."
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <input type="text" x-model="companyPostalCode" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
+                                    <input type="text" x-model="companyPostalCode" :disabled="!isEditing" @blur="isEditing && saveCompanyAddress()" @keydown.enter="isEditing && saveCompanyAddress()"
                                            placeholder="PLZ"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="companyCity" @blur="saveCompanyAddress()" @keydown.enter="saveCompanyAddress()"
+                                    <input type="text" x-model="companyCity" :disabled="!isEditing" @blur="isEditing && saveCompanyAddress()" @keydown.enter="isEditing && saveCompanyAddress()"
                                            placeholder="Stadt"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="relative">
                                     <input type="text"
                                            x-model="companyCountry"
-                                           @input="filterCountries()"
-                                           @keydown="handleCountryKeydown($event)"
-                                           @focus="loadCountries(); filterCountries()"
+                                           :disabled="!isEditing"
+                                           @input="isEditing && filterCountries()"
+                                           @keydown="isEditing && handleCountryKeydown($event)"
+                                           @focus="isEditing && (loadCountries(), filterCountries())"
                                            @blur="setTimeout(() => showCountryDropdown = false, 200)"
                                            placeholder="Land"
                                            autocomplete="off"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <div x-show="showCountryDropdown"
                                          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -361,6 +376,7 @@
                         </div>
                         <div class="block p-4 bg-white rounded-lg border border-gray-200" id="RegisterCompanyInvoiceAddress"
                              x-data="{
+                                 isEditing: false,
                                  billingCompanyName: '{{ auth('customer')->user()->billing_company_name ?? '' }}',
                                  billingAdditional: '{{ auth('customer')->user()->billing_additional ?? '' }}',
                                  billingStreet: '{{ auth('customer')->user()->billing_street ?? '' }}',
@@ -457,48 +473,65 @@
                                      }
                                  }
                              }">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold text-gray-900">Rechnungsadresse</h3>
-                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200 flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Freiwillige Angabe
-                                </span>
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900">Rechnungsadresse</h3>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200 flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Freiwillige Angabe
+                                    </span>
+                                    <button @click="isEditing = !isEditing" class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             <p class="text-sm text-gray-400 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein. Diese Anschrift wird nur verwendet, wenn Sie kostenpflichtige Abos abschließen.</p>
                             <div class="space-y-3">
-                                <input type="text" x-model="billingCompanyName" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
+                                <input type="text" x-model="billingCompanyName" :disabled="!isEditing" @blur="isEditing && saveBillingAddress()" @keydown.enter="isEditing && saveBillingAddress()"
                                        placeholder="Firmenname"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <input type="text" x-model="billingAdditional" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
+                                <input type="text" x-model="billingAdditional" :disabled="!isEditing" @blur="isEditing && saveBillingAddress()" @keydown.enter="isEditing && saveBillingAddress()"
                                        placeholder="Zusatz"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <div class="grid grid-cols-3 gap-3">
-                                    <input type="text" x-model="billingStreet" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
+                                    <input type="text" x-model="billingStreet" :disabled="!isEditing" @blur="isEditing && saveBillingAddress()" @keydown.enter="isEditing && saveBillingAddress()"
                                            placeholder="Straße"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="billingHouseNumber" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
+                                    <input type="text" x-model="billingHouseNumber" :disabled="!isEditing" @blur="isEditing && saveBillingAddress()" @keydown.enter="isEditing && saveBillingAddress()"
                                            placeholder="Nr."
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <input type="text" x-model="billingPostalCode" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
+                                    <input type="text" x-model="billingPostalCode" :disabled="!isEditing" @blur="isEditing && saveBillingAddress()" @keydown.enter="isEditing && saveBillingAddress()"
                                            placeholder="PLZ"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <input type="text" x-model="billingCity" @blur="saveBillingAddress()" @keydown.enter="saveBillingAddress()"
+                                    <input type="text" x-model="billingCity" :disabled="!isEditing" @blur="isEditing && saveBillingAddress()" @keydown.enter="isEditing && saveBillingAddress()"
                                            placeholder="Stadt"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="relative">
                                     <input type="text"
                                            x-model="billingCountry"
-                                           @input="filterBillingCountries()"
-                                           @keydown="handleBillingCountryKeydown($event)"
-                                           @focus="loadCountries(); filterBillingCountries()"
+                                           :disabled="!isEditing"
+                                           @input="isEditing && filterBillingCountries()"
+                                           @keydown="isEditing && handleBillingCountryKeydown($event)"
+                                           @focus="isEditing && (loadCountries(), filterBillingCountries())"
                                            @blur="setTimeout(() => showBillingCountryDropdown = false, 200)"
                                            placeholder="Land"
                                            autocomplete="off"
+                                           :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <div x-show="showBillingCountryDropdown"
                                          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -621,9 +654,17 @@
                              companyCity = $event.detail.companyCity;
                              companyCountry = $event.detail.companyCountry;
                          ">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Firmenadresse
-                        </h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Firmenadresse
+                            </h3>
+                            <button @click="document.getElementById('RegisterCompanyAddress').scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { document.querySelector('#RegisterCompanyAddress button').click(); }, 500);"
+                                    class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div x-show="companyName">
                             <p class="text-sm text-gray-700">
                                 <strong x-text="companyName"></strong>
@@ -660,9 +701,17 @@
                              billingCity = $event.detail.billingCity;
                              billingCountry = $event.detail.billingCountry;
                          ">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Rechnungsadresse
-                        </h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Rechnungsadresse
+                            </h3>
+                            <button @click="document.getElementById('RegisterCompanyInvoiceAddress').scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { document.querySelector('#RegisterCompanyInvoiceAddress button').click(); }, 500);"
+                                    class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div x-show="billingCompanyName">
                             <p class="text-sm text-gray-700">
                                 <strong x-text="billingCompanyName"></strong>
