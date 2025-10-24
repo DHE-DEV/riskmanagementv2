@@ -74,22 +74,28 @@ class AirportForm
                         TextInput::make('latitude')
                             ->label('Breitengrad')
                             ->numeric()
-                            ->step(0.000001)
-                            ->placeholder('z.B. 50.1109')
+                            ->step('any')
+                            ->minValue(-90)
+                            ->maxValue(90)
+                            ->placeholder('z.B. 50.1109 oder -76.5467')
+                            ->helperText('Werte zwischen -90 und +90')
                             ->prefix('Lat:'),
 
                         TextInput::make('longitude')
                             ->label('Längengrad')
                             ->numeric()
-                            ->step(0.000001)
-                            ->placeholder('z.B. 8.6821')
+                            ->step('any')
+                            ->minValue(-180)
+                            ->maxValue(180)
+                            ->placeholder('z.B. 8.6821 oder -76.5467')
+                            ->helperText('Werte zwischen -180 und +180')
                             ->prefix('Lng:'),
                     ]),
 
                 TextInput::make('google_maps_coordinates')
                     ->label('Google Maps Koordinaten einfügen')
-                    ->placeholder('z.B. 50.1109, 8.6821 oder 50.1109 8.6821')
-                    ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme in Breiten- und Längengrad')
+                    ->placeholder('z.B. 50.1109, 8.6821 oder 52.0097, -76.5467')
+                    ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme in Breiten- und Längengrad. Unterstützt positive und negative Werte.')
                     ->live(onBlur: true)
                     ->dehydrated(false)
                     ->afterStateUpdated(function ($set, ?string $state) {
