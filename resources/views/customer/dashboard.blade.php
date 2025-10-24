@@ -36,19 +36,29 @@
                         <div class="block p-4 bg-white rounded-lg border border-gray-200"
                              x-data="{
                                  customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
+                                 saving: false,
                                  async updateCustomerType(type) {
+                                     console.log('Updating customer type to:', type);
                                      this.customerType = type;
+                                     this.saving = true;
+
                                      try {
                                          const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
                                              method: 'POST',
                                              headers: {
                                                  'Content-Type': 'application/json',
-                                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                 'Accept': 'application/json'
                                              },
                                              body: JSON.stringify({ customer_type: type })
                                          });
+
+                                         console.log('Response status:', response.status);
                                          const data = await response.json();
+                                         console.log('Response data:', data);
+
                                          if (data.success) {
+                                             console.log('Dispatching event with label:', data.customer_type_label);
                                              // Dispatch event für Profil-Update
                                              window.dispatchEvent(new CustomEvent('customer-type-updated', {
                                                  detail: {
@@ -56,9 +66,14 @@
                                                      label: data.customer_type_label
                                                  }
                                              }));
+                                         } else {
+                                             console.error('Save failed:', data);
                                          }
                                      } catch (error) {
                                          console.error('Fehler beim Speichern:', error);
+                                         alert('Fehler beim Speichern des Kundentyps. Bitte versuchen Sie es erneut.');
+                                     } finally {
+                                         this.saving = false;
                                      }
                                  }
                              }">
@@ -103,7 +118,10 @@
                          x-data="{
                              customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
                          }"
-                         @customer-type-updated.window="customerTypeLabel = $event.detail.label">
+                         @customer-type-updated.window="
+                             console.log('Event received in profile:', $event.detail);
+                             customerTypeLabel = $event.detail.label;
+                         ">
                         <h3 class="text-lg font-semibold text-blue-900 mb-2">
                             Profil
                         </h3>
