@@ -13,12 +13,16 @@
         @endif
 
         <!-- Ereignisse Button (nur für Dashboard) -->
+        @php
+            $isAirportsParam = request()->has('airports') && request()->get('airports') == '1';
+            $isEventsActive = $active === 'dashboard' && !$isAirportsParam;
+        @endphp
         @if($active === 'dashboard')
-        <button class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors" title="Ereignisse" onclick="showSidebarLiveStatistics()">
+        <button class="p-3 {{ $isEventsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors" title="Ereignisse" onclick="showSidebarLiveStatistics()">
             <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
         </button>
         @else
-        <a href="{{ route('home') }}" class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Ereignisse">
+        <a href="{{ route('home') }}" class="p-3 {{ $isEventsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Ereignisse">
             <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
         </a>
         @endif
@@ -39,12 +43,15 @@
 
         <!-- Flughäfen -->
         @if(config('app.dashboard_airports_enabled', true))
+            @php
+                $isAirportsActive = request()->has('airports') && request()->get('airports') == '1';
+            @endphp
             @if($active === 'dashboard')
-                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
+                <button class="p-3 {{ $isAirportsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
                 </button>
             @else
-                <a href="/?airports=1" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Flughäfen">
+                <a href="/?airports=1" class="p-3 {{ $isAirportsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Flughäfen">
                     <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
                 </a>
             @endif
