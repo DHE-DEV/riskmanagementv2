@@ -676,6 +676,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Schnittstellen
+                        </h3>
+                        <p class="text-sm text-gray-500 italic">Keine Schnittstellen konfiguriert</p>
+                    </div>
                 </div>
             </div>
         </div>
