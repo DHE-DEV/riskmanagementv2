@@ -211,12 +211,12 @@
                             <span
                                 x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
                                 x-text="customerTypeLabel"
-                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
                             </span>
                             <template x-for="label in businessTypeLabels" :key="label">
                                 <span
                                     x-text="label"
-                                    class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full border border-gray-300">
+                                    class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded border border-gray-300">
                                 </span>
                             </template>
                         </div>
