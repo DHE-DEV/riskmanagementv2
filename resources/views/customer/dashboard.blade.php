@@ -31,7 +31,6 @@
                          customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
                          businessTypes: {{ json_encode(auth('customer')->user()->business_type ?? []) }},
                          saving: false,
-                         hideProfileCompletion: false,
                          async updateCustomerType(type) {
                              console.log('Updating customer type to:', type);
                              this.customerType = type;
@@ -114,10 +113,8 @@
                          isBusinessTypeSelected(type) {
                              return this.businessTypes.includes(type);
                          },
-                         async toggleHideProfileCompletion() {
-                             this.hideProfileCompletion = !this.hideProfileCompletion;
-
-                             if (this.hideProfileCompletion) {
+                         async toggleHideProfileCompletion(event) {
+                             if (event.target.checked) {
                                  try {
                                      const response = await fetch('{{ route('customer.profile.hide-profile-completion') }}', {
                                          method: 'POST',
@@ -129,13 +126,15 @@
                                          body: JSON.stringify({ hide: true })
                                      });
                                      const data = await response.json();
+                                     console.log('Hide profile completion response:', data);
                                      if (data.success) {
                                          // Seite neu laden um den Bereich auszublenden
                                          window.location.reload();
                                      }
                                  } catch (error) {
                                      console.error('Fehler beim Speichern:', error);
-                                     this.hideProfileCompletion = false;
+                                     event.target.checked = false;
+                                     alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
                                  }
                              }
                          }
@@ -519,8 +518,7 @@
                     <div class="mt-6 pt-6 border-t border-gray-300">
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox"
-                                   x-model="hideProfileCompletion"
-                                   @change="toggleHideProfileCompletion()"
+                                   @change="toggleHideProfileCompletion($event)"
                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                             <span class="ml-2 text-sm text-gray-700">Diesen Bereich nicht mehr anzeigen</span>
                         </label>
