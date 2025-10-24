@@ -32,51 +32,78 @@
                     <p class="text-gray-700 mb-6">
                         Es fehlen nur noch wenige Schritte, bis Ihr Profil vollständig erfasst ist. Um den vollen Funktionsumfang nutzen zu können, führen Sie bitte die ausstehenden Aktionen aus.
                     </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="block p-4 bg-white rounded-lg border border-gray-200"
-                             x-data="{
-                                 customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
-                                 saving: false,
-                                 async updateCustomerType(type) {
-                                     console.log('Updating customer type to:', type);
-                                     this.customerType = type;
-                                     this.saving = true;
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+                         x-data="{
+                             customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
+                             businessType: '{{ auth('customer')->user()->business_type ?? '' }}',
+                             saving: false,
+                             async updateCustomerType(type) {
+                                 console.log('Updating customer type to:', type);
+                                 this.customerType = type;
+                                 this.saving = true;
 
-                                     try {
-                                         const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
-                                             method: 'POST',
-                                             headers: {
-                                                 'Content-Type': 'application/json',
-                                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                 'Accept': 'application/json'
-                                             },
-                                             body: JSON.stringify({ customer_type: type })
-                                         });
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.update-customer-type') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({ customer_type: type })
+                                     });
 
-                                         console.log('Response status:', response.status);
-                                         const data = await response.json();
-                                         console.log('Response data:', data);
+                                     console.log('Response status:', response.status);
+                                     const data = await response.json();
+                                     console.log('Response data:', data);
 
-                                         if (data.success) {
-                                             console.log('Dispatching event with label:', data.customer_type_label);
-                                             // Dispatch event für Profil-Update
-                                             window.dispatchEvent(new CustomEvent('customer-type-updated', {
-                                                 detail: {
-                                                     type: data.customer_type,
-                                                     label: data.customer_type_label
-                                                 }
-                                             }));
-                                         } else {
-                                             console.error('Save failed:', data);
-                                         }
-                                     } catch (error) {
-                                         console.error('Fehler beim Speichern:', error);
-                                         alert('Fehler beim Speichern des Kundentyps. Bitte versuchen Sie es erneut.');
-                                     } finally {
-                                         this.saving = false;
+                                     if (data.success) {
+                                         console.log('Dispatching event with label:', data.customer_type_label);
+                                         window.dispatchEvent(new CustomEvent('customer-type-updated', {
+                                             detail: {
+                                                 type: data.customer_type,
+                                                 label: data.customer_type_label
+                                             }
+                                         }));
+                                     } else {
+                                         console.error('Save failed:', data);
                                      }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                     alert('Fehler beim Speichern des Kundentyps. Bitte versuchen Sie es erneut.');
+                                 } finally {
+                                     this.saving = false;
                                  }
-                             }">
+                             },
+                             async updateBusinessType(type) {
+                                 console.log('Updating business type to:', type);
+                                 this.businessType = type;
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.update-business-type') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({ business_type: type })
+                                     });
+                                     const data = await response.json();
+                                     console.log('Business type response:', data);
+                                     if (data.success) {
+                                         window.dispatchEvent(new CustomEvent('business-type-updated', {
+                                             detail: {
+                                                 type: data.business_type,
+                                                 label: data.business_type_label
+                                             }
+                                         }));
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                 }
+                             }
+                         }">
+                        <div class="block p-4 bg-white rounded-lg border border-gray-200">
                             <h3 class="font-semibold text-gray-900 mb-2">Kundentype</h3>
                             <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p>
                             <div class="flex gap-3">
@@ -98,36 +125,7 @@
                         </div>
                         <div class="block p-4 bg-white rounded-lg border border-gray-200"
                              x-show="customerType === 'business'"
-                             x-data="{
-                                 businessType: '{{ auth('customer')->user()->business_type ?? '' }}',
-                                 async updateBusinessType(type) {
-                                     console.log('Updating business type to:', type);
-                                     this.businessType = type;
-                                     try {
-                                         const response = await fetch('{{ route('customer.profile.update-business-type') }}', {
-                                             method: 'POST',
-                                             headers: {
-                                                 'Content-Type': 'application/json',
-                                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                 'Accept': 'application/json'
-                                             },
-                                             body: JSON.stringify({ business_type: type })
-                                         });
-                                         const data = await response.json();
-                                         console.log('Business type response:', data);
-                                         if (data.success) {
-                                             window.dispatchEvent(new CustomEvent('business-type-updated', {
-                                                 detail: {
-                                                     type: data.business_type,
-                                                     label: data.business_type_label
-                                                 }
-                                             }));
-                                         }
-                                     } catch (error) {
-                                         console.error('Fehler beim Speichern:', error);
-                                     }
-                                 }
-                             }">
+                             x-transition>
                             <h3 class="font-semibold text-gray-900 mb-2">Geschäftstype</h3>
                             <p class="text-sm text-gray-600 mb-4">Bitte wählen Sie den Tätigkeitsbereich aus.</p>
                             <div class="flex gap-3 flex-wrap">
