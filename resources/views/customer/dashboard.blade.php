@@ -1031,6 +1031,50 @@
                             </button>
                         </div>
                     </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-data="{
+                             isActive: {{ auth('customer')->user()->branch_management_active ? 'true' : 'false' }},
+                             async toggleBranchManagement() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.toggle-branch-management') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({ active: !this.isActive })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         this.isActive = data.branch_management_active;
+                                         window.dispatchEvent(new CustomEvent('branch-management-updated', {
+                                             detail: { active: data.branch_management_active }
+                                         }));
+                                         // Seite neu laden, damit das Firmensymbol in der Navigation angezeigt wird
+                                         window.location.reload();
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                     alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+                                 }
+                             }
+                         }">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Filialen & Standorte
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Verwalten Sie zugehörige Filialen und Standorte.
+                        </p>
+                        <div>
+                            <button @click="toggleBranchManagement()"
+                                    :class="isActive ? 'bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                                    class="px-3 py-1 text-xs font-medium rounded border transition-colors">
+                                <span x-text="isActive ? 'Deaktivieren' : 'Integrieren'"></span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

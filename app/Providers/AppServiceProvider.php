@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\CustomEvent;
+use App\Models\Customer;
 use App\Observers\CustomEventObserver;
+use App\Observers\CustomerObserver;
 use Filament\Support\Facades\FilamentView;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register model observers
         CustomEvent::observe(CustomEventObserver::class);
+        Customer::observe(CustomerObserver::class);
 
         FilamentView::registerRenderHook(
             'panels::head.end',

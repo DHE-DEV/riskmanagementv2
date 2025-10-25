@@ -301,21 +301,19 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="pt-3 border-t border-gray-200">
-                            <div class="flex gap-2">
-                                <button id="search-button" onclick="searchBookingOptions()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
+                        <div class="pt-3 space-y-2 border-t border-gray-200">
+                                <button id="search-button" onclick="searchBookingOptions()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                     Suchen
                                 </button>
-                                <button id="reset-filters-button" onclick="resetFilters()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-1.5" style="display: none;">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button id="reset-filters-button" onclick="resetFilters()" class="w-full px-4 py-2.5 text-sm text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-2" style="display: none;">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                     </svg>
-                                    Zurücksetzen
+                                    Filter zurücksetzen
                                 </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -347,15 +345,30 @@
                 </div>
 
                 <!-- Registration Call-to-Action -->
-                <div class="bg-white shadow-sm mt-0">
-                    <div class="p-4 text-center">
-                        <p class="text-sm text-gray-600 mb-3">Sie möchten hier gelistet sein?</p>
-                        <a href="#" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors shadow-sm w-full">
-                            <i class="fa-solid fa-user-plus"></i>
-                            Kostenlos registrieren
-                        </a>
+                @if($customer && $customer->customer_type === 'business' && !$customer->directory_listing_active)
+                    <!-- Eingeloggt als Firmenkunde, aber Listing nicht aktiviert -->
+                    <div class="bg-white shadow-sm mt-0">
+                        <div class="p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-3">Möchten Sie Ihre Adresse hier veröffentlichen?</p>
+                            <button onclick="activateDirectoryListing()" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm w-full">
+                                <i class="fa-solid fa-check-circle"></i>
+                                Adresse veröffentlichen
+                            </button>
+                        </div>
                     </div>
-                </div>
+                @elseif(!$customer)
+                    <!-- Nicht eingeloggt -->
+                    <div class="bg-white shadow-sm mt-0">
+                        <div class="p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-3">Sie möchten hier gelistet sein?</p>
+                            <a href="{{ route('customer.register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors shadow-sm w-full">
+                                <i class="fa-solid fa-user-plus"></i>
+                                Kostenlos registrieren
+                            </a>
+                        </div>
+                    </div>
+                @endif
+                {{-- Wenn eingeloggt UND directory_listing_active = true: Kasten wird nicht angezeigt --}}
             </aside>
 
             <!-- Map Container -->
@@ -385,6 +398,7 @@
         let bookingMap = null;
         let markersLayer = null;
         let searchAreaLayer = null; // Für PLZ-Gebiet und Suchkreis
+        let centerMarkerLayer = null; // Für Suchzentrum-Marker (nicht geclustert)
 
         document.addEventListener('DOMContentLoaded', function() {
             // Map initialisieren
@@ -425,6 +439,9 @@
 
             // Layer für Suchbereich (PLZ-Gebiet + Kreis)
             searchAreaLayer = L.layerGroup().addTo(bookingMap);
+
+            // Layer für Suchzentrum-Marker (nicht geclustert)
+            centerMarkerLayer = L.layerGroup().addTo(bookingMap);
 
             // Initial badge styling setzen
             updateRadiusBadges();
@@ -555,7 +572,7 @@
                     displayResults(data);
 
                     // Zeige Reset-Button
-                    document.getElementById('reset-filters-button').style.display = 'block';
+                    document.getElementById('reset-filters-button').style.display = 'flex';
                 } else {
                     alert(data.message || 'Fehler bei der Suche');
                 }
@@ -659,6 +676,7 @@
         function displayLocations(locations, center = null) {
             // Alte Marker entfernen
             markersLayer.clearLayers();
+            centerMarkerLayer.clearLayers();
 
             // Icons für verschiedene Typen - Standard Leaflet Marker
             const blueIcon = L.icon({
@@ -715,12 +733,12 @@
                 }
             });
 
-            // Center-Marker hinzufügen, wenn vorhanden (aber nicht mehr zoomen - das macht loadPostalCodeArea)
+            // Center-Marker hinzufügen, wenn vorhanden (auf separatem Layer, nicht geclustert)
             if (center && center.lat && center.lng) {
                 const centerMarker = L.marker([center.lat, center.lng], {
                     icon: redIcon
                 }).bindPopup('Suchzentrum');
-                markersLayer.addLayer(centerMarker);
+                centerMarkerLayer.addLayer(centerMarker);
             }
         }
 
@@ -871,8 +889,9 @@
             updateRadiusBadges();
             updateBookingTypeBadges();
 
-            // Suchbereich entfernen (PLZ-Gebiet + Kreis)
+            // Suchbereich und Center-Marker entfernen
             searchAreaLayer.clearLayers();
+            centerMarkerLayer.clearLayers();
 
             // Ergebnisse, gesponserte Sektion und Reset-Button ausblenden
             const resultsDiv = document.getElementById('booking-search-results');
@@ -890,6 +909,38 @@
 
             // Karte zurück auf Deutschland zentrieren
             bookingMap.setView([51.1657, 10.4515], 6);
+        }
+
+        // Adressveröffentlichung aktivieren
+        async function activateDirectoryListing() {
+            if (!confirm('Möchten Sie Ihre Firmenadresse wirklich im Adressverzeichnis veröffentlichen?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ route('customer.profile.toggle-directory-listing') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ active: true })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Ihre Adresse wurde erfolgreich veröffentlicht und wird nun im Adressverzeichnis angezeigt!');
+                    // Seite neu laden um die Änderungen zu zeigen
+                    window.location.reload();
+                } else {
+                    alert('Fehler beim Aktivieren der Adressveröffentlichung. Bitte versuchen Sie es erneut.');
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Fehler beim Aktivieren der Adressveröffentlichung. Bitte versuchen Sie es erneut.');
+            }
         }
     </script>
 </body>

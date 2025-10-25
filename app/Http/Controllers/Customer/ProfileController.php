@@ -170,4 +170,20 @@ class ProfileController extends Controller
             'directory_listing_active' => $customer->directory_listing_active
         ]);
     }
+
+    public function toggleBranchManagement(Request $request)
+    {
+        $request->validate([
+            'active' => 'required|boolean'
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->branch_management_active = $request->active;
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'branch_management_active' => $customer->branch_management_active
+        ]);
+    }
 }

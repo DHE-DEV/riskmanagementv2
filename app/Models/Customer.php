@@ -48,6 +48,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'passolution_subscription_updated_at',
         'hide_profile_completion',
         'directory_listing_active',
+        'branch_management_active',
     ];
 
     protected $hidden = [
@@ -91,5 +92,13 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return !is_null($this->passolution_access_token)
             && !is_null($this->passolution_token_expires_at)
             && $this->passolution_token_expires_at->isFuture();
+    }
+
+    /**
+     * Beziehung zu BookingLocations
+     */
+    public function bookingLocations()
+    {
+        return $this->hasMany(BookingLocation::class);
     }
 }

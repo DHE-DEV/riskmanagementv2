@@ -59,6 +59,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::post('/profile/toggle-directory-listing', [\App\Http\Controllers\Customer\ProfileController::class, 'toggleDirectoryListing'])
             ->name('profile.toggle-directory-listing');
 
+        Route::post('/profile/toggle-branch-management', [\App\Http\Controllers\Customer\ProfileController::class, 'toggleBranchManagement'])
+            ->name('profile.toggle-branch-management');
+
         // Passolution OAuth routes
         Route::get('/passolution/authorize', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'redirect'])
             ->name('passolution.authorize');

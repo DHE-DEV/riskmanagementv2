@@ -12,11 +12,12 @@ class BookingLocationController extends Controller
 {
     /**
      * Get all booking locations (no filters)
+     * Zeigt nur Locations von Kunden mit aktiviertem directory_listing_active
      */
     public function index(Request $request)
     {
         try {
-            $query = BookingLocation::query();
+            $query = BookingLocation::query()->activeListings();
 
             // Optional: Filter by type
             if ($request->has('type') && in_array($request->type, ['online', 'stationary', 'any'])) {
@@ -69,7 +70,7 @@ class BookingLocationController extends Controller
                 ], 404);
             }
 
-            $query = BookingLocation::query();
+            $query = BookingLocation::query()->activeListings();
 
             // Filter by booking type
             if ($bookingType === 'online') {
@@ -80,11 +81,14 @@ class BookingLocationController extends Controller
                     ->withinRadius($coordinates['lat'], $coordinates['lng'], $radius);
             } else {
                 // 'any' - get online + stationary within radius
-                $stationaryInRadius = BookingLocation::stationary()
+                $stationaryInRadius = BookingLocation::activeListings()
+                    ->stationary()
                     ->withinRadius($coordinates['lat'], $coordinates['lng'], $radius)
                     ->get();
 
-                $onlineLocations = BookingLocation::online()->get();
+                $onlineLocations = BookingLocation::activeListings()
+                    ->online()
+                    ->get();
 
                 $combined = $stationaryInRadius->concat($onlineLocations);
 
