@@ -68,9 +68,9 @@
         <!-- Benachrichtigungen (nur für eingeloggte Kunden) -->
         @if(auth('customer')->check())
         <div x-data="notificationDropdown()" class="relative" style="z-index: 10001;">
-            <button @click="toggleDropdown" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors relative" title="Benachrichtigungen">
+            <button @click="toggleDropdown" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors relative flex items-center justify-center" title="Benachrichtigungen" style="min-width: 48px; min-height: 48px;">
                 <i class="fa-regular fa-bell text-2xl" aria-hidden="true"></i>
-                <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center" style="z-index: 10002;"></span>
+                <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-900" style="z-index: 10002;"></span>
             </button>
 
             <!-- Dropdown -->
