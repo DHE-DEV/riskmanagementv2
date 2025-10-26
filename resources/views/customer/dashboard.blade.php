@@ -72,6 +72,60 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal für Import -->
+        <div x-show="showImportModal" x-cloak class="modal-overlay fixed inset-0 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="modal-backdrop fixed inset-0 bg-black opacity-50" @click="closeImportModal"></div>
+                <div class="modal-content relative bg-white rounded-lg max-w-lg w-full p-6">
+                    <h3 class="text-lg font-semibold mb-4">Filialen importieren</h3>
+
+                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="fa-regular fa-info-circle mr-1"></i>
+                            Nur CSV-Dateien werden unterstützt. Format: Name, Zusatz, Straße, Hausnummer, PLZ, Stadt, Land
+                        </p>
+                    </div>
+
+                    <!-- Drag & Drop Area -->
+                    <div
+                        @drop.prevent="handleFileDrop($event)"
+                        @dragover.prevent="isDragging = true"
+                        @dragleave.prevent="isDragging = false"
+                        :class="isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'"
+                        class="border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer"
+                        @click="$refs.fileInput.click()">
+                        <i class="fa-regular fa-cloud-upload text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-700 font-medium mb-1">Datei hier ablegen</p>
+                        <p class="text-sm text-gray-500">oder klicken zum Durchsuchen</p>
+                        <input
+                            type="file"
+                            x-ref="fileInput"
+                            @change="handleFileSelect($event)"
+                            accept=".csv"
+                            class="hidden">
+                    </div>
+
+                    <div x-show="selectedFileName" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm text-green-800">
+                            <i class="fa-regular fa-file-csv mr-1"></i>
+                            <span x-text="selectedFileName"></span>
+                        </p>
+                    </div>
+
+                    <div class="mt-6 flex gap-2">
+                        <button
+                            @click="processImport"
+                            :disabled="!selectedFile"
+                            :class="selectedFile ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                            class="flex-1 text-white px-4 py-2 rounded transition-colors">
+                            Importieren
+                        </button>
+                        <button type="button" @click="closeImportModal" class="flex-1 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Abbrechen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="p-8">
@@ -1212,6 +1266,10 @@
 function branchManager() {
     return {
         showModal: false,
+        showImportModal: false,
+        isDragging: false,
+        selectedFile: null,
+        selectedFileName: '',
         branches: [],
         form: {
             name: '',
@@ -1544,63 +1602,104 @@ function branchManager() {
             document.body.removeChild(link);
         },
 
-        importBranches() {
-            // Erstelle Input-Element für Datei-Upload
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.csv';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
+        openImportModal() {
+            this.showImportModal = true;
+            this.selectedFile = null;
+            this.selectedFileName = '';
+            this.isDragging = false;
+        },
 
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    const csv = event.target.result;
-                    const lines = csv.split('\n');
+        closeImportModal() {
+            this.showImportModal = false;
+            this.selectedFile = null;
+            this.selectedFileName = '';
+            this.isDragging = false;
+        },
 
-                    // Überspringe Header-Zeile
-                    for (let i = 1; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (!line) continue;
+        handleFileDrop(event) {
+            this.isDragging = false;
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                this.setSelectedFile(files[0]);
+            }
+        },
 
-                        // Parse CSV-Zeile
-                        const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-                        if (!values || values.length < 6) continue;
+        handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                this.setSelectedFile(files[0]);
+            }
+        },
 
-                        const cleanValue = (val) => val ? val.replace(/^"|"$/g, '').trim() : '';
+        setSelectedFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Bitte wählen Sie eine CSV-Datei aus.');
+                return;
+            }
+            this.selectedFile = file;
+            this.selectedFileName = file.name;
+        },
 
-                        const branchData = {
-                            name: cleanValue(values[0]),
-                            additional: cleanValue(values[1]),
-                            street: cleanValue(values[2]),
-                            house_number: cleanValue(values[3]),
-                            postal_code: cleanValue(values[4]),
-                            city: cleanValue(values[5]),
-                            country: cleanValue(values[6]) || 'Deutschland'
-                        };
+        async processImport() {
+            if (!this.selectedFile) return;
 
-                        // Speichere Filiale
-                        try {
-                            await fetch('/customer/branches', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify(branchData)
-                            });
-                        } catch (error) {
-                            console.error('Error importing branch:', error);
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const csv = event.target.result;
+                const lines = csv.split('\n');
+
+                let imported = 0;
+
+                // Überspringe Header-Zeile
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    // Parse CSV-Zeile
+                    const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+                    if (!values || values.length < 6) continue;
+
+                    const cleanValue = (val) => val ? val.replace(/^"|"$/g, '').trim() : '';
+
+                    const branchData = {
+                        name: cleanValue(values[0]),
+                        additional: cleanValue(values[1]),
+                        street: cleanValue(values[2]),
+                        house_number: cleanValue(values[3]),
+                        postal_code: cleanValue(values[4]),
+                        city: cleanValue(values[5]),
+                        country: cleanValue(values[6]) || 'Deutschland'
+                    };
+
+                    // Speichere Filiale
+                    try {
+                        const response = await fetch('/customer/branches', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify(branchData)
+                        });
+
+                        if (response.ok) {
+                            imported++;
                         }
+                    } catch (error) {
+                        console.error('Error importing branch:', error);
                     }
+                }
 
-                    // Lade Filialen neu
-                    this.loadBranches();
-                    alert('Import abgeschlossen!');
-                };
-                reader.readAsText(file);
+                // Lade Filialen neu
+                await this.loadBranches();
+                this.closeImportModal();
+                alert(`Import abgeschlossen! ${imported} Filiale(n) wurden importiert.`);
             };
-            input.click();
+            reader.readAsText(this.selectedFile);
+        },
+
+        importBranches() {
+            this.openImportModal();
         }
     };
 }
