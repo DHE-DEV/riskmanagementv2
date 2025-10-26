@@ -79,6 +79,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::prefix('branches')->name('branches.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\BranchController::class, 'index'])->name('index');
             Route::post('/', [\App\Http\Controllers\Customer\BranchController::class, 'store'])->name('store');
+            Route::post('/import', [\App\Http\Controllers\Customer\BranchController::class, 'import'])->name('import');
             Route::put('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'update'])->name('update');
             Route::delete('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'destroy'])->name('destroy');
         });

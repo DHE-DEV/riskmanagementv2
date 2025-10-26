@@ -121,6 +121,23 @@ class BranchController extends Controller
         ]);
     }
 
+    public function import(Request $request)
+    {
+        $validated = $request->validate([
+            'csv_data' => 'required|string',
+        ]);
+
+        $customer = auth('customer')->user();
+
+        // Dispatch Job
+        \App\Jobs\ImportBranches::dispatch($customer->id, $validated['csv_data']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Import wurde gestartet. Sie erhalten eine Benachrichtigung, wenn der Import abgeschlossen ist.'
+        ]);
+    }
+
     private function geocodeAddress(string $address): array
     {
         try {

@@ -1645,55 +1645,30 @@ function branchManager() {
 
             const reader = new FileReader();
             reader.onload = async (event) => {
-                const csv = event.target.result;
-                const lines = csv.split('\n');
+                const csvData = event.target.result;
 
-                let imported = 0;
+                try {
+                    const response = await fetch('/customer/branches/import', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ csv_data: csvData })
+                    });
 
-                // Überspringe Header-Zeile
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
+                    const data = await response.json();
 
-                    // Parse CSV-Zeile
-                    const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-                    if (!values || values.length < 6) continue;
-
-                    const cleanValue = (val) => val ? val.replace(/^"|"$/g, '').trim() : '';
-
-                    const branchData = {
-                        name: cleanValue(values[0]),
-                        additional: cleanValue(values[1]),
-                        street: cleanValue(values[2]),
-                        house_number: cleanValue(values[3]),
-                        postal_code: cleanValue(values[4]),
-                        city: cleanValue(values[5]),
-                        country: cleanValue(values[6]) || 'Deutschland'
-                    };
-
-                    // Speichere Filiale
-                    try {
-                        const response = await fetch('/customer/branches', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify(branchData)
-                        });
-
-                        if (response.ok) {
-                            imported++;
-                        }
-                    } catch (error) {
-                        console.error('Error importing branch:', error);
+                    if (data.success) {
+                        this.closeImportModal();
+                        alert(data.message);
+                    } else {
+                        alert('Fehler beim Starten des Imports.');
                     }
+                } catch (error) {
+                    console.error('Error starting import:', error);
+                    alert('Fehler beim Starten des Imports.');
                 }
-
-                // Lade Filialen neu
-                await this.loadBranches();
-                this.closeImportModal();
-                alert(`Import abgeschlossen! ${imported} Filiale(n) wurden importiert.`);
             };
             reader.readAsText(this.selectedFile);
         },
