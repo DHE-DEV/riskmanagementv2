@@ -65,6 +65,42 @@
 
     <!-- Bottom Buttons -->
     <div class="flex flex-col items-center space-y-3">
+        <!-- Benachrichtigungen (nur für eingeloggte Kunden) -->
+        @if(auth('customer')->check())
+        <div x-data="notificationDropdown()" class="relative">
+            <button @click="toggleDropdown" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors relative" title="Benachrichtigungen">
+                <i class="fa-regular fa-bell text-2xl" aria-hidden="true"></i>
+                <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
+            </button>
+
+            <!-- Dropdown -->
+            <div x-show="showDropdown" @click.away="showDropdown = false" x-cloak
+                 class="absolute bottom-full right-0 mb-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+                <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="font-semibold text-gray-900">Benachrichtigungen</h3>
+                    <button @click="markAllAsRead" class="text-xs text-blue-600 hover:text-blue-800">Alle als gelesen</button>
+                </div>
+
+                <div class="max-h-96 overflow-y-auto">
+                    <template x-if="notifications.length === 0">
+                        <div class="p-4 text-center text-gray-500 text-sm">
+                            Keine Benachrichtigungen
+                        </div>
+                    </template>
+
+                    <template x-for="notification in notifications" :key="notification.id">
+                        <div @click="markAsRead(notification.id)"
+                             :class="notification.read_at ? 'bg-white' : 'bg-blue-50'"
+                             class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <p class="text-sm text-gray-900" x-text="notification.data.message"></p>
+                            <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @if($active === 'dashboard')
         <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Karte zentrieren" onclick="centerMap()">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="w-6 h-6" fill="currentColor" aria-hidden="true">
@@ -75,3 +111,87 @@
 
     </div>
 </nav>
+
+@if(auth('customer')->check())
+<script>
+function notificationDropdown() {
+    return {
+        showDropdown: false,
+        notifications: [],
+        unreadCount: 0,
+
+        init() {
+            this.loadNotifications();
+            // Poll alle 30 Sekunden
+            setInterval(() => this.loadNotifications(), 30000);
+        },
+
+        toggleDropdown() {
+            this.showDropdown = !this.showDropdown;
+            if (this.showDropdown) {
+                this.loadNotifications();
+            }
+        },
+
+        async loadNotifications() {
+            try {
+                const response = await fetch('/customer/notifications');
+                const data = await response.json();
+                if (data.success) {
+                    this.notifications = data.notifications;
+                    this.unreadCount = data.unread_count;
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        },
+
+        async markAsRead(id) {
+            try {
+                await fetch(`/customer/notifications/${id}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                this.loadNotifications();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        },
+
+        async markAllAsRead() {
+            try {
+                await fetch('/customer/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                this.loadNotifications();
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return 'Gerade eben';
+            if (minutes < 60) return `vor ${minutes} Min.`;
+            if (hours < 24) return `vor ${hours} Std.`;
+            if (days === 1) return 'Gestern';
+            if (days < 7) return `vor ${days} Tagen`;
+            return date.toLocaleDateString('de-DE');
+        }
+    };
+}
+</script>
+@endif

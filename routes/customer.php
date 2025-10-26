@@ -83,6 +83,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::put('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'update'])->name('update');
             Route::delete('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'destroy'])->name('destroy');
         });
+
+        // Notification routes
+        Route::prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])->name('index');
+            Route::post('/{id}/read', [\App\Http\Controllers\Customer\NotificationController::class, 'markAsRead'])->name('mark-read');
+            Route::post('/mark-all-read', [\App\Http\Controllers\Customer\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        });
     });
 
     // Authentication Routes
