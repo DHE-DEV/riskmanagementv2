@@ -67,15 +67,15 @@
     <div class="flex flex-col items-center space-y-3">
         <!-- Benachrichtigungen (nur für eingeloggte Kunden) -->
         @if(auth('customer')->check())
-        <div x-data="notificationDropdown()" class="relative">
+        <div x-data="notificationDropdown()" class="relative" style="z-index: 10001;">
             <button @click="toggleDropdown" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors relative" title="Benachrichtigungen">
                 <i class="fa-regular fa-bell text-2xl" aria-hidden="true"></i>
-                <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
+                <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center" style="z-index: 10002;"></span>
             </button>
 
             <!-- Dropdown -->
             <div x-show="showDropdown" @click.away="showDropdown = false" x-cloak
-                 class="absolute bottom-full right-0 mb-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+                 class="absolute bottom-full right-0 mb-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" style="z-index: 10000;">
                 <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                     <h3 class="font-semibold text-gray-900">Benachrichtigungen</h3>
                     <button @click="markAllAsRead" class="text-xs text-blue-600 hover:text-blue-800">Alle als gelesen</button>
