@@ -67,9 +67,11 @@
     <div class="flex flex-col items-center space-y-3">
         <!-- Benachrichtigungen (nur für eingeloggte Kunden) -->
         @if(auth('customer')->check())
-        <div x-data="notificationDropdown()" class="relative" style="z-index: 10001;">
-            <button @click="toggleDropdown" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors relative flex items-center justify-center" title="Benachrichtigungen" style="min-width: 48px; min-height: 48px;">
+        <div x-data="notificationDropdown()" class="relative" style="z-index: 10001; background-color: rgba(255,0,0,0.1);">
+            <button @click="toggleDropdown" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors relative flex items-center justify-center" title="Benachrichtigungen" style="min-width: 48px; min-height: 48px; background-color: rgba(0,255,0,0.2);">
                 <i class="fa-regular fa-bell text-2xl" aria-hidden="true"></i>
+                <!-- Fallback: Text wenn Icon nicht lädt -->
+                <span style="position: absolute; font-size: 20px; color: white;">🔔</span>
                 <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-900" style="z-index: 10002;"></span>
             </button>
 
