@@ -1473,22 +1473,19 @@ function branchManager() {
                                   title="In Zwischenablage kopieren">
                                 ${branch.app_code || 'N/A'}
                             </span>
-                            <div class="flex flex-col gap-1">
-                                <i class="fa-regular fa-building text-gray-400 text-sm" title="Filiale"></i>
-                                ${scheduledDeletion ? `
-                                <button onclick="event.stopPropagation(); cancelScheduledDeletion(${branch.id})"
-                                        class="text-orange-600 hover:text-orange-800 text-sm"
-                                        title="Löschung abbrechen">
-                                    <i class="fa-regular fa-circle-xmark"></i>
-                                </button>
-                                ` : `
-                                <button onclick="event.stopPropagation(); deleteBranch(${branch.id})"
-                                        class="text-red-600 hover:text-red-800 text-sm"
-                                        title="Löschen">
-                                    <i class="fa-regular fa-trash"></i>
-                                </button>
-                                `}
-                            </div>
+                            ${scheduledDeletion ? `
+                            <button onclick="event.stopPropagation(); cancelScheduledDeletion(${branch.id})"
+                                    class="text-orange-600 hover:text-orange-800 text-sm"
+                                    title="Löschung abbrechen">
+                                <i class="fa-regular fa-circle-xmark"></i>
+                            </button>
+                            ` : `
+                            <button onclick="event.stopPropagation(); deleteBranch(${branch.id})"
+                                    class="text-red-600 hover:text-red-800 text-sm"
+                                    title="Löschen">
+                                <i class="fa-regular fa-trash"></i>
+                            </button>
+                            `}
                         </div>
                     </div>
                 </div>`;
