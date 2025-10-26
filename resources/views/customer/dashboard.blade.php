@@ -1388,16 +1388,23 @@ function branchManager() {
 
             // Headquarters - mit Klick-Funktion und grünem Rahmen
             html += `<div class="bg-white p-3 rounded-lg border-2 border-green-500 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-hq'))">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between mb-1">
-                            <h4 class="font-semibold text-gray-900 text-sm">Hauptsitz</h4>
-                            <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-mono rounded" title="App-Code">HQ00</span>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-1">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-gray-900 text-sm mb-1">Hauptsitz</h4>
+                        <p class="text-xs text-gray-600">
                             {{ auth('customer')->user()->company_street }} {{ auth('customer')->user()->company_house_number }}<br>
                             {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}
                         </p>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-shrink-0">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                              onclick="event.stopPropagation(); copyToClipboard('HQ00', this)"
+                              title="In Zwischenablage kopieren">
+                            HQ00
+                        </span>
+                        <div class="flex flex-col gap-1">
+                            <i class="fa-regular fa-building text-gray-400 text-sm" title="Hauptsitz"></i>
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -1405,20 +1412,29 @@ function branchManager() {
             // Branches - mit Klick-Funktion
             this.branches.forEach(branch => {
                 html += `<div class="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-branch', { detail: { id: ${branch.id} } }))">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between mb-1">
-                                <h4 class="font-semibold text-gray-900 text-sm">${branch.name}</h4>
-                                <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-mono rounded" title="App-Code">${branch.app_code || 'N/A'}</span>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-1">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-900 text-sm mb-1">${branch.name}</h4>
+                            <p class="text-xs text-gray-600">
                                 ${branch.street} ${branch.house_number || ''}<br>
                                 ${branch.postal_code} ${branch.city}
                             </p>
                         </div>
-                        <button onclick="event.stopPropagation(); deleteBranch(${branch.id})" class="text-red-600 hover:text-red-800 text-xs ml-2">
-                            <i class="fa-regular fa-trash"></i>
-                        </button>
+                        <div class="flex flex-col items-center gap-2 flex-shrink-0">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                                  onclick="event.stopPropagation(); copyToClipboard('${branch.app_code || 'N/A'}', this)"
+                                  title="In Zwischenablage kopieren">
+                                ${branch.app_code || 'N/A'}
+                            </span>
+                            <div class="flex flex-col gap-1">
+                                <i class="fa-regular fa-building text-gray-400 text-sm" title="Filiale"></i>
+                                <button onclick="event.stopPropagation(); deleteBranch(${branch.id})"
+                                        class="text-red-600 hover:text-red-800 text-sm"
+                                        title="Löschen">
+                                    <i class="fa-regular fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>`;
             });
@@ -1702,6 +1718,25 @@ function branchManager() {
             this.openImportModal();
         }
     };
+}
+
+function copyToClipboard(text, element) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Visual feedback
+        const originalText = element.textContent;
+        const originalBg = element.className;
+
+        element.textContent = '✓ Kopiert';
+        element.className = element.className.replace('bg-blue-100', 'bg-green-100').replace('text-blue-800', 'text-green-800');
+
+        setTimeout(() => {
+            element.textContent = originalText;
+            element.className = originalBg;
+        }, 1500);
+    }).catch(err => {
+        console.error('Fehler beim Kopieren:', err);
+        alert('Fehler beim Kopieren in die Zwischenablage');
+    });
 }
 
 async function deleteBranch(id) {
