@@ -1259,6 +1259,46 @@
 </style>
 @endpush
 
+<!-- Export Confirmation Modal -->
+<div id="exportConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center" style="z-index: 10000;">
+    <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+        <div class="flex items-start gap-4 mb-4">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <i class="fa-regular fa-file-export text-blue-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Filialen exportieren</h3>
+                <div class="text-sm text-gray-600 space-y-2">
+                    <p class="flex items-start gap-2">
+                        <i class="fa-regular fa-circle-check text-blue-600 mt-0.5"></i>
+                        <span>Der Export wird automatisch im Hintergrund durchgeführt.</span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                        <i class="fa-regular fa-bell text-blue-600 mt-0.5"></i>
+                        <span>Sie erhalten eine Benachrichtigung, sobald der Export abgeschlossen ist.</span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                        <i class="fa-regular fa-clock text-orange-600 mt-0.5"></i>
+                        <span><strong>Sie haben 72 Stunden Zeit</strong>, um die Datei herunterzuladen. Danach wird sie automatisch gelöscht.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3 justify-end">
+            <button onclick="closeExportModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </button>
+            <button onclick="confirmExport()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                <i class="fa-regular fa-file-export"></i>
+                Export starten
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Branch Modal -->
 <div id="deleteBranchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center" style="z-index: 10000;">
     <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -1670,39 +1710,11 @@ function branchManager() {
             }
         },
 
-        async exportBranches() {
-            try {
-                const response = await fetch('/customer/branches/export', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Trigger notification reload after a short delay
-                    setTimeout(() => {
-                        window.dispatchEvent(new CustomEvent('reload-notifications'));
-                    }, 2000);
-
-                    // Poll for notifications every 3 seconds for 30 seconds
-                    let pollCount = 0;
-                    const pollInterval = setInterval(() => {
-                        window.dispatchEvent(new CustomEvent('reload-notifications'));
-                        pollCount++;
-                        if (pollCount >= 10) {
-                            clearInterval(pollInterval);
-                        }
-                    }, 3000);
-                }
-            } catch (error) {
-                console.error('Error starting export:', error);
-                alert('Fehler beim Starten des Exports');
-            }
+        exportBranches() {
+            // Open export confirmation modal
+            const modal = document.getElementById('exportConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         },
 
         openImportModal() {
@@ -1893,6 +1905,51 @@ async function cancelScheduledDeletion(id) {
     } catch (error) {
         console.error('Error canceling scheduled deletion:', error);
         alert('Fehler beim Abbrechen der Löschung');
+    }
+}
+
+function closeExportModal() {
+    const modal = document.getElementById('exportConfirmModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function confirmExport() {
+    try {
+        const response = await fetch('/customer/branches/export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            closeExportModal();
+
+            // Trigger notification reload after a short delay
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('reload-notifications'));
+            }, 2000);
+
+            // Poll for notifications every 3 seconds for 30 seconds
+            let pollCount = 0;
+            const pollInterval = setInterval(() => {
+                window.dispatchEvent(new CustomEvent('reload-notifications'));
+                pollCount++;
+                if (pollCount >= 10) {
+                    clearInterval(pollInterval);
+                }
+            }, 3000);
+        } else {
+            alert('Fehler beim Starten des Exports');
+        }
+    } catch (error) {
+        console.error('Error starting export:', error);
+        alert('Fehler beim Starten des Exports');
     }
 }
 
