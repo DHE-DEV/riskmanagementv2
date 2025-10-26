@@ -123,19 +123,58 @@ class BranchController extends Controller
 
     public function import(Request $request)
     {
-        $validated = $request->validate([
-            'csv_data' => 'required|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'csv_data' => 'required|string',
+            ]);
 
-        $customer = auth('customer')->user();
+            $customer = auth('customer')->user();
 
-        // Dispatch Job
-        \App\Jobs\ImportBranches::dispatch($customer->id, $validated['csv_data']);
+            if (!$customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Benutzer nicht authentifiziert.'
+                ], 401);
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Import wurde gestartet. Sie erhalten eine Benachrichtigung, wenn der Import abgeschlossen ist.'
-        ]);
+            // Prüfe ob Branch Management aktiviert ist
+            if (!$customer->branch_management_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch Management ist nicht aktiviert.'
+                ], 403);
+            }
+
+            // Dispatch Job
+            \App\Jobs\ImportBranches::dispatch($customer->id, $validated['csv_data']);
+
+            \Log::info('Branch import job dispatched', [
+                'customer_id' => $customer->id,
+                'csv_length' => strlen($validated['csv_data'])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Import wurde gestartet. Sie erhalten eine Benachrichtigung, wenn der Import abgeschlossen ist.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Branch import validation failed', [
+                'errors' => $e->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validierungsfehler: ' . json_encode($e->errors())
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Branch import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Ein Fehler ist aufgetreten: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function export()

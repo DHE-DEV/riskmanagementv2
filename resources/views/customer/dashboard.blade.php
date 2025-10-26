@@ -1688,11 +1688,11 @@ function branchManager() {
                             }
                         }, 3000);
                     } else {
-                        alert('Fehler beim Starten des Imports.');
+                        alert('Fehler beim Starten des Imports:\n' + (data.message || 'Unbekannter Fehler'));
                     }
                 } catch (error) {
                     console.error('Error starting import:', error);
-                    alert('Fehler beim Starten des Imports.');
+                    alert('Fehler beim Starten des Imports:\n' + error.message);
                 }
             };
             reader.readAsText(this.selectedFile);
