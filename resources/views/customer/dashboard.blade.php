@@ -1259,6 +1259,44 @@
 </style>
 @endpush
 
+<!-- Delete Branch Modal -->
+<div id="deleteBranchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center" style="z-index: 10000;">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Filiale löschen</h3>
+
+        <p class="text-sm text-gray-600 mb-4">
+            Möchten Sie diese Filiale wirklich löschen?
+        </p>
+
+        <div class="mb-4">
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" id="scheduleDelete" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="text-sm text-gray-700">Zu einem bestimmten Datum löschen</span>
+            </label>
+        </div>
+
+        <div id="deleteDateContainer" class="mb-4 hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Löschdatum
+            </label>
+            <input type="date" id="deleteDate"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                   min="">
+        </div>
+
+        <div class="flex gap-3 justify-end">
+            <button onclick="closeDeleteModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </button>
+            <button onclick="confirmDelete()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                Löschen
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
@@ -1411,7 +1449,10 @@ function branchManager() {
 
             // Branches - mit Klick-Funktion
             this.branches.forEach(branch => {
-                html += `<div class="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-branch', { detail: { id: ${branch.id} } }))">
+                const scheduledDeletion = branch.scheduled_deletion_at ? new Date(branch.scheduled_deletion_at) : null;
+                const scheduledDeletionFormatted = scheduledDeletion ? scheduledDeletion.toLocaleDateString('de-DE') : null;
+
+                html += `<div class="bg-white p-3 rounded-lg border ${scheduledDeletion ? 'border-orange-300 bg-orange-50' : 'border-gray-200'} cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-branch', { detail: { id: ${branch.id} } }))">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
                             <h4 class="font-semibold text-gray-900 text-sm mb-1">${branch.name}</h4>
@@ -1419,6 +1460,12 @@ function branchManager() {
                                 ${branch.street} ${branch.house_number || ''}<br>
                                 ${branch.postal_code} ${branch.city}
                             </p>
+                            ${scheduledDeletion ? `
+                            <div class="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded">
+                                <i class="fa-regular fa-clock"></i>
+                                <span>Wird gelöscht am: ${scheduledDeletionFormatted}</span>
+                            </div>
+                            ` : ''}
                         </div>
                         <div class="flex flex-col items-center gap-2 flex-shrink-0">
                             <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded cursor-pointer hover:bg-blue-200 transition-colors"
@@ -1428,11 +1475,19 @@ function branchManager() {
                             </span>
                             <div class="flex flex-col gap-1">
                                 <i class="fa-regular fa-building text-gray-400 text-sm" title="Filiale"></i>
+                                ${scheduledDeletion ? `
+                                <button onclick="event.stopPropagation(); cancelScheduledDeletion(${branch.id})"
+                                        class="text-orange-600 hover:text-orange-800 text-sm"
+                                        title="Löschung abbrechen">
+                                    <i class="fa-regular fa-circle-xmark"></i>
+                                </button>
+                                ` : `
                                 <button onclick="event.stopPropagation(); deleteBranch(${branch.id})"
                                         class="text-red-600 hover:text-red-800 text-sm"
                                         title="Löschen">
                                     <i class="fa-regular fa-trash"></i>
                                 </button>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -1759,24 +1814,105 @@ function copyToClipboard(text, element) {
     });
 }
 
-async function deleteBranch(id) {
-    if (!confirm('Möchten Sie diese Filiale wirklich löschen?')) return;
+let branchToDelete = null;
+
+function deleteBranch(id) {
+    branchToDelete = id;
+    const modal = document.getElementById('deleteBranchModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('deleteDate').setAttribute('min', today);
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteBranchModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+
+    // Reset form
+    document.getElementById('scheduleDelete').checked = false;
+    document.getElementById('deleteDateContainer').classList.add('hidden');
+    document.getElementById('deleteDate').value = '';
+    branchToDelete = null;
+}
+
+async function confirmDelete() {
+    if (!branchToDelete) return;
+
+    const scheduleCheckbox = document.getElementById('scheduleDelete');
+    const deleteDate = document.getElementById('deleteDate').value;
 
     try {
-        const response = await fetch(`/customer/branches/${id}`, {
+        const body = {};
+        if (scheduleCheckbox.checked && deleteDate) {
+            body.scheduled_deletion_at = deleteDate;
+        }
+
+        const response = await fetch(`/customer/branches/${branchToDelete}`, {
             method: 'DELETE',
             headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            closeDeleteModal();
+            window.location.reload();
+        } else {
+            alert(data.message || 'Fehler beim Löschen');
+        }
+    } catch (error) {
+        console.error('Error deleting branch:', error);
+        alert('Fehler beim Löschen der Filiale');
+    }
+}
+
+async function cancelScheduledDeletion(id) {
+    if (!confirm('Möchten Sie die geplante Löschung wirklich abbrechen?')) return;
+
+    try {
+        const response = await fetch(`/customer/branches/${id}/cancel-deletion`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         });
 
         const data = await response.json();
         if (data.success) {
             window.location.reload();
+        } else {
+            alert(data.message || 'Fehler beim Abbrechen der Löschung');
         }
     } catch (error) {
-        console.error('Error deleting branch:', error);
+        console.error('Error canceling scheduled deletion:', error);
+        alert('Fehler beim Abbrechen der Löschung');
     }
 }
+
+// Event listener for schedule checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    const scheduleCheckbox = document.getElementById('scheduleDelete');
+    const deleteDateContainer = document.getElementById('deleteDateContainer');
+
+    if (scheduleCheckbox) {
+        scheduleCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                deleteDateContainer.classList.remove('hidden');
+            } else {
+                deleteDateContainer.classList.add('hidden');
+            }
+        });
+    }
+});
 </script>
 @endpush

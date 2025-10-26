@@ -98,7 +98,7 @@ class BranchController extends Controller
         ]);
     }
 
-    public function destroy(Branch $branch)
+    public function destroy(Request $request, Branch $branch)
     {
         // Check ownership
         if ($branch->customer_id !== auth('customer')->id()) {
@@ -113,6 +113,29 @@ class BranchController extends Controller
             ], 422);
         }
 
+        // Check if scheduled deletion is requested
+        if ($request->has('scheduled_deletion_at') && $request->input('scheduled_deletion_at')) {
+            $scheduledDate = $request->input('scheduled_deletion_at');
+
+            // Validate date format and that it's in the future
+            $date = \Carbon\Carbon::parse($scheduledDate);
+            if ($date->isPast()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Das Löschdatum muss in der Zukunft liegen'
+                ], 422);
+            }
+
+            $branch->scheduled_deletion_at = $date;
+            $branch->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Löschung wurde für ' . $date->format('d.m.Y') . ' geplant'
+            ]);
+        }
+
+        // Immediate deletion
         $branch->delete();
 
         return response()->json([
@@ -206,6 +229,23 @@ class BranchController extends Controller
         }
 
         return \Storage::disk('public')->download($path, $filename);
+    }
+
+    public function cancelScheduledDeletion(Branch $branch)
+    {
+        // Check ownership
+        if ($branch->customer_id !== auth('customer')->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        // Clear scheduled deletion
+        $branch->scheduled_deletion_at = null;
+        $branch->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Geplante Löschung wurde abgebrochen'
+        ]);
     }
 
     private function geocodeAddress(string $address): array

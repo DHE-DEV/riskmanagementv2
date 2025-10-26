@@ -84,6 +84,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/download/{filename}', [\App\Http\Controllers\Customer\BranchController::class, 'download'])->name('download');
             Route::put('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'update'])->name('update');
             Route::delete('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'destroy'])->name('destroy');
+            Route::post('/{branch}/cancel-deletion', [\App\Http\Controllers\Customer\BranchController::class, 'cancelScheduledDeletion'])->name('cancel-deletion');
         });
 
         // Notification routes

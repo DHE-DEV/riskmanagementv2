@@ -13,7 +13,11 @@ return new class extends Migration
     public function up(): void
     {
         // Fix jobs table id column to have AUTO_INCREMENT
-        DB::statement('ALTER TABLE jobs MODIFY id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY');
+        // Check if AUTO_INCREMENT is already set
+        $result = DB::select("SHOW COLUMNS FROM jobs WHERE Field = 'id'");
+        if (!empty($result) && strpos($result[0]->Extra, 'auto_increment') === false) {
+            DB::statement('ALTER TABLE jobs MODIFY id BIGINT UNSIGNED AUTO_INCREMENT');
+        }
     }
 
     /**
