@@ -1317,11 +1317,14 @@ function branchManager() {
 
             let html = '';
 
-            // Headquarters - mit Klick-Funktion
-            html += `<div class="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-hq'))">
+            // Headquarters - mit Klick-Funktion und grünem Rahmen
+            html += `<div class="bg-white p-3 rounded-lg border-2 border-green-500 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-hq'))">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900 text-sm">Hauptsitz</h4>
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="font-semibold text-gray-900 text-sm">Hauptsitz</h4>
+                            <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-mono rounded" title="App-Code">HQ00</span>
+                        </div>
                         <p class="text-xs text-gray-600 mt-1">
                             {{ auth('customer')->user()->company_street }} {{ auth('customer')->user()->company_house_number }}<br>
                             {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}
@@ -1335,13 +1338,16 @@ function branchManager() {
                 html += `<div class="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-branch', { detail: { id: ${branch.id} } }))">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 text-sm">${branch.name}</h4>
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="font-semibold text-gray-900 text-sm">${branch.name}</h4>
+                                <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-mono rounded" title="App-Code">${branch.app_code || 'N/A'}</span>
+                            </div>
                             <p class="text-xs text-gray-600 mt-1">
                                 ${branch.street} ${branch.house_number || ''}<br>
                                 ${branch.postal_code} ${branch.city}
                             </p>
                         </div>
-                        <button onclick="event.stopPropagation(); deleteBranch(${branch.id})" class="text-red-600 hover:text-red-800 text-xs">
+                        <button onclick="event.stopPropagation(); deleteBranch(${branch.id})" class="text-red-600 hover:text-red-800 text-xs ml-2">
                             <i class="fa-regular fa-trash"></i>
                         </button>
                     </div>
