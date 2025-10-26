@@ -138,6 +138,37 @@ class BranchController extends Controller
         ]);
     }
 
+    public function export()
+    {
+        $customer = auth('customer')->user();
+
+        // Dispatch Export Job
+        \App\Jobs\ExportBranches::dispatch($customer->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Export wurde gestartet. Sie erhalten eine Benachrichtigung mit dem Download-Link, wenn der Export abgeschlossen ist.'
+        ]);
+    }
+
+    public function download(string $filename)
+    {
+        $customer = auth('customer')->user();
+
+        // Security: Check if filename belongs to this customer
+        if (!str_starts_with($filename, 'branch-export-' . $customer->id . '-')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $path = 'exports/' . $filename;
+
+        if (!\Storage::disk('local')->exists($path)) {
+            return response()->json(['success' => false, 'message' => 'Datei nicht gefunden'], 404);
+        }
+
+        return \Storage::disk('local')->download($path);
+    }
+
     private function geocodeAddress(string $address): array
     {
         try {

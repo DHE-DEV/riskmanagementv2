@@ -37,16 +37,26 @@
 
                             <template x-for="notification in notifications" :key="notification.id">
                                 <div :class="notification.read_at ? 'bg-white' : 'bg-blue-50'"
-                                     class="p-3 border-b border-gray-100 transition-colors flex items-start justify-between group">
-                                    <div @click="markAsRead(notification.id)" class="flex-1 cursor-pointer hover:opacity-80">
-                                        <p class="text-sm text-gray-900" x-text="notification.data.message"></p>
-                                        <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                     class="p-3 border-b border-gray-100 transition-colors group">
+                                    <div class="flex items-start justify-between">
+                                        <div @click="markAsRead(notification.id)" class="flex-1 cursor-pointer hover:opacity-80">
+                                            <p class="text-sm text-gray-900" x-text="notification.data.message"></p>
+                                            <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                        </div>
+                                        <button @click.stop="deleteNotification(notification.id)"
+                                                class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Löschen">
+                                            <i class="fa-regular fa-trash-can text-sm"></i>
+                                        </button>
                                     </div>
-                                    <button @click.stop="deleteNotification(notification.id)"
-                                            class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Löschen">
-                                        <i class="fa-regular fa-trash-can text-sm"></i>
-                                    </button>
+                                    <!-- Download-Button für Export-Benachrichtigungen -->
+                                    <div x-show="notification.data.type === 'branch_export' && notification.data.filename" class="mt-2">
+                                        <a :href="'/customer/branches/download/' + notification.data.filename"
+                                           class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors">
+                                            <i class="fa-regular fa-download"></i>
+                                            CSV herunterladen
+                                        </a>
+                                    </div>
                                 </div>
                             </template>
                         </div>

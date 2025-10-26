@@ -1582,24 +1582,39 @@ function branchManager() {
             }
         },
 
-        exportBranches() {
-            // Erstelle CSV-Export
-            let csv = 'Name,Zusatz,Straße,Hausnummer,PLZ,Stadt,Land,App-Code\n';
+        async exportBranches() {
+            try {
+                const response = await fetch('/customer/branches/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
 
-            this.branches.forEach(branch => {
-                csv += `"${branch.name}","${branch.additional || ''}","${branch.street}","${branch.house_number || ''}","${branch.postal_code}","${branch.city}","${branch.country}","${branch.app_code}"\n`;
-            });
+                const data = await response.json();
 
-            // Download als CSV-Datei
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'filialen_export_' + new Date().toISOString().slice(0,10) + '.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                if (data.success) {
+                    // Trigger notification reload after a short delay
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('reload-notifications'));
+                    }, 2000);
+
+                    // Poll for notifications every 3 seconds for 30 seconds
+                    let pollCount = 0;
+                    const pollInterval = setInterval(() => {
+                        window.dispatchEvent(new CustomEvent('reload-notifications'));
+                        pollCount++;
+                        if (pollCount >= 10) {
+                            clearInterval(pollInterval);
+                        }
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error starting export:', error);
+                alert('Fehler beim Starten des Exports');
+            }
         },
 
         openImportModal() {

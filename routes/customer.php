@@ -80,6 +80,8 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\BranchController::class, 'index'])->name('index');
             Route::post('/', [\App\Http\Controllers\Customer\BranchController::class, 'store'])->name('store');
             Route::post('/import', [\App\Http\Controllers\Customer\BranchController::class, 'import'])->name('import');
+            Route::post('/export', [\App\Http\Controllers\Customer\BranchController::class, 'export'])->name('export');
+            Route::get('/download/{filename}', [\App\Http\Controllers\Customer\BranchController::class, 'download'])->name('download');
             Route::put('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'update'])->name('update');
             Route::delete('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'destroy'])->name('destroy');
         });
