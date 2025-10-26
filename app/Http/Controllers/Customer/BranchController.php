@@ -216,6 +216,20 @@ class BranchController extends Controller
             ], 409); // HTTP 409 Conflict
         }
 
+        // Check daily export limit (3 per day)
+        $today = \Carbon\Carbon::today();
+        $exportsToday = \App\Models\BranchExport::where('customer_id', $customer->id)
+            ->whereDate('created_at', $today)
+            ->whereIn('status', ['completed', 'processing', 'pending'])
+            ->count();
+
+        if ($exportsToday >= 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sie haben die maximale Anzahl von 3 Exporten pro Tag erreicht. Bitte versuchen Sie es morgen erneut.'
+            ], 429); // HTTP 429 Too Many Requests
+        }
+
         // Create export record with pending status
         $export = \App\Models\BranchExport::create([
             'customer_id' => $customer->id,
