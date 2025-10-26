@@ -11,6 +11,7 @@ class BranchExport extends Model
         'customer_id',
         'filename',
         'count',
+        'status',
         'expires_at',
     ];
 

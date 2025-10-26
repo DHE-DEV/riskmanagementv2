@@ -204,8 +204,29 @@ class BranchController extends Controller
     {
         $customer = auth('customer')->user();
 
+        // Check if there's already a pending or processing export
+        $existingExport = \App\Models\BranchExport::where('customer_id', $customer->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->first();
+
+        if ($existingExport) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Es wird bereits ein Export durchgeführt. Bitte warten Sie, bis dieser abgeschlossen ist.'
+            ], 409); // HTTP 409 Conflict
+        }
+
+        // Create export record with pending status
+        $export = \App\Models\BranchExport::create([
+            'customer_id' => $customer->id,
+            'filename' => '', // Will be set by the job
+            'count' => 0,
+            'status' => 'pending',
+            'expires_at' => \Carbon\Carbon::now()->addHours(72),
+        ]);
+
         // Dispatch Export Job
-        \App\Jobs\ExportBranches::dispatch($customer->id);
+        \App\Jobs\ExportBranches::dispatch($customer->id, $export->id);
 
         return response()->json([
             'success' => true,

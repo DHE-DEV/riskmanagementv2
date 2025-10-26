@@ -15,13 +15,15 @@ class ExportBranches implements ShouldQueue
     use Queueable;
 
     protected int $customerId;
+    protected int $exportId;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(int $customerId)
+    public function __construct(int $customerId, int $exportId)
     {
         $this->customerId = $customerId;
+        $this->exportId = $exportId;
     }
 
     /**
@@ -30,58 +32,71 @@ class ExportBranches implements ShouldQueue
     public function handle(): void
     {
         $customer = Customer::find($this->customerId);
+        $export = BranchExport::find($this->exportId);
 
-        if (!$customer) {
-            \Log::error("Customer not found: {$this->customerId}");
+        if (!$customer || !$export) {
+            \Log::error("Customer or export not found: customer={$this->customerId}, export={$this->exportId}");
+            if ($export) {
+                $export->update(['status' => 'failed']);
+            }
             return;
         }
 
-        // Get all branches for this customer
-        $branches = $customer->branches()
-            ->orderBy('is_headquarters', 'desc')
-            ->orderBy('created_at')
-            ->get();
+        // Update status to processing
+        $export->update(['status' => 'processing']);
 
-        // Create CSV content
-        $csv = "Name,Zusatz,Straße,Hausnummer,PLZ,Stadt,Land,Breitengrad,Längengrad,App-Code,Hauptsitz\n";
+        try {
+            // Get all branches for this customer
+            $branches = $customer->branches()
+                ->orderBy('is_headquarters', 'desc')
+                ->orderBy('created_at')
+                ->get();
 
-        foreach ($branches as $branch) {
-            $csv .= sprintf(
-                "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-                $this->escapeCsv($branch->name),
-                $this->escapeCsv($branch->additional ?? ''),
-                $this->escapeCsv($branch->street),
-                $this->escapeCsv($branch->house_number ?? ''),
-                $this->escapeCsv($branch->postal_code),
-                $this->escapeCsv($branch->city),
-                $this->escapeCsv($branch->country),
-                $branch->latitude ?? '',
-                $branch->longitude ?? '',
-                $branch->app_code ?? '',
-                $branch->is_headquarters ? 'Ja' : 'Nein'
-            );
+            // Create CSV content
+            $csv = "Name,Zusatz,Straße,Hausnummer,PLZ,Stadt,Land,Breitengrad,Längengrad,App-Code,Hauptsitz\n";
+
+            foreach ($branches as $branch) {
+                $csv .= sprintf(
+                    "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+                    $this->escapeCsv($branch->name),
+                    $this->escapeCsv($branch->additional ?? ''),
+                    $this->escapeCsv($branch->street),
+                    $this->escapeCsv($branch->house_number ?? ''),
+                    $this->escapeCsv($branch->postal_code),
+                    $this->escapeCsv($branch->city),
+                    $this->escapeCsv($branch->country),
+                    $branch->latitude ?? '',
+                    $branch->longitude ?? '',
+                    $branch->app_code ?? '',
+                    $branch->is_headquarters ? 'Ja' : 'Nein'
+                );
+            }
+
+            // Generate unique filename
+            $filename = 'branch-export-' . $customer->id . '-' . now()->format('Y-m-d-His') . '.csv';
+            $path = $filename;
+
+            // Store file in public disk for easy download
+            Storage::disk('public')->put('exports/' . $path, $csv);
+
+            // Update export record
+            $expiresAt = Carbon::now()->addHours(72);
+            $export->update([
+                'filename' => $filename,
+                'count' => $branches->count(),
+                'status' => 'completed',
+                'expires_at' => $expiresAt,
+            ]);
+
+            // Send notification
+            $customer->notify(new BranchExportCompleted($filename, $branches->count(), $expiresAt));
+
+            \Log::info("Branch export completed for customer {$this->customerId}: {$filename}, expires at {$expiresAt}");
+        } catch (\Exception $e) {
+            \Log::error("Branch export failed for customer {$this->customerId}: " . $e->getMessage());
+            $export->update(['status' => 'failed']);
+            throw $e;
         }
-
-        // Generate unique filename
-        $filename = 'branch-export-' . $customer->id . '-' . now()->format('Y-m-d-His') . '.csv';
-        $path = $filename;
-
-        // Store file in public disk for easy download
-        Storage::disk('public')->put('exports/' . $path, $csv);
-
-        // Create export record with 72 hours expiry
-        $expiresAt = Carbon::now()->addHours(72);
-        $export = BranchExport::create([
-            'customer_id' => $customer->id,
-            'filename' => $filename,
-            'count' => $branches->count(),
-            'expires_at' => $expiresAt,
-        ]);
-
-        // Send notification
-        $customer->notify(new BranchExportCompleted($filename, $branches->count(), $expiresAt));
-
-        \Log::info("Branch export completed for customer {$this->customerId}: {$filename}, expires at {$expiresAt}");
     }
 
     private function escapeCsv(?string $value): string

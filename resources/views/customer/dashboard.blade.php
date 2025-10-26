@@ -1945,10 +1945,12 @@ async function confirmExport() {
                 }
             }, 3000);
         } else {
-            alert('Fehler beim Starten des Exports');
+            closeExportModal();
+            alert(data.message || 'Fehler beim Starten des Exports');
         }
     } catch (error) {
         console.error('Error starting export:', error);
+        closeExportModal();
         alert('Fehler beim Starten des Exports');
     }
 }
