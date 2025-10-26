@@ -28,11 +28,11 @@
                 </button>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <button @click="importBranches" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                    <button @click="importBranches" class="px-3 py-1 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm">
                         <i class="fa-regular fa-file-import"></i>
                         Importieren
                     </button>
-                    <button @click="exportBranches" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                    <button @click="exportBranches" class="px-3 py-1 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm">
                         <i class="fa-regular fa-file-export"></i>
                         Exportieren
                     </button>
