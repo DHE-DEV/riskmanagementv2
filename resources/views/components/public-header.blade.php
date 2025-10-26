@@ -12,7 +12,7 @@
         <div class="flex items-center space-x-4">
             @auth('customer')
                 <!-- Benachrichtigungen -->
-                <div x-data="notificationDropdown()" class="relative" style="margin-right: 50px;">
+                <div x-data="notificationDropdown()" class="relative" :style="'margin-right: 30px; margin-top: ' + (unreadCount > 0 ? '15px' : '8px')">
                     <button @click="toggleDropdown" class="relative p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Benachrichtigungen">
                         <i class="fa-regular fa-bell text-xl"></i>
                         <span x-show="unreadCount > 0" x-text="unreadCount"
@@ -36,11 +36,17 @@
                             </template>
 
                             <template x-for="notification in notifications" :key="notification.id">
-                                <div @click="markAsRead(notification.id)"
-                                     :class="notification.read_at ? 'bg-white' : 'bg-blue-50'"
-                                     class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-                                    <p class="text-sm text-gray-900" x-text="notification.data.message"></p>
-                                    <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                <div :class="notification.read_at ? 'bg-white' : 'bg-blue-50'"
+                                     class="p-3 border-b border-gray-100 transition-colors flex items-start justify-between group">
+                                    <div @click="markAsRead(notification.id)" class="flex-1 cursor-pointer hover:opacity-80">
+                                        <p class="text-sm text-gray-900" x-text="notification.data.message"></p>
+                                        <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                    </div>
+                                    <button @click.stop="deleteNotification(notification.id)"
+                                            class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Löschen">
+                                        <i class="fa-regular fa-trash-can text-sm"></i>
+                                    </button>
                                 </div>
                             </template>
                         </div>
@@ -167,6 +173,21 @@ function notificationDropdown() {
                 this.loadNotifications();
             } catch (error) {
                 console.error('Error marking all as read:', error);
+            }
+        },
+
+        async deleteNotification(id) {
+            try {
+                await fetch(`/customer/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                this.loadNotifications();
+            } catch (error) {
+                console.error('Error deleting notification:', error);
             }
         },
 

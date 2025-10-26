@@ -12,7 +12,7 @@ class NotificationController extends Controller
         $customer = auth('customer')->user();
         $notifications = $customer->notifications()
             ->latest()
-            ->limit(10)
+            ->limit(20)
             ->get();
 
         return response()->json([
@@ -41,5 +41,18 @@ class NotificationController extends Controller
         $customer->unreadNotifications->markAsRead();
 
         return response()->json(['success' => true]);
+    }
+
+    public function delete($id)
+    {
+        $customer = auth('customer')->user();
+        $notification = $customer->notifications()->find($id);
+
+        if ($notification) {
+            $notification->delete();
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false], 404);
     }
 }
