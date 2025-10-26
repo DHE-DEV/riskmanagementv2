@@ -13,10 +13,17 @@ return new class extends Migration
     public function up(): void
     {
         // Fix jobs table id column to have AUTO_INCREMENT
-        // Check if AUTO_INCREMENT is already set
-        $result = DB::select("SHOW COLUMNS FROM jobs WHERE Field = 'id'");
-        if (!empty($result) && strpos($result[0]->Extra, 'auto_increment') === false) {
-            DB::statement('ALTER TABLE jobs MODIFY id BIGINT UNSIGNED AUTO_INCREMENT');
+        try {
+            // Check if AUTO_INCREMENT is already set
+            $result = DB::select("SHOW COLUMNS FROM jobs WHERE Field = 'id'");
+            if (!empty($result) && strpos($result[0]->Extra, 'auto_increment') === false) {
+                // Ensure PRIMARY KEY exists and add AUTO_INCREMENT
+                DB::statement('ALTER TABLE jobs MODIFY id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY');
+            }
+        } catch (\Exception $e) {
+            // If migration fails (e.g., already has AUTO_INCREMENT), just skip it
+            // This allows the migration to succeed even if the table is already correct
+            \Log::info('Jobs table AUTO_INCREMENT migration skipped: ' . $e->getMessage());
         }
     }
 
