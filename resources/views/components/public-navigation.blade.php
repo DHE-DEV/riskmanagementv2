@@ -142,9 +142,12 @@ function notificationDropdown() {
             try {
                 const response = await fetch('/customer/notifications');
                 const data = await response.json();
+                console.log('Notifications loaded:', data);
                 if (data.success) {
                     this.notifications = data.notifications;
                     this.unreadCount = data.unread_count;
+                    console.log('Unread count:', this.unreadCount);
+                    console.log('Notifications:', this.notifications);
                 }
             } catch (error) {
                 console.error('Error loading notifications:', error);
