@@ -26,6 +26,17 @@
                     <i class="fa-regular fa-plus"></i>
                     Neue Filiale hinzufügen
                 </button>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button @click="importBranches" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-file-import"></i>
+                        Importieren
+                    </button>
+                    <button @click="exportBranches" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-file-export"></i>
+                        Exportieren
+                    </button>
+                </div>
             </div>
 
             <div class="mt-6">
@@ -1511,6 +1522,85 @@ function branchManager() {
             } catch (error) {
                 console.error('Error saving branch:', error);
             }
+        },
+
+        exportBranches() {
+            // Erstelle CSV-Export
+            let csv = 'Name,Zusatz,Straße,Hausnummer,PLZ,Stadt,Land,App-Code\n';
+
+            this.branches.forEach(branch => {
+                csv += `"${branch.name}","${branch.additional || ''}","${branch.street}","${branch.house_number || ''}","${branch.postal_code}","${branch.city}","${branch.country}","${branch.app_code}"\n`;
+            });
+
+            // Download als CSV-Datei
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'filialen_export_' + new Date().toISOString().slice(0,10) + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+
+        importBranches() {
+            // Erstelle Input-Element für Datei-Upload
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n');
+
+                    // Überspringe Header-Zeile
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        // Parse CSV-Zeile
+                        const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+                        if (!values || values.length < 6) continue;
+
+                        const cleanValue = (val) => val ? val.replace(/^"|"$/g, '').trim() : '';
+
+                        const branchData = {
+                            name: cleanValue(values[0]),
+                            additional: cleanValue(values[1]),
+                            street: cleanValue(values[2]),
+                            house_number: cleanValue(values[3]),
+                            postal_code: cleanValue(values[4]),
+                            city: cleanValue(values[5]),
+                            country: cleanValue(values[6]) || 'Deutschland'
+                        };
+
+                        // Speichere Filiale
+                        try {
+                            await fetch('/customer/branches', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify(branchData)
+                            });
+                        } catch (error) {
+                            console.error('Error importing branch:', error);
+                        }
+                    }
+
+                    // Lade Filialen neu
+                    this.loadBranches();
+                    alert('Import abgeschlossen!');
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         }
     };
 }
