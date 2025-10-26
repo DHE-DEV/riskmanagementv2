@@ -200,6 +200,28 @@ class BranchController extends Controller
         }
     }
 
+    public function exportStatus()
+    {
+        $customer = auth('customer')->user();
+
+        // Check daily export limit (3 per day)
+        $today = \Carbon\Carbon::today();
+        $exportsToday = \App\Models\BranchExport::where('customer_id', $customer->id)
+            ->whereDate('created_at', $today)
+            ->whereIn('status', ['completed', 'processing', 'pending'])
+            ->count();
+
+        $maxExportsPerDay = 3;
+        $remainingExports = max(0, $maxExportsPerDay - $exportsToday);
+
+        return response()->json([
+            'success' => true,
+            'exports_today' => $exportsToday,
+            'max_exports' => $maxExportsPerDay,
+            'remaining_exports' => $remainingExports,
+        ]);
+    }
+
     public function export()
     {
         $customer = auth('customer')->user();
@@ -223,10 +245,13 @@ class BranchController extends Controller
             ->whereIn('status', ['completed', 'processing', 'pending'])
             ->count();
 
-        if ($exportsToday >= 3) {
+        $maxExportsPerDay = 3;
+        $remainingExports = $maxExportsPerDay - $exportsToday;
+
+        if ($exportsToday >= $maxExportsPerDay) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sie haben die maximale Anzahl von 3 Exporten pro Tag erreicht. Bitte versuchen Sie es morgen erneut.'
+                'message' => "Sie haben heute bereits {$exportsToday} von {$maxExportsPerDay} möglichen Exporten durchgeführt. Bitte versuchen Sie es morgen erneut."
             ], 429); // HTTP 429 Too Many Requests
         }
 

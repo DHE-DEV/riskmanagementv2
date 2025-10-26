@@ -1285,6 +1285,18 @@
             </div>
         </div>
 
+        <!-- Export Status Info -->
+        <div id="exportStatusInfo" class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">Heute durchgeführt:</span>
+                <span class="font-semibold text-gray-900"><span id="exportsToday">-</span> von <span id="maxExports">3</span></span>
+            </div>
+            <div class="flex items-center justify-between text-sm mt-1">
+                <span class="text-gray-600">Verbleibend:</span>
+                <span class="font-semibold" id="remainingExportsDisplay">-</span>
+            </div>
+        </div>
+
         <div class="flex gap-3 justify-end">
             <button onclick="closeExportModal()"
                     class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -1710,7 +1722,29 @@ function branchManager() {
             }
         },
 
-        exportBranches() {
+        async exportBranches() {
+            // Load export status
+            try {
+                const response = await fetch('/customer/branches/export-status');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('exportsToday').textContent = data.exports_today;
+                    document.getElementById('maxExports').textContent = data.max_exports;
+
+                    const remainingDisplay = document.getElementById('remainingExportsDisplay');
+                    if (data.remaining_exports > 0) {
+                        remainingDisplay.textContent = data.remaining_exports;
+                        remainingDisplay.className = 'font-semibold text-green-600';
+                    } else {
+                        remainingDisplay.textContent = '0 (Limit erreicht)';
+                        remainingDisplay.className = 'font-semibold text-red-600';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading export status:', error);
+            }
+
             // Open export confirmation modal
             const modal = document.getElementById('exportConfirmModal');
             modal.classList.remove('hidden');
