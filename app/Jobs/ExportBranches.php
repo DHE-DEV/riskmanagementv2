@@ -62,10 +62,10 @@ class ExportBranches implements ShouldQueue
 
         // Generate unique filename
         $filename = 'branch-export-' . $customer->id . '-' . now()->format('Y-m-d-His') . '.csv';
-        $path = 'exports/' . $filename;
+        $path = $filename;
 
-        // Store file
-        Storage::disk('local')->put($path, $csv);
+        // Store file in public disk for easy download
+        Storage::disk('public')->put('exports/' . $path, $csv);
 
         // Send notification
         $customer->notify(new BranchExportCompleted($filename, $branches->count()));

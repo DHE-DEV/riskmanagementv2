@@ -162,11 +162,11 @@ class BranchController extends Controller
 
         $path = 'exports/' . $filename;
 
-        if (!\Storage::disk('local')->exists($path)) {
+        if (!\Storage::disk('public')->exists($path)) {
             return response()->json(['success' => false, 'message' => 'Datei nicht gefunden'], 404);
         }
 
-        return \Storage::disk('local')->download($path);
+        return \Storage::disk('public')->download($path, $filename);
     }
 
     private function geocodeAddress(string $address): array
