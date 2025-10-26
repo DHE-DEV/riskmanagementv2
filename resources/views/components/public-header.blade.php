@@ -11,6 +11,42 @@
         <!-- User Actions -->
         <div class="flex items-center space-x-4">
             @auth('customer')
+                <!-- Benachrichtigungen -->
+                <div x-data="notificationDropdown()" class="relative" style="margin-right: 50px;">
+                    <button @click="toggleDropdown" class="relative p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Benachrichtigungen">
+                        <i class="fa-regular fa-bell text-xl"></i>
+                        <span x-show="unreadCount > 0" x-text="unreadCount"
+                              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                              style="z-index: 10002;"></span>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div x-show="showDropdown" @click.away="showDropdown = false" x-cloak
+                         class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" style="z-index: 10000;">
+                        <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                            <h3 class="font-semibold text-gray-900">Benachrichtigungen</h3>
+                            <button @click="markAllAsRead" class="text-xs text-blue-600 hover:text-blue-800">Alle als gelesen</button>
+                        </div>
+
+                        <div class="max-h-96 overflow-y-auto">
+                            <template x-if="notifications.length === 0">
+                                <div class="p-4 text-center text-gray-500 text-sm">
+                                    Keine Benachrichtigungen
+                                </div>
+                            </template>
+
+                            <template x-for="notification in notifications" :key="notification.id">
+                                <div @click="markAsRead(notification.id)"
+                                     :class="notification.read_at ? 'bg-white' : 'bg-blue-50'"
+                                     class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                                    <p class="text-sm text-gray-900" x-text="notification.data.message"></p>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- User Dropdown -->
                 <div class="relative" x-data="{ open: false }">
                     <button
@@ -62,3 +98,94 @@
         </div>
     </div>
 </header>
+
+@auth('customer')
+<script>
+function notificationDropdown() {
+    return {
+        showDropdown: false,
+        notifications: [],
+        unreadCount: 0,
+
+        init() {
+            this.loadNotifications();
+            // Poll alle 30 Sekunden
+            setInterval(() => this.loadNotifications(), 30000);
+
+            // Listen for manual reload trigger
+            window.addEventListener('reload-notifications', () => {
+                this.loadNotifications();
+            });
+        },
+
+        toggleDropdown() {
+            this.showDropdown = !this.showDropdown;
+            if (this.showDropdown) {
+                this.loadNotifications();
+            }
+        },
+
+        async loadNotifications() {
+            try {
+                const response = await fetch('/customer/notifications');
+                const data = await response.json();
+                console.log('Notifications loaded:', data);
+                if (data.success) {
+                    this.notifications = data.notifications;
+                    this.unreadCount = data.unread_count;
+                    console.log('Unread count:', this.unreadCount);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        },
+
+        async markAsRead(id) {
+            try {
+                await fetch(`/customer/notifications/${id}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                this.loadNotifications();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        },
+
+        async markAllAsRead() {
+            try {
+                await fetch('/customer/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                this.loadNotifications();
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return 'Gerade eben';
+            if (minutes < 60) return `vor ${minutes} Min.`;
+            if (hours < 24) return `vor ${hours} Std.`;
+            if (days === 1) return 'Gestern';
+            if (days < 7) return `vor ${days} Tagen`;
+            return date.toLocaleDateString('de-DE');
+        }
+    };
+}
+</script>
+@endauth
