@@ -39,6 +39,7 @@ class ImportBranches implements ShouldQueue
         $lines = explode("\n", $this->csvData);
         $imported = 0;
         $failed = 0;
+        $skipped = 0;
         $errors = [];
 
         // Überspringe Header-Zeile
@@ -63,6 +64,24 @@ class ImportBranches implements ShouldQueue
                     'city' => $values[5] ?? '',
                     'country' => $values[6] ?? 'Deutschland',
                 ];
+
+                // Prüfe auf Duplikate
+                $existingBranch = $customer->branches()
+                    ->where('name', $branchData['name'])
+                    ->where('street', $branchData['street'])
+                    ->where('house_number', $branchData['house_number'] ?? '')
+                    ->where('postal_code', $branchData['postal_code'])
+                    ->where('city', $branchData['city'])
+                    ->first();
+
+                if ($existingBranch) {
+                    $skipped++;
+                    Log::info('Branch already exists, skipping', [
+                        'name' => $branchData['name'],
+                        'address' => $branchData['street'] . ' ' . $branchData['house_number']
+                    ]);
+                    continue;
+                }
 
                 // Geocode the address
                 $address = "{$branchData['street']} {$branchData['house_number']}, {$branchData['postal_code']} {$branchData['city']}, {$branchData['country']}";
@@ -97,7 +116,7 @@ class ImportBranches implements ShouldQueue
         }
 
         // Sende Benachrichtigung an Kunden
-        $customer->notify(new BranchImportCompleted($imported, $failed, $errors));
+        $customer->notify(new BranchImportCompleted($imported, $failed, $skipped, $errors));
 
         Log::info('Branch import completed', [
             'customer_id' => $this->customerId,

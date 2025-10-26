@@ -13,15 +13,17 @@ class BranchImportCompleted extends Notification
 
     protected $imported;
     protected $failed;
+    protected $skipped;
     protected $errors;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($imported, $failed, $errors = [])
+    public function __construct($imported, $failed, $skipped = 0, $errors = [])
     {
         $this->imported = $imported;
         $this->failed = $failed;
+        $this->skipped = $skipped;
         $this->errors = $errors;
     }
 
@@ -49,6 +51,10 @@ class BranchImportCompleted extends Notification
             $message->line("✓ Erfolgreich importiert: {$this->imported} Filiale(n)");
         }
 
+        if ($this->skipped > 0) {
+            $message->line("⊘ Übersprungen (bereits vorhanden): {$this->skipped} Filiale(n)");
+        }
+
         if ($this->failed > 0) {
             $message->line("✗ Fehlgeschlagen: {$this->failed} Filiale(n)");
         }
@@ -72,12 +78,29 @@ class BranchImportCompleted extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $parts = [];
+
+        if ($this->imported > 0) {
+            $parts[] = "{$this->imported} importiert";
+        }
+
+        if ($this->skipped > 0) {
+            $parts[] = "{$this->skipped} übersprungen";
+        }
+
+        if ($this->failed > 0) {
+            $parts[] = "{$this->failed} fehlgeschlagen";
+        }
+
+        $message = "Import abgeschlossen: " . implode(', ', $parts);
+
         return [
             'type' => 'branch_import_completed',
             'imported' => $this->imported,
             'failed' => $this->failed,
+            'skipped' => $this->skipped,
             'errors' => $this->errors,
-            'message' => "Import abgeschlossen: {$this->imported} erfolgreich, {$this->failed} fehlgeschlagen",
+            'message' => $message,
         ];
     }
 }
