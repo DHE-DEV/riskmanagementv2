@@ -222,6 +222,19 @@ class BranchController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
+        // Check if export exists and is not expired
+        $export = \App\Models\BranchExport::where('customer_id', $customer->id)
+            ->where('filename', $filename)
+            ->first();
+
+        if (!$export) {
+            return response()->json(['success' => false, 'message' => 'Export nicht gefunden oder bereits abgelaufen'], 404);
+        }
+
+        if ($export->isExpired()) {
+            return response()->json(['success' => false, 'message' => 'Diese Export-Datei ist abgelaufen und wurde gelöscht'], 410);
+        }
+
         $path = 'exports/' . $filename;
 
         if (!\Storage::disk('public')->exists($path)) {

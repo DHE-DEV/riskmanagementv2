@@ -3,10 +3,12 @@
 namespace App\Jobs;
 
 use App\Models\Customer;
+use App\Models\BranchExport;
 use App\Notifications\BranchExportCompleted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class ExportBranches implements ShouldQueue
 {
@@ -67,10 +69,19 @@ class ExportBranches implements ShouldQueue
         // Store file in public disk for easy download
         Storage::disk('public')->put('exports/' . $path, $csv);
 
-        // Send notification
-        $customer->notify(new BranchExportCompleted($filename, $branches->count()));
+        // Create export record with 72 hours expiry
+        $expiresAt = Carbon::now()->addHours(72);
+        $export = BranchExport::create([
+            'customer_id' => $customer->id,
+            'filename' => $filename,
+            'count' => $branches->count(),
+            'expires_at' => $expiresAt,
+        ]);
 
-        \Log::info("Branch export completed for customer {$this->customerId}: {$filename}");
+        // Send notification
+        $customer->notify(new BranchExportCompleted($filename, $branches->count(), $expiresAt));
+
+        \Log::info("Branch export completed for customer {$this->customerId}: {$filename}, expires at {$expiresAt}");
     }
 
     private function escapeCsv(?string $value): string

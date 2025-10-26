@@ -24,3 +24,10 @@ Schedule::command('branches:delete-scheduled')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/branch-deletion-schedule.log'));
+
+// Cleanup Expired Exports - runs every hour
+Schedule::command('exports:cleanup')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/exports-cleanup-schedule.log'));

@@ -56,6 +56,10 @@
                                             <i class="fa-regular fa-download"></i>
                                             CSV herunterladen
                                         </a>
+                                        <p x-show="notification.data.expires_formatted" class="text-xs text-orange-600 mt-2">
+                                            <i class="fa-regular fa-clock"></i>
+                                            Verfügbar bis: <span x-text="notification.data.expires_formatted"></span> Uhr
+                                        </p>
                                     </div>
                                 </div>
                             </template>
