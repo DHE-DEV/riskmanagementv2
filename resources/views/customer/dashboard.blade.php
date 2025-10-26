@@ -1500,8 +1500,10 @@ function branchManager() {
             // Add HQ marker - geocode the headquarters address
             @if(auth('customer')->user()->company_street)
             const hqAddress = '{{ auth('customer')->user()->company_street }} {{ auth('customer')->user()->company_house_number }}, {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}, {{ auth('customer')->user()->company_country ?? "Deutschland" }}';
+            console.log('Geocoding HQ address:', hqAddress);
             try {
                 const hqCoords = await this.geocodeAddress(hqAddress);
+                console.log('HQ coordinates:', hqCoords);
                 if (hqCoords.lat && hqCoords.lon) {
                     const hqMarker = L.marker([hqCoords.lat, hqCoords.lon], {
                         icon: L.icon({
@@ -1517,6 +1519,9 @@ function branchManager() {
 
                     this.markerClusterGroup.addLayer(hqMarker);
                     this.markers.push(hqMarker);
+                    console.log('HQ marker added to map');
+                } else {
+                    console.warn('HQ coordinates not found for address:', hqAddress);
                 }
             } catch (error) {
                 console.error('Error geocoding HQ:', error);
@@ -1554,13 +1559,28 @@ function branchManager() {
 
         async geocodeAddress(address) {
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
+                // Add delay to respect Nominatim rate limiting (1 request per second)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`, {
+                    headers: {
+                        'User-Agent': 'RiskManagement/1.0'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('Geocoding HTTP error:', response.status);
+                    return { lat: null, lon: null };
+                }
+
                 const data = await response.json();
                 if (data.length > 0) {
                     return {
                         lat: parseFloat(data[0].lat),
                         lon: parseFloat(data[0].lon)
                     };
+                } else {
+                    console.warn('No geocoding results for address:', address);
                 }
             } catch (error) {
                 console.error('Geocoding error:', error);
