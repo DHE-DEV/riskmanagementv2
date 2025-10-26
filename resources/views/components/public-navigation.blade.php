@@ -124,6 +124,11 @@ function notificationDropdown() {
             this.loadNotifications();
             // Poll alle 30 Sekunden
             setInterval(() => this.loadNotifications(), 30000);
+
+            // Listen for manual reload trigger
+            window.addEventListener('reload-notifications', () => {
+                this.loadNotifications();
+            });
         },
 
         toggleDropdown() {

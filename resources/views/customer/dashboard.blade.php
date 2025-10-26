@@ -1662,6 +1662,16 @@ function branchManager() {
                     if (data.success) {
                         this.closeImportModal();
                         alert(data.message);
+
+                        // Poll für Benachrichtigung alle 3 Sekunden für die nächsten 30 Sekunden
+                        let pollCount = 0;
+                        const pollInterval = setInterval(() => {
+                            window.dispatchEvent(new CustomEvent('reload-notifications'));
+                            pollCount++;
+                            if (pollCount >= 10) { // 10 × 3 Sekunden = 30 Sekunden
+                                clearInterval(pollInterval);
+                            }
+                        }, 3000);
                     } else {
                         alert('Fehler beim Starten des Imports.');
                     }
