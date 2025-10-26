@@ -54,6 +54,13 @@
                 </a>
             @endif
         @endif
+
+        <!-- Filialen & Standorte -->
+        @if(auth('customer')->check() && auth('customer')->user()->branch_management_active)
+        <a href="{{ route('branches') }}" class="p-3 {{ $active === 'branches' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Filialen & Standorte">
+            <i class="fa-regular fa-building text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
     </div>
 
     <!-- Bottom Buttons -->
@@ -66,11 +73,5 @@
         </button>
         @endif
 
-        <!-- Firmensymbol (nur wenn Branch Management aktiviert ist) -->
-        @if(auth('customer')->check() && auth('customer')->user()->branch_management_active)
-        <a href="{{ route('branches') }}" class="p-3 {{ $active === 'branches' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Filialen & Standorte">
-            <i class="fa-regular fa-building text-2xl" aria-hidden="true"></i>
-        </a>
-        @endif
     </div>
 </nav>

@@ -101,4 +101,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(BookingLocation::class);
     }
+
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
 }

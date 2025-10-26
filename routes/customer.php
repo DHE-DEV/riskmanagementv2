@@ -74,6 +74,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::post('/passolution/refresh-token', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'refreshToken'])
             ->name('passolution.refresh-token');
+
+        // Branch Management routes
+        Route::prefix('branches')->name('branches.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\BranchController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\BranchController::class, 'store'])->name('store');
+            Route::put('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'update'])->name('update');
+            Route::delete('/{branch}', [\App\Http\Controllers\Customer\BranchController::class, 'destroy'])->name('destroy');
+        });
     });
 
     // Authentication Routes

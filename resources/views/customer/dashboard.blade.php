@@ -7,8 +7,83 @@
 @endphp
 
 @section('content')
+    <!-- Sidebar -->
+    <div class="sidebar" x-data="branchManager()">
+        <div class="p-4">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fa-regular fa-building mr-2"></i>
+                Filialen & Standorte
+            </h2>
+
+            <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                <p class="text-sm text-gray-600">
+                    Hier können Sie Ihre Filialen und Standorte verwalten.
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <button @click="openModal" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-regular fa-plus"></i>
+                    Neue Filiale hinzufügen
+                </button>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">
+                    Ihre Filialen <span id="branches-count" class="text-gray-500">(0)</span>
+                </h3>
+                <div class="space-y-2" id="branches-list">
+                    <!-- Branches werden hier dynamisch geladen -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal für neue Filiale -->
+        <div x-show="showModal" x-cloak class="modal-overlay fixed inset-0 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="modal-backdrop fixed inset-0 bg-black opacity-50" @click="closeModal"></div>
+                <div class="modal-content relative bg-white rounded-lg max-w-md w-full p-6">
+                    <h3 class="text-lg font-semibold mb-4">Neue Filiale hinzufügen</h3>
+                    <form @submit.prevent="saveBranch">
+                        <div class="space-y-3">
+                            <input type="text" x-model="form.name" placeholder="Filialname" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" x-model="form.street" placeholder="Straße" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" x-model="form.house_number" placeholder="Hausnummer" class="w-full px-3 py-2 border rounded">
+                            <input type="text" x-model="form.postal_code" placeholder="PLZ" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" x-model="form.city" placeholder="Stadt" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" x-model="form.country" placeholder="Land" required class="w-full px-3 py-2 border rounded">
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Speichern</button>
+                            <button type="button" @click="closeModal" class="flex-1 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Abbrechen</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="p-8">
         <div class="max-w-7xl mx-auto">
+            <!-- Karte für Filialen -->
+            @if(auth('customer')->user()->branch_management_active)
+            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6" x-data="{ recenterMap() { window.dispatchEvent(new CustomEvent('recenter-map')); } }">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fa-regular fa-map-location-dot mr-2"></i>
+                        Standorte auf der Karte
+                    </h2>
+                    <button @click="recenterMap()" class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="w-4 h-4" fill="currentColor">
+                            <path d="M320 544C443.7 544 544 443.7 544 320C544 196.3 443.7 96 320 96C196.3 96 96 196.3 96 320C96 325.9 96.2 331.8 96.7 337.6L91.8 339.2C81.9 342.6 73.3 348.1 66.4 355.1C64.8 343.6 64 331.9 64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C308.1 576 296.4 575.2 284.9 573.6C291.9 566.7 297.4 558 300.7 548.2L302.3 543.3C308.1 543.8 314 544 319.9 544zM320 160C408.4 160 480 231.6 480 320C480 407.2 410.2 478.1 323.5 480L334.4 447.2C398.3 440 448 385.8 448 320C448 249.3 390.7 192 320 192C254.2 192 200 241.7 192.8 305.6L160 316.5C161.9 229.8 232.8 160 320 160zM315.3 324.7C319.6 329 321.1 335.3 319.2 341.1L255.2 533.1C253 539.6 246.9 544 240 544C233.1 544 227 539.6 224.8 533.1L201 461.6L107.3 555.3C101.1 561.5 90.9 561.5 84.7 555.3C78.5 549.1 78.5 538.9 84.7 532.7L178.4 439L107 415.2C100.4 413 96 406.9 96 400C96 393.1 100.4 387 106.9 384.8L298.9 320.8C304.6 318.9 311 320.4 315.3 324.7zM162.6 400L213.1 416.8C217.9 418.4 221.6 422.1 223.2 426.9L240 477.4L278.7 361.3L162.6 400z"></path>
+                        </svg>
+                        Karte zentrieren
+                    </button>
+                </div>
+                <div id="branches-map"></div>
+            </div>
+            @endif
+
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                 <div class="mb-6">
                     <p class="text-gray-600 mt-1">
@@ -897,7 +972,7 @@
                         </h3>
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Passolution:</span>
+                                <span class="text-sm text-gray-700">Passolution</span>
                                 @if(auth('customer')->user()->hasActivePassolution())
                                     <div class="flex items-center gap-2">
                                         <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
@@ -1080,3 +1155,378 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+    [x-cloak] { display: none !important; }
+    .sidebar {
+        position: fixed;
+        left: 64px;
+        top: 64px;
+        bottom: 56px;
+        width: 320px;
+        background: #f9fafb;
+        border-right: 1px solid #e5e7eb;
+        overflow-y: auto;
+        z-index: 50;
+    }
+    .main-content > .p-8 {
+        margin-left: 320px;
+    }
+    #branches-map {
+        height: 400px;
+        border-radius: 8px;
+        z-index: 1;
+    }
+    /* Modal Container */
+    .modal-overlay {
+        z-index: 9998 !important;
+    }
+    .modal-backdrop {
+        z-index: 9998 !important;
+    }
+    .modal-content {
+        z-index: 9999 !important;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+function branchManager() {
+    return {
+        showModal: false,
+        branches: [],
+        form: {
+            name: '',
+            street: '',
+            house_number: '',
+            postal_code: '',
+            city: '',
+            country: 'Deutschland'
+        },
+        map: null,
+        markers: [],
+        markerClusterGroup: null,
+
+        init() {
+            this.loadBranches();
+            this.initMap();
+
+            // Event-Listener für Karte zentrieren
+            window.addEventListener('recenter-map', () => {
+                this.recenterMap();
+            });
+
+            // Event-Listener für Zoom auf Hauptsitz
+            window.addEventListener('zoom-to-hq', () => {
+                this.zoomToHeadquarters();
+            });
+
+            // Event-Listener für Zoom auf Filiale
+            window.addEventListener('zoom-to-branch', (e) => {
+                this.zoomToBranch(e.detail.id);
+            });
+        },
+
+        recenterMap() {
+            if (!this.map) return;
+
+            // Wenn Marker vorhanden sind, auf diese zentrieren
+            if (this.markers.length > 0 && this.markerClusterGroup) {
+                const bounds = this.markerClusterGroup.getBounds();
+                if (bounds.isValid()) {
+                    this.map.fitBounds(bounds.pad(0.1));
+                }
+            } else {
+                // Sonst DACH-Region anzeigen
+                const dachBounds = [
+                    [47.0, 5.8],   // Südwest (Schweiz)
+                    [55.1, 15.0]   // Nordost (Deutschland)
+                ];
+                this.map.fitBounds(dachBounds);
+            }
+        },
+
+        async zoomToHeadquarters() {
+            if (!this.map) return;
+
+            @if(auth('customer')->user()->company_street)
+            const hqAddress = '{{ auth('customer')->user()->company_street }} {{ auth('customer')->user()->company_house_number }}, {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}, {{ auth('customer')->user()->company_country ?? "Deutschland" }}';
+            try {
+                const hqCoords = await this.geocodeAddress(hqAddress);
+                if (hqCoords.lat && hqCoords.lon) {
+                    this.map.setView([hqCoords.lat, hqCoords.lon], 15);
+
+                    // Popup öffnen
+                    const hqMarker = this.markers.find(m => m.getLatLng().lat === parseFloat(hqCoords.lat));
+                    if (hqMarker) {
+                        hqMarker.openPopup();
+                    }
+                }
+            } catch (error) {
+                console.error('Error zooming to HQ:', error);
+            }
+            @endif
+        },
+
+        zoomToBranch(branchId) {
+            if (!this.map) return;
+
+            const branch = this.branches.find(b => b.id === branchId);
+            if (branch && branch.latitude && branch.longitude) {
+                this.map.setView([parseFloat(branch.latitude), parseFloat(branch.longitude)], 15);
+
+                // Popup öffnen
+                const marker = this.markers.find(m => {
+                    const lat = m.getLatLng().lat;
+                    const lng = m.getLatLng().lng;
+                    return Math.abs(lat - parseFloat(branch.latitude)) < 0.0001 &&
+                           Math.abs(lng - parseFloat(branch.longitude)) < 0.0001;
+                });
+
+                if (marker) {
+                    marker.openPopup();
+                }
+            }
+        },
+
+        async loadBranches() {
+            try {
+                const response = await fetch('/customer/branches');
+                const data = await response.json();
+                if (data.success) {
+                    this.branches = data.branches;
+                    this.renderBranches();
+                    this.updateMap();
+                }
+            } catch (error) {
+                console.error('Error loading branches:', error);
+            }
+        },
+
+        renderBranches() {
+            const list = document.getElementById('branches-list');
+            const countEl = document.getElementById('branches-count');
+            if (!list) return;
+
+            let html = '';
+
+            // Headquarters - mit Klick-Funktion
+            html += `<div class="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-hq'))">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900 text-sm">Hauptsitz</h4>
+                        <p class="text-xs text-gray-600 mt-1">
+                            {{ auth('customer')->user()->company_street }} {{ auth('customer')->user()->company_house_number }}<br>
+                            {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}
+                        </p>
+                    </div>
+                </div>
+            </div>`;
+
+            // Branches - mit Klick-Funktion
+            this.branches.forEach(branch => {
+                html += `<div class="bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="window.dispatchEvent(new CustomEvent('zoom-to-branch', { detail: { id: ${branch.id} } }))">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-900 text-sm">${branch.name}</h4>
+                            <p class="text-xs text-gray-600 mt-1">
+                                ${branch.street} ${branch.house_number || ''}<br>
+                                ${branch.postal_code} ${branch.city}
+                            </p>
+                        </div>
+                        <button onclick="event.stopPropagation(); deleteBranch(${branch.id})" class="text-red-600 hover:text-red-800 text-xs">
+                            <i class="fa-regular fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            if (this.branches.length === 0) {
+                html += `<div class="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300 text-center">
+                    <i class="fa-regular fa-building text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-sm text-gray-500">Keine weiteren Filialen</p>
+                </div>`;
+            }
+
+            list.innerHTML = html;
+
+            // Update count: 1 Hauptsitz + Anzahl Filialen
+            const totalCount = 1 + this.branches.length;
+            if (countEl) {
+                countEl.textContent = `(${totalCount})`;
+            }
+        },
+
+        initMap() {
+            setTimeout(() => {
+                const mapEl = document.getElementById('branches-map');
+                if (!mapEl || this.map) return; // Verhindere doppelte Initialisierung
+
+                // Initialisiere Karte mit Bounds für DACH-Region (Deutschland, Österreich, Schweiz)
+                this.map = L.map('branches-map');
+
+                // Definiere die Bounds für DACH-Region
+                const dachBounds = [
+                    [47.0, 5.8],   // Südwest (Schweiz)
+                    [55.1, 15.0]   // Nordost (Deutschland)
+                ];
+
+                this.map.fitBounds(dachBounds);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(this.map);
+
+                // Initialisiere Marker Cluster Group
+                this.markerClusterGroup = L.markerClusterGroup({
+                    chunkedLoading: true,
+                    spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: true,
+                    maxClusterRadius: 50
+                });
+
+                this.map.addLayer(this.markerClusterGroup);
+
+                this.updateMap();
+            }, 500);
+        },
+
+        async updateMap() {
+            if (!this.map || !this.markerClusterGroup) return;
+
+            // Clear existing markers from cluster group
+            this.markerClusterGroup.clearLayers();
+            this.markers = [];
+
+            // Add HQ marker - geocode the headquarters address
+            @if(auth('customer')->user()->company_street)
+            const hqAddress = '{{ auth('customer')->user()->company_street }} {{ auth('customer')->user()->company_house_number }}, {{ auth('customer')->user()->company_postal_code }} {{ auth('customer')->user()->company_city }}, {{ auth('customer')->user()->company_country ?? "Deutschland" }}';
+            try {
+                const hqCoords = await this.geocodeAddress(hqAddress);
+                if (hqCoords.lat && hqCoords.lon) {
+                    const hqMarker = L.marker([hqCoords.lat, hqCoords.lon], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    })
+                        .bindPopup(`<b>Hauptsitz</b><br>{{ auth('customer')->user()->company_name }}<br>${hqAddress}`);
+
+                    this.markerClusterGroup.addLayer(hqMarker);
+                    this.markers.push(hqMarker);
+                }
+            } catch (error) {
+                console.error('Error geocoding HQ:', error);
+            }
+            @endif
+
+            // Add branch markers
+            this.branches.forEach(branch => {
+                if (branch.latitude && branch.longitude) {
+                    const marker = L.marker([branch.latitude, branch.longitude], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    })
+                        .bindPopup(`<b>${branch.name}</b><br>${branch.street} ${branch.house_number || ''}<br>${branch.postal_code} ${branch.city}`);
+
+                    this.markerClusterGroup.addLayer(marker);
+                    this.markers.push(marker);
+                }
+            });
+
+            // Fit bounds if there are markers
+            if (this.markers.length > 0) {
+                const bounds = this.markerClusterGroup.getBounds();
+                if (bounds.isValid()) {
+                    this.map.fitBounds(bounds.pad(0.1));
+                }
+            }
+        },
+
+        async geocodeAddress(address) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
+                const data = await response.json();
+                if (data.length > 0) {
+                    return {
+                        lat: parseFloat(data[0].lat),
+                        lon: parseFloat(data[0].lon)
+                    };
+                }
+            } catch (error) {
+                console.error('Geocoding error:', error);
+            }
+            return { lat: null, lon: null };
+        },
+
+        openModal() {
+            this.showModal = true;
+        },
+
+        closeModal() {
+            this.showModal = false;
+            this.form = { name: '', street: '', house_number: '', postal_code: '', city: '', country: 'Deutschland' };
+        },
+
+        async saveBranch() {
+            try {
+                const response = await fetch('/customer/branches', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(this.form)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.closeModal();
+                    this.loadBranches();
+                }
+            } catch (error) {
+                console.error('Error saving branch:', error);
+            }
+        }
+    };
+}
+
+async function deleteBranch(id) {
+    if (!confirm('Möchten Sie diese Filiale wirklich löschen?')) return;
+
+    try {
+        const response = await fetch(`/customer/branches/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Error deleting branch:', error);
+    }
+}
+</script>
+@endpush

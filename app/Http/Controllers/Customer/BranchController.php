@@ -1,0 +1,155 @@
+<?php
+
+namespace App\Http\Controllers\Customer;
+
+use App\Http\Controllers\Controller;
+use App\Models\Branch;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class BranchController extends Controller
+{
+    public function index()
+    {
+        $customer = auth('customer')->user();
+        $branches = $customer->branches()->orderBy('is_headquarters', 'desc')->orderBy('created_at')->get();
+
+        return response()->json([
+            'success' => true,
+            'branches' => $branches
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'additional' => 'nullable|string|max:255',
+            'street' => 'required|string|max:255',
+            'house_number' => 'nullable|string|max:50',
+            'postal_code' => 'required|string|max:20',
+            'city' => 'required|string|max:255',
+            'country' => 'required|string|max:255',
+        ]);
+
+        $customer = auth('customer')->user();
+
+        // Geocode the address
+        $address = "{$validated['street']} {$validated['house_number']}, {$validated['postal_code']} {$validated['city']}, {$validated['country']}";
+        $coordinates = $this->geocodeAddress($address);
+
+        $branch = $customer->branches()->create([
+            'name' => $validated['name'],
+            'additional' => $validated['additional'] ?? null,
+            'street' => $validated['street'],
+            'house_number' => $validated['house_number'] ?? null,
+            'postal_code' => $validated['postal_code'],
+            'city' => $validated['city'],
+            'country' => $validated['country'],
+            'latitude' => $coordinates['lat'] ?? null,
+            'longitude' => $coordinates['lon'] ?? null,
+            'is_headquarters' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'branch' => $branch,
+            'message' => 'Filiale erfolgreich hinzugefügt'
+        ]);
+    }
+
+    public function update(Request $request, Branch $branch)
+    {
+        // Check ownership
+        if ($branch->customer_id !== auth('customer')->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'additional' => 'nullable|string|max:255',
+            'street' => 'required|string|max:255',
+            'house_number' => 'nullable|string|max:50',
+            'postal_code' => 'required|string|max:20',
+            'city' => 'required|string|max:255',
+            'country' => 'required|string|max:255',
+        ]);
+
+        // Geocode the address
+        $address = "{$validated['street']} {$validated['house_number']}, {$validated['postal_code']} {$validated['city']}, {$validated['country']}";
+        $coordinates = $this->geocodeAddress($address);
+
+        $branch->update([
+            'name' => $validated['name'],
+            'additional' => $validated['additional'],
+            'street' => $validated['street'],
+            'house_number' => $validated['house_number'],
+            'postal_code' => $validated['postal_code'],
+            'city' => $validated['city'],
+            'country' => $validated['country'],
+            'latitude' => $coordinates['lat'] ?? $branch->latitude,
+            'longitude' => $coordinates['lon'] ?? $branch->longitude,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'branch' => $branch,
+            'message' => 'Filiale erfolgreich aktualisiert'
+        ]);
+    }
+
+    public function destroy(Branch $branch)
+    {
+        // Check ownership
+        if ($branch->customer_id !== auth('customer')->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        // Prevent deletion of headquarters
+        if ($branch->is_headquarters) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Der Hauptsitz kann nicht gelöscht werden'
+            ], 422);
+        }
+
+        $branch->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Filiale erfolgreich gelöscht'
+        ]);
+    }
+
+    private function geocodeAddress(string $address): array
+    {
+        try {
+            // Add User-Agent header as required by Nominatim usage policy
+            $response = Http::withHeaders([
+                'User-Agent' => 'Laravel-RiskManagement/1.0'
+            ])->get('https://nominatim.openstreetmap.org/search', [
+                'q' => $address,
+                'format' => 'json',
+                'limit' => 1,
+            ]);
+
+            \Log::info('Geocoding request for: ' . $address);
+            \Log::info('Geocoding response status: ' . $response->status());
+
+            if ($response->successful() && count($response->json()) > 0) {
+                $result = $response->json()[0];
+                \Log::info('Geocoding successful: lat=' . $result['lat'] . ', lon=' . $result['lon']);
+                return [
+                    'lat' => $result['lat'],
+                    'lon' => $result['lon'],
+                ];
+            } else {
+                \Log::warning('Geocoding returned no results for: ' . $address);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Geocoding failed: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+}
