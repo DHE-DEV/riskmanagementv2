@@ -14,13 +14,16 @@ return new class extends Migration
         if (!Schema::hasTable('cities')) {
             Schema::create('cities', function (Blueprint $table) {
                 $table->id();
-                $table->string('name');
+                $table->json('name_translations');
                 $table->foreignId('country_id')->constrained()->onDelete('cascade');
                 $table->foreignId('region_id')->nullable()->constrained()->onDelete('cascade');
-                $table->decimal('latitude', 10, 8)->nullable();
-                $table->decimal('longitude', 11, 8)->nullable();
-                $table->boolean('is_active')->default(true);
+                $table->integer('population')->nullable();
+                $table->decimal('lat', 10, 6)->nullable();
+                $table->decimal('lng', 11, 6)->nullable();
+                $table->boolean('is_capital')->default(false);
+                $table->boolean('is_regional_capital')->default(false);
                 $table->timestamps();
+                $table->softDeletes();
             });
         }
     }

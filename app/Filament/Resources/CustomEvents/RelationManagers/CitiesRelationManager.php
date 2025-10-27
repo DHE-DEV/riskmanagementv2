@@ -31,10 +31,10 @@ class CitiesRelationManager extends RelationManager
                 Select::make('recordId')
                     ->label('Stadt')
                     ->options(fn () => City::query()
-                        ->orderBy('name')
+                        ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
                         ->limit(100)
                         ->get()
-                        ->mapWithKeys(fn (City $c) => [$c->id => $c->name])
+                        ->mapWithKeys(fn (City $c) => [$c->id => $c->getName('de')])
                         ->toArray()
                     )
                     ->searchable()
@@ -71,18 +71,25 @@ class CitiesRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('city_name')
                     ->label('Stadt')
-                    ->searchable()
-                    ->sortable(),
+                    ->getStateUsing(fn ($record) => $record->getName('de'))
+                    ->searchable(query: function ($query, string $search): Builder {
+                        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
+                                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                    })
+                    ->sortable(query: function ($query, string $direction): Builder {
+                        return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) {$direction}");
+                    }),
 
                 Tables\Columns\TextColumn::make('country.name_translations')
                     ->label('Land')
                     ->formatStateUsing(fn ($record) => $record->country ? $record->country->getName('de') : '-')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('region.name')
+                Tables\Columns\TextColumn::make('region_name')
                     ->label('Region')
+                    ->getStateUsing(fn ($record) => $record->region ? $record->region->getName('de') : '-')
                     ->sortable()
                     ->toggleable(),
 
@@ -127,13 +134,13 @@ class CitiesRelationManager extends RelationManager
 
                                 return City::query()
                                     ->whereNotIn('id', $existingIds)
-                                    ->orderBy('name')
+                                    ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
                                     ->limit(100)
                                     ->get()
                                     ->mapWithKeys(fn (City $c) => [
-                                        $c->id => $c->name . ' (' .
+                                        $c->id => $c->getName('de') . ' (' .
                                         ($c->country ? $c->country->getName('de') : '') .
-                                        ($c->region ? ', ' . $c->region->name : '') .
+                                        ($c->region ? ', ' . $c->region->getName('de') : '') .
                                         ')'
                                     ])
                                     ->toArray();
