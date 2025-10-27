@@ -31,10 +31,10 @@ class RegionsRelationManager extends RelationManager
                 Select::make('recordId')
                     ->label('Region')
                     ->options(fn () => Region::query()
-                        ->orderBy('name')
+                        ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
                         ->limit(100)
                         ->get()
-                        ->mapWithKeys(fn (Region $r) => [$r->id => $r->name])
+                        ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
                         ->toArray()
                     )
                     ->searchable()
@@ -71,10 +71,17 @@ class RegionsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('region_name')
                     ->label('Region')
-                    ->searchable()
-                    ->sortable(),
+                    ->getStateUsing(fn ($record) => $record->getName('de'))
+                    ->searchable(query: function ($query, string $search): Builder {
+                        return $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
+                                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"])
+                                    ->orWhere('code', 'like', "%{$search}%");
+                    })
+                    ->sortable(query: function ($query, string $direction): Builder {
+                        return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) {$direction}");
+                    }),
 
                 Tables\Columns\TextColumn::make('country.name_translations')
                     ->label('Land')
@@ -122,10 +129,10 @@ class RegionsRelationManager extends RelationManager
 
                                 return Region::query()
                                     ->whereNotIn('id', $existingIds)
-                                    ->orderBy('name')
+                                    ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
                                     ->limit(100)
                                     ->get()
-                                    ->mapWithKeys(fn (Region $r) => [$r->id => $r->name . ' (' . ($r->country ? $r->country->getName('de') : '') . ')'])
+                                    ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de') . ' (' . ($r->country ? $r->country->getName('de') : '') . ')'])
                                     ->toArray();
                             })
                             ->searchable()
