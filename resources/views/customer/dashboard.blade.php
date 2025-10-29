@@ -1565,7 +1565,11 @@ function branchManager() {
                 if (!mapEl || this.map) return; // Verhindere doppelte Initialisierung
 
                 // Initialisiere Karte mit Bounds für DACH-Region (Deutschland, Österreich, Schweiz)
-                this.map = L.map('branches-map');
+                this.map = L.map('branches-map', {
+                    worldCopyJump: false,
+                    maxBounds: [[-90, -180], [90, 180]],
+                    minZoom: 2
+                });
 
                 // Definiere die Bounds für DACH-Region
                 const dachBounds = [
@@ -1578,6 +1582,17 @@ function branchManager() {
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
                 }).addTo(this.map);
+
+                // Window Resize Event-Listener für dynamische Karten-Anpassung
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (this.map) {
+                            this.map.invalidateSize();
+                        }
+                    }, 250);
+                });
 
                 // Initialisiere Marker Cluster Group
                 this.markerClusterGroup = L.markerClusterGroup({

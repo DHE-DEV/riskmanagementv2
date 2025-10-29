@@ -23,12 +23,20 @@ class AirportsTable
                     ->searchable(),
                 TextColumn::make('icao_code')
                     ->searchable(),
-                TextColumn::make('city.id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('country.id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('city_name')
+                    ->label('Stadt')
+                    ->state(fn ($record) => $record->city?->getName('de'))
+                    ->searchable()
+                    ->sortable(query: function ($query, $direction) {
+                        return $query->orderBy('city_id', $direction);
+                    }),
+                TextColumn::make('country_name')
+                    ->label('Land')
+                    ->state(fn ($record) => $record->country?->getName('de'))
+                    ->searchable()
+                    ->sortable(query: function ($query, $direction) {
+                        return $query->orderBy('country_id', $direction);
+                    }),
                 TextColumn::make('lat')
                     ->numeric()
                     ->sortable(),

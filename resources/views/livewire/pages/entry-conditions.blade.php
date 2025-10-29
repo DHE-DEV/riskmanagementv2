@@ -108,8 +108,15 @@
         }
 
         #entry-conditions-map {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+        }
+
+        #entry-conditions-map .leaflet-container {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
         }
 
         /* Details Sidebar rechts */
@@ -281,11 +288,11 @@
         }
 
         .entry-conditions-content-body .pds-embed__info-table .fa-check {
-            color: #10b981;
+            color: #6b7280;
         }
 
         .entry-conditions-content-body .pds-embed__info-table .fa-xmark {
-            color: #ef4444;
+            color: #6b7280;
         }
 
         /* Span-Container für Icons in der Tabelle */
@@ -439,7 +446,7 @@
                             </div>
                             <div id="entryPossibleSection" class="px-2 py-2" style="display: none;">
                                 <!-- Hidden checkboxes for state management -->
-                                <input type="checkbox" id="filter-passport" onchange="applyEntryConditionsFilters()" checked style="display: none;">
+                                <input type="checkbox" id="filter-passport" onchange="applyEntryConditionsFilters()" style="display: none;">
                                 <input type="checkbox" id="filter-id-card" onchange="applyEntryConditionsFilters()" style="display: none;">
                                 <input type="checkbox" id="filter-temp-passport" onchange="applyEntryConditionsFilters()" style="display: none;">
                                 <input type="checkbox" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()" style="display: none;">
@@ -580,10 +587,14 @@
         window.countryCoordinates = new Map(); // Map von ISO-Code zu {name, lat, lng, capital_name}
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // Map initialisieren
-            window.entryConditionsMap = L.map('entry-conditions-map').setView([20, 0], 2);
+            // Map initialisieren mit Zoom-Beschränkungen (wie Dashboard)
+            window.entryConditionsMap = L.map('entry-conditions-map', {
+                worldCopyJump: false,
+                maxBounds: [[-90, -180], [90, 180]],
+                minZoom: 2  // Verhindert Herauszoomen über Weltansicht hinaus
+            }).setView([20, 0], 2);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(window.entryConditionsMap);
@@ -592,6 +603,22 @@
 
             // Layer Group für Länder-Highlighting
             window.countryLayersGroup = L.layerGroup().addTo(window.entryConditionsMap);
+
+            // Karte an Container-Größe anpassen
+            setTimeout(() => {
+                window.entryConditionsMap.invalidateSize();
+            }, 100);
+
+            // Window Resize Event-Listener für dynamische Karten-Anpassung
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    if (window.entryConditionsMap) {
+                        window.entryConditionsMap.invalidateSize();
+                    }
+                }, 250);
+            });
 
             // Länder-Koordinaten laden
             await loadCountryCoordinates();

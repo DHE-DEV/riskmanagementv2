@@ -246,11 +246,14 @@
     });
 
     function initMap() {
-        // Initialize the map centered on Germany
+        // Initialize the map centered on Germany with Zoom-Beschränkungen
         map = L.map('branches-map', {
             center: [51.1657, 10.4515],
             zoom: 6,
-            zoomControl: true
+            zoomControl: true,
+            worldCopyJump: false,
+            maxBounds: [[-90, -180], [90, 180]],
+            minZoom: 2
         });
 
         // Add OpenStreetMap tile layer
@@ -258,6 +261,17 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         }).addTo(map);
+
+        // Window Resize Event-Listener für dynamische Karten-Anpassung
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 250);
+        });
 
         // Initialize marker cluster group
         markersLayer = L.markerClusterGroup({

@@ -401,13 +401,28 @@
         let centerMarkerLayer = null; // Für Suchzentrum-Marker (nicht geclustert)
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Map initialisieren
-            bookingMap = L.map('booking-map').setView([51.1657, 10.4515], 6); // Deutschland zentriert
+            // Map initialisieren mit Zoom-Beschränkungen
+            bookingMap = L.map('booking-map', {
+                worldCopyJump: false,
+                maxBounds: [[-90, -180], [90, 180]],
+                minZoom: 2  // Verhindert Herauszoomen über Weltansicht hinaus
+            }).setView([51.1657, 10.4515], 6); // Deutschland zentriert
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(bookingMap);
+
+            // Window Resize Event-Listener für dynamische Karten-Anpassung
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    if (bookingMap) {
+                        bookingMap.invalidateSize();
+                    }
+                }, 250);
+            });
 
             // Marker-Cluster-Layer statt normalem LayerGroup
             markersLayer = L.markerClusterGroup({

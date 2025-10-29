@@ -128,31 +128,33 @@ class AirportForm
                                             $lng = trim($parts[1]);
 
                                             if (is_numeric($lat) && is_numeric($lng)) {
-                                                $set('latitude', $lat);
-                                                $set('longitude', $lng);
+                                                $set('lat', $lat);
+                                                $set('lng', $lng);
                                             }
                                         }
                                     }),
 
                                 \Filament\Schemas\Components\Grid::make(2)
                                     ->schema([
-                                        TextInput::make('latitude')
+                                        TextInput::make('lat')
                                             ->label('Breitengrad')
-                                            ->numeric()
-                                            ->step('any')
-                                            ->minValue(-90)
-                                            ->maxValue(90)
+                                            ->rule('numeric')
+                                            ->rule('min:-90')
+                                            ->rule('max:90')
                                             ->placeholder('z.B. 50.1109 oder -76.5467')
-                                            ->helperText('Werte zwischen -90 und +90'),
+                                            ->helperText('Werte zwischen -90 und +90')
+                                            ->inputMode('decimal')
+                                            ->extraInputAttributes(['step' => 'any']),
 
-                                        TextInput::make('longitude')
+                                        TextInput::make('lng')
                                             ->label('Längengrad')
-                                            ->numeric()
-                                            ->step('any')
-                                            ->minValue(-180)
-                                            ->maxValue(180)
+                                            ->rule('numeric')
+                                            ->rule('min:-180')
+                                            ->rule('max:180')
                                             ->placeholder('z.B. 8.6821 oder -76.5467')
-                                            ->helperText('Werte zwischen -180 und +180'),
+                                            ->helperText('Werte zwischen -180 und +180')
+                                            ->inputMode('decimal')
+                                            ->extraInputAttributes(['step' => 'any']),
                                     ]),
                             ]),
                     ]),

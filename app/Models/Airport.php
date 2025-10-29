@@ -29,8 +29,8 @@ class Airport extends Model
     ];
 
     protected $casts = [
-        'lat' => 'decimal:6',
-        'lng' => 'decimal:6',
+        'lat' => 'decimal:16',
+        'lng' => 'decimal:16',
         'altitude' => 'integer',
     ];
 
