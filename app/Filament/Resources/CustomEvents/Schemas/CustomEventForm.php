@@ -236,11 +236,28 @@ class CustomEventForm
                     ->label('Startdatum')
                     ->required()
                     ->default(now())
+                    ->native(false)
+                    ->seconds(false)
                     ->displayFormat('d.m.Y H:i'),
 
                 DateTimePicker::make('end_date')
                     ->label('Enddatum')
                     ->displayFormat('d.m.Y H:i')
+                    ->native(false)
+                    ->seconds(false)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (Set $set, $state) {
+                        if ($state) {
+                            // Parse das Datum
+                            $date = \Carbon\Carbon::parse($state);
+
+                            // Wenn die Uhrzeit 00:00:00 ist, setze auf 00:01:00
+                            if ($date->format('H:i:s') === '00:00:00') {
+                                $date->setTime(0, 1, 0);
+                                $set('end_date', $date->format('Y-m-d H:i:s'));
+                            }
+                        }
+                    })
                     ->helperText('Optional - für zeitlich begrenzte Events'),
 
                 // Koordinaten - ausgeblendet, da jetzt über Länder-Zuordnung verwaltet
