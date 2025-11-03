@@ -61,6 +61,11 @@
             <i class="fa-regular fa-building text-2xl" aria-hidden="true"></i>
         </a>
         @endif
+
+        <!-- Kreuzfahrt -->
+        <a href="{{ route('cruise') }}" class="p-3 {{ $active === 'cruise' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Kreuzfahrt">
+            <i class="fa-regular fa-ship text-2xl" aria-hidden="true"></i>
+        </a>
     </div>
 
     <!-- Bottom Buttons -->

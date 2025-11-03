@@ -114,3 +114,12 @@ Route::get('/countries-geojson', function () {
         'Cache-Control' => 'public, max-age=86400' // Cache for 24 hours
     ]);
 })->name('countries.geojson');
+
+// Cruise Search API Routes
+Route::prefix('cruise-search')->group(function () {
+    Route::get('/cruise-lines', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getCruiseLines'])->name('cruise-search.cruise-lines');
+    Route::get('/ships', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getShips'])->name('cruise-search.ships');
+    Route::get('/routes', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getRoutes'])->name('cruise-search.routes');
+    Route::get('/cruise-dates', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getCruiseDates'])->name('cruise-search.cruise-dates');
+    Route::post('/search', [\App\Http\Controllers\Api\CruiseSearchController::class, 'search'])->name('cruise-search.search');
+});

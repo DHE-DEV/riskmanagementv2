@@ -64,6 +64,10 @@ Route::get('/branches', function () {
     ]);
 })->name('branches');
 
+Route::get('/cruise', function () {
+    return view('livewire.pages.cruise');
+})->name('cruise');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

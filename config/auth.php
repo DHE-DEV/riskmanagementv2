@@ -4,6 +4,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Authentication Enabled
+    |--------------------------------------------------------------------------
+    |
+    | This option controls whether authentication is enabled globally for the
+    | application. When set to false, authentication middleware will be bypassed.
+    |
+    */
+
+    'enabled' => env('AUTHENTICATION_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Defaults
     |--------------------------------------------------------------------------
     |
