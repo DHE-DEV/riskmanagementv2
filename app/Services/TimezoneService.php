@@ -163,6 +163,11 @@ class TimezoneService
             return 'Europe/Rome';
         }
 
+        // Griechenland
+        if ($latitude >= 34.8 && $latitude <= 41.8 && $longitude >= 19.4 && $longitude <= 28.2) {
+            return 'Europe/Athens';
+        }
+
         // Japan
         if ($latitude >= 24.0 && $latitude <= 46.0 && $longitude >= 123.0 && $longitude <= 146.0) {
             return 'Asia/Tokyo';

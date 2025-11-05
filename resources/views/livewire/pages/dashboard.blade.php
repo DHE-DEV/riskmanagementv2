@@ -2444,11 +2444,11 @@ function getWeatherIcon(weatherMain) {
 
 // Handle Details button click with tracking
 function handleDetailsClick(eventId, isCustom, countryName = null) {
-    console.log('handleDetailsClick aufgerufen mit eventId:', eventId, 'countryName:', countryName);
-
     // Track click for custom events
     if (isCustom && eventId) {
-        trackEventClick(eventId, 'details_button');
+        // Convert eventId to number if it's a string
+        const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
+        trackEventClick(numericEventId, 'details_button');
     }
 
     // Finde das richtige Event basierend auf der Original-ID
@@ -2856,14 +2856,31 @@ async function loadEventDetails(event) {
                 const tick = () => {
                     const now = new Date();
                     if (tzName) {
-                        const timeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, hour: '2-digit', minute: '2-digit', hour12: false });
-                        const dateFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, day: '2-digit', month: '2-digit', year: 'numeric' });
-                        if (timeEl) timeEl.textContent = timeFmt.format(now);
-                        if (dateEl) dateEl.textContent = dateFmt.format(now);
-                        if (zoneEl) zoneEl.textContent = tzName;
-                        if (abbrEl) abbrEl.textContent = '';
-                        // Korrekte Zeitdifferenz zu Berlin berechnen
-                        if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
+                        try {
+                            const timeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, hour: '2-digit', minute: '2-digit', hour12: false });
+                            const dateFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, day: '2-digit', month: '2-digit', year: 'numeric' });
+                            if (timeEl) timeEl.textContent = timeFmt.format(now);
+                            if (dateEl) dateEl.textContent = dateFmt.format(now);
+                            if (zoneEl) zoneEl.textContent = tzName;
+                            if (abbrEl) abbrEl.textContent = '';
+                            // Korrekte Zeitdifferenz zu Berlin berechnen
+                            if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
+                        } catch (e) {
+                            // Fallback to offset-based calculation if timezone name is invalid
+                            console.warn('Invalid timezone name:', tzName, '- using offset fallback');
+                            const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+                            const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
+                            const hh = String(local.getHours()).padStart(2, '0');
+                            const mm = String(local.getMinutes()).padStart(2, '0');
+                            if (timeEl) timeEl.textContent = `${hh}:${mm}`;
+                            const dd = String(local.getDate()).padStart(2, '0');
+                            const MM = String(local.getMonth() + 1).padStart(2, '0');
+                            const yyyy = local.getFullYear();
+                            if (dateEl) dateEl.textContent = `${dd}.${MM}.${yyyy}`;
+                            if (zoneEl) zoneEl.textContent = tzName;
+                            if (abbrEl) abbrEl.textContent = '';
+                            if (diffEl) diffEl.textContent = formatDiff(offset);
+                        }
                     } else {
                         const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
                         const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
