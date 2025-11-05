@@ -1510,20 +1510,17 @@ let continents = [];
 // Load continents from database
 async function loadContinentsFromDB() {
     try {
-        console.log('Loading continents from database...');
         const response = await fetch('/api/continents');
 
         if (response.ok) {
             const data = await response.json();
             if (data.success && data.data) {
                 continents = data.data;
-                console.log(`Loaded ${continents.length} continents from database`);
                 return true;
             }
         }
     } catch (error) {
-        console.error('Failed to load continents from database:', error);
-        console.log('Using empty continents array as fallback');
+        // Silent error handling
     }
     return false;
 }
@@ -1531,7 +1528,6 @@ async function loadContinentsFromDB() {
 // Load country mappings from database
 async function loadCountryMappingsFromDB() {
     try {
-        console.log('Loading country mappings from database...');
         const response = await fetch('/api/countries/mappings');
 
         if (response.ok) {
@@ -1539,13 +1535,11 @@ async function loadCountryMappingsFromDB() {
             if (data.success && data.data) {
                 // Override static mappings with database mappings
                 countryNameMapping = data.data;
-                console.log(`Loaded ${data.count} country mappings from database`);
                 return true;
             }
         }
     } catch (error) {
-        console.error('Failed to load country mappings from database:', error);
-        console.log('Using static country mappings as fallback');
+        // Silent error handling
     }
     return false;
 }
@@ -1718,8 +1712,6 @@ function initializeMap() {
 
     // Load GeoJSON data for countries
     loadCountryBoundaries();
-
-    console.log('Leaflet Map initialized');
 }
 
 // Initiale Daten laden
@@ -1742,12 +1734,9 @@ async function loadDashboardData() {
             if (gdacsResult.success) {
                 const gdacsEvents = processGdacsEvents(gdacsResult.data.events);
                 allEvents = allEvents.concat(gdacsEvents);
-                console.log(`Loaded ${gdacsEvents.length} GDACS events`);
-            } else {
-                console.log('GDACS integration disabled or failed:', gdacsResult.message);
             }
         } else {
-            console.log('GDACS integration disabled via configuration');
+            // GDACS integration disabled
         }
         
         // CustomEvents laden
@@ -1758,7 +1747,6 @@ async function loadDashboardData() {
         if (customResult.success) {
             const customEvents = processCustomEvents(customResult.data.events);
             allEvents = allEvents.concat(customEvents);
-            console.log(`Loaded ${customEvents.length} custom events`);
         }
         
         // Globale allEvents Variable setzen
@@ -1803,21 +1791,6 @@ async function loadDashboardData() {
             }
         }
 
-        // Debug: Risikostufen-Werte in den ersten paar Events ausgeben
-        if (filteredByContinent.length > 0 && window.riskFilterDebug !== true) {
-            window.riskFilterDebug = true;
-            console.log('=== RISK LEVEL DEBUG ===');
-            filteredByContinent.slice(0, 5).forEach((e, i) => {
-                console.log(`Event ${i + 1}:`, {
-                    risk_level: e.risk_level,
-                    alert_level: e.alert_level,
-                    alertlevel: e.alertlevel,
-                    severity: e.severity,
-                    title: e.title || e.event_title
-                });
-            });
-            console.log('=== END RISK LEVEL DEBUG ===');
-        }
 
         // Dann alle anderen Filter auf das Kontinente-gefilterte Ergebnis anwenden
         const filtered = filteredByContinent.filter(e => {
@@ -1877,18 +1850,6 @@ async function loadDashboardData() {
                 else riskLevel = 'critical';
             }
             
-            // Debug logging für Risiko-Filter (nur erste 3 Events) - NACH dem Mapping
-            if (!window.riskFilterDebugCount) window.riskFilterDebugCount = 0;
-            if (window.riskFilterDebugCount < 3) {
-                console.log(`Event ${window.riskFilterDebugCount + 1} Risk Mapping:`, {
-                    title: e.title,
-                    originalRiskLevel,
-                    originalPriority,
-                    source: e.source,
-                    finalMappedRiskLevel: riskLevel
-                });
-                window.riskFilterDebugCount++;
-            }
             
             const allowRisk = window.riskFilter?.[riskLevel] ?? true;
             
@@ -1951,9 +1912,6 @@ async function loadDashboardData() {
         renderEvents();
         updateStatistics();
         updateLastUpdated();
-        
-        console.log(`Total: ${currentEvents.length} events loaded`);
-        
     } catch (error) {
         console.error('Error loading dashboard data:', error);
         // Fallback zu Beispieldaten
@@ -2414,10 +2372,6 @@ function handleDetailsClick(eventId, isCustom, countryName = null) {
     // Zuerst versuche direkt über die ID zu finden
     event = window.eventById[eventId];
 
-    if (event) {
-        console.log('Event direkt gefunden:', event.title, 'ID:', event.id);
-    }
-
     // Falls nicht gefunden, suche nur nach der exakten original_event_id (nicht nach id)
     // Dies verhindert, dass das falsche Event gefunden wird
     if (!event) {
@@ -2436,23 +2390,19 @@ function handleDetailsClick(eventId, isCustom, countryName = null) {
                 const countryMatch = matchingEvents.find(e => e.country_name === countryName);
                 if (countryMatch) {
                     event = countryMatch;
-                    console.log('Event mit passendem Land gefunden:', event.title, 'Land:', countryName);
                 } else {
                     // Fallback: erstes Event
                     event = matchingEvents[0];
-                    console.log('Kein Event mit Land gefunden, verwende erstes:', event.title);
                 }
             } else {
                 // Nimm das erste gefundene Event (alle sollten dieselben Basis-Daten haben)
                 event = matchingEvents[0];
-                console.log('Event über original_event_id gefunden:', event.title, 'aus', matchingEvents.length, 'Matches');
             }
         }
     }
 
     // Wenn immer noch nicht gefunden, versuche API-Call für Custom Events
     if (!event && isCustom && eventId) {
-        console.log('Event nicht im Cache, lade von API...');
         // Lade Event direkt von der API
         fetch(`/api/custom-events/${eventId}`)
             .then(response => response.json())
@@ -2473,7 +2423,6 @@ function handleDetailsClick(eventId, isCustom, countryName = null) {
 
     // Fallback auf leeres Objekt
     if (!event) {
-        console.warn('Event nicht gefunden für ID:', eventId);
         event = {};
     }
 
@@ -2583,21 +2532,6 @@ async function loadEventDetails(event) {
 
             result = await response.json();
         }
-        
-        // Debug-Logging
-        console.log('Event Details Debug:', {
-            id: event.id,
-            title: event.title,
-            source: event.source,
-            event_type: event.event_type,
-            mapped_type: mapEventType(event.event_type, event.event_type_name),
-            priority: event.priority,
-            severity: event.severity,
-            country: event.country,
-            country_name: event.country_name,
-            country_relation: event.country_relation,
-            gdacs_date_added: event.gdacs_date_added
-        });
 
         // Erstelle detaillierte Event-Anzeige
         let detailsHtml = `
@@ -2964,8 +2898,6 @@ function loadSampleData() {
     renderEvents();
     updateStatistics();
     updateLastUpdated();
-    
-    console.log(`Loaded ${currentEvents.length} sample events`);
 }
 
 // Statistiken laden
@@ -4145,8 +4077,6 @@ function createEventElement(event) {
 
         // Wenn kein Land/keine Koordinaten zugewiesen: Direkt Details anzeigen
         if (!event.latitude || !event.longitude) {
-            console.log('Event ohne Koordinaten - öffne direkt Details:', event.title);
-
             // Schließe alle geöffneten Popups auf der Karte
             if (map) {
                 map.closePopup();
@@ -4166,7 +4096,6 @@ function createEventElement(event) {
         let targetMarker = null;
 
         // Finde den richtigen Marker
-        console.log('Suche Marker für Event:', event.title, 'ID:', event.id, 'Original-ID:', event.original_event_id);
 
         // Array für alle passenden Marker
         const matchingMarkers = [];
@@ -4177,21 +4106,11 @@ function createEventElement(event) {
                 const markerId = marker.eventData.original_id || marker.eventData.original_event_id || marker.eventData.id;
                 const eventId = event.original_event_id || event.id;
 
-                // Debug-Ausgabe für jeden Marker
-                if (marker.eventData.title && (marker.eventData.title.includes('Hundetaxe') || marker.eventData.title.includes('Chikungunya'))) {
-                    console.log('Prüfe Marker:', marker.eventData.title,
-                        'Marker-ID:', marker.eventData.id,
-                        'Original-ID:', marker.eventData.original_event_id,
-                        'Original_id:', marker.eventData.original_id,
-                        'Vergleiche mit Event-ID:', eventId);
-                }
-
                 // Prüfe verschiedene ID-Kombinationen
                 if (markerId == eventId || // == statt === für String/Number-Vergleich
                     marker.eventData.id == event.id ||
                     (marker.eventData.original_event_id && marker.eventData.original_event_id == eventId) ||
                     (marker.eventData.original_id && marker.eventData.original_id == eventId)) {
-                    console.log('MATCH gefunden für:', marker.eventData.title);
                     matchingMarkers.push(marker);
                 }
             }
@@ -4201,7 +4120,6 @@ function createEventElement(event) {
         if (matchingMarkers.length > 0) {
             // Versuche den Marker mit dem exakt passenden Titel zu finden
             targetMarker = matchingMarkers.find(m => m.eventData.title === event.title) || matchingMarkers[0];
-            console.log('Gewählter Marker:', targetMarker.eventData?.title);
         }
 
         // Fallback: Falls kein Marker über ID gefunden, versuche Koordinaten-Matching
@@ -4215,21 +4133,17 @@ function createEventElement(event) {
         }
 
         if (targetMarker && markerClusterGroup) {
-            console.log('Ziel-Marker gefunden:', targetMarker.eventData?.title || 'Unbekannt');
 
             // Verwende die eingebaute zoomToShowLayer Methode
             // Diese zoomt automatisch und löst Cluster auf wenn nötig
             markerClusterGroup.zoomToShowLayer(targetMarker, function() {
-                console.log('zoomToShowLayer Callback aufgerufen');
 
                 // Kleine Verzögerung für Animation
                 setTimeout(() => {
                     // Prüfe ob der Marker in einem Cluster ist
                     const cluster = markerClusterGroup.getVisibleParent(targetMarker);
-                    console.log('Visible parent:', cluster);
 
                     if (cluster && cluster !== targetMarker && cluster.spiderfy) {
-                        console.log('Marker ist in einem Cluster - öffne Cluster automatisch');
 
                         // Unspiderfy alle anderen Cluster zuerst
                         markerClusterGroup.unspiderfy();
@@ -4241,12 +4155,10 @@ function createEventElement(event) {
 
                             // Nach dem Spiderfy das spezifische Popup öffnen
                             setTimeout(() => {
-                                console.log('Öffne Popup nach Spiderfy');
                                 targetMarker.openPopup();
                             }, 400);
                         }, 100);
                     } else {
-                        console.log('Marker ist direkt sichtbar - öffne Popup');
                         // Marker ist direkt sichtbar
                         targetMarker.openPopup();
                     }
