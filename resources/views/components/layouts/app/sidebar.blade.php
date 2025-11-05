@@ -127,6 +127,43 @@
 
         {{ $slot }}
 
+        <!-- Footer -->
+        <footer class="border-t border-zinc-200 bg-zinc-50 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-center">
+                    <flux:modal.trigger name="disclaimer-modal">
+                        <flux:button variant="ghost" size="sm" x-on:click.prevent="$dispatch('open-modal', 'disclaimer-modal')">
+                            Haftungsausschluss
+                        </flux:button>
+                    </flux:modal.trigger>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Disclaimer Modal -->
+        <flux:modal name="disclaimer-modal" class="max-w-2xl">
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">Haftungsausschluss</flux:heading>
+                </div>
+
+                <div class="prose prose-sm dark:prose-invert max-w-none">
+                    <p>
+                        Die auf global-travel-monitor.eu bereitgestellten Informationen werden mit größter Sorgfalt recherchiert und regelmäßig aktualisiert. Dennoch kann keine Gewähr für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte übernommen werden. Alle Angaben erfolgen ohne Gewähr. Eine Haftung, insbesondere für eventuelle Schäden oder Konsequenzen, die durch die Nutzung der angebotenen Informationen entstehen, ist ausgeschlossen.
+                    </p>
+                    <p>
+                        Das Portal kann Verlinkungen zu externen Webseiten Dritter enthalten, auf deren Inhalte kein Einfluss besteht. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
+                    </p>
+                </div>
+
+                <div class="flex justify-end">
+                    <flux:modal.close>
+                        <flux:button variant="primary">Schließen</flux:button>
+                    </flux:modal.close>
+                </div>
+            </div>
+        </flux:modal>
+
         @fluxScripts
     </body>
 </html>

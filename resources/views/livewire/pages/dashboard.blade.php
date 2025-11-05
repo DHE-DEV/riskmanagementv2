@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Travel Monitor</title>
 
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -68,7 +65,7 @@
             background: white;
             border-bottom: 1px solid #e5e7eb;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 10000;
+            z-index: 50;
         }
         
         /* Footer - feststehend */
@@ -77,7 +74,7 @@
             height: 32px; /* 50% weniger als 64px */
             background: white;
             color: black;
-            z-index: 9999;
+            z-index: 50;
             border-top: 1px solid #e5e7eb;
         }
         
@@ -875,12 +872,119 @@
 <body>
 <div class="app-container">
     <!-- Fixed Header -->
-    <x-public-header />
+    <header class="header">
+        <div class="flex items-center justify-between h-full px-4">
+            <!-- Logo and Search -->
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
+                    <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
+                    </div>
+                <!--
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        placeholder="Land suchen..." 
+                        class="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        id="countrySearch"
+                    >
+                    <div class="absolute right-3 top-2.5">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>-->
+            </div>
+
+            <!-- Status and Actions -->
+            <div class="flex items-center space-x-4">
+                <button
+                    class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Daten aktualisieren"
+                    onclick="refreshData()"
+                    id="refreshButton"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
 
     <!-- Main Content Area -->
     <div class="main-content">
         <!-- Black Navigation Bar -->
-        <x-public-navigation active="dashboard" />
+        <nav class="navigation flex flex-col items-center justify-between py-4 h-full">
+            <!-- Top Buttons -->
+            <div class="flex flex-col items-center space-y-6">
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Menü" onclick="toggleRightContainer()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                
+                <!-- Statistiken Button - vorübergehend auskommentiert
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Statistiken" onclick="toggleStatistics()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </button>
+                -->
+                
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse" onclick="showSidebarLiveStatistics()">
+                    <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
+                </button>
+
+                @if(config('app.entry_conditions_enabled', true))
+                <a href="{{ route('entry-conditions') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Einreisebestimmungen">
+                    <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
+                </a>
+                @endif
+
+                @if(config('app.dashboard_booking_enabled', true))
+                <a href="/booking" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Buchungsmöglichkeit">
+                    <i class="fa-regular fa-calendar-check text-2xl" aria-hidden="true"></i>
+                </a>
+                @endif
+
+                @if(config('app.dashboard_airports_enabled', true))
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
+                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
+                </button>
+                @endif
+<!--
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Social Media" onclick="createSocialSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h8v8H8z"></path>
+                    </svg>
+                </button>
+                    -->
+            </div>
+            
+            <!-- Bottom Buttons -->
+            <div class="flex flex-col items-center space-y-3">
+                <!--
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Filter" onclick="createNewFilterSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                    </svg>
+                </button>
+    -->
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Karte zentrieren" onclick="centerMap()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="w-6 h-6" fill="currentColor" aria-hidden="true"><!--!Font Awesome Pro v7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2025 Fonticons, Inc.--><path d="M320 544C443.7 544 544 443.7 544 320C544 196.3 443.7 96 320 96C196.3 96 96 196.3 96 320C96 325.9 96.2 331.8 96.7 337.6L91.8 339.2C81.9 342.6 73.3 348.1 66.4 355.1C64.8 343.6 64 331.9 64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C308.1 576 296.4 575.2 284.9 573.6C291.9 566.7 297.4 558 300.7 548.2L302.3 543.3C308.1 543.8 314 544 319.9 544zM320 160C408.4 160 480 231.6 480 320C480 407.2 410.2 478.1 323.5 480L334.4 447.2C398.3 440 448 385.8 448 320C448 249.3 390.7 192 320 192C254.2 192 200 241.7 192.8 305.6L160 316.5C161.9 229.8 232.8 160 320 160zM315.3 324.7C319.6 329 321.1 335.3 319.2 341.1L255.2 533.1C253 539.6 246.9 544 240 544C233.1 544 227 539.6 224.8 533.1L201 461.6L107.3 555.3C101.1 561.5 90.9 561.5 84.7 555.3C78.5 549.1 78.5 538.9 84.7 532.7L178.4 439L107 415.2C100.4 413 96 406.9 96 400C96 393.1 100.4 387 106.9 384.8L298.9 320.8C304.6 318.9 311 320.4 315.3 324.7zM162.6 400L213.1 416.8C217.9 418.4 221.6 422.1 223.2 426.9L240 477.4L278.7 361.3L162.6 400z"/></svg>
+                </button>
+                <!--
+                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einstellungen" onclick="createSettingsSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </button>
+    -->
+            </div>
+        </nav>
 
         <!-- Gray Sidebar -->
         <aside class="sidebar overflow-y-auto">
@@ -2297,11 +2401,11 @@ function getWeatherIcon(weatherMain) {
 
 // Handle Details button click with tracking
 function handleDetailsClick(eventId, isCustom, countryName = null) {
-    console.log('handleDetailsClick aufgerufen mit eventId:', eventId, 'countryName:', countryName);
-
     // Track click for custom events
     if (isCustom && eventId) {
-        trackEventClick(eventId, 'details_button');
+        // Convert eventId to number if it's a string
+        const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
+        trackEventClick(numericEventId, 'details_button');
     }
 
     // Finde das richtige Event basierend auf der Original-ID
@@ -2709,14 +2813,31 @@ async function loadEventDetails(event) {
                 const tick = () => {
                     const now = new Date();
                     if (tzName) {
-                        const timeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, hour: '2-digit', minute: '2-digit', hour12: false });
-                        const dateFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, day: '2-digit', month: '2-digit', year: 'numeric' });
-                        if (timeEl) timeEl.textContent = timeFmt.format(now);
-                        if (dateEl) dateEl.textContent = dateFmt.format(now);
-                        if (zoneEl) zoneEl.textContent = tzName;
-                        if (abbrEl) abbrEl.textContent = '';
-                        // Korrekte Zeitdifferenz zu Berlin berechnen
-                        if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
+                        try {
+                            const timeFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, hour: '2-digit', minute: '2-digit', hour12: false });
+                            const dateFmt = new Intl.DateTimeFormat('de-DE', { timeZone: tzName, day: '2-digit', month: '2-digit', year: 'numeric' });
+                            if (timeEl) timeEl.textContent = timeFmt.format(now);
+                            if (dateEl) dateEl.textContent = dateFmt.format(now);
+                            if (zoneEl) zoneEl.textContent = tzName;
+                            if (abbrEl) abbrEl.textContent = '';
+                            // Korrekte Zeitdifferenz zu Berlin berechnen
+                            if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
+                        } catch (e) {
+                            // Fallback to offset-based calculation if timezone name is invalid
+                            console.warn('Invalid timezone name:', tzName, '- using offset fallback');
+                            const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+                            const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
+                            const hh = String(local.getHours()).padStart(2, '0');
+                            const mm = String(local.getMinutes()).padStart(2, '0');
+                            if (timeEl) timeEl.textContent = `${hh}:${mm}`;
+                            const dd = String(local.getDate()).padStart(2, '0');
+                            const MM = String(local.getMonth() + 1).padStart(2, '0');
+                            const yyyy = local.getFullYear();
+                            if (dateEl) dateEl.textContent = `${dd}.${MM}.${yyyy}`;
+                            if (zoneEl) zoneEl.textContent = tzName;
+                            if (abbrEl) abbrEl.textContent = '';
+                            if (diffEl) diffEl.textContent = formatDiff(offset);
+                        }
                     } else {
                         const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
                         const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
@@ -5843,41 +5964,8 @@ function createNewFilterSidebar() {
     }, 300);
 }
 
-// Navigation Active State aktualisieren
-function updateNavigationActiveState(activeButton) {
-    // Alle Navigation Buttons finden
-    const navButtons = document.querySelectorAll('.navigation button, .navigation a');
-
-    navButtons.forEach(button => {
-        // Entferne aktive Klassen
-        button.classList.remove('bg-white', 'text-black');
-        // Füge inaktive Klassen hinzu
-        if (!button.classList.contains('text-white')) {
-            button.classList.add('text-white');
-        }
-    });
-
-    // Setze den aktiven Button
-    if (activeButton === 'events') {
-        const eventsButton = document.querySelector('.navigation button[title="Ereignisse"]');
-        if (eventsButton) {
-            eventsButton.classList.remove('text-white');
-            eventsButton.classList.add('bg-white', 'text-black');
-        }
-    } else if (activeButton === 'airports') {
-        const airportsButton = document.querySelector('.navigation button[title="Flughäfen"]');
-        if (airportsButton) {
-            airportsButton.classList.remove('text-white');
-            airportsButton.classList.add('bg-white', 'text-black');
-        }
-    }
-}
-
 // Neue Airport Sidebar erstellen und anzeigen
 function createAirportSidebar() {
-    // Navigation Active State aktualisieren
-    updateNavigationActiveState('airports');
-
     // Alle anderen Container ausblenden
     hideAllRightContainers();
     const existingAirport = document.getElementById('sidebar-airport');
@@ -6065,9 +6153,6 @@ function restoreFilterSubSections() {
 
 // Sidebar Live Statistics anzeigen
 function showSidebarLiveStatistics() {
-    // Navigation Active State aktualisieren
-    updateNavigationActiveState('events');
-
     const sidebar = getDefaultSidebar();
     const statisticsContainer = document.getElementById('statisticsContainer');
     const airportSidebar = document.getElementById('sidebar-airport');
