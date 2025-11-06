@@ -1727,8 +1727,8 @@
                     // Gefundene Länder: Details anzeigen
                     await loadEntryConditionsContent(nationalityCodes, foundDestinations);
 
-                    // Auf Karte markieren
-                    highlightCountriesOnMap(foundDestinations);
+                    // Auf Karte markieren - nur Marker, keine 300km Kreise
+                    await updateMapWithSelectedDestinations();
                 } else {
                     // Kein Land gefunden: Fehlermeldung anzeigen
                     const destNames = destinationCodes.map(code => {
@@ -1781,8 +1781,8 @@
             if (nationalityCodes.length > 0 && destinationCodes.length > 0 && !destinationCodes.includes('*')) {
                 console.log('Using new content API');
 
-                // Länder auf der Karte hervorheben
-                highlightCountriesOnMap(destinationCodes);
+                // Länder auf der Karte markieren - nur Marker, keine 300km Kreise
+                await updateMapWithSelectedDestinations();
 
                 // Neue Content API aufrufen
                 await loadEntryConditionsContent(nationalityCodes, destinationCodes);
@@ -2184,8 +2184,8 @@
 
             console.log('Loading content for nationalities:', nationalityCodes, 'and destination:', destinationCodes);
 
-            // Länder auf der Karte hervorheben
-            highlightCountriesOnMap(destinationCodes);
+            // Karte aktualisieren - nur Marker, keine 300km Kreise
+            await updateMapWithSelectedDestinations();
 
             // Content API aufrufen
             await loadEntryConditionsContent(nationalityCodes, destinationCodes);
