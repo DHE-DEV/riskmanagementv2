@@ -4001,9 +4001,12 @@ function createEventElement(event) {
     
     // Klick-Event hinzufügen
     div.addEventListener('click', () => {
-        // Track click for custom events only
-        if (event.source === 'custom' && event.id) {
-            trackEventClick(event.id, 'list');
+        // Track click for custom events only - verwende Original-ID falls vorhanden
+        if (event.source === 'custom') {
+            const trackId = event.original_event_id || event.id;
+            if (trackId) {
+                trackEventClick(trackId, 'list');
+            }
         }
 
         // Wenn kein Land/keine Koordinaten zugewiesen: Direkt Details anzeigen
