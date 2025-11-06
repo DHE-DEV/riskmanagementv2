@@ -34,7 +34,6 @@ class AirportForm
                                             return [$country->id => $country->getName('de')];
                                         })->toArray();
                                     })
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record?->country?->getName('de'))
                                     ->required()
                                     ->searchable()
                                     ->preload()
@@ -43,16 +42,22 @@ class AirportForm
 
                                 Select::make('city_id')
                                     ->label('Stadt')
-                                    ->options(function (Get $get) {
+                                    ->options(function (Get $get, $record) {
                                         $countryId = $get('country_id');
+
+                                        // Beim Bearbeiten: Wenn kein Land ausgewählt, nutze das Land des aktuellen Flughafens
+                                        if (!$countryId && $record) {
+                                            $countryId = $record->country_id;
+                                        }
+
                                         if (!$countryId) {
                                             return [];
                                         }
+
                                         return City::where('country_id', $countryId)->get()->mapWithKeys(function ($city) {
                                             return [$city->id => $city->getName('de')];
                                         })->toArray();
                                     })
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record?->city?->getName('de'))
                                     ->required()
                                     ->searchable()
                                     ->preload(),
