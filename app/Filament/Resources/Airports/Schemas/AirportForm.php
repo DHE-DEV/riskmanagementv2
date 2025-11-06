@@ -44,6 +44,7 @@ class AirportForm
                                     ->label('Stadt')
                                     ->options(function (Get $get, $record) {
                                         $countryId = $get('country_id');
+                                        $currentCityId = $get('city_id');
 
                                         // Beim Bearbeiten: Wenn kein Land ausgewählt, nutze das Land des aktuellen Flughafens
                                         if (!$countryId && $record) {
@@ -54,9 +55,19 @@ class AirportForm
                                             return [];
                                         }
 
-                                        return City::where('country_id', $countryId)->get()->mapWithKeys(function ($city) {
+                                        $cities = City::where('country_id', $countryId)->get()->mapWithKeys(function ($city) {
                                             return [$city->id => $city->getName('de')];
-                                        })->toArray();
+                                        });
+
+                                        // Beim Bearbeiten: Stelle sicher, dass die aktuelle Stadt in den Optionen ist
+                                        if ($currentCityId && !$cities->has($currentCityId)) {
+                                            $currentCity = City::find($currentCityId);
+                                            if ($currentCity) {
+                                                $cities->put($currentCityId, $currentCity->getName('de'));
+                                            }
+                                        }
+
+                                        return $cities->toArray();
                                     })
                                     ->required()
                                     ->searchable()
