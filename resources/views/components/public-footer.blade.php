@@ -8,8 +8,8 @@
             <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal').classList.remove('hidden');" class="hover:text-blue-300 transition-colors">Haftungsausschluss</a>
         </div>
         <div class="flex items-center space-x-4 text-sm">
-            <span>Version 1.0.18</span>
-            <span>Build: 2025-20-22</span>
+            <span>Version 1.0.19</span>
+            <span>Build: 2025-11-04</span>
         </div>
     </div>
 </footer>
