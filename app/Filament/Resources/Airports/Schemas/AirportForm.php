@@ -34,10 +34,12 @@ class AirportForm
                                             return [$country->id => $country->getName('de')];
                                         })->toArray();
                                     })
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record?->country?->getName('de'))
                                     ->required()
                                     ->searchable()
+                                    ->preload()
                                     ->live()
-                                    ->afterStateUpdated(fn () => $this->form->fill(['city_id' => null])),
+                                    ->afterStateUpdated(fn ($set) => $set('city_id', null)),
 
                                 Select::make('city_id')
                                     ->label('Stadt')
@@ -50,8 +52,10 @@ class AirportForm
                                             return [$city->id => $city->getName('de')];
                                         })->toArray();
                                     })
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record?->city?->getName('de'))
                                     ->required()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->preload(),
 
                                 TextInput::make('website')
                                     ->label('Website')
@@ -93,11 +97,15 @@ class AirportForm
                                 Select::make('type')
                                     ->label('Typ')
                                     ->options([
-                                        'domestic' => 'Inland',
-                                        'international' => 'International',
-                                        'military' => 'Militär',
+                                        'international' => 'Internationaler Flughafen',
+                                        'large_airport' => 'Großer Flughafen',
+                                        'medium_airport' => 'Mittlerer Flughafen',
+                                        'small_airport' => 'Kleiner Flughafen',
+                                        'heliport' => 'Hubschrauberlandeplatz',
+                                        'seaplane_base' => 'Wasserflugzeugbasis',
                                     ])
-                                    ->default('domestic')
+                                    ->default('medium_airport')
+                                    ->native(false)
                                     ->required(),
 
                                 TextInput::make('google_maps_coordinates')
