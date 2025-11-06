@@ -2106,7 +2106,9 @@
             if (!hasSpecificDestinations) {
                 // Keine spezifischen Länder: Karte leeren
                 window.entryConditionsMarkers.clearLayers();
-                window.countryLayersGroup.clearLayers();
+                if (window.countryLayersGroup) {
+                    window.countryLayersGroup.clearLayers();
+                }
                 return;
             }
 
@@ -2118,9 +2120,12 @@
                     name: data.name
                 }));
 
-            // Länder auf der Karte anzeigen (verwendet displayCountriesOnMap Logik)
+            // Länder auf der Karte anzeigen - nur Marker, KEINE Kreise
             window.entryConditionsMarkers.clearLayers();
-            window.countryLayersGroup.clearLayers();
+            // Kreise aus vorherigen Suchen entfernen (300km Radius Highlighting)
+            if (window.countryLayersGroup) {
+                window.countryLayersGroup.clearLayers();
+            }
 
             const bounds = [];
 
