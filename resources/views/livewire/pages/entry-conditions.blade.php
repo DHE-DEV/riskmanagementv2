@@ -2168,15 +2168,8 @@
         async function loadEntryConditionsForCountry(countryName, iso2Code) {
             console.log('loadEntryConditionsForCountry called with:', countryName, iso2Code);
 
-            // Alle bisherigen Reiseziele entfernen
-            window.selectedDestinations.clear();
-
-            // Neues Land als Reiseziel auswählen
-            window.selectedDestinations.set(iso2Code, {
-                name: countryName,
-                code: iso2Code
-            });
-            renderSelectedDestinations();
+            // Land ist bereits ausgewählt, nur die Details anzeigen
+            // NICHT die anderen Länder löschen
 
             // Nationalitäten holen (sollte Deutschland sein)
             const nationalityCodes = Array.from(window.selectedNationalities.keys());
@@ -2184,10 +2177,7 @@
 
             console.log('Loading content for nationalities:', nationalityCodes, 'and destination:', destinationCodes);
 
-            // Karte aktualisieren - nur Marker, keine 300km Kreise
-            await updateMapWithSelectedDestinations();
-
-            // Content API aufrufen
+            // Content API aufrufen - zeigt Details für das geklickte Land
             await loadEntryConditionsContent(nationalityCodes, destinationCodes);
         }
 
