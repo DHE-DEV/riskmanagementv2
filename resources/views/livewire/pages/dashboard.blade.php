@@ -1478,10 +1478,18 @@ async function loadCountryMappingsFromDB() {
 // Track event clicks
 async function trackEventClick(eventId, clickType) {
     try {
+        console.log('trackEventClick called with:', eventId, clickType);
+
+        // Konvertiere zu Nummer falls String
+        const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
+
         // Only track custom events
-        if (!eventId || typeof eventId !== 'number') {
+        if (!numericEventId || typeof numericEventId !== 'number' || isNaN(numericEventId)) {
+            console.log('Invalid event ID, skipping tracking:', eventId);
             return;
         }
+
+        console.log('Tracking click for event:', numericEventId, 'type:', clickType);
 
         const response = await fetch('/api/custom-events/track-click', {
             method: 'POST',
@@ -1490,13 +1498,15 @@ async function trackEventClick(eventId, clickType) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
             },
             body: JSON.stringify({
-                event_id: eventId,
+                event_id: numericEventId,
                 click_type: clickType
             })
         });
 
         if (!response.ok) {
-            console.error('Failed to track click');
+            console.error('Failed to track click, status:', response.status);
+        } else {
+            console.log('Click tracked successfully');
         }
     } catch (error) {
         console.error('Error tracking click:', error);
@@ -4001,12 +4011,17 @@ function createEventElement(event) {
     
     // Klick-Event hinzufügen
     div.addEventListener('click', () => {
+        console.log('Event clicked in list:', event.title, 'ID:', event.id, 'Source:', event.source, 'Original ID:', event.original_event_id);
+
         // Track click for custom events only - verwende Original-ID falls vorhanden
         if (event.source === 'custom') {
             const trackId = event.original_event_id || event.id;
+            console.log('Tracking list click for event ID:', trackId);
             if (trackId) {
                 trackEventClick(trackId, 'list');
             }
+        } else {
+            console.log('Not tracking - source is not custom:', event.source);
         }
 
         // Wenn kein Land/keine Koordinaten zugewiesen: Direkt Details anzeigen
