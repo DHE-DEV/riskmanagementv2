@@ -1271,6 +1271,9 @@
 
             // Ausgewählte Reiseziele anzeigen
             renderSelectedDestinations();
+
+            // Karte aktualisieren
+            updateMapWithSelectedDestinations();
         }
 
         function removeDestination(code) {
@@ -1278,6 +1281,9 @@
             window.selectedDestinations.delete(code);
 
             renderSelectedDestinations();
+
+            // Karte aktualisieren
+            updateMapWithSelectedDestinations();
         }
 
         function renderSelectedDestinations() {
@@ -2087,6 +2093,69 @@
             // Karte auf Marker zentrieren
             if (window.entryConditionsMarkers.getLayers().length > 0) {
                 window.entryConditionsMap.fitBounds(window.entryConditionsMarkers.getBounds());
+            }
+        }
+
+        // Karte mit aktuell ausgewählten Reisezielen aktualisieren
+        async function updateMapWithSelectedDestinations() {
+            // Prüfe ob spezifische Länder ausgewählt sind (nicht nur "*")
+            const hasSpecificDestinations = window.selectedDestinations &&
+                window.selectedDestinations.size > 0 &&
+                !(window.selectedDestinations.size === 1 && window.selectedDestinations.has('*'));
+
+            if (!hasSpecificDestinations) {
+                // Keine spezifischen Länder: Karte leeren
+                window.entryConditionsMarkers.clearLayers();
+                window.countryLayersGroup.clearLayers();
+                return;
+            }
+
+            // Spezifische Länder ausgewählt: Auf Karte anzeigen
+            const selectedCountries = Array.from(window.selectedDestinations.entries())
+                .filter(([code]) => code !== '*') // "*" ausfiltern
+                .map(([code, data]) => ({
+                    code: code,
+                    name: data.name
+                }));
+
+            // Länder auf der Karte anzeigen (verwendet displayCountriesOnMap Logik)
+            window.entryConditionsMarkers.clearLayers();
+            window.countryLayersGroup.clearLayers();
+
+            const bounds = [];
+
+            for (const country of selectedCountries) {
+                const countryCode = country.code;
+                if (!countryCode) continue;
+
+                try {
+                    // Prüfe ob wir Koordinaten für dieses Land haben
+                    const countryData = window.countryCoordinates.get(countryCode);
+
+                    if (countryData && countryData.lat && countryData.lng) {
+                        // Marker an Hauptstadt-Position setzen
+                        const marker = L.marker([countryData.lat, countryData.lng]);
+                        marker.bindPopup(`<b>${country.name || countryCode}</b><br>Hauptstadt: ${countryData.capital_name}`);
+                        marker.on('click', () => loadEntryConditionsForCountry(country.name, countryCode));
+                        window.entryConditionsMarkers.addLayer(marker);
+
+                        // Bounds hinzufügen
+                        bounds.push([countryData.lat, countryData.lng]);
+                    } else {
+                        console.warn(`No coordinates found for ${countryCode}`);
+                    }
+                } catch (error) {
+                    console.error(`Error loading coordinates for ${countryCode}:`, error);
+                }
+            }
+
+            // Karte auf Marker zentrieren
+            if (bounds.length > 0) {
+                const latLngBounds = L.latLngBounds(bounds);
+                window.entryConditionsMap.fitBounds(latLngBounds, {
+                    padding: [50, 50],
+                    maxZoom: 6
+                });
             }
         }
 
