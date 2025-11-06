@@ -661,20 +661,22 @@
                 document.getElementById('filter-no-insurance')?.checked ||
                 document.getElementById('filter-no-entry-form')?.checked;
 
-            // Prüfe ob ausgewählte Zielländer vorhanden sind
-            const hasSelectedDestinations = window.selectedDestinations && window.selectedDestinations.size > 0;
+            // Prüfe ob ausgewählte Zielländer vorhanden sind (aber nicht nur "Beliebiges Reiseziel" (*))
+            const hasSpecificDestinations = window.selectedDestinations &&
+                window.selectedDestinations.size > 0 &&
+                !(window.selectedDestinations.size === 1 && window.selectedDestinations.has('*'));
 
             // Wenn Filter aktiv sind, automatisch Suche ausführen
             if (hasActiveFilters) {
                 console.log('Auto-search: Filters detected, executing search automatically');
                 searchEntryConditions();
-            } else if (hasSelectedDestinations) {
-                // Wenn keine Filter, aber ausgewählte Länder vorhanden sind, diese anzeigen
-                console.log('No filters active, but destinations selected, displaying selected countries');
+            } else if (hasSpecificDestinations) {
+                // Wenn keine Filter, aber spezifische Länder ausgewählt sind, diese anzeigen
+                console.log('No filters active, but specific destinations selected, displaying selected countries');
                 await displayAllCountries();
             } else {
-                // Wenn keine Filter und keine ausgewählten Länder: Karte leer lassen
-                console.log('No filters and no destinations selected, keeping map empty');
+                // Wenn keine Filter und keine spezifischen Länder (nur "*" oder leer): Karte leer lassen
+                console.log('No filters and no specific destinations selected, keeping map empty');
             }
         }
 
