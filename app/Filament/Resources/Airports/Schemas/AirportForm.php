@@ -407,7 +407,7 @@ class AirportForm
                             ->columnSpan(1)
                             ->schema([
                                 // Hotels Section
-                                Section::make('Hotels in Flughafennähe')
+                                Section::make('Hotels in der Nähe')
                                     ->description('Hotels in der Nähe des Flughafens')
                                     ->schema([
                                         Repeater::make('nearby_hotels')

@@ -17,6 +17,11 @@ class CustomerObserver
         // Prüfen ob directory_listing_active oder company_address Felder geändert wurden
         if ($customer->wasChanged(['directory_listing_active', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])) {
             $this->syncBookingLocation($customer);
+
+            // Wenn directory_listing_active geändert wurde, alle Filialen synchronisieren
+            if ($customer->wasChanged('directory_listing_active')) {
+                $this->syncAllBranches($customer);
+            }
         }
     }
 
@@ -149,5 +154,23 @@ class CustomerObserver
         }, $customer->business_type);
 
         return implode(', ', $types);
+    }
+
+    /**
+     * Synchronisiert alle Filialen des Kunden
+     * Wird aufgerufen wenn directory_listing_active geändert wird
+     */
+    protected function syncAllBranches(Customer $customer): void
+    {
+        // Hole alle Filialen des Kunden
+        $branches = $customer->branches()->get();
+
+        foreach ($branches as $branch) {
+            // Triggere das updated Event für jede Filiale
+            // Dies wird den BranchObserver aufrufen
+            $branch->touch();
+        }
+
+        Log::info("Alle Filialen für Customer {$customer->id} synchronisiert (directory_listing_active: " . ($customer->directory_listing_active ? 'aktiv' : 'inaktiv') . ")");
     }
 }

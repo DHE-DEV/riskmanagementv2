@@ -8,6 +8,7 @@ class BookingLocation extends Model
 {
     protected $fillable = [
         'customer_id',
+        'branch_id',
         'type',
         'name',
         'description',
@@ -80,5 +81,13 @@ class BookingLocation extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Beziehung zur Branch (Filiale)
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

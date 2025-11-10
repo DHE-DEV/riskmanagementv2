@@ -56,4 +56,12 @@ class Branch extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    /**
+     * Get the booking location for this branch
+     */
+    public function bookingLocation()
+    {
+        return $this->hasOne(BookingLocation::class);
+    }
 }

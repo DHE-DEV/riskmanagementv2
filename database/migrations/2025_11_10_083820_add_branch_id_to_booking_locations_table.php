@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('booking_locations', function (Blueprint $table) {
-            $table->foreignId('customer_id')->nullable()->after('id')->constrained('customers')->onDelete('cascade');
-            $table->index('customer_id');
+            $table->foreignId('branch_id')->nullable()->after('customer_id')->constrained('branches')->onDelete('cascade');
         });
     }
 
@@ -23,9 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('booking_locations', function (Blueprint $table) {
-            $table->dropForeign(['customer_id']);
-            $table->dropIndex(['customer_id']);
-            $table->dropColumn('customer_id');
+            $table->dropForeign(['branch_id']);
+            $table->dropColumn('branch_id');
         });
     }
 };
