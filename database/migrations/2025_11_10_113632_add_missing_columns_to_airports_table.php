@@ -12,9 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('airports', function (Blueprint $table) {
-            $table->boolean('is_active')->default(true)->after('type');
-            $table->string('website', 2048)->nullable()->after('country_id');
-            $table->string('security_timeslot_url', 2048)->nullable()->after('website');
+            if (!Schema::hasColumn('airports', 'is_active')) {
+                $table->boolean('is_active')->default(true)->after('type');
+            }
+            if (!Schema::hasColumn('airports', 'website')) {
+                $table->string('website', 2048)->nullable()->after('country_id');
+            }
+            if (!Schema::hasColumn('airports', 'security_timeslot_url')) {
+                $table->string('security_timeslot_url', 2048)->nullable()->after('website');
+            }
         });
     }
 
