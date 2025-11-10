@@ -22,11 +22,11 @@ class CustomerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
-    protected static ?string $navigationLabel = 'Customers';
+    protected static ?string $navigationLabel = 'Kunden';
 
-    protected static ?string $modelLabel = 'Customer';
+    protected static ?string $modelLabel = 'Kunde';
 
-    protected static ?string $pluralModelLabel = 'Customers';
+    protected static ?string $pluralModelLabel = 'Kunden';
 
     protected static ?int $navigationSort = 10;
 
@@ -43,7 +43,7 @@ class CustomerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\BranchesRelationManager::class,
         ];
     }
 
