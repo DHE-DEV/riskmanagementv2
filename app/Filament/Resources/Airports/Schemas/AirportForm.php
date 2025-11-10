@@ -8,6 +8,9 @@ use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class AirportForm
@@ -16,11 +19,19 @@ class AirportForm
     {
         return $schema
             ->components([
+                // Erstes Grid - Grundinformationen
                 \Filament\Schemas\Components\Grid::make(2)
                     ->columnSpanFull()
+                    ->columns([
+                        'default' => 1,
+                        'sm' => 1,
+                        'md' => 2,
+                        'lg' => 2,
+                    ])
                     ->schema([
                         // Linke Spalte
                         \Filament\Schemas\Components\Grid::make(1)
+                            ->columnSpan(1)
                             ->schema([
                                 TextInput::make('name')
                                     ->label('Name')
@@ -46,7 +57,6 @@ class AirportForm
                                         $countryId = $get('country_id');
                                         $currentCityId = $get('city_id');
 
-                                        // Beim Bearbeiten: Wenn kein Land ausgewählt, nutze das Land des aktuellen Flughafens
                                         if (!$countryId && $record) {
                                             $countryId = $record->country_id;
                                         }
@@ -59,7 +69,6 @@ class AirportForm
                                             return [$city->id => $city->getName('de')];
                                         });
 
-                                        // Beim Bearbeiten: Stelle sicher, dass die aktuelle Stadt in den Optionen ist
                                         if ($currentCityId && !$cities->has($currentCityId)) {
                                             $currentCity = City::find($currentCityId);
                                             if ($currentCity) {
@@ -90,10 +99,16 @@ class AirportForm
                                 Toggle::make('is_active')
                                     ->label('Aktiv')
                                     ->default(true),
+
+                                Toggle::make('operates_24h')
+                                    ->label('24h Betrieb für Passagierflugzeuge')
+                                    ->helperText('Ist der Flughafen 24 Stunden täglich für Passagierflugzeuge in Betrieb?')
+                                    ->default(false),
                             ]),
 
                         // Rechte Spalte
                         \Filament\Schemas\Components\Grid::make(1)
+                            ->columnSpan(1)
                             ->schema([
                                 \Filament\Schemas\Components\Grid::make(2)
                                     ->schema([
@@ -126,8 +141,8 @@ class AirportForm
 
                                 TextInput::make('google_maps_coordinates')
                                     ->label('Google Maps Koordinaten einfügen')
-                                    ->placeholder('z.B. 50.1109, 8.6821 oder 52.0097, -76.5467')
-                                    ->helperText('Koordinaten aus Google Maps hier einfügen - automatische Übernahme in Breiten- und Längengrad. Unterstützt positive und negative Werte.')
+                                    ->placeholder('z.B. 50.1109, 8.6821')
+                                    ->helperText('Koordinaten aus Google Maps hier einfügen')
                                     ->live(onBlur: true)
                                     ->dehydrated(false)
                                     ->afterStateUpdated(function ($set, ?string $state) {
@@ -135,12 +150,9 @@ class AirportForm
                                             return;
                                         }
 
-                                        // Parse Google Maps coordinate formats
-                                        // Entferne alle Zeichen außer Zahlen, Punkt, Komma und Minus
                                         $cleaned = preg_replace('/[^\d.,\-]/', ' ', $state);
                                         $cleaned = preg_replace('/\s+/', ' ', trim($cleaned));
 
-                                        // Trenne nach Komma oder Leerzeichen
                                         if (strpos($cleaned, ',') !== false) {
                                             $parts = explode(',', $cleaned);
                                         } else {
@@ -165,7 +177,7 @@ class AirportForm
                                             ->rule('numeric')
                                             ->rule('min:-90')
                                             ->rule('max:90')
-                                            ->placeholder('z.B. 50.1109 oder -76.5467')
+                                            ->placeholder('z.B. 50.1109')
                                             ->helperText('Werte zwischen -90 und +90')
                                             ->inputMode('decimal')
                                             ->extraInputAttributes(['step' => 'any']),
@@ -175,11 +187,277 @@ class AirportForm
                                             ->rule('numeric')
                                             ->rule('min:-180')
                                             ->rule('max:180')
-                                            ->placeholder('z.B. 8.6821 oder -76.5467')
+                                            ->placeholder('z.B. 8.6821')
                                             ->helperText('Werte zwischen -180 und +180')
                                             ->inputMode('decimal')
                                             ->extraInputAttributes(['step' => 'any']),
                                     ]),
+                            ]),
+                    ]),
+
+                // Zweites Grid - Zusätzliche Informationen
+                \Filament\Schemas\Components\Grid::make(2)
+                    ->columnSpanFull()
+                    ->columns([
+                        'default' => 1,
+                        'sm' => 1,
+                        'md' => 2,
+                        'lg' => 2,
+                    ])
+                    ->schema([
+                        // Linke Spalte - Grid 1 (Lounges + Mobilitätsangebote)
+                        \Filament\Schemas\Components\Grid::make(1)
+                            ->columnSpan(1)
+                            ->schema([
+                                // Lounges Section
+                                Section::make('Lounges')
+                                    ->description('Informationen zu verfügbaren Lounges am Flughafen')
+                                    ->schema([
+                                        Repeater::make('lounges')
+                                            ->label('')
+                                            ->schema([
+                                                \Filament\Schemas\Components\Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('name')
+                                                            ->label('Name der Lounge')
+                                                            ->required()
+                                                            ->maxLength(255)
+                                                            ->placeholder('z.B. Lufthansa Business Lounge')
+                                                            ->columnSpan(2),
+
+                                                        TextInput::make('location')
+                                                            ->label('Standort')
+                                                            ->maxLength(255)
+                                                            ->placeholder('z.B. Terminal 1, Ebene 3')
+                                                            ->columnSpan(1),
+
+                                                        TextInput::make('access')
+                                                            ->label('Zugang')
+                                                            ->maxLength(255)
+                                                            ->placeholder('z.B. Business Class, Priority Pass')
+                                                            ->columnSpan(1),
+
+                                                        TextInput::make('url')
+                                                            ->label('Website/Info-URL')
+                                                            ->url()
+                                                            ->maxLength(2048)
+                                                            ->placeholder('https://...')
+                                                            ->columnSpan(2),
+                                                    ]),
+                                            ])
+                                            ->defaultItems(0)
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                            ->addActionLabel('Lounge hinzufügen')
+                                            ->reorderable(),
+                                    ])
+                                    ->collapsible()
+                                    ->collapsed(),
+
+                                // Mobilitätsangebote Section
+                                Section::make('Mobilitätsangebote')
+                                    ->description('Verkehrs- und Mobilitätsoptionen am Flughafen')
+                                    ->schema([
+                                        \Filament\Schemas\Components\Grid::make(2)
+                                            ->columns([
+                                                'default' => 1,
+                                                'sm' => 1,
+                                                'md' => 2,
+                                                'lg' => 2,
+                                            ])
+                                            ->schema([
+                                                // Linke Spalte
+                                                \Filament\Schemas\Components\Grid::make(1)
+                                                    ->columnSpan(1)
+                                                    ->schema([
+                                                        // Mietwagen
+                                                        \Filament\Schemas\Components\Fieldset::make('Mietwagen')
+                                                            ->schema([
+                                                                Toggle::make('mobility_options.car_rental.available')
+                                                                    ->label('Verfügbar')
+                                                                    ->default(false)
+                                                                    ->reactive(),
+
+                                                                Repeater::make('mobility_options.car_rental.providers')
+                                                                    ->label('Anbieter')
+                                                                    ->simple(TextInput::make('provider')->label('Anbieter')->placeholder('z.B. Sixt, Hertz, Avis'))
+                                                                    ->defaultItems(0)
+                                                                    ->addActionLabel('Anbieter hinzufügen')
+                                                                    ->visible(fn ($get) => $get('mobility_options.car_rental.available') ?? false),
+
+                                                                TextInput::make('mobility_options.car_rental.booking_url')
+                                                                    ->label('Buchungs-URL')
+                                                                    ->url()
+                                                                    ->maxLength(2048)
+                                                                    ->visible(fn ($get) => $get('mobility_options.car_rental.available') ?? false),
+                                                            ]),
+
+                                                        // ÖPNV
+                                                        \Filament\Schemas\Components\Fieldset::make('Öffentlicher Nahverkehr (ÖPNV)')
+                                                            ->schema([
+                                                                Toggle::make('mobility_options.public_transport.available')
+                                                                    ->label('Verfügbar')
+                                                                    ->default(false)
+                                                                    ->reactive(),
+
+                                                                Repeater::make('mobility_options.public_transport.types')
+                                                                    ->label('Verkehrsmittel')
+                                                                    ->simple(TextInput::make('type')->label('Typ')->placeholder('z.B. S-Bahn, U-Bahn, Bus'))
+                                                                    ->defaultItems(0)
+                                                                    ->addActionLabel('Verkehrsmittel hinzufügen')
+                                                                    ->visible(fn ($get) => $get('mobility_options.public_transport.available') ?? false),
+
+                                                                TextInput::make('mobility_options.public_transport.info_url')
+                                                                    ->label('Info-URL')
+                                                                    ->url()
+                                                                    ->maxLength(2048)
+                                                                    ->visible(fn ($get) => $get('mobility_options.public_transport.available') ?? false),
+                                                            ]),
+
+                                                        // Airport Shuttle
+                                                        \Filament\Schemas\Components\Fieldset::make('Airport Shuttle')
+                                                            ->schema([
+                                                                Toggle::make('mobility_options.airport_shuttle.available')
+                                                                    ->label('Verfügbar')
+                                                                    ->default(false)
+                                                                    ->reactive(),
+
+                                                                Textarea::make('mobility_options.airport_shuttle.info')
+                                                                    ->label('Informationen')
+                                                                    ->rows(2)
+                                                                    ->placeholder('z.B. Kostenloser Shuttle zu Hotels, 24/7 Betrieb')
+                                                                    ->visible(fn ($get) => $get('mobility_options.airport_shuttle.available') ?? false),
+
+                                                                TextInput::make('mobility_options.airport_shuttle.url')
+                                                                    ->label('Info-URL')
+                                                                    ->url()
+                                                                    ->maxLength(2048)
+                                                                    ->visible(fn ($get) => $get('mobility_options.airport_shuttle.available') ?? false),
+                                                            ]),
+                                                    ]),
+
+                                                // Rechte Spalte
+                                                \Filament\Schemas\Components\Grid::make(1)
+                                                    ->columnSpan(1)
+                                                    ->schema([
+                                                        // Taxi
+                                                        \Filament\Schemas\Components\Fieldset::make('Taxi')
+                                                            ->schema([
+                                                                Toggle::make('mobility_options.taxi.available')
+                                                                    ->label('Verfügbar')
+                                                                    ->default(false)
+                                                                    ->reactive(),
+
+                                                                Textarea::make('mobility_options.taxi.info')
+                                                                    ->label('Informationen')
+                                                                    ->rows(2)
+                                                                    ->placeholder('z.B. 24/7 verfügbar, Taxistand vor Terminal 1')
+                                                                    ->visible(fn ($get) => $get('mobility_options.taxi.available') ?? false),
+
+                                                                TextInput::make('mobility_options.taxi.approx_cost')
+                                                                    ->label('Ungefähre Kosten')
+                                                                    ->placeholder('z.B. 50 EUR in die Innenstadt')
+                                                                    ->visible(fn ($get) => $get('mobility_options.taxi.available') ?? false),
+                                                            ]),
+
+                                                        // Parkhäuser
+                                                        \Filament\Schemas\Components\Fieldset::make('Parkhäuser')
+                                                            ->schema([
+                                                                Toggle::make('mobility_options.parking.available')
+                                                                    ->label('Verfügbar')
+                                                                    ->default(false)
+                                                                    ->reactive(),
+
+                                                                Repeater::make('mobility_options.parking.options')
+                                                                    ->label('Parkmöglichkeiten')
+                                                                    ->schema([
+                                                                        TextInput::make('name')
+                                                                            ->label('Name')
+                                                                            ->required()
+                                                                            ->placeholder('z.B. Parkhaus P1'),
+
+                                                                        TextInput::make('distance')
+                                                                            ->label('Entfernung')
+                                                                            ->placeholder('z.B. 100m zum Terminal'),
+
+                                                                        TextInput::make('price_info')
+                                                                            ->label('Preisinformation')
+                                                                            ->placeholder('z.B. 5 EUR/Tag'),
+                                                                    ])
+                                                                    ->columns(3)
+                                                                    ->defaultItems(0)
+                                                                    ->addActionLabel('Parkmöglichkeit hinzufügen')
+                                                                    ->visible(fn ($get) => $get('mobility_options.parking.available') ?? false),
+
+                                                                TextInput::make('mobility_options.parking.booking_url')
+                                                                    ->label('Buchungs-URL')
+                                                                    ->url()
+                                                                    ->maxLength(2048)
+                                                                    ->visible(fn ($get) => $get('mobility_options.parking.available') ?? false),
+                                                            ]),
+                                                    ]),
+                                            ]),
+                                    ])
+                                    ->collapsible()
+                                    ->collapsed(),
+                            ]),
+
+                        // Rechte Spalte - Grid 2 (Hotels)
+                        \Filament\Schemas\Components\Grid::make(1)
+                            ->columnSpan(1)
+                            ->schema([
+                                // Hotels Section
+                                Section::make('Hotels in Flughafennähe')
+                                    ->description('Hotels in der Nähe des Flughafens')
+                                    ->schema([
+                                        Repeater::make('nearby_hotels')
+                                            ->label('')
+                                            ->schema([
+                                                \Filament\Schemas\Components\Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('name')
+                                                            ->label('Name des Hotels')
+                                                            ->required()
+                                                            ->maxLength(255)
+                                                            ->placeholder('z.B. Airport Hotel Frankfurt')
+                                                            ->columnSpan(2),
+
+                                                        TextInput::make('distance_km')
+                                                            ->label('Entfernung (km)')
+                                                            ->numeric()
+                                                            ->step(0.1)
+                                                            ->suffix('km')
+                                                            ->placeholder('z.B. 0.5')
+                                                            ->columnSpan(1),
+
+                                                        Toggle::make('shuttle')
+                                                            ->label('Shuttle-Service verfügbar')
+                                                            ->default(false)
+                                                            ->columnSpan(1),
+
+                                                        TextInput::make('booking_url')
+                                                            ->label('Buchungs-URL')
+                                                            ->url()
+                                                            ->maxLength(2048)
+                                                            ->placeholder('https://...')
+                                                            ->columnSpan(2),
+
+                                                        Textarea::make('notes')
+                                                            ->label('Zusätzliche Informationen')
+                                                            ->rows(2)
+                                                            ->maxLength(1000)
+                                                            ->placeholder('z.B. Kostenloser Shuttle alle 30 Minuten')
+                                                            ->columnSpan(2),
+                                                    ]),
+                                            ])
+                                            ->defaultItems(0)
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                            ->addActionLabel('Hotel hinzufügen')
+                                            ->reorderable(),
+                                    ])
+                                    ->collapsible()
+                                    ->collapsed(),
                             ]),
                     ]),
             ]);

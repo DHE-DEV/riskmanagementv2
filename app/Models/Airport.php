@@ -26,12 +26,20 @@ class Airport extends Model
         'type',
         'source',
         'security_timeslot_url',
+        'operates_24h',
+        'lounges',
+        'nearby_hotels',
+        'mobility_options',
     ];
 
     protected $casts = [
         'lat' => 'decimal:16',
         'lng' => 'decimal:16',
         'altitude' => 'integer',
+        'operates_24h' => 'boolean',
+        'lounges' => 'array',
+        'nearby_hotels' => 'array',
+        'mobility_options' => 'array',
     ];
 
     /**

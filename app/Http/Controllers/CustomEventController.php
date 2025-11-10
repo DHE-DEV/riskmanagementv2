@@ -53,34 +53,14 @@ class CustomEventController extends Controller
 
                     // Länder mit ihren individuellen Koordinaten sammeln
                     $countriesData = $event->countries->map(function ($country) use ($event) {
-                        if ($country->pivot->use_default_coordinates) {
-                            // Primär: Hauptstadt-Koordinaten
-                            if ($country->capital && $country->capital->lat && $country->capital->lng) {
-                                $lat = $country->capital->lat;
-                                $lng = $country->capital->lng;
-                            } else {
-                                // Fallback: geografisches Zentrum des Landes
-                                $lat = $country->lat;
-                                $lng = $country->lng;
-                            }
-                        } else {
-                            // Verwende individuelle Koordinaten aus dem Pivot
-                            $lat = $country->pivot->latitude;
-                            $lng = $country->pivot->longitude;
-                        }
-
-                        // Fallback auf Event-Koordinaten wenn nichts vorhanden
-                        if (!$lat && !$lng && $event->latitude && $event->longitude) {
-                            $lat = $event->latitude;
-                            $lng = $event->longitude;
-                        }
+                        $coordinates = $this->getCoordinatesForCountry($country, $event);
 
                         return [
                             'id' => $country->id,
                             'name' => $country->getName('de'),
                             'iso_code' => $country->iso_code,
-                            'latitude' => $lat ? (float) $lat : null,
-                            'longitude' => $lng ? (float) $lng : null,
+                            'latitude' => $coordinates['latitude'],
+                            'longitude' => $coordinates['longitude'],
                             'location_note' => $country->pivot->location_note,
                             'use_default_coordinates' => $country->pivot->use_default_coordinates,
                         ];
@@ -181,34 +161,14 @@ class CustomEventController extends Controller
 
                     // Länder mit ihren individuellen Koordinaten sammeln
                     $countriesData = $event->countries->map(function ($country) use ($event) {
-                        if ($country->pivot->use_default_coordinates) {
-                            // Primär: Hauptstadt-Koordinaten
-                            if ($country->capital && $country->capital->lat && $country->capital->lng) {
-                                $lat = $country->capital->lat;
-                                $lng = $country->capital->lng;
-                            } else {
-                                // Fallback: geografisches Zentrum des Landes
-                                $lat = $country->lat;
-                                $lng = $country->lng;
-                            }
-                        } else {
-                            // Verwende individuelle Koordinaten aus dem Pivot
-                            $lat = $country->pivot->latitude;
-                            $lng = $country->pivot->longitude;
-                        }
-
-                        // Fallback auf Event-Koordinaten wenn nichts vorhanden
-                        if (!$lat && !$lng && $event->latitude && $event->longitude) {
-                            $lat = $event->latitude;
-                            $lng = $event->longitude;
-                        }
+                        $coordinates = $this->getCoordinatesForCountry($country, $event);
 
                         return [
                             'id' => $country->id,
                             'name' => $country->getName('de'),
                             'iso_code' => $country->iso_code,
-                            'latitude' => $lat ? (float) $lat : null,
-                            'longitude' => $lng ? (float) $lng : null,
+                            'latitude' => $coordinates['latitude'],
+                            'longitude' => $coordinates['longitude'],
                             'location_note' => $country->pivot->location_note,
                             'use_default_coordinates' => $country->pivot->use_default_coordinates,
                         ];
@@ -360,6 +320,64 @@ class CustomEventController extends Controller
     }
 
     /**
+     * Get coordinates for a country based on priority: City > Region > Capital > Country
+     */
+    private function getCoordinatesForCountry($country, $event): array
+    {
+        $lat = null;
+        $lng = null;
+
+        if ($country->pivot->use_default_coordinates) {
+            // Priorität: Stadt > Region > Hauptstadt > Land
+
+            // 1. Prüfe Stadt-Koordinaten
+            if ($country->pivot->city_id) {
+                $city = \App\Models\City::find($country->pivot->city_id);
+                if ($city && $city->lat && $city->lng) {
+                    $lat = $city->lat;
+                    $lng = $city->lng;
+                }
+            }
+
+            // 2. Prüfe Region-Koordinaten (wenn keine Stadt-Koordinaten)
+            if (!$lat && !$lng && $country->pivot->region_id) {
+                $region = \App\Models\Region::find($country->pivot->region_id);
+                if ($region && $region->lat && $region->lng) {
+                    $lat = $region->lat;
+                    $lng = $region->lng;
+                }
+            }
+
+            // 3. Prüfe Hauptstadt-Koordinaten (wenn keine Stadt/Region-Koordinaten)
+            if (!$lat && !$lng && $country->capital && $country->capital->lat && $country->capital->lng) {
+                $lat = $country->capital->lat;
+                $lng = $country->capital->lng;
+            }
+
+            // 4. Fallback: geografisches Zentrum des Landes
+            if (!$lat && !$lng) {
+                $lat = $country->lat;
+                $lng = $country->lng;
+            }
+        } else {
+            // Verwende individuelle Koordinaten aus dem Pivot
+            $lat = $country->pivot->latitude;
+            $lng = $country->pivot->longitude;
+        }
+
+        // Fallback auf Event-Koordinaten wenn nichts vorhanden
+        if (!$lat && !$lng && $event->latitude && $event->longitude) {
+            $lat = $event->latitude;
+            $lng = $event->longitude;
+        }
+
+        return [
+            'latitude' => $lat ? (float) $lat : null,
+            'longitude' => $lng ? (float) $lng : null,
+        ];
+    }
+
+    /**
      * Get marker color based on priority
      */
     private function getPriorityColor(string $priority): string
@@ -465,34 +483,14 @@ class CustomEventController extends Controller
 
             // Format countries data
             $countriesData = $event->countries->map(function ($country) use ($event) {
-                if ($country->pivot->use_default_coordinates) {
-                    // Primär: Hauptstadt-Koordinaten
-                    if ($country->capital && $country->capital->lat && $country->capital->lng) {
-                        $lat = $country->capital->lat;
-                        $lng = $country->capital->lng;
-                    } else {
-                        // Fallback: geografisches Zentrum des Landes
-                        $lat = $country->lat;
-                        $lng = $country->lng;
-                    }
-                } else {
-                    // Verwende individuelle Koordinaten aus dem Pivot
-                    $lat = $country->pivot->latitude;
-                    $lng = $country->pivot->longitude;
-                }
-
-                // Fallback auf Event-Koordinaten wenn nichts vorhanden
-                if (!$lat && !$lng && $event->latitude && $event->longitude) {
-                    $lat = $event->latitude;
-                    $lng = $event->longitude;
-                }
+                $coordinates = $this->getCoordinatesForCountry($country, $event);
 
                 return [
                     'id' => $country->id,
                     'name' => $country->getName('de'),
                     'iso_code' => $country->iso_code,
-                    'latitude' => $lat ? (float) $lat : null,
-                    'longitude' => $lng ? (float) $lng : null,
+                    'latitude' => $coordinates['latitude'],
+                    'longitude' => $coordinates['longitude'],
                     'location_note' => $country->pivot->location_note,
                     'use_default_coordinates' => $country->pivot->use_default_coordinates,
                 ];
