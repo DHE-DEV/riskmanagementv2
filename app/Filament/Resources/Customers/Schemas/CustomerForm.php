@@ -50,6 +50,19 @@ class CustomerForm
                         ]),
                     ]),
 
+                Section::make('Einstellungen')
+                    ->columnSpan(1)
+                    ->schema([
+                        Toggle::make('directory_listing_active')
+                            ->label('Adressverzeichnis aktiv'),
+
+                        Toggle::make('branch_management_active')
+                            ->label('Filialen-Verwaltung aktiv'),
+
+                        Toggle::make('hide_profile_completion')
+                            ->label('Profil-Vervollständigung ausblenden'),
+                    ]),
+
                 Section::make('Passolution Integration')
                     ->columnSpan(1)
                     ->schema([
@@ -107,19 +120,6 @@ class CustomerForm
                         TextInput::make('company_country')
                             ->label('Land')
                             ->maxLength(255),
-                    ]),
-
-                Section::make('Einstellungen')
-                    ->columnSpan(1)
-                    ->schema([
-                        Toggle::make('directory_listing_active')
-                            ->label('Adressverzeichnis aktiv'),
-
-                        Toggle::make('branch_management_active')
-                            ->label('Filialen-Verwaltung aktiv'),
-
-                        Toggle::make('hide_profile_completion')
-                            ->label('Profil-Vervollständigung ausblenden'),
                     ]),
 
                 Section::make('Rechnungsadresse')
