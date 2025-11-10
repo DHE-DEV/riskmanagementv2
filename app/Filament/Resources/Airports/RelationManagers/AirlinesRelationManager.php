@@ -63,9 +63,9 @@ class AirlinesRelationManager extends RelationManager
                 Select::make('direction')
                     ->label('Richtung')
                     ->options([
-                        'both' => 'Von und Nach',
-                        'from' => 'Von diesem Flughafen',
-                        'to' => 'Zu diesem Flughafen',
+                        'both' => 'Abflug und Ankunft',
+                        'from' => 'Abflug',
+                        'to' => 'Ankunft',
                     ])
                     ->default('both')
                     ->required()
@@ -187,9 +187,9 @@ class AirlinesRelationManager extends RelationManager
                         \Filament\Forms\Components\Select::make('direction')
                             ->label('Richtung')
                             ->options([
-                                'both' => 'Von und Nach',
-                                'from' => 'Von diesem Flughafen',
-                                'to' => 'Zu diesem Flughafen',
+                                'both' => 'Abflug und Ankunft',
+                                'from' => 'Abflug',
+                                'to' => 'Ankunft',
                             ])
                             ->default('both')
                             ->required()
