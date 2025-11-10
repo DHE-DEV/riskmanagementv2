@@ -90,6 +90,7 @@ class CustomerForm
                 // Rechte Spalte
                 Section::make('Firmeninformationen')
                     ->columnSpan(1)
+                    ->columnStart(2)
                     ->schema([
                         TextInput::make('company_name')
                             ->label('Firmenname')
