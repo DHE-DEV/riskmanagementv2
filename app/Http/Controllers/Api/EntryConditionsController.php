@@ -11,6 +11,29 @@ use Illuminate\Support\Facades\Log;
 class EntryConditionsController extends Controller
 {
     /**
+     * Get API key - prioritize customer's Passolution token if available
+     */
+    private function getApiKey()
+    {
+        $customer = auth('customer')->user();
+
+        if ($customer && $customer->hasActivePassolution()) {
+            return $customer->passolution_access_token;
+        }
+
+        return config('services.passolution.api_key', env('PDS_KEY'));
+    }
+
+    /**
+     * Check if customer has Passolution access
+     */
+    private function hasPassolutionAccess()
+    {
+        $customer = auth('customer')->user();
+        return $customer && $customer->hasActivePassolution();
+    }
+
+    /**
      * Get all country coordinates for map markers (all destinations)
      */
     public function getAllCountryCoordinates()
@@ -58,19 +81,22 @@ class EntryConditionsController extends Controller
     public function getCountries()
     {
         try {
-            // Get available nationalities from config
-            $availableNationalities = config('app.entry_conditions_available_nationalities',
-                env('ENTRY_CONDITIONS_AVAILABLE_NATIONALITIES', 'DE,AT,CH'));
-
-            // Convert to array of country codes
-            $allowedCodes = array_map('trim', explode(',', $availableNationalities));
-
             // Use Eloquent to get countries with capital coordinates
             $query = \App\Models\Country::with('capital');
 
-            // Filter by allowed country codes if configuration is set
-            if (!empty($allowedCodes) && !in_array('*', $allowedCodes)) {
-                $query->whereIn('iso_code', $allowedCodes);
+            // If customer has Passolution access, allow all nationalities
+            if (!$this->hasPassolutionAccess()) {
+                // Get available nationalities from config
+                $availableNationalities = config('app.entry_conditions_available_nationalities',
+                    env('ENTRY_CONDITIONS_AVAILABLE_NATIONALITIES', 'DE,AT,CH'));
+
+                // Convert to array of country codes
+                $allowedCodes = array_map('trim', explode(',', $availableNationalities));
+
+                // Filter by allowed country codes if configuration is set
+                if (!empty($allowedCodes) && !in_array('*', $allowedCodes)) {
+                    $query->whereIn('iso_code', $allowedCodes);
+                }
             }
 
             $countries = $query->get()
@@ -128,9 +154,9 @@ class EntryConditionsController extends Controller
                 ];
             }
 
-            // Get API credentials from config
+            // Get API credentials - use customer token if available
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
-            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
+            $apiKey = $this->getApiKey();
 
             if (!$apiKey) {
                 if ($loggingEnabled) {
@@ -268,9 +294,9 @@ class EntryConditionsController extends Controller
                 ], 400);
             }
 
-            // Get API credentials from config
+            // Get API credentials - use customer token if available
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
-            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
+            $apiKey = $this->getApiKey();
 
             if (!$apiKey) {
                 if ($loggingEnabled) {
@@ -445,9 +471,28 @@ class EntryConditionsController extends Controller
                 ], 400);
             }
 
-            // Get API credentials from config
+            // Prüfe ob mehrere Nationalitäten angegeben wurden
+            $nationalityArray = is_array($nationalities) ? $nationalities : array_filter(array_map('trim', explode(',', $nationalities)));
+            if (count($nationalityArray) > 1) {
+                // Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung erlaubt
+                if (!$this->hasPassolutionAccess()) {
+                    if ($loggingEnabled) {
+                        EntryConditionsLog::create(array_merge($logData, [
+                            'success' => false,
+                            'error_message' => 'Multiple nationalities require Passolution access',
+                        ]));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung verfügbar'
+                    ], 403);
+                }
+            }
+
+            // Get API credentials - use customer token if available
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
-            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
+            $apiKey = $this->getApiKey();
 
             if (!$apiKey) {
                 if ($loggingEnabled) {
@@ -632,9 +677,28 @@ class EntryConditionsController extends Controller
                 ], 400);
             }
 
-            // Get API credentials from config
+            // Prüfe ob mehrere Nationalitäten angegeben wurden
+            $nationalityArray = array_filter(array_map('trim', explode(',', $nationalities)));
+            if (count($nationalityArray) > 1) {
+                // Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung erlaubt
+                if (!$this->hasPassolutionAccess()) {
+                    if ($loggingEnabled) {
+                        EntryConditionsLog::create(array_merge($logData, [
+                            'success' => false,
+                            'error_message' => 'Multiple nationalities require Passolution access',
+                        ]));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung verfügbar'
+                    ], 403);
+                }
+            }
+
+            // Get API credentials - use customer token if available
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
-            $apiKey = config('services.passolution.api_key', env('PDS_KEY'));
+            $apiKey = $this->getApiKey();
 
             if (!$apiKey) {
                 if ($loggingEnabled) {

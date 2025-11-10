@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class BookingLocation extends Model
 {
     protected $fillable = [
+        'customer_id',
+        'branch_id',
         'type',
         'name',
         'description',
@@ -60,5 +62,32 @@ class BookingLocation extends Model
         )
         ->having('distance', '<=', $radiusKm)
         ->orderBy('distance');
+    }
+
+    /**
+     * Scope für aktive Directory Listings
+     * Filtert nur Locations von Kunden, die directory_listing_active = true haben
+     */
+    public function scopeActiveListings($query)
+    {
+        return $query->whereHas('customer', function ($q) {
+            $q->where('directory_listing_active', true);
+        });
+    }
+
+    /**
+     * Beziehung zum Customer
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Beziehung zur Branch (Filiale)
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

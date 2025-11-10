@@ -43,8 +43,30 @@ Route::get('/booking', function () {
     if (!config('app.dashboard_booking_enabled', true)) {
         abort(404);
     }
-    return view('livewire.pages.booking');
+
+    $customer = auth('customer')->user();
+
+    return view('livewire.pages.booking', [
+        'customer' => $customer,
+    ]);
 })->name('booking');
+
+Route::get('/branches', function () {
+    // Nur für eingeloggte Kunden mit aktiviertem Branch Management
+    if (!auth('customer')->check() || !auth('customer')->user()->branch_management_active) {
+        abort(404);
+    }
+
+    $customer = auth('customer')->user();
+
+    return view('livewire.pages.branches', [
+        'customer' => $customer,
+    ]);
+})->name('branches');
+
+Route::get('/cruise', function () {
+    return view('livewire.pages.cruise');
+})->name('cruise');
 
 Route::middleware([
     'auth:sanctum',
@@ -59,3 +81,4 @@ Route::middleware([
 });
 
 require __DIR__.'/auth.php';
+require __DIR__.'/customer-auth.php';

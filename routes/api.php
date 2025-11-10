@@ -85,7 +85,8 @@ Route::prefix('geolocation')->group(function () {
 });
 
 // Entry Conditions API Routes
-Route::prefix('entry-conditions')->group(function () {
+// Using web middleware to support session-based customer authentication
+Route::prefix('entry-conditions')->middleware('web')->group(function () {
     Route::get('/countries', [EntryConditionsController::class, 'getCountries'])->name('entry-conditions.countries');
     Route::get('/all-coordinates', [EntryConditionsController::class, 'getAllCountryCoordinates'])->name('entry-conditions.all-coordinates');
     Route::post('/search', [EntryConditionsController::class, 'search'])->name('entry-conditions.search');
@@ -113,3 +114,12 @@ Route::get('/countries-geojson', function () {
         'Cache-Control' => 'public, max-age=86400' // Cache for 24 hours
     ]);
 })->name('countries.geojson');
+
+// Cruise Search API Routes
+Route::prefix('cruise-search')->group(function () {
+    Route::get('/cruise-lines', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getCruiseLines'])->name('cruise-search.cruise-lines');
+    Route::get('/ships', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getShips'])->name('cruise-search.ships');
+    Route::get('/routes', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getRoutes'])->name('cruise-search.routes');
+    Route::get('/cruise-dates', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getCruiseDates'])->name('cruise-search.cruise-dates');
+    Route::post('/search', [\App\Http\Controllers\Api\CruiseSearchController::class, 'search'])->name('cruise-search.search');
+});

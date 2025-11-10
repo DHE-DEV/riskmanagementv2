@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Airport extends Model
 {
@@ -18,20 +19,30 @@ class Airport extends Model
         'city_id',
         'country_id',
         'website',
+        'security_timeslot_url',
         'lat',
         'lng',
         'altitude',
         'timezone',
         'dst_timezone',
         'type',
+        'is_active',
         'source',
-        'security_timeslot_url',
+        'operates_24h',
+        'lounges',
+        'nearby_hotels',
+        'mobility_options',
     ];
 
     protected $casts = [
-        'lat' => 'decimal:6',
-        'lng' => 'decimal:6',
+        'lat' => 'decimal:16',
+        'lng' => 'decimal:16',
         'altitude' => 'integer',
+        'is_active' => 'boolean',
+        'operates_24h' => 'boolean',
+        'lounges' => 'array',
+        'nearby_hotels' => 'array',
+        'mobility_options' => 'array',
     ];
 
     /**
@@ -48,6 +59,16 @@ class Airport extends Model
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * Get the airlines that serve this airport.
+     */
+    public function airlines(): BelongsToMany
+    {
+        return $this->belongsToMany(Airline::class, 'airline_airport')
+            ->withPivot('direction', 'terminal')
+            ->withTimestamps();
     }
 
     /**

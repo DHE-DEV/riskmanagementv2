@@ -5,6 +5,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/app/public/exports/*.csv
 /vendor
 .env
 .env.backup

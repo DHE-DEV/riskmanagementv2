@@ -17,3 +17,17 @@ if (config('app.gdacs_enabled')) {
         ->emailOutputOnFailure(config('mail.admin_email', 'admin@passolution.eu'))
         ->appendOutputTo(storage_path('logs/gdacs-schedule.log'));
 }
+
+// Scheduled Branch Deletion - runs daily at 00:00
+Schedule::command('branches:delete-scheduled')
+    ->daily()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/branch-deletion-schedule.log'));
+
+// Cleanup Expired Exports - runs every hour
+Schedule::command('exports:cleanup')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/exports-cleanup-schedule.log'));

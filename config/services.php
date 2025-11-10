@@ -46,10 +46,37 @@ return [
         'api_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
         'api_key' => env('PASSOLUTION_API_KEY'),
         'api_secret' => env('PASSOLUTION_API_SECRET'),
+        'client_id' => env('PASSOLUTION_OAUTH_CLIENT_ID'),
+        'client_secret' => env('PASSOLUTION_OAUTH_CLIENT_SECRET'),
     ],
 
     'openai' => [
         'key' => env('RISK_CHARGPT_KEY'),
+    ],
+
+    // Social Authentication Providers for Customers
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('APP_URL') . '/customer/auth/facebook/callback',
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('APP_URL') . '/customer/auth/google/callback',
+    ],
+
+    'linkedin' => [
+        'client_id' => env('LINKEDIN_CLIENT_ID'),
+        'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
+        'redirect' => env('APP_URL') . '/customer/auth/linkedin/callback',
+    ],
+
+    'twitter' => [
+        'client_id' => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
+        'redirect' => env('APP_URL') . '/customer/auth/twitter/callback',
     ],
 
 ];

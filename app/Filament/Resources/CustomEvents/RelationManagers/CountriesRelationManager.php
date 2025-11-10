@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\CustomEvents\RelationManagers;
 
 use App\Models\Country;
+use App\Models\Region;
+use App\Models\City;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section as FormSection;
 use Filament\Forms\Components\Select;
@@ -56,7 +58,7 @@ class CountriesRelationManager extends RelationManager
                             ->required()
                             ->preload()
                             ->reactive()
-                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                            ->afterStateUpdated(function (SchemaSet $set, ?string $state) {
                                 if ($state) {
                                     $country = Country::find($state);
                                     if ($country && $country->lat && $country->lng) {
@@ -74,7 +76,7 @@ class CountriesRelationManager extends RelationManager
                             ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
                             ->default(true)
                             ->reactive()
-                            ->afterStateUpdated(function (Get $get, Set $set, ?bool $state) {
+                            ->afterStateUpdated(function (SchemaGet $get, SchemaSet $set, ?bool $state) {
                                 if ($state && $get('recordId')) {
                                     $country = Country::find($get('recordId'));
                                     if ($country && $country->lat && $country->lng) {
@@ -135,6 +137,33 @@ class CountriesRelationManager extends RelationManager
                     })
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('location_details')
+                    ->label('Region / Stadt')
+                    ->getStateUsing(function ($record) {
+                        if (!$record || !$record->pivot) {
+                            return '-';
+                        }
+
+                        $parts = [];
+
+                        if ($record->pivot->region_id) {
+                            $region = Region::find($record->pivot->region_id);
+                            if ($region) {
+                                $parts[] = $region->getName('de');
+                            }
+                        }
+
+                        if ($record->pivot->city_id) {
+                            $city = City::find($record->pivot->city_id);
+                            if ($city) {
+                                $parts[] = $city->getName('de');
+                            }
+                        }
+
+                        return !empty($parts) ? implode(' / ', $parts) : '-';
+                    })
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('coordinates')
                     ->label('Koordinaten')
                     ->getStateUsing(function ($record) {
@@ -142,8 +171,45 @@ class CountriesRelationManager extends RelationManager
                             return '-';
                         }
 
-                        $lat = $record->pivot->use_default_coordinates ? $record->lat : $record->pivot->latitude;
-                        $lng = $record->pivot->use_default_coordinates ? $record->lng : $record->pivot->longitude;
+                        // Priorität: Stadt > Region > Hauptstadt > Land
+                        $lat = null;
+                        $lng = null;
+
+                        if ($record->pivot->use_default_coordinates) {
+                            // 1. Prüfe Stadt-Koordinaten
+                            if ($record->pivot->city_id) {
+                                $city = City::find($record->pivot->city_id);
+                                if ($city && $city->lat && $city->lng) {
+                                    $lat = $city->lat;
+                                    $lng = $city->lng;
+                                }
+                            }
+
+                            // 2. Prüfe Region-Koordinaten (wenn keine Stadt-Koordinaten)
+                            if (!$lat && !$lng && $record->pivot->region_id) {
+                                $region = Region::find($record->pivot->region_id);
+                                if ($region && $region->lat && $region->lng) {
+                                    $lat = $region->lat;
+                                    $lng = $region->lng;
+                                }
+                            }
+
+                            // 3. Prüfe Hauptstadt-Koordinaten (wenn keine Stadt/Region-Koordinaten)
+                            if (!$lat && !$lng && $record->capital && $record->capital->lat && $record->capital->lng) {
+                                $lat = $record->capital->lat;
+                                $lng = $record->capital->lng;
+                            }
+
+                            // 4. Fallback: geografisches Zentrum des Landes
+                            if (!$lat && !$lng) {
+                                $lat = $record->lat;
+                                $lng = $record->lng;
+                            }
+                        } else {
+                            // Verwende individuelle Koordinaten aus dem Pivot
+                            $lat = $record->pivot->latitude;
+                            $lng = $record->pivot->longitude;
+                        }
 
                         if (!$lat || !$lng) {
                             return '-';
@@ -164,8 +230,45 @@ class CountriesRelationManager extends RelationManager
                             return $state;
                         }
 
-                        $lat = $record->pivot->use_default_coordinates ? $record->lat : $record->pivot->latitude;
-                        $lng = $record->pivot->use_default_coordinates ? $record->lng : $record->pivot->longitude;
+                        // Priorität: Stadt > Region > Hauptstadt > Land
+                        $lat = null;
+                        $lng = null;
+
+                        if ($record->pivot->use_default_coordinates) {
+                            // 1. Prüfe Stadt-Koordinaten
+                            if ($record->pivot->city_id) {
+                                $city = City::find($record->pivot->city_id);
+                                if ($city && $city->lat && $city->lng) {
+                                    $lat = $city->lat;
+                                    $lng = $city->lng;
+                                }
+                            }
+
+                            // 2. Prüfe Region-Koordinaten (wenn keine Stadt-Koordinaten)
+                            if (!$lat && !$lng && $record->pivot->region_id) {
+                                $region = Region::find($record->pivot->region_id);
+                                if ($region && $region->lat && $region->lng) {
+                                    $lat = $region->lat;
+                                    $lng = $region->lng;
+                                }
+                            }
+
+                            // 3. Prüfe Hauptstadt-Koordinaten (wenn keine Stadt/Region-Koordinaten)
+                            if (!$lat && !$lng && $record->capital && $record->capital->lat && $record->capital->lng) {
+                                $lat = $record->capital->lat;
+                                $lng = $record->capital->lng;
+                            }
+
+                            // 4. Fallback: geografisches Zentrum des Landes
+                            if (!$lat && !$lng) {
+                                $lat = $record->lat;
+                                $lng = $record->lng;
+                            }
+                        } else {
+                            // Verwende individuelle Koordinaten aus dem Pivot
+                            $lat = $record->pivot->latitude;
+                            $lng = $record->pivot->longitude;
+                        }
 
                         if (!$lat || !$lng) {
                             return '-';
@@ -288,6 +391,12 @@ class CountriesRelationManager extends RelationManager
                             })
                             ->searchable()
                             ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($set) {
+                                // Reset region and city when country changes
+                                $set('region_id', null);
+                                $set('city_id', null);
+                            })
                             ->getSearchResultsUsing(function (string $search) {
                                 $ownerRecord = $this->getOwnerRecord();
                                 $existingIds = $ownerRecord->countries()->pluck('countries.id')->toArray();
@@ -312,10 +421,167 @@ class CountriesRelationManager extends RelationManager
                                 $value ? Country::find($value)?->getName('de') . ' (' . Country::find($value)?->iso_code . ')' : null
                             ),
 
+                        Select::make('region_id')
+                            ->label('Region (optional)')
+                            ->options(function ($get) {
+                                $countryId = $get('recordId');
+                                if (!$countryId) {
+                                    return [];
+                                }
+
+                                return Region::query()
+                                    ->where('country_id', $countryId)
+                                    ->orderBy('name_translations->de')
+                                    ->get()
+                                    ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateUpdated(function ($get, $set, ?string $state) {
+                                // Reset city when region changes
+                                $set('city_id', null);
+
+                                // Update coordinates if using default coordinates
+                                if ($state && $get('use_default_coordinates')) {
+                                    $region = Region::find($state);
+                                    if ($region && $region->lat && $region->lng) {
+                                        $set('latitude', $region->lat);
+                                        $set('longitude', $region->lng);
+                                    }
+                                }
+                            })
+                            ->getSearchResultsUsing(function (string $search, $get) {
+                                $countryId = $get('recordId');
+                                if (!$countryId) {
+                                    return [];
+                                }
+
+                                $searchLower = mb_strtolower($search);
+
+                                return Region::query()
+                                    ->where('country_id', $countryId)
+                                    ->where(function ($query) use ($searchLower) {
+                                        $query->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))) LIKE ?', ['%' . $searchLower . '%'])
+                                              ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.en"))) LIKE ?', ['%' . $searchLower . '%'])
+                                              ->orWhereRaw('LOWER(code) LIKE ?', ['%' . $searchLower . '%']);
+                                    })
+                                    ->orderBy('name_translations->de')
+                                    ->limit(100)
+                                    ->get()
+                                    ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value): ?string =>
+                                $value ? Region::find($value)?->getName('de') : null
+                            )
+                            ->visible(fn ($get) => $get('recordId') !== null)
+                            ->helperText('Optional: Wählen Sie eine Region des ausgewählten Landes'),
+
+                        Select::make('city_id')
+                            ->label('Stadt (optional)')
+                            ->options(function ($get) {
+                                $countryId = $get('recordId');
+                                $regionId = $get('region_id');
+
+                                if (!$countryId) {
+                                    return [];
+                                }
+
+                                $query = City::query()->where('country_id', $countryId);
+
+                                // If region is selected, filter cities by region
+                                if ($regionId) {
+                                    $query->where('region_id', $regionId);
+                                }
+
+                                return $query
+                                    ->orderBy('name_translations->de')
+                                    ->get()
+                                    ->mapWithKeys(fn (City $c) => [$c->id => $c->getName('de')])
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateUpdated(function ($get, $set, ?string $state) {
+                                if ($state) {
+                                    $city = City::find($state);
+                                    if ($city && $city->lat && $city->lng && !$get('use_default_coordinates')) {
+                                        $set('latitude', $city->lat);
+                                        $set('longitude', $city->lng);
+                                    }
+                                }
+                            })
+                            ->getSearchResultsUsing(function (string $search, $get) {
+                                $countryId = $get('recordId');
+                                $regionId = $get('region_id');
+
+                                if (!$countryId) {
+                                    return [];
+                                }
+
+                                $searchLower = mb_strtolower($search);
+                                $query = City::query()->where('country_id', $countryId);
+
+                                // If region is selected, filter cities by region
+                                if ($regionId) {
+                                    $query->where('region_id', $regionId);
+                                }
+
+                                return $query
+                                    ->where(function ($query) use ($searchLower) {
+                                        $query->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))) LIKE ?', ['%' . $searchLower . '%'])
+                                              ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.en"))) LIKE ?', ['%' . $searchLower . '%']);
+                                    })
+                                    ->orderBy('name_translations->de')
+                                    ->limit(100)
+                                    ->get()
+                                    ->mapWithKeys(fn (City $c) => [$c->id => $c->getName('de')])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value): ?string =>
+                                $value ? City::find($value)?->getName('de') : null
+                            )
+                            ->visible(fn ($get) => $get('recordId') !== null)
+                            ->helperText(fn ($get) => $get('region_id')
+                                ? 'Optional: Wählen Sie eine Stadt der ausgewählten Region'
+                                : 'Optional: Wählen Sie eine Stadt des ausgewählten Landes'),
+
                         Toggle::make('use_default_coordinates')
-                            ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
+                            ->label('Standard-Koordinaten verwenden')
+                            ->helperText('Verwendet Koordinaten von Stadt > Region > Land')
                             ->default(true)
-                            ->reactive(),
+                            ->reactive()
+                            ->afterStateUpdated(function ($get, $set, ?bool $state) {
+                                if ($state) {
+                                    // Priority: City > Region > Country
+                                    if ($get('city_id')) {
+                                        $city = City::find($get('city_id'));
+                                        if ($city && $city->lat && $city->lng) {
+                                            $set('latitude', $city->lat);
+                                            $set('longitude', $city->lng);
+                                            return;
+                                        }
+                                    }
+
+                                    if ($get('region_id')) {
+                                        $region = Region::find($get('region_id'));
+                                        if ($region && $region->lat && $region->lng) {
+                                            $set('latitude', $region->lat);
+                                            $set('longitude', $region->lng);
+                                            return;
+                                        }
+                                    }
+
+                                    if ($get('recordId')) {
+                                        $country = Country::find($get('recordId'));
+                                        if ($country && $country->lat && $country->lng) {
+                                            $set('latitude', $country->lat);
+                                            $set('longitude', $country->lng);
+                                        }
+                                    }
+                                }
+                            }),
 
                         Grid::make(2)
                             ->schema([
@@ -378,12 +644,27 @@ class CountriesRelationManager extends RelationManager
                             ->helperText('Optional: Beschreiben Sie den genauen Standort'),
                     ])
                     ->mutateFormDataUsing(function (array $data): array {
-                        // If using default coordinates, get them from the country
+                        // If using default coordinates, get them from city, region or country
                         if ($data['use_default_coordinates'] ?? true) {
-                            $country = Country::find($data['recordId']);
-                            if ($country) {
-                                $data['latitude'] = $country->lat;
-                                $data['longitude'] = $country->lng;
+                            // Priority: City > Region > Country
+                            if (!empty($data['city_id'])) {
+                                $city = City::find($data['city_id']);
+                                if ($city && $city->lat && $city->lng) {
+                                    $data['latitude'] = $city->lat;
+                                    $data['longitude'] = $city->lng;
+                                }
+                            } elseif (!empty($data['region_id'])) {
+                                $region = Region::find($data['region_id']);
+                                if ($region && $region->lat && $region->lng) {
+                                    $data['latitude'] = $region->lat;
+                                    $data['longitude'] = $region->lng;
+                                }
+                            } else {
+                                $country = Country::find($data['recordId']);
+                                if ($country && $country->lat && $country->lng) {
+                                    $data['latitude'] = $country->lat;
+                                    $data['longitude'] = $country->lng;
+                                }
                             }
                         }
                         return $data;
@@ -395,8 +676,104 @@ class CountriesRelationManager extends RelationManager
                     ->modalHeading('Standort bearbeiten')
                     ->modalSubmitActionLabel('Speichern')
                     ->form([
+                        Select::make('region_id')
+                            ->label('Region (optional)')
+                            ->options(function (Country $record) {
+                                return Region::query()
+                                    ->where('country_id', $record->id)
+                                    ->orderBy('name_translations->de')
+                                    ->get()
+                                    ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateUpdated(function ($set) {
+                                // Reset city when region changes
+                                $set('city_id', null);
+                            })
+                            ->getSearchResultsUsing(function (string $search, Country $record) {
+                                $searchLower = mb_strtolower($search);
+
+                                return Region::query()
+                                    ->where('country_id', $record->id)
+                                    ->where(function ($query) use ($searchLower) {
+                                        $query->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))) LIKE ?', ['%' . $searchLower . '%'])
+                                              ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.en"))) LIKE ?', ['%' . $searchLower . '%'])
+                                              ->orWhereRaw('LOWER(code) LIKE ?', ['%' . $searchLower . '%']);
+                                    })
+                                    ->orderBy('name_translations->de')
+                                    ->limit(100)
+                                    ->get()
+                                    ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value): ?string =>
+                                $value ? Region::find($value)?->getName('de') : null
+                            )
+                            ->helperText('Optional: Wählen Sie eine Region des Landes'),
+
+                        Select::make('city_id')
+                            ->label('Stadt (optional)')
+                            ->options(function ($get, Country $record) {
+                                $regionId = $get('region_id');
+
+                                $query = City::query()->where('country_id', $record->id);
+
+                                // If region is selected, filter cities by region
+                                if ($regionId) {
+                                    $query->where('region_id', $regionId);
+                                }
+
+                                return $query
+                                    ->orderBy('name_translations->de')
+                                    ->get()
+                                    ->mapWithKeys(fn (City $c) => [$c->id => $c->getName('de')])
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateUpdated(function ($get, $set, ?string $state) {
+                                // Update coordinates if city is selected and using default coordinates
+                                if ($state && $get('use_default_coordinates')) {
+                                    $city = City::find($state);
+                                    if ($city && $city->lat && $city->lng) {
+                                        $set('latitude', $city->lat);
+                                        $set('longitude', $city->lng);
+                                    }
+                                }
+                            })
+                            ->getSearchResultsUsing(function (string $search, $get, Country $record) {
+                                $regionId = $get('region_id');
+                                $searchLower = mb_strtolower($search);
+                                $query = City::query()->where('country_id', $record->id);
+
+                                // If region is selected, filter cities by region
+                                if ($regionId) {
+                                    $query->where('region_id', $regionId);
+                                }
+
+                                return $query
+                                    ->where(function ($query) use ($searchLower) {
+                                        $query->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.de"))) LIKE ?', ['%' . $searchLower . '%'])
+                                              ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, "$.en"))) LIKE ?', ['%' . $searchLower . '%']);
+                                    })
+                                    ->orderBy('name_translations->de')
+                                    ->limit(100)
+                                    ->get()
+                                    ->mapWithKeys(fn (City $c) => [$c->id => $c->getName('de')])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value): ?string =>
+                                $value ? City::find($value)?->getName('de') : null
+                            )
+                            ->helperText(fn ($get) => $get('region_id')
+                                ? 'Optional: Wählen Sie eine Stadt der ausgewählten Region'
+                                : 'Optional: Wählen Sie eine Stadt des Landes'),
+
                         Toggle::make('use_default_coordinates')
-                            ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
+                            ->label('Standard-Koordinaten verwenden')
+                            ->helperText('Verwendet Koordinaten von Stadt > Region > Land')
                             ->reactive(),
 
                         Grid::make(2)
@@ -456,10 +833,25 @@ class CountriesRelationManager extends RelationManager
                             ->placeholder('z.B. Hauptstadt, Flughafen Frankfurt, etc.'),
                     ])
                     ->mutateFormDataUsing(function (array $data, Country $record): array {
-                        // If using default coordinates, get them from the country
+                        // If using default coordinates, get them from city, region or country
                         if ($data['use_default_coordinates'] ?? false) {
-                            $data['latitude'] = $record->lat;
-                            $data['longitude'] = $record->lng;
+                            // Priority: City > Region > Country
+                            if (!empty($data['city_id'])) {
+                                $city = City::find($data['city_id']);
+                                if ($city && $city->lat && $city->lng) {
+                                    $data['latitude'] = $city->lat;
+                                    $data['longitude'] = $city->lng;
+                                }
+                            } elseif (!empty($data['region_id'])) {
+                                $region = Region::find($data['region_id']);
+                                if ($region && $region->lat && $region->lng) {
+                                    $data['latitude'] = $region->lat;
+                                    $data['longitude'] = $region->lng;
+                                }
+                            } else {
+                                $data['latitude'] = $record->lat;
+                                $data['longitude'] = $record->lng;
+                            }
                         }
                         return $data;
                     }),

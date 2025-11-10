@@ -164,4 +164,23 @@ return [
     'dashboard_airports_enabled' => env('DASHBOARD_AIRPORTS_ENABLED', true),
     'dashboard_booking_enabled' => env('DASHBOARD_BOOKING_ENABLED', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Navigation Menu Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options control which menu items are visible in the public navigation.
+    | Each item can be individually enabled or disabled via environment variables.
+    |
+    */
+
+    'navigation_menu_enabled' => env('NAVIGATION_MENU_ENABLED', true),
+    'navigation_events_enabled' => env('NAVIGATION_EVENTS_ENABLED', true),
+    'navigation_entry_conditions_enabled' => env('NAVIGATION_ENTRY_CONDITIONS_ENABLED', true),
+    'navigation_booking_enabled' => env('NAVIGATION_BOOKING_ENABLED', true),
+    'navigation_airports_enabled' => env('NAVIGATION_AIRPORTS_ENABLED', true),
+    'navigation_branches_enabled' => env('NAVIGATION_BRANCHES_ENABLED', true),
+    'navigation_cruise_enabled' => env('NAVIGATION_CRUISE_ENABLED', true),
+    'navigation_center_map_enabled' => env('NAVIGATION_CENTER_MAP_ENABLED', true),
+
 ];

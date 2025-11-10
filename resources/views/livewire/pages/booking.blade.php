@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Buchungsmöglichkeit - Global Travel Monitor</title>
 
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -60,7 +63,7 @@
             background: white;
             border-bottom: 1px solid #e5e7eb;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 50;
+            z-index: 10000;
         }
 
         /* Footer - feststehend */
@@ -69,7 +72,7 @@
             height: 32px;
             background: white;
             color: black;
-            z-index: 50;
+            z-index: 9999;
             border-top: 1px solid #e5e7eb;
         }
 
@@ -202,41 +205,12 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="header">
-            <div class="flex items-center justify-between px-6 h-full">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
-                        <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <x-public-header />
 
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->
-            <nav class="navigation flex flex-col items-center py-4 space-y-4">
-                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Dashboard">
-                    <i class="fa-regular fa-home text-2xl" aria-hidden="true"></i>
-                </a>
-                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse">
-                    <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
-                </a>
-                @if(config('app.entry_conditions_enabled', true))
-                <a href="/entry-conditions" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Einreisebestimmungen">
-                    <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
-                </a>
-                @endif
-                <a href="/booking" class="p-3 text-white bg-gray-800 rounded-lg transition-colors" title="Buchungsmöglichkeit">
-                    <i class="fa-regular fa-calendar-check text-2xl" aria-hidden="true"></i>
-                </a>
-                @if(config('app.dashboard_airports_enabled', true))
-                <a href="/?airports=1" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen">
-                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </a>
-                @endif
-            </nav>
+            <x-public-navigation active="booking" />
 
             <!-- Filter Sidebar -->
             <aside class="sidebar">
@@ -327,21 +301,19 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="pt-3 border-t border-gray-200">
-                            <div class="flex gap-2">
-                                <button id="search-button" onclick="searchBookingOptions()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
+                        <div class="pt-3 space-y-2 border-t border-gray-200">
+                                <button id="search-button" onclick="searchBookingOptions()" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                     Suchen
                                 </button>
-                                <button id="reset-filters-button" onclick="resetFilters()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-1.5" style="display: none;">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button id="reset-filters-button" onclick="resetFilters()" class="w-full px-4 py-2.5 text-sm text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-2" style="display: none;">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                     </svg>
-                                    Zurücksetzen
+                                    Filter zurücksetzen
                                 </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -373,15 +345,30 @@
                 </div>
 
                 <!-- Registration Call-to-Action -->
-                <div class="bg-white shadow-sm mt-0">
-                    <div class="p-4 text-center">
-                        <p class="text-sm text-gray-600 mb-3">Sie möchten hier gelistet sein?</p>
-                        <a href="#" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors shadow-sm w-full">
-                            <i class="fa-solid fa-user-plus"></i>
-                            Kostenlos registrieren
-                        </a>
+                @if($customer && $customer->customer_type === 'business' && !$customer->directory_listing_active)
+                    <!-- Eingeloggt als Firmenkunde, aber Listing nicht aktiviert -->
+                    <div class="bg-white shadow-sm mt-0">
+                        <div class="p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-3">Möchten Sie Ihre Adresse hier veröffentlichen?</p>
+                            <button onclick="activateDirectoryListing()" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm w-full">
+                                <i class="fa-solid fa-check-circle"></i>
+                                Adresse veröffentlichen
+                            </button>
+                        </div>
                     </div>
-                </div>
+                @elseif(!$customer)
+                    <!-- Nicht eingeloggt -->
+                    <div class="bg-white shadow-sm mt-0">
+                        <div class="p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-3">Sie möchten hier gelistet sein?</p>
+                            <a href="{{ route('customer.register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors shadow-sm w-full">
+                                <i class="fa-solid fa-user-plus"></i>
+                                Kostenlos registrieren
+                            </a>
+                        </div>
+                    </div>
+                @endif
+                {{-- Wenn eingeloggt UND directory_listing_active = true: Kasten wird nicht angezeigt --}}
             </aside>
 
             <!-- Map Container -->
@@ -398,50 +385,7 @@
         </div>
 
         <!-- Footer -->
-        <footer class="footer">
-            <div class="flex items-center justify-between px-4 h-full">
-                <div class="flex items-center space-x-6 text-sm">
-                    <span>© 2025 Passolution GmbH</span>
-                    <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Impressum</a>
-                    <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Datenschutz</a>
-                    <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
-                    <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal').classList.remove('hidden');" class="hover:text-blue-300 transition-colors">Haftungsausschluss</a>
-                </div>
-                <div class="flex items-center space-x-4 text-sm">
-                    <span>Version 1.0.17</span>
-                    <span>Build: 2025-09-30</span>
-                </div>
-            </div>
-        </footer>
-
-        <!-- Haftungsausschluss Modal -->
-        <div id="disclaimerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-gray-900">Haftungsausschluss</h2>
-                        <button onclick="document.getElementById('disclaimerModal').classList.add('hidden');" class="text-gray-400 hover:text-gray-600 transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="space-y-4 text-gray-700">
-                        <p>
-                            Die auf global-travel-monitor.eu bereitgestellten Informationen werden mit größter Sorgfalt recherchiert und regelmäßig aktualisiert. Dennoch kann keine Gewähr für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte übernommen werden. Alle Angaben erfolgen ohne Gewähr. Eine Haftung, insbesondere für eventuelle Schäden oder Konsequenzen, die durch die Nutzung der angebotenen Informationen entstehen, ist ausgeschlossen.
-                        </p>
-                        <p>
-                            Das Portal kann Verlinkungen zu externen Webseiten Dritter enthalten, auf deren Inhalte kein Einfluss besteht. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
-                        </p>
-                    </div>
-                    <div class="mt-6 flex justify-end">
-                        <button onclick="document.getElementById('disclaimerModal').classList.add('hidden');" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                            Schließen
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-public-footer />
     </div>
 
     <!-- Leaflet JS -->
@@ -454,15 +398,31 @@
         let bookingMap = null;
         let markersLayer = null;
         let searchAreaLayer = null; // Für PLZ-Gebiet und Suchkreis
+        let centerMarkerLayer = null; // Für Suchzentrum-Marker (nicht geclustert)
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Map initialisieren
-            bookingMap = L.map('booking-map').setView([51.1657, 10.4515], 6); // Deutschland zentriert
+            // Map initialisieren mit Zoom-Beschränkungen
+            bookingMap = L.map('booking-map', {
+                worldCopyJump: false,
+                maxBounds: [[-90, -180], [90, 180]],
+                minZoom: 2  // Verhindert Herauszoomen über Weltansicht hinaus
+            }).setView([51.1657, 10.4515], 6); // Deutschland zentriert
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(bookingMap);
+
+            // Window Resize Event-Listener für dynamische Karten-Anpassung
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    if (bookingMap) {
+                        bookingMap.invalidateSize();
+                    }
+                }, 250);
+            });
 
             // Marker-Cluster-Layer statt normalem LayerGroup
             markersLayer = L.markerClusterGroup({
@@ -494,6 +454,9 @@
 
             // Layer für Suchbereich (PLZ-Gebiet + Kreis)
             searchAreaLayer = L.layerGroup().addTo(bookingMap);
+
+            // Layer für Suchzentrum-Marker (nicht geclustert)
+            centerMarkerLayer = L.layerGroup().addTo(bookingMap);
 
             // Initial badge styling setzen
             updateRadiusBadges();
@@ -624,7 +587,7 @@
                     displayResults(data);
 
                     // Zeige Reset-Button
-                    document.getElementById('reset-filters-button').style.display = 'block';
+                    document.getElementById('reset-filters-button').style.display = 'flex';
                 } else {
                     alert(data.message || 'Fehler bei der Suche');
                 }
@@ -728,6 +691,7 @@
         function displayLocations(locations, center = null) {
             // Alte Marker entfernen
             markersLayer.clearLayers();
+            centerMarkerLayer.clearLayers();
 
             // Icons für verschiedene Typen - Standard Leaflet Marker
             const blueIcon = L.icon({
@@ -784,12 +748,12 @@
                 }
             });
 
-            // Center-Marker hinzufügen, wenn vorhanden (aber nicht mehr zoomen - das macht loadPostalCodeArea)
+            // Center-Marker hinzufügen, wenn vorhanden (auf separatem Layer, nicht geclustert)
             if (center && center.lat && center.lng) {
                 const centerMarker = L.marker([center.lat, center.lng], {
                     icon: redIcon
                 }).bindPopup('Suchzentrum');
-                markersLayer.addLayer(centerMarker);
+                centerMarkerLayer.addLayer(centerMarker);
             }
         }
 
@@ -940,8 +904,9 @@
             updateRadiusBadges();
             updateBookingTypeBadges();
 
-            // Suchbereich entfernen (PLZ-Gebiet + Kreis)
+            // Suchbereich und Center-Marker entfernen
             searchAreaLayer.clearLayers();
+            centerMarkerLayer.clearLayers();
 
             // Ergebnisse, gesponserte Sektion und Reset-Button ausblenden
             const resultsDiv = document.getElementById('booking-search-results');
@@ -959,6 +924,38 @@
 
             // Karte zurück auf Deutschland zentrieren
             bookingMap.setView([51.1657, 10.4515], 6);
+        }
+
+        // Adressveröffentlichung aktivieren
+        async function activateDirectoryListing() {
+            if (!confirm('Möchten Sie Ihre Firmenadresse wirklich im Adressverzeichnis veröffentlichen?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ route('customer.profile.toggle-directory-listing') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ active: true })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Ihre Adresse wurde erfolgreich veröffentlicht und wird nun im Adressverzeichnis angezeigt!');
+                    // Seite neu laden um die Änderungen zu zeigen
+                    window.location.reload();
+                } else {
+                    alert('Fehler beim Aktivieren der Adressveröffentlichung. Bitte versuchen Sie es erneut.');
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Fehler beim Aktivieren der Adressveröffentlichung. Bitte versuchen Sie es erneut.');
+            }
         }
     </script>
 </body>

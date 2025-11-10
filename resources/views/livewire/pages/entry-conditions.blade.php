@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Einreisebestimmungen - Global Travel Monitor</title>
 
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -59,7 +62,7 @@
             background: white;
             border-bottom: 1px solid #e5e7eb;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 50;
+            z-index: 10000;
         }
 
         /* Footer - feststehend */
@@ -68,7 +71,7 @@
             height: 32px;
             background: white;
             color: black;
-            z-index: 50;
+            z-index: 9999;
             border-top: 1px solid #e5e7eb;
         }
 
@@ -105,8 +108,15 @@
         }
 
         #entry-conditions-map {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+        }
+
+        #entry-conditions-map .leaflet-container {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
         }
 
         /* Details Sidebar rechts */
@@ -278,11 +288,11 @@
         }
 
         .entry-conditions-content-body .pds-embed__info-table .fa-check {
-            color: #10b981;
+            color: #6b7280;
         }
 
         .entry-conditions-content-body .pds-embed__info-table .fa-xmark {
-            color: #ef4444;
+            color: #6b7280;
         }
 
         /* Span-Container für Icons in der Tabelle */
@@ -347,61 +357,12 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="header">
-            <div class="flex items-center justify-between h-full px-4">
-                <!-- Logo and Title -->
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
-                        <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center space-x-4">
-                    <button
-                        class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Daten aktualisieren"
-                        onclick="window.location.reload()"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </header>
+        <x-public-header />
 
         <!-- Main Content -->
         <div class="main-content">
             <!-- Navigation -->
-            <nav class="navigation flex flex-col items-center py-4 space-y-3">
-                <a href="/" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Dashboard">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                </a>
-
-                <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Ereignisse" onclick="window.location.href='/'">
-                    <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
-                </button>
-
-                <button class="p-3 bg-gray-800 text-white rounded-lg" title="Einreisebestimmungen">
-                    <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
-                </button>
-
-                @if(config('app.dashboard_booking_enabled', true))
-                <a href="/booking" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Buchungsmöglichkeit">
-                    <i class="fa-regular fa-calendar-check text-2xl" aria-hidden="true"></i>
-                </a>
-                @endif
-
-                @if(config('app.dashboard_airports_enabled', true))
-                <a href="/?airports=1" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Flughäfen">
-                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </a>
-                @endif
-            </nav>
+            <x-public-navigation active="entry-conditions" />
 
             <!-- Filter Sidebar -->
             <aside class="sidebar">
@@ -485,7 +446,7 @@
                             </div>
                             <div id="entryPossibleSection" class="px-2 py-2" style="display: none;">
                                 <!-- Hidden checkboxes for state management -->
-                                <input type="checkbox" id="filter-passport" onchange="applyEntryConditionsFilters()" checked style="display: none;">
+                                <input type="checkbox" id="filter-passport" onchange="applyEntryConditionsFilters()" style="display: none;">
                                 <input type="checkbox" id="filter-id-card" onchange="applyEntryConditionsFilters()" style="display: none;">
                                 <input type="checkbox" id="filter-temp-passport" onchange="applyEntryConditionsFilters()" style="display: none;">
                                 <input type="checkbox" id="filter-temp-id-card" onchange="applyEntryConditionsFilters()" style="display: none;">
@@ -606,50 +567,7 @@
         </div>
 
         <!-- Footer -->
-        <footer class="footer">
-            <div class="flex items-center justify-between px-4 h-full">
-                <div class="flex items-center space-x-6 text-sm">
-                    <span>© 2025 Passolution GmbH</span>
-                    <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Impressum</a>
-                    <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Datenschutz</a>
-                    <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
-                    <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal').classList.remove('hidden');" class="hover:text-blue-300 transition-colors">Haftungsausschluss</a>
-                </div>
-                <div class="flex items-center space-x-4 text-sm">
-                    <span>Version 1.0.17</span>
-                    <span>Build: 2025-09-30</span>
-                </div>
-            </div>
-        </footer>
-
-        <!-- Haftungsausschluss Modal -->
-        <div id="disclaimerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-gray-900">Haftungsausschluss</h2>
-                        <button onclick="document.getElementById('disclaimerModal').classList.add('hidden');" class="text-gray-400 hover:text-gray-600 transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="space-y-4 text-gray-700">
-                        <p>
-                            Die auf global-travel-monitor.eu bereitgestellten Informationen werden mit größter Sorgfalt recherchiert und regelmäßig aktualisiert. Dennoch kann keine Gewähr für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte übernommen werden. Alle Angaben erfolgen ohne Gewähr. Eine Haftung, insbesondere für eventuelle Schäden oder Konsequenzen, die durch die Nutzung der angebotenen Informationen entstehen, ist ausgeschlossen.
-                        </p>
-                        <p>
-                            Das Portal kann Verlinkungen zu externen Webseiten Dritter enthalten, auf deren Inhalte kein Einfluss besteht. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
-                        </p>
-                    </div>
-                    <div class="mt-6 flex justify-end">
-                        <button onclick="document.getElementById('disclaimerModal').classList.add('hidden');" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                            Schließen
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-public-footer />
     </div>
 
     <!-- Leaflet JS -->
@@ -658,6 +576,9 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <script>
+        // Customer Passolution Status - Als window property für Testbarkeit
+        window.hasPassolutionAccess = {{ auth('customer')->check() && auth('customer')->user()->hasActivePassolution() ? 'true' : 'false' }};
+
         // Map initialisieren - Als window properties für Testbarkeit
         window.entryConditionsMap = null;
         window.entryConditionsMarkers = L.markerClusterGroup();
@@ -666,10 +587,14 @@
         window.countryCoordinates = new Map(); // Map von ISO-Code zu {name, lat, lng, capital_name}
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // Map initialisieren
-            window.entryConditionsMap = L.map('entry-conditions-map').setView([20, 0], 2);
+            // Map initialisieren mit Zoom-Beschränkungen (wie Dashboard)
+            window.entryConditionsMap = L.map('entry-conditions-map', {
+                worldCopyJump: false,
+                maxBounds: [[-90, -180], [90, 180]],
+                minZoom: 2  // Verhindert Herauszoomen über Weltansicht hinaus
+            }).setView([20, 0], 2);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(window.entryConditionsMap);
@@ -678,6 +603,22 @@
 
             // Layer Group für Länder-Highlighting
             window.countryLayersGroup = L.layerGroup().addTo(window.entryConditionsMap);
+
+            // Karte an Container-Größe anpassen
+            setTimeout(() => {
+                window.entryConditionsMap.invalidateSize();
+            }, 100);
+
+            // Window Resize Event-Listener für dynamische Karten-Anpassung
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    if (window.entryConditionsMap) {
+                        window.entryConditionsMap.invalidateSize();
+                    }
+                }, 250);
+            });
 
             // Länder-Koordinaten laden
             await loadCountryCoordinates();
@@ -720,14 +661,22 @@
                 document.getElementById('filter-no-insurance')?.checked ||
                 document.getElementById('filter-no-entry-form')?.checked;
 
+            // Prüfe ob ausgewählte Zielländer vorhanden sind (aber nicht nur "Beliebiges Reiseziel" (*))
+            const hasSpecificDestinations = window.selectedDestinations &&
+                window.selectedDestinations.size > 0 &&
+                !(window.selectedDestinations.size === 1 && window.selectedDestinations.has('*'));
+
             // Wenn Filter aktiv sind, automatisch Suche ausführen
             if (hasActiveFilters) {
                 console.log('Auto-search: Filters detected, executing search automatically');
                 searchEntryConditions();
-            } else {
-                // Wenn keine Filter aktiv sind, alle verfügbaren Länder anzeigen
-                console.log('No filters active, displaying all available countries');
+            } else if (hasSpecificDestinations) {
+                // Wenn keine Filter, aber spezifische Länder ausgewählt sind, diese anzeigen
+                console.log('No filters active, but specific destinations selected, displaying selected countries');
                 await displayAllCountries();
+            } else {
+                // Wenn keine Filter und keine spezifischen Länder (nur "*" oder leer): Karte leer lassen
+                console.log('No filters and no specific destinations selected, keeping map empty');
             }
         }
 
@@ -756,7 +705,9 @@
         async function loadCountryCoordinates() {
             try {
                 // Use all-coordinates endpoint to get ALL countries, not just available nationalities
-                const response = await fetch('/api/entry-conditions/all-coordinates');
+                const response = await fetch('/api/entry-conditions/all-coordinates', {
+                    credentials: 'same-origin'
+                });
                 const data = await response.json();
 
                 if (data.success && data.countries) {
@@ -945,7 +896,10 @@
 
         // Nationality Filter Variables - Als window properties für Testbarkeit
         window.selectedNationalities = new Map();
-        window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
+        // Deutschland als Standard nur wenn kein Passolution-Zugang
+        if (!window.hasPassolutionAccess) {
+            window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
+        }
         let nationalityFilterActiveIndex = 0;
 
         // Destinations Filter Variables - Als window properties für Testbarkeit
@@ -1049,7 +1003,8 @@
                 box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
                 // Use entry-conditions endpoint which filters by available nationalities
                 const res = await fetch('/api/entry-conditions/countries', {
-                    headers: { 'Accept': 'application/json' }
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
                 });
 
                 if (!res.ok) throw new Error('Network error');
@@ -1138,8 +1093,8 @@
             // Nationalität entfernen
             window.selectedNationalities.delete(code);
 
-            // Wenn keine Nationalität mehr ausgewählt ist, Deutschland als Standard setzen
-            if (window.selectedNationalities.size === 0) {
+            // Wenn keine Nationalität mehr ausgewählt ist und kein Passolution-Zugang, Deutschland als Standard setzen
+            if (window.selectedNationalities.size === 0 && !window.hasPassolutionAccess) {
                 window.selectedNationalities.set('DE', { code: 'DE', name: 'Deutschland' });
             }
 
@@ -1316,6 +1271,9 @@
 
             // Ausgewählte Reiseziele anzeigen
             renderSelectedDestinations();
+
+            // Karte aktualisieren
+            updateMapWithSelectedDestinations();
         }
 
         function removeDestination(code) {
@@ -1323,6 +1281,9 @@
             window.selectedDestinations.delete(code);
 
             renderSelectedDestinations();
+
+            // Karte aktualisieren
+            updateMapWithSelectedDestinations();
         }
 
         function renderSelectedDestinations() {
@@ -1464,7 +1425,7 @@
             if (!displayContainer || !availableContainer) return;
 
             const filters = [
-                { id: 'filter-no-insurance', label: 'Keine Versicherung' },
+                { id: 'filter-no-insurance', label: 'Keine Krankenversicherung' },
                 { id: 'filter-no-entry-form', label: 'Kein Einreiseformular' }
             ];
 
@@ -1729,6 +1690,7 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({
                             nationality: nationality,
                             filters: filters
@@ -1765,8 +1727,8 @@
                     // Gefundene Länder: Details anzeigen
                     await loadEntryConditionsContent(nationalityCodes, foundDestinations);
 
-                    // Auf Karte markieren
-                    highlightCountriesOnMap(foundDestinations);
+                    // Auf Karte markieren - nur Marker, keine 300km Kreise
+                    await updateMapWithSelectedDestinations();
                 } else {
                     // Kein Land gefunden: Fehlermeldung anzeigen
                     const destNames = destinationCodes.map(code => {
@@ -1819,8 +1781,8 @@
             if (nationalityCodes.length > 0 && destinationCodes.length > 0 && !destinationCodes.includes('*')) {
                 console.log('Using new content API');
 
-                // Länder auf der Karte hervorheben
-                highlightCountriesOnMap(destinationCodes);
+                // Länder auf der Karte markieren - nur Marker, keine 300km Kreise
+                await updateMapWithSelectedDestinations();
 
                 // Neue Content API aufrufen
                 await loadEntryConditionsContent(nationalityCodes, destinationCodes);
@@ -1864,6 +1826,7 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({
                             nationality: nationality,
                             filters: filters
@@ -1941,8 +1904,18 @@
                     const nationalityName = nationalityData ? nationalityData.name : natCode;
 
                     for (const destCode of destinationCodes) {
+                        // Hole Ländernamen: Zuerst aus selectedDestinations, dann aus countryCoordinates Map
+                        let destinationName = destCode;
                         const destinationData = window.selectedDestinations.get(destCode);
-                        const destinationName = destinationData ? destinationData.name : destCode;
+                        if (destinationData && destinationData.name) {
+                            destinationName = destinationData.name;
+                        } else {
+                            // Fallback auf countryCoordinates Map
+                            const countryData = window.countryCoordinates.get(destCode);
+                            if (countryData && countryData.name) {
+                                destinationName = countryData.name;
+                            }
+                        }
 
                         // API-Aufruf für diese Kombination
                         const response = await fetch('/api/entry-conditions/content', {
@@ -1952,6 +1925,7 @@
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
+                            credentials: 'same-origin',
                             body: JSON.stringify({
                                 countries: [destCode],
                                 nationalities: [natCode]
@@ -1975,6 +1949,12 @@
 
                         // Entferne thead-Bereiche mit "Schnellübersicht" aus Tabellen
                         cleanedContentHtml = cleanedContentHtml.replace(/<thead[^>]*>[\s\S]*?<\/thead>/gi, '');
+
+                        // Ersetze downloadPDF() mit spezifischen Ländern für diesen Content-Block
+                        cleanedContentHtml = cleanedContentHtml.replace(
+                            /onclick="downloadPDF\(\)"/gi,
+                            `onclick="downloadPDFForCountries('${escapeForAttr(destCode)}', '${escapeForAttr(natCode)}')"`
+                        );
 
                         allResultsHtml += `
                             <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
@@ -2075,7 +2055,13 @@
 
                 // Verwende destination.code für ISO-Code
                 const countryCode = destination.code || destination.iso2 || '';
-                const countryName = destination.name || 'Unbekannt';
+
+                // Hole Ländernamen: Zuerst aus destination, dann aus countryCoordinates Map
+                let countryName = destination.name;
+                if (!countryName || countryName === countryCode) {
+                    const countryData = window.countryCoordinates.get(countryCode);
+                    countryName = countryData ? countryData.name : countryCode;
+                }
 
                 item.onclick = () => loadEntryConditionsForCountry(countryName, countryCode);
 
@@ -2113,10 +2099,13 @@
                     const countryData = window.countryCoordinates.get(countryCode);
 
                     if (countryData && countryData.lat && countryData.lng) {
+                        // Hole Ländernamen: Zuerst aus destination, dann aus countryData
+                        const countryName = destination.name && destination.name !== countryCode ? destination.name : countryData.name;
+
                         // Marker an Hauptstadt-Position setzen
                         const marker = L.marker([countryData.lat, countryData.lng]);
-                        marker.bindPopup(`<b>${destination.name || countryCode}</b><br>Hauptstadt: ${countryData.capital_name}`);
-                        marker.on('click', () => loadEntryConditionsForCountry(destination.name, countryCode));
+                        marker.bindPopup(`<b>${countryName}</b><br>Hauptstadt: ${countryData.capital_name}`);
+                        marker.on('click', () => loadEntryConditionsForCountry(countryName, countryCode));
                         window.entryConditionsMarkers.addLayer(marker);
                     } else {
                         console.warn(`No coordinates found for ${countryCode}`);
@@ -2132,19 +2121,80 @@
             }
         }
 
+        // Karte mit aktuell ausgewählten Reisezielen aktualisieren
+        async function updateMapWithSelectedDestinations() {
+            // Prüfe ob spezifische Länder ausgewählt sind (nicht nur "*")
+            const hasSpecificDestinations = window.selectedDestinations &&
+                window.selectedDestinations.size > 0 &&
+                !(window.selectedDestinations.size === 1 && window.selectedDestinations.has('*'));
+
+            if (!hasSpecificDestinations) {
+                // Keine spezifischen Länder: Karte leeren
+                window.entryConditionsMarkers.clearLayers();
+                if (window.countryLayersGroup) {
+                    window.countryLayersGroup.clearLayers();
+                }
+                return;
+            }
+
+            // Spezifische Länder ausgewählt: Auf Karte anzeigen
+            const selectedCountries = Array.from(window.selectedDestinations.entries())
+                .filter(([code]) => code !== '*') // "*" ausfiltern
+                .map(([code, data]) => ({
+                    code: code,
+                    name: data.name
+                }));
+
+            // Länder auf der Karte anzeigen - nur Marker, KEINE Kreise
+            window.entryConditionsMarkers.clearLayers();
+            // Kreise aus vorherigen Suchen entfernen (300km Radius Highlighting)
+            if (window.countryLayersGroup) {
+                window.countryLayersGroup.clearLayers();
+            }
+
+            const bounds = [];
+
+            for (const country of selectedCountries) {
+                const countryCode = country.code;
+                if (!countryCode) continue;
+
+                try {
+                    // Prüfe ob wir Koordinaten für dieses Land haben
+                    const countryData = window.countryCoordinates.get(countryCode);
+
+                    if (countryData && countryData.lat && countryData.lng) {
+                        // Marker an Hauptstadt-Position setzen
+                        const marker = L.marker([countryData.lat, countryData.lng]);
+                        marker.bindPopup(`<b>${country.name || countryCode}</b><br>Hauptstadt: ${countryData.capital_name}`);
+                        marker.on('click', () => loadEntryConditionsForCountry(country.name, countryCode));
+                        window.entryConditionsMarkers.addLayer(marker);
+
+                        // Bounds hinzufügen
+                        bounds.push([countryData.lat, countryData.lng]);
+                    } else {
+                        console.warn(`No coordinates found for ${countryCode}`);
+                    }
+                } catch (error) {
+                    console.error(`Error loading coordinates for ${countryCode}:`, error);
+                }
+            }
+
+            // Karte auf Marker zentrieren
+            if (bounds.length > 0) {
+                const latLngBounds = L.latLngBounds(bounds);
+                window.entryConditionsMap.fitBounds(latLngBounds, {
+                    padding: [50, 50],
+                    maxZoom: 6
+                });
+            }
+        }
+
         // Einreisebestimmungen für ein Land laden
         async function loadEntryConditionsForCountry(countryName, iso2Code) {
             console.log('loadEntryConditionsForCountry called with:', countryName, iso2Code);
 
-            // Alle bisherigen Reiseziele entfernen
-            window.selectedDestinations.clear();
-
-            // Neues Land als Reiseziel auswählen
-            window.selectedDestinations.set(iso2Code, {
-                name: countryName,
-                code: iso2Code
-            });
-            renderSelectedDestinations();
+            // Land ist bereits ausgewählt, nur die Details anzeigen
+            // NICHT die anderen Länder löschen
 
             // Nationalitäten holen (sollte Deutschland sein)
             const nationalityCodes = Array.from(window.selectedNationalities.keys());
@@ -2152,10 +2202,7 @@
 
             console.log('Loading content for nationalities:', nationalityCodes, 'and destination:', destinationCodes);
 
-            // Länder auf der Karte hervorheben
-            highlightCountriesOnMap(destinationCodes);
-
-            // Content API aufrufen
+            // Content API aufrufen - zeigt Details für das geklickte Land
             await loadEntryConditionsContent(nationalityCodes, destinationCodes);
         }
 
@@ -2227,7 +2274,26 @@
             }
         }
 
-        // PDF Download Funktion
+        // PDF Download Funktion - für spezifische Länder aus Content
+        function downloadPDFForCountries(countryCode, nationalityCode) {
+            console.log('PDF Download for specific countries:', countryCode, nationalityCode);
+
+            // Build URL für unsere API (die als Proxy fungiert)
+            const queryParams = new URLSearchParams({
+                lang: 'de',
+                countries: countryCode,
+                nat: nationalityCode
+            });
+
+            const pdfUrl = `/api/entry-conditions/pdf?${queryParams.toString()}`;
+
+            console.log('PDF Download requested:', pdfUrl);
+
+            // Öffne PDF in neuem Tab
+            window.open(pdfUrl, '_blank');
+        }
+
+        // PDF Download Funktion - für alle ausgewählten Länder
         function downloadPDF() {
             // Hole die aktuell ausgewählten Nationalitäten und Reiseziele
             const nationalityCodes = Array.from(window.selectedNationalities.keys());
@@ -2235,6 +2301,12 @@
 
             if (nationalityCodes.length === 0 || destinationCodes.length === 0) {
                 alert('Bitte wählen Sie zuerst eine Nationalität und ein Reiseziel aus.');
+                return;
+            }
+
+            // Prüfe ob "Beliebiges Reiseziel" (*) ausgewählt ist
+            if (destinationCodes.includes('*')) {
+                alert('PDF-Download ist nicht verfügbar wenn "Beliebiges Reiseziel" ausgewählt ist. Bitte wählen Sie spezifische Länder aus.');
                 return;
             }
 

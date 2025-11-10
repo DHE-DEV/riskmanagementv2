@@ -78,7 +78,7 @@ class CustomEvent extends Model implements Feedable
     public function countries()
     {
         return $this->belongsToMany(Country::class, 'country_custom_event')
-            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates'])
+            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates', 'region_id', 'city_id'])
             ->withTimestamps();
     }
 
