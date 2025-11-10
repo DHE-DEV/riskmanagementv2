@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('booking_locations', function (Blueprint $table) {
-            $table->foreignId('branch_id')->nullable()->after('customer_id')->constrained('branches')->onDelete('cascade');
+            // Prüfen ob customer_id existiert, um after() Position zu bestimmen
+            if (Schema::hasColumn('booking_locations', 'customer_id')) {
+                $table->foreignId('branch_id')->nullable()->after('customer_id')->constrained('branches')->onDelete('cascade');
+            } else {
+                // Wenn customer_id nicht existiert, füge branch_id einfach hinzu
+                $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('cascade');
+            }
         });
     }
 
