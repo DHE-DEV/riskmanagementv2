@@ -14,11 +14,15 @@ class CustomerForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->columns(2)
             ->components([
-                // Linke Spalte
-                Section::make('Allgemeine Informationen')
-                    ->columnSpan(1)
+                Grid::make([
+                    'default' => 1,
+                    'lg' => 2,
+                ])
+                ->schema([
+                    // Linke Spalte
+                    Section::make('Allgemeine Informationen')
+                        ->columnSpan(1)
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('name')
@@ -90,7 +94,6 @@ class CustomerForm
                 // Rechte Spalte
                 Section::make('Firmeninformationen')
                     ->columnSpan(1)
-                    ->columnStart(2)
                     ->schema([
                         TextInput::make('company_name')
                             ->label('Firmenname')
@@ -156,6 +159,7 @@ class CustomerForm
                             ->label('Land')
                             ->maxLength(255),
                     ]),
+                ]),
             ]);
     }
 }
