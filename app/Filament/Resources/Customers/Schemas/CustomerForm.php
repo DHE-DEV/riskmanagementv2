@@ -20,12 +20,15 @@ class CustomerForm
                         Grid::make(2)->schema([
                             TextInput::make('name')
                                 ->label('Name')
-                                ->disabled(),
+                                ->required()
+                                ->maxLength(255),
 
                             TextInput::make('email')
                                 ->label('E-Mail')
                                 ->email()
-                                ->disabled(),
+                                ->required()
+                                ->maxLength(255)
+                                ->unique(ignorable: fn ($record) => $record),
 
                             TextInput::make('customer_type')
                                 ->label('Kundentyp')
@@ -36,8 +39,7 @@ class CustomerForm
                                 ->disabled(),
 
                             DateTimePicker::make('email_verified_at')
-                                ->label('E-Mail verifiziert am')
-                                ->disabled(),
+                                ->label('E-Mail verifiziert am'),
 
                             DateTimePicker::make('created_at')
                                 ->label('Registriert am')
@@ -50,28 +52,28 @@ class CustomerForm
                         Grid::make(2)->schema([
                             TextInput::make('company_name')
                                 ->label('Firmenname')
-                                ->disabled()
+                                ->maxLength(255)
                                 ->columnSpan(2),
 
                             TextInput::make('company_street')
                                 ->label('Straße')
-                                ->disabled(),
+                                ->maxLength(255),
 
                             TextInput::make('company_house_number')
                                 ->label('Hausnummer')
-                                ->disabled(),
+                                ->maxLength(20),
 
                             TextInput::make('company_postal_code')
                                 ->label('PLZ')
-                                ->disabled(),
+                                ->maxLength(20),
 
                             TextInput::make('company_city')
                                 ->label('Stadt')
-                                ->disabled(),
+                                ->maxLength(255),
 
                             TextInput::make('company_country')
                                 ->label('Land')
-                                ->disabled()
+                                ->maxLength(255)
                                 ->columnSpan(2),
                         ]),
                     ])
@@ -82,16 +84,13 @@ class CustomerForm
                     ->schema([
                         Grid::make(3)->schema([
                             Toggle::make('directory_listing_active')
-                                ->label('Adressverzeichnis aktiv')
-                                ->disabled(),
+                                ->label('Adressverzeichnis aktiv'),
 
                             Toggle::make('branch_management_active')
-                                ->label('Filialen-Verwaltung aktiv')
-                                ->disabled(),
+                                ->label('Filialen-Verwaltung aktiv'),
 
                             Toggle::make('hide_profile_completion')
-                                ->label('Profil-Vervollständigung ausblenden')
-                                ->disabled(),
+                                ->label('Profil-Vervollständigung ausblenden'),
                         ]),
                     ]),
 
