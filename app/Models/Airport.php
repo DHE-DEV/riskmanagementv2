@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Airport extends Model
 {
@@ -56,6 +57,16 @@ class Airport extends Model
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * Get the airlines that serve this airport.
+     */
+    public function airlines(): BelongsToMany
+    {
+        return $this->belongsToMany(Airline::class, 'airline_airport')
+            ->withPivot('direction')
+            ->withTimestamps();
     }
 
     /**
