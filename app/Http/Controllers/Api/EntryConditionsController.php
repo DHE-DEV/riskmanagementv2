@@ -471,6 +471,25 @@ class EntryConditionsController extends Controller
                 ], 400);
             }
 
+            // Prüfe ob mehrere Nationalitäten angegeben wurden
+            $nationalityArray = is_array($nationalities) ? $nationalities : array_filter(array_map('trim', explode(',', $nationalities)));
+            if (count($nationalityArray) > 1) {
+                // Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung erlaubt
+                if (!$this->hasPassolutionAccess()) {
+                    if ($loggingEnabled) {
+                        EntryConditionsLog::create(array_merge($logData, [
+                            'success' => false,
+                            'error_message' => 'Multiple nationalities require Passolution access',
+                        ]));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung verfügbar'
+                    ], 403);
+                }
+            }
+
             // Get API credentials - use customer token if available
             $apiUrl = config('services.passolution.api_url', env('PASSOLUTION_API_URL'));
             $apiKey = $this->getApiKey();
@@ -656,6 +675,25 @@ class EntryConditionsController extends Controller
                     'success' => false,
                     'message' => 'Both countries and nationalities are required'
                 ], 400);
+            }
+
+            // Prüfe ob mehrere Nationalitäten angegeben wurden
+            $nationalityArray = array_filter(array_map('trim', explode(',', $nationalities)));
+            if (count($nationalityArray) > 1) {
+                // Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung erlaubt
+                if (!$this->hasPassolutionAccess()) {
+                    if ($loggingEnabled) {
+                        EntryConditionsLog::create(array_merge($logData, [
+                            'success' => false,
+                            'error_message' => 'Multiple nationalities require Passolution access',
+                        ]));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Mehrere Nationalitäten sind nur mit aktiver Passolution-Verbindung verfügbar'
+                    ], 403);
+                }
             }
 
             // Get API credentials - use customer token if available

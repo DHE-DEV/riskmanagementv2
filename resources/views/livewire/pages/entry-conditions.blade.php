@@ -1950,6 +1950,12 @@
                         // Entferne thead-Bereiche mit "Schnellübersicht" aus Tabellen
                         cleanedContentHtml = cleanedContentHtml.replace(/<thead[^>]*>[\s\S]*?<\/thead>/gi, '');
 
+                        // Ersetze downloadPDF() mit spezifischen Ländern für diesen Content-Block
+                        cleanedContentHtml = cleanedContentHtml.replace(
+                            /onclick="downloadPDF\(\)"/gi,
+                            `onclick="downloadPDFForCountries('${escapeForAttr(destCode)}', '${escapeForAttr(natCode)}')"`
+                        );
+
                         allResultsHtml += `
                             <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
                                 <div style="background-color: #f4f4f4;" class="px-4 py-3 border-b border-gray-200">
@@ -2268,7 +2274,26 @@
             }
         }
 
-        // PDF Download Funktion
+        // PDF Download Funktion - für spezifische Länder aus Content
+        function downloadPDFForCountries(countryCode, nationalityCode) {
+            console.log('PDF Download for specific countries:', countryCode, nationalityCode);
+
+            // Build URL für unsere API (die als Proxy fungiert)
+            const queryParams = new URLSearchParams({
+                lang: 'de',
+                countries: countryCode,
+                nat: nationalityCode
+            });
+
+            const pdfUrl = `/api/entry-conditions/pdf?${queryParams.toString()}`;
+
+            console.log('PDF Download requested:', pdfUrl);
+
+            // Öffne PDF in neuem Tab
+            window.open(pdfUrl, '_blank');
+        }
+
+        // PDF Download Funktion - für alle ausgewählten Länder
         function downloadPDF() {
             // Hole die aktuell ausgewählten Nationalitäten und Reiseziele
             const nationalityCodes = Array.from(window.selectedNationalities.keys());
