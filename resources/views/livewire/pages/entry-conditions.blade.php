@@ -1904,8 +1904,18 @@
                     const nationalityName = nationalityData ? nationalityData.name : natCode;
 
                     for (const destCode of destinationCodes) {
+                        // Hole Ländernamen: Zuerst aus selectedDestinations, dann aus countryCoordinates Map
+                        let destinationName = destCode;
                         const destinationData = window.selectedDestinations.get(destCode);
-                        const destinationName = destinationData ? destinationData.name : destCode;
+                        if (destinationData && destinationData.name) {
+                            destinationName = destinationData.name;
+                        } else {
+                            // Fallback auf countryCoordinates Map
+                            const countryData = window.countryCoordinates.get(destCode);
+                            if (countryData && countryData.name) {
+                                destinationName = countryData.name;
+                            }
+                        }
 
                         // API-Aufruf für diese Kombination
                         const response = await fetch('/api/entry-conditions/content', {
@@ -2039,7 +2049,13 @@
 
                 // Verwende destination.code für ISO-Code
                 const countryCode = destination.code || destination.iso2 || '';
-                const countryName = destination.name || 'Unbekannt';
+
+                // Hole Ländernamen: Zuerst aus destination, dann aus countryCoordinates Map
+                let countryName = destination.name;
+                if (!countryName || countryName === countryCode) {
+                    const countryData = window.countryCoordinates.get(countryCode);
+                    countryName = countryData ? countryData.name : countryCode;
+                }
 
                 item.onclick = () => loadEntryConditionsForCountry(countryName, countryCode);
 
@@ -2077,10 +2093,13 @@
                     const countryData = window.countryCoordinates.get(countryCode);
 
                     if (countryData && countryData.lat && countryData.lng) {
+                        // Hole Ländernamen: Zuerst aus destination, dann aus countryData
+                        const countryName = destination.name && destination.name !== countryCode ? destination.name : countryData.name;
+
                         // Marker an Hauptstadt-Position setzen
                         const marker = L.marker([countryData.lat, countryData.lng]);
-                        marker.bindPopup(`<b>${destination.name || countryCode}</b><br>Hauptstadt: ${countryData.capital_name}`);
-                        marker.on('click', () => loadEntryConditionsForCountry(destination.name, countryCode));
+                        marker.bindPopup(`<b>${countryName}</b><br>Hauptstadt: ${countryData.capital_name}`);
+                        marker.on('click', () => loadEntryConditionsForCountry(countryName, countryCode));
                         window.entryConditionsMarkers.addLayer(marker);
                     } else {
                         console.warn(`No coordinates found for ${countryCode}`);
@@ -2257,6 +2276,12 @@
 
             if (nationalityCodes.length === 0 || destinationCodes.length === 0) {
                 alert('Bitte wählen Sie zuerst eine Nationalität und ein Reiseziel aus.');
+                return;
+            }
+
+            // Prüfe ob "Beliebiges Reiseziel" (*) ausgewählt ist
+            if (destinationCodes.includes('*')) {
+                alert('PDF-Download ist nicht verfügbar wenn "Beliebiges Reiseziel" ausgewählt ist. Bitte wählen Sie spezifische Länder aus.');
                 return;
             }
 
