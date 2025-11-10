@@ -71,6 +71,12 @@ class AirlinesRelationManager extends RelationManager
                     ->required()
                     ->native(false)
                     ->helperText('Gibt an, in welche Richtung Flüge stattfinden'),
+
+                \Filament\Forms\Components\TextInput::make('terminal')
+                    ->label('Terminal')
+                    ->maxLength(50)
+                    ->placeholder('z.B. Terminal 1, T2, A')
+                    ->helperText('Terminal an dem die Airline operiert (optional)'),
             ]);
     }
 
@@ -124,6 +130,12 @@ class AirlinesRelationManager extends RelationManager
                         return collect($record->cabin_classes)->map(fn($class) => $labels[$class] ?? $class)->toArray();
                     })
                     ->toggleable(),
+
+                Tables\Columns\TextColumn::make('pivot.terminal')
+                    ->label('Terminal')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('is_active')
@@ -171,6 +183,22 @@ class AirlinesRelationManager extends RelationManager
                                 return $label;
                             })
                             ->placeholder('Airline suchen...'),
+
+                        \Filament\Forms\Components\Select::make('direction')
+                            ->label('Richtung')
+                            ->options([
+                                'both' => 'Von und Nach',
+                                'from' => 'Von diesem Flughafen',
+                                'to' => 'Zu diesem Flughafen',
+                            ])
+                            ->default('both')
+                            ->required()
+                            ->native(false),
+
+                        \Filament\Forms\Components\TextInput::make('terminal')
+                            ->label('Terminal')
+                            ->maxLength(50)
+                            ->placeholder('z.B. Terminal 1, T2, A'),
                     ]),
             ])
             ->actions([

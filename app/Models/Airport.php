@@ -67,7 +67,7 @@ class Airport extends Model
     public function airlines(): BelongsToMany
     {
         return $this->belongsToMany(Airline::class, 'airline_airport')
-            ->withPivot('direction')
+            ->withPivot('direction', 'terminal')
             ->withTimestamps();
     }
 
