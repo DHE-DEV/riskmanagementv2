@@ -23,20 +23,14 @@ class AirportsTable
                     ->searchable(),
                 TextColumn::make('icao_code')
                     ->searchable(),
-                TextColumn::make('city_name')
+                TextColumn::make('city.name')
                     ->label('Stadt')
-                    ->state(fn ($record) => $record->city?->getName('de'))
-                    ->searchable()
-                    ->sortable(query: function ($query, $direction) {
-                        return $query->orderBy('city_id', $direction);
-                    }),
-                TextColumn::make('country_name')
+                    ->formatStateUsing(fn ($record) => $record->city?->getName('de'))
+                    ->sortable(),
+                TextColumn::make('country.name')
                     ->label('Land')
-                    ->state(fn ($record) => $record->country?->getName('de'))
-                    ->searchable()
-                    ->sortable(query: function ($query, $direction) {
-                        return $query->orderBy('country_id', $direction);
-                    }),
+                    ->formatStateUsing(fn ($record) => $record->country?->getName('de'))
+                    ->sortable(),
                 TextColumn::make('lat')
                     ->numeric()
                     ->sortable(),
@@ -47,13 +41,19 @@ class AirportsTable
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('timezone')
-                    ->searchable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('dst_timezone')
-                    ->searchable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('type')
-                    ->searchable(),
-                TextColumn::make('source')
-                    ->searchable(),
+                    ->sortable()
+                    ->toggleable(),
+                TextColumn::make('is_active')
+                    ->label('Aktiv')
+                    ->boolean()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
