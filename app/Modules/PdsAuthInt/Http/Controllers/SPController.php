@@ -54,6 +54,14 @@ class SPController extends Controller
      */
     public function exchangeToken(Request $request): JsonResponse
     {
+        Log::info('====== SSO EXCHANGE START (Service 2 - SP) ======');
+        Log::info('SSO: Received JWT exchange request', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+            'has_jwt' => $request->has('jwt'),
+        ]);
+
         try {
             // Validate request / Request validieren
             $validated = $request->validate([
@@ -62,21 +70,39 @@ class SPController extends Controller
 
             $jwt = $validated['jwt'];
 
+            Log::info('SSO: JWT received', [
+                'jwt_length' => strlen($jwt),
+                'jwt_preview' => substr($jwt, 0, 50) . '...',
+            ]);
+
             // Load public key from environment or file / Öffentlichen Schlüssel aus Umgebung oder Datei laden
             $publicKeyConfig = config('pdsauthint.public_key');
             $useEnvKeys = config('pdsauthint.use_env_keys', true);
 
             // Check if key is provided directly in config (from env var)
             // Prüfen, ob Schlüssel direkt in Config bereitgestellt wird (aus Umgebungsvariable)
+            Log::info('SSO: Loading public key', [
+                'use_env_keys' => $useEnvKeys,
+                'config_is_string' => is_string($publicKeyConfig),
+                'starts_with_begin' => is_string($publicKeyConfig) && str_starts_with($publicKeyConfig, '-----BEGIN'),
+            ]);
+
             if ($useEnvKeys && is_string($publicKeyConfig) && str_starts_with($publicKeyConfig, '-----BEGIN')) {
                 // Key is directly from environment variable (PASSPORT_PUBLIC_KEY or SSO_PUBLIC_KEY)
                 // Schlüssel stammt direkt aus Umgebungsvariable (PASSPORT_PUBLIC_KEY oder SSO_PUBLIC_KEY)
                 $publicKey = $publicKeyConfig;
 
-                Log::debug('SSO: Using public key from environment variable');
+                Log::info('SSO: Using public key from environment variable', [
+                    'key_length' => strlen($publicKey),
+                ]);
             } else {
                 // Key is a file path / Schlüssel ist ein Dateipfad
                 $publicKeyPath = $publicKeyConfig;
+
+                Log::info('SSO: Attempting to load public key from file', [
+                    'path' => $publicKeyPath,
+                    'file_exists' => file_exists($publicKeyPath),
+                ]);
 
                 if (!file_exists($publicKeyPath)) {
                     Log::error('SSO public key file not found', ['path' => $publicKeyPath]);
@@ -88,11 +114,14 @@ class SPController extends Controller
 
                 $publicKey = file_get_contents($publicKeyPath);
 
-                Log::debug('SSO: Using public key from file', ['path' => $publicKeyPath]);
+                Log::info('SSO: Public key loaded from file', [
+                    'path' => $publicKeyPath,
+                    'key_length' => strlen($publicKey),
+                ]);
             }
 
             if (!$publicKey) {
-                Log::error('SSO: Failed to load public key');
+                Log::error('SSO: Failed to load public key - key is empty');
                 return response()->json([
                     'error' => 'Configuration error',
                     'message' => 'Could not load public key'
@@ -100,12 +129,24 @@ class SPController extends Controller
             }
 
             // Decode and validate JWT / JWT dekodieren und validieren
+            Log::info('SSO: Attempting to decode JWT with RS256');
+
             try {
                 $decoded = JWT::decode($jwt, new Key($publicKey, 'RS256'));
+
+                Log::info('SSO: JWT decoded successfully', [
+                    'iss' => $decoded->iss ?? 'MISSING',
+                    'aud' => $decoded->aud ?? 'MISSING',
+                    'sub' => $decoded->sub ?? 'MISSING',
+                    'agent_id' => $decoded->agent_id ?? 'MISSING',
+                    'email' => $decoded->email ?? 'MISSING',
+                    'exp' => isset($decoded->exp) ? date('Y-m-d H:i:s', $decoded->exp) : 'MISSING',
+                ]);
             } catch (\Exception $e) {
-                Log::warning('JWT validation failed', [
+                Log::error('SSO: JWT decode failed', [
                     'error' => $e->getMessage(),
-                    'jwt' => substr($jwt, 0, 50) . '...'
+                    'exception_class' => get_class($e),
+                    'jwt_preview' => substr($jwt, 0, 50) . '...',
                 ]);
                 return response()->json([
                     'error' => 'Invalid token',
@@ -115,8 +156,13 @@ class SPController extends Controller
 
             // Verify issuer / Aussteller verifizieren
             $expectedIssuer = config('pdsauthint.jwt_issuer');
+            Log::info('SSO: Verifying JWT issuer', [
+                'expected' => $expectedIssuer,
+                'received' => $decoded->iss ?? 'null',
+            ]);
+
             if (!isset($decoded->iss) || $decoded->iss !== $expectedIssuer) {
-                Log::warning('JWT issuer mismatch', [
+                Log::error('SSO: JWT issuer mismatch', [
                     'expected' => $expectedIssuer,
                     'received' => $decoded->iss ?? 'null'
                 ]);
@@ -128,8 +174,13 @@ class SPController extends Controller
 
             // Verify audience / Ziel verifizieren
             $expectedAudience = config('pdsauthint.jwt_audience');
+            Log::info('SSO: Verifying JWT audience', [
+                'expected' => $expectedAudience,
+                'received' => $decoded->aud ?? 'null',
+            ]);
+
             if (!isset($decoded->aud) || $decoded->aud !== $expectedAudience) {
-                Log::warning('JWT audience mismatch', [
+                Log::error('SSO: JWT audience mismatch', [
                     'expected' => $expectedAudience,
                     'received' => $decoded->aud ?? 'null'
                 ]);
@@ -153,6 +204,7 @@ class SPController extends Controller
 
             // Generate One-Time Token (OTT) / One-Time Token (OTT) generieren
             // 60 Zeichen für erhöhte Sicherheit / 60 characters for increased security
+            Log::info('SSO: Generating OTT');
             $ott = Str::random(60);
 
             // Store claims in cache / Claims im Cache speichern
@@ -164,14 +216,21 @@ class SPController extends Controller
 
             Cache::put($cacheKey, $claims, $cacheTtl);
 
-            Log::info('OTT generated successfully', [
-                'agent_id' => $claims['sub'] ?? 'unknown',
-                'customer_id' => $claims['customer_id'] ?? 'unknown',
-                'ttl' => $cacheTtl
+            Log::info('SSO: OTT generated and stored in cache', [
+                'cache_key' => $cacheKey,
+                'sub' => $claims['sub'] ?? 'unknown',
+                'agent_id' => $claims['agent_id'] ?? 'unknown',
+                'email' => $claims['email'] ?? 'unknown',
+                'ttl' => $cacheTtl,
+                'ott_length' => strlen($ott),
             ]);
 
             // Generate redirect URL / Redirect-URL generieren
             $redirectUrl = route('pdsauthint.login', ['ott' => $ott]);
+
+            Log::info('====== SSO EXCHANGE SUCCESS (Service 2 - SP) ======', [
+                'redirect_url' => $redirectUrl,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -181,13 +240,22 @@ class SPController extends Controller
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('====== SSO EXCHANGE FAILED (Service 2 - SP) ======');
+            Log::error('SSO: Validation failed', [
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ]);
             return response()->json([
                 'error' => 'Validation failed',
                 'message' => $e->getMessage()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Token exchange failed', [
+            Log::error('====== SSO EXCHANGE FAILED (Service 2 - SP) ======');
+            Log::error('SSO: Token exchange failed', [
                 'error' => $e->getMessage(),
+                'exception_class' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
@@ -227,6 +295,15 @@ class SPController extends Controller
      */
     public function handleLogin(Request $request): RedirectResponse
     {
+        Log::info('====== SSO LOGIN START (Service 2 - SP) ======');
+        Log::info('SSO: Received login request with OTT', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+            'has_ott' => $request->has('ott'),
+            'ott_length' => $request->has('ott') ? strlen($request->get('ott')) : 0,
+        ]);
+
         try {
             // Validate OTT parameter / OTT-Parameter validieren
             $validated = $request->validate([
@@ -236,15 +313,28 @@ class SPController extends Controller
             $ott = $validated['ott'];
             $cacheKey = config('pdsauthint.ott_cache_prefix') . $ott;
 
+            Log::info('SSO: Retrieving claims from cache', [
+                'cache_key' => $cacheKey,
+            ]);
+
             // Retrieve and delete claims from cache (one-time use)
             // Claims aus Cache holen und löschen (einmalige Verwendung)
             $claims = Cache::pull($cacheKey);
 
             if (!$claims) {
-                Log::warning('Invalid or expired OTT', ['ott' => substr($ott, 0, 10) . '...']);
+                Log::error('SSO: Invalid or expired OTT - not found in cache', [
+                    'cache_key' => $cacheKey,
+                    'ott_preview' => substr($ott, 0, 10) . '...'
+                ]);
                 return redirect()->route('login')
                     ->withErrors(['error' => 'Invalid or expired login token. Please try again.']);
             }
+
+            Log::info('SSO: Claims retrieved from cache', [
+                'sub' => $claims['sub'] ?? 'MISSING',
+                'agent_id' => $claims['agent_id'] ?? 'MISSING',
+                'email' => $claims['email'] ?? 'MISSING',
+            ]);
 
             // Validate required claims / Erforderliche Claims validieren
             if (!isset($claims['sub']) || !isset($claims['agent_id'])) {
@@ -256,6 +346,11 @@ class SPController extends Controller
             $service1CustomerId = $claims['sub']; // Customer ID from Service 1 (JWT subject)
             $agentId = $claims['agent_id']; // Agent/Agency ID from IdP
 
+            Log::info('SSO: Starting JIT provisioning', [
+                'service1_customer_id' => $service1CustomerId,
+                'agent_id' => $agentId,
+            ]);
+
             // JIT Provisioning: Find or create customer
             // JIT Provisioning: Kunden finden oder erstellen
             // Unique constraint: agent_id + service1_customer_id
@@ -265,6 +360,11 @@ class SPController extends Controller
 
             if ($customer) {
                 // Update existing customer / Bestehenden Kunden aktualisieren
+                Log::info('SSO: Existing customer found - updating', [
+                    'customer_id' => $customer->id,
+                    'name' => $customer->name,
+                ]);
+
                 $customer->update([
                     'email' => $claims['email'] ?? $customer->email,
                     'phone' => $claims['phone'] ?? $customer->phone,
@@ -272,7 +372,7 @@ class SPController extends Controller
                     'account_type' => $claims['account_type'] ?? $customer->account_type,
                 ]);
 
-                Log::info('Customer updated via SSO', [
+                Log::info('SSO: Customer updated successfully', [
                     'customer_id' => $customer->id,
                     'agent_id' => $agentId,
                     'service1_customer_id' => $service1CustomerId
@@ -280,6 +380,8 @@ class SPController extends Controller
             } else {
                 // Create new customer / Neuen Kunden erstellen
                 // Use email as name fallback since 'name' claim is not provided by IdP
+                Log::info('SSO: No existing customer found - creating new customer');
+
                 $customer = Customer::create([
                     'agent_id' => $agentId,
                     'service1_customer_id' => $service1CustomerId,
@@ -291,20 +393,28 @@ class SPController extends Controller
                     'password' => bcrypt(Str::random(32)), // Random password, not used for SSO login
                 ]);
 
-                Log::info('New customer created via SSO', [
+                Log::info('SSO: New customer created successfully', [
                     'customer_id' => $customer->id,
                     'agent_id' => $agentId,
-                    'service1_customer_id' => $service1CustomerId
+                    'service1_customer_id' => $service1CustomerId,
+                    'email' => $customer->email,
                 ]);
             }
 
             // Log in customer / Kunden einloggen
             $guard = config('pdsauthint.customer_guard');
+
+            Log::info('SSO: Logging in customer', [
+                'customer_id' => $customer->id,
+                'guard' => $guard,
+            ]);
+
             Auth::guard($guard)->login($customer);
 
-            Log::info('Customer logged in via SSO', [
+            Log::info('SSO: Customer logged in successfully', [
                 'customer_id' => $customer->id,
-                'guard' => $guard
+                'guard' => $guard,
+                'is_authenticated' => Auth::guard($guard)->check(),
             ]);
 
             // Redirect to customer dashboard / Zum Kunden-Dashboard weiterleiten
