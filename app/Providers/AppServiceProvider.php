@@ -19,7 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register PdsAuthInt Module Service Provider
+        // Registriere PdsAuthInt Modul Service Provider
+        $this->app->register(\App\Modules\PdsAuthInt\Providers\PdsAuthIntServiceProvider::class);
     }
 
     /**
