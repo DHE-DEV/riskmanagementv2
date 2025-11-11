@@ -16,20 +16,20 @@ use App\Modules\PdsAuthInt\Http\Controllers\SPController;
 |
 */
 
-Route::prefix('api/sso')->group(function () {
+Route::prefix('api/pdsauthint')->group(function () {
     /*
      * JWT Exchange Endpoint
      *
      * Empfängt ein JWT vom IdP und tauscht es gegen ein One-Time Token (OTT)
-     * POST /api/sso/exchange
+     * POST /api/pdsauthint/exchange
      * Body: { "jwt": "eyJ..." }
      * Response: { "ott": "abc123...", "redirect_url": "..." }
      *
      * Receives a JWT from the IdP and exchanges it for a One-Time Token (OTT)
-     * POST /api/sso/exchange
+     * POST /api/pdsauthint/exchange
      * Body: { "jwt": "eyJ..." }
      * Response: { "ott": "abc123...", "redirect_url": "..." }
      */
     Route::post('/exchange', [SPController::class, 'exchangeToken'])
-        ->name('sso.exchange');
+        ->name('pdsauthint.api.exchange');
 });
