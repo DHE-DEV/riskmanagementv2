@@ -49,6 +49,12 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'hide_profile_completion',
         'directory_listing_active',
         'branch_management_active',
+        // SSO fields
+        'agent_id',
+        'service1_customer_id',
+        'phone',
+        'address',
+        'account_type',
     ];
 
     protected $hidden = [
@@ -66,6 +72,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'passolution_refresh_token_expires_at' => 'datetime',
         'passolution_features' => 'array',
         'passolution_subscription_updated_at' => 'datetime',
+        // SSO fields
+        'address' => 'array',
     ];
 
     /**
