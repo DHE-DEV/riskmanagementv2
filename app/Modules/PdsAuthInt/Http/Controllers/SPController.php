@@ -171,7 +171,7 @@ class SPController extends Controller
             ]);
 
             // Generate redirect URL / Redirect-URL generieren
-            $redirectUrl = route('sso.login', ['ott' => $ott]);
+            $redirectUrl = route('pdsauthint.login', ['ott' => $ott]);
 
             return response()->json([
                 'success' => true,
@@ -247,14 +247,14 @@ class SPController extends Controller
             }
 
             // Validate required claims / Erforderliche Claims validieren
-            if (!isset($claims['sub']) || !isset($claims['customer_id'])) {
+            if (!isset($claims['sub']) || !isset($claims['agent_id'])) {
                 Log::error('Missing required claims in OTT', ['claims' => $claims]);
                 return redirect()->route('login')
                     ->withErrors(['error' => 'Invalid authentication data.']);
             }
 
-            $agentId = $claims['sub']; // Agent ID from IdP
-            $service1CustomerId = $claims['customer_id']; // Customer ID from Service 1
+            $service1CustomerId = $claims['sub']; // Customer ID from Service 1 (JWT subject)
+            $agentId = $claims['agent_id']; // Agent/Agency ID from IdP
 
             // JIT Provisioning: Find or create customer
             // JIT Provisioning: Kunden finden oder erstellen
@@ -266,7 +266,6 @@ class SPController extends Controller
             if ($customer) {
                 // Update existing customer / Bestehenden Kunden aktualisieren
                 $customer->update([
-                    'name' => $claims['name'] ?? $customer->name,
                     'email' => $claims['email'] ?? $customer->email,
                     'phone' => $claims['phone'] ?? $customer->phone,
                     'address' => $claims['address'] ?? $customer->address,
@@ -280,10 +279,11 @@ class SPController extends Controller
                 ]);
             } else {
                 // Create new customer / Neuen Kunden erstellen
+                // Use email as name fallback since 'name' claim is not provided by IdP
                 $customer = Customer::create([
                     'agent_id' => $agentId,
                     'service1_customer_id' => $service1CustomerId,
-                    'name' => $claims['name'] ?? 'Unknown',
+                    'name' => $claims['email'] ?? 'SSO User',
                     'email' => $claims['email'] ?? null,
                     'phone' => $claims['phone'] ?? null,
                     'address' => $claims['address'] ?? null,
