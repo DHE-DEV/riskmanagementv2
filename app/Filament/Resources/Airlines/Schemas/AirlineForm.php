@@ -110,6 +110,11 @@ class AirlineForm
                                             ->label('Chat-URL')
                                             ->url()
                                             ->placeholder('https://...'),
+
+                                        TextInput::make('contact_info.help_url')
+                                            ->label('Hilfe-URL')
+                                            ->url()
+                                            ->placeholder('https://...'),
                                     ]),
                             ]),
                     ]),
@@ -166,21 +171,117 @@ class AirlineForm
 
                                         Fieldset::make('Handgepäck')
                                             ->schema([
-                                                TextInput::make('baggage_rules.hand_baggage.economy')
-                                                    ->label('Economy')
-                                                    ->placeholder('z.B. 1x8kg'),
+                                                // Economy
+                                                Fieldset::make('Economy')
+                                                    ->columns(1)
+                                                    ->schema([
+                                                        TextInput::make('baggage_rules.hand_baggage.economy')
+                                                            ->label('Gewicht')
+                                                            ->placeholder('z.B. 1x8kg')
+                                                            ->columnSpanFull(),
 
-                                                TextInput::make('baggage_rules.hand_baggage.premium_economy')
-                                                    ->label('Premium Economy')
-                                                    ->placeholder('z.B. 2x8kg'),
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.economy.length')
+                                                            ->label('Länge (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 55')
+                                                            ->columnSpanFull(),
 
-                                                TextInput::make('baggage_rules.hand_baggage.business')
-                                                    ->label('Business Class')
-                                                    ->placeholder('z.B. 2x8kg'),
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.economy.width')
+                                                            ->label('Breite (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 40')
+                                                            ->columnSpanFull(),
 
-                                                TextInput::make('baggage_rules.hand_baggage.first')
-                                                    ->label('First Class')
-                                                    ->placeholder('z.B. 2x8kg'),
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.economy.height')
+                                                            ->label('Höhe (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 23')
+                                                            ->columnSpanFull(),
+                                                    ]),
+
+                                                // Premium Economy
+                                                Fieldset::make('Premium Economy')
+                                                    ->columns(1)
+                                                    ->schema([
+                                                        TextInput::make('baggage_rules.hand_baggage.premium_economy')
+                                                            ->label('Gewicht')
+                                                            ->placeholder('z.B. 2x8kg')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.premium_economy.length')
+                                                            ->label('Länge (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 55')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.premium_economy.width')
+                                                            ->label('Breite (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 40')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.premium_economy.height')
+                                                            ->label('Höhe (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 23')
+                                                            ->columnSpanFull(),
+                                                    ]),
+
+                                                // Business Class
+                                                Fieldset::make('Business Class')
+                                                    ->columns(1)
+                                                    ->schema([
+                                                        TextInput::make('baggage_rules.hand_baggage.business')
+                                                            ->label('Gewicht')
+                                                            ->placeholder('z.B. 2x8kg')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.business.length')
+                                                            ->label('Länge (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 55')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.business.width')
+                                                            ->label('Breite (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 40')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.business.height')
+                                                            ->label('Höhe (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 23')
+                                                            ->columnSpanFull(),
+                                                    ]),
+
+                                                // First Class
+                                                Fieldset::make('First Class')
+                                                    ->columns(1)
+                                                    ->schema([
+                                                        TextInput::make('baggage_rules.hand_baggage.first')
+                                                            ->label('Gewicht')
+                                                            ->placeholder('z.B. 2x8kg')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.first.length')
+                                                            ->label('Länge (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 55')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.first.width')
+                                                            ->label('Breite (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 40')
+                                                            ->columnSpanFull(),
+
+                                                        TextInput::make('baggage_rules.hand_baggage_dimensions.first.height')
+                                                            ->label('Höhe (cm)')
+                                                            ->numeric()
+                                                            ->placeholder('z.B. 23')
+                                                            ->columnSpanFull(),
+                                                    ]),
                                             ]),
                                     ])
                                     ->collapsible()
