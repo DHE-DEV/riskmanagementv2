@@ -10,6 +10,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip in testing environment
+        if (app()->environment('testing')) {
+            return;
+        }
+
         // Setze alle Geokoordinaten bei Ländern auf null
         DB::table('countries')->update([
             'lat' => null,

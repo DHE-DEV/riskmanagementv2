@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cities', function (Blueprint $table) {
-            $table->boolean('is_regional_capital')->default(false)->after('is_capital');
+            if (!Schema::hasColumn('cities', 'is_regional_capital')) {
+                $table->boolean('is_regional_capital')->default(false)->after('is_capital');
+            }
         });
     }
 

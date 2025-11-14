@@ -17,31 +17,27 @@ class ContinentFactory extends Factory
     public function definition(): array
     {
         $continents = [
-            ['name' => 'Europe', 'code' => 'EU'],
-            ['name' => 'Asia', 'code' => 'AS'],
-            ['name' => 'Africa', 'code' => 'AF'],
-            ['name' => 'North America', 'code' => 'NA'],
-            ['name' => 'South America', 'code' => 'SA'],
-            ['name' => 'Australia', 'code' => 'AU'],
-            ['name' => 'Antarctica', 'code' => 'AN'],
+            ['name_de' => 'Europa', 'name_en' => 'Europe', 'code' => 'EU'],
+            ['name_de' => 'Asien', 'name_en' => 'Asia', 'code' => 'AS'],
+            ['name_de' => 'Afrika', 'name_en' => 'Africa', 'code' => 'AF'],
+            ['name_de' => 'Nordamerika', 'name_en' => 'North America', 'code' => 'NA'],
+            ['name_de' => 'Südamerika', 'name_en' => 'South America', 'code' => 'SA'],
+            ['name_de' => 'Ozeanien', 'name_en' => 'Oceania', 'code' => 'OC'],
+            ['name_de' => 'Antarktis', 'name_en' => 'Antarctica', 'code' => 'AN'],
         ];
 
         $continent = fake()->randomElement($continents);
 
         return [
-            'name' => $continent['name'],
+            'name_translations' => [
+                'de' => $continent['name_de'],
+                'en' => $continent['name_en'],
+            ],
             'code' => $continent['code'],
-            'is_active' => true,
+            'sort_order' => fake()->numberBetween(0, 100),
+            'description' => fake()->optional()->sentence(),
+            'lat' => fake()->optional()->latitude(),
+            'lng' => fake()->optional()->longitude(),
         ];
-    }
-
-    /**
-     * Indicate that the continent is inactive.
-     */
-    public function inactive(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'is_active' => false,
-        ]);
     }
 }

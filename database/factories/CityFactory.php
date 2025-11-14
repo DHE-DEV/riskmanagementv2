@@ -19,29 +19,32 @@ class CityFactory extends Factory
     public function definition(): array
     {
         $cities = [
-            'Berlin', 'Hamburg', 'Munich', 'Cologne', 'Frankfurt',
-            'Stuttgart', 'Düsseldorf', 'Dortmund', 'Essen', 'Leipzig',
-            'Bremen', 'Dresden', 'Hannover', 'Nuremberg', 'Duisburg',
-            'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Mannheim'
+            ['name_de' => 'Berlin', 'name_en' => 'Berlin'],
+            ['name_de' => 'Hamburg', 'name_en' => 'Hamburg'],
+            ['name_de' => 'München', 'name_en' => 'Munich'],
+            ['name_de' => 'Köln', 'name_en' => 'Cologne'],
+            ['name_de' => 'Frankfurt', 'name_en' => 'Frankfurt'],
+            ['name_de' => 'Stuttgart', 'name_en' => 'Stuttgart'],
+            ['name_de' => 'Düsseldorf', 'name_en' => 'Dusseldorf'],
+            ['name_de' => 'Dortmund', 'name_en' => 'Dortmund'],
+            ['name_de' => 'Leipzig', 'name_en' => 'Leipzig'],
+            ['name_de' => 'Dresden', 'name_en' => 'Dresden'],
         ];
+
+        $city = fake()->randomElement($cities);
 
         return [
-            'name' => fake()->randomElement($cities),
+            'name_translations' => [
+                'de' => $city['name_de'],
+                'en' => $city['name_en'],
+            ],
             'country_id' => Country::factory(),
             'region_id' => Region::factory(),
-            'latitude' => fake()->latitude(),
-            'longitude' => fake()->longitude(),
-            'is_active' => true,
+            'population' => fake()->optional()->numberBetween(50000, 5000000),
+            'lat' => fake()->optional()->latitude(),
+            'lng' => fake()->optional()->longitude(),
+            'is_capital' => fake()->boolean(5),
+            'is_regional_capital' => fake()->boolean(10),
         ];
-    }
-
-    /**
-     * Indicate that the city is inactive.
-     */
-    public function inactive(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'is_active' => false,
-        ]);
     }
 }

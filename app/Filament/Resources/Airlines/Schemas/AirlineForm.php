@@ -340,69 +340,8 @@ class AirlineForm
                                     ])
                                     ->collapsible()
                                     ->collapsed(),
-
-                                // Lounges Section
-                                Section::make('Lounges & Zugänge')
-                                    ->description('Lounge-Angebote und Zugangsregelungen')
-                                    ->schema([
-                                        Repeater::make('lounges')
-                                            ->label('')
-                                            ->schema([
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        TextInput::make('name')
-                                                            ->label('Name der Lounge')
-                                                            ->required()
-                                                            ->placeholder('z.B. Lufthansa Business Lounge')
-                                                            ->columnSpan(2),
-
-                                                        TextInput::make('location')
-                                                            ->label('Standort/Flughafen')
-                                                            ->placeholder('z.B. Frankfurt Terminal 1')
-                                                            ->columnSpan(1),
-
-                                                        TextInput::make('access')
-                                                            ->label('Zugang')
-                                                            ->placeholder('z.B. Business Class, HON Circle')
-                                                            ->columnSpan(1),
-
-                                                        TextInput::make('url')
-                                                            ->label('Info-URL')
-                                                            ->url()
-                                                            ->placeholder('https://...')
-                                                            ->columnSpan(2),
-                                                    ]),
-                                            ])
-                                            ->defaultItems(0)
-                                            ->collapsible()
-                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
-                                            ->addActionLabel('Lounge hinzufügen')
-                                            ->reorderable(),
-                                    ])
-                                    ->collapsible()
-                                    ->collapsed(),
                             ]),
                     ]),
-
-                // Direktverbindungen Section
-                Section::make('Direktverbindungen')
-                    ->description('Flughäfen, die von dieser Airline direkt angeflogen werden')
-                    ->schema([
-                        Select::make('airports')
-                            ->label('Flughäfen mit Direktverbindungen')
-                            ->relationship('airports', 'name')
-                            ->options(function () {
-                                return Airport::all()->mapWithKeys(function ($airport) {
-                                    return [$airport->id => $airport->name . ' (' . $airport->iata_code . ')'];
-                                })->toArray();
-                            })
-                            ->multiple()
-                            ->searchable()
-                            ->preload()
-                            ->helperText('Wählen Sie alle Flughäfen aus, zu/von denen diese Airline Direktflüge anbietet'),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
             ]);
     }
 }

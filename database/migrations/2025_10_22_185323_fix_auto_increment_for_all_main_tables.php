@@ -14,10 +14,15 @@ return new class extends Migration
         // Fix: Add AUTO_INCREMENT to id columns which were missing
         // This affects multiple core tables that were created without AUTO_INCREMENT
         // Note: PRIMARY KEY already exists, so we only add AUTO_INCREMENT
-        $tables = ['regions', 'cities', 'countries', 'custom_events', 'event_types'];
+        $driver = DB::getDriverName();
 
-        foreach ($tables as $table) {
-            DB::statement("ALTER TABLE {$table} MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
+        // Only apply for MySQL, SQLite handles AUTOINCREMENT automatically for INTEGER PRIMARY KEY
+        if ($driver === 'mysql') {
+            $tables = ['regions', 'cities', 'countries', 'custom_events', 'event_types'];
+
+            foreach ($tables as $table) {
+                DB::statement("ALTER TABLE {$table} MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
+            }
         }
     }
 

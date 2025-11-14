@@ -12,6 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip data insertion in testing environment
+        if (app()->environment('testing')) {
+            return;
+        }
+
         // Fehlende Länder hinzufügen
         $missingCountries = [
             // Afrika

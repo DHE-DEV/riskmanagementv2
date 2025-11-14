@@ -37,12 +37,14 @@ class AirportFactory extends Factory
             'name' => $airport['name'],
             'iata_code' => $airport['iata'],
             'icao_code' => $airport['icao'],
-            'type' => fake()->randomElement(['domestic', 'international', 'military']),
-            'latitude' => fake()->latitude(),
-            'longitude' => fake()->longitude(),
+            'type' => fake()->randomElement(['international', 'large_airport', 'medium_airport', 'small_airport']),
+            'lat' => fake()->latitude(),
+            'lng' => fake()->longitude(),
+            'altitude' => fake()->numberBetween(0, 5000),
             'country_id' => Country::factory(),
             'city_id' => City::factory(),
             'is_active' => true,
+            'operates_24h' => fake()->boolean(70),
         ];
     }
 

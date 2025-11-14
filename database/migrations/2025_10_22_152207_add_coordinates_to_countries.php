@@ -11,6 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // First, add the lat and lng columns if they don't exist
+        if (!Schema::hasColumn('countries', 'lat')) {
+            Schema::table('countries', function (Blueprint $table) {
+                $table->decimal('lat', 10, 8)->nullable()->after('is_schengen_member');
+                $table->decimal('lng', 11, 8)->nullable()->after('lat');
+            });
+        }
+
         // Add coordinates for major countries (approximate geographic centers or capital cities)
         $coordinates = [
             // Europe
@@ -65,7 +73,13 @@ return new class extends Migration
             'NZ' => [-40.9006, 174.8860], // New Zealand (geographic center)
         ];
 
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        // Disable foreign key checks (SQLite compatible)
+        $driver = \DB::getDriverName();
+        if ($driver === 'mysql') {
+            \DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        } elseif ($driver === 'sqlite') {
+            \DB::statement('PRAGMA foreign_keys = OFF');
+        }
 
         foreach ($coordinates as $isoCode => $coords) {
             \DB::table('countries')
@@ -76,7 +90,12 @@ return new class extends Migration
                 ]);
         }
 
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Re-enable foreign key checks
+        if ($driver === 'mysql') {
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        } elseif ($driver === 'sqlite') {
+            \DB::statement('PRAGMA foreign_keys = ON');
+        }
     }
 
     /**
@@ -85,7 +104,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('countries', function (Blueprint $table) {
-            //
+            $table->dropColumn(['lat', 'lng']);
         });
     }
 };

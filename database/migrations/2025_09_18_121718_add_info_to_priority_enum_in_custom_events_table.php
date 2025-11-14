@@ -12,6 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip in testing environment (SQLite doesn't support MODIFY COLUMN for ENUM)
+        if (app()->environment('testing')) {
+            return;
+        }
+
         // MySQL specific: Modify ENUM to include 'info'
         DB::statement("ALTER TABLE custom_events MODIFY COLUMN priority ENUM('info', 'low', 'medium', 'high', 'critical') DEFAULT 'medium'");
     }

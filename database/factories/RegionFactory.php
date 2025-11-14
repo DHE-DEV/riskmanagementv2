@@ -18,26 +18,28 @@ class RegionFactory extends Factory
     public function definition(): array
     {
         $regions = [
-            'Bavaria', 'Hesse', 'North Rhine-Westphalia', 'Baden-Württemberg',
-            'Lower Saxony', 'Saxony', 'Thuringia', 'Brandenburg',
-            'Mecklenburg-Vorpommern', 'Schleswig-Holstein', 'Hamburg', 'Berlin',
-            'Bremen', 'Saarland', 'Rhineland-Palatinate', 'Saxony-Anhalt'
+            ['name_de' => 'Bayern', 'name_en' => 'Bavaria', 'code' => 'BY'],
+            ['name_de' => 'Hessen', 'name_en' => 'Hesse', 'code' => 'HE'],
+            ['name_de' => 'Nordrhein-Westfalen', 'name_en' => 'North Rhine-Westphalia', 'code' => 'NW'],
+            ['name_de' => 'Baden-Württemberg', 'name_en' => 'Baden-Württemberg', 'code' => 'BW'],
+            ['name_de' => 'Niedersachsen', 'name_en' => 'Lower Saxony', 'code' => 'NI'],
+            ['name_de' => 'Sachsen', 'name_en' => 'Saxony', 'code' => 'SN'],
+            ['name_de' => 'Thüringen', 'name_en' => 'Thuringia', 'code' => 'TH'],
+            ['name_de' => 'Brandenburg', 'name_en' => 'Brandenburg', 'code' => 'BB'],
         ];
+
+        $region = fake()->randomElement($regions);
 
         return [
-            'name' => fake()->randomElement($regions),
+            'name_translations' => [
+                'de' => $region['name_de'],
+                'en' => $region['name_en'],
+            ],
+            'code' => $region['code'],
             'country_id' => Country::factory(),
-            'is_active' => true,
+            'description' => fake()->optional()->sentence(),
+            'lat' => fake()->optional()->latitude(),
+            'lng' => fake()->optional()->longitude(),
         ];
-    }
-
-    /**
-     * Indicate that the region is inactive.
-     */
-    public function inactive(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'is_active' => false,
-        ]);
     }
 }
