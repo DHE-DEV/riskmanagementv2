@@ -17,6 +17,7 @@ class AirportsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['city', 'country']))
             ->columns([
                 TextColumn::make('name')
                     ->searchable(),
@@ -24,14 +25,30 @@ class AirportsTable
                     ->searchable(),
                 TextColumn::make('icao_code')
                     ->searchable(),
-                TextColumn::make('city.name')
+                TextColumn::make('city_name')
                     ->label('Stadt')
-                    ->formatStateUsing(fn ($record) => $record->city?->getName('de'))
-                    ->sortable(),
-                TextColumn::make('country.name')
+                    ->getStateUsing(fn ($record) => $record->city?->getName('de'))
+                    ->searchable(query: function ($query, $search) {
+                        return $query->whereHas('city', function ($q) use ($search) {
+                            $q->where('name_translations', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function ($query, $direction) {
+                        return $query->join('cities', 'airports.city_id', '=', 'cities.id')
+                            ->orderBy('cities.name_translations', $direction);
+                    }),
+                TextColumn::make('country_name')
                     ->label('Land')
-                    ->formatStateUsing(fn ($record) => $record->country?->getName('de'))
-                    ->sortable(),
+                    ->getStateUsing(fn ($record) => $record->country?->getName('de'))
+                    ->searchable(query: function ($query, $search) {
+                        return $query->whereHas('country', function ($q) use ($search) {
+                            $q->where('name_translations', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function ($query, $direction) {
+                        return $query->join('countries', 'airports.country_id', '=', 'countries.id')
+                            ->orderBy('countries.name_translations', $direction);
+                    }),
                 TextColumn::make('lat')
                     ->numeric()
                     ->sortable(),
