@@ -1425,7 +1425,7 @@
             if (!displayContainer || !availableContainer) return;
 
             const filters = [
-                { id: 'filter-no-insurance', label: 'Keine Krankenversicherung' },
+                { id: 'filter-no-insurance', label: 'Ohne Reisekrankenversicherung' },
                 { id: 'filter-no-entry-form', label: 'Kein Einreiseformular' }
             ];
 
