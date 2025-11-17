@@ -3,7 +3,7 @@
         <!-- Logo -->
         <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-2">
-                <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
+                <img src="/logo.png" alt="Global Travel Monitor - Weltweites Reiserisiko-Monitoring und Sicherheitsinformationen" class="h-8 w-auto" style="margin-left:-5px"/>
                 <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
             </div>
         </div>

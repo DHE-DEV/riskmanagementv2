@@ -1,2 +1,10 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /customer/
+Disallow: /login
+Disallow: /register
+
+# Sitemap
+Sitemap: https://global-travel-monitor.eu/sitemap.xml
