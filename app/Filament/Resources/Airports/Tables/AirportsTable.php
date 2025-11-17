@@ -57,13 +57,14 @@ class AirportsTable
                     ->sortable(),
                 TextColumn::make('altitude')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('timezone')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('dst_timezone')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('type')
                     ->sortable()
                     ->toggleable(),
