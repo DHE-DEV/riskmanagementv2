@@ -237,6 +237,20 @@ class AirportForm
                                                             ->placeholder('z.B. Business Class, Priority Pass')
                                                             ->columnSpan(1),
 
+                                                        Toggle::make('children_welcome')
+                                                            ->label('Kinder willkommen')
+                                                            ->default(false)
+                                                            ->columnSpan(1),
+
+                                                        TextInput::make('price_per_person')
+                                                            ->label('Preis pro Person ab')
+                                                            ->numeric()
+                                                            ->step(0.01)
+                                                            ->suffix('EUR')
+                                                            ->placeholder('z.B. 35.00')
+                                                            ->helperText('Preis für den Lounge-Zugang pro Person')
+                                                            ->columnSpan(1),
+
                                                         TextInput::make('url')
                                                             ->label('Website/Info-URL')
                                                             ->url()

@@ -131,6 +131,23 @@ class AirlinesRelationManager extends RelationManager
                     })
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('pivot.direction')
+                    ->label('Richtung')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'both' => 'Abflug & Ankunft',
+                        'from' => 'Abflug',
+                        'to' => 'Ankunft',
+                        default => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'both' => 'success',
+                        'from' => 'info',
+                        'to' => 'warning',
+                        default => 'gray',
+                    })
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('pivot.terminal')
                     ->label('Terminal')
                     ->placeholder('—')
@@ -202,6 +219,45 @@ class AirlinesRelationManager extends RelationManager
                     ]),
             ])
             ->actions([
+                \Filament\Actions\Action::make('edit')
+                    ->label('Bearbeiten')
+                    ->icon('heroicon-o-pencil')
+                    ->form([
+                        Select::make('direction')
+                            ->label('Richtung')
+                            ->options([
+                                'both' => 'Abflug und Ankunft',
+                                'from' => 'Abflug',
+                                'to' => 'Ankunft',
+                            ])
+                            ->default('both')
+                            ->required()
+                            ->native(false)
+                            ->helperText('Gibt an, in welche Richtung Flüge stattfinden'),
+
+                        \Filament\Forms\Components\TextInput::make('terminal')
+                            ->label('Terminal')
+                            ->maxLength(50)
+                            ->placeholder('z.B. Terminal 1, T2, A')
+                            ->helperText('Terminal an dem die Airline operiert (optional)'),
+                    ])
+                    ->fillForm(fn ($record): array => [
+                        'direction' => $record->pivot->direction ?? 'both',
+                        'terminal' => $record->pivot->terminal,
+                    ])
+                    ->action(function (array $data, $record, $livewire): void {
+                        $livewire->getOwnerRecord()->airlines()->updateExistingPivot(
+                            $record->id,
+                            [
+                                'direction' => $data['direction'],
+                                'terminal' => $data['terminal'],
+                            ]
+                        );
+                    })
+                    ->modalHeading('Airline bearbeiten')
+                    ->modalSubmitActionLabel('Speichern')
+                    ->modalCancelActionLabel('Abbrechen'),
+
                 \Filament\Actions\DetachAction::make()
                     ->label('Entfernen')
                     ->modalHeading('Airline entfernen')
