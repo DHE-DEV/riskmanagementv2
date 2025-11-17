@@ -31,3 +31,10 @@ Schedule::command('exports:cleanup')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/exports-cleanup-schedule.log'));
+
+// Generate Sitemap - runs daily at 02:00 for SEO
+Schedule::command('sitemap:generate')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/sitemap-generation-schedule.log'));

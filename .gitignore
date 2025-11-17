@@ -22,3 +22,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+# Auto-generated sitemap
+/public/sitemap.xml
