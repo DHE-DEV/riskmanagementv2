@@ -166,6 +166,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Customer Authentication
+    |--------------------------------------------------------------------------
+    |
+    | Control whether customer registration and login buttons are visible
+    | on public pages. Useful for closing registration or restricting access.
+    |
+    */
+
+    'customer_registration_enabled' => env('CUSTOMER_REGISTRATION_ENABLED', true),
+    'customer_login_enabled' => env('CUSTOMER_LOGIN_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Navigation Menu Configuration
     |--------------------------------------------------------------------------
     |
