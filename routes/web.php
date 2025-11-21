@@ -81,7 +81,7 @@ Route::middleware([
 });
 
 // Admin SSO Logs Routes
-Route::prefix('admin')->name('admin.')->middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth:web'])->group(function () {
     Route::prefix('sso-logs')->name('sso-logs.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\SsoLogController::class, 'index'])->name('index');
         Route::get('/stats', [App\Http\Controllers\Admin\SsoLogController::class, 'stats'])->name('stats');
