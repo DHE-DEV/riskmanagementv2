@@ -22,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
         // Register PdsAuthInt Module Service Provider
         // Registriere PdsAuthInt Modul Service Provider
         $this->app->register(\App\Modules\PdsAuthInt\Providers\PdsAuthIntServiceProvider::class);
+
+        // Register SSO Log Service as singleton
+        // Registriere SSO Log Service als Singleton
+        $this->app->singleton(\App\Services\SsoLogService::class, function ($app) {
+            return new \App\Services\SsoLogService();
+        });
     }
 
     /**

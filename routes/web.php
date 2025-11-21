@@ -80,5 +80,14 @@ Route::middleware([
     Route::get('settings/appearance', [SettingsController::class, 'appearance'])->name('settings.appearance');
 });
 
+// Admin SSO Logs Routes
+Route::prefix('admin')->name('admin.')->middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
+    Route::prefix('sso-logs')->name('sso-logs.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SsoLogController::class, 'index'])->name('index');
+        Route::get('/stats', [App\Http\Controllers\Admin\SsoLogController::class, 'stats'])->name('stats');
+        Route::get('/{requestId}', [App\Http\Controllers\Admin\SsoLogController::class, 'show'])->name('show');
+    });
+});
+
 require __DIR__.'/auth.php';
 require __DIR__.'/customer-auth.php';
