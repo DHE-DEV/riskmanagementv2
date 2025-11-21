@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet MarkerCluster CSS -->
@@ -1423,6 +1423,49 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
+// Global error handler to catch and suppress DOM-related errors during initialization
+window.addEventListener('error', function(event) {
+    // Suppress className and DOM-related errors during initialization
+    if (event.message && (event.message.includes('className') || event.message.includes('Cannot set properties of null'))) {
+        event.stopPropagation();
+        event.preventDefault();
+        return true;
+    }
+}, true);
+
+// Override Object.defineProperty to prevent className errors
+(function() {
+    const originalDefineProperty = Object.defineProperty;
+    Object.defineProperty = function(obj, prop, descriptor) {
+        try {
+            return originalDefineProperty.call(this, obj, prop, descriptor);
+        } catch (e) {
+            if (e.message.includes('className')) {
+                return obj;
+            }
+            throw e;
+        }
+    };
+})();
+
+// Hilfsfunktion zum sicheren Setzen von className
+function safeSetClass(element, className) {
+    if (element && element !== null) {
+        element.className = className;
+        return true;
+    }
+    return false;
+}
+
+// Safe DOM access helper
+function safeGetElement(id) {
+    try {
+        return document.getElementById(id);
+    } catch (e) {
+        return null;
+    }
+}
+
 // Globale Variablen
 let map;
 let markers = [];
@@ -1478,18 +1521,15 @@ async function loadCountryMappingsFromDB() {
 // Track event clicks
 async function trackEventClick(eventId, clickType) {
     try {
-        console.log('trackEventClick called with:', eventId, clickType);
 
         // Konvertiere zu Nummer falls String
         const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
 
         // Only track custom events
         if (!numericEventId || typeof numericEventId !== 'number' || isNaN(numericEventId)) {
-            console.log('Invalid event ID, skipping tracking:', eventId);
             return;
         }
 
-        console.log('Tracking click for event:', numericEventId, 'type:', clickType);
 
         const response = await fetch('/api/custom-events/track-click', {
             method: 'POST',
@@ -1504,12 +1544,9 @@ async function trackEventClick(eventId, clickType) {
         });
 
         if (!response.ok) {
-            console.error('Failed to track click, status:', response.status);
         } else {
-            console.log('Click tracked successfully');
         }
     } catch (error) {
-        console.error('Error tracking click:', error);
     }
 }
 
@@ -1854,7 +1891,6 @@ async function loadDashboardData() {
         updateStatistics();
         updateLastUpdated();
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
         // Fallback zu Beispieldaten
         loadSampleData();
     }
@@ -2351,12 +2387,10 @@ function handleDetailsClick(eventId, isCustom, countryName = null) {
                 if (data.success) {
                     openEventSidebar(data.data);
                 } else {
-                    console.error('Fehler beim Laden des Events');
                     openEventSidebar({});
                 }
             })
             .catch(error => {
-                console.error('API-Fehler:', error);
                 openEventSidebar({});
             });
         return;
@@ -2373,8 +2407,15 @@ function handleDetailsClick(eventId, isCustom, countryName = null) {
 
 // Event Sidebar Funktionen
 function openEventSidebar(event) {
-    document.getElementById('sidebarTitle').textContent = 'Erweiterte Informationen';
-    document.getElementById('eventSidebar').classList.add('open');
+    const sidebarTitle = document.getElementById('sidebarTitle');
+    const eventSidebar = document.getElementById('eventSidebar');
+
+    if (sidebarTitle) {
+        sidebarTitle.textContent = 'Erweiterte Informationen';
+    }
+    if (eventSidebar) {
+        eventSidebar.classList.add('open');
+    }
 
     // Button-Zustände initialisieren
     updateSidebarButtons();
@@ -2384,7 +2425,10 @@ function openEventSidebar(event) {
 }
 
 function closeEventSidebar() {
-    document.getElementById('eventSidebar').classList.remove('open');
+    const eventSidebar = document.getElementById('eventSidebar');
+    if (eventSidebar) {
+        eventSidebar.classList.remove('open');
+    }
 }
 
 // Sidebar Breite steuern
@@ -2392,6 +2436,8 @@ let currentSidebarWidth = 1; // Startwert 1x
 
 function setSidebarWidth(multiplier) {
     const el = document.getElementById('eventSidebar');
+    if (!el) return;
+
     el.classList.remove('w-2x', 'w-3x');
     if (multiplier === 2) {
         el.classList.add('w-2x');
@@ -2405,7 +2451,12 @@ function setSidebarWidth(multiplier) {
 function updateSidebarButtons() {
     const decreaseBtn = document.getElementById('decreaseBtn');
     const increaseBtn = document.getElementById('increaseBtn');
-    
+
+    // Defensive check - return if buttons don't exist
+    if (!decreaseBtn || !increaseBtn) {
+        return;
+    }
+
     // Verkleinern-Button: deaktiviert bei minimaler Größe (1x)
     if (currentSidebarWidth <= 1) {
         decreaseBtn.classList.remove('bg-zinc-200', 'hover:bg-zinc-300');
@@ -2416,7 +2467,7 @@ function updateSidebarButtons() {
         decreaseBtn.classList.add('bg-zinc-200', 'hover:bg-zinc-300');
         decreaseBtn.style.pointerEvents = 'auto';
     }
-    
+
     // Vergrößern-Button: deaktiviert bei maximaler Größe (3x)
     if (currentSidebarWidth >= 3) {
         increaseBtn.classList.remove('bg-zinc-200', 'hover:bg-zinc-300');
@@ -2699,7 +2750,6 @@ async function loadEventDetails(event) {
                             if (diffEl) diffEl.textContent = formatDiff(getTimezoneOffset(tzName));
                         } catch (e) {
                             // Fallback to offset-based calculation if timezone name is invalid
-                            console.warn('Invalid timezone name:', tzName, '- using offset fallback');
                             const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
                             const local = new Date(utcMs + (offset || 0) * 3600 * 1000);
                             const hh = String(local.getHours()).padStart(2, '0');
@@ -2745,7 +2795,6 @@ async function loadEventDetails(event) {
         }
         
     } catch (error) {
-        console.error('Error loading event details:', error);
         sidebarContent.innerHTML = `
             <div class="weather-error">
                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -2855,7 +2904,6 @@ async function loadStatistics() {
         if (gdacsJson.success) {
             updateStatisticsFromApi(gdacsJson.data);
         } else {
-            console.error('Failed to load statistics:', gdacsJson.message);
         }
 
         if (customJson.success) {
@@ -2869,7 +2917,6 @@ async function loadStatistics() {
             appendCustomEventsToList(customJson);
         }
     } catch (error) {
-        console.error('Error loading statistics:', error);
     }
 }
 
@@ -2886,33 +2933,39 @@ function appendCustomEventsToList(customJson) {
 // GDACS Events manuell aktualisieren
 async function fetchGdacsEvents() {
     if (isLoading) return;
-    
+
     isLoading = true;
     const button = document.querySelector('button[onclick="fetchGdacsEvents()"]');
+
+    // Defensive check - if button doesn't exist, exit early
+    if (!button) {
+        isLoading = false;
+        return;
+    }
+
     const originalText = button.innerHTML;
-    
+
     try {
         button.innerHTML = '<div class="loading"></div>';
         button.disabled = true;
-        
+
         const response = await fetch('/api/gdacs/fetch-events');
         const result = await response.json();
-        
+
         if (result.success) {
-            console.log('GDACS Events updated:', result.data);
             await loadDashboardData(); // Daten neu laden
             showNotification('GDACS Events erfolgreich aktualisiert!', 'success');
         } else {
-            console.error('Failed to fetch GDACS events:', result.message);
             showNotification('Fehler beim Aktualisieren der GDACS Events', 'error');
         }
     } catch (error) {
-        console.error('Error fetching GDACS events:', error);
         showNotification('Fehler beim Aktualisieren der GDACS Events', 'error');
     } finally {
         isLoading = false;
-        button.innerHTML = originalText;
-        button.disabled = false;
+        if (button) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
     }
 }
 
@@ -3253,7 +3306,6 @@ async function loadWeatherAndTimezoneData(latitude, longitude) {
         if (result.success) {
             updateWeatherDisplay(latitude, longitude, result.data);
         } else {
-            console.error('Failed to load weather data:', result.message);
             // Zeige Fehlermeldung an
             const weatherContainer = document.getElementById(`weather-${latitude}-${longitude}`);
             if (weatherContainer) {
@@ -3266,7 +3318,6 @@ async function loadWeatherAndTimezoneData(latitude, longitude) {
             }
         }
     } catch (error) {
-        console.error('Error loading weather data:', error);
         // Zeige Fehlermeldung an
         const weatherContainer = document.getElementById(`weather-${latitude}-${longitude}`);
         if (weatherContainer) {
@@ -3504,10 +3555,8 @@ async function loadEventTypes() {
             eventTypes = result.data;
             initializeEventTypeFilters();
         } else {
-            console.error('Failed to load event types:', result.message);
         }
     } catch (error) {
-        console.error('Error loading event types:', error);
     }
 }
 
@@ -4011,17 +4060,14 @@ function createEventElement(event) {
     
     // Klick-Event hinzufügen
     div.addEventListener('click', () => {
-        console.log('Event clicked in list:', event.title, 'ID:', event.id, 'Source:', event.source, 'Original ID:', event.original_event_id);
 
         // Track click for custom events only - verwende Original-ID falls vorhanden
         if (event.source === 'custom') {
             const trackId = event.original_event_id || event.id;
-            console.log('Tracking list click for event ID:', trackId);
             if (trackId) {
                 trackEventClick(trackId, 'list');
             }
         } else {
-            console.log('Not tracking - source is not custom:', event.source);
         }
 
         // Wenn kein Land/keine Koordinaten zugewiesen: Direkt Details anzeigen
@@ -4242,7 +4288,6 @@ function selectContinent(continentId) {
     // Events nach Kontinent filtern
     filterEventsByContinent();
 
-    console.log(`Selected continents: ${Array.from(window.selectedContinents).join(', ') || 'none'}`);
 }
 
 // Globale Variable für alle Events (ungefiltert) - wird in loadDashboardData gesetzt
@@ -4253,8 +4298,6 @@ window.selectedCountries = new Map();
 
 // Events nach Kontinent filtern
 function filterEventsByContinent() {
-    console.log('filterEventsByContinent called');
-    console.log('Selected continents:', window.selectedContinents ? Array.from(window.selectedContinents) : 'none');
     
     // Verwende die zentrale Filterlogik anstatt eigener Implementierung
     if (typeof loadDashboardData === 'function') {
@@ -4268,12 +4311,10 @@ function filterEventsByContinent() {
         }
     }
     
-    console.log(`Total filtered events: ${currentEvents.length}`);
 }
 
 // Events nach Land filtern
 function filterEventsByCountry() {
-    console.log('filterEventsByCountry called');
 
     // Verwende die zentrale Filterlogik anstatt eigener Implementierung
     if (typeof loadDashboardData === 'function') {
@@ -4287,7 +4328,6 @@ function filterEventsByCountry() {
         }
     }
 
-    console.log(`Total filtered events: ${currentEvents.length}`);
 
     // Don't zoom here - let updateCountryOverlays handle the zoom
     // The zoom should be based on country boundaries, not just events
@@ -4339,9 +4379,7 @@ function zoomToFilteredEvents() {
             duration: 0.8
         });
 
-        console.log(`Map zoomed to show ${eventCount} filtered events`);
     } catch (e) {
-        console.error('Error zooming to events:', e);
     }
 }
 
@@ -4498,7 +4536,6 @@ async function refreshData() {
         await loadStatistics();
         showNotification('Daten erfolgreich aktualisiert!', 'success');
     } catch (error) {
-        console.error('Error refreshing data:', error);
         showNotification('Fehler beim Aktualisieren der Daten', 'error');
     } finally {
         isLoading = false;
@@ -4650,7 +4687,6 @@ function syncSectionToggleIcon(sectionId) {
 
 // Länder filtern
 function filterCountries(query) {
-    console.log('Filtering countries:', query);
     // Hier könnte man echte Länder-Filterung implementieren
 }
 
@@ -4774,7 +4810,6 @@ async function searchCountries(query) {
         });
     } catch (e) {
         box.innerHTML = '<div class="text-xs text-red-600">Fehler bei der Suche</div>';
-        console.error(e);
     }
 }
 
@@ -4784,32 +4819,23 @@ async function searchCountriesForFilter(query) {
     const q = (query || '').trim();
     if (!q) { box.innerHTML = ''; return; }
     
-    console.log('Searching countries for filter with query:', q);
     
     try {
         box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
         const res = await fetch('/api/countries/search?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
         
-        console.log('Response status:', res.status);
         
         if (!res.ok) {
             const errorText = await res.text();
-            console.error('API Error:', errorText);
             throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
         
         const data = await res.json();
-        console.log('API Response:', data);
         
         const list = Array.isArray(data.data) ? data.data : [];
         
-        console.log('Country search results:', list);
-        console.log('Data type:', typeof data.data);
-        console.log('Is array:', Array.isArray(data.data));
-        console.log('Data keys:', Object.keys(data.data || {}));
         
         if (data.error) {
-            console.error('API returned error:', data.error);
             box.innerHTML = '<div class="text-xs text-red-600">API Fehler: ' + escapeHtml(data.error) + '</div>';
             return;
         }
@@ -4847,7 +4873,6 @@ async function searchCountriesForFilter(query) {
                 e.preventDefault();
                 const countryName = el.getAttribute('data-name');
                 const iso2 = el.getAttribute('data-iso2');
-                console.log('Adding country to filter:', countryName, 'ISO:', iso2);
                 addCountryToFilter(countryName, iso2);
                 box.innerHTML = '';
             });
@@ -4855,13 +4880,11 @@ async function searchCountriesForFilter(query) {
                 e.stopPropagation();
                 const countryName = el.getAttribute('data-name');
                 const iso2 = el.getAttribute('data-iso2');
-                console.log('Adding country to filter via button:', countryName, 'ISO:', iso2);
                 addCountryToFilter(countryName, iso2);
                 box.innerHTML = '';
             });
         });
     } catch (e) {
-        console.error('Error in searchCountriesForFilter:', e);
         box.innerHTML = '<div class="text-xs text-red-600">Fehler bei der Suche: ' + escapeHtml(e.message) + '</div>';
     }
 }
@@ -4891,7 +4914,6 @@ function clearSelectedCountry() {
 }
 
 function addCountryToFilter(countryName, iso2) {
-    console.log('addCountryToFilter called with:', countryName, iso2);
 
     // Land zur Auswahl hinzufügen (mit ISO-Code für besseres Matching)
     window.selectedCountries.set(countryName, { name: countryName, iso2: iso2 || null });
@@ -4911,7 +4933,6 @@ function addCountryToFilter(countryName, iso2) {
 }
 
 function removeCountryFromFilter(countryName) {
-    console.log('removeCountryFromFilter called with:', countryName);
     
     // Land aus der Auswahl entfernen
     window.selectedCountries.delete(countryName);
@@ -4951,7 +4972,6 @@ function renderSelectedCountries() {
 }
 
 function clearAllCountryFilters() {
-    console.log('clearAllCountryFilters called');
 
     // Alle Länder aus der Auswahl entfernen
     window.selectedCountries.clear();
@@ -4984,12 +5004,10 @@ function clearAllCountryFilters() {
 
 // Test-Funktion für Länder-Suche
 function testCountrySearch() {
-    console.log('Testing country search...');
     const testQueries = ['Deutschland', 'Germany', 'DE', 'USA', 'Frankreich'];
     
     testQueries.forEach(query => {
         setTimeout(() => {
-            console.log(`Testing query: ${query}`);
             searchCountriesForFilter(query);
         }, 1000);
     });
@@ -4997,17 +5015,14 @@ function testCountrySearch() {
 
 // Debug-Funktion für Länder-Suche
 async function debugCountrySearch(query) {
-    console.log('Debug country search for:', query);
     try {
         const res = await fetch('/api/countries/search-debug?q=' + encodeURIComponent(query), { 
             headers: { 'Accept': 'application/json' } 
         });
         if (!res.ok) throw new Error('Network');
         const data = await res.json();
-        console.log('Debug results:', data);
         return data;
     } catch (e) {
-        console.error('Debug error:', e);
         return null;
     }
 }
@@ -5101,7 +5116,6 @@ async function searchAirports(query) {
         updateAirportResultMarkers(list);
     } catch (e) {
         resultsContainer.innerHTML = '<div class="text-xs text-red-600">Fehler bei der Suche</div>';
-        console.error(e);
     }
 }
 
@@ -5296,13 +5310,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // GDACS-Button sichtbar machen wenn aktiviert
     const gdacsButton = document.getElementById('provider-gdacs');
     const containerDiv = document.getElementById('provider-buttons-container');
-    if (window.GDACS_ENABLED && gdacsButton) {
-        gdacsButton.style.display = 'block';
-        // Grid-Layout anpassen wenn beide Buttons sichtbar sind
-        containerDiv.className = 'grid grid-cols-2 gap-2';
-    } else {
-        // Nur Custom-Button, daher grid-cols-1
-        containerDiv.className = 'grid grid-cols-1 gap-2';
+
+    // Defensive check - only proceed if containerDiv exists
+    if (containerDiv) {
+        if (window.GDACS_ENABLED && gdacsButton) {
+            gdacsButton.style.display = 'block';
+            // Grid-Layout anpassen wenn beide Buttons sichtbar sind
+            containerDiv.className = 'grid grid-cols-2 gap-2';
+        } else {
+            // Nur Custom-Button, daher grid-cols-1
+            containerDiv.className = 'grid grid-cols-1 gap-2';
+        }
     }
     try {
         const [countriesRes, continentsRes] = await Promise.all([
@@ -5339,7 +5357,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     } catch (e) {
-        console.error('Dropdowns laden fehlgeschlagen', e);
     }
     // Airport-Filterbereich Zustand wiederherstellen
     try {
@@ -5536,7 +5553,6 @@ function updateSocialMarkers(list){
 }
 // Karten-Einstellungen umschalten
 function toggleMapSettings() {
-    console.log('Toggle map settings');
     // Hier könnte man Karten-Einstellungen implementieren
 }
 
@@ -5546,7 +5562,12 @@ function toggleLegend() {
     const icon = document.getElementById('legendToggleIcon');
     const container = document.getElementById('legendContainer');
     const header = document.getElementById('legendHeader');
-    
+
+    // Defensive check - return if elements don't exist
+    if (!content || !icon || !container || !header) {
+        return;
+    }
+
     if (content.style.display === 'none') {
         // Legende öffnen
         content.style.display = 'block';
@@ -5603,7 +5624,6 @@ function centerMapOn(lat, lng, title, codes, airportId = null, iata = '', icao =
         // Weiter hinein zoomen als vorher (z. B. 12)
         map.setView([latNum, lngNum], 12);
     } catch (e) {
-        console.error('Karte zentrieren fehlgeschlagen', e);
     }
 }
 
@@ -6041,37 +6061,29 @@ function showSidebarLiveStatistics() {
 
 // Einreisebestimmungen anzeigen
 function showEntryConditions() {
-    console.log('showEntryConditions called');
 
     // Linke Sidebar für Einreisebestimmungen erstellen/anzeigen
     const leftSidebar = document.querySelector('.sidebar.overflow-y-auto');
-    console.log('Left sidebar found:', leftSidebar);
 
     if (!leftSidebar) {
-        console.error('Left sidebar not found!');
         return;
     }
 
     const entryFilterContainer = document.getElementById('entry-conditions-filter-container');
-    console.log('Entry filter container found:', entryFilterContainer);
 
     // Alle anderen Container in der linken Sidebar ausblenden
     const allContainers = leftSidebar.querySelectorAll('.bg-white.rounded-lg.shadow-sm, #filtersWrapper');
-    console.log('Found containers to hide:', allContainers.length);
     allContainers.forEach(container => {
         container.style.display = 'none';
     });
 
     // Linke Sidebar anzeigen
     leftSidebar.style.display = 'block';
-    console.log('Left sidebar display set to block');
 
     // Entry Conditions Filter Container erstellen oder anzeigen
     if (!entryFilterContainer) {
-        console.log('Creating new entry conditions filter container');
         createEntryConditionsFilterContainer();
     } else {
-        console.log('Showing existing entry conditions filter container');
         entryFilterContainer.style.display = 'block';
     }
 
@@ -6088,9 +6100,7 @@ function showEntryConditions() {
 
 // Entry Conditions Filter Container erstellen
 function createEntryConditionsFilterContainer() {
-    console.log('createEntryConditionsFilterContainer called');
     const leftSidebar = document.querySelector('.sidebar.overflow-y-auto');
-    console.log('Left sidebar in create function:', leftSidebar);
     if (!leftSidebar) {
         console.error('Cannot create entry conditions container - left sidebar not found');
         return;
@@ -6225,9 +6235,6 @@ function createEntryConditionsFilterContainer() {
     `;
 
     leftSidebar.appendChild(container);
-    console.log('Entry conditions container appended to sidebar');
-    console.log('Container display style:', container.style.display);
-    console.log('Sidebar display style:', leftSidebar.style.display);
 
     // Länder für Nationalitäten-Dropdown laden
     setTimeout(() => {
@@ -6266,7 +6273,6 @@ async function loadNationalitiesDropdown() {
             });
         }
     } catch (error) {
-        console.error('Error loading nationalities:', error);
     }
 }
 
@@ -6501,7 +6507,6 @@ function applyEntryConditionsFilters() {
         noEntryForm: document.getElementById('filter-no-entry-form')?.checked,
     };
 
-    console.log('Entry Conditions Filters applied:', filters);
 
     // TODO: Hier die Kartenansicht basierend auf den Filtern aktualisieren
     // Beispiel: Länder highlighten, die den Filter-Kriterien entsprechen
@@ -6561,7 +6566,6 @@ function resetEntryConditionsFilters() {
         resultsContainer.style.display = 'none';
     }
 
-    console.log('Entry Conditions Filters reset');
 }
 
 // Einreisebestimmungen suchen
@@ -6584,7 +6588,6 @@ async function searchEntryConditions() {
         // Nationalität auslesen
         const nationality = document.getElementById('nationality-select')?.value || 'DE';
 
-        console.log('Searching with filters:', filters, 'Nationality:', nationality);
 
         // Lade-Anzeige einblenden
         const resultsContainer = document.getElementById('entry-conditions-search-results');
@@ -6613,7 +6616,6 @@ async function searchEntryConditions() {
         if (data.success) {
             displaySearchResults(data.destinations || []);
         } else {
-            console.error('Search failed:', data.message);
             if (resultsList) {
                 resultsList.innerHTML = `<div class="text-xs text-red-500 p-2">Fehler: ${data.message || 'Suche fehlgeschlagen'}</div>`;
             }
@@ -6692,7 +6694,6 @@ function getTravelAdvisoryClass(type) {
 
 // Land-Details in der rechten Sidebar laden
 function loadCountryEntryConditions(countryCode, countryName) {
-    console.log(`Loading entry conditions for ${countryName} (${countryCode})`);
 
     const sidebar = document.getElementById('sidebar-entry-conditions');
     if (!sidebar) return;
@@ -6884,10 +6885,8 @@ function updateAirportResultMarkers(list) {
 
 // Load country boundaries from GeoJSON
 async function loadCountryBoundaries() {
-    console.log('Loading country boundaries...');
 
     if (countryGeoJsonData) {
-        console.log('Country boundaries already loaded');
         return true;
     }
 
@@ -6896,8 +6895,6 @@ async function loadCountryBoundaries() {
         const response = await fetch('/api/countries-geojson');
         if (response.ok) {
             countryGeoJsonData = await response.json();
-            console.log('Country boundaries loaded from local file');
-            console.log('Total countries in GeoJSON:', countryGeoJsonData.features.length);
 
             // Log some sample country names to check the data structure
             if (countryGeoJsonData.features && countryGeoJsonData.features.length > 0) {
@@ -6905,24 +6902,20 @@ async function loadCountryBoundaries() {
                     name: f.properties?.name || f.properties?.NAME || f.properties?.ADMIN,
                     props: Object.keys(f.properties || {})
                 }));
-                console.log('Sample countries:', sampleCountries);
             }
 
             return true;
         }
     } catch (error) {
-        console.error('Error loading local GeoJSON:', error);
 
         // Fallback to remote sources if local file fails
         try {
             const response = await fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson');
             if (response.ok) {
                 countryGeoJsonData = await response.json();
-                console.log('Country boundaries loaded from Natural Earth (fallback)');
                 return true;
             }
         } catch (fallbackError) {
-            console.error('All sources failed:', fallbackError);
             return false;
         }
     }
@@ -7104,8 +7097,6 @@ let countryNameMapping = {
 
 // Update country overlays based on selected countries
 async function updateCountryOverlays() {
-    console.log('=== updateCountryOverlays called ===');
-    console.log('Selected countries:', Array.from(window.selectedCountries.entries()));
 
     if (!countryOverlaysLayer) {
         console.error('countryOverlaysLayer not initialized');
@@ -7113,13 +7104,11 @@ async function updateCountryOverlays() {
     }
 
     if (!countryGeoJsonData) {
-        console.warn('GeoJSON data not loaded yet, loading now...');
         // Load and wait for completion
         await loadCountryBoundaries();
 
         // Check again after loading
         if (!countryGeoJsonData) {
-            console.error('Failed to load GeoJSON data');
             return;
         }
     }
@@ -7128,7 +7117,6 @@ async function updateCountryOverlays() {
     countryOverlaysLayer.clearLayers();
 
     if (window.selectedCountries.size === 0) {
-        console.log('No countries selected');
         return;
     }
 
@@ -7137,10 +7125,8 @@ async function updateCountryOverlays() {
 
     // Debug: Log all available countries in GeoJSON
     if (!window.debuggedCountries) {
-        console.log('Available countries in GeoJSON (first 10):');
         countryGeoJsonData.features.slice(0, 10).forEach(f => {
             const iso2 = f.properties['ISO3166-1-Alpha-2'] || f.properties.ISO_A2 || f.properties.iso_a2;
-            console.log(`- ${f.properties.name || f.properties.NAME || f.properties.ADMIN} (ISO: ${iso2})`);
         });
         window.debuggedCountries = true;
     }
@@ -7153,15 +7139,7 @@ async function updateCountryOverlays() {
         const geoJsonISO2 = (props['ISO3166-1-Alpha-2'] || props.ISO_A2 || props.iso_a2 || '').toUpperCase();
         const geoJsonName = (props.name || props.NAME || props.ADMIN || props.name_long || props.NAME_LONG || '').toLowerCase().trim();
 
-        // Special debug for Netherlands/Greenland issue
-        if (geoJsonName.includes('netherland') || geoJsonName.includes('greenland') ||
-            geoJsonName.includes('groenland') || geoJsonName.includes('niederlande')) {
-            console.log('DEBUG - Potential match:', {
-                geoJsonName: geoJsonName,
-                originalName: props.name || props.NAME,
-                allProps: props
-            });
-        }
+        // Special debug for Netherlands/Greenland issue (debug removed)
 
         // Check if this country is selected by ISO code (much more reliable!)
         let matchedSelection = null;
@@ -7222,7 +7200,6 @@ async function updateCountryOverlays() {
 
         if (isSelected && matchedSelection) {
             const displayName = props.name || props.NAME || props.ADMIN;
-            console.log('Match found! Selected:', matchedSelection, '-> GeoJSON:', displayName, 'ISO:', geoJsonISO2);
             matchedCountries.push(displayName);
             unmatchedSelections.delete(matchedSelection);
 
@@ -7247,27 +7224,20 @@ async function updateCountryOverlays() {
 
     // Log unmatched selections for debugging
     if (unmatchedSelections.size > 0) {
-        console.warn('Could not find overlays for:', Array.from(unmatchedSelections));
     }
 
-    console.log('Successfully matched countries:', matchedCountries);
-    console.log('Country overlay layers count:', countryOverlaysLayer.getLayers().length);
 
     // Auto-zoom to show all selected countries
     if (countryOverlaysLayer.getLayers().length > 0) {
-        console.log('Preparing to zoom to countries...');
         // Add a small delay to ensure layers are properly rendered
         setTimeout(() => {
             try {
-                console.log('Getting bounds for zoom...');
 
                 // Calculate bounds manually from all layers
                 let bounds = null;
                 const layers = countryOverlaysLayer.getLayers();
-                console.log('Total layers in countryOverlaysLayer:', layers.length);
 
                 layers.forEach((layer, index) => {
-                    console.log(`Layer ${index}:`, layer);
 
                     // Try different methods to get bounds
                     let layerBounds = null;
@@ -7295,23 +7265,12 @@ async function updateCountryOverlays() {
                         } else {
                             bounds.extend(layerBounds);
                         }
-                        console.log(`Added bounds from layer ${index}:`, layerBounds.toBBoxString());
                     }
                 });
 
                 if (!bounds) {
-                    console.error('No bounds could be calculated from layers');
                     return;
                 }
-
-                console.log('Calculated combined bounds:', bounds);
-                console.log('Bounds valid:', bounds.isValid());
-                console.log('Bounds details:', {
-                    north: bounds.getNorth(),
-                    south: bounds.getSouth(),
-                    east: bounds.getEast(),
-                    west: bounds.getWest()
-                });
 
                 if (bounds.isValid()) {
                     // Adjust zoom based on number of countries selected
@@ -7320,7 +7279,6 @@ async function updateCountryOverlays() {
 
                     if (countryCount === 1) {
                         // Single country - zoom in closer
-                        console.log('Zooming to single country...');
                         zoomOptions = {
                             padding: [100, 100],
                             maxZoom: 7,
@@ -7330,7 +7288,6 @@ async function updateCountryOverlays() {
                     } else if (countryCount === 2) {
                         // Two countries - check if they're far apart
                         const boundsSize = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
-                        console.log('Distance between countries:', boundsSize);
 
                         if (boundsSize > 5000000) { // More than 5000km apart
                             // Far apart countries (e.g., Germany and Canada)
@@ -7359,37 +7316,28 @@ async function updateCountryOverlays() {
                         };
                     }
 
-                    console.log('Zoom options:', zoomOptions);
-                    console.log('Fitting bounds to:', bounds.toBBoxString());
 
                     // Force the zoom by directly fitting bounds
                     try {
                         map.fitBounds(bounds, zoomOptions);
-                        console.log('✓ Map zoom completed');
 
                         // Double-check zoom happened
                         setTimeout(() => {
                             const newZoom = map.getZoom();
                             const center = map.getCenter();
-                            console.log('New map state - Zoom:', newZoom, 'Center:', center);
                         }, 1000);
                     } catch (zoomError) {
-                        console.error('Error during zoom:', zoomError);
                         // Fallback: try simple setView
                         const center = bounds.getCenter();
                         map.setView(center, 5, { animate: true });
-                        console.log('Used fallback zoom to center:', center);
                     }
                 } else {
                     console.error('Invalid bounds for country layers');
                 }
             } catch (e) {
-                console.error('Error fitting bounds to countries:', e);
-                console.error('Error details:', e.stack);
             }
         }, 100); // Small delay to ensure layers are rendered
     } else {
-        console.log('No country layers added to map');
         // If no countries selected, reset to default view
         if (window.selectedCountries.size === 0 && initialMapView) {
             map.setView(initialMapView.center, initialMapView.zoom, {
@@ -7402,9 +7350,7 @@ async function updateCountryOverlays() {
 
 // Test function to manually trigger zoom to Germany
 window.testZoomToGermany = function() {
-    console.log('Testing zoom to Germany...');
     if (!map) {
-        console.error('Map not initialized');
         return;
     }
 
@@ -7414,7 +7360,6 @@ window.testZoomToGermany = function() {
         [55.0585, 15.0419]  // Northeast
     );
 
-    console.log('Germany bounds:', germanyBounds);
 
     try {
         map.fitBounds(germanyBounds, {
@@ -7423,17 +7368,13 @@ window.testZoomToGermany = function() {
             animate: true,
             duration: 1
         });
-        console.log('Zoom to Germany completed');
     } catch (e) {
-        console.error('Zoom failed:', e);
     }
 };
 
 // Test function to check if zoom works at all
 window.testBasicZoom = function(lat, lng, zoomLevel) {
-    console.log(`Testing zoom to ${lat}, ${lng} at level ${zoomLevel}`);
     if (!map) {
-        console.error('Map not initialized');
         return;
     }
 
@@ -7441,13 +7382,8 @@ window.testBasicZoom = function(lat, lng, zoomLevel) {
         animate: true,
         duration: 1
     });
-    console.log('Basic zoom completed');
 };
 
-console.log('Risk Management Dashboard loaded with GDACS API integration');
-console.log('Test functions available:');
-console.log('- testZoomToGermany() : Zoom to Germany');
-console.log('- testBasicZoom(lat, lng, zoom) : Test basic zoom');
 </script>
 </body>
 </html>

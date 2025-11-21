@@ -30,14 +30,13 @@ class GenerateSitemap extends Command
         $this->info('Generating sitemap...');
 
         // Use production URL from config
-        $baseUrl = config('app.url');
+        $baseUrl = rtrim(config('app.url'), '/');
 
-        $sitemap = Sitemap::create()
-            ->setBaseUrl($baseUrl);
+        $sitemap = Sitemap::create();
 
         // Add main public pages
         $sitemap->add(
-            Url::create('/')
+            Url::create($baseUrl . '/')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
                 ->setPriority(1.0)
@@ -45,7 +44,7 @@ class GenerateSitemap extends Command
 
         // Add dashboard page (public)
         $sitemap->add(
-            Url::create('/dashboard')
+            Url::create($baseUrl . '/dashboard')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)
                 ->setPriority(0.9)
@@ -53,7 +52,7 @@ class GenerateSitemap extends Command
 
         // Add cruise page
         $sitemap->add(
-            Url::create('/cruise')
+            Url::create($baseUrl . '/cruise')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
                 ->setPriority(0.8)
@@ -61,7 +60,7 @@ class GenerateSitemap extends Command
 
         // Add booking page
         $sitemap->add(
-            Url::create('/booking')
+            Url::create($baseUrl . '/booking')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
                 ->setPriority(0.8)
@@ -69,7 +68,7 @@ class GenerateSitemap extends Command
 
         // Add entry conditions page
         $sitemap->add(
-            Url::create('/entry-conditions')
+            Url::create($baseUrl . '/entry-conditions')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
                 ->setPriority(0.8)
@@ -77,7 +76,7 @@ class GenerateSitemap extends Command
 
         // Add branches page
         $sitemap->add(
-            Url::create('/branches')
+            Url::create($baseUrl . '/branches')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
                 ->setPriority(0.7)
@@ -85,14 +84,14 @@ class GenerateSitemap extends Command
 
         // Add RSS feeds
         $sitemap->add(
-            Url::create('/feed/events/rss')
+            Url::create($baseUrl . '/feed/events/rss')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)
                 ->setPriority(0.6)
         );
 
         $sitemap->add(
-            Url::create('/feed/events/atom')
+            Url::create($baseUrl . '/feed/events/atom')
                 ->setLastModificationDate(now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)
                 ->setPriority(0.6)

@@ -126,11 +126,18 @@ class AirportSearchController extends Controller
     public function countries(): JsonResponse
     {
         $countries = Country::query()
-            ->select(['countries.id', 'countries.name', 'countries.code'])
+            ->select(['countries.id', 'countries.iso_code', 'countries.name_translations'])
             ->join('airports', 'airports.country_id', '=', 'countries.id')
             ->distinct()
-            ->orderBy('countries.name')
-            ->get();
+            ->orderBy('countries.iso_code')
+            ->get()
+            ->map(function ($country) {
+                return [
+                    'id' => $country->id,
+                    'code' => $country->iso_code,
+                    'name' => $country->getName('de'),
+                ];
+            });
 
         return response()->json([
             'data' => $countries,
@@ -140,12 +147,18 @@ class AirportSearchController extends Controller
     public function continents(): JsonResponse
     {
         $continents = Continent::query()
-            ->select(['continents.id', 'continents.name'])
+            ->select(['continents.id', 'continents.code', 'continents.name_translations'])
             ->join('countries', 'countries.continent_id', '=', 'continents.id')
             ->join('airports', 'airports.country_id', '=', 'countries.id')
             ->distinct()
-            ->orderBy('continents.name')
-            ->get();
+            ->orderBy('continents.code')
+            ->get()
+            ->map(function ($continent) {
+                return [
+                    'id' => $continent->id,
+                    'name' => $continent->getName('de'),
+                ];
+            });
 
         return response()->json([
             'data' => $continents,
