@@ -1,0 +1,89 @@
+{
+  "finalUrl": "https://test11-dot-web1-dot-dataservice-development.ey.r.appspot.com/de",
+  "cookies": [
+    {
+      "name": "_ga",
+      "value": "GA1.1.29924469.1763733933",
+      "domain": ".test11-dot-web1-dot-dataservice-development.ey.r.appspot.com",
+      "path": "/",
+      "expires": 1798293932.907054,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_pl_aid",
+      "value": "eyJpdiI6InRwRWJjaXVqV2lHa0g3azI0ZHRXNVE9PSIsInZhbHVlIjoic3dzK2VBNGt0alY1L05PSGVJVGdrR2pvVVZIU2JwaE45V29mYkZ0aGN2L3hIajlKT01rSmRwSGhuTFRuVmg2dSIsIm1hYyI6ImRkYzQyNDE2MTAxMDQyNzkwYTlmN2FjMDI0NjQ2MGYxMjIyZGMwMDkzM2MwZGIzOWRmOWI4ZmEzMzA1YWMwMWYiLCJ0YWciOiIifQ%3D%3D",
+      "domain": "test11-dot-web1-dot-dataservice-development.ey.r.appspot.com",
+      "path": "/",
+      "expires": 1766325934.798543,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_Z8Y9CQM4DZ",
+      "value": "GS2.1.s1763733932$o1$g1$t1763733935$j57$l0$h0",
+      "domain": ".test11-dot-web1-dot-dataservice-development.ey.r.appspot.com",
+      "path": "/",
+      "expires": 1798293935.158936,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6Ikh3UGEralJ5OGRXNk1KZ2xYOWUwdXc9PSIsInZhbHVlIjoiVkorekhHWXQvZm54TkpCU3FWYjF1ZHlWQnhHeVFrYzR3MTJSK0xaNERWdDBBcWNaT1ZsQ1Baak4zWE1veUJ5NXRQZm5CQ1M3a2VGRS9nc3RwN1BUU1M4SHJYbXM4S0pqZGNiS2RwMGRmNVk2UTFyZlBXVGFZbXdNWEhkRmtmMEMiLCJtYWMiOiI5MzE5YjlmNzc0M2Y4ZGU4MzlhNDUzNzIzNzhjZTJkY2I5M2FiM2E0YzgyOGQ5N2ZlMDNmYzI3MWY0OWM0NGNkIiwidGFnIjoiIn0%3D",
+      "domain": "test11-dot-web1-dot-dataservice-development.ey.r.appspot.com",
+      "path": "/",
+      "expires": 1763741138.48239,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "passolution_dataservice_website_session",
+      "value": "eyJpdiI6IktLaFJyaTZZL2EvNjNlWXRLSWdzdXc9PSIsInZhbHVlIjoia0ZjOUhaTVhJT241b0FEdEZ4NDJ6K3hpTXhuVU1OaEJ3WnF0TFh5Mnd1Z2Jjd0ZjMzJ6bWFMQWR6ODIzNVlTeGRlOHFFajAwR0dXQjhBdW8zcXlkSGxYTThaUXgyMDJXSG9HVTJ2YUdpWEJnbDFMZlRHdDBNdVVkQmtvNTZCM04iLCJtYWMiOiI4YWNhZDEwZTZhZTlkZWY2ZTRhMzEwNDQ3NTcwZjZhOWVlNTAyODRmYTdmMTU2MjkzNDNmZDQ5NzQwZDQ2MDM4IiwidGFnIjoiIn0%3D",
+      "domain": "test11-dot-web1-dot-dataservice-development.ey.r.appspot.com",
+      "path": "/",
+      "expires": 1763741138.48244,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "requests": [
+    {
+      "url": "https://test11-dot-web1-dot-dataservice-development.ey.r.appspot.com/de/pdsauthint/redirect",
+      "method": "POST",
+      "headers": {
+        "accept-language": "en-US",
+        "content-type": "application/x-www-form-urlencoded",
+        "origin": "https://test11-dot-web1-dot-dataservice-development.ey.r.appspot.com",
+        "referer": "https://test11-dot-web1-dot-dataservice-development.ey.r.appspot.com/de",
+        "upgrade-insecure-requests": "1",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36",
+        "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\""
+      },
+      "postData": "_token=AiT02aKdIv3jr0q4Jxb2NFx30zPmjswi79XwgKkL"
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://test11-dot-web1-dot-dataservice-development.ey.r.appspot.com/de/pdsauthint/redirect",
+      "status": 302,
+      "headers": {
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "cache-control": "no-cache, private",
+        "content-type": "text/html; charset=utf-8",
+        "date": "Fri, 21 Nov 2025 14:06:07 GMT",
+        "location": "https://test11-dot-web1-dot-dataservice-development.ey.r.appspot.com/de/login",
+        "server": "nginx",
+        "via": "1.1 google"
+      },
+      "body": "[Unable to read body]"
+    }
+  ]
+}
