@@ -3,6 +3,23 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | SSO Service Version (Service Provider)
+    |--------------------------------------------------------------------------
+    |
+    | SSO-Service-Version (Service Provider)
+    | Increment this version number with each SSO-related deployment
+    | Diese Versionsnummer bei jedem SSO-bezogenen Deployment erhöhen
+    |
+    | Version History / Versionshistorie:
+    | - 1.0.0: Initial SSO implementation
+    | - 1.1.0: Added comprehensive logging system
+    | - 1.2.0: Added remote log reception from IdP + version tracking
+    |
+    */
+    'version' => env('SSO_VERSION', '1.2.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | PDS Auth Integration - Role
     |--------------------------------------------------------------------------
     |

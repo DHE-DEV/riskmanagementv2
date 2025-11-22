@@ -32,4 +32,20 @@ Route::prefix('api/pdsauthint')->group(function () {
      */
     Route::post('/exchange', [SPController::class, 'exchangeToken'])
         ->name('pdsauthint.api.exchange');
+
+    /*
+     * SSO Log Endpoint
+     *
+     * Empfängt SSO-Logs vom IdP (pds-homepage) zur zentralen Speicherung
+     * POST /api/pdsauthint/log
+     * Body: { "request_id": "...", "step": "...", "status": "...", "data": {...} }
+     * Response: { "success": true }
+     *
+     * Receives SSO logs from the IdP (pds-homepage) for central storage
+     * POST /api/pdsauthint/log
+     * Body: { "request_id": "...", "step": "...", "status": "...", "data": {...} }
+     * Response: { "success": true }
+     */
+    Route::post('/log', [SPController::class, 'receiveLog'])
+        ->name('pdsauthint.api.log');
 });

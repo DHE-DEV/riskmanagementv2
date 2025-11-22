@@ -1209,4 +1209,118 @@ class SPController extends Controller
                 ->withErrors(['error' => 'An error occurred during login. Please try again.']);
         }
     }
+
+    /**
+     * Receive SSO log from IdP (pds-homepage)
+     *
+     * API Endpoint: POST /api/pdsauthint/log
+     *
+     * Empfängt SSO-Logs vom IdP zur zentralen Speicherung in riskmanagementv2
+     * Receives SSO logs from IdP for central storage in riskmanagementv2
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function receiveLog(Request $request): JsonResponse
+    {
+        try {
+            // Validate incoming log data
+            $validated = $request->validate([
+                'request_id' => 'required|string',
+                'step' => 'required|string',
+                'status' => 'required|string|in:success,error,info,warning',
+                'data' => 'nullable|array',
+                'error_message' => 'nullable|string',
+                'error_trace' => 'nullable|string',
+                'source' => 'nullable|string',
+                'version_idp' => 'nullable|string',
+            ]);
+
+            Log::info('SSO: Received log from IdP', [
+                'request_id' => $validated['request_id'],
+                'step' => $validated['step'],
+                'status' => $validated['status'],
+                'source' => $validated['source'] ?? 'pds-homepage',
+                'version_idp' => $validated['version_idp'] ?? 'unknown',
+            ]);
+
+            // Use SsoLogService to store the log
+            $logData = [
+                'version_idp' => $validated['version_idp'] ?? null,
+                'request_data' => $validated['data']['request_data'] ?? null,
+                'response_data' => $validated['data']['response_data'] ?? null,
+                'jwt_payload' => $validated['data']['jwt_payload'] ?? null,
+                'jwt_token' => $validated['data']['jwt_token'] ?? null,
+                'ott' => $validated['data']['ott'] ?? null,
+                'agent_id' => $validated['data']['agent_id'] ?? null,
+                'service1_customer_id' => $validated['data']['service1_customer_id'] ?? null,
+                'customer_id' => $validated['data']['customer_id'] ?? null,
+            ];
+
+            // Add source information to identify logs from IdP
+            if (!isset($logData['request_data'])) {
+                $logData['request_data'] = [];
+            }
+            $logData['request_data']['source'] = $validated['source'] ?? 'pds-homepage';
+            $logData['request_data']['received_at'] = now()->toIso8601String();
+
+            // Handle error logs
+            if ($validated['status'] === 'error' && isset($validated['error_message'])) {
+                // For error logs, we need to manually set version_idp as logError doesn't accept it
+                $errorLog = $this->ssoLogService->logError(
+                    requestId: $validated['request_id'],
+                    step: $validated['step'],
+                    error: $validated['error_message'],
+                    trace: $validated['error_trace'] ?? null
+                );
+
+                // Update the log with version_idp if provided
+                if (isset($validated['version_idp'])) {
+                    $errorLog->update(['version_idp' => $validated['version_idp']]);
+                }
+            } else {
+                // Handle regular logs
+                $this->ssoLogService->logStep(
+                    requestId: $validated['request_id'],
+                    step: $validated['step'],
+                    status: $validated['status'],
+                    data: $logData
+                );
+            }
+
+            Log::info('SSO: Log from IdP stored successfully', [
+                'request_id' => $validated['request_id'],
+                'step' => $validated['step'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Log received and stored successfully'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('SSO: Invalid log data received from IdP', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('SSO: Failed to store log from IdP', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to store log'
+            ], 500);
+        }
+    }
 }

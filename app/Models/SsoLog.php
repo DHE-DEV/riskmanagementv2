@@ -17,6 +17,8 @@ class SsoLog extends Model
         'request_id',
         'customer_id',
         'step',
+        'version_idp',
+        'version_sp',
         'status',
         'jwt_payload',
         'jwt_token',
