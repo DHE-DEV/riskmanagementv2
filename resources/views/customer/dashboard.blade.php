@@ -1,4 +1,4 @@
-@extends('layouts.dashboard-minimal')
+@extends('layouts.public')
 
 @section('title', 'Customer Dashboard - Global Travel Monitor')
 
