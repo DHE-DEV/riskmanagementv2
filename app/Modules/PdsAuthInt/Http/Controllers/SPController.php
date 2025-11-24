@@ -876,6 +876,7 @@ class SPController extends Controller
                         'phone' => $claims['phone'] ?? $customer->phone,
                         'address' => $claims['address'] ?? $customer->address,
                         'account_type' => $claims['account_type'] ?? $customer->account_type,
+                        'pds_customer_number' => $claims['pds_customer_number'] ?? $customer->pds_customer_number,
                         // Company address fields from JWT claims
                         'company_name' => $claims['company_name'] ?? $customer->company_name,
                         'company_additional' => $claims['company_additional'] ?? $customer->company_additional,
@@ -956,6 +957,7 @@ class SPController extends Controller
                         'phone' => $claims['phone'] ?? null,
                         'address' => $claims['address'] ?? null,
                         'account_type' => $claims['account_type'] ?? 'standard',
+                        'pds_customer_number' => $claims['pds_customer_number'] ?? null,
                         // Company address fields from JWT claims
                         'company_name' => $claims['company_name'] ?? null,
                         'company_additional' => $claims['company_additional'] ?? null,

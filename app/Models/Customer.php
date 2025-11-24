@@ -52,6 +52,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // SSO fields
         'agent_id',
         'service1_customer_id',
+        'pds_customer_number',
         'phone',
         'address',
         'account_type',
