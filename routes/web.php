@@ -9,10 +9,6 @@ Route::get('/', function () {
     return view('livewire.pages.dashboard');
 })->name('home');
 
-Route::get('/dashboard', function () {
-    return view('livewire.pages.dashboard');
-})->name('dashboard');
-
 Route::get('/entry-conditions', function () {
     if (!config('app.entry_conditions_enabled', true)) {
         abort(404);
