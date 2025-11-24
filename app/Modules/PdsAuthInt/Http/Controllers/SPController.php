@@ -886,6 +886,8 @@ class SPController extends Controller
                         'company_postal_code' => $claims['company_postal_code'] ?? $customer->company_postal_code,
                         'company_city' => $claims['company_city'] ?? $customer->company_city,
                         'company_country' => $claims['company_country'] ?? $customer->company_country,
+                        // Subscription information from JWT claims
+                        'passolution_subscription_type' => $claims['passolution_subscription_type'] ?? $customer->passolution_subscription_type,
                     ]);
 
                     Log::info('SSO: Customer updated successfully', [
@@ -967,6 +969,8 @@ class SPController extends Controller
                         'company_postal_code' => $claims['company_postal_code'] ?? null,
                         'company_city' => $claims['company_city'] ?? null,
                         'company_country' => $claims['company_country'] ?? null,
+                        // Subscription information from JWT claims
+                        'passolution_subscription_type' => $claims['passolution_subscription_type'] ?? null,
                         'password' => bcrypt(Str::random(32)), // Random password, not used for SSO login
                     ]);
 
