@@ -3,7 +3,7 @@
         <!-- Logo -->
         <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-2">
-                <img src="/logo.png" alt="Logo" class="h-8 w-auto" style="margin-left:-5px"/>
+                <img src="/logo.png" alt="Global Travel Monitor - Weltweites Reiserisiko-Monitoring und Sicherheitsinformationen" class="h-8 w-auto" style="margin-left:-5px"/>
                 <span class="text-xl font-semibold text-gray-800" style="margin-left: 30px;">Global Travel Monitor</span>
             </div>
         </div>
@@ -100,21 +100,27 @@
                         </form>
                     </div>
                 </div>
-            @else
-                <!-- Login & Register Buttons -->
-                <a
-                    href="{{ route('customer.login') }}"
-                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                >
-                    <i class="fas fa-sign-in-alt mr-2"></i>Anmelden
-                </a>
-                <a
-                    href="{{ route('customer.register') }}"
-                    class="px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                    <i class="fas fa-user-plus mr-2"></i>Registrieren
-                </a>
             @endauth
+
+            @guest('customer')
+                <!-- Login & Register Buttons -->
+                @if(config('app.customer_login_enabled', true))
+                    <a
+                        href="{{ route('customer.login') }}"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    >
+                        <i class="fas fa-sign-in-alt mr-2"></i>Anmelden
+                    </a>
+                @endif
+                @if(config('app.customer_registration_enabled', true))
+                    <a
+                        href="{{ route('customer.register') }}"
+                        class="px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                        <i class="fas fa-user-plus mr-2"></i>Registrieren
+                    </a>
+                @endif
+            @endguest
         </div>
     </div>
 </header>

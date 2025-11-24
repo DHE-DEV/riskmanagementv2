@@ -3,7 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Global Travel Monitor')</title>
+
+    <!-- SEO Meta Tags -->
+    <title>@yield('title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen')</title>
+    <meta name="description" content="@yield('description', 'Global Travel Monitor bietet Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen. Umfassende Länder-Risikoanalysen, Destination Manager und Live-Statistiken für sicheres Reisen.')">
+    <meta name="keywords" content="@yield('keywords', 'Reiserisiko, Travel Risk Management, Destination Manager, Länderrisiken, Sicherheitswarnungen, Business Travel, Reisesicherheit, Risk Map, Krisenmanagement, Weltweite Ereignisse')">
+    <meta name="author" content="Global Travel Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="@yield('canonical', url()->current())">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:title" content="@yield('og_title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring')">
+    <meta property="og:description" content="@yield('og_description', 'Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen für sicheres Reisen.')">
+    <meta property="og:url" content="@yield('og_url', url()->current())">
+    <meta property="og:image" content="@yield('og_image', asset('android-chrome-192x192.png'))">
+    <meta property="og:locale" content="de_DE">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('twitter_title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring')">
+    <meta name="twitter:description" content="@yield('twitter_description', 'Echtzeit-Informationen zu weltweiten Reiserisiken und Sicherheitswarnungen.')">
+    <meta name="twitter:image" content="@yield('twitter_image', asset('android-chrome-192x192.png'))">
+
+    <!-- Language Alternates -->
+    <link rel="alternate" hreflang="de" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="en" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -23,7 +51,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
     <!-- Font Awesome -->
-    @php($faKit = config('services.fontawesome.kit'))
+    @php
+        $faKit = config('services.fontawesome.kit');
+        $faFallback = file_exists(public_path('vendor/fontawesome/css/all.min.css'))
+            ? asset('vendor/fontawesome/css/all.min.css')
+            : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+    @endphp
     @if(!empty($faKit))
         <script src="https://kit.fontawesome.com/{{ e($faKit) }}.js" crossorigin="anonymous" onload="window.__faKitOk=true" onerror="window.__faKitOk=false"></script>
         <script>
@@ -31,7 +64,7 @@
             function addCss(href){
                 var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
             }
-            var fallbackHref = '{{ file_exists(public_path('vendor/fontawesome/css/all.min.css')) ? asset('vendor/fontawesome/css/all.min.css') : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }}';
+            var fallbackHref = "{{ $faFallback }}";
             window.addEventListener('DOMContentLoaded', function(){
                 setTimeout(function(){ if(!window.__faKitOk){ addCss(fallbackHref); } }, 800);
             });
@@ -110,6 +143,61 @@
 
         @yield('additional-styles')
     </style>
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Organization",
+                "@id": "{{ url('/') }}#organization",
+                "name": "Global Travel Monitor",
+                "url": "{{ url('/') }}",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "{{ asset('android-chrome-192x192.png') }}",
+                    "width": 192,
+                    "height": 192
+                },
+                "sameAs": []
+            },
+            {
+                "@type": "WebSite",
+                "@id": "{{ url('/') }}#website",
+                "url": "{{ url('/') }}",
+                "name": "Global Travel Monitor",
+                "description": "Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen",
+                "publisher": {
+                    "@id": "{{ url('/') }}#organization"
+                },
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": "{{ url('/') }}?search={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                },
+                "inLanguage": "de-DE"
+            },
+            {
+                "@type": "WebPage",
+                "@id": "{{ url()->current() }}#webpage",
+                "url": "{{ url()->current() }}",
+                "name": "@yield('title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen')",
+                "isPartOf": {
+                    "@id": "{{ url('/') }}#website"
+                },
+                "about": {
+                    "@id": "{{ url('/') }}#organization"
+                },
+                "description": "@yield('description', 'Global Travel Monitor bietet Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen.')",
+                "inLanguage": "de-DE"
+            }
+        ]
+    }
+    </script>
 
     @stack('head-scripts')
 </head>
