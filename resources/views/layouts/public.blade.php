@@ -51,7 +51,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
     <!-- Font Awesome -->
-    @php($faKit = config('services.fontawesome.kit'))
+    @php
+        $faKit = config('services.fontawesome.kit');
+        $faFallback = file_exists(public_path('vendor/fontawesome/css/all.min.css'))
+            ? asset('vendor/fontawesome/css/all.min.css')
+            : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+    @endphp
     @if(!empty($faKit))
         <script src="https://kit.fontawesome.com/{{ e($faKit) }}.js" crossorigin="anonymous" onload="window.__faKitOk=true" onerror="window.__faKitOk=false"></script>
         <script>
@@ -59,7 +64,7 @@
             function addCss(href){
                 var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
             }
-            var fallbackHref = '{{ file_exists(public_path('vendor/fontawesome/css/all.min.css')) ? asset('vendor/fontawesome/css/all.min.css') : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }}';
+            var fallbackHref = "{{ $faFallback }}";
             window.addEventListener('DOMContentLoaded', function(){
                 setTimeout(function(){ if(!window.__faKitOk){ addCss(fallbackHref); } }, 800);
             });

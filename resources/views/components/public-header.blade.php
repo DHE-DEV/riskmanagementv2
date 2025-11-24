@@ -100,7 +100,9 @@
                         </form>
                     </div>
                 </div>
-            @else
+            @endauth
+
+            @guest('customer')
                 <!-- Login & Register Buttons -->
                 @if(config('app.customer_login_enabled', true))
                     <a
@@ -118,7 +120,7 @@
                         <i class="fas fa-user-plus mr-2"></i>Registrieren
                     </a>
                 @endif
-            @endauth
+            @endguest
         </div>
     </div>
 </header>

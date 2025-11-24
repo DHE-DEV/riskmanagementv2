@@ -33,5 +33,6 @@ Route::prefix('pdsauthint')->group(function () {
      * GET /pdsauthint/login?ott=abc123...
      */
     Route::get('/login', [SPController::class, 'handleLogin'])
+        ->middleware('web')
         ->name('pdsauthint.login');
 });
