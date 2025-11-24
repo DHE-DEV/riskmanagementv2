@@ -16,7 +16,7 @@ use App\Modules\PdsAuthInt\Http\Controllers\SPController;
 |
 */
 
-Route::prefix('pdsauthint')->group(function () {
+Route::prefix('sso')->group(function () {
     /*
      * SSO Login Endpoint
      *
@@ -24,15 +24,14 @@ Route::prefix('pdsauthint')->group(function () {
      * Führt JIT (Just-In-Time) Provisioning durch
      * Loggt den Kunden ein und leitet zum Dashboard weiter
      *
-     * GET /pdsauthint/login?ott=abc123...
+     * GET /sso/login?ott=abc123...
      *
      * Receives a One-Time Token (OTT) as query parameter
      * Performs JIT (Just-In-Time) Provisioning
      * Logs in the customer and redirects to dashboard
      *
-     * GET /pdsauthint/login?ott=abc123...
+     * GET /sso/login?ott=abc123...
      */
     Route::get('/login', [SPController::class, 'handleLogin'])
-        ->middleware('web')
-        ->name('pdsauthint.login');
+        ->name('sso.login');
 });
