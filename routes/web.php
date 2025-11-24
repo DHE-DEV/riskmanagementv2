@@ -9,6 +9,20 @@ Route::get('/', function () {
     return view('livewire.pages.dashboard');
 })->name('home');
 
+// Debug route to check auth status
+Route::get('/auth-debug', function () {
+    return response()->json([
+        'customer_authenticated' => auth('customer')->check(),
+        'customer_user' => auth('customer')->user(),
+        'session_id' => session()->getId(),
+        'has_session' => session()->has('_token'),
+        'all_guards' => [
+            'web' => auth('web')->check(),
+            'customer' => auth('customer')->check(),
+        ],
+    ]);
+});
+
 Route::get('/entry-conditions', function () {
     if (!config('app.entry_conditions_enabled', true)) {
         abort(404);
