@@ -44,6 +44,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'passolution_refresh_token',
         'passolution_refresh_token_expires_at',
         'passolution_subscription_type',
+        'passolution_roles',
         'passolution_features',
         'passolution_subscription_updated_at',
         'hide_profile_completion',
@@ -71,6 +72,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'business_type' => 'array',
         'passolution_token_expires_at' => 'datetime',
         'passolution_refresh_token_expires_at' => 'datetime',
+        'passolution_roles' => 'array',
         'passolution_features' => 'array',
         'passolution_subscription_updated_at' => 'datetime',
         // SSO fields
