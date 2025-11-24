@@ -71,6 +71,9 @@
     <!-- Header -->
     @include('components.public-header')
 
+    <!-- Black Navigation Bar -->
+    <x-public-navigation :active="$active ?? 'dashboard'" />
+
     <!-- Main Content -->
     <div class="main-content">
         @yield('content')
