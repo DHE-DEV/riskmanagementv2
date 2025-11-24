@@ -872,6 +872,7 @@ class SPController extends Controller
                     ];
 
                     $customer->update([
+                        'name' => $claims['company_name'] ?? $customer->name,
                         'email' => $claims['email'] ?? $customer->email,
                         'phone' => $claims['phone'] ?? $customer->phone,
                         'address' => $claims['address'] ?? $customer->address,
@@ -882,8 +883,8 @@ class SPController extends Controller
                         'company_additional' => $claims['company_additional'] ?? $customer->company_additional,
                         'company_street' => $claims['company_street'] ?? $customer->company_street,
                         'company_house_number' => $claims['company_house_number'] ?? $customer->company_house_number,
-                        'company_postal_code' => $claims['company_postal_code'] ?? $claims['zip'] ?? $customer->company_postal_code,
-                        'company_city' => $claims['company_city'] ?? $claims['city'] ?? $customer->company_city,
+                        'company_postal_code' => $claims['company_postal_code'] ?? $customer->company_postal_code,
+                        'company_city' => $claims['company_city'] ?? $customer->company_city,
                         'company_country' => $claims['company_country'] ?? $customer->company_country,
                     ]);
 
@@ -952,7 +953,7 @@ class SPController extends Controller
                     $customer = Customer::create([
                         'agent_id' => $agentId,
                         'service1_customer_id' => $service1CustomerId,
-                        'name' => $claims['email'] ?? 'SSO User',
+                        'name' => $claims['company_name'] ?? $claims['email'] ?? 'SSO User',
                         'email' => $claims['email'] ?? null,
                         'phone' => $claims['phone'] ?? null,
                         'address' => $claims['address'] ?? null,
@@ -963,8 +964,8 @@ class SPController extends Controller
                         'company_additional' => $claims['company_additional'] ?? null,
                         'company_street' => $claims['company_street'] ?? null,
                         'company_house_number' => $claims['company_house_number'] ?? null,
-                        'company_postal_code' => $claims['company_postal_code'] ?? $claims['zip'] ?? null,
-                        'company_city' => $claims['company_city'] ?? $claims['city'] ?? null,
+                        'company_postal_code' => $claims['company_postal_code'] ?? null,
+                        'company_city' => $claims['company_city'] ?? null,
                         'company_country' => $claims['company_country'] ?? null,
                         'password' => bcrypt(Str::random(32)), // Random password, not used for SSO login
                     ]);
