@@ -1052,6 +1052,20 @@ class SPController extends Controller
             $stepStartTime = microtime(true);
             $guard = config('pdsauthint.customer_guard');
 
+            // Logout any currently logged in user before SSO login
+            // Aktuell angemeldeten Benutzer vor SSO-Login abmelden
+            if (Auth::guard($guard)->check()) {
+                $currentUser = Auth::guard($guard)->user();
+                Log::info('SSO: Logging out current user before SSO login', [
+                    'current_customer_id' => $currentUser->id,
+                    'current_email' => $currentUser->email,
+                    'new_customer_id' => $customer->id,
+                ]);
+                Auth::guard($guard)->logout();
+                session()->invalidate();
+                session()->regenerateToken();
+            }
+
             Log::info('SSO: Logging in customer', [
                 'customer_id' => $customer->id,
                 'guard' => $guard,
