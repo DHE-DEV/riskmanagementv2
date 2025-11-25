@@ -116,10 +116,11 @@ class PassolutionService
         }
 
         try {
+            $refreshUrl = config('services.passolution.oauth_refresh_url');
             $response = Http::withBasicAuth(
                 config('services.passolution.client_id'),
                 config('services.passolution.client_secret')
-            )->asForm()->post('https://web.passolution.eu/oauth/token/refresh', [
+            )->asForm()->post($refreshUrl, [
                 'grant_type' => 'refresh_token',
                 'refresh_token' => $customer->passolution_refresh_token,
             ]);

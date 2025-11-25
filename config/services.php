@@ -48,6 +48,11 @@ return [
         'api_secret' => env('PASSOLUTION_API_SECRET'),
         'client_id' => env('PASSOLUTION_OAUTH_CLIENT_ID'),
         'client_secret' => env('PASSOLUTION_OAUTH_CLIENT_SECRET'),
+        // OAuth URLs - configurable for different environments
+        'oauth_base_url' => env('PASSOLUTION_OAUTH_BASE_URL', 'https://web.passolution.eu'),
+        'oauth_authorize_url' => env('PASSOLUTION_OAUTH_AUTHORIZE_URL', 'https://web.passolution.eu/oauth/authorize'),
+        'oauth_token_url' => env('PASSOLUTION_OAUTH_TOKEN_URL', 'https://web.passolution.eu/oauth/token'),
+        'oauth_refresh_url' => env('PASSOLUTION_OAUTH_REFRESH_URL', 'https://web.passolution.eu/oauth/token/refresh'),
     ],
 
     // PDS API - For SSO token-based API access
