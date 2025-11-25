@@ -1075,7 +1075,7 @@
                                 {{-- Token Info --}}
                                 <div class="pt-2 border-t border-gray-200">
                                     <div class="mb-2">
-                                        <div class="flex items-center gap-2 mb-1">
+                                        <div class="flex items-center justify-between mb-1">
                                             <span class="text-xs text-gray-600">Verbindung:</span>
                                             @if($tokenSource === 'sso')
                                                 <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
@@ -1088,11 +1088,11 @@
                                             @endif
                                         </div>
                                         @if($tokenSource === 'sso' && $customer->pds_api_token_expires_at)
-                                            <div class="text-xs text-gray-500 ml-16">
+                                            <div class="text-xs text-gray-500 text-right">
                                                 gültig bis {{ $customer->pds_api_token_expires_at->format('d.m.Y H:i') }}
                                             </div>
                                         @elseif($tokenSource === 'oauth' && $customer->passolution_token_expires_at)
-                                            <div class="text-xs text-gray-500 ml-16">
+                                            <div class="text-xs text-gray-500 text-right">
                                                 gültig bis {{ $customer->passolution_token_expires_at->format('d.m.Y H:i') }}
                                             </div>
                                         @endif
@@ -1101,7 +1101,7 @@
 
                                 @if($customer->passolution_subscription_type)
                                     <div class="pt-2 border-t border-gray-200">
-                                        <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex items-center justify-between mb-2">
                                             <span class="text-xs text-gray-600">Abonnement:</span>
                                             <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
                                                 {{ ucfirst($customer->passolution_subscription_type) }}
@@ -1111,7 +1111,7 @@
                                         @if($customer->passolution_features && count($customer->passolution_features) > 0)
                                             <div class="mt-2">
                                                 <span class="text-xs text-gray-600 block mb-2">Freigeschaltete Features:</span>
-                                                <div class="flex flex-wrap gap-1">
+                                                <div class="flex flex-wrap gap-1 justify-end">
                                                     @foreach($passolutionService->getFeatureLabels($customer->passolution_features) as $featureLabel)
                                                         <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300">
                                                             {{ $featureLabel }}
