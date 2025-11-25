@@ -50,6 +50,14 @@ return [
         'client_secret' => env('PASSOLUTION_OAUTH_CLIENT_SECRET'),
     ],
 
+    // PDS API - For SSO token-based API access
+    // PDS API - Für SSO-Token-basierten API-Zugriff
+    // Uses same base URL as passolution service (PASSOLUTION_API_URL)
+    'pds_api' => [
+        'base_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
+        'timeout' => env('PDS_API_TIMEOUT', 30),
+    ],
+
     'openai' => [
         'key' => env('RISK_CHARGPT_KEY'),
     ],

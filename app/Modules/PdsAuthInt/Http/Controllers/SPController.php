@@ -889,6 +889,12 @@ class SPController extends Controller
                         // Subscription and roles information from JWT claims
                         'passolution_subscription_type' => $claims['passolution_subscription_type'] ?? $customer->passolution_subscription_type,
                         'passolution_roles' => $claims['passolution_roles'] ?? $customer->passolution_roles,
+                        // PDS API Token for calling pds-api
+                        // PDS API Token für Aufrufe an pds-api
+                        'pds_api_token' => $claims['pds_api_token'] ?? $customer->pds_api_token,
+                        'pds_api_token_expires_at' => isset($claims['pds_api_token_expires_at'])
+                            ? \Carbon\Carbon::parse($claims['pds_api_token_expires_at'])
+                            : $customer->pds_api_token_expires_at,
                     ]);
 
                     Log::info('SSO: Customer updated successfully', [
@@ -973,6 +979,12 @@ class SPController extends Controller
                         // Subscription and roles information from JWT claims
                         'passolution_subscription_type' => $claims['passolution_subscription_type'] ?? null,
                         'passolution_roles' => $claims['passolution_roles'] ?? null,
+                        // PDS API Token for calling pds-api
+                        // PDS API Token für Aufrufe an pds-api
+                        'pds_api_token' => $claims['pds_api_token'] ?? null,
+                        'pds_api_token_expires_at' => isset($claims['pds_api_token_expires_at'])
+                            ? \Carbon\Carbon::parse($claims['pds_api_token_expires_at'])
+                            : null,
                         'password' => bcrypt(Str::random(32)), // Random password, not used for SSO login
                     ]);
 

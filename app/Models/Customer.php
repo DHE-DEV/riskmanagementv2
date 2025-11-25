@@ -57,6 +57,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'phone',
         'address',
         'account_type',
+        // PDS API Token for calling pds-api
+        'pds_api_token',
+        'pds_api_token_expires_at',
     ];
 
     protected $hidden = [
@@ -64,6 +67,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'pds_api_token', // Hide API token from serialization
     ];
 
     protected $casts = [
@@ -77,6 +81,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'passolution_subscription_updated_at' => 'datetime',
         // SSO fields
         'address' => 'array',
+        // PDS API Token
+        'pds_api_token_expires_at' => 'datetime',
     ];
 
     /**
@@ -103,6 +109,17 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return !is_null($this->passolution_access_token)
             && !is_null($this->passolution_token_expires_at)
             && $this->passolution_token_expires_at->isFuture();
+    }
+
+    /**
+     * Check if PDS API token is valid and not expired
+     * Prüft ob der PDS API Token gültig und nicht abgelaufen ist
+     */
+    public function hasValidPdsApiToken(): bool
+    {
+        return !is_null($this->pds_api_token)
+            && !is_null($this->pds_api_token_expires_at)
+            && $this->pds_api_token_expires_at->isFuture();
     }
 
     /**
