@@ -11,26 +11,31 @@ use Illuminate\Support\Facades\Log;
 class EntryConditionsController extends Controller
 {
     /**
-     * Get API key - prioritize customer's Passolution token if available
+     * Get API key - prioritize customer's token if available (SSO or OAuth)
+     * Priorität: SSO-Token (pds_api_token) > OAuth-Token > globaler API-Key
      */
     private function getApiKey()
     {
         $customer = auth('customer')->user();
 
-        if ($customer && $customer->hasActivePassolution()) {
-            return $customer->passolution_access_token;
+        if ($customer) {
+            // Use getActiveApiToken which checks SSO token first, then OAuth token
+            $token = $customer->getActiveApiToken();
+            if ($token) {
+                return $token;
+            }
         }
 
         return config('services.passolution.api_key', env('PDS_KEY'));
     }
 
     /**
-     * Check if customer has Passolution access
+     * Check if customer has Passolution access (via SSO or OAuth)
      */
     private function hasPassolutionAccess()
     {
         $customer = auth('customer')->user();
-        return $customer && $customer->hasActivePassolution();
+        return $customer && $customer->hasAnyActiveToken();
     }
 
     /**

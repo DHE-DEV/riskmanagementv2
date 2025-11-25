@@ -1035,20 +1035,32 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Schnittstellen
                         </h3>
+                        @php
+                            $customer = auth('customer')->user();
+                            $passolutionService = app(\App\Services\PassolutionService::class);
+                            $hasActiveToken = $customer->hasAnyActiveToken();
+                            $tokenSource = $customer->getActiveTokenSource();
+                        @endphp
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Passolution</span>
-                                @if(auth('customer')->user()->hasActivePassolution())
+                                @if($hasActiveToken)
                                     <div class="flex items-center gap-2">
-                                        <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
-                                            @csrf
-                                            <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline"
-                                                    onclick="return confirm('Möchten Sie die Passolution-Integration wirklich deaktivieren?')">
-                                                Trennen
-                                            </button>
-                                        </form>
+                                        @if($tokenSource === 'oauth')
+                                            {{-- OAuth Token kann manuell getrennt werden --}}
+                                            <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline"
+                                                        onclick="return confirm('Möchten Sie die Passolution-Integration wirklich deaktivieren?')">
+                                                    Trennen
+                                                </button>
+                                            </form>
+                                        @endif
                                         <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
                                             Aktiv
+                                            @if($tokenSource === 'sso')
+                                                <span class="text-green-600">(SSO)</span>
+                                            @endif
                                         </span>
                                     </div>
                                 @else
@@ -1059,11 +1071,32 @@
                                 @endif
                             </div>
 
-                            @if(auth('customer')->user()->hasActivePassolution())
-                                @php
-                                    $customer = auth('customer')->user();
-                                    $passolutionService = app(\App\Services\PassolutionService::class);
-                                @endphp
+                            @if($hasActiveToken)
+                                {{-- Token Info --}}
+                                <div class="pt-2 border-t border-gray-200">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-xs text-gray-600">Verbindung:</span>
+                                        @if($tokenSource === 'sso')
+                                            <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                                via SSO (pds-homepage)
+                                            </span>
+                                            @if($customer->pds_api_token_expires_at)
+                                                <span class="text-xs text-gray-500">
+                                                    gültig bis {{ $customer->pds_api_token_expires_at->format('d.m.Y H:i') }}
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">
+                                                via OAuth
+                                            </span>
+                                            @if($customer->passolution_token_expires_at)
+                                                <span class="text-xs text-gray-500">
+                                                    gültig bis {{ $customer->passolution_token_expires_at->format('d.m.Y H:i') }}
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </div>
 
                                 @if($customer->passolution_subscription_type)
                                     <div class="pt-2 border-t border-gray-200">
