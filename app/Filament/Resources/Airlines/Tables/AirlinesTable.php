@@ -36,10 +36,19 @@ class AirlinesTable
                     ->sortable()
                     ->toggleable(),
 
-                TextColumn::make('homeCountry.name_de')
+                TextColumn::make('homeCountry.name_translations')
                     ->label('Heimatland')
-                    ->searchable()
-                    ->sortable()
+                    ->getStateUsing(fn ($record) => $record->homeCountry?->name_translations['de'] ?? $record->homeCountry?->name_translations['en'] ?? '-')
+                    ->searchable(query: function ($query, string $search): void {
+                        $query->whereHas('homeCountry', function ($q) use ($search) {
+                            $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de')) LIKE ?", ["%{$search}%"])
+                              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en')) LIKE ?", ["%{$search}%"]);
+                        });
+                    })
+                    ->sortable(query: function ($query, string $direction): void {
+                        $query->leftJoin('countries', 'airlines.home_country_id', '=', 'countries.id')
+                              ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(countries.name_translations, '$.de')) {$direction}");
+                    })
                     ->toggleable(),
 
                 TextColumn::make('headquarters')
