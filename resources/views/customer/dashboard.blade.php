@@ -1074,26 +1074,27 @@
                             @if($hasActiveToken)
                                 {{-- Token Info --}}
                                 <div class="pt-2 border-t border-gray-200">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="text-xs text-gray-600">Verbindung:</span>
-                                        @if($tokenSource === 'sso')
-                                            <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
-                                                via SSO (pds-homepage)
-                                            </span>
-                                            @if($customer->pds_api_token_expires_at)
-                                                <span class="text-xs text-gray-500">
-                                                    gültig bis {{ $customer->pds_api_token_expires_at->format('d.m.Y H:i') }}
+                                    <div class="mb-2">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-xs text-gray-600">Verbindung:</span>
+                                            @if($tokenSource === 'sso')
+                                                <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                                    via SSO (pds-homepage)
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">
+                                                    via OAuth
                                                 </span>
                                             @endif
-                                        @else
-                                            <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">
-                                                via OAuth
-                                            </span>
-                                            @if($customer->passolution_token_expires_at)
-                                                <span class="text-xs text-gray-500">
-                                                    gültig bis {{ $customer->passolution_token_expires_at->format('d.m.Y H:i') }}
-                                                </span>
-                                            @endif
+                                        </div>
+                                        @if($tokenSource === 'sso' && $customer->pds_api_token_expires_at)
+                                            <div class="text-xs text-gray-500 ml-16">
+                                                gültig bis {{ $customer->pds_api_token_expires_at->format('d.m.Y H:i') }}
+                                            </div>
+                                        @elseif($tokenSource === 'oauth' && $customer->passolution_token_expires_at)
+                                            <div class="text-xs text-gray-500 ml-16">
+                                                gültig bis {{ $customer->passolution_token_expires_at->format('d.m.Y H:i') }}
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
