@@ -42,14 +42,14 @@ class PdsApiService
     }
 
     /**
-     * Check if customer has a valid PDS API token
+     * Check if customer has a valid API token (SSO or OAuth)
      *
      * @param Customer $customer
      * @return bool
      */
     public function hasValidToken(Customer $customer): bool
     {
-        return $customer->hasValidPdsApiToken();
+        return $customer->hasAnyActiveToken();
     }
 
     /**
@@ -177,13 +177,14 @@ class PdsApiService
 
     /**
      * Create an authenticated HTTP client for the customer
+     * Uses the best available token (SSO token first, then OAuth token)
      *
      * @param Customer $customer
      * @return PendingRequest
      */
     protected function client(Customer $customer): PendingRequest
     {
-        return Http::withToken($customer->pds_api_token)
+        return Http::withToken($customer->getActiveApiToken())
             ->timeout($this->timeout)
             ->acceptJson();
     }

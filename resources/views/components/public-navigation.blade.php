@@ -66,6 +66,13 @@
         </a>
         @endif
 
+        <!-- Meine Reisenden -->
+        @if(config('app.navigation_my_travelers_enabled', true) && auth('customer')->check())
+        <a href="{{ route('my-travelers') }}" class="p-3 {{ $active === 'my-travelers' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Meine Reisenden">
+            <i class="fa-regular fa-users text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
         <!-- Kreuzfahrt -->
         @if(config('app.navigation_cruise_enabled', true))
         <a href="{{ route('cruise') }}" class="p-3 {{ $active === 'cruise' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Kreuzfahrt">

@@ -78,6 +78,15 @@ Route::get('/cruise', function () {
     return view('livewire.pages.cruise');
 })->name('cruise');
 
+// Meine Reisenden - nur für eingeloggte Kunden mit gültigem Token
+Route::get('/my-travelers', [\App\Http\Controllers\Customer\MyTravelersController::class, 'index'])
+    ->middleware('auth:customer')
+    ->name('my-travelers');
+
+Route::get('/my-travelers/active', [\App\Http\Controllers\Customer\MyTravelersController::class, 'getActiveTravelers'])
+    ->middleware('auth:customer')
+    ->name('my-travelers.active');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
