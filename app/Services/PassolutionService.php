@@ -10,26 +10,40 @@ class PassolutionService
 {
     /**
      * Fetch and update subscription information for a customer
+     * Uses SSO token (pds_api_token) if available, otherwise OAuth token
      */
     public function updateSubscription(Customer $customer): bool
     {
-        if (!$customer->hasActivePassolution()) {
+        $token = $customer->getActiveApiToken();
+        $tokenSource = $customer->getActiveTokenSource();
+
+        if (!$token) {
             return false;
         }
 
         try {
-            $response = Http::withToken($customer->passolution_access_token)
-                ->get('https://api.passolution.eu/api/v2/account/subscription');
+            $baseUrl = config('services.pds_api.base_url', 'https://api.passolution.eu/api/v2');
+
+            Log::info('PassolutionService: Fetching subscription', [
+                'customer_id' => $customer->id,
+                'token_source' => $tokenSource,
+                'base_url' => $baseUrl,
+            ]);
+
+            $response = Http::withToken($token)
+                ->get("{$baseUrl}/account/subscription");
 
             if (!$response->successful()) {
                 Log::warning('Passolution subscription fetch failed', [
                     'customer_id' => $customer->id,
                     'status' => $response->status(),
-                    'body' => $response->body()
+                    'body' => $response->body(),
+                    'token_source' => $tokenSource,
                 ]);
 
-                // If token is expired (401), try to refresh it
-                if ($response->status() === 401) {
+                // If token is expired (401), try to refresh it (only for OAuth tokens)
+                // SSO tokens are renewed on each SSO login
+                if ($response->status() === 401 && $tokenSource === 'oauth') {
                     $this->refreshTokenIfNeeded($customer);
                 }
 
@@ -54,6 +68,30 @@ class PassolutionService
 
             return false;
         }
+    }
+
+    /**
+     * Check if Passolution integration is active for a customer
+     * Returns true if SSO token or OAuth token is available
+     */
+    public function isActive(Customer $customer): bool
+    {
+        return $customer->hasAnyActiveToken();
+    }
+
+    /**
+     * Get token information for display
+     */
+    public function getTokenInfo(Customer $customer): array
+    {
+        return [
+            'is_active' => $customer->hasAnyActiveToken(),
+            'source' => $customer->getActiveTokenSource(),
+            'has_sso_token' => $customer->hasValidPdsApiToken(),
+            'has_oauth_token' => $customer->hasActivePassolution(),
+            'sso_expires_at' => $customer->pds_api_token_expires_at?->toIso8601String(),
+            'oauth_expires_at' => $customer->passolution_token_expires_at?->toIso8601String(),
+        ];
     }
 
     /**

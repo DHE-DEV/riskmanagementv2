@@ -123,6 +123,54 @@ class Customer extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if any Passolution API token is available (SSO or OAuth)
+     * Prüft ob ein Passolution API Token verfügbar ist (SSO oder OAuth)
+     */
+    public function hasAnyActiveToken(): bool
+    {
+        return $this->hasValidPdsApiToken() || $this->hasActivePassolution();
+    }
+
+    /**
+     * Get the active API token for Passolution API calls
+     * Gibt den aktiven API Token für Passolution API-Aufrufe zurück
+     *
+     * Priority: PDS API Token (SSO) > Passolution OAuth Token
+     * Priorität: PDS API Token (SSO) > Passolution OAuth Token
+     */
+    public function getActiveApiToken(): ?string
+    {
+        // First check SSO token (PDS API Token)
+        if ($this->hasValidPdsApiToken()) {
+            return $this->pds_api_token;
+        }
+
+        // Fall back to OAuth token
+        if ($this->hasActivePassolution()) {
+            return $this->passolution_access_token;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the source of the active token
+     * Gibt die Quelle des aktiven Tokens zurück
+     */
+    public function getActiveTokenSource(): ?string
+    {
+        if ($this->hasValidPdsApiToken()) {
+            return 'sso';
+        }
+
+        if ($this->hasActivePassolution()) {
+            return 'oauth';
+        }
+
+        return null;
+    }
+
+    /**
      * Beziehung zu BookingLocations
      */
     public function bookingLocations()
