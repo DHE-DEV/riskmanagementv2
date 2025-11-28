@@ -246,7 +246,7 @@ class FeedController extends Controller
         $lastBuildDate = $events->first()?->updated_at?->toRfc2822String() ?? $buildDate;
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">' . PHP_EOL;
+        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">' . PHP_EOL;
         $xml .= '  <channel>' . PHP_EOL;
         $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
@@ -296,13 +296,7 @@ class FeedController extends Controller
             $categories[] = $event->eventType->name;
         }
 
-        // Build description with all relevant information
-        // Use description, fallback to popup_content, then to 'No description available'
-        $eventDescription = $event->description ?: $event->popup_content ?: null;
-        $description = $eventDescription
-            ? $this->escapeXml(strip_tags($eventDescription))
-            : 'Keine Beschreibung verfügbar';
-
+        // Build short summary (for <description>)
         $details = [];
         // Event type (Typ: Sicherheit, Reiseverkehr, etc.)
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
@@ -335,15 +329,21 @@ class FeedController extends Controller
             $details[] = 'Land: ' . $event->country->getName('de');
         }
 
-        if (!empty($details)) {
-            $description .= "\n\n" . implode(' | ', $details);
-        }
+        // Short description = metadata summary
+        $shortDescription = !empty($details) ? implode(' | ', $details) : 'Keine Details verfügbar';
+
+        // Full content (for <content:encoded>)
+        $eventDescription = $event->description ?: $event->popup_content ?: null;
+        $fullContent = $eventDescription
+            ? strip_tags($eventDescription)
+            : 'Keine Beschreibung verfügbar';
 
         $xml = '    <item>' . PHP_EOL;
         $xml .= '      <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '      <link>' . $this->escapeXml($link) . '</link>' . PHP_EOL;
         $xml .= '      <guid isPermaLink="true">' . $this->escapeXml($link) . '</guid>' . PHP_EOL;
-        $xml .= '      <description>' . $description . '</description>' . PHP_EOL;
+        $xml .= '      <description>' . $this->escapeXml($shortDescription) . '</description>' . PHP_EOL;
+        $xml .= '      <content:encoded><![CDATA[' . $fullContent . ']]></content:encoded>' . PHP_EOL;
         $xml .= '      <pubDate>' . $pubDate . '</pubDate>' . PHP_EOL;
 
         foreach ($categories as $category) {
