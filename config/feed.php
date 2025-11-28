@@ -237,7 +237,17 @@ return [
      * =================================================================
      * CACHE-KONFIGURATION
      * =================================================================
-     * Cache-Dauer für Feed-Generierung: 1 Stunde (3600 Sekunden)
+     * Cache-Dauer für Feed-Generierung in Sekunden.
+     * Kann über .env konfiguriert werden: FEED_CACHE_DURATION=3600
+     * Setze auf 0 um Caching zu deaktivieren (nützlich für Entwicklung).
+     *
+     * Default: 3600 (1 Stunde)
      */
-    'cache_duration' => 3600,
+    'cache_duration' => (int) env('FEED_CACHE_DURATION', 3600),
+
+    /*
+     * Maximale Anzahl von Items pro Feed.
+     * Kann über .env konfiguriert werden: FEED_MAX_ITEMS=100
+     */
+    'max_items' => (int) env('FEED_MAX_ITEMS', 100),
 ];

@@ -13,11 +13,6 @@ use Illuminate\Support\Facades\Log;
 class FeedController extends Controller
 {
     /**
-     * Maximum items per feed
-     */
-    private const MAX_ITEMS = 100;
-
-    /**
      * Base URL for the application
      */
     private string $baseUrl;
@@ -27,10 +22,16 @@ class FeedController extends Controller
      */
     private int $cacheDuration;
 
+    /**
+     * Maximum items per feed (from .env: FEED_MAX_ITEMS, default 100)
+     */
+    private int $maxItems;
+
     public function __construct()
     {
         $this->baseUrl = config('app.url');
-        $this->cacheDuration = (int) env('FEED_CACHE_DURATION', 3600);
+        $this->cacheDuration = (int) config('feed.cache_duration', 3600);
+        $this->maxItems = (int) config('feed.max_items', 100);
     }
 
     /**
@@ -98,14 +99,18 @@ class FeedController extends Controller
                     throw new \Exception("Country not found: {$countryCode}");
                 }
 
-                // Get events related to this country
-                $events = $this->getActiveEvents()
-                    ->where(function ($query) use ($country) {
-                        $query->where('country_id', $country->id)
-                            ->orWhereHas('countries', function ($q) use ($country) {
-                                $q->where('countries.id', $country->id);
-                            });
-                    });
+                // Get events related to this country (filter Collection)
+                $events = $this->getActiveEvents()->filter(function ($event) use ($country) {
+                    // Check direct country_id
+                    if ($event->country_id === $country->id) {
+                        return true;
+                    }
+                    // Check many-to-many countries relation
+                    if ($event->countries && $event->countries->contains('id', $country->id)) {
+                        return true;
+                    }
+                    return false;
+                });
 
                 $countryName = $country->getName('en');
                 return $this->generateRss(
@@ -140,14 +145,18 @@ class FeedController extends Controller
                     throw new \Exception("Event type not found: {$typeCode}");
                 }
 
-                // Get events of this type
-                $events = $this->getActiveEvents()
-                    ->where(function ($query) use ($eventType) {
-                        $query->where('event_type_id', $eventType->id)
-                            ->orWhereHas('eventTypes', function ($q) use ($eventType) {
-                                $q->where('event_types.id', $eventType->id);
-                            });
-                    });
+                // Get events of this type (filter Collection)
+                $events = $this->getActiveEvents()->filter(function ($event) use ($eventType) {
+                    // Check direct event_type_id
+                    if ($event->event_type_id === $eventType->id) {
+                        return true;
+                    }
+                    // Check many-to-many eventTypes relation
+                    if ($event->eventTypes && $event->eventTypes->contains('id', $eventType->id)) {
+                        return true;
+                    }
+                    return false;
+                });
 
                 return $this->generateRss(
                     $events,
@@ -179,11 +188,18 @@ class FeedController extends Controller
                     throw new \Exception("Region not found: {$regionId}");
                 }
 
-                // Get events in countries that belong to this region
-                $events = $this->getActiveEvents()
-                    ->whereHas('countries', function ($query) use ($region) {
-                        $query->where('countries.id', $region->country_id);
-                    });
+                // Get events in countries that belong to this region (filter Collection)
+                $events = $this->getActiveEvents()->filter(function ($event) use ($region) {
+                    // Check if event's countries include the region's country
+                    if ($event->countries && $event->countries->contains('id', $region->country_id)) {
+                        return true;
+                    }
+                    // Check direct country_id
+                    if ($event->country_id === $region->country_id) {
+                        return true;
+                    }
+                    return false;
+                });
 
                 $regionName = $region->getName('en');
                 $countryName = $region->country->getName('en');
@@ -217,7 +233,7 @@ class FeedController extends Controller
                 'eventCategory'
             ])
             ->orderBy('start_date', 'desc')
-            ->limit(self::MAX_ITEMS)
+            ->limit($this->maxItems)
             ->get();
     }
 
