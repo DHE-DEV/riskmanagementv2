@@ -13,11 +13,6 @@ use Illuminate\Support\Facades\Log;
 class FeedController extends Controller
 {
     /**
-     * Cache duration in seconds (1 hour)
-     */
-    private const CACHE_DURATION = 3600;
-
-    /**
      * Maximum items per feed
      */
     private const MAX_ITEMS = 100;
@@ -27,9 +22,15 @@ class FeedController extends Controller
      */
     private string $baseUrl;
 
+    /**
+     * Cache duration in seconds (from .env: FEED_CACHE_DURATION, default 3600)
+     */
+    private int $cacheDuration;
+
     public function __construct()
     {
         $this->baseUrl = config('app.url');
+        $this->cacheDuration = (int) env('FEED_CACHE_DURATION', 3600);
     }
 
     /**
@@ -39,7 +40,7 @@ class FeedController extends Controller
     {
         $cacheKey = 'feed:all_events:rss';
 
-        $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () {
+        $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
             $events = $this->getActiveEvents();
             return $this->generateRss($events, 'Global Travel Monitor - Aktuelle Ereignisse', 'Aktuelle Reisesicherheitsinformationen und Ereignisse');
         });
@@ -54,7 +55,7 @@ class FeedController extends Controller
     {
         $cacheKey = 'feed:all_events:atom';
 
-        $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () {
+        $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
             $events = $this->getActiveEvents();
             return $this->generateAtom($events, 'Global Travel Monitor - Aktuelle Ereignisse', 'Aktuelle Reisesicherheitsinformationen und Ereignisse');
         });
@@ -69,7 +70,7 @@ class FeedController extends Controller
     {
         $cacheKey = 'feed:critical_events:rss';
 
-        $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () {
+        $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
             $events = $this->getActiveEvents()
                 ->whereIn('priority', ['high', 'critical']);
 
@@ -87,7 +88,7 @@ class FeedController extends Controller
         $cacheKey = "feed:country:{$countryCode}:rss";
 
         try {
-            $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($countryCode) {
+            $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($countryCode) {
                 // Find country by ISO code
                 $country = Country::where('iso_code', strtoupper($countryCode))
                     ->orWhere('iso3_code', strtoupper($countryCode))
@@ -129,7 +130,7 @@ class FeedController extends Controller
         $cacheKey = "feed:type:{$typeCode}:rss";
 
         try {
-            $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($typeCode) {
+            $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($typeCode) {
                 // Find event type by code
                 $eventType = EventType::where('code', strtolower($typeCode))
                     ->where('is_active', true)
@@ -170,7 +171,7 @@ class FeedController extends Controller
         $cacheKey = "feed:region:{$regionId}:rss";
 
         try {
-            $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($regionId) {
+            $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($regionId) {
                 // Find region
                 $region = Region::with('country')->find($regionId);
 
