@@ -354,9 +354,38 @@ class FeedController extends Controller
             $xml .= '      <dc:creator>' . $this->escapeXml($event->creator->name) . '</dc:creator>' . PHP_EOL;
         }
 
+        // Add country image as enclosure (use first country)
+        $countryCode = null;
+        if ($event->countries && $event->countries->count() > 0) {
+            $countryCode = strtolower($event->countries->first()->iso_code);
+        } elseif ($event->country) {
+            $countryCode = strtolower($event->country->iso_code);
+        }
+
+        if ($countryCode) {
+            $imageUrl = $this->getCountryImageUrl($countryCode);
+            if ($imageUrl) {
+                $xml .= '      <enclosure url="' . $this->escapeXml($imageUrl) . '" type="image/jpeg" />' . PHP_EOL;
+            }
+        }
+
         $xml .= '    </item>' . PHP_EOL;
 
         return $xml;
+    }
+
+    /**
+     * Get country cover image URL
+     */
+    private function getCountryImageUrl(string $countryCode): ?string
+    {
+        $imagePath = public_path('images/countries/' . strtolower($countryCode) . '.jpg');
+
+        if (file_exists($imagePath)) {
+            return $this->baseUrl . '/images/countries/' . strtolower($countryCode) . '.jpg';
+        }
+
+        return null;
     }
 
     /**
@@ -470,6 +499,21 @@ class FeedController extends Controller
             $xml .= '    <author>' . PHP_EOL;
             $xml .= '      <name>' . $this->escapeXml($event->creator->name) . '</name>' . PHP_EOL;
             $xml .= '    </author>' . PHP_EOL;
+        }
+
+        // Add country image as enclosure link (use first country)
+        $countryCode = null;
+        if ($event->countries && $event->countries->count() > 0) {
+            $countryCode = strtolower($event->countries->first()->iso_code);
+        } elseif ($event->country) {
+            $countryCode = strtolower($event->country->iso_code);
+        }
+
+        if ($countryCode) {
+            $imageUrl = $this->getCountryImageUrl($countryCode);
+            if ($imageUrl) {
+                $xml .= '    <link rel="enclosure" type="image/jpeg" href="' . $this->escapeXml($imageUrl) . '" />' . PHP_EOL;
+            }
         }
 
         $xml .= '  </entry>' . PHP_EOL;
