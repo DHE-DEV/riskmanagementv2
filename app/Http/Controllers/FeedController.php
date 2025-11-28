@@ -284,23 +284,31 @@ class FeedController extends Controller
         $eventDescription = $event->description ?: $event->popup_content ?: null;
         $description = $eventDescription
             ? $this->escapeXml(strip_tags($eventDescription))
-            : 'No description available';
+            : 'Keine Beschreibung verfügbar';
 
         $details = [];
         if ($event->start_date) {
-            $details[] = 'Start: ' . $event->start_date->format('Y-m-d H:i');
+            $details[] = 'Beginn: ' . $event->start_date->format('d.m.Y H:i');
         }
         if ($event->end_date) {
-            $details[] = 'End: ' . $event->end_date->format('Y-m-d H:i');
+            $details[] = 'Ende: ' . $event->end_date->format('d.m.Y H:i');
         }
         if ($event->priority) {
-            $details[] = 'Priority: ' . ucfirst($event->priority);
+            $priorityTranslations = [
+                'low' => 'Niedrig',
+                'medium' => 'Mittel',
+                'high' => 'Hoch',
+                'critical' => 'Kritisch',
+                'info' => 'Info',
+            ];
+            $priorityDe = $priorityTranslations[strtolower($event->priority)] ?? ucfirst($event->priority);
+            $details[] = 'Priorität: ' . $priorityDe;
         }
         if ($event->countries && $event->countries->count() > 0) {
-            $countryNames = $event->countries->map(fn($c) => $c->getName('en'))->join(', ');
-            $details[] = 'Countries: ' . $countryNames;
+            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
+            $details[] = 'Länder: ' . $countryNames;
         } elseif ($event->country) {
-            $details[] = 'Country: ' . $event->country->getName('en');
+            $details[] = 'Land: ' . $event->country->getName('de');
         }
 
         if (!empty($details)) {
@@ -376,23 +384,31 @@ class FeedController extends Controller
         $eventDescription = $event->description ?: $event->popup_content ?: null;
         $content = $eventDescription
             ? $this->escapeXml(strip_tags($eventDescription))
-            : 'No description available';
+            : 'Keine Beschreibung verfügbar';
 
         $details = [];
         if ($event->start_date) {
-            $details[] = 'Start: ' . $event->start_date->format('Y-m-d H:i');
+            $details[] = 'Beginn: ' . $event->start_date->format('d.m.Y H:i');
         }
         if ($event->end_date) {
-            $details[] = 'End: ' . $event->end_date->format('Y-m-d H:i');
+            $details[] = 'Ende: ' . $event->end_date->format('d.m.Y H:i');
         }
         if ($event->priority) {
-            $details[] = 'Priority: ' . ucfirst($event->priority);
+            $priorityTranslations = [
+                'low' => 'Niedrig',
+                'medium' => 'Mittel',
+                'high' => 'Hoch',
+                'critical' => 'Kritisch',
+                'info' => 'Info',
+            ];
+            $priorityDe = $priorityTranslations[strtolower($event->priority)] ?? ucfirst($event->priority);
+            $details[] = 'Priorität: ' . $priorityDe;
         }
         if ($event->countries && $event->countries->count() > 0) {
-            $countryNames = $event->countries->map(fn($c) => $c->getName('en'))->join(', ');
-            $details[] = 'Countries: ' . $countryNames;
+            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
+            $details[] = 'Länder: ' . $countryNames;
         } elseif ($event->country) {
-            $details[] = 'Country: ' . $event->country->getName('en');
+            $details[] = 'Land: ' . $event->country->getName('de');
         }
 
         if (!empty($details)) {
