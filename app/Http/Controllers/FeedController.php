@@ -251,7 +251,7 @@ class FeedController extends Controller
         $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
         $xml .= '    <description>' . $this->escapeXml($description) . '</description>' . PHP_EOL;
-        $xml .= '    <language>en-us</language>' . PHP_EOL;
+        $xml .= '    <language>de-DE</language>' . PHP_EOL;
         $xml .= '    <lastBuildDate>' . $lastBuildDate . '</lastBuildDate>' . PHP_EOL;
         $xml .= '    <pubDate>' . $buildDate . '</pubDate>' . PHP_EOL;
         $xml .= '    <atom:link href="' . $this->escapeXml(url()->current()) . '" rel="self" type="application/rss+xml" />' . PHP_EOL;
