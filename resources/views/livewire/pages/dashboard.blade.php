@@ -1614,6 +1614,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }, 1000); // Warte bis Marker geladen sind
         }
+    } else if (eventId) {
+        // Nur Event-ID ohne Koordinaten - Event finden und anzeigen
+        setTimeout(() => {
+            openEventById(eventId);
+        }, 1500); // Warte bis Events geladen sind
     }
 
     // Automatische Aktualisierung alle 5 Minuten
@@ -2332,6 +2337,47 @@ function getWeatherIcon(weatherMain) {
     };
     
     return icons[weatherMain] || 'fa-cloud-sun';
+}
+
+// Open event by ID (used for URL parameter ?event=123)
+function openEventById(eventId) {
+    // Suche Event in window.eventById
+    let event = window.eventById[eventId];
+
+    // Falls nicht gefunden, suche nach original_event_id
+    if (!event) {
+        for (const [key, value] of Object.entries(window.eventById)) {
+            if (value.original_event_id == eventId || value.id == eventId) {
+                event = value;
+                break;
+            }
+        }
+    }
+
+    if (event) {
+        // Zoom zur Event-Position
+        if (event.lat && event.lng) {
+            map.setView([event.lat, event.lng], 6);
+        } else if (event.latitude && event.longitude) {
+            map.setView([event.latitude, event.longitude], 6);
+        }
+
+        // Sidebar mit Event-Details öffnen
+        const isCustom = event.source === 'custom';
+        handleDetailsClick(event.original_event_id || event.id, isCustom);
+
+        // Marker hervorheben (optional)
+        setTimeout(() => {
+            markers.forEach(marker => {
+                const markerData = marker.eventData;
+                if (markerData && (markerData.id == eventId || markerData.original_event_id == eventId || markerData.original_id == eventId)) {
+                    marker.openPopup();
+                }
+            });
+        }, 500);
+    } else {
+        console.warn('Event not found:', eventId);
+    }
 }
 
 // Handle Details button click with tracking
