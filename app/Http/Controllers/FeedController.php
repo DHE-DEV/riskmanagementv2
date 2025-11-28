@@ -280,7 +280,11 @@ class FeedController extends Controller
         }
 
         // Build description with all relevant information
-        $description = $this->escapeXml($event->description ?: 'No description available');
+        // Use description, fallback to popup_content, then to 'No description available'
+        $eventDescription = $event->description ?: $event->popup_content ?: null;
+        $description = $eventDescription
+            ? $this->escapeXml(strip_tags($eventDescription))
+            : 'No description available';
 
         $details = [];
         if ($event->start_date) {
@@ -368,7 +372,11 @@ class FeedController extends Controller
         }
 
         // Build content
-        $content = $this->escapeXml($event->description ?: 'No description available');
+        // Use description, fallback to popup_content, then to 'No description available'
+        $eventDescription = $event->description ?: $event->popup_content ?: null;
+        $content = $eventDescription
+            ? $this->escapeXml(strip_tags($eventDescription))
+            : 'No description available';
 
         $details = [];
         if ($event->start_date) {
