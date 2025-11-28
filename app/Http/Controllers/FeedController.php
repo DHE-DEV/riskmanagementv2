@@ -225,6 +225,7 @@ class FeedController extends Controller
     {
         return CustomEvent::active()
             ->notArchived()
+            ->where('start_date', '<=', now()) // Nur Events die bereits gestartet sind
             ->with([
                 'country',
                 'countries',
