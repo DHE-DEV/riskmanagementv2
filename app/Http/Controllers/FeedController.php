@@ -304,6 +304,13 @@ class FeedController extends Controller
             : 'Keine Beschreibung verfügbar';
 
         $details = [];
+        // Event type (Typ: Sicherheit, Reiseverkehr, etc.)
+        if ($event->eventTypes && $event->eventTypes->count() > 0) {
+            $typeNames = $event->eventTypes->pluck('name')->join(', ');
+            $details[] = 'Typ: ' . $typeNames;
+        } elseif ($event->eventType) {
+            $details[] = 'Typ: ' . $event->eventType->name;
+        }
         if ($event->start_date) {
             $details[] = 'Beginn: ' . $event->start_date->format('d.m.Y H:i');
         }
@@ -404,6 +411,13 @@ class FeedController extends Controller
             : 'Keine Beschreibung verfügbar';
 
         $details = [];
+        // Event type (Typ: Sicherheit, Reiseverkehr, etc.)
+        if ($event->eventTypes && $event->eventTypes->count() > 0) {
+            $typeNames = $event->eventTypes->pluck('name')->join(', ');
+            $details[] = 'Typ: ' . $typeNames;
+        } elseif ($event->eventType) {
+            $details[] = 'Typ: ' . $event->eventType->name;
+        }
         if ($event->start_date) {
             $details[] = 'Beginn: ' . $event->start_date->format('d.m.Y H:i');
         }
