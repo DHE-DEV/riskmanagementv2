@@ -41,7 +41,7 @@ class FeedController extends Controller
 
         $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () {
             $events = $this->getActiveEvents();
-            return $this->generateRss($events, 'All Events', 'All active risk management events');
+            return $this->generateRss($events, 'Global Travel Monitor - Aktuelle Ereignisse', 'Aktuelle Reisesicherheitsinformationen und Ereignisse');
         });
 
         return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
@@ -56,7 +56,7 @@ class FeedController extends Controller
 
         $content = Cache::remember($cacheKey, self::CACHE_DURATION, function () {
             $events = $this->getActiveEvents();
-            return $this->generateAtom($events, 'All Events', 'All active risk management events');
+            return $this->generateAtom($events, 'Global Travel Monitor - Aktuelle Ereignisse', 'Aktuelle Reisesicherheitsinformationen und Ereignisse');
         });
 
         return response($content, 200)->header('Content-Type', 'application/atom+xml; charset=utf-8');
@@ -257,6 +257,15 @@ class FeedController extends Controller
         $link = $this->baseUrl . '/events/' . $event->id;
         $pubDate = $event->created_at->toRfc2822String();
 
+        // Build title with country name
+        $title = $event->title;
+        if ($event->countries && $event->countries->count() > 0) {
+            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
+            $title = $title . ' (' . $countryNames . ')';
+        } elseif ($event->country) {
+            $title = $title . ' (' . $event->country->getName('de') . ')';
+        }
+
         // Build categories
         $categories = [];
         if ($event->priority) {
@@ -295,7 +304,7 @@ class FeedController extends Controller
         }
 
         $xml = '    <item>' . PHP_EOL;
-        $xml .= '      <title>' . $this->escapeXml($event->title) . '</title>' . PHP_EOL;
+        $xml .= '      <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '      <link>' . $this->escapeXml($link) . '</link>' . PHP_EOL;
         $xml .= '      <guid isPermaLink="true">' . $this->escapeXml($link) . '</guid>' . PHP_EOL;
         $xml .= '      <description>' . $description . '</description>' . PHP_EOL;
@@ -349,6 +358,15 @@ class FeedController extends Controller
         $updated = $event->updated_at->toAtomString();
         $published = $event->created_at->toAtomString();
 
+        // Build title with country name
+        $title = $event->title;
+        if ($event->countries && $event->countries->count() > 0) {
+            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
+            $title = $title . ' (' . $countryNames . ')';
+        } elseif ($event->country) {
+            $title = $title . ' (' . $event->country->getName('de') . ')';
+        }
+
         // Build content
         $content = $this->escapeXml($event->description ?: 'No description available');
 
@@ -374,7 +392,7 @@ class FeedController extends Controller
         }
 
         $xml = '  <entry>' . PHP_EOL;
-        $xml .= '    <title>' . $this->escapeXml($event->title) . '</title>' . PHP_EOL;
+        $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '    <link href="' . $this->escapeXml($link) . '" />' . PHP_EOL;
         $xml .= '    <id>' . $this->escapeXml($link) . '</id>' . PHP_EOL;
         $xml .= '    <updated>' . $updated . '</updated>' . PHP_EOL;
