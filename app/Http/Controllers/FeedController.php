@@ -272,7 +272,7 @@ class FeedController extends Controller
     private function generateRssItem($event): string
     {
         $link = $this->baseUrl . '/?event=' . $event->id;
-        $pubDate = $event->created_at->toRfc2822String();
+        $pubDate = ($event->start_date ?? $event->created_at)->toRfc2822String();
 
         // Build title with country name
         $title = $event->title;
@@ -421,7 +421,7 @@ class FeedController extends Controller
     {
         $link = $this->baseUrl . '/?event=' . $event->id;
         $updated = $event->updated_at->toAtomString();
-        $published = $event->created_at->toAtomString();
+        $published = ($event->start_date ?? $event->created_at)->toAtomString();
 
         // Build title with country name
         $title = $event->title;
