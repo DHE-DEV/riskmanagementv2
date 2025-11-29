@@ -29,7 +29,9 @@ class FeedController extends Controller
 
     public function __construct()
     {
-        $this->baseUrl = config('app.url');
+        $baseUrl = config('app.url');
+        // Fix common URL typo: https// -> https://
+        $this->baseUrl = preg_replace('#^(https?)//(?!/)#', '$1://', $baseUrl);
         $this->cacheDuration = (int) config('feed.cache_duration', 3600);
         $this->maxItems = (int) config('feed.max_items', 100);
     }
