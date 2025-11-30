@@ -298,15 +298,7 @@ class EventFeedController extends Controller
     {
         $link = $this->baseUrl . '/?event=' . $event->id;
         $pubDate = ($event->start_date ?? $event->created_at)->toRfc2822String();
-
-        // Build title with country name
         $title = $event->title;
-        if ($event->countries && $event->countries->count() > 0) {
-            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
-            $title = $title . ' (' . $countryNames . ')';
-        } elseif ($event->country) {
-            $title = $title . ' (' . $event->country->getName('de') . ')';
-        }
 
         // Build categories
         $categories = [];
@@ -506,15 +498,7 @@ class EventFeedController extends Controller
         $link = $this->baseUrl . '/?event=' . $event->id;
         $updated = $event->updated_at->toAtomString();
         $published = ($event->start_date ?? $event->created_at)->toAtomString();
-
-        // Build title with country name
         $title = $event->title;
-        if ($event->countries && $event->countries->count() > 0) {
-            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
-            $title = $title . ' (' . $countryNames . ')';
-        } elseif ($event->country) {
-            $title = $title . ' (' . $event->country->getName('de') . ')';
-        }
 
         // Build content
         // Use description, fallback to popup_content, then to 'No description available'
