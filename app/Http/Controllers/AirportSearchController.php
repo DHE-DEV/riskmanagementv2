@@ -288,14 +288,12 @@ class AirportSearchController extends Controller
         if ($countryId > 0) {
             $country = Country::withoutGlobalScopes()
                 ->where('id', $countryId)
-                ->select(['id', 'lat', 'lng'])
                 ->first();
         } elseif ($q !== '') {
             // Try exact match first
             if (Schema::hasColumn('countries', 'iso_code')) {
                 $country = Country::withoutGlobalScopes()
                     ->where('iso_code', $upper)
-                    ->select(['id', 'lat', 'lng'])
                     ->first();
             }
 
@@ -303,7 +301,6 @@ class AirportSearchController extends Controller
             if (!$country && Schema::hasColumn('countries', 'iso3_code')) {
                 $country = Country::withoutGlobalScopes()
                     ->where('iso3_code', $upper)
-                    ->select(['id', 'lat', 'lng'])
                     ->first();
             }
 
@@ -325,7 +322,7 @@ class AirportSearchController extends Controller
                         $qb->orWhere('iso3_code', 'like', "%{$upper}%");
                     }
                 });
-                $country = $query->select(['id', 'lat', 'lng'])->first();
+                $country = $query->first();
             }
         } else {
             return response()->json(['data' => null]);
@@ -336,6 +333,8 @@ class AirportSearchController extends Controller
 
         return response()->json(['data' => [
             'id' => $country->id,
+            'name' => $country->getName('de') ?? $country->name,
+            'iso_code' => $country->iso_code,
             'latitude' => $country->lat,
             'longitude' => $country->lng,
         ]]);

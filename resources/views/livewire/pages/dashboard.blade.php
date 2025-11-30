@@ -1571,6 +1571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const zoom = urlParams.get('zoom');
     const eventId = urlParams.get('event');
     const showMarker = urlParams.get('marker');
+    const countryCode = urlParams.get('country');
 
     if (lat && lng) {
         // Zur angegebenen Position zoomen
@@ -1618,6 +1619,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Nur Event-ID ohne Koordinaten - Event finden und anzeigen
         setTimeout(() => {
             openEventById(eventId);
+        }, 1500); // Warte bis Events geladen sind
+    } else if (countryCode) {
+        // Land-Code ohne Koordinaten - Land finden und als Filter setzen
+        setTimeout(() => {
+            openCountryByCode(countryCode);
         }, 1500); // Warte bis Events geladen sind
     }
 
@@ -2377,6 +2383,28 @@ function openEventById(eventId) {
         }, 500);
     } else {
         console.warn('Event not found:', eventId);
+    }
+}
+
+// Open country by ISO code (for ?country=XX URL parameter)
+async function openCountryByCode(isoCode) {
+    try {
+        const response = await fetch(`/api/countries/locate?q=${encodeURIComponent(isoCode)}`);
+        const result = await response.json();
+
+        if (result.data && result.data.name) {
+            // Zoom zur Land-Position
+            if (result.data.latitude && result.data.longitude) {
+                map.setView([result.data.latitude, result.data.longitude], 5);
+            }
+
+            // Land zum Filter hinzufügen
+            addCountryToFilter(result.data.name, result.data.iso_code);
+        } else {
+            console.warn('Country not found:', isoCode);
+        }
+    } catch (error) {
+        console.error('Error loading country:', error);
     }
 }
 
