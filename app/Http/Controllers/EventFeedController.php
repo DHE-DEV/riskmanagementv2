@@ -249,8 +249,10 @@ class EventFeedController extends Controller
             ->notArchived()
             ->where('start_date', '<=', now()) // Nur Events die bereits gestartet sind
             ->with([
-                'country',
-                'countries',
+                'country.continent',
+                'country.capital',
+                'countries.continent',
+                'countries.capital',
                 'eventType',
                 'eventTypes',
                 'eventCategory'
@@ -424,19 +426,9 @@ class EventFeedController extends Controller
             $xml .= '        <country:is_eu_member>' . ($country->is_eu_member ? 'true' : 'false') . '</country:is_eu_member>' . PHP_EOL;
             $xml .= '        <country:is_schengen_member>' . ($country->is_schengen_member ? 'true' : 'false') . '</country:is_schengen_member>' . PHP_EOL;
 
-            // Continent
+            // Continent (from relationship)
             if ($country->continent) {
-                $continentNames = [
-                    'EU' => 'Europa',
-                    'AS' => 'Asien',
-                    'AF' => 'Afrika',
-                    'NA' => 'Nordamerika',
-                    'SA' => 'Südamerika',
-                    'OC' => 'Ozeanien',
-                    'AN' => 'Antarktis',
-                ];
-                $continentName = $continentNames[$country->continent] ?? $country->continent;
-                $xml .= '        <country:continent>' . $this->escapeXml($continentName) . '</country:continent>' . PHP_EOL;
+                $xml .= '        <country:continent>' . $this->escapeXml($country->continent->getName('de')) . '</country:continent>' . PHP_EOL;
             }
 
             // Currency
@@ -449,13 +441,13 @@ class EventFeedController extends Controller
                 $xml .= '        <country:phone_prefix>' . $this->escapeXml($country->phone_prefix) . '</country:phone_prefix>' . PHP_EOL;
             }
 
-            // Capital with coordinates
-            if ($country->capital_name) {
+            // Capital with coordinates (from relationship)
+            if ($country->capital) {
                 $xml .= '        <country:capital>' . PHP_EOL;
-                $xml .= '          <country:capital_name>' . $this->escapeXml($country->capital_name) . '</country:capital_name>' . PHP_EOL;
-                if ($country->capital_latitude && $country->capital_longitude) {
-                    $xml .= '          <geo:lat>' . $country->capital_latitude . '</geo:lat>' . PHP_EOL;
-                    $xml .= '          <geo:long>' . $country->capital_longitude . '</geo:long>' . PHP_EOL;
+                $xml .= '          <country:capital_name>' . $this->escapeXml($country->capital->getName('de')) . '</country:capital_name>' . PHP_EOL;
+                if ($country->capital->lat && $country->capital->lng) {
+                    $xml .= '          <geo:lat>' . $country->capital->lat . '</geo:lat>' . PHP_EOL;
+                    $xml .= '          <geo:long>' . $country->capital->lng . '</geo:long>' . PHP_EOL;
                 }
                 $xml .= '        </country:capital>' . PHP_EOL;
             }
