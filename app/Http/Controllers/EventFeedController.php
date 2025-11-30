@@ -10,7 +10,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
-class FeedController extends Controller
+class EventFeedController extends Controller
 {
     /**
      * Base URL for the application

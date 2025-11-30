@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\FeedController;
+use App\Http\Controllers\EventFeedController;
+use App\Http\Controllers\CountryFeedController;
 
 Route::get('/', function () {
     return view('livewire.pages.dashboard');
@@ -31,22 +32,48 @@ Route::get('/entry-conditions', function () {
 })->name('entry-conditions');
 
 // RSS/Atom Feed Routes
+// Struktur: /feed/{kategorie}/...
+// Ermöglicht spätere Erweiterung um weitere Feed-Kategorien (news, advisories, topics, etc.)
 Route::prefix('feed')->name('feed.')->group(function () {
-    // All events feeds
-    Route::get('events.xml', [FeedController::class, 'allEvents'])->name('events.rss');
-    Route::get('events.atom', [FeedController::class, 'allEventsAtom'])->name('events.atom');
 
-    // Critical/high priority events
-    Route::get('critical.xml', [FeedController::class, 'criticalEvents'])->name('critical');
+    // Event-Feeds: /feed/events/...
+    Route::prefix('events')->name('events.')->group(function () {
+        // All events feeds
+        Route::get('all.xml', [EventFeedController::class, 'allEvents'])->name('all.rss');
+        Route::get('all.atom', [EventFeedController::class, 'allEventsAtom'])->name('all.atom');
 
-    // Events by country (ISO code)
-    Route::get('countries/{code}.xml', [FeedController::class, 'byCountry'])->name('countries');
+        // Critical/high priority events
+        Route::get('critical.xml', [EventFeedController::class, 'criticalEvents'])->name('critical');
 
-    // Events by type
-    Route::get('types/{type}.xml', [FeedController::class, 'byEventType'])->name('types');
+        // Events by country (ISO code)
+        Route::get('countries/{code}.xml', [EventFeedController::class, 'byCountry'])->name('countries');
 
-    // Events by region
-    Route::get('regions/{region}.xml', [FeedController::class, 'byRegion'])->name('regions');
+        // Events by type
+        Route::get('types/{type}.xml', [EventFeedController::class, 'byEventType'])->name('types');
+
+        // Events by region
+        Route::get('regions/{region}.xml', [EventFeedController::class, 'byRegion'])->name('regions');
+    });
+
+    // Country-Feeds: /feed/countries/...
+    Route::prefix('countries')->name('countries.')->group(function () {
+        // All countries with details
+        Route::get('names/all.xml', [CountryFeedController::class, 'allCountries'])->name('all');
+
+        // Countries by continent (EU, AS, AF, NA, SA, OC, AN)
+        Route::get('continent/{code}.xml', [CountryFeedController::class, 'byContinent'])->name('continent');
+
+        // EU member countries
+        Route::get('eu.xml', [CountryFeedController::class, 'euCountries'])->name('eu');
+
+        // Schengen member countries
+        Route::get('schengen.xml', [CountryFeedController::class, 'schengenCountries'])->name('schengen');
+    });
+
+    // Placeholder für zukünftige Feed-Kategorien:
+    // Route::prefix('news')->name('news.')->group(function () { ... });
+    // Route::prefix('advisories')->name('advisories.')->group(function () { ... });
+    // Route::prefix('topics')->name('topics.')->group(function () { ... });
 });
 
 Route::get('/booking', function () {
