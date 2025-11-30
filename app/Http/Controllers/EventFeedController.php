@@ -371,6 +371,9 @@ class EventFeedController extends Controller
             $xml .= '      <dc:creator>' . $this->escapeXml($event->creator->name) . '</dc:creator>' . PHP_EOL;
         }
 
+        // Add source information
+        $xml .= '      <source url="' . $this->escapeXml($this->baseUrl) . '">Global Travel Monitor by Passolution</source>' . PHP_EOL;
+
         // Add country image as enclosure (use first country)
         $countryCode = null;
         if ($event->countries && $event->countries->count() > 0) {
