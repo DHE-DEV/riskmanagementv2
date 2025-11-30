@@ -512,7 +512,7 @@ class CustomEventController extends Controller
                 'latitude' => $event->latitude,
                 'longitude' => $event->longitude,
                 'marker_color' => $this->getPriorityColor($event->priority),
-                'marker_icon' => $eventTypeIcon ?? $event->marker_icon,
+                'marker_icon' => $displayIcon ?? $event->marker_icon,
                 'icon_color' => $event->icon_color,
                 'marker_size' => $event->marker_size,
                 'popup_content' => $event->popup_content,
