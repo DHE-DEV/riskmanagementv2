@@ -67,7 +67,7 @@ class EventFeedController extends Controller
     }
 
     /**
-     * Get critical/high priority events in RSS format
+     * Get high priority events in RSS format
      */
     public function criticalEvents(): Response
     {
@@ -75,9 +75,9 @@ class EventFeedController extends Controller
 
         $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
             $events = $this->getActiveEvents()
-                ->whereIn('priority', ['high', 'critical']);
+                ->where('priority', 'high');
 
-            return $this->generateRss($events, 'Critical & High Priority Events', 'High and critical priority risk management events');
+            return $this->generateRss($events, 'Wichtige Ereignisse', 'Ereignisse mit hoher Priorität');
         });
 
         return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
