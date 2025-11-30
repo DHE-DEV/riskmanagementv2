@@ -3,7 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Travel Monitor</title>
+    <title>Global Travel Monitor (GTM) - Reisesicherheit by Passolution</title>
+
+    {{-- SEO Meta Tags --}}
+    <meta name="description" content="Global Travel Monitor (GTM) von Passolution - Aktuelle Reisesicherheitsinformationen, Reisewarnungen und Ereignisse weltweit. Echtzeit-Monitoring für sichere Reisen.">
+    <meta name="keywords" content="Global Travel Monitor, GTM, Passolution, Reisesicherheit, Reisewarnungen, Travel Risk Management, Reiserisiko, Sicherheitsinformationen, Reisemonitoring">
+    <meta name="author" content="Passolution GmbH">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ config('app.url') }}">
+
+    {{-- Open Graph / Facebook --}}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ config('app.url') }}">
+    <meta property="og:title" content="Global Travel Monitor (GTM) - Reisesicherheit by Passolution">
+    <meta property="og:description" content="Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit. Das Travel Risk Management Tool von Passolution.">
+    <meta property="og:image" content="{{ asset('og-image.png') }}">
+    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:locale" content="de_DE">
+
+    {{-- Twitter --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Global Travel Monitor (GTM) by Passolution">
+    <meta name="twitter:description" content="Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit.">
+    <meta name="twitter:image" content="{{ asset('og-image.png') }}">
+
+    {{-- Additional SEO --}}
+    <meta name="application-name" content="Global Travel Monitor">
+    <meta name="theme-color" content="#1e40af">
 
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
