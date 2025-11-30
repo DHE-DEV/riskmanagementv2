@@ -42,8 +42,8 @@ Route::prefix('feed')->name('feed.')->group(function () {
         Route::get('all.xml', [EventFeedController::class, 'allEvents'])->name('all.rss');
         Route::get('all.atom', [EventFeedController::class, 'allEventsAtom'])->name('all.atom');
 
-        // Critical/high priority events
-        Route::get('critical.xml', [EventFeedController::class, 'criticalEvents'])->name('critical');
+        // Events by priority (high, medium, low, info)
+        Route::get('priority/{priority}.xml', [EventFeedController::class, 'byPriority'])->name('priority');
 
         // Events by country (ISO code)
         Route::get('countries/{code}.xml', [EventFeedController::class, 'byCountry'])->name('countries');

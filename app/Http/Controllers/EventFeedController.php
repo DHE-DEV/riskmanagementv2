@@ -67,17 +67,37 @@ class EventFeedController extends Controller
     }
 
     /**
-     * Get high priority events in RSS format
+     * Get events by priority level
+     * Valid priorities: high, medium, low, info
      */
-    public function criticalEvents(): Response
+    public function byPriority(string $priority): Response
     {
-        $cacheKey = 'feed:critical_events:rss';
+        $validPriorities = ['high', 'medium', 'low', 'info'];
+        $priority = strtolower($priority);
 
-        $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
+        if (!in_array($priority, $validPriorities)) {
+            return $this->generateErrorResponse("Ungültige Priorität: {$priority}. Gültig: " . implode(', ', $validPriorities));
+        }
+
+        $cacheKey = "feed:priority:{$priority}:rss";
+
+        $priorityNames = [
+            'high' => 'Hoch',
+            'medium' => 'Mittel',
+            'low' => 'Niedrig',
+            'info' => 'Information',
+        ];
+
+        $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($priority, $priorityNames) {
             $events = $this->getActiveEvents()
-                ->where('priority', 'high');
+                ->where('priority', $priority);
 
-            return $this->generateRss($events, 'Wichtige Ereignisse', 'Ereignisse mit hoher Priorität');
+            $priorityName = $priorityNames[$priority] ?? ucfirst($priority);
+            return $this->generateRss(
+                $events,
+                "Ereignisse - Priorität {$priorityName}",
+                "Ereignisse mit Priorität: {$priorityName}"
+            );
         });
 
         return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
