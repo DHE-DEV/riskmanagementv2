@@ -269,7 +269,7 @@ class EventFeedController extends Controller
         $lastBuildDate = $events->first()?->updated_at?->toRfc2822String() ?? $buildDate;
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">' . PHP_EOL;
+        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:country="http://global-travel-monitor.eu/ns/country" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#">' . PHP_EOL;
         $xml .= '  <channel>' . PHP_EOL;
         $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
@@ -392,7 +392,76 @@ class EventFeedController extends Controller
             }
         }
 
+        // Add detailed country data for each country
+        $xml .= $this->generateCountryData($event);
+
         $xml .= '    </item>' . PHP_EOL;
+
+        return $xml;
+    }
+
+    /**
+     * Generate country data XML for an event
+     */
+    private function generateCountryData($event): string
+    {
+        $xml = '';
+        $countries = collect();
+
+        // Collect all countries from the event
+        if ($event->countries && $event->countries->count() > 0) {
+            $countries = $event->countries;
+        } elseif ($event->country) {
+            $countries = collect([$event->country]);
+        }
+
+        foreach ($countries as $country) {
+            $xml .= '      <country:data>' . PHP_EOL;
+            $xml .= '        <country:name>' . $this->escapeXml($country->getName('de')) . '</country:name>' . PHP_EOL;
+            $xml .= '        <country:name_en>' . $this->escapeXml($country->getName('en')) . '</country:name_en>' . PHP_EOL;
+            $xml .= '        <country:iso_code>' . $this->escapeXml($country->iso_code ?? '') . '</country:iso_code>' . PHP_EOL;
+            $xml .= '        <country:iso3_code>' . $this->escapeXml($country->iso3_code ?? '') . '</country:iso3_code>' . PHP_EOL;
+            $xml .= '        <country:is_eu_member>' . ($country->is_eu_member ? 'true' : 'false') . '</country:is_eu_member>' . PHP_EOL;
+            $xml .= '        <country:is_schengen_member>' . ($country->is_schengen_member ? 'true' : 'false') . '</country:is_schengen_member>' . PHP_EOL;
+
+            // Continent
+            if ($country->continent) {
+                $continentNames = [
+                    'EU' => 'Europa',
+                    'AS' => 'Asien',
+                    'AF' => 'Afrika',
+                    'NA' => 'Nordamerika',
+                    'SA' => 'Südamerika',
+                    'OC' => 'Ozeanien',
+                    'AN' => 'Antarktis',
+                ];
+                $continentName = $continentNames[$country->continent] ?? $country->continent;
+                $xml .= '        <country:continent>' . $this->escapeXml($continentName) . '</country:continent>' . PHP_EOL;
+            }
+
+            // Currency
+            if ($country->currency_code) {
+                $xml .= '        <country:currency_code>' . $this->escapeXml($country->currency_code) . '</country:currency_code>' . PHP_EOL;
+            }
+
+            // Phone prefix
+            if ($country->phone_prefix) {
+                $xml .= '        <country:phone_prefix>' . $this->escapeXml($country->phone_prefix) . '</country:phone_prefix>' . PHP_EOL;
+            }
+
+            // Capital with coordinates
+            if ($country->capital_name) {
+                $xml .= '        <country:capital>' . PHP_EOL;
+                $xml .= '          <country:capital_name>' . $this->escapeXml($country->capital_name) . '</country:capital_name>' . PHP_EOL;
+                if ($country->capital_latitude && $country->capital_longitude) {
+                    $xml .= '          <geo:lat>' . $country->capital_latitude . '</geo:lat>' . PHP_EOL;
+                    $xml .= '          <geo:long>' . $country->capital_longitude . '</geo:long>' . PHP_EOL;
+                }
+                $xml .= '        </country:capital>' . PHP_EOL;
+            }
+
+            $xml .= '      </country:data>' . PHP_EOL;
+        }
 
         return $xml;
     }
