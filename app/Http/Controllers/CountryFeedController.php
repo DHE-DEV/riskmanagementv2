@@ -130,15 +130,17 @@ class CountryFeedController extends Controller
     private function generateRss($countries, string $title, string $description): string
     {
         $buildDate = now()->toRfc2822String();
+        $lastBuildDate = $countries->first()?->updated_at?->toRfc2822String() ?? $buildDate;
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:country="http://riskmanagement.local/xmlns/country">' . PHP_EOL;
+        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:country="http://global-travel-monitor.eu/ns/country">' . PHP_EOL;
         $xml .= '  <channel>' . PHP_EOL;
         $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
         $xml .= '    <description>' . $this->escapeXml($description) . '</description>' . PHP_EOL;
         $xml .= '    <language>de-DE</language>' . PHP_EOL;
-        $xml .= '    <lastBuildDate>' . $buildDate . '</lastBuildDate>' . PHP_EOL;
+        $xml .= '    <lastBuildDate>' . $lastBuildDate . '</lastBuildDate>' . PHP_EOL;
+        $xml .= '    <pubDate>' . $buildDate . '</pubDate>' . PHP_EOL;
         $xml .= '    <atom:link href="' . $this->escapeXml(url()->current()) . '" rel="self" type="application/rss+xml" />' . PHP_EOL;
         $xml .= '    <ttl>1440</ttl>' . PHP_EOL; // 24 hours - country data doesn't change often
 
@@ -185,6 +187,7 @@ class CountryFeedController extends Controller
         $xml .= '      <title>' . $this->escapeXml($countryName) . '</title>' . PHP_EOL;
         $xml .= '      <link>' . $this->escapeXml($this->baseUrl . '/?country=' . $country->iso_code) . '</link>' . PHP_EOL;
         $xml .= '      <guid isPermaLink="false">country-' . $this->escapeXml($country->iso_code) . '</guid>' . PHP_EOL;
+        $xml .= '      <pubDate>' . ($country->updated_at ?? $country->created_at ?? now())->toRfc2822String() . '</pubDate>' . PHP_EOL;
         $xml .= '      <description>' . $this->escapeXml($descriptionText) . '</description>' . PHP_EOL;
 
         // Custom country namespace elements for structured data
