@@ -271,7 +271,7 @@ class EventFeedController extends Controller
         $lastBuildDate = $events->first()?->updated_at?->toRfc2822String() ?? $buildDate;
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:country="http://global-travel-monitor.eu/ns/country" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#">' . PHP_EOL;
+        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:country="http://global-travel-monitor.eu/ns/country" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:article="http://global-travel-monitor.eu/ns/article">' . PHP_EOL;
         $xml .= '  <channel>' . PHP_EOL;
         $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
@@ -297,7 +297,7 @@ class EventFeedController extends Controller
     private function generateRssItem($event): string
     {
         $link = $this->baseUrl . '/?event=' . $event->id;
-        $pubDate = ($event->start_date ?? $event->created_at)->toRfc2822String();
+        $pubDate = $event->created_at->toRfc2822String();
         $title = $event->title;
 
         // Build categories
@@ -362,6 +362,19 @@ class EventFeedController extends Controller
         $xml .= '      <description>' . $this->escapeXml($shortDescription) . '</description>' . PHP_EOL;
         $xml .= '      <content:encoded><![CDATA[' . $fullContent . ']]></content:encoded>' . PHP_EOL;
         $xml .= '      <pubDate>' . $pubDate . '</pubDate>' . PHP_EOL;
+
+        // Article-specific data (display period and priority)
+        $xml .= '      <article:data>' . PHP_EOL;
+        if ($event->start_date) {
+            $xml .= '        <article:start_date>' . $event->start_date->toRfc2822String() . '</article:start_date>' . PHP_EOL;
+        }
+        if ($event->end_date) {
+            $xml .= '        <article:end_date>' . $event->end_date->toRfc2822String() . '</article:end_date>' . PHP_EOL;
+        }
+        if ($event->priority) {
+            $xml .= '        <article:priority>' . $this->escapeXml($event->priority) . '</article:priority>' . PHP_EOL;
+        }
+        $xml .= '      </article:data>' . PHP_EOL;
 
         foreach ($categories as $category) {
             $xml .= '      <category>' . $this->escapeXml($category) . '</category>' . PHP_EOL;
@@ -476,7 +489,7 @@ class EventFeedController extends Controller
         $feedUrl = url()->current();
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<feed xmlns="http://www.w3.org/2005/Atom">' . PHP_EOL;
+        $xml .= '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:article="http://global-travel-monitor.eu/ns/article">' . PHP_EOL;
         $xml .= '  <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
         $xml .= '  <subtitle>' . $this->escapeXml($subtitle) . '</subtitle>' . PHP_EOL;
         $xml .= '  <link href="' . $this->escapeXml($this->baseUrl) . '" rel="alternate" />' . PHP_EOL;
@@ -500,7 +513,7 @@ class EventFeedController extends Controller
     {
         $link = $this->baseUrl . '/?event=' . $event->id;
         $updated = $event->updated_at->toAtomString();
-        $published = ($event->start_date ?? $event->created_at)->toAtomString();
+        $published = $event->created_at->toAtomString();
         $title = $event->title;
 
         // Build content
@@ -553,6 +566,19 @@ class EventFeedController extends Controller
         $xml .= '    <updated>' . $updated . '</updated>' . PHP_EOL;
         $xml .= '    <published>' . $published . '</published>' . PHP_EOL;
         $xml .= '    <content type="text">' . $content . '</content>' . PHP_EOL;
+
+        // Article-specific data (display period and priority)
+        $xml .= '    <article:data>' . PHP_EOL;
+        if ($event->start_date) {
+            $xml .= '      <article:start_date>' . $event->start_date->toAtomString() . '</article:start_date>' . PHP_EOL;
+        }
+        if ($event->end_date) {
+            $xml .= '      <article:end_date>' . $event->end_date->toAtomString() . '</article:end_date>' . PHP_EOL;
+        }
+        if ($event->priority) {
+            $xml .= '      <article:priority>' . $this->escapeXml($event->priority) . '</article:priority>' . PHP_EOL;
+        }
+        $xml .= '    </article:data>' . PHP_EOL;
 
         if ($event->priority) {
             $xml .= '    <category term="' . $this->escapeXml(strtolower($event->priority)) . '" label="Priority: ' . $this->escapeXml(ucfirst($event->priority)) . '" />' . PHP_EOL;
