@@ -363,7 +363,7 @@ class EventFeedController extends Controller
         $xml .= '      <content:encoded><![CDATA[' . $fullContent . ']]></content:encoded>' . PHP_EOL;
         $xml .= '      <pubDate>' . $pubDate . '</pubDate>' . PHP_EOL;
 
-        // Article-specific data (display period and priority)
+        // Article-specific data (display period, priority, and event types)
         $xml .= '      <article:data>' . PHP_EOL;
         if ($event->start_date) {
             $xml .= '        <article:start_date>' . $event->start_date->toRfc2822String() . '</article:start_date>' . PHP_EOL;
@@ -373,6 +373,14 @@ class EventFeedController extends Controller
         }
         if ($event->priority) {
             $xml .= '        <article:priority>' . $this->escapeXml($event->priority) . '</article:priority>' . PHP_EOL;
+        }
+        // Event types
+        if ($event->eventTypes && $event->eventTypes->count() > 0) {
+            foreach ($event->eventTypes as $eventType) {
+                $xml .= '        <article:event_type code="' . $this->escapeXml($eventType->code) . '">' . $this->escapeXml($eventType->name) . '</article:event_type>' . PHP_EOL;
+            }
+        } elseif ($event->eventType) {
+            $xml .= '        <article:event_type code="' . $this->escapeXml($event->eventType->code) . '">' . $this->escapeXml($event->eventType->name) . '</article:event_type>' . PHP_EOL;
         }
         $xml .= '      </article:data>' . PHP_EOL;
 
@@ -567,7 +575,7 @@ class EventFeedController extends Controller
         $xml .= '    <published>' . $published . '</published>' . PHP_EOL;
         $xml .= '    <content type="text">' . $content . '</content>' . PHP_EOL;
 
-        // Article-specific data (display period and priority)
+        // Article-specific data (display period, priority, and event types)
         $xml .= '    <article:data>' . PHP_EOL;
         if ($event->start_date) {
             $xml .= '      <article:start_date>' . $event->start_date->toAtomString() . '</article:start_date>' . PHP_EOL;
@@ -577,6 +585,14 @@ class EventFeedController extends Controller
         }
         if ($event->priority) {
             $xml .= '      <article:priority>' . $this->escapeXml($event->priority) . '</article:priority>' . PHP_EOL;
+        }
+        // Event types
+        if ($event->eventTypes && $event->eventTypes->count() > 0) {
+            foreach ($event->eventTypes as $eventType) {
+                $xml .= '      <article:event_type code="' . $this->escapeXml($eventType->code) . '">' . $this->escapeXml($eventType->name) . '</article:event_type>' . PHP_EOL;
+            }
+        } elseif ($event->eventType) {
+            $xml .= '      <article:event_type code="' . $this->escapeXml($event->eventType->code) . '">' . $this->escapeXml($event->eventType->name) . '</article:event_type>' . PHP_EOL;
         }
         $xml .= '    </article:data>' . PHP_EOL;
 
