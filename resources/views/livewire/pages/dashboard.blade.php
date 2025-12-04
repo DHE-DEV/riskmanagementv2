@@ -13,19 +13,31 @@
     <link rel="canonical" href="{{ config('app.url') }}">
 
     {{-- Open Graph / Facebook --}}
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ config('app.url') }}">
-    <meta property="og:title" content="Global Travel Monitor (GTM) - Reisesicherheit by Passolution">
-    <meta property="og:description" content="Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit. Das Travel Risk Management Tool von Passolution.">
-    <meta property="og:image" content="{{ asset('og-image.png') }}">
+    <meta property="og:type" content="{{ isset($sharedEvent) ? 'article' : 'website' }}">
+    <meta property="og:url" content="{{ isset($sharedEvent) ? config('app.url') . '/?event=' . $sharedEvent->id : config('app.url') }}">
+    <meta property="og:title" content="{{ isset($sharedEvent) ? $sharedEvent->title . ' - Global Travel Monitor' : 'Global Travel Monitor (GTM) - Reisesicherheit by Passolution' }}">
+    <meta property="og:description" content="{{ isset($sharedEvent) ? Str::limit(strip_tags($sharedEvent->description ?? $sharedEvent->popup_content ?? ''), 200) : 'Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit. Das Travel Risk Management Tool von Passolution.' }}">
+    @if(isset($sharedEvent) && $sharedEvent->countries->isNotEmpty())
+        @php
+            $firstCountry = $sharedEvent->countries->first();
+            $countryImagePath = 'images/countries/' . strtolower($firstCountry->iso_code) . '.jpg';
+        @endphp
+        <meta property="og:image" content="{{ file_exists(public_path($countryImagePath)) ? asset($countryImagePath) : asset('og-image.png') }}">
+    @else
+        <meta property="og:image" content="{{ asset('og-image.png') }}">
+    @endif
     <meta property="og:site_name" content="Global Travel Monitor">
     <meta property="og:locale" content="de_DE">
 
     {{-- Twitter --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Global Travel Monitor (GTM) by Passolution">
-    <meta name="twitter:description" content="Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit.">
-    <meta name="twitter:image" content="{{ asset('og-image.png') }}">
+    <meta name="twitter:title" content="{{ isset($sharedEvent) ? $sharedEvent->title . ' - GTM' : 'Global Travel Monitor (GTM) by Passolution' }}">
+    <meta name="twitter:description" content="{{ isset($sharedEvent) ? Str::limit(strip_tags($sharedEvent->description ?? $sharedEvent->popup_content ?? ''), 200) : 'Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit.' }}">
+    @if(isset($sharedEvent) && $sharedEvent->countries->isNotEmpty())
+        <meta name="twitter:image" content="{{ file_exists(public_path($countryImagePath)) ? asset($countryImagePath) : asset('og-image.png') }}">
+    @else
+        <meta name="twitter:image" content="{{ asset('og-image.png') }}">
+    @endif
 
     {{-- Additional SEO --}}
     <meta name="application-name" content="Global Travel Monitor">

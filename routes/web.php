@@ -7,7 +7,18 @@ use App\Http\Controllers\EventFeedController;
 use App\Http\Controllers\CountryFeedController;
 
 Route::get('/', function () {
-    return view('livewire.pages.dashboard');
+    $eventId = request()->query('event');
+    $sharedEvent = null;
+
+    if ($eventId) {
+        $sharedEvent = \App\Models\CustomEvent::with(['countries', 'eventType', 'eventTypes'])
+            ->where('is_active', true)
+            ->find($eventId);
+    }
+
+    return view('livewire.pages.dashboard', [
+        'sharedEvent' => $sharedEvent,
+    ]);
 })->name('home');
 
 // Debug route to check auth status
