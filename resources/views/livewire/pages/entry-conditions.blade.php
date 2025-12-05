@@ -266,6 +266,21 @@
             .mobile-drawer-menu[x-show="drawerOpen"] {
                 display: block;
             }
+
+            /* Mobile Details Header anzeigen */
+            .mobile-details-header {
+                display: block !important;
+            }
+
+            /* Desktop Details Header verstecken */
+            .desktop-details-header {
+                display: none !important;
+            }
+
+            /* Content Padding für fixen Header */
+            .mobile-details-content {
+                padding-top: 70px !important;
+            }
         }
 
         .entry-conditions-content-body table {
@@ -454,7 +469,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          @click="drawerOpen = false"
-         class="fixed inset-0 z-40 bg-black bg-opacity-50 mobile-drawer-overlay"
+         class="fixed inset-0 z-[10003] bg-black bg-opacity-50 mobile-drawer-overlay"
          style="display: none;">
     </div>
 
@@ -466,7 +481,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="translate-x-0"
          x-transition:leave-end="-translate-x-full"
-         class="fixed top-0 left-0 h-full w-72 bg-white z-50 shadow-xl mobile-drawer-menu transform"
+         class="fixed top-0 left-0 h-full w-72 bg-white z-[10004] shadow-xl mobile-drawer-menu transform"
          style="display: none;">
 
         <!-- Drawer Header -->
@@ -762,8 +777,21 @@
 
             <!-- Details Sidebar (rechts, anfangs versteckt) -->
             <aside id="details-sidebar" class="details-sidebar" style="display: none;">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-6">
+                <!-- Mobile Header für Details (nur auf Mobil sichtbar) -->
+                <div class="hidden md:hidden mobile-details-header" style="display: none;">
+                    <div class="fixed top-0 left-0 right-0 h-14 bg-white shadow-md z-[10002] flex items-center justify-between px-4">
+                        <button @click="drawerOpen = true" class="p-2 -ml-2 text-gray-700">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <span class="font-semibold text-gray-800">Einreisebestimmungen</span>
+                        <button onclick="hideDetailsSidebar()" class="p-2 -mr-2 text-gray-700">
+                            <i class="fas fa-arrow-left text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6 pt-6 md:pt-6 mobile-details-content">
+                    <div class="flex items-center justify-between mb-6 desktop-details-header">
                         <h2 class="font-semibold text-gray-800">Einreisebestimmungen</h2>
                         <button onclick="hideDetailsSidebar()" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

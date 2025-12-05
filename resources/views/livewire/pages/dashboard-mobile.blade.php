@@ -625,6 +625,33 @@
                 },
 
                 // Reference Data
+                // Country ISO code to continent mapping
+                countryToContinentMap: {
+                    // Europa
+                    'DE': 'EU', 'AT': 'EU', 'CH': 'EU', 'FR': 'EU', 'IT': 'EU', 'ES': 'EU', 'PT': 'EU', 'GB': 'EU', 'IE': 'EU',
+                    'NL': 'EU', 'BE': 'EU', 'LU': 'EU', 'PL': 'EU', 'CZ': 'EU', 'SK': 'EU', 'HU': 'EU', 'RO': 'EU', 'BG': 'EU',
+                    'GR': 'EU', 'HR': 'EU', 'SI': 'EU', 'RS': 'EU', 'BA': 'EU', 'ME': 'EU', 'MK': 'EU', 'AL': 'EU', 'XK': 'EU',
+                    'SE': 'EU', 'NO': 'EU', 'FI': 'EU', 'DK': 'EU', 'IS': 'EU', 'EE': 'EU', 'LV': 'EU', 'LT': 'EU',
+                    'UA': 'EU', 'BY': 'EU', 'MD': 'EU', 'RU': 'EU', 'MT': 'EU', 'CY': 'EU', 'TR': 'EU',
+                    // Asien
+                    'CN': 'AS', 'JP': 'AS', 'KR': 'AS', 'KP': 'AS', 'MN': 'AS', 'TW': 'AS', 'HK': 'AS', 'MO': 'AS',
+                    'IN': 'AS', 'PK': 'AS', 'BD': 'AS', 'LK': 'AS', 'NP': 'AS', 'BT': 'AS', 'MV': 'AS', 'AF': 'AS',
+                    'TH': 'AS', 'VN': 'AS', 'MY': 'AS', 'SG': 'AS', 'ID': 'AS', 'PH': 'AS', 'MM': 'AS', 'KH': 'AS', 'LA': 'AS', 'BN': 'AS', 'TL': 'AS',
+                    'SA': 'AS', 'AE': 'AS', 'QA': 'AS', 'KW': 'AS', 'BH': 'AS', 'OM': 'AS', 'YE': 'AS', 'IR': 'AS', 'IQ': 'AS', 'SY': 'AS', 'JO': 'AS', 'LB': 'AS', 'IL': 'AS', 'PS': 'AS',
+                    'KZ': 'AS', 'UZ': 'AS', 'TM': 'AS', 'TJ': 'AS', 'KG': 'AS', 'AZ': 'AS', 'GE': 'AS', 'AM': 'AS',
+                    // Afrika
+                    'EG': 'AF', 'LY': 'AF', 'TN': 'AF', 'DZ': 'AF', 'MA': 'AF', 'SD': 'AF', 'SS': 'AF', 'ET': 'AF', 'ER': 'AF', 'DJ': 'AF', 'SO': 'AF',
+                    'KE': 'AF', 'UG': 'AF', 'TZ': 'AF', 'RW': 'AF', 'BI': 'AF', 'CD': 'AF', 'CG': 'AF', 'GA': 'AF', 'GQ': 'AF', 'CM': 'AF', 'CF': 'AF', 'TD': 'AF',
+                    'NG': 'AF', 'GH': 'AF', 'CI': 'AF', 'SN': 'AF', 'ML': 'AF', 'BF': 'AF', 'NE': 'AF', 'MR': 'AF', 'GM': 'AF', 'GW': 'AF', 'GN': 'AF', 'SL': 'AF', 'LR': 'AF', 'TG': 'AF', 'BJ': 'AF',
+                    'ZA': 'AF', 'NA': 'AF', 'BW': 'AF', 'ZW': 'AF', 'ZM': 'AF', 'MW': 'AF', 'MZ': 'AF', 'AO': 'AF', 'SZ': 'AF', 'LS': 'AF', 'MG': 'AF', 'MU': 'AF', 'SC': 'AF', 'KM': 'AF', 'RE': 'AF',
+                    // Nordamerika
+                    'US': 'NA', 'CA': 'NA', 'MX': 'NA', 'GT': 'NA', 'BZ': 'NA', 'HN': 'NA', 'SV': 'NA', 'NI': 'NA', 'CR': 'NA', 'PA': 'NA',
+                    'CU': 'NA', 'JM': 'NA', 'HT': 'NA', 'DO': 'NA', 'PR': 'NA', 'BS': 'NA', 'TT': 'NA', 'BB': 'NA', 'LC': 'NA', 'VC': 'NA', 'GD': 'NA', 'AG': 'NA', 'DM': 'NA', 'KN': 'NA',
+                    // Südamerika
+                    'BR': 'SA', 'AR': 'SA', 'CL': 'SA', 'PE': 'SA', 'CO': 'SA', 'VE': 'SA', 'EC': 'SA', 'BO': 'SA', 'PY': 'SA', 'UY': 'SA', 'GY': 'SA', 'SR': 'SA', 'GF': 'SA',
+                    // Ozeanien
+                    'AU': 'OC', 'NZ': 'OC', 'PG': 'OC', 'FJ': 'OC', 'SB': 'OC', 'VU': 'OC', 'NC': 'OC', 'PF': 'OC', 'WS': 'OC', 'TO': 'OC', 'KI': 'OC', 'MH': 'OC', 'FM': 'OC', 'PW': 'OC', 'NR': 'OC', 'TV': 'OC'
+                },
                 continents: [
                     { code: 'EU', name: 'Europa' },
                     { code: 'AS', name: 'Asien' },
@@ -772,13 +799,21 @@
                         );
                     }
 
-                    // Event Types
+                    // Event Types (API returns array of strings or objects)
                     if (this.filters.eventTypes.length > 0) {
-                        filtered = filtered.filter(e =>
-                            (e.event_types || []).some(t =>
-                                this.filters.eventTypes.includes(t.id)
-                            )
-                        );
+                        filtered = filtered.filter(e => {
+                            const eventTypes = e.event_types || [];
+                            return eventTypes.some(t => {
+                                // Handle both string and object formats
+                                const typeName = typeof t === 'string' ? t : t.name;
+                                const typeId = typeof t === 'object' ? t.id : null;
+                                // Match by ID or by name
+                                return this.filters.eventTypes.includes(typeId) ||
+                                       this.eventTypes.some(et =>
+                                           this.filters.eventTypes.includes(et.id) && et.name === typeName
+                                       );
+                            });
+                        });
                     }
 
                     // Countries
