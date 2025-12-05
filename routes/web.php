@@ -24,15 +24,20 @@ Route::get('/', function () {
 
         // Track direct link access
         if ($sharedEvent) {
-            EventClick::create([
-                'custom_event_id' => $sharedEvent->id,
-                'click_type' => 'direct_link',
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'session_id' => session()->getId(),
-                'user_id' => auth()->id(),
-                'clicked_at' => now(),
-            ]);
+            try {
+                EventClick::create([
+                    'custom_event_id' => $sharedEvent->id,
+                    'click_type' => 'direct_link',
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'session_id' => session()->getId() ?? null,
+                    'user_id' => auth()->id(),
+                    'clicked_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                // Silently fail - don't break the page for tracking errors
+                \Log::warning('Direct link tracking failed: ' . $e->getMessage());
+            }
         }
 
         // Show mobile-optimized event view for mobile devices with event parameter
