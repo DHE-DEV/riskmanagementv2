@@ -191,9 +191,53 @@
             @if($event->countries->isNotEmpty())
                 @php
                     $firstCountry = $event->countries->first();
-                    // Coordinates from pivot table or country's lat/lng
-                    $lat = $event->latitude ?? $firstCountry->pivot->latitude ?? $firstCountry->lat ?? null;
-                    $lng = $event->longitude ?? $firstCountry->pivot->longitude ?? $firstCountry->lng ?? null;
+                    $lat = null;
+                    $lng = null;
+
+                    // Same logic as CustomEventController::getCoordinatesForCountry()
+                    if ($firstCountry->pivot->use_default_coordinates ?? true) {
+                        // Priority: City > Region > Capital > Country
+
+                        // 1. City coordinates
+                        if ($firstCountry->pivot->city_id) {
+                            $city = \App\Models\City::find($firstCountry->pivot->city_id);
+                            if ($city && $city->lat && $city->lng) {
+                                $lat = $city->lat;
+                                $lng = $city->lng;
+                            }
+                        }
+
+                        // 2. Region coordinates
+                        if (!$lat && !$lng && $firstCountry->pivot->region_id) {
+                            $region = \App\Models\Region::find($firstCountry->pivot->region_id);
+                            if ($region && $region->lat && $region->lng) {
+                                $lat = $region->lat;
+                                $lng = $region->lng;
+                            }
+                        }
+
+                        // 3. Capital coordinates
+                        if (!$lat && !$lng && $firstCountry->capital && $firstCountry->capital->lat && $firstCountry->capital->lng) {
+                            $lat = $firstCountry->capital->lat;
+                            $lng = $firstCountry->capital->lng;
+                        }
+
+                        // 4. Country center (fallback)
+                        if (!$lat && !$lng) {
+                            $lat = $firstCountry->lat;
+                            $lng = $firstCountry->lng;
+                        }
+                    } else {
+                        // Use pivot coordinates
+                        $lat = $firstCountry->pivot->latitude;
+                        $lng = $firstCountry->pivot->longitude;
+                    }
+
+                    // Final fallback: event coordinates
+                    if (!$lat && !$lng && $event->latitude && $event->longitude) {
+                        $lat = $event->latitude;
+                        $lng = $event->longitude;
+                    }
                 @endphp
                 @if($lat && $lng)
                     <div class="bg-white rounded-lg shadow-sm p-4 mb-4" id="weather-section">

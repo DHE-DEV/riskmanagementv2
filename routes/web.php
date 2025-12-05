@@ -17,7 +17,7 @@ Route::get('/', function () {
 
     // Load shared event if event ID is provided
     if ($eventId) {
-        $sharedEvent = \App\Models\CustomEvent::with(['countries', 'eventType', 'eventTypes'])
+        $sharedEvent = \App\Models\CustomEvent::with(['countries.capital', 'eventType', 'eventTypes'])
             ->where('is_active', true)
             ->find($eventId);
 
