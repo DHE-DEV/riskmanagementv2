@@ -265,7 +265,7 @@
                 </div>
             </div>
 
-            <!-- Search Input -->
+            {{-- Search Input temporarily disabled
             <div class="flex-1 mx-4" x-show="searchOpen" x-cloak>
                 <input type="text"
                        x-model="searchQuery"
@@ -274,12 +274,15 @@
                        class="w-full px-3 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                        x-ref="searchInput">
             </div>
+            --}}
 
             <!-- Right: Actions -->
             <div class="flex items-center gap-1">
+                {{-- Search button temporarily disabled
                 <button @click="toggleSearch()" class="p-2 text-gray-700">
                     <i :class="searchOpen ? 'fa-times' : 'fa-search'" class="fas text-lg"></i>
                 </button>
+                --}}
                 <button @click="filterModalOpen = true" class="p-2 text-gray-700 relative">
                     <i class="fas fa-filter text-lg"></i>
                     <span x-show="activeFiltersCount > 0"
