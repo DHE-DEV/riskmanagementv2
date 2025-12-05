@@ -677,25 +677,18 @@
                     return marker;
                 },
 
-                async trackEventClick(eventId, clickType) {
-                    try {
-                        const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
-                        if (!numericEventId || isNaN(numericEventId)) return;
+                trackEventClick(eventId, clickType) {
+                    const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
+                    if (!numericEventId || isNaN(numericEventId)) return;
 
-                        await fetch('/api/custom-events/track-click', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                            },
-                            body: JSON.stringify({
-                                event_id: numericEventId,
-                                click_type: clickType
-                            })
-                        });
-                    } catch (err) {
-                        console.error('Error tracking event click:', err);
-                    }
+                    // Use sendBeacon for reliable tracking
+                    const data = JSON.stringify({
+                        event_id: numericEventId,
+                        click_type: clickType
+                    });
+
+                    const blob = new Blob([data], { type: 'application/json' });
+                    navigator.sendBeacon('/api/custom-events/track-click', blob);
                 },
 
                 centerMap() {
