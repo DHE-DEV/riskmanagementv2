@@ -422,15 +422,16 @@
                             </div>
 
                             <!-- Meta Row -->
-                            <div class="flex items-center gap-2 text-xs">
+                            <div class="flex flex-wrap items-center gap-1.5 text-xs">
                                 <!-- Priority Badge -->
                                 <span class="px-2 py-0.5 rounded-full text-white text-xs"
                                       :class="'priority-' + (event.priority || 'info')"
                                       x-text="getPriorityLabel(event.priority)"></span>
 
-                                <!-- Event Type -->
-                                <template x-if="event.event_types && event.event_types.length > 0">
-                                    <span class="text-gray-500" x-text="event.event_types[0].name"></span>
+                                <!-- Event Type Tags -->
+                                <template x-for="eventType in (event.event_types || [])" :key="eventType.id || eventType.name">
+                                    <span class="px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs"
+                                          x-text="typeof eventType === 'string' ? eventType : eventType.name"></span>
                                 </template>
                             </div>
 
