@@ -784,8 +784,8 @@
                             <i class="fas fa-bars text-xl"></i>
                         </button>
                         <span class="font-semibold text-gray-800">Einreisebestimmungen</span>
-                        <button onclick="hideDetailsSidebar()" class="p-2 -mr-2 text-gray-700">
-                            <i class="fas fa-arrow-left text-xl"></i>
+                        <button onclick="hideDetailsSidebar()" class="p-2 -mr-2 text-gray-700" title="Zurück">
+                            <i class="fas fa-xmark text-xl"></i>
                         </button>
                     </div>
                 </div>
