@@ -299,6 +299,11 @@
                     class="filter-chip whitespace-nowrap px-3 py-1.5 rounded-full text-sm bg-gray-200 text-gray-700">
                 Alle
             </button>
+            <button @click="setTimePeriod('future')"
+                    :class="{ 'active': filters.timePeriod === 'future' }"
+                    class="filter-chip whitespace-nowrap px-3 py-1.5 rounded-full text-sm bg-gray-200 text-gray-700">
+                Zukünftig
+            </button>
             <button @click="setTimePeriod('today')"
                     :class="{ 'active': filters.timePeriod === 'today' }"
                     class="filter-chip whitespace-nowrap px-3 py-1.5 rounded-full text-sm bg-gray-200 text-gray-700">
@@ -722,9 +727,14 @@
                     // Time Period
                     if (this.filters.timePeriod !== 'all') {
                         const now = new Date();
+                        now.setHours(0, 0, 0, 0); // Set to midnight for date comparison
                         filtered = filtered.filter(e => {
                             const eventDate = new Date(e.start_date || e.created_at);
                             switch (this.filters.timePeriod) {
+                                case 'future':
+                                    const eventDateOnly = new Date(eventDate);
+                                    eventDateOnly.setHours(0, 0, 0, 0);
+                                    return eventDateOnly > now;
                                 case 'today':
                                     return eventDate.toDateString() === now.toDateString();
                                 case 'week':
@@ -737,6 +747,15 @@
                                     return true;
                             }
                         });
+
+                        // Sort future events by date (soonest first)
+                        if (this.filters.timePeriod === 'future') {
+                            filtered.sort((a, b) => {
+                                const dateA = new Date(a.start_date || a.created_at);
+                                const dateB = new Date(b.start_date || b.created_at);
+                                return dateA - dateB;
+                            });
+                        }
                     }
 
                     // Priority
