@@ -117,6 +117,9 @@
             background: #2563eb;
         }
 
+        /* Hide elements until Alpine.js initializes */
+        [x-cloak] { display: none !important; }
+
         /* Bottom Sheet */
         .bottom-sheet {
             position: fixed;
@@ -269,8 +272,8 @@
         <!-- Drawer Items -->
         <nav class="py-2">
             <a href="{{ route('home') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
-                <i class="fa-regular fa-brake-warning w-6 text-center"></i>
-                <span>Ereignisse</span>
+                <i class="fa-solid fa-rss w-6 text-center"></i>
+                <span>Nachrichten Feed</span>
             </a>
 
             <a href="{{ route('home') }}?view=map" class="flex items-center gap-4 px-4 py-3 text-gray-700 bg-blue-50 border-r-4 border-blue-600">
@@ -302,6 +305,20 @@
             <div class="border-t border-gray-200 my-2"></div>
 
             @auth('customer')
+                @if(auth('customer')->user()->branch_management_active)
+                <a href="{{ route('branches') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <i class="fa-regular fa-building w-6 text-center"></i>
+                    <span>Filialen & Standorte</span>
+                </a>
+                @endif
+
+                <a href="{{ route('my-travelers') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <i class="fa-regular fa-users w-6 text-center"></i>
+                    <span>Meine Reisenden</span>
+                </a>
+
+                <div class="border-t border-gray-200 my-2"></div>
+
                 <a href="{{ route('customer.dashboard') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
                     <i class="fa-regular fa-user w-6 text-center"></i>
                     <span>{{ auth('customer')->user()->name }}</span>
@@ -321,8 +338,29 @@
                     <span>Anmelden</span>
                 </a>
                 @endif
+
+                @if(config('app.customer_registration_enabled', true))
+                <a href="{{ route('customer.register') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <i class="fa-regular fa-user-plus w-6 text-center"></i>
+                    <span>Registrieren</span>
+                </a>
+                @endif
             @endauth
         </nav>
+
+        <!-- Drawer Footer -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 text-xs text-gray-500">
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mb-2">
+                <a href="https://www.passolution.de/datenschutz/" target="_blank" class="text-blue-600 hover:underline">Datenschutz</a>
+                <a href="https://www.passolution.de/agb/" target="_blank" class="text-blue-600 hover:underline">AGB</a>
+                <a href="https://www.passolution.de/impressum/" target="_blank" class="text-blue-600 hover:underline">Impressum</a>
+                <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal')?.classList.remove('hidden');" class="text-blue-600 hover:underline">Haftungsausschluss</a>
+            </div>
+            <div class="flex justify-between">
+                <span>© 2025 Passolution GmbH</span>
+                <span>Version 1.0.2</span>
+            </div>
+        </div>
     </div>
 
     <!-- App Bar -->
@@ -370,7 +408,7 @@
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 bottom-safe">
         <div class="flex justify-around items-center h-14">
             <a href="{{ route('home') }}" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-500">
-                <i class="fa-solid fa-list text-xl"></i>
+                <i class="fa-solid fa-rss text-xl"></i>
                 <span class="text-xs mt-1">Feed</span>
             </a>
             <a href="{{ route('home') }}?view=map" class="flex flex-col items-center justify-center flex-1 py-2 text-blue-600">
@@ -385,7 +423,7 @@
     </nav>
 
     <!-- Bottom Sheet for Event Details -->
-    <div :class="{ 'open': selectedEvent }" class="bottom-sheet">
+    <div x-show="selectedEvent" x-cloak :class="{ 'open': selectedEvent }" class="bottom-sheet">
         <div class="bottom-sheet-handle"></div>
         <div class="bottom-sheet-content" x-show="selectedEvent">
             <template x-if="selectedEvent">

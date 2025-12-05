@@ -244,7 +244,7 @@
             </div>
             <div class="flex justify-between">
                 <span>© 2025 Passolution GmbH</span>
-                <span>Version 1.0.19</span>
+                <span>Version 1.0.2</span>
             </div>
         </div>
     </div>
@@ -466,7 +466,7 @@
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 bottom-safe">
         <div class="flex justify-around items-center h-14">
             <a href="{{ route('home') }}" class="flex flex-col items-center justify-center flex-1 py-2 text-blue-600">
-                <i class="fa-solid fa-list text-xl"></i>
+                <i class="fa-solid fa-rss text-xl"></i>
                 <span class="text-xs mt-1">Feed</span>
             </a>
             <a href="{{ route('home') }}?view=map" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-500">
