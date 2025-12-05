@@ -920,15 +920,18 @@
                     const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
                     if (!numericEventId || isNaN(numericEventId)) return;
 
-                    // Use sendBeacon for reliable tracking during page navigation
-                    const data = JSON.stringify({
-                        event_id: numericEventId,
-                        click_type: clickType
-                    });
-
-                    // sendBeacon with Blob to set Content-Type
-                    const blob = new Blob([data], { type: 'application/json' });
-                    navigator.sendBeacon('/api/custom-events/track-click', blob);
+                    // Use fetch with keepalive for reliable tracking during page navigation
+                    fetch('/api/custom-events/track-click', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            event_id: numericEventId,
+                            click_type: clickType
+                        }),
+                        keepalive: true  // Ensures request completes even when page navigates away
+                    }).catch(() => {});  // Ignore errors silently
                 },
 
                 loadMore() {
