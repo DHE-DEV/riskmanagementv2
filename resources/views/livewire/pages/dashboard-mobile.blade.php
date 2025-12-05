@@ -771,13 +771,7 @@
                         );
                     }
 
-                    // Sort by date (newest first)
-                    filtered.sort((a, b) => {
-                        const dateA = new Date(a.start_date || a.created_at);
-                        const dateB = new Date(b.start_date || b.created_at);
-                        return dateB - dateA;
-                    });
-
+                    // Keep original API order (same as desktop) - no additional sorting
                     this.filteredEvents = filtered;
                 },
 
