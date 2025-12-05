@@ -256,12 +256,12 @@
          x-transition:leave="transition ease-in duration-200">
 
         <!-- Drawer Header -->
-        <div class="bg-black text-white p-4">
+        <div class="bg-gray-100 border-b border-gray-200 p-4">
             <div class="flex items-center gap-3">
                 <img src="{{ asset('android-chrome-192x192.png') }}" alt="GTM" class="h-10 w-10">
                 <div>
-                    <div class="font-semibold">Global Travel Monitor</div>
-                    <div class="text-xs text-gray-400">Passolution GmbH</div>
+                    <div class="font-semibold text-gray-900">Global Travel Monitor</div>
+                    <div class="text-xs text-gray-500">Passolution GmbH</div>
                 </div>
             </div>
         </div>
