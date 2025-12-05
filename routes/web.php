@@ -8,14 +8,39 @@ use App\Http\Controllers\CountryFeedController;
 
 Route::get('/', function () {
     $eventId = request()->query('event');
+    $viewParam = request()->query('view');
     $sharedEvent = null;
 
+    // Detect mobile/tablet devices
+    $agent = new \Jenssegers\Agent\Agent();
+    $isMobile = $agent->isMobile() || $agent->isTablet();
+
+    // Load shared event if event ID is provided
     if ($eventId) {
         $sharedEvent = \App\Models\CustomEvent::with(['countries', 'eventType', 'eventTypes'])
             ->where('is_active', true)
             ->find($eventId);
+
+        // Show mobile-optimized event view for mobile devices with event parameter
+        if ($sharedEvent && $isMobile) {
+            return view('livewire.pages.event-mobile', [
+                'event' => $sharedEvent,
+            ]);
+        }
     }
 
+    // Mobile routing (without event parameter)
+    if ($isMobile && !$eventId) {
+        // Map view for mobile
+        if ($viewParam === 'map') {
+            return view('livewire.pages.dashboard-mobile-map');
+        }
+
+        // Default mobile view (feed)
+        return view('livewire.pages.dashboard-mobile');
+    }
+
+    // Desktop view
     return view('livewire.pages.dashboard', [
         'sharedEvent' => $sharedEvent,
     ]);

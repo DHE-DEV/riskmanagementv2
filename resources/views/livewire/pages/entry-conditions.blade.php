@@ -16,10 +16,10 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet MarkerCluster CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <!-- Font Awesome Einbindung -->
     @php($faKit = config('services.fontawesome.kit'))
     @if(!empty($faKit))
@@ -176,6 +176,96 @@
 
         .entry-conditions-content-body a:hover {
             color: #1d4ed8;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .navigation {
+                display: none !important;
+            }
+
+            .map-container {
+                display: none !important;
+            }
+
+            .details-sidebar {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                z-index: 10001 !important;
+                background: white !important;
+            }
+
+            .sidebar {
+                width: 100% !important;
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .header {
+                height: auto;
+                padding: 12px 16px;
+            }
+
+            .footer {
+                display: none !important;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            body {
+                overflow: auto;
+            }
+
+            .app-container {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .header {
+                display: none !important;
+            }
+
+            .mobile-header {
+                display: flex !important;
+            }
+
+            .sidebar {
+                padding-top: 56px;
+            }
+        }
+
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10002;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+        }
+
+        .mobile-drawer-overlay,
+        .mobile-drawer-menu {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-drawer-overlay[x-show="drawerOpen"],
+            .mobile-drawer-menu[x-show="drawerOpen"] {
+                display: block;
+            }
         }
 
         .entry-conditions-content-body table {
@@ -354,7 +444,133 @@
         }
     </style>
 </head>
-<body>
+<body x-data="{ drawerOpen: false }">
+    <!-- Mobile Drawer Overlay -->
+    <div x-show="drawerOpen"
+         x-transition:enter="transition-opacity ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="drawerOpen = false"
+         class="fixed inset-0 z-40 bg-black bg-opacity-50 mobile-drawer-overlay"
+         style="display: none;">
+    </div>
+
+    <!-- Mobile Drawer Menu -->
+    <div x-show="drawerOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="-translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="-translate-x-full"
+         class="fixed top-0 left-0 h-full w-72 bg-white z-50 shadow-xl mobile-drawer-menu transform"
+         style="display: none;">
+
+        <!-- Drawer Header -->
+        <div class="bg-gray-100 border-b border-gray-200 p-4">
+            <div class="flex items-center gap-3">
+                <img src="{{ asset('android-chrome-192x192.png') }}" alt="GTM" class="h-10 w-10">
+                <div>
+                    <div class="font-semibold text-gray-900">Global Travel Monitor</div>
+                    <div class="text-xs text-gray-500">Passolution GmbH</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drawer Items -->
+        <nav class="py-2">
+            <a href="{{ route('home') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                <i class="fa-solid fa-rss w-6 text-center"></i>
+                <span>Nachrichten Feed</span>
+            </a>
+
+            <a href="{{ route('home') }}?view=map" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                <i class="fa-regular fa-map w-6 text-center"></i>
+                <span>Karte</span>
+            </a>
+
+            @if(config('app.navigation_entry_conditions_enabled', true))
+            <a href="{{ route('entry-conditions') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 bg-blue-50 border-r-4 border-blue-600">
+                <i class="fa-regular fa-passport w-6 text-center text-blue-600"></i>
+                <span class="font-medium text-blue-600">Einreisebestimmungen</span>
+            </a>
+            @endif
+
+            @if(config('app.navigation_booking_enabled', true))
+            <a href="{{ route('booking') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                <i class="fa-regular fa-calendar-check w-6 text-center"></i>
+                <span>Buchungsmöglichkeit</span>
+            </a>
+            @endif
+
+            @if(config('app.navigation_cruise_enabled', true))
+            <a href="{{ route('cruise') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                <i class="fa-regular fa-ship w-6 text-center"></i>
+                <span>Kreuzfahrt</span>
+            </a>
+            @endif
+
+            <div class="border-t border-gray-200 my-2"></div>
+
+            @auth('customer')
+                <a href="{{ route('customer.dashboard') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <i class="fa-regular fa-user w-6 text-center"></i>
+                    <span>{{ auth('customer')->user()->name }}</span>
+                </a>
+
+                <form method="POST" action="{{ route('customer.logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-4 px-4 py-3 text-red-600 hover:bg-red-50">
+                        <i class="fa-regular fa-sign-out w-6 text-center"></i>
+                        <span>Abmelden</span>
+                    </button>
+                </form>
+            @else
+                @if(config('app.customer_login_enabled', true))
+                <a href="{{ route('customer.login') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <i class="fa-regular fa-sign-in w-6 text-center"></i>
+                    <span>Anmelden</span>
+                </a>
+                @endif
+
+                @if(config('app.customer_registration_enabled', true))
+                <a href="{{ route('customer.register') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <i class="fa-regular fa-user-plus w-6 text-center"></i>
+                    <span>Registrieren</span>
+                </a>
+                @endif
+            @endauth
+        </nav>
+
+        <!-- Drawer Footer -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 text-xs text-gray-500">
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mb-2">
+                <a href="https://www.passolution.de/datenschutz/" target="_blank" class="text-blue-600 hover:underline">Datenschutz</a>
+                <a href="https://www.passolution.de/agb/" target="_blank" class="text-blue-600 hover:underline">AGB</a>
+                <a href="https://www.passolution.de/impressum/" target="_blank" class="text-blue-600 hover:underline">Impressum</a>
+                <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal').classList.remove('hidden');" class="text-blue-600 hover:underline">Haftungsausschluss</a>
+            </div>
+            <div class="flex justify-between">
+                <span>© 2025 Passolution GmbH</span>
+                <span>Version 1.0.19</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button @click="drawerOpen = true" class="absolute left-4 p-2 -ml-2 text-gray-700">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <div class="flex items-center justify-center gap-2">
+            <img src="{{ asset('android-chrome-192x192.png') }}" alt="GTM" class="h-6 w-6">
+            <span class="font-semibold text-gray-800">Einreisebestimmungen</span>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Header -->
         <x-public-header />
@@ -371,7 +587,8 @@
                     <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('entryFilters')">
                         <h3 class="font-semibold text-gray-800 flex items-center gap-2">
                             <i class="fa-regular fa-passport text-blue-500"></i>
-                            <span>Einreisebestimmungen</span>
+                            <span class="hidden md:inline">Einreisebestimmungen</span>
+                            <span class="inline md:hidden">Filter</span>
                         </h3>
                         <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('entryFilters')">
                             <svg id="entryFiltersToggleIcon" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -571,9 +788,9 @@
     </div>
 
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Leaflet MarkerCluster JS -->
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <script>
         // Customer Passolution Status - Als window property für Testbarkeit
