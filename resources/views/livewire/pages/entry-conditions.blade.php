@@ -196,7 +196,7 @@
                 bottom: 0 !important;
                 width: 100% !important;
                 height: 100% !important;
-                z-index: 10001 !important;
+                z-index: 10006 !important;
                 background: white !important;
             }
 
@@ -261,6 +261,11 @@
             display: none;
         }
 
+        /* Mobile Details Header - auf Desktop versteckt */
+        .mobile-details-header {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .mobile-drawer-overlay[x-show="drawerOpen"],
             .mobile-drawer-menu[x-show="drawerOpen"] {
@@ -269,7 +274,7 @@
 
             /* Mobile Details Header anzeigen */
             .mobile-details-header {
-                display: block !important;
+                display: block;
             }
 
             /* Desktop Details Header verstecken */
@@ -469,7 +474,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          @click="drawerOpen = false"
-         class="fixed inset-0 z-[10003] bg-black bg-opacity-50 mobile-drawer-overlay"
+         class="fixed inset-0 z-[10010] bg-black bg-opacity-50 mobile-drawer-overlay"
          style="display: none;">
     </div>
 
@@ -481,7 +486,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="translate-x-0"
          x-transition:leave-end="-translate-x-full"
-         class="fixed top-0 left-0 h-full w-72 bg-white z-[10004] shadow-xl mobile-drawer-menu transform"
+         class="fixed top-0 left-0 h-full w-72 bg-white z-[10011] shadow-xl mobile-drawer-menu transform"
          style="display: none;">
 
         <!-- Drawer Header -->
@@ -778,8 +783,8 @@
             <!-- Details Sidebar (rechts, anfangs versteckt) -->
             <aside id="details-sidebar" class="details-sidebar" style="display: none;">
                 <!-- Mobile Header für Details (nur auf Mobil sichtbar) -->
-                <div class="hidden md:hidden mobile-details-header" style="display: none;">
-                    <div class="fixed top-0 left-0 right-0 h-14 bg-white shadow-md z-[10002] flex items-center justify-between px-4">
+                <div class="mobile-details-header">
+                    <div class="fixed top-0 left-0 right-0 h-14 bg-white shadow-md z-[10007] flex items-center justify-between px-4">
                         <button @click="drawerOpen = true" class="p-2 -ml-2 text-gray-700">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
