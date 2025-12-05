@@ -400,7 +400,7 @@ class CustomEventController extends Controller
         try {
             $request->validate([
                 'event_id' => 'required|exists:custom_events,id',
-                'click_type' => 'required|in:list,map_marker,details_button,mobile_list,mobile_map_marker',
+                'click_type' => 'required|in:list,map_marker,details_button,mobile_list,mobile_map_marker,direct_link',
             ]);
 
             EventClick::create([

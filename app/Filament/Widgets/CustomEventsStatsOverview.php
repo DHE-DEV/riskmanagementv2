@@ -46,6 +46,15 @@ class CustomEventsStatsOverview extends BaseWidget
         $mapClicks = EventClick::where('click_type', 'map_marker')->count();
         $detailsClicks = EventClick::where('click_type', 'details_button')->count();
 
+        // Direct link statistics
+        $directLinkTotal = EventClick::where('click_type', 'direct_link')->count();
+        $directLinkToday = EventClick::where('click_type', 'direct_link')
+            ->whereDate('clicked_at', today())->count();
+        $directLinkYesterday = EventClick::where('click_type', 'direct_link')
+            ->whereDate('clicked_at', today()->subDay())->count();
+        $directLinkWeek = EventClick::where('click_type', 'direct_link')
+            ->whereBetween('clicked_at', [now()->startOfWeek(), now()->endOfWeek()])->count();
+
         return [
             Stat::make('Gesamt-Interaktionen', number_format($totalClicks))
                 ->description($weeklyTrend > 0 ? "{$weeklyTrend}% mehr als letzte Woche" : ($weeklyTrend < 0 ? abs($weeklyTrend) . "% weniger als letzte Woche" : "Keine Änderung"))
@@ -67,6 +76,11 @@ class CustomEventsStatsOverview extends BaseWidget
                 ->description($topEvent ? substr($topEvent->title, 0, 40) : 'Noch kein Top Event')
                 ->descriptionIcon('heroicon-m-star')
                 ->color('warning'),
+
+            Stat::make('Direktlinks', number_format($directLinkTotal))
+                ->description("Heute: {$directLinkToday} | Diese Woche: {$directLinkWeek}")
+                ->descriptionIcon('heroicon-m-link')
+                ->color('primary'),
         ];
     }
 

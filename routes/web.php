@@ -5,6 +5,7 @@ use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\EventFeedController;
 use App\Http\Controllers\CountryFeedController;
+use App\Models\EventClick;
 
 Route::get('/', function () {
     $eventId = request()->query('event');
@@ -20,6 +21,19 @@ Route::get('/', function () {
         $sharedEvent = \App\Models\CustomEvent::with(['countries.capital', 'eventType', 'eventTypes'])
             ->where('is_active', true)
             ->find($eventId);
+
+        // Track direct link access
+        if ($sharedEvent) {
+            EventClick::create([
+                'custom_event_id' => $sharedEvent->id,
+                'click_type' => 'direct_link',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'session_id' => session()->getId(),
+                'user_id' => auth()->id(),
+                'clicked_at' => now(),
+            ]);
+        }
 
         // Show mobile-optimized event view for mobile devices with event parameter
         if ($sharedEvent && $isMobile) {
