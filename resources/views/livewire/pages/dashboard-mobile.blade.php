@@ -723,7 +723,8 @@
                     try {
                         const response = await fetch('/api/custom-events/event-types');
                         const data = await response.json();
-                        this.eventTypes = data.event_types || [];
+                        // API returns { success: true, data: [...] }
+                        this.eventTypes = data.data || data.event_types || [];
                     } catch (err) {
                         console.error('Error loading event types:', err);
                     }
@@ -790,12 +791,13 @@
                         filtered = filtered.filter(e => this.filters.priorities.includes(e.priority));
                     }
 
-                    // Continent
+                    // Continent - use countryToContinentMap to determine continent from ISO code
                     if (this.filters.continents.length > 0) {
                         filtered = filtered.filter(e =>
-                            (e.countries || []).some(c =>
-                                this.filters.continents.includes(c.continent_code)
-                            )
+                            (e.countries || []).some(c => {
+                                const continentCode = this.countryToContinentMap[c.iso_code];
+                                return this.filters.continents.includes(continentCode);
+                            })
                         );
                     }
 
