@@ -283,7 +283,7 @@
 
             @if(config('app.navigation_entry_conditions_enabled', true))
             <a href="{{ route('entry-conditions') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
-                <i class="fa-regular fa-passport w-6 text-center"></i>
+                <i class="fa-solid fa-earth-europe w-6 text-center"></i>
                 <span>Einreisebestimmungen</span>
             </a>
             @endif
@@ -671,9 +671,31 @@
                     // Click handler to show bottom sheet
                     marker.on('click', function() {
                         self.selectedEvent = event;
+                        self.trackEventClick(event.id, 'mobile_map_marker');
                     });
 
                     return marker;
+                },
+
+                async trackEventClick(eventId, clickType) {
+                    try {
+                        const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
+                        if (!numericEventId || isNaN(numericEventId)) return;
+
+                        await fetch('/api/custom-events/track-click', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                            },
+                            body: JSON.stringify({
+                                event_id: numericEventId,
+                                click_type: clickType
+                            })
+                        });
+                    } catch (err) {
+                        console.error('Error tracking event click:', err);
+                    }
                 },
 
                 centerMap() {
