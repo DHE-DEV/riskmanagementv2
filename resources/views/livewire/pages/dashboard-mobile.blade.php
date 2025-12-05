@@ -297,7 +297,7 @@
             <button @click="setTimePeriod('all')"
                     :class="{ 'active': filters.timePeriod === 'all' }"
                     class="filter-chip whitespace-nowrap px-3 py-1.5 rounded-full text-sm bg-gray-200 text-gray-700">
-                Alle
+                Aktuell
             </button>
             <button @click="setTimePeriod('future')"
                     :class="{ 'active': filters.timePeriod === 'future' }"
