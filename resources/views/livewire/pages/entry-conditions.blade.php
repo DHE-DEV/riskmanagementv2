@@ -659,7 +659,7 @@
                                 <div class="space-y-2">
                                     <input
                                         type="text"
-                                        placeholder="Land suchen (Name oder Code)..."
+                                        placeholder="Land oder Flughafen-Code (z.B. FRA)..."
                                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         id="destinationsFilterInput"
                                         onkeyup="handleDestinationsFilterKeyup(event)"
@@ -1454,15 +1454,21 @@
                     return;
                 }
 
-                box.innerHTML = list.map((c, i) => (
-                    `<div class="autocomplete-item px-2 py-1 rounded border hover:bg-gray-50 flex items-center justify-between bg-white ${i === 0 ? 'border-blue-300' : 'border-gray-200'}" data-index="${i}" data-name="${escapeForAttr(c.name)}" data-iso2="${escapeForAttr(c.iso2 || '')}">
+                box.innerHTML = list.map((c, i) => {
+                    // Check if this result was matched via airport IATA code
+                    const airportInfo = c.matched_by === 'airport' && c.airport_code
+                        ? `<div class="text-xs text-blue-600"><i class="fa-solid fa-plane text-[10px] mr-1"></i>${escapeHtml(c.airport_code)} - ${escapeHtml(c.airport_name || '')}</div>`
+                        : '';
+
+                    return `<div class="autocomplete-item px-2 py-1 rounded border hover:bg-gray-50 flex items-center justify-between bg-white ${i === 0 ? 'border-blue-300' : 'border-gray-200'}" data-index="${i}" data-name="${escapeForAttr(c.name)}" data-iso2="${escapeForAttr(c.iso2 || '')}">
                         <div>
                             <div class="font-medium">${escapeHtml(c.name)}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(c.iso2 || '')}${c.iso3 ? ' / ' + escapeHtml(c.iso3) : ''}</div>
+                            ${airportInfo}
                         </div>
                         <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-100">Übernehmen</button>
-                    </div>`
-                )).join('');
+                    </div>`;
+                }).join('');
 
                 destinationsFilterActiveIndex = 0;
                 box.querySelectorAll('.autocomplete-item').forEach(el => {
@@ -1765,7 +1771,7 @@
                 if (destinationsInput) {
                     destinationsInput.disabled = false;
                     destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
-                    destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+                    destinationsInput.placeholder = 'Land oder Flughafen-Code (z.B. FRA)...';
                 }
 
                 // Wenn keine Filter mehr aktiv sind, Ergebnisse ausblenden
@@ -1834,7 +1840,7 @@
                 // Reiseziele-Feld wieder aktivieren
                 destinationsInput.disabled = false;
                 destinationsInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
-                destinationsInput.placeholder = 'Land suchen (Name oder Code)...';
+                destinationsInput.placeholder = 'Land oder Flughafen-Code (z.B. FRA)...';
             }
 
             // Suchergebnisse ausblenden

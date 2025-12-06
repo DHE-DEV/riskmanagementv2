@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Airport;
+use App\Models\AirportCode;
 use App\Models\Country;
 use App\Models\Continent;
 use Illuminate\Http\Request;
@@ -17,6 +18,10 @@ class AirportSearchController extends Controller
         $countryFilter = trim((string) $request->query('country', ''));
         $countryId = (int) $request->query('country_id', 0);
         $continentFilter = trim((string) $request->query('continent', ''));
+
+        // Neue Filter für IATA/ICAO-Suche
+        $searchIata = $request->boolean('iata', false);
+        $searchIcao = $request->boolean('icao', false);
 
         if ($query === '' && $countryFilter === '' && $continentFilter === '' && $countryId === 0) {
             return response()->json([
@@ -40,25 +45,45 @@ class AirportSearchController extends Controller
             $selectColumns[] = $airportTable.'.lng as longitude';
         }
 
+        // Immer Country-Daten mit laden für die Ausgabe
+        $selectColumns[] = 'countries.id as country_id';
+        $selectColumns[] = 'countries.iso_code as country_iso_code';
+        $selectColumns[] = 'countries.name_translations as country_name_translations';
+
         $airportsQuery = Airport::query()->withoutGlobalScopes()
             ->select($selectColumns)
-            ->when($countryFilter !== '' || $continentFilter !== '' || $countryId !== 0, function ($q) use ($countryFilter, $continentFilter, $countryId, $airportTable) {
-                $q->leftJoin('countries', $airportTable.'.country_id', '=', 'countries.id');
-                if ($continentFilter !== '') {
-                    $q->leftJoin('continents', 'countries.continent_id', '=', 'continents.id');
-                }
-                if ($countryId !== 0) {
-                    $q->where('countries.id', '=', $countryId);
-                }
+            ->leftJoin('countries', $airportTable.'.country_id', '=', 'countries.id')
+            ->when($continentFilter !== '', function ($q) {
+                $q->leftJoin('continents', 'countries.continent_id', '=', 'continents.id');
             })
-            ->when(strlen($query) === 3, function ($q) use ($query) {
-                $q->where('iata_code', 'like', strtoupper($query));
-            }, function ($q) use ($query) {
-                $q->where(function ($sub) use ($query) {
-                    $sub->where('name', 'like', "%{$query}%")
-                        ->orWhere('iata_code', 'like', "%{$query}%")
-                        ->orWhere('icao_code', 'like', "%{$query}%");
-                });
+            ->when($countryId !== 0, function ($q) use ($countryId) {
+                $q->where('countries.id', '=', $countryId);
+            })
+            ->when($query !== '', function ($q) use ($query, $searchIata, $searchIcao) {
+                $upperQuery = strtoupper($query);
+
+                // Wenn IATA und/oder ICAO Filter gesetzt sind
+                if ($searchIata || $searchIcao) {
+                    $q->where(function ($sub) use ($upperQuery, $searchIata, $searchIcao) {
+                        if ($searchIata) {
+                            $sub->orWhere('iata_code', 'like', "%{$upperQuery}%");
+                        }
+                        if ($searchIcao) {
+                            $sub->orWhere('icao_code', 'like', "%{$upperQuery}%");
+                        }
+                    });
+                } else {
+                    // Standard-Verhalten: Bei 3 Zeichen exakte IATA-Suche, sonst Fuzzy
+                    if (strlen($query) === 3) {
+                        $q->where('iata_code', 'like', $upperQuery);
+                    } else {
+                        $q->where(function ($sub) use ($query, $upperQuery) {
+                            $sub->where('name', 'like', "%{$query}%")
+                                ->orWhere('iata_code', 'like', "%{$upperQuery}%")
+                                ->orWhere('icao_code', 'like', "%{$upperQuery}%");
+                        });
+                    }
+                }
             })
             ->when($countryFilter !== '' && $countryId === 0, function ($q) use ($countryFilter) {
                 $q->where(function ($inner) use ($countryFilter) {
@@ -107,7 +132,23 @@ class AirportSearchController extends Controller
         }
         $airportsQuery->limit($limit);
 
-        $results = $airportsQuery->get()->map(function (Airport $airport) {
+        $results = $airportsQuery->get()->map(function ($airport) {
+            // Land aus den gejointen Daten extrahieren
+            $country = null;
+            if ($airport->country_id) {
+                $nameTranslations = $airport->country_name_translations;
+                if (is_string($nameTranslations)) {
+                    $nameTranslations = json_decode($nameTranslations, true) ?? [];
+                }
+                $countryName = $nameTranslations['de'] ?? $nameTranslations['en'] ?? $airport->country_iso_code ?? 'Unbekannt';
+
+                $country = [
+                    'id' => $airport->country_id,
+                    'iso_code' => $airport->country_iso_code,
+                    'name' => $countryName,
+                ];
+            }
+
             return [
                 'id' => $airport->id,
                 'name' => $airport->name,
@@ -115,6 +156,7 @@ class AirportSearchController extends Controller
                 'icao_code' => $airport->icao_code,
                 'latitude' => $airport->latitude ?? null,
                 'longitude' => $airport->longitude ?? null,
+                'country' => $country,
             ];
         });
 
@@ -173,6 +215,35 @@ class AirportSearchController extends Controller
         }
 
         try {
+            $results = collect();
+
+            // Check if the query could be an IATA airport code (3 letters)
+            $upperQ = strtoupper($q);
+            if (strlen($q) === 3 && ctype_alpha($q)) {
+                // Search for airport by IATA code in airport_codes_1 table
+                $airport = AirportCode::where('iata_code', $upperQ)->first();
+
+                if ($airport && $airport->iso_country) {
+                    // Find the country by ISO code
+                    $country = Country::query()
+                        ->withoutGlobalScopes()
+                        ->where('iso_code', $airport->iso_country)
+                        ->first();
+
+                    if ($country) {
+                        $results->push([
+                            'id' => $country->id,
+                            'iso2' => $country->iso_code,
+                            'iso3' => $country->iso3_code,
+                            'name' => $country->getName('de'),
+                            'matched_by' => 'airport',
+                            'airport_name' => $airport->name,
+                            'airport_code' => $airport->iata_code,
+                        ]);
+                    }
+                }
+            }
+
             // Simple approach: get all countries and filter in PHP
             $allCountries = Country::query()
                 ->withoutGlobalScopes()
@@ -183,7 +254,12 @@ class AirportSearchController extends Controller
             // Normalize search query for better matching
             $normalizedQ = $this->normalizeString($q);
 
-            $filteredCountries = $allCountries->filter(function (Country $country) use ($q, $normalizedQ) {
+            $filteredCountries = $allCountries->filter(function (Country $country) use ($q, $normalizedQ, $results) {
+                // Skip countries already added via airport search
+                if ($results->contains('id', $country->id)) {
+                    return false;
+                }
+
                 $name = $country->getName('de');
                 $iso2 = $country->iso_code;
                 $iso3 = $country->iso3_code;
@@ -196,7 +272,7 @@ class AirportSearchController extends Controller
                        stripos($iso2, $q) !== false ||
                        stripos($iso3, $q) !== false ||
                        stripos($normalizedName, $normalizedQ) !== false;
-            })->take(20)->map(function (Country $c) {
+            })->map(function (Country $c) {
                 return [
                     'id' => $c->id,
                     'iso2' => $c->iso_code,
@@ -205,7 +281,10 @@ class AirportSearchController extends Controller
                 ];
             });
 
-            return response()->json(['data' => $filteredCountries->values()]);
+            // Merge airport results (at the top) with country results
+            $mergedResults = $results->merge($filteredCountries)->take(20);
+
+            return response()->json(['data' => $mergedResults->values()]);
         } catch (\Exception $e) {
             \Log::error('Country search error: ' . $e->getMessage());
             return response()->json(['data' => [], 'error' => $e->getMessage()]);
