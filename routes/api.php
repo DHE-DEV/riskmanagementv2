@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
+use App\Http\Controllers\Api\ShareLinkController;
 use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
@@ -122,4 +123,15 @@ Route::prefix('cruise-search')->group(function () {
     Route::get('/routes', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getRoutes'])->name('cruise-search.routes');
     Route::get('/cruise-dates', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getCruiseDates'])->name('cruise-search.cruise-dates');
     Route::post('/search', [\App\Http\Controllers\Api\CruiseSearchController::class, 'search'])->name('cruise-search.search');
+});
+
+// API v1 Routes
+Route::prefix('v1')->group(function () {
+    // Share Links API
+    Route::prefix('share-links')->group(function () {
+        Route::get('/', [ShareLinkController::class, 'index'])->name('v1.share-links.index');
+        Route::post('/', [ShareLinkController::class, 'store'])->name('v1.share-links.store');
+        Route::get('/{token}', [ShareLinkController::class, 'show'])->name('v1.share-links.show');
+        Route::delete('/{token}', [ShareLinkController::class, 'destroy'])->name('v1.share-links.destroy');
+    });
 });
