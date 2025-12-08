@@ -136,10 +136,18 @@ return [
         ],
 
         'gdacs_sync' => [
-            'driver' => 'daily', 
+            'driver' => 'daily',
             'path' => storage_path('logs/gdacs-sync.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14, // 14 Tage aufbewahren
+            'replace_placeholders' => true,
+        ],
+
+        'travel_detail' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/travel-detail.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30,
             'replace_placeholders' => true,
         ],
 

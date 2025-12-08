@@ -112,6 +112,34 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Travel Detail Archive Database
+        |--------------------------------------------------------------------------
+        |
+        | Optional separate database for archiving old travel detail records.
+        | Only used when TD_ARCHIVE_USE_SEPARATE_DB=true.
+        |
+        */
+        'td_archive' => [
+            'driver' => 'mysql',
+            'host' => env('TD_ARCHIVE_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('TD_ARCHIVE_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('TD_ARCHIVE_DB_DATABASE', 'travel_detail_archive'),
+            'username' => env('TD_ARCHIVE_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('TD_ARCHIVE_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('TD_ARCHIVE_DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
     ],
 
     /*

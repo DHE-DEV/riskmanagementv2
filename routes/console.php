@@ -38,3 +38,31 @@ Schedule::command('sitemap:generate')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/sitemap-generation-schedule.log'));
+
+// Travel Detail Module - Scheduled Cleanup (nur wenn aktiviert)
+if (config('travel_detail.enabled') && config('travel_detail.retention.scheduled_cleanup_enabled')) {
+    $cleanupTime = config('travel_detail.retention.cleanup_time', '03:00');
+
+    // Archive completed trips (mark as archived after X days)
+    Schedule::command('td:archive-trips --force')
+        ->dailyAt($cleanupTime)
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/travel-detail-archive.log'));
+
+    // Prune old import logs (delete after X days)
+    Schedule::command('td:prune-logs')
+        ->dailyAt($cleanupTime)
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/travel-detail-prune-logs.log'));
+
+    // Purge archived trips (permanently delete after X years)
+    Schedule::command('td:purge-archived --force')
+        ->weekly()
+        ->sundays()
+        ->at($cleanupTime)
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/travel-detail-purge.log'));
+}

@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
+use App\Http\Controllers\Api\V1\TripController;
+use App\Http\Controllers\Api\V1\ProximityController;
+use App\Http\Controllers\Api\V1\ShareLinkController;
 use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
@@ -122,4 +125,36 @@ Route::prefix('cruise-search')->group(function () {
     Route::get('/routes', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getRoutes'])->name('cruise-search.routes');
     Route::get('/cruise-dates', [\App\Http\Controllers\Api\CruiseSearchController::class, 'getCruiseDates'])->name('cruise-search.cruise-dates');
     Route::post('/search', [\App\Http\Controllers\Api\CruiseSearchController::class, 'search'])->name('cruise-search.search');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Travel Detail API Routes (v1)
+|--------------------------------------------------------------------------
+|
+| These routes handle trip import, management, and proximity queries.
+| Protected by Sanctum token authentication.
+|
+*/
+Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
+    // Trip Management
+    Route::prefix('trips')->group(function () {
+        Route::get('/', [TripController::class, 'index'])->name('v1.trips.index');
+        Route::post('/', [TripController::class, 'store'])->name('v1.trips.store');
+        Route::get('/{trip}', [TripController::class, 'show'])->name('v1.trips.show');
+        Route::delete('/{trip}', [TripController::class, 'destroy'])->name('v1.trips.destroy');
+        Route::get('/{trip}/summary', [TripController::class, 'summary'])->name('v1.trips.summary');
+        Route::post('/{trip}/share-link', [TripController::class, 'generateShareLink'])->name('v1.trips.share-link');
+    });
+
+    // Direct Share-Link Generation (without database storage)
+    Route::post('/share-links', [ShareLinkController::class, 'store'])->name('v1.share-links.store');
+
+    // Proximity Queries
+    Route::prefix('proximity')->group(function () {
+        Route::post('/near-event', [ProximityController::class, 'nearEvent'])->name('v1.proximity.near-event');
+        Route::post('/at-location', [ProximityController::class, 'atLocation'])->name('v1.proximity.at-location');
+        Route::post('/affected-by-event/{event}', [ProximityController::class, 'affectedByEvent'])->name('v1.proximity.affected-by-event');
+        Route::post('/trips-in-country', [ProximityController::class, 'tripsInCountry'])->name('v1.proximity.trips-in-country');
+    });
 });
