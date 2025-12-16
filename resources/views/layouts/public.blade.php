@@ -77,9 +77,9 @@
     @endif
 
     {{-- RSS/Atom Feed Discovery --}}
-    <link rel="alternate" type="application/rss+xml" title="All Events (RSS)" href="{{ route('feed.events.rss') }}">
-    <link rel="alternate" type="application/atom+xml" title="All Events (Atom)" href="{{ route('feed.events.atom') }}">
-    <link rel="alternate" type="application/rss+xml" title="Critical Events (RSS)" href="{{ route('feed.critical') }}">
+    <link rel="alternate" type="application/rss+xml" title="All Events (RSS)" href="{{ route('feed.events.all.rss') }}">
+    <link rel="alternate" type="application/atom+xml" title="All Events (Atom)" href="{{ route('feed.events.all.atom') }}">
+    <link rel="alternate" type="application/rss+xml" title="Critical Events (RSS)" href="{{ route('feed.events.priority', ['priority' => 'high']) }}">
 
     <style>
         /* Basis-Layout */
