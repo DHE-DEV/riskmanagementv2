@@ -1017,25 +1017,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 },
 
                 formatDate(dateStr) {
-                    if (!dateStr) return '';
+                    if (!dateStr) return 'Unbekannt';
                     const date = new Date(dateStr);
-                    const now = new Date();
-                    const diff = now - date;
-                    const minutes = Math.floor(diff / 60000);
-                    const hours = Math.floor(diff / 3600000);
-                    const days = Math.floor(diff / 86400000);
+                    if (isNaN(date.getTime())) return 'Unbekannt';
 
-                    if (minutes < 1) return 'Gerade eben';
-                    if (minutes < 60) return `vor ${minutes} Min.`;
-                    if (hours < 24) return `vor ${hours} Std.`;
-                    if (days === 1) return 'Gestern';
-                    if (days < 7) return `vor ${days} Tagen`;
-
-                    return date.toLocaleDateString('de-DE', {
+                    return new Intl.DateTimeFormat('de-DE', {
                         day: '2-digit',
                         month: '2-digit',
-                        year: 'numeric'
-                    });
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    }).format(date);
                 }
             };
         }
