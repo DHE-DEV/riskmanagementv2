@@ -76,17 +76,28 @@
         /* Powered by badge */
         .powered-by {
             position: fixed;
-            bottom: 8px;
-            right: 8px;
             background: rgba(255, 255, 255, 0.95);
-            padding: 4px 10px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 11px;
             color: #6b7280;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             z-index: 9999;
             text-decoration: none;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .powered-by.top-right {
+            top: 12px;
+            right: 12px;
+        }
+
+        .powered-by.bottom-right {
+            bottom: 8px;
+            right: 8px;
         }
 
         .powered-by:hover {
@@ -96,9 +107,8 @@
         }
 
         .powered-by img {
-            height: 14px;
-            vertical-align: middle;
-            margin-right: 4px;
+            height: 18px;
+            width: auto;
         }
 
         @yield('additional-styles')
@@ -114,8 +124,9 @@
 
         <!-- Powered by badge -->
         @if(!request()->query('hide_badge'))
-        <a href="https://global-travel-monitor.eu" target="_blank" rel="noopener" class="powered-by">
-            Powered by <strong>Global Travel Monitor</strong>
+        <a href="https://global-travel-monitor.eu" target="_blank" rel="noopener" class="powered-by @yield('badge_position', 'bottom-right')">
+            <img src="{{ asset('favicon-32x32.png') }}" alt="GTM">
+            <span>Powered by <strong>Global Travel Monitor</strong></span>
         </a>
         @endif
     </div>

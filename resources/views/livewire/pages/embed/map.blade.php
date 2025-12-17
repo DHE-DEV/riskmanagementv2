@@ -1,6 +1,7 @@
 @extends('layouts.embed')
 
 @section('title', 'Karte - Global Travel Monitor')
+@section('badge_position', 'top-right')
 
 @push('styles')
 <style>
