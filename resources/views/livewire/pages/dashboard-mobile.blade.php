@@ -328,7 +328,7 @@
             <button @click="togglePriority('high')"
                     :class="{ 'active': filters.priorities.includes('high') }"
                     class="filter-chip whitespace-nowrap px-3 py-1.5 rounded-full text-sm bg-red-100 text-red-700">
-                <i class="fas fa-exclamation-circle mr-1"></i>Wichtig
+                Hoch
             </button>
             <button @click="togglePriority('medium')"
                     :class="{ 'active': filters.priorities.includes('medium') }"
@@ -546,7 +546,7 @@
                     <div class="flex flex-wrap gap-2">
                         <button @click="togglePriority('high')"
                                 :class="{ 'bg-red-600 text-white': filters.priorities.includes('high'), 'bg-red-100 text-red-700': !filters.priorities.includes('high') }"
-                                class="px-3 py-2 rounded-lg text-sm">Wichtig</button>
+                                class="px-3 py-2 rounded-lg text-sm">Hoch</button>
                         <button @click="togglePriority('medium')"
                                 :class="{ 'bg-orange-600 text-white': filters.priorities.includes('medium'), 'bg-orange-100 text-orange-700': !filters.priorities.includes('medium') }"
                                 class="px-3 py-2 rounded-lg text-sm">Mittel</button>
@@ -958,7 +958,7 @@
                         low: 'Niedrig',
                         info: 'Info',
                         medium: 'Mittel',
-                        high: 'Wichtig',
+                        high: 'Hoch',
                         critical: 'Kritisch'
                     };
                     return labels[priority] || 'Info';

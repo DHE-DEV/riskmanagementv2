@@ -714,7 +714,7 @@
                         low: 'Niedrig',
                         info: 'Information',
                         medium: 'Mittel',
-                        high: 'Wichtig',
+                        high: 'Hoch',
                         critical: 'Kritisch'
                     };
                     return labels[priority] || 'Information';
