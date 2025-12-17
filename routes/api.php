@@ -4,7 +4,8 @@ use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
 use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\ProximityController;
-use App\Http\Controllers\Api\V1\ShareLinkController;
+use App\Http\Controllers\Api\V1\ShareLinkController as V1ShareLinkController;
+use App\Http\Controllers\Api\ShareLinkController;
 use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
@@ -129,7 +130,22 @@ Route::prefix('cruise-search')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Travel Detail API Routes (v1)
+| API v1 Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1')->group(function () {
+    // Share Links API (public)
+    Route::prefix('share-links')->group(function () {
+        Route::get('/', [ShareLinkController::class, 'index'])->name('v1.share-links.index');
+        Route::post('/', [ShareLinkController::class, 'store'])->name('v1.share-links.store');
+        Route::get('/{token}', [ShareLinkController::class, 'show'])->name('v1.share-links.show');
+        Route::delete('/{token}', [ShareLinkController::class, 'destroy'])->name('v1.share-links.destroy');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Travel Detail API Routes (v1 - Protected)
 |--------------------------------------------------------------------------
 |
 | These routes handle trip import, management, and proximity queries.
@@ -147,8 +163,8 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         Route::post('/{trip}/share-link', [TripController::class, 'generateShareLink'])->name('v1.trips.share-link');
     });
 
-    // Direct Share-Link Generation (without database storage)
-    Route::post('/share-links', [ShareLinkController::class, 'store'])->name('v1.share-links.store');
+    // Direct Share-Link Generation (without database storage) - V1 Controller
+    Route::post('/td-share-links', [V1ShareLinkController::class, 'store'])->name('v1.td-share-links.store');
 
     // Proximity Queries
     Route::prefix('proximity')->group(function () {
