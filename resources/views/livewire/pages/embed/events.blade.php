@@ -58,7 +58,7 @@
             <template x-for="priority in filters.priorities" :key="priority">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                     <span x-text="getPriorityLabel(priority)"></span>
-                    <button @click="togglePriority(priority)" class="hover:text-blue-600">
+                    <button @click="togglePriority(priority); applyFilters()" class="hover:text-blue-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </span>
@@ -66,7 +66,7 @@
             <template x-for="code in filters.continents" :key="code">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                     <span x-text="getContinentName(code)"></span>
-                    <button @click="toggleContinent(code)" class="hover:text-blue-600">
+                    <button @click="toggleContinent(code); applyFilters()" class="hover:text-blue-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </span>
@@ -74,7 +74,7 @@
             <template x-for="typeId in filters.eventTypes" :key="typeId">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                     <span x-text="getEventTypeName(typeId)"></span>
-                    <button @click="toggleEventType(typeId)" class="hover:text-blue-600">
+                    <button @click="toggleEventType(typeId); applyFilters()" class="hover:text-blue-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </span>

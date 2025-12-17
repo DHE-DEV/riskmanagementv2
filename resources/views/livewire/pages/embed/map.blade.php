@@ -103,7 +103,7 @@
             <template x-for="priority in filters.priorities" :key="priority">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
                     <span x-text="getPriorityLabel(priority)"></span>
-                    <button @click="togglePriority(priority)" class="hover:text-red-600">
+                    <button @click="togglePriority(priority); applyFilters()" class="hover:text-red-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </span>
@@ -111,7 +111,7 @@
             <template x-for="code in filters.continents" :key="code">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
                     <span x-text="getContinentName(code)"></span>
-                    <button @click="toggleContinent(code)" class="hover:text-red-600">
+                    <button @click="toggleContinent(code); applyFilters()" class="hover:text-red-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </span>
