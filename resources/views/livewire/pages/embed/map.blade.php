@@ -79,17 +79,43 @@
     <!-- Map Container -->
     <div id="embed-map" class="h-full w-full"></div>
 
-    <!-- Filter Controls (Floating) -->
-    <div class="absolute top-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
-        <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-gray-700">Filter:</span>
-            <select x-model="priorityFilter" @change="updateMarkers()"
-                    class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500">
-                <option value="all">Alle Events</option>
-                <option value="critical">Kritisch</option>
-                <option value="high">Hoch</option>
-                <option value="medium">Mittel</option>
-            </select>
+    <!-- Filter Button (Floating) -->
+    <div class="absolute top-4 left-4 z-[1000]">
+        <button @click="filterModalOpen = true"
+                class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors relative">
+            <i class="fas fa-filter"></i>
+            <span>Filter</span>
+            <span x-show="activeFiltersCount > 0"
+                  x-text="activeFiltersCount"
+                  class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
+        </button>
+
+        <!-- Active Filter Pills -->
+        <div x-show="activeFiltersCount > 0" class="mt-2 flex flex-wrap gap-1 max-w-xs">
+            <template x-if="filters.timePeriod !== 'all'">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
+                    <span x-text="getTimePeriodLabel(filters.timePeriod)"></span>
+                    <button @click="filters.timePeriod = 'all'; applyFilters()" class="hover:text-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            </template>
+            <template x-for="priority in filters.priorities" :key="priority">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
+                    <span x-text="getPriorityLabel(priority)"></span>
+                    <button @click="togglePriority(priority)" class="hover:text-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            </template>
+            <template x-for="code in filters.continents" :key="code">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
+                    <span x-text="getContinentName(code)"></span>
+                    <button @click="toggleContinent(code)" class="hover:text-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            </template>
         </div>
     </div>
 
@@ -106,20 +132,172 @@
         <div class="text-xs font-semibold text-gray-700 mb-2">Legende</div>
         <div class="space-y-1 text-xs">
             <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="w-3 h-3 rounded-full" style="background-color: #dc2626;"></span>
                 <span>Kritisch</span>
             </div>
             <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                <span class="w-3 h-3 rounded-full" style="background-color: #ff0000;"></span>
                 <span>Hoch</span>
             </div>
             <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span class="w-3 h-3 rounded-full" style="background-color: #e6a50a;"></span>
                 <span>Mittel</span>
             </div>
             <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span class="w-3 h-3 rounded-full" style="background-color: #0fb67f;"></span>
+                <span>Niedrig</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full" style="background-color: #0066cc;"></span>
                 <span>Info</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div x-show="filterModalOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[1002] flex items-end sm:items-center justify-center bg-black bg-opacity-50"
+         style="display: none;"
+         @click.self="filterModalOpen = false">
+
+        <div x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="transform translate-y-full sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="transform translate-y-0 sm:scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="transform translate-y-0 sm:scale-100"
+             x-transition:leave-end="transform translate-y-full sm:translate-y-0 sm:scale-95"
+             class="bg-white rounded-t-xl sm:rounded-xl w-full sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+
+            <!-- Modal Header -->
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Filter</h2>
+                <div class="flex gap-3 items-center">
+                    <button @click="resetFilters()" class="text-sm text-blue-600 hover:text-blue-800">Zurücksetzen</button>
+                    <button @click="filterModalOpen = false" class="p-1 text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                <!-- Time Period Filter -->
+                <div>
+                    <h3 class="font-medium text-gray-900 mb-3">Zeitraum</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="filters.timePeriod = 'all'"
+                                :class="{ 'bg-blue-600 text-white': filters.timePeriod === 'all', 'bg-gray-100 text-gray-700': filters.timePeriod !== 'all' }"
+                                class="px-3 py-2 rounded-lg text-sm">Aktuell</button>
+                        <button @click="filters.timePeriod = 'future'"
+                                :class="{ 'bg-blue-600 text-white': filters.timePeriod === 'future', 'bg-gray-100 text-gray-700': filters.timePeriod !== 'future' }"
+                                class="px-3 py-2 rounded-lg text-sm">Zukünftig</button>
+                        <button @click="filters.timePeriod = 'today'"
+                                :class="{ 'bg-blue-600 text-white': filters.timePeriod === 'today', 'bg-gray-100 text-gray-700': filters.timePeriod !== 'today' }"
+                                class="px-3 py-2 rounded-lg text-sm">Heute</button>
+                        <button @click="filters.timePeriod = 'week'"
+                                :class="{ 'bg-blue-600 text-white': filters.timePeriod === 'week', 'bg-gray-100 text-gray-700': filters.timePeriod !== 'week' }"
+                                class="px-3 py-2 rounded-lg text-sm">Diese Woche</button>
+                        <button @click="filters.timePeriod = 'month'"
+                                :class="{ 'bg-blue-600 text-white': filters.timePeriod === 'month', 'bg-gray-100 text-gray-700': filters.timePeriod !== 'month' }"
+                                class="px-3 py-2 rounded-lg text-sm">Dieser Monat</button>
+                    </div>
+                </div>
+
+                <!-- Priority Filter -->
+                <div>
+                    <h3 class="font-medium text-gray-900 mb-3">Priorität</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="togglePriority('critical')"
+                                :class="{ 'bg-red-600 text-white': filters.priorities.includes('critical'), 'bg-red-100 text-red-700': !filters.priorities.includes('critical') }"
+                                class="px-3 py-2 rounded-lg text-sm">Kritisch</button>
+                        <button @click="togglePriority('high')"
+                                :class="{ 'bg-red-600 text-white': filters.priorities.includes('high'), 'bg-red-100 text-red-700': !filters.priorities.includes('high') }"
+                                class="px-3 py-2 rounded-lg text-sm">Hoch</button>
+                        <button @click="togglePriority('medium')"
+                                :class="{ 'bg-orange-600 text-white': filters.priorities.includes('medium'), 'bg-orange-100 text-orange-700': !filters.priorities.includes('medium') }"
+                                class="px-3 py-2 rounded-lg text-sm">Mittel</button>
+                        <button @click="togglePriority('low')"
+                                :class="{ 'bg-green-600 text-white': filters.priorities.includes('low'), 'bg-green-100 text-green-700': !filters.priorities.includes('low') }"
+                                class="px-3 py-2 rounded-lg text-sm">Niedrig</button>
+                        <button @click="togglePriority('info')"
+                                :class="{ 'bg-blue-600 text-white': filters.priorities.includes('info'), 'bg-blue-100 text-blue-700': !filters.priorities.includes('info') }"
+                                class="px-3 py-2 rounded-lg text-sm">Information</button>
+                    </div>
+                </div>
+
+                <!-- Continent Filter -->
+                <div>
+                    <h3 class="font-medium text-gray-900 mb-3">Kontinent</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="continent in continents" :key="continent.code">
+                            <button @click="toggleContinent(continent.code)"
+                                    :class="{ 'bg-blue-600 text-white': filters.continents.includes(continent.code), 'bg-gray-100 text-gray-700': !filters.continents.includes(continent.code) }"
+                                    class="px-3 py-2 rounded-lg text-sm"
+                                    x-text="continent.name"></button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Event Type Filter -->
+                <div>
+                    <h3 class="font-medium text-gray-900 mb-3">Ereignistyp</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="eventType in eventTypes" :key="eventType.id">
+                            <button @click="toggleEventType(eventType.id)"
+                                    :class="{ 'bg-blue-600 text-white': filters.eventTypes.includes(eventType.id), 'bg-gray-100 text-gray-700': !filters.eventTypes.includes(eventType.id) }"
+                                    class="px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+                                <i :class="eventType.icon" class="text-sm"></i>
+                                <span x-text="eventType.name"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Country Filter -->
+                <div>
+                    <h3 class="font-medium text-gray-900 mb-3">Land</h3>
+                    <input type="text"
+                           x-model="countrySearch"
+                           @input="filterCountries()"
+                           placeholder="Land suchen..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <div x-show="filteredCountriesList.length > 0" class="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                        <template x-for="country in filteredCountriesList" :key="country.id">
+                            <button @click="toggleCountry(country.id)"
+                                    class="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 text-left">
+                                <span class="flex items-center gap-2">
+                                    <span x-text="country.flag_emoji || getCountryFlag(country.iso_code)"></span>
+                                    <span x-text="country.name_de || country.name" class="text-sm"></span>
+                                </span>
+                                <i x-show="filters.countries.includes(country.id)" class="fas fa-check text-blue-600"></i>
+                            </button>
+                        </template>
+                    </div>
+                    <!-- Selected Countries -->
+                    <div x-show="filters.countries.length > 0" class="mt-2 flex flex-wrap gap-2">
+                        <template x-for="countryId in filters.countries" :key="countryId">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center gap-1">
+                                <span x-text="getCountryName(countryId)"></span>
+                                <button @click="toggleCountry(countryId)" class="hover:text-blue-600">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Apply Button -->
+            <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+                <button @click="filterModalOpen = false; applyFilters()"
+                        class="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                    Filter anwenden
+                </button>
             </div>
         </div>
     </div>
@@ -134,16 +312,80 @@ function embedMapApp() {
         map: null,
         markerCluster: null,
         events: [],
+        filteredEvents: [],
         loading: true,
-        priorityFilter: '{{ request()->query("filter", "all") }}',
+        filterModalOpen: false,
+
+        // Filter State
+        filters: {
+            timePeriod: 'all',
+            priorities: [],
+            continents: [],
+            eventTypes: [],
+            countries: []
+        },
+
+        // Reference Data
+        countryToContinentMap: {
+            // Europa
+            'DE': 'EU', 'AT': 'EU', 'CH': 'EU', 'FR': 'EU', 'IT': 'EU', 'ES': 'EU', 'PT': 'EU', 'GB': 'EU', 'IE': 'EU',
+            'NL': 'EU', 'BE': 'EU', 'LU': 'EU', 'PL': 'EU', 'CZ': 'EU', 'SK': 'EU', 'HU': 'EU', 'RO': 'EU', 'BG': 'EU',
+            'GR': 'EU', 'HR': 'EU', 'SI': 'EU', 'RS': 'EU', 'BA': 'EU', 'ME': 'EU', 'MK': 'EU', 'AL': 'EU', 'XK': 'EU',
+            'SE': 'EU', 'NO': 'EU', 'FI': 'EU', 'DK': 'EU', 'IS': 'EU', 'EE': 'EU', 'LV': 'EU', 'LT': 'EU',
+            'UA': 'EU', 'BY': 'EU', 'MD': 'EU', 'RU': 'EU', 'MT': 'EU', 'CY': 'EU', 'TR': 'EU',
+            // Asien
+            'CN': 'AS', 'JP': 'AS', 'KR': 'AS', 'KP': 'AS', 'MN': 'AS', 'TW': 'AS', 'HK': 'AS', 'MO': 'AS',
+            'IN': 'AS', 'PK': 'AS', 'BD': 'AS', 'LK': 'AS', 'NP': 'AS', 'BT': 'AS', 'MV': 'AS', 'AF': 'AS',
+            'TH': 'AS', 'VN': 'AS', 'MY': 'AS', 'SG': 'AS', 'ID': 'AS', 'PH': 'AS', 'MM': 'AS', 'KH': 'AS', 'LA': 'AS', 'BN': 'AS', 'TL': 'AS',
+            'SA': 'AS', 'AE': 'AS', 'QA': 'AS', 'KW': 'AS', 'BH': 'AS', 'OM': 'AS', 'YE': 'AS', 'IR': 'AS', 'IQ': 'AS', 'SY': 'AS', 'JO': 'AS', 'LB': 'AS', 'IL': 'AS', 'PS': 'AS',
+            'KZ': 'AS', 'UZ': 'AS', 'TM': 'AS', 'TJ': 'AS', 'KG': 'AS', 'AZ': 'AS', 'GE': 'AS', 'AM': 'AS',
+            // Afrika
+            'EG': 'AF', 'LY': 'AF', 'TN': 'AF', 'DZ': 'AF', 'MA': 'AF', 'SD': 'AF', 'SS': 'AF', 'ET': 'AF', 'ER': 'AF', 'DJ': 'AF', 'SO': 'AF',
+            'KE': 'AF', 'UG': 'AF', 'TZ': 'AF', 'RW': 'AF', 'BI': 'AF', 'CD': 'AF', 'CG': 'AF', 'GA': 'AF', 'GQ': 'AF', 'CM': 'AF', 'CF': 'AF', 'TD': 'AF',
+            'NG': 'AF', 'GH': 'AF', 'CI': 'AF', 'SN': 'AF', 'ML': 'AF', 'BF': 'AF', 'NE': 'AF', 'MR': 'AF', 'GM': 'AF', 'GW': 'AF', 'GN': 'AF', 'SL': 'AF', 'LR': 'AF', 'TG': 'AF', 'BJ': 'AF',
+            'ZA': 'AF', 'NA': 'AF', 'BW': 'AF', 'ZW': 'AF', 'ZM': 'AF', 'MW': 'AF', 'MZ': 'AF', 'AO': 'AF', 'SZ': 'AF', 'LS': 'AF', 'MG': 'AF', 'MU': 'AF', 'SC': 'AF', 'KM': 'AF', 'RE': 'AF',
+            // Nordamerika
+            'US': 'NA', 'CA': 'NA', 'MX': 'NA', 'GT': 'NA', 'BZ': 'NA', 'HN': 'NA', 'SV': 'NA', 'NI': 'NA', 'CR': 'NA', 'PA': 'NA',
+            'CU': 'NA', 'JM': 'NA', 'HT': 'NA', 'DO': 'NA', 'PR': 'NA', 'BS': 'NA', 'TT': 'NA', 'BB': 'NA', 'LC': 'NA', 'VC': 'NA', 'GD': 'NA', 'AG': 'NA', 'DM': 'NA', 'KN': 'NA',
+            // Südamerika
+            'BR': 'SA', 'AR': 'SA', 'CL': 'SA', 'PE': 'SA', 'CO': 'SA', 'VE': 'SA', 'EC': 'SA', 'BO': 'SA', 'PY': 'SA', 'UY': 'SA', 'GY': 'SA', 'SR': 'SA', 'GF': 'SA',
+            // Ozeanien
+            'AU': 'OC', 'NZ': 'OC', 'PG': 'OC', 'FJ': 'OC', 'SB': 'OC', 'VU': 'OC', 'NC': 'OC', 'PF': 'OC', 'WS': 'OC', 'TO': 'OC', 'KI': 'OC', 'MH': 'OC', 'FM': 'OC', 'PW': 'OC', 'NR': 'OC', 'TV': 'OC'
+        },
+        continents: [
+            { code: 'EU', name: 'Europa' },
+            { code: 'AS', name: 'Asien' },
+            { code: 'AF', name: 'Afrika' },
+            { code: 'NA', name: 'Nordamerika' },
+            { code: 'SA', name: 'Südamerika' },
+            { code: 'OC', name: 'Ozeanien' }
+        ],
+        eventTypes: [],
+        countries: [],
+        countrySearch: '',
+        filteredCountriesList: [],
+
+        // Computed
+        get activeFiltersCount() {
+            let count = 0;
+            if (this.filters.timePeriod !== 'all') count++;
+            count += this.filters.priorities.length;
+            count += this.filters.continents.length;
+            count += this.filters.eventTypes.length;
+            count += this.filters.countries.length;
+            return count;
+        },
 
         async init() {
-            await this.initMap();
-            await this.loadEvents();
+            this.initMap();
+            await Promise.all([
+                this.loadEvents(),
+                this.loadEventTypes(),
+                this.loadCountries()
+            ]);
         },
 
         initMap() {
-            // Initialize Leaflet map
             this.map = L.map('embed-map', {
                 center: [30, 10],
                 zoom: 2,
@@ -152,12 +394,10 @@ function embedMapApp() {
                 worldCopyJump: true
             });
 
-            // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(this.map);
 
-            // Initialize marker cluster
             this.markerCluster = L.markerClusterGroup({
                 chunkedLoading: true,
                 maxClusterRadius: 50,
@@ -175,11 +415,104 @@ function embedMapApp() {
                 const response = await fetch('/api/custom-events/map-events');
                 const data = await response.json();
                 this.events = data.data || [];
-                this.updateMarkers();
+                this.applyFilters();
             } catch (error) {
                 console.error('Error loading events:', error);
             }
             this.loading = false;
+        },
+
+        async loadEventTypes() {
+            try {
+                const response = await fetch('/api/custom-events/event-types');
+                const data = await response.json();
+                this.eventTypes = data.data || data.event_types || [];
+            } catch (err) {
+                console.error('Error loading event types:', err);
+            }
+        },
+
+        async loadCountries() {
+            try {
+                const response = await fetch('/api/countries');
+                const data = await response.json();
+                this.countries = data.countries || data || [];
+            } catch (err) {
+                console.error('Error loading countries:', err);
+            }
+        },
+
+        applyFilters() {
+            let filtered = [...this.events];
+
+            // Time Period
+            if (this.filters.timePeriod !== 'all') {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                filtered = filtered.filter(e => {
+                    const eventDate = new Date(e.start_date || e.created_at);
+                    switch (this.filters.timePeriod) {
+                        case 'future':
+                            const eventDateOnly = new Date(eventDate);
+                            eventDateOnly.setHours(0, 0, 0, 0);
+                            return eventDateOnly >= now;
+                        case 'today':
+                            return eventDate.toDateString() === now.toDateString();
+                        case 'week':
+                            const weekFromNow = new Date(now);
+                            weekFromNow.setDate(weekFromNow.getDate() + 7);
+                            return eventDate >= now && eventDate <= weekFromNow;
+                        case 'month':
+                            const monthFromNow = new Date(now);
+                            monthFromNow.setMonth(monthFromNow.getMonth() + 1);
+                            return eventDate >= now && eventDate <= monthFromNow;
+                        default:
+                            return true;
+                    }
+                });
+            }
+
+            // Priority
+            if (this.filters.priorities.length > 0) {
+                filtered = filtered.filter(e => this.filters.priorities.includes(e.priority));
+            }
+
+            // Continent
+            if (this.filters.continents.length > 0) {
+                filtered = filtered.filter(e =>
+                    (e.countries || []).some(c => {
+                        const continentCode = this.countryToContinentMap[c.iso_code];
+                        return this.filters.continents.includes(continentCode);
+                    })
+                );
+            }
+
+            // Event Types
+            if (this.filters.eventTypes.length > 0) {
+                filtered = filtered.filter(e => {
+                    const eventTypesList = e.event_types || [];
+                    return eventTypesList.some(t => {
+                        const typeName = typeof t === 'string' ? t : t.name;
+                        const typeId = typeof t === 'object' ? t.id : null;
+                        return this.filters.eventTypes.includes(typeId) ||
+                               this.eventTypes.some(et =>
+                                   this.filters.eventTypes.includes(et.id) && et.name === typeName
+                               );
+                    });
+                });
+            }
+
+            // Countries
+            if (this.filters.countries.length > 0) {
+                filtered = filtered.filter(e =>
+                    (e.countries || []).some(c =>
+                        this.filters.countries.includes(c.id)
+                    )
+                );
+            }
+
+            this.filteredEvents = filtered;
+            this.updateMarkers();
         },
 
         updateMarkers() {
@@ -187,13 +520,7 @@ function embedMapApp() {
 
             this.markerCluster.clearLayers();
 
-            let filteredEvents = this.events;
-            if (this.priorityFilter !== 'all') {
-                filteredEvents = filteredEvents.filter(e => e.priority === this.priorityFilter);
-            }
-
-            filteredEvents.forEach(event => {
-                // Wenn Event Länder mit Koordinaten hat, erstelle Marker für jedes Land
+            this.filteredEvents.forEach(event => {
                 if (event.countries && event.countries.length > 0) {
                     event.countries.forEach(country => {
                         const lat = parseFloat(country.latitude);
@@ -213,7 +540,6 @@ function embedMapApp() {
                         this.markerCluster.addLayer(marker);
                     });
                 } else {
-                    // Fallback: Event-eigene Koordinaten
                     const lat = parseFloat(event.latitude);
                     const lng = parseFloat(event.longitude);
 
@@ -233,22 +559,121 @@ function embedMapApp() {
             });
         },
 
+        filterCountries() {
+            if (!this.countrySearch) {
+                this.filteredCountriesList = this.countries.slice(0, 10);
+            } else {
+                const query = this.countrySearch.toLowerCase();
+                this.filteredCountriesList = this.countries
+                    .filter(c => (c.name_de || c.name || '').toLowerCase().includes(query))
+                    .slice(0, 10);
+            }
+        },
+
+        togglePriority(priority) {
+            const idx = this.filters.priorities.indexOf(priority);
+            if (idx > -1) {
+                this.filters.priorities.splice(idx, 1);
+            } else {
+                this.filters.priorities.push(priority);
+            }
+        },
+
+        toggleContinent(code) {
+            const idx = this.filters.continents.indexOf(code);
+            if (idx > -1) {
+                this.filters.continents.splice(idx, 1);
+            } else {
+                this.filters.continents.push(code);
+            }
+        },
+
+        toggleEventType(id) {
+            const idx = this.filters.eventTypes.indexOf(id);
+            if (idx > -1) {
+                this.filters.eventTypes.splice(idx, 1);
+            } else {
+                this.filters.eventTypes.push(id);
+            }
+        },
+
+        toggleCountry(id) {
+            const idx = this.filters.countries.indexOf(id);
+            if (idx > -1) {
+                this.filters.countries.splice(idx, 1);
+            } else {
+                this.filters.countries.push(id);
+            }
+        },
+
+        resetFilters() {
+            this.filters = {
+                timePeriod: 'all',
+                priorities: [],
+                continents: [],
+                eventTypes: [],
+                countries: []
+            };
+            this.applyFilters();
+        },
+
+        // Helper Methods
+        getCountryName(countryId) {
+            const country = this.countries.find(c => c.id === countryId);
+            return country ? (country.name_de || country.name) : '';
+        },
+
+        getCountryFlag(isoCode) {
+            if (!isoCode || isoCode.length !== 2) return '';
+            const codePoints = isoCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
+            return String.fromCodePoint(...codePoints);
+        },
+
+        getContinentName(code) {
+            const continent = this.continents.find(c => c.code === code);
+            return continent ? continent.name : code;
+        },
+
+        getEventTypeName(typeId) {
+            const eventType = this.eventTypes.find(t => t.id === typeId);
+            return eventType ? eventType.name : '';
+        },
+
+        getTimePeriodLabel(period) {
+            const labels = {
+                'all': 'Aktuell',
+                'future': 'Zukünftig',
+                'today': 'Heute',
+                'week': 'Diese Woche',
+                'month': 'Dieser Monat'
+            };
+            return labels[period] || period;
+        },
+
+        getPriorityLabel(priority) {
+            const labels = {
+                critical: 'Kritisch',
+                high: 'Hoch',
+                medium: 'Mittel',
+                low: 'Niedrig',
+                info: 'Info'
+            };
+            return labels[priority] || 'Info';
+        },
+
         createIcon(event) {
-            // Exakt gleiche Farben wie auf der Hauptseite (getPriorityColor)
             const priorityColors = {
-                'info': '#0066cc',      // Blau - Information
-                'low': '#0fb67f',       // Grün - geringes Risiko
-                'medium': '#e6a50a',    // Orange - mittleres Risiko
-                'high': '#ff0000',      // Rot - hohes Risiko
-                'critical': '#dc2626'   // Dunkelrot - kritisch
+                'info': '#0066cc',
+                'low': '#0fb67f',
+                'medium': '#e6a50a',
+                'high': '#ff0000',
+                'critical': '#dc2626'
             };
             const markerColor = event.marker_color || priorityColors[event.priority] || '#e6a50a';
 
-            // Icon-Logik wie auf der Hauptseite
             const iconClass = this.getEventIcon(event);
             const iconSize = 28;
 
-            // Einheitliches Kreis-Design wie auf der Hauptseite
             const iconHtml = `
                 <div style="
                     background-color: ${markerColor};
@@ -276,20 +701,15 @@ function embedMapApp() {
         },
 
         getEventIcon(event) {
-            // Wenn marker_icon vorhanden, verwende es
             if (event.marker_icon) {
                 if (event.marker_icon.startsWith('fa-')) {
                     return event.marker_icon.includes('fa-solid') ? event.marker_icon : `fa-solid ${event.marker_icon}`;
                 }
                 return event.marker_icon;
             }
-
-            // Fallback auf event_type Icon
             if (event.event_type?.icon) {
                 return event.event_type.icon;
             }
-
-            // Fallback auf Event-Typ basierte Icons
             const fallbackIcons = {
                 'exercise': 'fa-solid fa-dumbbell',
                 'earthquake': 'fa-solid fa-house-crack',
@@ -301,7 +721,6 @@ function embedMapApp() {
                 'wildfire': 'fa-solid fa-fire',
                 'other': 'fa-solid fa-location-pin'
             };
-
             return fallbackIcons[event.event_type] || 'fa-solid fa-location-pin';
         },
 
@@ -322,7 +741,6 @@ function embedMapApp() {
                 info: 'bg-blue-100 text-blue-700'
             };
 
-            // Wenn ein spezifisches Land übergeben wurde, zeige nur dieses
             const countryName = country ? (country.name || country.name_de) :
                 (event.countries?.map(c => c.name || c.name_de).join(', ') || '');
             const description = event.popup_content || event.description || '';
