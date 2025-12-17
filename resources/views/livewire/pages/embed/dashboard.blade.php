@@ -70,7 +70,7 @@
 
             <template x-if="!loading">
                 <div class="divide-y divide-gray-100">
-                    <template x-for="event in filteredEvents.slice(0, 20)" :key="event.id">
+                    <template x-for="event in filteredEvents" :key="event.id">
                         <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
                              @click="selectEvent(event)">
                             <div class="flex items-start gap-2">
