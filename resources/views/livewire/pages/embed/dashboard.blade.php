@@ -283,16 +283,35 @@ function embedDashboardApp() {
                 low: '#22c55e',
                 info: '#3b82f6'
             };
-            const color = event.marker_color || priorityColors[event.priority] || priorityColors.info;
+            const markerColor = event.marker_color || priorityColors[event.priority] || priorityColors.info;
 
             // Icon-Logik wie auf der Hauptseite
             const iconClass = this.getEventIcon(event);
+            const iconSize = 28;
+
+            // Einheitliches Kreis-Design wie auf der Hauptseite
+            const iconHtml = `
+                <div style="
+                    background-color: ${markerColor};
+                    border: 2px solid white;
+                    border-radius: 50%;
+                    width: ${iconSize}px;
+                    height: ${iconSize}px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                    cursor: pointer;
+                ">
+                    <i class="${iconClass}" style="color: #FFFFFF; font-size: ${iconSize * 0.5}px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);"></i>
+                </div>
+            `;
 
             return L.divIcon({
                 className: 'custom-marker',
-                html: `<i class="${iconClass}" style="color: ${color};"></i>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 20]
+                html: iconHtml,
+                iconSize: [iconSize, iconSize],
+                iconAnchor: [iconSize / 2, iconSize / 2]
             });
         },
 
@@ -357,10 +376,6 @@ function embedDashboardApp() {
         getPriorityLabel(priority) {
             const labels = { critical: 'Kritisch', high: 'Hoch', medium: 'Mittel', low: 'Niedrig', info: 'Info' };
             return labels[priority] || 'Info';
-        },
-
-        getEventIcon(event) {
-            return event.event_type?.icon || 'fas fa-exclamation-circle';
         },
 
         formatDate(dateStr) {
