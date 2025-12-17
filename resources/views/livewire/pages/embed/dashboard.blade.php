@@ -426,8 +426,8 @@ function embedDashboardApp() {
                 maxZoom: 18
             });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OSM'
+            L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
             }).addTo(this.map);
 
             this.markerCluster = L.markerClusterGroup({
