@@ -65,6 +65,46 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+/*
+|--------------------------------------------------------------------------
+| Embed Routes (for iframe embedding on external websites)
+|--------------------------------------------------------------------------
+|
+| These routes provide embeddable versions of the dashboard, events list,
+| and map without header, footer, or navigation. They can be embedded
+| via iframe on customer websites.
+|
+| Usage:
+|   <iframe src="https://global-travel-monitor.eu/embed/events" width="100%" height="600"></iframe>
+|
+| Optional parameters:
+|   ?filter=critical|high|medium  - Pre-filter by priority
+|   ?lang=de|en                   - Language (default: de)
+|   ?hide_badge=1                 - Hide "Powered by" badge
+|
+*/
+Route::prefix('embed')->name('embed.')->middleware(['allow.embedding'])->group(function () {
+    // Events list (embeddable)
+    Route::get('/events', function () {
+        return view('livewire.pages.embed.events');
+    })->name('events');
+
+    // Map view (embeddable)
+    Route::get('/map', function () {
+        return view('livewire.pages.embed.map');
+    })->name('map');
+
+    // Dashboard with sidebar and map (embeddable)
+    Route::get('/dashboard', function () {
+        return view('livewire.pages.embed.dashboard');
+    })->name('dashboard');
+
+    // Alias: /embed redirects to /embed/dashboard
+    Route::get('/', function () {
+        return redirect()->route('embed.dashboard');
+    });
+});
+
 // Debug route to check auth status
 Route::get('/auth-debug', function () {
     return response()->json([
