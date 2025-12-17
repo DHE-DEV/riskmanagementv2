@@ -79,8 +79,17 @@
     <!-- Map Container -->
     <div id="embed-map" class="h-full w-full"></div>
 
+    <!-- Center Map Button (Left side, below zoom controls) -->
+    <div class="absolute top-28 left-2 z-[1000]">
+        <button @click="centerMap()"
+                title="Karte zentrieren"
+                class="w-8 h-8 bg-white rounded shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors border border-gray-300">
+            <i class="fas fa-crosshairs text-sm"></i>
+        </button>
+    </div>
+
     <!-- Filter Button (Floating - Top Right, below Powered by badge) -->
-    <div class="absolute top-16 right-4 z-[1000]">
+    <div class="absolute top-16 right-4 z-[1000] flex flex-col items-end">
         <button @click="filterModalOpen = true"
                 class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors relative">
             <i class="fas fa-filter"></i>
@@ -91,7 +100,7 @@
         </button>
 
         <!-- Active Filter Pills -->
-        <div x-show="activeFiltersCount > 0" class="mt-2 flex flex-wrap gap-1 max-w-xs justify-end">
+        <div x-show="activeFiltersCount > 0" class="mt-2 flex flex-col items-end gap-1">
             <template x-if="filters.timePeriod !== 'all'">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
                     <span x-text="getTimePeriodLabel(filters.timePeriod)"></span>
@@ -342,7 +351,7 @@ function embedMapApp() {
 
         initMap() {
             this.map = L.map('embed-map', {
-                center: [30, 10],
+                center: [38.1, 13.4], // Italy/Palermo
                 zoom: 2,
                 minZoom: 2,
                 maxZoom: 18,
@@ -362,6 +371,11 @@ function embedMapApp() {
             });
 
             this.map.addLayer(this.markerCluster);
+        },
+
+        centerMap() {
+            // Center on Italy/Palermo with world view
+            this.map.setView([38.1, 13.4], 2);
         },
 
         async loadEvents() {
