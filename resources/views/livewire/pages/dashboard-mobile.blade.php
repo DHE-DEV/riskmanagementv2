@@ -363,6 +363,29 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- Main Content -->
     <main class="pt-28 pb-20">
+        <!-- SEO Static Content for Crawlers -->
+        <noscript>
+            <article class="px-4 py-6 bg-white mx-4 rounded-lg shadow-sm mb-4">
+                <h1 class="text-xl font-bold text-gray-800 mb-3">Global Travel Monitor - Reisesicherheit weltweit</h1>
+                <p class="text-gray-600 mb-3">
+                    Willkommen beim Global Travel Monitor von Passolution. Hier finden Sie aktuelle Reisesicherheitsinformationen,
+                    Ereignisse und Warnungen für über 200 Länder weltweit.
+                </p>
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Aktuelle Sicherheitsereignisse</h2>
+                <p class="text-gray-600 mb-3">
+                    Unser Travel Risk Management System überwacht kontinuierlich weltweite Ereignisse wie Naturkatastrophen,
+                    politische Unruhen, Gesundheitswarnungen und Sicherheitsrisiken.
+                </p>
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Funktionen</h2>
+                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                    <li>Echtzeit-Monitoring von Sicherheitsereignissen</li>
+                    <li>Länderrisiko-Bewertungen</li>
+                    <li>Filterung nach Regionen und Ereignistypen</li>
+                    <li>Detaillierte Ereignisinformationen</li>
+                </ul>
+            </article>
+        </noscript>
+
         <!-- Loading State -->
         <div x-show="loading" class="flex justify-center py-12">
             <div class="text-center">
