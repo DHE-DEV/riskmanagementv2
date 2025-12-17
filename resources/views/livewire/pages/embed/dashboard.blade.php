@@ -75,8 +75,8 @@
                              @click="selectEvent(event)">
                             <div class="flex items-start gap-2">
                                 <span :style="'background-color: ' + getMarkerColor(event)"
-                                      class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 shadow-sm border-2 border-white">
-                                    <i :class="getEventIcon(event)" class="text-xs" style="color: #FFFFFF !important;"></i>
+                                      class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm border-2 border-white">
+                                    <i :class="getEventIcon(event)" class="text-sm" style="color: #FFFFFF !important;"></i>
                                 </span>
                                 <div class="flex-1 min-w-0">
                                     <h3 class="text-sm font-medium text-gray-900 line-clamp-2" x-text="event.title"></h3>
