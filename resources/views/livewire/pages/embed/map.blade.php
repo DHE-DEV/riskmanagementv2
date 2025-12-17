@@ -128,7 +128,7 @@
     </div>
 
     <!-- Legend -->
-    <div class="absolute bottom-4 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3" style="padding-bottom: 22px;">
+    <div class="absolute bottom-8 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
         <div class="text-xs font-semibold text-gray-700 mb-2">Legende</div>
         <div class="space-y-1 text-xs">
             <div class="flex items-center gap-2">
@@ -208,9 +208,6 @@
                 <div>
                     <h3 class="font-medium text-gray-900 mb-3">Priorität</h3>
                     <div class="flex flex-wrap gap-2">
-                        <button @click="togglePriority('critical')"
-                                :class="{ 'bg-red-600 text-white': filters.priorities.includes('critical'), 'bg-red-100 text-red-700': !filters.priorities.includes('critical') }"
-                                class="px-3 py-2 rounded-lg text-sm">Kritisch</button>
                         <button @click="togglePriority('high')"
                                 :class="{ 'bg-red-600 text-white': filters.priorities.includes('high'), 'bg-red-100 text-red-700': !filters.priorities.includes('high') }"
                                 class="px-3 py-2 rounded-lg text-sm">Hoch</button>
@@ -260,9 +257,11 @@
                     <input type="text"
                            x-model="countrySearch"
                            @input="filterCountries()"
+                           @focus="filterCountries()"
                            placeholder="Land suchen..."
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <div x-show="filteredCountriesList.length > 0" class="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                    <p class="text-xs text-gray-500 mt-1 mb-2">Tippen Sie den Ländernamen ein, z.B. "Deutschland"</p>
+                    <div x-show="filteredCountriesList.length > 0" class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                         <template x-for="country in filteredCountriesList" :key="country.id">
                             <button @click="toggleCountry(country.id)"
                                     class="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 text-left">
@@ -379,6 +378,7 @@ function embedMapApp() {
                 this.loadEventTypes(),
                 this.loadCountries()
             ]);
+            this.filterCountries(); // Initial country list
         },
 
         initMap() {
