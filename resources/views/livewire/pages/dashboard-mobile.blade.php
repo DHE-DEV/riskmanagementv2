@@ -386,6 +386,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </article>
         </noscript>
 
+        <!-- Initial Static Content (hidden after JS loads) -->
+        <div x-show="!initialized" class="px-4 py-6">
+            <article class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <h1 class="text-xl font-bold text-gray-800 mb-3">Global Travel Monitor - Reisesicherheit weltweit</h1>
+                <p class="text-gray-600 mb-3">
+                    Willkommen beim Global Travel Monitor von Passolution. Aktuelle Reisesicherheitsinformationen,
+                    Ereignisse und Warnungen für über 200 Länder weltweit.
+                </p>
+                <p class="text-gray-600">
+                    Unser Travel Risk Management System überwacht kontinuierlich weltweite Sicherheitsereignisse.
+                </p>
+            </article>
+        </div>
+
         <!-- Loading State -->
         <div x-show="loading" class="flex justify-center py-12">
             <div class="text-center">
@@ -643,6 +657,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         function mobileApp() {
             return {
                 // State
+                initialized: false,
                 drawerOpen: false,
                 searchOpen: false,
                 searchQuery: '',
@@ -756,6 +771,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         this.error = 'Ereignisse konnten nicht geladen werden.';
                     } finally {
                         this.loading = false;
+                        this.initialized = true;
                     }
                 },
 
