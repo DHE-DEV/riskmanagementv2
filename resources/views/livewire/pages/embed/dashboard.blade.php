@@ -45,7 +45,7 @@
     <div class="w-full lg:w-80 xl:w-96 flex-shrink-0 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col h-1/2 lg:h-full">
         <!-- Header -->
         <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0">
-            <h2 class="font-bold text-gray-800">Aktuelle Events</h2>
+            <h2 class="font-bold text-gray-800">Aktuelle Ereignisse</h2>
             <div class="flex gap-1 mt-2">
                 <button @click="priorityFilter = 'all'; updateMarkers()"
                         :class="priorityFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'"
@@ -91,7 +91,7 @@
         <!-- Stats Footer -->
         <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex-shrink-0">
             <div class="flex justify-between text-xs text-gray-600">
-                <span><strong x-text="filteredEvents.length"></strong> Events</span>
+                <span><strong x-text="filteredEvents.length"></strong> Ereignisse</span>
                 <span class="text-gray-400">Letzte Aktualisierung: <span x-text="lastUpdate"></span></span>
             </div>
         </div>

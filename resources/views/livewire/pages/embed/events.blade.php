@@ -1,6 +1,6 @@
 @extends('layouts.embed')
 
-@section('title', 'Events - Global Travel Monitor')
+@section('title', 'Ereignisse - Global Travel Monitor')
 
 @section('content')
 <div x-data="embedEventsApp()" x-init="init()" class="h-full flex flex-col bg-gray-50">
@@ -46,7 +46,7 @@
         <template x-if="loading">
             <div class="flex items-center justify-center py-12">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span class="ml-3 text-gray-600">Events werden geladen...</span>
+                <span class="ml-3 text-gray-600">Ereignisse werden geladen...</span>
             </div>
         </template>
 
@@ -91,7 +91,7 @@
                 <template x-if="filteredEvents.length === 0 && !loading">
                     <div class="text-center py-12 text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-3"></i>
-                        <p>Keine Events gefunden</p>
+                        <p>Keine Ereignisse gefunden</p>
                     </div>
                 </template>
             </div>
