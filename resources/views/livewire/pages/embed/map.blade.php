@@ -128,13 +128,9 @@
     </div>
 
     <!-- Legend -->
-    <div class="absolute bottom-4 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
+    <div class="absolute bottom-4 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3" style="padding-bottom: 22px;">
         <div class="text-xs font-semibold text-gray-700 mb-2">Legende</div>
         <div class="space-y-1 text-xs">
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full" style="background-color: #dc2626;"></span>
-                <span>Kritisch</span>
-            </div>
             <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full" style="background-color: #ff0000;"></span>
                 <span>Hoch</span>
@@ -149,7 +145,7 @@
             </div>
             <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full" style="background-color: #0066cc;"></span>
-                <span>Info</span>
+                <span>Information</span>
             </div>
         </div>
     </div>
