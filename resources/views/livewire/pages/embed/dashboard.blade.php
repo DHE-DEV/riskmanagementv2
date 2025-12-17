@@ -74,9 +74,9 @@
                         <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
                              @click="selectEvent(event)">
                             <div class="flex items-start gap-2">
-                                <span :class="getPriorityColor(event.priority)"
-                                      class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5">
-                                    <i :class="getEventIcon(event)" class="text-xs"></i>
+                                <span :style="'background-color: ' + getMarkerColor(event)"
+                                      class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 shadow-sm border border-white">
+                                    <i :class="getEventIcon(event)" class="text-xs text-white"></i>
                                 </span>
                                 <div class="flex-1 min-w-0">
                                     <h3 class="text-sm font-medium text-gray-900 line-clamp-2" x-text="event.title"></h3>
@@ -360,6 +360,17 @@ function embedDashboardApp() {
                 info: 'bg-blue-100 text-blue-600'
             };
             return colors[priority] || colors.info;
+        },
+
+        getMarkerColor(event) {
+            const priorityColors = {
+                critical: '#ef4444',
+                high: '#f97316',
+                medium: '#eab308',
+                low: '#22c55e',
+                info: '#3b82f6'
+            };
+            return event.marker_color || priorityColors[event.priority] || priorityColors.info;
         },
 
         getPriorityBadgeColor(priority) {
