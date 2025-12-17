@@ -265,15 +265,33 @@ function embedEventsApp() {
         },
 
         getEventIcon(event) {
-            if (event.event_type?.icon) return event.event_type.icon;
-            const icons = {
-                critical: 'fas fa-exclamation-triangle',
-                high: 'fas fa-exclamation-circle',
-                medium: 'fas fa-info-circle',
-                low: 'fas fa-check-circle',
-                info: 'fas fa-info'
+            // Wenn marker_icon vorhanden, verwende es
+            if (event.marker_icon) {
+                if (event.marker_icon.startsWith('fa-')) {
+                    return event.marker_icon.includes('fa-solid') ? event.marker_icon : `fa-solid ${event.marker_icon}`;
+                }
+                return event.marker_icon;
+            }
+
+            // Fallback auf event_type Icon
+            if (event.event_type?.icon) {
+                return event.event_type.icon;
+            }
+
+            // Fallback auf Event-Typ basierte Icons
+            const fallbackIcons = {
+                'exercise': 'fa-solid fa-dumbbell',
+                'earthquake': 'fa-solid fa-house-crack',
+                'flood': 'fa-solid fa-water',
+                'volcano': 'fa-solid fa-volcano',
+                'storm': 'fa-solid fa-wind',
+                'cyclone': 'fa-solid fa-hurricane',
+                'drought': 'fa-solid fa-sun',
+                'wildfire': 'fa-solid fa-fire',
+                'other': 'fa-solid fa-location-pin'
             };
-            return icons[event.priority] || icons.info;
+
+            return fallbackIcons[event.event_type] || 'fa-solid fa-location-pin';
         },
 
         formatDate(dateStr) {

@@ -275,15 +275,18 @@ function embedDashboardApp() {
         },
 
         createIcon(event) {
-            const colors = {
+            // Verwende marker_color vom Event oder Fallback auf Priority-Farbe
+            const priorityColors = {
                 critical: '#ef4444',
                 high: '#f97316',
                 medium: '#eab308',
                 low: '#22c55e',
                 info: '#3b82f6'
             };
-            const color = colors[event.priority] || colors.info;
-            const iconClass = event.event_type?.icon || 'fas fa-exclamation-circle';
+            const color = event.marker_color || priorityColors[event.priority] || priorityColors.info;
+
+            // Icon-Logik wie auf der Hauptseite
+            const iconClass = this.getEventIcon(event);
 
             return L.divIcon({
                 className: 'custom-marker',
@@ -291,6 +294,36 @@ function embedDashboardApp() {
                 iconSize: [20, 20],
                 iconAnchor: [10, 20]
             });
+        },
+
+        getEventIcon(event) {
+            // Wenn marker_icon vorhanden, verwende es
+            if (event.marker_icon) {
+                if (event.marker_icon.startsWith('fa-')) {
+                    return event.marker_icon.includes('fa-solid') ? event.marker_icon : `fa-solid ${event.marker_icon}`;
+                }
+                return event.marker_icon;
+            }
+
+            // Fallback auf event_type Icon
+            if (event.event_type?.icon) {
+                return event.event_type.icon;
+            }
+
+            // Fallback auf Event-Typ basierte Icons
+            const fallbackIcons = {
+                'exercise': 'fa-solid fa-dumbbell',
+                'earthquake': 'fa-solid fa-house-crack',
+                'flood': 'fa-solid fa-water',
+                'volcano': 'fa-solid fa-volcano',
+                'storm': 'fa-solid fa-wind',
+                'cyclone': 'fa-solid fa-hurricane',
+                'drought': 'fa-solid fa-sun',
+                'wildfire': 'fa-solid fa-fire',
+                'other': 'fa-solid fa-location-pin'
+            };
+
+            return fallbackIcons[event.event_type] || 'fa-solid fa-location-pin';
         },
 
         getCountryNames(event) {
