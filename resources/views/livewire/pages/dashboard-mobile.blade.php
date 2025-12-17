@@ -1024,10 +1024,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     return new Intl.DateTimeFormat('de-DE', {
                         day: '2-digit',
                         month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
+                        year: 'numeric'
                     }).format(date);
                 }
             };
