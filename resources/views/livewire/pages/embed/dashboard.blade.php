@@ -204,7 +204,7 @@ function embedDashboardApp() {
             try {
                 const response = await fetch('/api/custom-events/dashboard-events?limit=100');
                 const data = await response.json();
-                this.events = data.data || [];
+                this.events = data.data?.events || [];
                 this.updateMarkers();
             } catch (error) {
                 console.error('Error loading events:', error);
