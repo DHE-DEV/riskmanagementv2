@@ -7514,32 +7514,25 @@ window.testBasicZoom = function(lat, lng, zoomLevel) {
 <!-- SEO Content Section -->
 <section class="bg-gray-100 border-t border-gray-200 py-8 px-6" style="position: relative; z-index: 1;">
     <div class="max-w-6xl mx-auto">
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">Global Travel Monitor - Weltweites Reiserisiko-Monitoring</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Global Travel Monitor – Weltweites Reisesicherheits-Monitoring</h1>
         <div class="prose prose-sm text-gray-600 max-w-none">
             <p class="mb-4">
-                Der <strong>Global Travel Monitor (GTM)</strong> von Passolution ist Ihre zentrale Plattform für weltweite Reisesicherheitsinformationen.
-                Unsere interaktive Weltkarte zeigt Ihnen in Echtzeit aktuelle Ereignisse, Reisewarnungen und Sicherheitshinweise für über 200 Länder weltweit.
+                Der <strong>Global Travel Monitor (GTM)</strong> von <strong>Passolution</strong> ist eine zentrale Plattform für weltweite <strong>Reisesicherheitsinformationen</strong>.
+                Er bündelt <strong>aktuelle Ereignisse</strong>, <strong>Reisewarnungen</strong> und <strong>offizielle Sicherheitshinweise</strong> für über <strong>200 Länder</strong> weltweit.
             </p>
             <p class="mb-4">
-                Als führendes <strong>Travel Risk Management Tool</strong> bietet der Global Travel Monitor umfassende Funktionen für Unternehmen und Reisende:
-                Länderrisikobewertungen, aktuelle Sicherheitsereignisse, Naturkatastrophen-Warnungen, politische Entwicklungen und gesundheitliche Reisehinweise.
+                Der <strong>Global Travel Monitor</strong> unterstützt <strong>Reiseprofis</strong> mit strukturierten und tagesaktuellen Informationen:
             </p>
-            <div class="grid md:grid-cols-3 gap-4 mt-6">
-                <div class="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 class="font-semibold text-gray-800 mb-2">Echtzeit-Monitoring</h3>
-                    <p class="text-sm">Aktuelle Ereignisse und Warnungen aus aller Welt, automatisch aktualisiert und kategorisiert nach Schweregrad.</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 class="font-semibold text-gray-800 mb-2">Länderrisiko-Analyse</h3>
-                    <p class="text-sm">Detaillierte Risikobewertungen für jedes Land mit Informationen zu Sicherheit, Gesundheit und Einreisebestimmungen.</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 class="font-semibold text-gray-800 mb-2">Interaktive Weltkarte</h3>
-                    <p class="text-sm">Visualisierung aller Ereignisse auf einer übersichtlichen Karte mit Filtermöglichkeiten nach Region, Typ und Zeitraum.</p>
-                </div>
-            </div>
+            <ul class="list-disc list-inside mb-4 space-y-1">
+                <li><strong>Relevante Sicherheitsereignisse</strong></li>
+                <li><strong>Warnmeldungen zu Naturkatastrophen</strong></li>
+                <li><strong>Gesundheitsbezogene Reisehinweise</strong></li>
+            </ul>
+            <p class="mb-4">
+                Alle Informationen werden <strong>übersichtlich aufbereitet</strong> und <strong>kontinuierlich aktualisiert</strong>.
+            </p>
             <p class="mt-6 text-sm text-gray-500">
-                © {{ date('Y') }} Passolution GmbH - Global Travel Monitor | Reisesicherheit | Travel Risk Management | Destination Manager
+                © {{ date('Y') }} Passolution GmbH – Global Travel Monitor | Reisesicherheit | Travel Risk Management
             </p>
         </div>
     </div>
