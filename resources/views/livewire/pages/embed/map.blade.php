@@ -251,40 +251,6 @@
                     </div>
                 </div>
 
-                <!-- Country Filter -->
-                <div>
-                    <h3 class="font-medium text-gray-900 mb-3">Land</h3>
-                    <input type="text"
-                           x-model="countrySearch"
-                           @input="filterCountries()"
-                           @focus="filterCountries()"
-                           placeholder="Land suchen..."
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <p class="text-xs text-gray-500 mt-1 mb-2">Tippen Sie den Ländernamen ein, z.B. "Deutschland"</p>
-                    <div x-show="filteredCountriesList.length > 0" class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
-                        <template x-for="country in filteredCountriesList" :key="country.id">
-                            <button @click="toggleCountry(country.id)"
-                                    class="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 text-left">
-                                <span class="flex items-center gap-2">
-                                    <span x-text="country.flag_emoji || getCountryFlag(country.iso_code)"></span>
-                                    <span x-text="country.name_de || country.name" class="text-sm"></span>
-                                </span>
-                                <i x-show="filters.countries.includes(country.id)" class="fas fa-check text-blue-600"></i>
-                            </button>
-                        </template>
-                    </div>
-                    <!-- Selected Countries -->
-                    <div x-show="filters.countries.length > 0" class="mt-2 flex flex-wrap gap-2">
-                        <template x-for="countryId in filters.countries" :key="countryId">
-                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center gap-1">
-                                <span x-text="getCountryName(countryId)"></span>
-                                <button @click="toggleCountry(countryId)" class="hover:text-blue-600">
-                                    <i class="fas fa-times text-xs"></i>
-                                </button>
-                            </span>
-                        </template>
-                    </div>
-                </div>
             </div>
 
             <!-- Apply Button -->
@@ -316,8 +282,7 @@ function embedMapApp() {
             timePeriod: 'all',
             priorities: [],
             continents: [],
-            eventTypes: [],
-            countries: []
+            eventTypes: []
         },
 
         // Reference Data
@@ -356,9 +321,6 @@ function embedMapApp() {
             { code: 'OC', name: 'Ozeanien' }
         ],
         eventTypes: [],
-        countries: [],
-        countrySearch: '',
-        filteredCountriesList: [],
 
         // Computed
         get activeFiltersCount() {
@@ -367,7 +329,6 @@ function embedMapApp() {
             count += this.filters.priorities.length;
             count += this.filters.continents.length;
             count += this.filters.eventTypes.length;
-            count += this.filters.countries.length;
             return count;
         },
 
@@ -375,10 +336,8 @@ function embedMapApp() {
             this.initMap();
             await Promise.all([
                 this.loadEvents(),
-                this.loadEventTypes(),
-                this.loadCountries()
+                this.loadEventTypes()
             ]);
-            this.filterCountries(); // Initial country list
         },
 
         initMap() {
@@ -425,16 +384,6 @@ function embedMapApp() {
                 this.eventTypes = data.data || data.event_types || [];
             } catch (err) {
                 console.error('Error loading event types:', err);
-            }
-        },
-
-        async loadCountries() {
-            try {
-                const response = await fetch('/api/countries');
-                const data = await response.json();
-                this.countries = data.countries || data || [];
-            } catch (err) {
-                console.error('Error loading countries:', err);
             }
         },
 
@@ -498,15 +447,6 @@ function embedMapApp() {
                 });
             }
 
-            // Countries
-            if (this.filters.countries.length > 0) {
-                filtered = filtered.filter(e =>
-                    (e.countries || []).some(c =>
-                        this.filters.countries.includes(c.id)
-                    )
-                );
-            }
-
             this.filteredEvents = filtered;
             this.updateMarkers();
         },
@@ -555,17 +495,6 @@ function embedMapApp() {
             });
         },
 
-        filterCountries() {
-            if (!this.countrySearch) {
-                this.filteredCountriesList = this.countries.slice(0, 10);
-            } else {
-                const query = this.countrySearch.toLowerCase();
-                this.filteredCountriesList = this.countries
-                    .filter(c => (c.name_de || c.name || '').toLowerCase().includes(query))
-                    .slice(0, 10);
-            }
-        },
-
         togglePriority(priority) {
             const idx = this.filters.priorities.indexOf(priority);
             if (idx > -1) {
@@ -593,32 +522,17 @@ function embedMapApp() {
             }
         },
 
-        toggleCountry(id) {
-            const idx = this.filters.countries.indexOf(id);
-            if (idx > -1) {
-                this.filters.countries.splice(idx, 1);
-            } else {
-                this.filters.countries.push(id);
-            }
-        },
-
         resetFilters() {
             this.filters = {
                 timePeriod: 'all',
                 priorities: [],
                 continents: [],
-                eventTypes: [],
-                countries: []
+                eventTypes: []
             };
             this.applyFilters();
         },
 
         // Helper Methods
-        getCountryName(countryId) {
-            const country = this.countries.find(c => c.id === countryId);
-            return country ? (country.name_de || country.name) : '';
-        },
-
         getCountryFlag(isoCode) {
             if (!isoCode || isoCode.length !== 2) return '';
             const codePoints = isoCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
