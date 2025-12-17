@@ -223,24 +223,52 @@ function embedDashboardApp() {
             this.markerCluster.clearLayers();
 
             this.filteredEvents.forEach(event => {
-                const lat = parseFloat(event.latitude || event.lat);
-                const lng = parseFloat(event.longitude || event.lng);
-                if (isNaN(lat) || isNaN(lng)) return;
+                // Wenn Event Länder mit Koordinaten hat, erstelle Marker für jedes Land
+                if (event.countries && event.countries.length > 0) {
+                    event.countries.forEach(country => {
+                        const lat = parseFloat(country.latitude);
+                        const lng = parseFloat(country.longitude);
 
-                const marker = L.marker([lat, lng], {
-                    icon: this.createIcon(event)
-                });
+                        if (isNaN(lat) || isNaN(lng)) return;
 
-                marker.on('click', () => this.selectEvent(event));
-                this.markerCluster.addLayer(marker);
+                        const marker = L.marker([lat, lng], {
+                            icon: this.createIcon(event)
+                        });
+
+                        marker.on('click', () => this.selectEvent(event, lat, lng));
+                        this.markerCluster.addLayer(marker);
+                    });
+                } else {
+                    // Fallback: Event-eigene Koordinaten
+                    const lat = parseFloat(event.latitude);
+                    const lng = parseFloat(event.longitude);
+
+                    if (isNaN(lat) || isNaN(lng)) return;
+
+                    const marker = L.marker([lat, lng], {
+                        icon: this.createIcon(event)
+                    });
+
+                    marker.on('click', () => this.selectEvent(event, lat, lng));
+                    this.markerCluster.addLayer(marker);
+                }
             });
         },
 
-        selectEvent(event) {
+        selectEvent(event, lat = null, lng = null) {
             this.selectedEvent = event;
 
-            const lat = parseFloat(event.latitude || event.lat);
-            const lng = parseFloat(event.longitude || event.lng);
+            // Verwende übergebene Koordinaten oder erste aus countries Array
+            if (!lat || !lng) {
+                if (event.countries && event.countries.length > 0) {
+                    lat = parseFloat(event.countries[0].latitude);
+                    lng = parseFloat(event.countries[0].longitude);
+                } else {
+                    lat = parseFloat(event.latitude);
+                    lng = parseFloat(event.longitude);
+                }
+            }
+
             if (!isNaN(lat) && !isNaN(lng)) {
                 this.map.setView([lat, lng], 6);
             }

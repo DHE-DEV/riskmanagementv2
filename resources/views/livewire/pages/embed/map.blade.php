@@ -193,21 +193,43 @@ function embedMapApp() {
             }
 
             filteredEvents.forEach(event => {
-                const lat = parseFloat(event.latitude || event.lat);
-                const lng = parseFloat(event.longitude || event.lng);
+                // Wenn Event Länder mit Koordinaten hat, erstelle Marker für jedes Land
+                if (event.countries && event.countries.length > 0) {
+                    event.countries.forEach(country => {
+                        const lat = parseFloat(country.latitude);
+                        const lng = parseFloat(country.longitude);
 
-                if (isNaN(lat) || isNaN(lng)) return;
+                        if (isNaN(lat) || isNaN(lng)) return;
 
-                const marker = L.marker([lat, lng], {
-                    icon: this.createIcon(event)
-                });
+                        const marker = L.marker([lat, lng], {
+                            icon: this.createIcon(event)
+                        });
 
-                marker.bindPopup(this.createPopup(event), {
-                    maxWidth: 320,
-                    className: 'event-popup-wrapper'
-                });
+                        marker.bindPopup(this.createPopup(event, country), {
+                            maxWidth: 320,
+                            className: 'event-popup-wrapper'
+                        });
 
-                this.markerCluster.addLayer(marker);
+                        this.markerCluster.addLayer(marker);
+                    });
+                } else {
+                    // Fallback: Event-eigene Koordinaten
+                    const lat = parseFloat(event.latitude);
+                    const lng = parseFloat(event.longitude);
+
+                    if (isNaN(lat) || isNaN(lng)) return;
+
+                    const marker = L.marker([lat, lng], {
+                        icon: this.createIcon(event)
+                    });
+
+                    marker.bindPopup(this.createPopup(event), {
+                        maxWidth: 320,
+                        className: 'event-popup-wrapper'
+                    });
+
+                    this.markerCluster.addLayer(marker);
+                }
             });
         },
 
@@ -232,7 +254,7 @@ function embedMapApp() {
             });
         },
 
-        createPopup(event) {
+        createPopup(event, country = null) {
             const priorityLabels = {
                 critical: 'Kritisch',
                 high: 'Hoch',
@@ -249,7 +271,9 @@ function embedMapApp() {
                 info: 'bg-blue-100 text-blue-700'
             };
 
-            const countries = event.countries?.map(c => c.name_de || c.name).join(', ') || '';
+            // Wenn ein spezifisches Land übergeben wurde, zeige nur dieses
+            const countryName = country ? (country.name || country.name_de) :
+                (event.countries?.map(c => c.name || c.name_de).join(', ') || '');
             const description = event.popup_content || event.description || '';
             const truncatedDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
 
@@ -263,7 +287,7 @@ function embedMapApp() {
                             <span class="text-xs text-gray-500">${this.formatDate(event.created_at)}</span>
                         </div>
                         <h3 class="font-semibold text-gray-900 text-sm">${event.title}</h3>
-                        ${countries ? `<p class="text-xs text-gray-500 mt-1">${countries}</p>` : ''}
+                        ${countryName ? `<p class="text-xs text-gray-500 mt-1">${countryName}</p>` : ''}
                     </div>
                     <div class="event-popup-content">
                         <div class="text-sm text-gray-700">${truncatedDesc}</div>
