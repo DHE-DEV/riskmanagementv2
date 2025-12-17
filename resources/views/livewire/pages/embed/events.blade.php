@@ -60,9 +60,9 @@
                             <div class="flex items-start gap-3">
                                 <!-- Priority Indicator -->
                                 <div class="flex-shrink-0 mt-1">
-                                    <span :class="getPriorityColor(event.priority)"
-                                          class="inline-flex items-center justify-center w-8 h-8 rounded-full">
-                                        <i :class="getEventIcon(event)" class="text-sm"></i>
+                                    <span :style="'background-color: ' + getMarkerColor(event)"
+                                          class="inline-flex items-center justify-center w-8 h-8 rounded-full shadow-sm border-2 border-white">
+                                        <i :class="getEventIcon(event)" class="text-sm" style="color: #FFFFFF !important;"></i>
                                     </span>
                                 </div>
 
@@ -240,6 +240,18 @@ function embedEventsApp() {
                 info: 'bg-blue-100 text-blue-600'
             };
             return colors[priority] || colors.info;
+        },
+
+        getMarkerColor(event) {
+            // Exakt gleiche Farben wie auf der Hauptseite (getPriorityColor)
+            const priorityColors = {
+                'info': '#0066cc',      // Blau - Information
+                'low': '#0fb67f',       // Grün - geringes Risiko
+                'medium': '#e6a50a',    // Orange - mittleres Risiko
+                'high': '#ff0000',      // Rot - hohes Risiko
+                'critical': '#dc2626'   // Dunkelrot - kritisch
+            };
+            return event.marker_color || priorityColors[event.priority] || '#e6a50a';
         },
 
         getPriorityBadgeColor(priority) {

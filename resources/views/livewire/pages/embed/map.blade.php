@@ -234,15 +234,15 @@ function embedMapApp() {
         },
 
         createIcon(event) {
-            // Verwende marker_color vom Event oder Fallback auf Priority-Farbe
+            // Exakt gleiche Farben wie auf der Hauptseite (getPriorityColor)
             const priorityColors = {
-                critical: '#ef4444',
-                high: '#f97316',
-                medium: '#eab308',
-                low: '#22c55e',
-                info: '#3b82f6'
+                'info': '#0066cc',      // Blau - Information
+                'low': '#0fb67f',       // Grün - geringes Risiko
+                'medium': '#e6a50a',    // Orange - mittleres Risiko
+                'high': '#ff0000',      // Rot - hohes Risiko
+                'critical': '#dc2626'   // Dunkelrot - kritisch
             };
-            const markerColor = event.marker_color || priorityColors[event.priority] || priorityColors.info;
+            const markerColor = event.marker_color || priorityColors[event.priority] || '#e6a50a';
 
             // Icon-Logik wie auf der Hauptseite
             const iconClass = this.getEventIcon(event);

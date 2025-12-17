@@ -75,8 +75,8 @@
                              @click="selectEvent(event)">
                             <div class="flex items-start gap-2">
                                 <span :style="'background-color: ' + getMarkerColor(event)"
-                                      class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 shadow-sm border border-white">
-                                    <i :class="getEventIcon(event)" class="text-xs text-white"></i>
+                                      class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 shadow-sm border-2 border-white">
+                                    <i :class="getEventIcon(event)" class="text-xs" style="color: #FFFFFF !important;"></i>
                                 </span>
                                 <div class="flex-1 min-w-0">
                                     <h3 class="text-sm font-medium text-gray-900 line-clamp-2" x-text="event.title"></h3>
@@ -275,15 +275,15 @@ function embedDashboardApp() {
         },
 
         createIcon(event) {
-            // Verwende marker_color vom Event oder Fallback auf Priority-Farbe
+            // Exakt gleiche Farben wie auf der Hauptseite (getPriorityColor)
             const priorityColors = {
-                critical: '#ef4444',
-                high: '#f97316',
-                medium: '#eab308',
-                low: '#22c55e',
-                info: '#3b82f6'
+                'info': '#0066cc',      // Blau - Information
+                'low': '#0fb67f',       // Grün - geringes Risiko
+                'medium': '#e6a50a',    // Orange - mittleres Risiko
+                'high': '#ff0000',      // Rot - hohes Risiko
+                'critical': '#dc2626'   // Dunkelrot - kritisch
             };
-            const markerColor = event.marker_color || priorityColors[event.priority] || priorityColors.info;
+            const markerColor = event.marker_color || priorityColors[event.priority] || '#e6a50a';
 
             // Icon-Logik wie auf der Hauptseite
             const iconClass = this.getEventIcon(event);
@@ -363,14 +363,15 @@ function embedDashboardApp() {
         },
 
         getMarkerColor(event) {
+            // Exakt gleiche Farben wie auf der Hauptseite (getPriorityColor)
             const priorityColors = {
-                critical: '#ef4444',
-                high: '#f97316',
-                medium: '#eab308',
-                low: '#22c55e',
-                info: '#3b82f6'
+                'info': '#0066cc',      // Blau - Information
+                'low': '#0fb67f',       // Grün - geringes Risiko
+                'medium': '#e6a50a',    // Orange - mittleres Risiko
+                'high': '#ff0000',      // Rot - hohes Risiko
+                'critical': '#dc2626'   // Dunkelrot - kritisch
             };
-            return event.marker_color || priorityColors[event.priority] || priorityColors.info;
+            return event.marker_color || priorityColors[event.priority] || '#e6a50a';
         },
 
         getPriorityBadgeColor(priority) {
