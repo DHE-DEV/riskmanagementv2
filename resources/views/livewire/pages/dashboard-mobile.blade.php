@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T7R2SWKD');</script>
+    <!-- End Google Tag Manager -->
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Global Travel Monitor - Ereignisse</title>
 
     {{-- SEO Meta Tags --}}
     <meta name="description" content="Global Travel Monitor - Aktuelle Reisesicherheitsinformationen und Ereignisse weltweit.">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{{ env('ROBOTS_ALLOW_INDEXING', false) ? 'index, follow' : 'noindex, nofollow' }}">
+    <link rel="canonical" href="{{ config('app.url') }}">
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
@@ -122,6 +131,10 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen" x-data="mobileApp()">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T7R2SWKD"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
     <!-- Drawer Overlay -->
     <div x-show="drawerOpen"
@@ -988,5 +1001,36 @@
             };
         }
     </script>
+
+<!-- SEO Content Section -->
+<section class="bg-gray-100 border-t border-gray-200 py-6 px-4">
+    <div class="max-w-lg mx-auto">
+        <h1 class="text-xl font-bold text-gray-800 mb-3">Global Travel Monitor - Weltweites Reiserisiko-Monitoring</h1>
+        <div class="text-sm text-gray-600 space-y-3">
+            <p>
+                Der <strong>Global Travel Monitor (GTM)</strong> von Passolution ist Ihre zentrale Plattform für weltweite Reisesicherheitsinformationen.
+                Aktuelle Ereignisse, Reisewarnungen und Sicherheitshinweise für über 200 Länder weltweit.
+            </p>
+            <p>
+                Als führendes <strong>Travel Risk Management Tool</strong> bietet der Global Travel Monitor: Länderrisikobewertungen,
+                Sicherheitsereignisse, Naturkatastrophen-Warnungen und gesundheitliche Reisehinweise.
+            </p>
+            <div class="grid grid-cols-1 gap-3 mt-4">
+                <div class="bg-white p-3 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-gray-800 mb-1">Echtzeit-Monitoring</h3>
+                    <p class="text-xs">Aktuelle Ereignisse und Warnungen aus aller Welt.</p>
+                </div>
+                <div class="bg-white p-3 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-gray-800 mb-1">Länderrisiko-Analyse</h3>
+                    <p class="text-xs">Detaillierte Risikobewertungen für jedes Land.</p>
+                </div>
+            </div>
+            <p class="mt-4 text-xs text-gray-500">
+                © {{ date('Y') }} Passolution GmbH - Global Travel Monitor | Reisesicherheit | Travel Risk Management
+            </p>
+        </div>
+    </div>
+</section>
+
 </body>
 </html>
