@@ -1041,12 +1041,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 Er bündelt <strong>aktuelle Ereignisse</strong>, <strong>Reisewarnungen</strong> und <strong>offizielle Sicherheitshinweise</strong> für über <strong>200 Länder</strong> weltweit.
             </p>
             <p>
-                Der <strong>Global Travel Monitor</strong> unterstützt <strong>Reiseprofis</strong> mit strukturierten und tagesaktuellen Informationen:
+                Der <strong>Global Travel Monitor</strong> unterstützt <strong>Reiseprofis</strong> mit strukturierten und tagesaktuellen Informationen, darunter:
             </p>
             <ul class="list-disc list-inside space-y-1">
                 <li><strong>Relevante Sicherheitsereignisse</strong></li>
                 <li><strong>Warnmeldungen zu Naturkatastrophen</strong></li>
                 <li><strong>Gesundheitsbezogene Reisehinweise</strong></li>
+                <li><strong>und vieles mehr</strong></li>
             </ul>
             <p>
                 Alle Informationen werden <strong>übersichtlich aufbereitet</strong> und <strong>kontinuierlich aktualisiert</strong>.
