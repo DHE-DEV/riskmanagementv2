@@ -17,7 +17,7 @@
     <meta name="description" content="Global Travel Monitor (GTM) von Passolution - Aktuelle Reisesicherheitsinformationen, Reisewarnungen und Ereignisse weltweit. Echtzeit-Monitoring für sichere Reisen.">
     <meta name="keywords" content="Global Travel Monitor, GTM, Passolution, Reisesicherheit, Reisewarnungen, Travel Risk Management, Reiserisiko, Sicherheitsinformationen, Reisemonitoring">
     <meta name="author" content="Passolution GmbH">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{{ env('ROBOTS_ALLOW_INDEXING', false) ? 'index, follow' : 'noindex, nofollow' }}">
     <link rel="canonical" href="{{ config('app.url') }}">
 
     {{-- Open Graph / Facebook --}}

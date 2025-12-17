@@ -17,7 +17,7 @@
     <meta name="description" content="@yield('description', 'Global Travel Monitor bietet Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen. Umfassende Länder-Risikoanalysen, Destination Manager und Live-Statistiken für sicheres Reisen.')">
     <meta name="keywords" content="@yield('keywords', 'Reiserisiko, Travel Risk Management, Destination Manager, Länderrisiken, Sicherheitswarnungen, Business Travel, Reisesicherheit, Risk Map, Krisenmanagement, Weltweite Ereignisse')">
     <meta name="author" content="Global Travel Monitor">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{{ env('ROBOTS_ALLOW_INDEXING', false) ? 'index, follow' : 'noindex, nofollow' }}">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
     <!-- Open Graph Meta Tags -->
