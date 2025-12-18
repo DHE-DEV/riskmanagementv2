@@ -136,18 +136,28 @@
             overflow: hidden;
         }
 
-        /* Leaflet Layers z-index override - Bottom Sheet muss darüber liegen */
-        .leaflet-pane,
-        .leaflet-top,
-        .leaflet-bottom,
-        .leaflet-control,
-        .leaflet-popup-pane,
-        .leaflet-tooltip-pane {
+        /* Leaflet Layers z-index override */
+        .leaflet-pane {
             z-index: auto !important;
         }
 
+        .leaflet-top,
+        .leaflet-bottom,
+        .leaflet-control {
+            z-index: 800 !important;
+        }
+
+        /* Leaflet Popups immer im Vordergrund (über Filter, Legend, Badge) */
+        .leaflet-popup-pane {
+            z-index: 5000 !important;
+        }
+
         .leaflet-popup {
-            z-index: 700 !important;
+            z-index: 5001 !important;
+        }
+
+        .leaflet-tooltip-pane {
+            z-index: 4999 !important;
         }
         .bottom-sheet.open {
             transform: translateY(0);

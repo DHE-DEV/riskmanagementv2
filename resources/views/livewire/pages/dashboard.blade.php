@@ -660,18 +660,28 @@
             flex-direction: column;
         }
 
-        /* Leaflet Layers z-index override - Event Sidebar muss darüber liegen */
-        .leaflet-pane,
-        .leaflet-top,
-        .leaflet-bottom,
-        .leaflet-control,
-        .leaflet-popup-pane,
-        .leaflet-tooltip-pane {
+        /* Leaflet Layers z-index override */
+        .leaflet-pane {
             z-index: auto !important;
         }
 
+        .leaflet-top,
+        .leaflet-bottom,
+        .leaflet-control {
+            z-index: 800 !important;
+        }
+
+        /* Leaflet Popups immer im Vordergrund (über Filter, Legend, Badge) */
+        .leaflet-popup-pane {
+            z-index: 5000 !important;
+        }
+
         .leaflet-popup {
-            z-index: 700 !important;
+            z-index: 5001 !important;
+        }
+
+        .leaflet-tooltip-pane {
+            z-index: 4999 !important;
         }
 
         .event-sidebar.w-2x { width: 800px; right: -800px; }
