@@ -85,9 +85,9 @@
                                     <p class="text-xs font-medium uppercase text-gray-800" x-text="getAllCountryNames(event)"></p>
                                     <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mt-1" x-text="event.title"></h3>
                                     <p class="text-xs text-gray-600 mt-1">
-                                        <span x-text="getEventTypesDisplay(event)"></span>
-                                        <span class="mx-1">•</span>
                                         <span x-text="formatDate(event.created_at)"></span>
+                                        <span class="mx-1">•</span>
+                                        <span x-text="getEventTypesDisplay(event)"></span>
                                     </p>
                                 </div>
                             </div>
