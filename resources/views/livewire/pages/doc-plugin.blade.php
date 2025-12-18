@@ -112,7 +112,7 @@
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <span class="badge bg-blue-100 text-blue-700">
-                            <i class="fas fa-list mr-1"></i> Liste
+                            <i class="fas fa-list mr-1"></i> Option 1
                         </span>
                         <span class="text-xs text-gray-500">1/3 Breite empfohlen</span>
                     </div>
@@ -238,7 +238,7 @@
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <span class="badge bg-green-100 text-green-700">
-                            <i class="fas fa-map mr-1"></i> Karte
+                            <i class="fas fa-map mr-1"></i> Option 2
                         </span>
                         <span class="text-xs text-gray-500">Volle Breite empfohlen</span>
                     </div>
@@ -277,7 +277,7 @@
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <span class="badge bg-purple-100 text-purple-700">
-                            <i class="fas fa-th-large mr-1"></i> Dashboard
+                            <i class="fas fa-th-large mr-1"></i> Option 3
                         </span>
                         <span class="text-xs text-gray-500">Volle Breite empfohlen</span>
                     </div>
