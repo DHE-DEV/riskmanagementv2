@@ -131,9 +131,33 @@
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
             transform: translateY(100%);
             transition: transform 0.3s ease;
-            z-index: 100;
+            z-index: 10000;
             max-height: 60vh;
             overflow: hidden;
+        }
+
+        /* Leaflet Layers z-index override */
+        .leaflet-pane {
+            z-index: auto !important;
+        }
+
+        .leaflet-top,
+        .leaflet-bottom,
+        .leaflet-control {
+            z-index: 800 !important;
+        }
+
+        /* Leaflet Popups immer im Vordergrund (über Filter, Legend, Badge) */
+        .leaflet-popup-pane {
+            z-index: 5000 !important;
+        }
+
+        .leaflet-popup {
+            z-index: 5001 !important;
+        }
+
+        .leaflet-tooltip-pane {
+            z-index: 4999 !important;
         }
         .bottom-sheet.open {
             transform: translateY(0);

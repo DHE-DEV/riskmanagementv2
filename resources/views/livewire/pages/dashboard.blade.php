@@ -663,9 +663,33 @@
             background: white;
             box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
             transition: right 0.3s ease-in-out;
-            z-index: 9999; /* Höchster Z-Index für Vordergrund */
+            z-index: 100000; /* Höchster Z-Index - über allen Leaflet-Layern */
             display: flex;
             flex-direction: column;
+        }
+
+        /* Leaflet Layers z-index override */
+        .leaflet-pane {
+            z-index: auto !important;
+        }
+
+        .leaflet-top,
+        .leaflet-bottom,
+        .leaflet-control {
+            z-index: 800 !important;
+        }
+
+        /* Leaflet Popups immer im Vordergrund (über Filter, Legend, Badge) */
+        .leaflet-popup-pane {
+            z-index: 5000 !important;
+        }
+
+        .leaflet-popup {
+            z-index: 5001 !important;
+        }
+
+        .leaflet-tooltip-pane {
+            z-index: 4999 !important;
         }
 
         .event-sidebar.w-2x { width: 800px; right: -800px; }
@@ -1162,7 +1186,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         </div>
                     </div>
                     <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('currentPastEvents')" style="position: relative; z-index: 2;">
-                        <p class="text-xs text-gray-700 font-medium">Aktuelle Ereignisse (<span id="currentPastEventsCount">0</span>)</p>
+                        <p class="text-xs text-gray-700 font-medium">Aktuelle Ereignisse</p>
                         <svg id="currentPastEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
