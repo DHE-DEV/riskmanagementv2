@@ -104,35 +104,23 @@
                     <span x-text="filteredEvents.length"></span> Ereignisse
                 </div>
 
-                <div class="divide-y divide-gray-200">
+                <div class="divide-y divide-gray-100">
                     <template x-for="event in filteredEvents" :key="event.id">
-                        <div class="bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                        <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
                              @click="openEvent(event)">
-                            <div class="px-4 py-3">
-                                <div class="flex items-start gap-3">
-                                    <!-- Priority Indicator -->
-                                    <div class="flex-shrink-0 mt-1">
-                                        <span :style="'background-color: ' + getMarkerColor(event)"
-                                              class="inline-flex items-center justify-center w-8 h-8 rounded-full shadow-sm border-2 border-white">
-                                            <i :class="getEventIcon(event)" class="text-sm" style="color: #FFFFFF !important;"></i>
-                                        </span>
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-medium uppercase text-gray-800" x-text="getCountryNames(event)"></p>
-                                        <h3 class="text-sm font-semibold text-gray-900 line-clamp-2 mt-1" x-text="event.title"></h3>
-                                        <p class="text-xs text-gray-600 mt-1">
-                                            <span x-text="formatDate(event.created_at)"></span>
-                                            <span class="mx-1">•</span>
-                                            <span x-text="getEventTypesDisplay(event)"></span>
-                                        </p>
-                                    </div>
-
-                                    <!-- Arrow -->
-                                    <div class="flex-shrink-0 text-gray-400">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </div>
+                            <div class="flex items-start gap-2">
+                                <span :style="'background-color: ' + getMarkerColor(event)"
+                                      class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm border-2 border-white">
+                                    <i :class="getEventIcon(event)" class="text-sm" style="color: #FFFFFF !important;"></i>
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-medium uppercase text-gray-800" x-text="getCountryNames(event)"></p>
+                                    <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mt-1" x-text="event.title"></h3>
+                                    <p class="text-xs text-gray-600 mt-1">
+                                        <span x-text="formatDate(event.created_at)"></span>
+                                        <span class="mx-1">•</span>
+                                        <span x-text="getEventTypesDisplay(event)"></span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
