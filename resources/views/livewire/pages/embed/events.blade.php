@@ -120,14 +120,13 @@
 
                                     <!-- Content -->
                                     <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span :class="getPriorityBadgeColor(event.priority)"
-                                                  class="px-2 py-0.5 text-xs font-medium rounded"
-                                                  x-text="getPriorityLabel(event.priority)"></span>
-                                            <span class="text-xs text-gray-500" x-text="formatDate(event.created_at)"></span>
-                                        </div>
-                                        <h3 class="text-sm font-semibold text-gray-900 line-clamp-2" x-text="event.title"></h3>
-                                        <p class="text-xs text-gray-500 mt-1" x-text="getCountryNames(event)"></p>
+                                        <p class="text-xs font-medium uppercase text-gray-800" x-text="getCountryNames(event)"></p>
+                                        <h3 class="text-sm font-semibold text-gray-900 line-clamp-2 mt-1" x-text="event.title"></h3>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            <span x-text="formatDate(event.created_at)"></span>
+                                            <span class="mx-1">•</span>
+                                            <span x-text="getEventTypesDisplay(event)"></span>
+                                        </p>
                                     </div>
 
                                     <!-- Arrow -->
@@ -577,6 +576,16 @@ function embedEventsApp() {
         getCountryNames(event) {
             if (!event.countries?.length) return 'Global';
             return event.countries.map(c => c.name_de || c.name).join(', ');
+        },
+
+        getEventTypesDisplay(event) {
+            if (event.event_types && event.event_types.length > 0) {
+                return event.event_types.map(t => typeof t === 'string' ? t : t.name).join(', ');
+            }
+            if (event.event_type_name) {
+                return event.event_type_name;
+            }
+            return 'Ereignis';
         },
 
         getCountryFlag(isoCode) {
