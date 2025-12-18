@@ -88,7 +88,7 @@
     <div id="embed-map" class="h-full w-full"></div>
 
     <!-- Center Map Button (Left side, below zoom controls) -->
-    <div class="absolute top-28 left-2 z-[1000]">
+    <div id="center-btn-container" class="absolute top-28 left-2 z-[1000]">
         <button @click="centerMap()"
                 title="Karte zentrieren"
                 class="w-8 h-8 bg-white rounded shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors border border-gray-300">
@@ -97,7 +97,7 @@
     </div>
 
     <!-- Filter Button (Floating - Top Right, below Powered by badge) -->
-    <div class="absolute top-16 right-4 z-[1000] flex flex-col items-end">
+    <div id="filter-container" class="absolute top-16 right-4 z-[1000] flex flex-col items-end">
         <button @click="filterModalOpen = true"
                 class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors relative">
             <i class="fas fa-filter"></i>
@@ -145,7 +145,7 @@
     </div>
 
     <!-- Legend -->
-    <div class="absolute bottom-8 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
+    <div id="legend-container" class="absolute bottom-8 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
         <div class="text-xs font-semibold text-gray-700 mb-2">Legende</div>
         <div class="space-y-1 text-xs">
             <div class="flex items-center gap-2">
@@ -379,6 +379,41 @@ function embedMapApp() {
             });
 
             this.map.addLayer(this.markerCluster);
+
+            // Listen for popup open/close events to adjust z-index
+            this.map.on('popupopen', () => {
+                this.lowerUIZIndex();
+            });
+
+            this.map.on('popupclose', () => {
+                this.restoreUIZIndex();
+            });
+        },
+
+        lowerUIZIndex() {
+            // Lower z-index of Filter, Legend, Powered-by when popup opens
+            const filterEl = document.getElementById('filter-container');
+            const legendEl = document.getElementById('legend-container');
+            const centerEl = document.getElementById('center-btn-container');
+            const badgeEl = document.querySelector('.powered-by');
+
+            if (filterEl) filterEl.style.zIndex = '500';
+            if (legendEl) legendEl.style.zIndex = '500';
+            if (centerEl) centerEl.style.zIndex = '500';
+            if (badgeEl) badgeEl.style.zIndex = '500';
+        },
+
+        restoreUIZIndex() {
+            // Restore z-index of Filter, Legend, Powered-by when popup closes
+            const filterEl = document.getElementById('filter-container');
+            const legendEl = document.getElementById('legend-container');
+            const centerEl = document.getElementById('center-btn-container');
+            const badgeEl = document.querySelector('.powered-by');
+
+            if (filterEl) filterEl.style.zIndex = '1000';
+            if (legendEl) legendEl.style.zIndex = '1000';
+            if (centerEl) centerEl.style.zIndex = '1000';
+            if (badgeEl) badgeEl.style.zIndex = '1000';
         },
 
         centerMap() {
