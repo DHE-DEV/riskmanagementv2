@@ -79,6 +79,13 @@
     .leaflet-popup {
         z-index: 2001 !important;
     }
+
+    /* Smooth transition for UI elements when popup opens/closes */
+    #filter-container,
+    #legend-container,
+    .powered-by {
+        transition: opacity 0.2s ease-in-out;
+    }
 </style>
 @endpush
 
@@ -380,40 +387,36 @@ function embedMapApp() {
 
             this.map.addLayer(this.markerCluster);
 
-            // Listen for popup open/close events to adjust z-index
+            // Listen for popup open/close events to hide/show UI elements
             this.map.on('popupopen', () => {
-                this.lowerUIZIndex();
+                this.hideUIElements();
             });
 
             this.map.on('popupclose', () => {
-                this.restoreUIZIndex();
+                this.showUIElements();
             });
         },
 
-        lowerUIZIndex() {
-            // Lower z-index of Filter, Legend, Powered-by when popup opens
+        hideUIElements() {
+            // Hide Filter, Legend, Powered-by when popup opens
             const filterEl = document.getElementById('filter-container');
             const legendEl = document.getElementById('legend-container');
-            const centerEl = document.getElementById('center-btn-container');
             const badgeEl = document.querySelector('.powered-by');
 
-            if (filterEl) filterEl.style.zIndex = '500';
-            if (legendEl) legendEl.style.zIndex = '500';
-            if (centerEl) centerEl.style.zIndex = '500';
-            if (badgeEl) badgeEl.style.zIndex = '500';
+            if (filterEl) filterEl.style.opacity = '0';
+            if (legendEl) legendEl.style.opacity = '0';
+            if (badgeEl) badgeEl.style.opacity = '0';
         },
 
-        restoreUIZIndex() {
-            // Restore z-index of Filter, Legend, Powered-by when popup closes
+        showUIElements() {
+            // Show Filter, Legend, Powered-by when popup closes
             const filterEl = document.getElementById('filter-container');
             const legendEl = document.getElementById('legend-container');
-            const centerEl = document.getElementById('center-btn-container');
             const badgeEl = document.querySelector('.powered-by');
 
-            if (filterEl) filterEl.style.zIndex = '1000';
-            if (legendEl) legendEl.style.zIndex = '1000';
-            if (centerEl) centerEl.style.zIndex = '1000';
-            if (badgeEl) badgeEl.style.zIndex = '1000';
+            if (filterEl) filterEl.style.opacity = '1';
+            if (legendEl) legendEl.style.opacity = '1';
+            if (badgeEl) badgeEl.style.opacity = '1';
         },
 
         centerMap() {
