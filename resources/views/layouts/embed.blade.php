@@ -82,7 +82,7 @@
             font-size: 11px;
             color: #6b7280;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            z-index: 100;
+            z-index: 1000;
             text-decoration: none;
             transition: all 0.2s ease;
             display: flex;
