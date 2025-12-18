@@ -4097,7 +4097,8 @@ function renderEvents() {
     }
 
     // Rendere aktuelle/vergangene Events (bereits nach Datum sortiert durch currentEvents)
-    document.getElementById('currentPastEventsCount').textContent = currentPastEvents.length;
+    const currentPastEventsCountEl = document.getElementById('currentPastEventsCount');
+    if (currentPastEventsCountEl) currentPastEventsCountEl.textContent = currentPastEvents.length;
     currentPastEvents.forEach(event => {
         const eventElement = createEventElement(event);
         eventsList.appendChild(eventElement);
