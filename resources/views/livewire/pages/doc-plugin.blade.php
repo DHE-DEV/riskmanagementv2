@@ -105,11 +105,9 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-6 py-12">
-        <!-- Options Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-
-            <!-- Option 1: Events List -->
-            <div class="option-card">
+        <!-- Option 1: Events List (1/3 width) -->
+        <div class="mb-12">
+            <div class="option-card max-w-md">
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <span class="badge bg-blue-100 text-blue-700">
@@ -144,15 +142,17 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Option 2: Map View -->
+        <!-- Option 2: Map View (Full Width) -->
+        <div class="mb-12">
             <div class="option-card">
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <span class="badge bg-green-100 text-green-700">
                             <i class="fas fa-map mr-1"></i> Karte
                         </span>
-                        <span class="text-xs text-gray-500">Flexibel</span>
+                        <span class="text-xs text-gray-500">Volle Breite empfohlen</span>
                     </div>
                     <h2 class="text-xl font-bold text-gray-900 mb-2">Weltkarte</h2>
                     <p class="text-gray-600 text-sm">
@@ -161,8 +161,8 @@
                 </div>
 
                 <div class="p-4 bg-gray-50">
-                    <div class="iframe-preview" style="height: 400px;">
-                        <iframe src="/embed/map" height="400" loading="lazy"></iframe>
+                    <div class="iframe-preview" style="height: 500px;">
+                        <iframe src="/embed/map" height="500" loading="lazy"></iframe>
                     </div>
                 </div>
 
@@ -181,8 +181,10 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Option 3: Dashboard -->
+        <!-- Option 3: Dashboard (Full Width) -->
+        <div class="mb-12">
             <div class="option-card">
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
@@ -198,8 +200,8 @@
                 </div>
 
                 <div class="p-4 bg-gray-50">
-                    <div class="iframe-preview" style="height: 400px;">
-                        <iframe src="/embed/dashboard" height="400" loading="lazy"></iframe>
+                    <div class="iframe-preview" style="height: 600px;">
+                        <iframe src="/embed/dashboard" height="600" loading="lazy"></iframe>
                     </div>
                 </div>
 
@@ -269,19 +271,6 @@
             </div>
         </div>
 
-        <!-- Full Width Preview -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <i class="fas fa-expand text-gray-400"></i>
-                    Vollbreite Vorschau - Dashboard
-                </h2>
-                <p class="text-gray-600 mt-2">So sieht das Dashboard in voller Breite aus:</p>
-            </div>
-            <div class="iframe-preview" style="height: 700px; border-radius: 0;">
-                <iframe src="/embed/dashboard" height="700" loading="lazy"></iframe>
-            </div>
-        </div>
     </main>
 
     <!-- Footer -->
