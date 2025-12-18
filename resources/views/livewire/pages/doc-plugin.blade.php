@@ -106,8 +106,9 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-6 py-12">
         <!-- Option 1: Events List (1/3 width) -->
-        <div class="mb-12">
-            <div class="option-card max-w-md">
+        <div class="mb-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Events List Preview -->
+            <div class="option-card">
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
                         <span class="badge bg-blue-100 text-blue-700">
@@ -122,8 +123,8 @@
                 </div>
 
                 <div class="p-4 bg-gray-50">
-                    <div class="iframe-preview" style="height: 400px;">
-                        <iframe src="/embed/events" height="400" loading="lazy"></iframe>
+                    <div class="iframe-preview" style="height: 600px;">
+                        <iframe src="/embed/events" height="600" loading="lazy"></iframe>
                     </div>
                 </div>
 
@@ -139,6 +140,95 @@
   height="600"
   frameborder="0"&gt;
 &lt;/iframe&gt;</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features & Info -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Features -->
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-star text-yellow-500"></i>
+                        Features
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-search text-blue-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Volltextsuche</h4>
+                                <p class="text-sm text-gray-500">Durchsuchen Sie alle Ereignisse nach Stichworten</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-filter text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Filter</h4>
+                                <p class="text-sm text-gray-500">Nach Priorität, Region und Ereignistyp filtern</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-clock text-purple-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Echtzeit-Updates</h4>
+                                <p class="text-sm text-gray-500">Automatische Aktualisierung der Ereignisse</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-mobile-alt text-orange-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Responsive Design</h4>
+                                <p class="text-sm text-gray-500">Optimiert für alle Bildschirmgrößen</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Use Cases -->
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-lightbulb text-amber-500"></i>
+                        Anwendungsfälle
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-gray-700">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>Sidebar-Widget auf Ihrer Unternehmenswebsite</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-gray-700">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>Integration in Ihr Intranet oder Mitarbeiterportal</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-gray-700">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>Reiseinformationen für Kunden auf Buchungsplattformen</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-gray-700">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>Travel Risk Management Dashboard</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Quick Tip -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-medium text-blue-900">Tipp</h4>
+                            <p class="text-sm text-blue-700">
+                                Die Ereignisliste eignet sich ideal für schmale Spalten (300-400px) in Ihrem Layout.
+                                Für breitere Bereiche empfehlen wir das Dashboard oder die Kartenansicht.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
