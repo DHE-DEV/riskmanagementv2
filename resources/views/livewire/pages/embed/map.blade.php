@@ -43,7 +43,7 @@
 
     .event-popup-content {
         padding: 12px 16px;
-        max-height: 200px;
+        max-height: 300px;
         overflow-y: auto;
     }
 
@@ -714,7 +714,6 @@ function embedMapApp() {
             const countryName = country ? (country.name || country.name_de) :
                 (event.countries?.map(c => c.name || c.name_de).join(', ') || '');
             const description = event.popup_content || event.description || '';
-            const truncatedDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
 
             return `
                 <div class="event-popup">
@@ -729,7 +728,7 @@ function embedMapApp() {
                         ${countryName ? `<p class="text-xs text-gray-500 mt-1">${countryName}</p>` : ''}
                     </div>
                     <div class="event-popup-content">
-                        <div class="text-sm text-gray-700">${truncatedDesc}</div>
+                        <div class="text-sm text-gray-700">${description}</div>
                     </div>
                     ${event.source_url ? `
                         <div class="event-popup-footer">
