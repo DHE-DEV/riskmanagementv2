@@ -73,7 +73,11 @@
     }
 
     .leaflet-popup-pane {
-        z-index: 1500 !important;
+        z-index: 2000 !important;
+    }
+
+    .leaflet-popup {
+        z-index: 2001 !important;
     }
 </style>
 @endpush
