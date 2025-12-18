@@ -200,6 +200,11 @@ Route::get('/cruise', function () {
     return view('livewire.pages.cruise');
 })->name('cruise');
 
+// Plugin/Embed Dokumentation
+Route::get('/doc-plugin', function () {
+    return view('livewire.pages.doc-plugin');
+})->name('doc-plugin');
+
 // Meine Reisenden - nur für eingeloggte Kunden mit gültigem Token
 Route::get('/my-travelers', [\App\Http\Controllers\Customer\MyTravelersController::class, 'index'])
     ->middleware('auth:customer')
