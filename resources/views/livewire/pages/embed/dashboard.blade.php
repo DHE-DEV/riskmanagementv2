@@ -86,9 +86,8 @@
 
         <!-- Stats Footer -->
         <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex-shrink-0">
-            <div class="flex justify-between text-xs text-gray-600">
-                <span><strong x-text="filteredEvents.length"></strong> Ereignisse</span>
-                <span class="text-gray-400">Letzte Aktualisierung: <span x-text="lastUpdate"></span></span>
+            <div class="text-xs text-gray-500">
+                Letzte Aktualisierung: <span x-text="lastUpdate"></span>
             </div>
         </div>
     </div>
