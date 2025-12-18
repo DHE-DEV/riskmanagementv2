@@ -37,6 +37,10 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
+
+    .leaflet-popup-pane {
+        z-index: 1500 !important;
+    }
 </style>
 @endpush
 
