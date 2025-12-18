@@ -403,9 +403,18 @@ function embedMapApp() {
             const legendEl = document.getElementById('legend-container');
             const badgeEl = document.querySelector('.powered-by');
 
-            if (filterEl) filterEl.style.opacity = '0';
-            if (legendEl) legendEl.style.opacity = '0';
-            if (badgeEl) badgeEl.style.opacity = '0';
+            if (filterEl) {
+                filterEl.style.opacity = '0';
+                filterEl.style.pointerEvents = 'none';
+            }
+            if (legendEl) {
+                legendEl.style.opacity = '0';
+                legendEl.style.pointerEvents = 'none';
+            }
+            if (badgeEl) {
+                badgeEl.style.opacity = '0';
+                badgeEl.style.pointerEvents = 'none';
+            }
         },
 
         showUIElements() {
@@ -414,9 +423,18 @@ function embedMapApp() {
             const legendEl = document.getElementById('legend-container');
             const badgeEl = document.querySelector('.powered-by');
 
-            if (filterEl) filterEl.style.opacity = '1';
-            if (legendEl) legendEl.style.opacity = '1';
-            if (badgeEl) badgeEl.style.opacity = '1';
+            if (filterEl) {
+                filterEl.style.opacity = '1';
+                filterEl.style.pointerEvents = 'auto';
+            }
+            if (legendEl) {
+                legendEl.style.opacity = '1';
+                legendEl.style.pointerEvents = 'auto';
+            }
+            if (badgeEl) {
+                badgeEl.style.opacity = '1';
+                badgeEl.style.pointerEvents = 'auto';
+            }
         },
 
         centerMap() {
