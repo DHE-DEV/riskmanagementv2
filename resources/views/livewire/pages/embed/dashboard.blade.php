@@ -82,8 +82,13 @@
                                     <i :class="getEventIcon(event)" class="text-sm" style="color: #FFFFFF !important;"></i>
                                 </span>
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="text-sm font-medium text-gray-900 line-clamp-2" x-text="event.title"></h3>
-                                    <p class="text-xs text-gray-500 mt-1" x-text="getCountryNames(event)"></p>
+                                    <p class="text-xs font-medium uppercase text-gray-800" x-text="getAllCountryNames(event)"></p>
+                                    <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mt-1" x-text="event.title"></h3>
+                                    <p class="text-xs text-gray-600 mt-1">
+                                        <span x-text="getEventTypesDisplay(event)"></span>
+                                        <span class="mx-1">•</span>
+                                        <span x-text="formatDate(event.created_at)"></span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -691,6 +696,21 @@ function embedDashboardApp() {
             if (!event.countries?.length) return 'Global';
             return event.countries.slice(0, 2).map(c => c.name_de || c.name).join(', ') +
                    (event.countries.length > 2 ? ` +${event.countries.length - 2}` : '');
+        },
+
+        getAllCountryNames(event) {
+            if (!event.countries?.length) return 'Global';
+            return event.countries.map(c => c.name_de || c.name).join(', ');
+        },
+
+        getEventTypesDisplay(event) {
+            if (event.event_types && event.event_types.length > 0) {
+                return event.event_types.map(t => typeof t === 'string' ? t : t.name).join(', ');
+            }
+            if (event.event_type_name) {
+                return event.event_type_name;
+            }
+            return 'Ereignis';
         },
 
         getMarkerColor(event) {
