@@ -341,7 +341,7 @@
                         </tr>
                         <tr class="border-b border-gray-100">
                             <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">priorities</code></td>
-                            <td class="py-3 px-4"><code>critical</code>, <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td>
+                            <td class="py-3 px-4"><code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td>
                             <td class="py-3 px-4 text-gray-600">Prioritäten (kommagetrennt)</td>
                             <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?priorities=high,medium</code></td>
                         </tr>
@@ -362,12 +362,6 @@
                             <td class="py-3 px-4">Suchbegriff</td>
                             <td class="py-3 px-4 text-gray-600">Volltextsuche in Ereignissen</td>
                             <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?search=Erdbeben</code></td>
-                        </tr>
-                        <tr class="border-b border-gray-100">
-                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">hide_badge</code></td>
-                            <td class="py-3 px-4"><code>1</code> oder <code>true</code></td>
-                            <td class="py-3 px-4 text-gray-600">Powered-by Badge ausblenden</td>
-                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?hide_badge=1</code></td>
                         </tr>
                     </tbody>
                 </table>
