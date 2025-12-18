@@ -244,7 +244,7 @@
                         </span>
                         <span class="text-xs text-gray-500">Volle Breite empfohlen</span>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Weltkarte</h2>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Nur Kartenansicht</h2>
                     <p class="text-gray-600 text-sm">
                         Interaktive Weltkarte mit allen Ereignissen als Marker. Ideal für visuelle Darstellung.
                     </p>
@@ -283,7 +283,7 @@
                         </span>
                         <span class="text-xs text-gray-500">Volle Breite empfohlen</span>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Dashboard</h2>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Komplettansicht</h2>
                     <p class="text-gray-600 text-sm">
                         Komplettansicht mit Seitenleiste, Ereignisliste und interaktiver Karte.
                     </p>
