@@ -131,9 +131,23 @@
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
             transform: translateY(100%);
             transition: transform 0.3s ease;
-            z-index: 100;
+            z-index: 10000;
             max-height: 60vh;
             overflow: hidden;
+        }
+
+        /* Leaflet Layers z-index override - Bottom Sheet muss darüber liegen */
+        .leaflet-pane,
+        .leaflet-top,
+        .leaflet-bottom,
+        .leaflet-control,
+        .leaflet-popup-pane,
+        .leaflet-tooltip-pane {
+            z-index: auto !important;
+        }
+
+        .leaflet-popup {
+            z-index: 700 !important;
         }
         .bottom-sheet.open {
             transform: translateY(0);
