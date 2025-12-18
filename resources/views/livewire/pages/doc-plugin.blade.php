@@ -389,6 +389,14 @@
                         EU = Europa, AS = Asien, AF = Afrika, NA = Nordamerika, SA = Südamerika, OC = Ozeanien
                     </p>
                 </div>
+
+                <div class="p-4 bg-green-50 rounded-lg">
+                    <p class="text-sm text-green-800">
+                        <i class="fas fa-tags mr-2"></i>
+                        <strong>Event-Type-IDs:</strong>
+                        9 = Reiseverkehr, 10 = Sicherheit, 11 = Umweltereignisse, 12 = Einreisebestimmungen, 13 = Allgemein, 14 = Gesundheit
+                    </p>
+                </div>
             </div>
         </div>
 
