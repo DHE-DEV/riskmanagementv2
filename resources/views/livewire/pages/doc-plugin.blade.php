@@ -149,7 +149,6 @@
                 <!-- Features -->
                 <div class="bg-white rounded-2xl shadow-lg p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-star text-yellow-500"></i>
                         Features
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -195,7 +194,6 @@
                 <!-- Use Cases -->
                 <div class="bg-white rounded-2xl shadow-lg p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-lightbulb text-amber-500"></i>
                         Anwendungsfälle
                     </h3>
                     <ul class="space-y-3">
