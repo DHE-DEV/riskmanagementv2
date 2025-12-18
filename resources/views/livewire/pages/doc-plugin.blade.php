@@ -87,16 +87,16 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-12">
+    <header class="bg-gradient-to-r from-gray-400 to-gray-800 text-white py-12">
         <div class="max-w-7xl mx-auto px-6">
             <div class="flex items-center gap-4 mb-4">
                 <img src="{{ asset('android-chrome-192x192.png') }}" alt="GTM Logo" class="w-12 h-12 rounded-lg">
                 <div>
                     <h1 class="text-3xl font-bold">Plugin Dokumentation</h1>
-                    <p class="text-gray-400">Global Travel Monitor - Embed Integration</p>
+                    <p class="">Global Travel Monitor - Integration</p>
                 </div>
             </div>
-            <p class="text-gray-300 max-w-2xl">
+            <p class="max-w-2xl">
                 Integrieren Sie aktuelle Reiseereignisse und Sicherheitsinformationen direkt in Ihre Website.
                 Wählen Sie aus drei verschiedenen Darstellungsoptionen.
             </p>
@@ -316,8 +316,11 @@
         <div class="bg-white rounded-2xl shadow-lg p-8 mb-12">
             <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <i class="fas fa-cog text-gray-400"></i>
-                Optionale Parameter
+                URL-Parameter (Vorfilter)
             </h2>
+            <p class="text-gray-600 mb-6">
+                Sie können die Ereignisliste mit URL-Parametern vorfiltern. Die Filter werden beim Laden der Seite automatisch angewendet.
+            </p>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -331,52 +334,80 @@
                     </thead>
                     <tbody class="text-sm">
                         <tr class="border-b border-gray-100">
-                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">filter</code></td>
-                            <td class="py-3 px-4"><code>critical</code>, <code>high</code>, <code>medium</code></td>
-                            <td class="py-3 px-4 text-gray-600">Vorfilterung nach Priorität</td>
-                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?filter=high</code></td>
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">timePeriod</code></td>
+                            <td class="py-3 px-4"><code>all</code>, <code>future</code>, <code>today</code>, <code>week</code>, <code>month</code></td>
+                            <td class="py-3 px-4 text-gray-600">Zeitraum der Ereignisse</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?timePeriod=future</code></td>
                         </tr>
                         <tr class="border-b border-gray-100">
-                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">lang</code></td>
-                            <td class="py-3 px-4"><code>de</code>, <code>en</code></td>
-                            <td class="py-3 px-4 text-gray-600">Sprache (Standard: de)</td>
-                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?lang=en</code></td>
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">priorities</code></td>
+                            <td class="py-3 px-4"><code>critical</code>, <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td>
+                            <td class="py-3 px-4 text-gray-600">Prioritäten (kommagetrennt)</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?priorities=high,medium</code></td>
                         </tr>
-                        <tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">continents</code></td>
+                            <td class="py-3 px-4"><code>EU</code>, <code>AS</code>, <code>AF</code>, <code>NA</code>, <code>SA</code>, <code>OC</code></td>
+                            <td class="py-3 px-4 text-gray-600">Kontinente (kommagetrennt)</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?continents=EU,AS</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">eventTypes</code></td>
+                            <td class="py-3 px-4">Event-Type-IDs</td>
+                            <td class="py-3 px-4 text-gray-600">Ereignistypen nach ID (kommagetrennt)</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?eventTypes=1,2,3</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">search</code></td>
+                            <td class="py-3 px-4">Suchbegriff</td>
+                            <td class="py-3 px-4 text-gray-600">Volltextsuche in Ereignissen</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?search=Erdbeben</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
                             <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">hide_badge</code></td>
-                            <td class="py-3 px-4"><code>1</code></td>
-                            <td class="py-3 px-4 text-gray-600">"Powered by" Badge ausblenden</td>
+                            <td class="py-3 px-4"><code>1</code> oder <code>true</code></td>
+                            <td class="py-3 px-4 text-gray-600">Powered-by Badge ausblenden</td>
                             <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?hide_badge=1</code></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                <p class="text-sm text-blue-800">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    <strong>Beispiel mit mehreren Parametern:</strong>
-                    <code class="ml-2 bg-blue-100 px-2 py-1 rounded">{{ url('/embed/events') }}?filter=high&lang=en&hide_badge=1</code>
-                </p>
+            <div class="mt-6 space-y-4">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Beispiel mit mehreren Parametern:</strong><br>
+                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">{{ url('/embed/events') }}?timePeriod=future&priorities=high,medium&continents=EU</code>
+                    </p>
+                </div>
+
+                <div class="p-4 bg-amber-50 rounded-lg">
+                    <p class="text-sm text-amber-800">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        <strong>Kontinente-Kürzel:</strong>
+                        EU = Europa, AS = Asien, AF = Afrika, NA = Nordamerika, SA = Südamerika, OC = Ozeanien
+                    </p>
+                </div>
             </div>
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-8 mt-12">
+    <footer class="bg-gray-400 text-white py-8 mt-12">
         <div class="max-w-7xl mx-auto px-6 text-center">
             <div class="flex items-center justify-center gap-3 mb-4">
                 <img src="{{ asset('favicon-32x32.png') }}" alt="GTM" class="w-6 h-6">
-                <span class="font-semibold">Global Travel Monitor</span>
+                <span class="text-gray-800 font-semibold">Global Travel Monitor</span>
             </div>
-            <p class="text-gray-400 text-sm">
-                &copy; {{ date('Y') }} Passolution GmbH. Alle Rechte vorbehalten.
+            <p class="text-gray-800 text-sm">
+                &copy; {{ date('Y') }} <a href="https://passolution.de" target="_blank">Passolution GmbH</a>. Alle Rechte vorbehalten.
             </p>
             <div class="flex items-center justify-center gap-4 mt-4 text-sm">
-                <a href="https://www.passolution.de/impressum/" target="_blank" class="text-gray-400 hover:text-white transition-colors">Impressum</a>
-                <a href="https://www.passolution.de/datenschutz/" target="_blank" class="text-gray-400 hover:text-white transition-colors">Datenschutz</a>
-                <a href="https://global-travel-monitor.eu" target="_blank" class="text-gray-400 hover:text-white transition-colors">Global Travel Monitor</a>
+                <a href="https://www.passolution.de/impressum/" target="_blank" class="text-gray-800 hover:text-gray-600">Impressum</a>
+                <a href="https://www.passolution.de/datenschutz/" target="_blank" class="text-gray-800 hover:text-gray-600">Datenschutz</a>
+                <a href="https://global-travel-monitor.eu" target="_blank" class="text-gray-800 hover:text-gray-600">Global Travel Monitor</a>
             </div>
         </div>
     </footer>
