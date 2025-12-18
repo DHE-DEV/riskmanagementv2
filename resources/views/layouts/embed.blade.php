@@ -123,7 +123,7 @@
         </div>
 
         <!-- Powered by badge -->
-        @if(!request()->query('hide_badge'))
+        @if(!request()->query('hide_badge') && !View::hasSection('hide_default_badge'))
         <a href="https://global-travel-monitor.eu" target="_blank" rel="noopener" class="powered-by @yield('badge_position', 'bottom-right')">
             <img src="{{ asset('favicon-32x32.png') }}" alt="GTM">
             <span>Powered by <strong>Global Travel Monitor</strong></span>

@@ -1,6 +1,7 @@
 @extends('layouts.embed')
 
 @section('title', 'Ereignisse - Global Travel Monitor')
+@section('hide_default_badge', true)
 
 @push('styles')
 <style>
@@ -150,6 +151,17 @@
             </div>
         </template>
     </div>
+
+    <!-- Powered by Footer -->
+    @if(!request()->query('hide_badge'))
+    <div class="flex-shrink-0 bg-gray-700 py-2">
+        <a href="https://global-travel-monitor.eu" target="_blank" rel="noopener"
+           class="flex items-center justify-center gap-2 text-gray-300 hover:text-white transition-colors text-xs">
+            <img src="{{ asset('favicon-32x32.png') }}" alt="GTM" class="h-4 w-4">
+            <span>Powered by <strong class="text-white">Global Travel Monitor</strong></span>
+        </a>
+    </div>
+    @endif
 
     <!-- Filter Modal -->
     <div x-show="filterModalOpen"
