@@ -20,39 +20,6 @@
         filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
     }
 
-    .leaflet-popup-content {
-        margin: 0;
-        padding: 0;
-    }
-
-    .leaflet-popup-content-wrapper {
-        padding: 0;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .event-popup {
-        min-width: 280px;
-        max-width: 320px;
-    }
-
-    .event-popup-header {
-        padding: 12px 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .event-popup-content {
-        padding: 12px 16px;
-        max-height: 300px;
-        overflow-y: auto;
-    }
-
-    .event-popup-footer {
-        padding: 8px 16px;
-        background: #f9fafb;
-        border-top: 1px solid #e5e7eb;
-    }
-
     .marker-cluster-small {
         background-color: rgba(181, 226, 140, 0.6);
     }
@@ -72,15 +39,7 @@
         background-color: rgba(241, 128, 23, 0.6);
     }
 
-    .leaflet-popup-pane {
-        z-index: 2000 !important;
-    }
-
-    .leaflet-popup {
-        z-index: 2001 !important;
-    }
-
-    /* Smooth transition for UI elements when popup opens/closes */
+    /* Smooth transition for UI elements when drawer opens/closes */
     #filter-container,
     #legend-container,
     .powered-by {
@@ -286,6 +245,57 @@
             </div>
         </div>
     </div>
+
+    <!-- Event Detail Drawer -->
+    <div x-show="selectedEvent"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="translate-x-full"
+         class="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-white shadow-xl z-[2000] flex flex-col"
+         style="display: none;">
+
+        <!-- Drawer Header -->
+        <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+            <span x-show="selectedEvent" :class="getPriorityBadgeColor(selectedEvent?.priority)"
+                  class="px-2 py-1 text-xs font-medium rounded"
+                  x-text="getPriorityLabel(selectedEvent?.priority)"></span>
+            <button @click="closeEventDrawer()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Drawer Content -->
+        <div class="flex-1 overflow-y-auto p-4">
+            <h2 class="text-lg font-bold text-gray-900 mb-3" x-text="selectedEvent?.title"></h2>
+
+            <div class="text-xs text-gray-500 mb-4" x-text="formatDate(selectedEvent?.created_at)"></div>
+
+            <!-- Countries -->
+            <div x-show="selectedEvent?.countries?.length" class="mb-4 flex flex-wrap gap-1">
+                <template x-for="country in selectedEvent?.countries || []" :key="country.id">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-xs">
+                        <span x-text="country.flag_emoji"></span>
+                        <span x-text="country.name_de || country.name"></span>
+                    </span>
+                </template>
+            </div>
+
+            <!-- Description -->
+            <div class="prose prose-sm max-w-none text-gray-700" x-html="selectedEvent?.description || selectedEvent?.popup_content"></div>
+
+            <!-- Source -->
+            <div x-show="selectedEvent?.source_url" class="mt-4 pt-4 border-t border-gray-200">
+                <a :href="selectedEvent?.source_url" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>Zur Quelle</span>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
@@ -300,6 +310,7 @@ function embedMapApp() {
         filteredEvents: [],
         loading: true,
         filterModalOpen: false,
+        selectedEvent: null,
 
         // Filter State
         filters: {
@@ -386,15 +397,6 @@ function embedMapApp() {
             });
 
             this.map.addLayer(this.markerCluster);
-
-            // Listen for popup open/close events to hide/show UI elements
-            this.map.on('popupopen', () => {
-                this.hideUIElements();
-            });
-
-            this.map.on('popupclose', () => {
-                this.showUIElements();
-            });
         },
 
         hideUIElements() {
@@ -546,11 +548,7 @@ function embedMapApp() {
                             icon: this.createIcon(event)
                         });
 
-                        marker.bindPopup(this.createPopup(event, country), {
-                            maxWidth: 320,
-                            className: 'event-popup-wrapper'
-                        });
-
+                        marker.on('click', () => this.selectEvent(event, lat, lng));
                         this.markerCluster.addLayer(marker);
                     });
                 } else {
@@ -563,11 +561,7 @@ function embedMapApp() {
                         icon: this.createIcon(event)
                     });
 
-                    marker.bindPopup(this.createPopup(event), {
-                        maxWidth: 320,
-                        className: 'event-popup-wrapper'
-                    });
-
+                    marker.on('click', () => this.selectEvent(event, lat, lng));
                     this.markerCluster.addLayer(marker);
                 }
             });
@@ -608,6 +602,41 @@ function embedMapApp() {
                 eventTypes: []
             };
             this.applyFilters();
+        },
+
+        selectEvent(event, lat = null, lng = null) {
+            this.selectedEvent = event;
+            this.hideUIElements();
+
+            if (!lat || !lng) {
+                if (event.countries && event.countries.length > 0) {
+                    lat = parseFloat(event.countries[0].latitude);
+                    lng = parseFloat(event.countries[0].longitude);
+                } else {
+                    lat = parseFloat(event.latitude);
+                    lng = parseFloat(event.longitude);
+                }
+            }
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                this.map.setView([lat, lng], 6);
+            }
+        },
+
+        closeEventDrawer() {
+            this.selectedEvent = null;
+            this.showUIElements();
+        },
+
+        getPriorityBadgeColor(priority) {
+            const colors = {
+                critical: 'bg-red-100 text-red-700',
+                high: 'bg-orange-100 text-orange-700',
+                medium: 'bg-yellow-100 text-yellow-700',
+                low: 'bg-green-100 text-green-700',
+                info: 'bg-blue-100 text-blue-700'
+            };
+            return colors[priority] || colors.info;
         },
 
         // Helper Methods
@@ -683,8 +712,7 @@ function embedMapApp() {
                 className: 'custom-marker',
                 html: iconHtml,
                 iconSize: [iconSize, iconSize],
-                iconAnchor: [iconSize / 2, iconSize / 2],
-                popupAnchor: [0, -iconSize / 2]
+                iconAnchor: [iconSize / 2, iconSize / 2]
             });
         },
 
@@ -710,55 +738,6 @@ function embedMapApp() {
                 'other': 'fa-solid fa-location-pin'
             };
             return fallbackIcons[event.event_type] || 'fa-solid fa-location-pin';
-        },
-
-        createPopup(event, country = null) {
-            const priorityLabels = {
-                critical: 'Kritisch',
-                high: 'Hoch',
-                medium: 'Mittel',
-                low: 'Niedrig',
-                info: 'Info'
-            };
-
-            const priorityColors = {
-                critical: 'bg-red-100 text-red-700',
-                high: 'bg-orange-100 text-orange-700',
-                medium: 'bg-yellow-100 text-yellow-700',
-                low: 'bg-green-100 text-green-700',
-                info: 'bg-blue-100 text-blue-700'
-            };
-
-            const countryName = country ? (country.name || country.name_de) :
-                (event.countries?.map(c => c.name || c.name_de).join(', ') || '');
-            const description = event.popup_content || event.description || '';
-
-            return `
-                <div class="event-popup">
-                    <div class="event-popup-header">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="px-2 py-0.5 text-xs font-medium rounded ${priorityColors[event.priority] || priorityColors.info}">
-                                ${priorityLabels[event.priority] || 'Info'}
-                            </span>
-                            <span class="text-xs text-gray-500">${this.formatDate(event.created_at)}</span>
-                        </div>
-                        <h3 class="font-semibold text-gray-900 text-sm">${event.title}</h3>
-                        ${countryName ? `<p class="text-xs text-gray-500 mt-1">${countryName}</p>` : ''}
-                    </div>
-                    <div class="event-popup-content">
-                        <div class="text-sm text-gray-700">${description}</div>
-                    </div>
-                    ${event.source_url ? `
-                        <div class="event-popup-footer">
-                            <a href="${event.source_url}" target="_blank" rel="noopener"
-                               class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                                <i class="fas fa-external-link-alt text-xs"></i>
-                                Zur Quelle
-                            </a>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
         },
 
         formatDate(dateStr) {
