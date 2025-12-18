@@ -71,6 +71,10 @@
     .marker-cluster-large div {
         background-color: rgba(241, 128, 23, 0.6);
     }
+
+    .leaflet-popup-pane {
+        z-index: 1500 !important;
+    }
 </style>
 @endpush
 
