@@ -54,7 +54,7 @@
     <div id="embed-map" class="h-full w-full"></div>
 
     <!-- Center Map Button (Left side, below zoom controls) -->
-    <div id="center-btn-container" class="absolute top-28 left-2 z-[1000]">
+    <div id="center-btn-container" class="absolute top-28 left-3 z-[1000]">
         <button @click="centerMap()"
                 title="Karte zentrieren"
                 class="w-8 h-8 bg-white rounded shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors border border-gray-300">
