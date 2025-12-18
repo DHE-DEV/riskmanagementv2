@@ -422,12 +422,49 @@ function embedDashboardApp() {
         },
 
         async init() {
+            this.parseUrlFilters();
             this.initMap();
             await Promise.all([
                 this.loadEvents(),
                 this.loadEventTypes()
             ]);
             this.lastUpdate = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        },
+
+        parseUrlFilters() {
+            const params = new URLSearchParams(window.location.search);
+
+            // Time Period: ?timePeriod=future
+            const timePeriod = params.get('timePeriod');
+            if (timePeriod && ['all', 'future', 'today', 'week', 'month'].includes(timePeriod)) {
+                this.filters.timePeriod = timePeriod;
+            }
+
+            // Priorities: ?priorities=high,medium
+            const priorities = params.get('priorities');
+            if (priorities) {
+                const validPriorities = ['critical', 'high', 'medium', 'low', 'info'];
+                this.filters.priorities = priorities.split(',')
+                    .map(p => p.trim())
+                    .filter(p => validPriorities.includes(p));
+            }
+
+            // Continents: ?continents=EU,AS
+            const continents = params.get('continents');
+            if (continents) {
+                const validContinents = ['EU', 'AS', 'AF', 'NA', 'SA', 'OC'];
+                this.filters.continents = continents.split(',')
+                    .map(c => c.trim().toUpperCase())
+                    .filter(c => validContinents.includes(c));
+            }
+
+            // Event Types: ?eventTypes=1,2,3
+            const eventTypes = params.get('eventTypes');
+            if (eventTypes) {
+                this.filters.eventTypes = eventTypes.split(',')
+                    .map(id => parseInt(id.trim()))
+                    .filter(id => !isNaN(id));
+            }
         },
 
         initMap() {
