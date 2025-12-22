@@ -122,7 +122,7 @@
 <body>
     <div class="container">
         <div class="icon">
-            <img src="https://global-travel-monitor.eu/images/logo.svg" alt="Global Travel Monitor" class="icon-logo">
+            <img src="https://global-travel-monitor.eu/android-chrome-192x192.png" alt="Global Travel Monitor" class="icon-logo">
         </div>
         <h1>Zugriff verweigert</h1>
         <p>Diese Embed-Ansicht erfordert einen gültigen API-Key.</p>
@@ -141,7 +141,7 @@
         </a>
 
         <div class="logo">
-            <img src="https://global-travel-monitor.eu/images/logo.svg" alt="Logo" class="logo-img">
+            <img src="https://global-travel-monitor.eu/favicon-32x32.png" alt="Logo" class="logo-img">
             Global Travel Monitor
         </div>
     </div>
