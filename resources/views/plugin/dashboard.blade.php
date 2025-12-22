@@ -293,14 +293,24 @@
                     <div class="flex justify-between mt-2 text-xs text-gray-400">
                         @php
                             $dates = array_keys($dailyData);
+                            $dateCount = count($dates);
                             $firstDate = \Carbon\Carbon::parse(reset($dates))->format('d.m.');
                             $lastDate = \Carbon\Carbon::parse(end($dates))->format('d.m.');
-                            $midIndex = intval(count($dates) / 2);
-                            $midDate = isset($dates[$midIndex]) ? \Carbon\Carbon::parse($dates[$midIndex])->format('d.m.') : '';
                         @endphp
-                        <span>{{ $firstDate }}</span>
-                        <span>{{ $midDate }}</span>
-                        <span>{{ $lastDate }}</span>
+                        @if($dateCount === 1)
+                            <span class="w-full text-center">{{ $firstDate }}</span>
+                        @elseif($dateCount <= 3)
+                            <span>{{ $firstDate }}</span>
+                            <span>{{ $lastDate }}</span>
+                        @else
+                            @php
+                                $midIndex = intval($dateCount / 2);
+                                $midDate = \Carbon\Carbon::parse($dates[$midIndex])->format('d.m.');
+                            @endphp
+                            <span>{{ $firstDate }}</span>
+                            <span>{{ $midDate }}</span>
+                            <span>{{ $lastDate }}</span>
+                        @endif
                     </div>
                 </div>
             </div>
