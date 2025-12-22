@@ -234,17 +234,66 @@
         @endif
 
         @if(count($stats['daily']) > 0)
-            <h3 class="text-md font-medium text-gray-900 mt-6 mb-2">Tägliche Aufrufe</h3>
-            <div class="overflow-x-auto">
-                <div class="flex items-end space-x-1 h-32">
-                    @php
-                        $maxCount = max($stats['daily']) ?: 1;
-                    @endphp
-                    @foreach($stats['daily'] as $date => $count)
-                        <div class="flex-1 min-w-[8px] bg-blue-500 rounded-t"
-                             style="height: {{ ($count / $maxCount) * 100 }}%"
-                             title="{{ $date }}: {{ $count }} Aufrufe"></div>
-                    @endforeach
+            <h3 class="text-md font-medium text-gray-900 mt-6 mb-4">Tägliche Aufrufe</h3>
+            @php
+                $maxCount = max($stats['daily']) ?: 1;
+                $dailyData = $stats['daily'];
+                $totalDays = count($dailyData);
+            @endphp
+
+            <div class="relative">
+                <!-- Y-Axis Labels -->
+                <div class="absolute left-0 top-0 bottom-6 w-10 flex flex-col justify-between text-xs text-gray-400">
+                    <span>{{ number_format($maxCount) }}</span>
+                    <span>{{ number_format($maxCount / 2) }}</span>
+                    <span>0</span>
+                </div>
+
+                <!-- Chart Area -->
+                <div class="ml-12">
+                    <!-- Grid Lines -->
+                    <div class="relative h-40 border-b border-l border-gray-200">
+                        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                            <div class="border-t border-gray-100 border-dashed"></div>
+                            <div class="border-t border-gray-100 border-dashed"></div>
+                            <div></div>
+                        </div>
+
+                        <!-- Bars -->
+                        <div class="absolute inset-0 flex items-end gap-px px-1">
+                            @foreach($dailyData as $date => $count)
+                                @php
+                                    $height = $maxCount > 0 ? ($count / $maxCount) * 100 : 0;
+                                    $formattedDate = \Carbon\Carbon::parse($date)->format('d.m.');
+                                @endphp
+                                <div class="flex-1 group relative flex flex-col items-center justify-end h-full">
+                                    <div class="w-full bg-blue-500 hover:bg-blue-600 rounded-t transition-colors cursor-pointer"
+                                         style="height: {{ max($height, 2) }}%; min-height: 2px;">
+                                    </div>
+                                    <!-- Tooltip -->
+                                    <div class="absolute bottom-full mb-2 hidden group-hover:block z-10">
+                                        <div class="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                            {{ $formattedDate }}: {{ number_format($count) }} Aufrufe
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- X-Axis Labels -->
+                    <div class="flex justify-between mt-2 text-xs text-gray-400">
+                        @php
+                            $dates = array_keys($dailyData);
+                            $firstDate = \Carbon\Carbon::parse(reset($dates))->format('d.m.');
+                            $lastDate = \Carbon\Carbon::parse(end($dates))->format('d.m.');
+                            $midIndex = intval(count($dates) / 2);
+                            $midDate = isset($dates[$midIndex]) ? \Carbon\Carbon::parse($dates[$midIndex])->format('d.m.') : '';
+                        @endphp
+                        <span>{{ $firstDate }}</span>
+                        <span>{{ $midDate }}</span>
+                        <span>{{ $lastDate }}</span>
+                    </div>
                 </div>
             </div>
         @endif
