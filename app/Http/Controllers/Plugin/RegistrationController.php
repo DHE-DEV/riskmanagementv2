@@ -25,7 +25,7 @@ class RegistrationController extends Controller
     {
         $validated = $request->validated();
 
-        // Create customer account
+        // Create customer account (always business customer for plugin users)
         $customer = Customer::create([
             'name' => $validated['contact_name'],
             'email' => $validated['email'],
@@ -36,7 +36,7 @@ class RegistrationController extends Controller
             'company_postal_code' => $validated['company_postal_code'],
             'company_city' => $validated['company_city'],
             'company_country' => $validated['company_country'],
-            'customer_type' => 'plugin',
+            'customer_type' => 'business',
         ]);
 
         // Fire registered event (for email verification if needed)
