@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PluginClientResource\RelationManagers;
 
+use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -12,7 +13,7 @@ class DomainsRelationManager extends RelationManager
 
     protected static ?string $title = 'Registrierte Domains';
 
-    protected static ?string $icon = 'heroicon-o-globe-alt';
+    protected static string|BackedEnum|null $icon = 'heroicon-o-globe-alt';
 
     public function table(Table $table): Table
     {

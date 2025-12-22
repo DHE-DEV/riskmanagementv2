@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PluginClientResource\RelationManagers;
 
+use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,7 +14,7 @@ class UsageEventsRelationManager extends RelationManager
 
     protected static ?string $title = 'Aufrufe';
 
-    protected static ?string $icon = 'heroicon-o-chart-bar';
+    protected static string|BackedEnum|null $icon = 'heroicon-o-chart-bar';
 
     public function table(Table $table): Table
     {
