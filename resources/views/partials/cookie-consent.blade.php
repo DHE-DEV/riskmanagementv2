@@ -1,6 +1,7 @@
 {{-- Cookie Consent Banner --}}
 <div x-data="cookieConsent()" x-show="showBanner" x-cloak
-     class="fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-gray-900 text-white shadow-lg"
+     class="fixed bottom-0 left-0 right-0 z-[9999] p-4 shadow-2xl"
+     style="background-color: rgb(211, 227, 96);"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 transform translate-y-full"
      x-transition:enter-end="opacity-100 transform translate-y-0"
@@ -10,20 +11,20 @@
     <div class="max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div class="flex-1">
-                <h3 class="text-lg font-semibold mb-1">Cookie-Einstellungen</h3>
-                <p class="text-sm text-gray-300">
+                <h3 class="text-lg font-semibold mb-1 text-gray-900">Cookie-Einstellungen</h3>
+                <p class="text-sm text-gray-800">
                     Wir verwenden Cookies und Google Analytics, um unsere Website zu verbessern und die Nutzung zu analysieren.
                     Sie können wählen, ob Sie dies akzeptieren möchten.
-                    <a href="https://www.passolution.de/datenschutz/" target="_blank" class="underline hover:text-white">Datenschutzerklärung</a>
+                    <a href="https://www.passolution.de/datenschutz/" target="_blank" class="font-medium text-gray-900 underline hover:text-gray-700">Datenschutzerklärung</a>
                 </p>
             </div>
             <div class="flex flex-col sm:flex-row gap-2 shrink-0">
                 <button @click="acceptAll()"
-                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                        class="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors">
                     Alle akzeptieren
                 </button>
                 <button @click="acceptEssential()"
-                        class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors">
+                        class="px-6 py-2 bg-white hover:bg-gray-100 text-gray-900 font-medium rounded-lg transition-colors border border-gray-300">
                     Nur essenzielle
                 </button>
             </div>
