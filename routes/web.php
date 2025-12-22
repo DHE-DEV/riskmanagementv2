@@ -75,7 +75,10 @@ Route::get('/', function () {
 | via iframe on customer websites.
 |
 | Usage:
-|   <iframe src="https://global-travel-monitor.eu/embed/events" width="100%" height="600"></iframe>
+|   <iframe src="https://global-travel-monitor.eu/embed/dashboard?key=YOUR_API_KEY" width="100%" height="600"></iframe>
+|
+| Required parameters:
+|   ?key=pk_live_...              - Your Plugin API key (required)
 |
 | Optional parameters:
 |   ?filter=critical|high|medium  - Pre-filter by priority
@@ -83,7 +86,7 @@ Route::get('/', function () {
 |   ?hide_badge=1                 - Hide "Powered by" badge
 |
 */
-Route::prefix('embed')->name('embed.')->middleware(['allow.embedding'])->group(function () {
+Route::prefix('embed')->name('embed.')->middleware(['allow.embedding', 'validate.embed.key'])->group(function () {
     // Events list (embeddable)
     Route::get('/events', function () {
         return view('livewire.pages.embed.events');

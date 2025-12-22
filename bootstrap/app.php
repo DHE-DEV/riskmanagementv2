@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'allow.embedding' => \App\Http\Middleware\AllowEmbedding::class,
             'plugin.onboarded' => \App\Http\Middleware\EnsurePluginOnboarded::class,
+            'validate.embed.key' => \App\Http\Middleware\ValidateEmbedKey::class,
         ]);
 
         // Enable CORS for API routes
