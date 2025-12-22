@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\PluginClientResource\RelationManagers;
 
 use BackedEnum;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class DomainsRelationManager extends RelationManager
@@ -35,27 +37,27 @@ class DomainsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('domain')
+                TextColumn::make('domain')
                     ->label('Domain')
                     ->searchable()
                     ->sortable()
                     ->copyable()
                     ->copyMessage('Domain kopiert!'),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Hinzugefügt am')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label('Domain hinzufügen')
                     ->modalHeading('Neue Domain hinzufügen')
                     ->successNotificationTitle('Domain wurde hinzugefügt'),
             ])
             ->actions([
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('Entfernen')
                     ->modalHeading('Domain entfernen')
                     ->modalDescription('Sind Sie sicher, dass Sie diese Domain entfernen möchten?')
