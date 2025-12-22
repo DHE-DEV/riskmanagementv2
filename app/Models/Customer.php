@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -181,5 +182,15 @@ class Customer extends Authenticatable implements MustVerifyEmail
     public function branches()
     {
         return $this->hasMany(Branch::class);
+    }
+
+    public function pluginClient(): HasOne
+    {
+        return $this->hasOne(PluginClient::class);
+    }
+
+    public function hasPluginClient(): bool
+    {
+        return $this->pluginClient()->exists();
     }
 }

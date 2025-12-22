@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
+use App\Http\Controllers\Api\Plugin\HandshakeController;
 use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\ProximityController;
 use App\Http\Controllers\Api\V1\ShareLinkController as V1ShareLinkController;
@@ -173,4 +174,20 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         Route::post('/affected-by-event/{event}', [ProximityController::class, 'affectedByEvent'])->name('v1.proximity.affected-by-event');
         Route::post('/trips-in-country', [ProximityController::class, 'tripsInCountry'])->name('v1.proximity.trips-in-country');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Plugin API Routes
+|--------------------------------------------------------------------------
+|
+| Widget handshake endpoint for license validation and usage tracking.
+| Rate limited to 60 requests per minute per IP.
+| CORS enabled for cross-domain widget embedding.
+|
+*/
+Route::prefix('plugin')->group(function () {
+    Route::post('/handshake', HandshakeController::class)
+        ->middleware(['throttle:60,1'])
+        ->name('plugin.handshake');
 });

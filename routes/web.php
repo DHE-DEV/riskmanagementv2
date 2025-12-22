@@ -235,5 +235,38 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web'])->group(function
     });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Plugin Routes
+|--------------------------------------------------------------------------
+|
+| Routes for the Plugin Onboarding and Dashboard.
+| Customers can register for the plugin, manage their API keys and domains.
+|
+*/
+Route::prefix('plugin')->name('plugin.')->group(function () {
+    // Public: Widget JS (no auth required, CORS enabled)
+    Route::get('/widget.js', \App\Http\Controllers\Plugin\WidgetController::class)->name('widget');
+
+    // Public: Combined registration (no auth required)
+    Route::middleware(['guest:customer'])->group(function () {
+        Route::get('/register', [\App\Http\Controllers\Plugin\RegistrationController::class, 'show'])->name('register');
+        Route::post('/register', [\App\Http\Controllers\Plugin\RegistrationController::class, 'store'])->name('register.store');
+    });
+
+    // Protected: Plugin onboarding and dashboard
+    Route::middleware(['auth:customer'])->group(function () {
+        // Onboarding
+        Route::get('/onboarding', [\App\Http\Controllers\Plugin\OnboardingController::class, 'show'])->name('onboarding');
+        Route::post('/onboarding', [\App\Http\Controllers\Plugin\OnboardingController::class, 'store'])->name('onboarding.store');
+
+        // Dashboard (requires plugin client)
+        Route::get('/dashboard', [\App\Http\Controllers\Plugin\DashboardController::class, 'show'])->name('dashboard');
+        Route::post('/add-domain', [\App\Http\Controllers\Plugin\DashboardController::class, 'addDomain'])->name('add-domain');
+        Route::delete('/remove-domain/{domainId}', [\App\Http\Controllers\Plugin\DashboardController::class, 'removeDomain'])->name('remove-domain');
+        Route::post('/regenerate-key', [\App\Http\Controllers\Plugin\DashboardController::class, 'regenerateKey'])->name('regenerate-key');
+    });
+});
+
 require __DIR__.'/auth.php';
 require __DIR__.'/customer-auth.php';

@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'allow.embedding' => \App\Http\Middleware\AllowEmbedding::class,
+            'plugin.onboarded' => \App\Http\Middleware\EnsurePluginOnboarded::class,
+        ]);
+
+        // Enable CORS for API routes
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
