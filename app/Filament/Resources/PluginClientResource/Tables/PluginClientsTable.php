@@ -2,8 +2,13 @@
 
 namespace App\Filament\Resources\PluginClientResource\Tables;
 
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -13,49 +18,49 @@ class PluginClientsTable
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('company_name')
+                TextColumn::make('company_name')
                     ->label('Firma')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('contact_name')
+                TextColumn::make('contact_name')
                     ->label('Ansprechpartner')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->label('E-Mail')
                     ->searchable()
                     ->sortable()
                     ->copyable()
                     ->copyMessage('E-Mail kopiert!'),
 
-                Tables\Columns\TextColumn::make('customer.company_city')
+                TextColumn::make('customer.company_city')
                     ->label('Ort')
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('activeKey.public_key')
+                TextColumn::make('activeKey.public_key')
                     ->label('API-Key')
                     ->copyable()
                     ->copyMessage('API-Key kopiert!')
                     ->limit(20)
                     ->tooltip(fn ($record) => $record->activeKey?->public_key),
 
-                Tables\Columns\TextColumn::make('domains_count')
+                TextColumn::make('domains_count')
                     ->label('Domains')
                     ->sortable()
                     ->badge()
                     ->color('info'),
 
-                Tables\Columns\TextColumn::make('usage_events_count')
+                TextColumn::make('usage_events_count')
                     ->label('Aufrufe')
                     ->sortable()
                     ->badge()
                     ->color('success'),
 
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -71,13 +76,13 @@ class PluginClientsTable
                         default => $state,
                     }),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Registriert am')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('Status')
                     ->options([
                         'active' => 'Aktiv',
@@ -85,12 +90,12 @@ class PluginClientsTable
                         'suspended' => 'Gesperrt',
                     ]),
 
-                Tables\Filters\Filter::make('has_usage')
+                Filter::make('has_usage')
                     ->label('Mit Aufrufen')
                     ->query(fn (Builder $query): Builder => $query->has('usageEvents'))
                     ->toggle(),
 
-                Tables\Filters\Filter::make('created_this_month')
+                Filter::make('created_this_month')
                     ->label('Diesen Monat registriert')
                     ->query(fn (Builder $query): Builder => $query->whereMonth('created_at', now()->month))
                     ->toggle(),
@@ -100,7 +105,7 @@ class PluginClientsTable
                     ->label('Details')
                     ->icon('heroicon-o-eye'),
 
-                Tables\Actions\Action::make('toggle_status')
+                Action::make('toggle_status')
                     ->label(fn ($record) => $record->status === 'active' ? 'Deaktivieren' : 'Aktivieren')
                     ->icon(fn ($record) => $record->status === 'active' ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn ($record) => $record->status === 'active' ? 'danger' : 'success')
@@ -112,8 +117,8 @@ class PluginClientsTable
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->label('Löschen')
                         ->requiresConfirmation(),
                 ]),
