@@ -97,10 +97,10 @@ class DashboardController extends Controller
     {
         $thirtyDaysAgo = now()->subDays(30);
 
-        // Daily page loads for last 30 days
+        // Daily embed views for last 30 days
         $dailyStats = PluginUsageEvent::where('plugin_client_id', $pluginClient->id)
             ->where('created_at', '>=', $thirtyDaysAgo)
-            ->where('event_type', 'page_load')
+            ->where('event_type', 'embed_view')
             ->select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(*) as count')
