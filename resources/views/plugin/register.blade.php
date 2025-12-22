@@ -20,7 +20,7 @@
                             <!-- Header -->
                             <div class="flex w-full flex-col text-center mb-8">
                                 <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Plugin-Zugang registrieren</h1>
-                                <p class="text-sm text-stone-600 dark:text-stone-400">Integrieren Sie den Global Travel Monitor auf Ihrer Website</p>
+                                <p class="text-sm text-stone-600 dark:text-stone-400">Durch Ihre Registrierung schalten Sie jetzt kostenlos das Global Travel Monitor Plugin zur Nutzung in Ihrer Website oder Anwendung frei.</p>
                             </div>
 
                             @if (session('error'))
