@@ -29,20 +29,19 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
         .icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
+            margin: 0 auto 16px;
+            text-align: center;
         }
         .icon-logo {
-            width: 50px;
-            height: 50px;
+            width: 64px;
+            height: 64px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
+        }
+        .plugin-title {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
         }
         h1 {
             color: #1F2937;
@@ -122,8 +121,9 @@
 <body>
     <div class="container">
         <div class="icon">
-            <img src="https://global-travel-monitor.eu/android-chrome-192x192.png" alt="Global Travel Monitor" class="icon-logo">
+            <img src="https://global-travel-monitor.eu/favicon-32x32.png" alt="Global Travel Monitor" class="icon-logo">
         </div>
+        <div class="plugin-title">Global Travel Monitor Plugin</div>
         <h1>Zugriff verweigert</h1>
         <p>Diese Embed-Ansicht erfordert einen gültigen API-Key.</p>
 
