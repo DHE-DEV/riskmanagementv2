@@ -31,17 +31,18 @@
         .icon {
             width: 80px;
             height: 80px;
-            background: #FEE2E2;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 24px;
         }
-        .icon svg {
-            width: 40px;
-            height: 40px;
-            color: #DC2626;
+        .icon-logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
         h1 {
             color: #1F2937;
@@ -121,9 +122,7 @@
 <body>
     <div class="container">
         <div class="icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+            <img src="https://global-travel-monitor.eu/images/logo.svg" alt="Global Travel Monitor" class="icon-logo">
         </div>
         <h1>Zugriff verweigert</h1>
         <p>Diese Embed-Ansicht erfordert einen gültigen API-Key.</p>
