@@ -145,7 +145,8 @@ class ValidateEmbedKey
                 'domain' => $request->header('Referer') ? parse_url($request->header('Referer'), PHP_URL_HOST) : null,
                 'path' => $request->path(),
                 'ip_hash' => PluginUsageEvent::hashIp($request->ip()),
-                'user_agent' => $request->userAgent(),
+                'user_agent' => $request->userAgent() ? substr($request->userAgent(), 0, 255) : null,
+                'created_at' => now(),
             ]);
         } catch (\Exception $e) {
             // Don't fail the request if tracking fails
