@@ -92,4 +92,9 @@ return [
         'redirect' => env('APP_URL') . '/customer/auth/twitter/callback',
     ],
 
+    // Plugin Demo Key for documentation page
+    'plugin' => [
+        'demo_key' => env('PLUGIN_DEMO_KEY'),
+    ],
+
 ];

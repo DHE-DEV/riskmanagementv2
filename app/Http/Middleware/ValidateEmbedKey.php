@@ -12,12 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
 class ValidateEmbedKey
 {
     /**
-     * Domains that are allowed to embed without an API key (for documentation/demos).
+     * Domains that are allowed to embed without an API key (for local development only).
      */
     protected array $allowedDomainsWithoutKey = [
-        'global-travel-monitor.de',
-        'global-travel-monitor.eu',
-        'livetest.global-travel-monitor.eu',
         'localhost',
         '127.0.0.1',
     ];

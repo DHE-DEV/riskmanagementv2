@@ -227,7 +227,7 @@
 
                 <div class="p-4 bg-gray-50">
                     <div class="iframe-preview" style="height: 600px;">
-                        <iframe src="/embed/events" height="600" loading="lazy"></iframe>
+                        <iframe src="/embed/events?key={{ config('services.plugin.demo_key') }}" height="600" loading="lazy"></iframe>
                     </div>
                 </div>
 
@@ -353,7 +353,7 @@
 
                 <div class="p-4 bg-gray-50">
                     <div class="iframe-preview" style="height: 500px;">
-                        <iframe src="/embed/map" height="500" loading="lazy"></iframe>
+                        <iframe src="/embed/map?key={{ config('services.plugin.demo_key') }}" height="500" loading="lazy"></iframe>
                     </div>
                 </div>
 
@@ -392,7 +392,7 @@
 
                 <div class="p-4 bg-gray-50">
                     <div class="iframe-preview" style="height: 600px;">
-                        <iframe src="/embed/dashboard" height="600" loading="lazy"></iframe>
+                        <iframe src="/embed/dashboard?key={{ config('services.plugin.demo_key') }}" height="600" loading="lazy"></iframe>
                     </div>
                 </div>
 
