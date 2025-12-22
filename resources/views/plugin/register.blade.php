@@ -278,9 +278,9 @@
                                         >
                                         <label for="terms" class="ml-2 block text-sm text-stone-700 dark:text-stone-300">
                                             Ich akzeptiere die
-                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Nutzungsbedingungen</a>
+                                            <a href="https://www.passolution.de/agb/" target="_blank" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Allgemeinen Geschäftsbedingungen</a>
                                             und die
-                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Datenschutzerklärung</a>
+                                            <a href="https://www.passolution.de/datenschutz/" target="_blank" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Datenschutzerklärung</a>
                                         </label>
                                     </div>
                                     @error('terms')
