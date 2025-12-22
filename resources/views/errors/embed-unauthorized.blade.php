@@ -121,7 +121,7 @@
 <body>
     <div class="container">
         <div class="icon">
-            <img src="https://global-travel-monitor.eu/favicon-32x32.png" alt="Global Travel Monitor" class="icon-logo">
+            <img src="https://global-travel-monitor.eu/logo.png" alt="Global Travel Monitor" class="icon-logo">
         </div>
         <div class="plugin-title">Global Travel Monitor Plugin</div>
         <h1>Zugriff verweigert</h1>
