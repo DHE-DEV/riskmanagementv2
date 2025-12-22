@@ -248,9 +248,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web'])->group(function
 |
 */
 Route::prefix('plugin')->name('plugin.')->group(function () {
-    // Public: Widget JS (no auth required, CORS enabled)
-    Route::get('/widget.js', \App\Http\Controllers\Plugin\WidgetController::class)->name('widget');
-
     // Public: Combined registration (no auth required)
     Route::middleware(['guest:customer'])->group(function () {
         Route::get('/register', [\App\Http\Controllers\Plugin\RegistrationController::class, 'show'])->name('register');
