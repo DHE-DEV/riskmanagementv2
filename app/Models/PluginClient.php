@@ -25,6 +25,16 @@ class PluginClient extends Model
         'status' => 'string',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (PluginClient $client) {
+            // Delete all related records
+            $client->usageEvents()->delete();
+            $client->domains()->delete();
+            $client->keys()->delete();
+        });
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
