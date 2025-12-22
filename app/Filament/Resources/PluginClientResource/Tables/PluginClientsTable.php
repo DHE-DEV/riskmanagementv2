@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PluginClientResource\Tables;
 
+use Filament\Actions\ViewAction;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -95,7 +96,7 @@ class PluginClientsTable
                     ->toggle(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->label('Details')
                     ->icon('heroicon-o-eye'),
 
