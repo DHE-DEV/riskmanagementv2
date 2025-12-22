@@ -60,6 +60,10 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Event Management',
                 'Geografische Daten',
+                'Daten-Import',
+                'Benutzerverwaltung',
+                'Plugin',
+                'Travel Management',
                 'API Schnittstellen',
                 'Verwaltung',
                 'System',
