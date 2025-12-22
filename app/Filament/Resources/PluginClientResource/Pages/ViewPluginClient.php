@@ -4,20 +4,19 @@ namespace App\Filament\Resources\PluginClientResource\Pages;
 
 use App\Filament\Resources\PluginClientResource;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\TextEntry;
+use Filament\Schemas\Components\RepeatableEntry;
 
 class ViewPluginClient extends ViewRecord
 {
     protected static string $resource = PluginClientResource::class;
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('Kundendaten')
                     ->icon('heroicon-o-building-office')
                     ->columns(2)
