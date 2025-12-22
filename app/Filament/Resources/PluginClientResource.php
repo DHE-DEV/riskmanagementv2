@@ -72,6 +72,31 @@ class PluginClientResource extends Resource
                             ->default('active')
                             ->required(),
                     ]),
+                Section::make('Adresse')
+                    ->icon('heroicon-o-map-pin')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('street')
+                                    ->label('Straße')
+                                    ->maxLength(255),
+                                TextInput::make('house_number')
+                                    ->label('Hausnummer')
+                                    ->maxLength(20),
+                            ]),
+                        Grid::make(3)
+                            ->schema([
+                                TextInput::make('postal_code')
+                                    ->label('PLZ')
+                                    ->maxLength(20),
+                                TextInput::make('city')
+                                    ->label('Ort')
+                                    ->maxLength(255),
+                                TextInput::make('country')
+                                    ->label('Land')
+                                    ->maxLength(255),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -114,15 +139,15 @@ class PluginClientResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextEntry::make('customer.company_street')
+                                TextEntry::make('street')
                                     ->label('Straße'),
-                                TextEntry::make('customer.company_house_number')
+                                TextEntry::make('house_number')
                                     ->label('Hausnummer'),
-                                TextEntry::make('customer.company_postal_code')
+                                TextEntry::make('postal_code')
                                     ->label('PLZ'),
-                                TextEntry::make('customer.company_city')
+                                TextEntry::make('city')
                                     ->label('Ort'),
-                                TextEntry::make('customer.company_country')
+                                TextEntry::make('country')
                                     ->label('Land'),
                             ]),
                     ]),

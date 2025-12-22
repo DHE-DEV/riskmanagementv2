@@ -18,6 +18,11 @@ class PluginClient extends Model
         'company_name',
         'contact_name',
         'email',
+        'street',
+        'house_number',
+        'postal_code',
+        'city',
+        'country',
         'status',
     ];
 
