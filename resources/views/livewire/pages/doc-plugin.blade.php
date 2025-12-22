@@ -434,11 +434,17 @@
                         </tr>
                     </thead>
                     <tbody class="text-sm">
+                        <tr class="border-b border-gray-100 bg-red-50">
+                            <td class="py-3 px-4"><code class="bg-red-100 px-2 py-1 rounded text-red-600 font-semibold">key</code></td>
+                            <td class="py-3 px-4"><code>pk_live_...</code></td>
+                            <td class="py-3 px-4 text-red-700 font-medium">Ihr API-Key (Pflichtfeld)</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-red-100 px-2 py-1 rounded">?key=pk_live_xxx</code></td>
+                        </tr>
                         <tr class="border-b border-gray-100">
                             <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">timePeriod</code></td>
                             <td class="py-3 px-4"><code>all</code>, <code>future</code>, <code>today</code>, <code>week</code>, <code>month</code></td>
                             <td class="py-3 px-4 text-gray-600">Zeitraum der Ereignisse</td>
-                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?timePeriod=future</code></td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">&timePeriod=future</code></td>
                         </tr>
                         <tr class="border-b border-gray-100">
                             <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">priorities</code></td>
@@ -473,7 +479,7 @@
                     <p class="text-sm text-blue-800">
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Beispiel mit mehreren Parametern:</strong><br>
-                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">{{ url('/embed/events') }}?timePeriod=future&priorities=high,medium&continents=EU</code>
+                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">{{ url('/embed/events') }}?key=IHR_API_KEY&timePeriod=future&priorities=high,medium&continents=EU</code>
                     </p>
                 </div>
 
