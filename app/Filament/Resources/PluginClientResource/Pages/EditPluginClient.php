@@ -34,4 +34,11 @@ class EditPluginClient extends EditRecord
     {
         return 'Plugin-Kunde wurde aktualisiert';
     }
+
+    public function getRelationManagers(): array
+    {
+        return [
+            \App\Filament\Resources\PluginClientResource\RelationManagers\DomainsRelationManager::class,
+        ];
+    }
 }
