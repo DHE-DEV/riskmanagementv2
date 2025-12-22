@@ -7,9 +7,13 @@ use App\Filament\Resources\PluginClientResource\RelationManagers;
 use App\Filament\Resources\PluginClientResource\Tables\PluginClientsTable;
 use App\Models\PluginClient;
 use BackedEnum;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
-use Filament\Tables\Table;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,6 +30,111 @@ class PluginClientResource extends Resource
     protected static ?string $pluralModelLabel = 'Plugin-Kunden';
 
     protected static ?int $navigationSort = 10;
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Kundendaten')
+                    ->icon('heroicon-o-building-office')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('company_name')
+                                    ->label('Firma'),
+                                TextEntry::make('contact_name')
+                                    ->label('Ansprechpartner'),
+                                TextEntry::make('email')
+                                    ->label('E-Mail')
+                                    ->copyable(),
+                                TextEntry::make('status')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'active' => 'success',
+                                        'inactive' => 'warning',
+                                        'suspended' => 'danger',
+                                        default => 'gray',
+                                    })
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'active' => 'Aktiv',
+                                        'inactive' => 'Inaktiv',
+                                        'suspended' => 'Gesperrt',
+                                        default => $state,
+                                    }),
+                            ]),
+                    ]),
+
+                Section::make('Adresse')
+                    ->icon('heroicon-o-map-pin')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('customer.company_street')
+                                    ->label('Straße'),
+                                TextEntry::make('customer.company_house_number')
+                                    ->label('Hausnummer'),
+                                TextEntry::make('customer.company_postal_code')
+                                    ->label('PLZ'),
+                                TextEntry::make('customer.company_city')
+                                    ->label('Ort'),
+                                TextEntry::make('customer.company_country')
+                                    ->label('Land'),
+                            ]),
+                    ]),
+
+                Section::make('API-Zugang')
+                    ->icon('heroicon-o-key')
+                    ->schema([
+                        TextEntry::make('activeKey.public_key')
+                            ->label('Aktiver API-Key')
+                            ->copyable()
+                            ->copyMessage('API-Key kopiert!')
+                            ->fontFamily('mono'),
+                        TextEntry::make('activeKey.created_at')
+                            ->label('Key erstellt am')
+                            ->dateTime('d.m.Y H:i'),
+                    ]),
+
+                Section::make('Statistik')
+                    ->icon('heroicon-o-chart-bar')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('usage_events_count')
+                                    ->label('Gesamtaufrufe')
+                                    ->getStateUsing(fn ($record) => $record->usageEvents()->count())
+                                    ->badge()
+                                    ->color('success'),
+                                TextEntry::make('usage_events_30days')
+                                    ->label('Aufrufe (30 Tage)')
+                                    ->getStateUsing(fn ($record) => $record->usageEvents()->where('created_at', '>=', now()->subDays(30))->count())
+                                    ->badge()
+                                    ->color('info'),
+                                TextEntry::make('usage_events_today')
+                                    ->label('Aufrufe (heute)')
+                                    ->getStateUsing(fn ($record) => $record->usageEvents()->whereDate('created_at', today())->count())
+                                    ->badge()
+                                    ->color('primary'),
+                            ]),
+                    ]),
+
+                Section::make('Zeitstempel')
+                    ->icon('heroicon-o-clock')
+                    ->collapsed()
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Registriert am')
+                                    ->dateTime('d.m.Y H:i'),
+                                TextEntry::make('updated_at')
+                                    ->label('Aktualisiert am')
+                                    ->dateTime('d.m.Y H:i'),
+                            ]),
+                    ]),
+            ]);
+    }
 
     public static function table(Table $table): Table
     {
