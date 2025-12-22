@@ -55,7 +55,8 @@
 
         <!-- Domains Section -->
         <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Erlaubte Domains</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Erlaubte Domains</h2>
+            <p class="text-xs text-gray-500 mb-4">Ohne https:// oder http:// angeben (z.B. meine-website.de)</p>
 
             <ul class="divide-y divide-gray-200 mb-4">
                 @forelse($domains as $domain)
