@@ -118,12 +118,15 @@ class ValidateEmbedKey
         // Remove www. prefix for comparison
         $domain = preg_replace('/^www\./', '', strtolower($domain));
 
-        // Check if client has any domains registered
-        $allowedDomains = $client->domains->pluck('domain')->map(function ($d) {
-            return preg_replace('/^www\./', '', strtolower($d));
-        })->toArray();
+        // Check if client has any active domains registered
+        $allowedDomains = $client->domains
+            ->where('is_active', true)
+            ->pluck('domain')
+            ->map(function ($d) {
+                return preg_replace('/^www\./', '', strtolower($d));
+            })->toArray();
 
-        // If no domains registered, allow all (for testing)
+        // If no active domains registered, allow all (for testing)
         if (empty($allowedDomains)) {
             return true;
         }

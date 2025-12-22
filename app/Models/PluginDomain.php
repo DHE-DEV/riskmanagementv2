@@ -13,6 +13,11 @@ class PluginDomain extends Model
     protected $fillable = [
         'plugin_client_id',
         'domain',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function pluginClient(): BelongsTo
