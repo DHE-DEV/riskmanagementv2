@@ -1,6 +1,6 @@
 {{-- Cookie Consent Banner --}}
 <div x-data="cookieConsent()" x-show="showBanner" x-cloak
-     class="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gray-900 text-white shadow-lg"
+     class="fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-gray-900 text-white shadow-lg"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 transform translate-y-full"
      x-transition:enter-end="opacity-100 transform translate-y-0"
