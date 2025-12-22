@@ -120,7 +120,7 @@
                     <div class="bg-gray-900 rounded-lg p-3 overflow-x-auto mb-3">
                         <pre class="text-xs text-green-400 font-mono whitespace-pre-wrap" id="code-events">&lt;iframe
   src="{{ $baseUrl }}/embed/events?key={{ $apiKey }}"
-  width="100%"
+  width="400"
   height="600"
   frameborder="0"&gt;
 &lt;/iframe&gt;</pre>

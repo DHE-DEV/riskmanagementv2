@@ -239,7 +239,7 @@
                         </button>
                         <code>&lt;iframe
   src="{{ url('/embed/events') }}?key=IHR_API_KEY"
-  width="100%"
+  width="400"
   height="600"
   frameborder="0"&gt;
 &lt;/iframe&gt;</code>
