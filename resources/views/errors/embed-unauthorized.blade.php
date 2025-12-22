@@ -87,6 +87,22 @@
             overflow-x: auto;
             word-break: break-all;
         }
+        .register-link {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .register-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
         .logo {
             margin-top: 24px;
             color: #9CA3AF;
@@ -112,6 +128,10 @@
             <h3>So binden Sie das Widget ein:</h3>
             <code>&lt;iframe src="https://global-travel-monitor.eu/embed/dashboard?key=IHR_API_KEY" width="100%" height="800"&gt;&lt;/iframe&gt;</code>
         </div>
+
+        <a href="https://global-travel-monitor.eu/plugin/register" target="_blank" class="register-link">
+            Jetzt kostenlos registrieren und API-Key erhalten
+        </a>
 
         <div class="logo">
             Global Travel Monitor
