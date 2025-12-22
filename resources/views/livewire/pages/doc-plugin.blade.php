@@ -83,6 +83,14 @@
             font-size: 12px;
             font-weight: 600;
         }
+
+        .register-btn {
+            background: linear-gradient(to right, #8e9299, #50514d);
+        }
+
+        .register-btn:hover {
+            background: linear-gradient(to right, #50514d, #8e9299);
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -149,7 +157,7 @@
                             </div>
                         </div>
                     </div>
-                    <a href="{{ url('/plugin/register') }}" class="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl hover:opacity-90" style="background: linear-gradient(to right, #8e9299, #50514d);">
+                    <a href="{{ url('/plugin/register') }}" class="register-btn inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl">
                         <i class="fas fa-user-plus"></i>
                         Jetzt kostenlos registrieren
                         <i class="fas fa-arrow-right ml-2"></i>
