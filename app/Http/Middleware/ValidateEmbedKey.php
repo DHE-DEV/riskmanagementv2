@@ -12,12 +12,28 @@ use Symfony\Component\HttpFoundation\Response;
 class ValidateEmbedKey
 {
     /**
+     * Domains that are allowed to embed without an API key (for documentation/demos).
+     */
+    protected array $allowedDomainsWithoutKey = [
+        'global-travel-monitor.de',
+        'global-travel-monitor.eu',
+        'livetest.global-travel-monitor.eu',
+        'localhost',
+        '127.0.0.1',
+    ];
+
+    /**
      * Handle an incoming request.
      *
      * Validates the API key for embed routes and tracks usage.
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Check if request comes from an allowed domain (for docs/demos)
+        if ($this->isFromAllowedDomain($request)) {
+            return $next($request);
+        }
+
         $apiKey = $request->query('key');
 
         // Check if key is provided
@@ -62,6 +78,38 @@ class ValidateEmbedKey
         $request->attributes->set('plugin_client', $client);
 
         return $next($request);
+    }
+
+    /**
+     * Check if request comes from an allowed domain that doesn't need an API key.
+     */
+    protected function isFromAllowedDomain(Request $request): bool
+    {
+        $referer = $request->header('Referer');
+
+        if (!$referer) {
+            return false;
+        }
+
+        $refererHost = parse_url($referer, PHP_URL_HOST);
+
+        if (!$refererHost) {
+            return false;
+        }
+
+        // Remove www. prefix for comparison
+        $refererHost = preg_replace('/^www\./', '', strtolower($refererHost));
+
+        foreach ($this->allowedDomainsWithoutKey as $allowedDomain) {
+            $allowedDomain = preg_replace('/^www\./', '', strtolower($allowedDomain));
+
+            // Exact match or subdomain match
+            if ($refererHost === $allowedDomain || str_ends_with($refererHost, '.' . $allowedDomain)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
