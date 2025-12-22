@@ -166,7 +166,15 @@
             </div>
 
             <!-- Option 3: Full Dashboard -->
-            <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <div class="border border-gray-200 rounded-lg overflow-hidden relative">
+                <div class="absolute top-2 right-2 z-10">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-500 text-white shadow-sm">
+                        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                        </svg>
+                        Empfohlen
+                    </span>
+                </div>
                 <div class="bg-purple-50 px-4 py-3 border-b border-purple-100">
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
