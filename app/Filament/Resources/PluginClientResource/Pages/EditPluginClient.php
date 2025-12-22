@@ -4,18 +4,18 @@ namespace App\Filament\Resources\PluginClientResource\Pages;
 
 use App\Filament\Resources\PluginClientResource;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Actions\ViewAction;
+use Filament\Resources\Pages\EditRecord;
 
-class ViewPluginClient extends ViewRecord
+class EditPluginClient extends EditRecord
 {
     protected static string $resource = PluginClientResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make()
-                ->label('Bearbeiten'),
+            ViewAction::make()
+                ->label('Ansehen'),
             DeleteAction::make()
                 ->label('Löschen')
                 ->modalHeading('Plugin-Kunde löschen')
@@ -25,11 +25,13 @@ class ViewPluginClient extends ViewRecord
         ];
     }
 
-    public function getRelationManagers(): array
+    protected function getRedirectUrl(): string
     {
-        return [
-            \App\Filament\Resources\PluginClientResource\RelationManagers\DomainsRelationManager::class,
-            \App\Filament\Resources\PluginClientResource\RelationManagers\UsageEventsRelationManager::class,
-        ];
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
+    }
+
+    protected function getSavedNotificationTitle(): ?string
+    {
+        return 'Plugin-Kunde wurde aktualisiert';
     }
 }

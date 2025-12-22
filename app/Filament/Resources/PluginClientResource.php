@@ -5,8 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PluginClientResource\Pages;
 use App\Filament\Resources\PluginClientResource\RelationManagers;
 use App\Filament\Resources\PluginClientResource\Tables\PluginClientsTable;
+use App\Models\Customer;
 use App\Models\PluginClient;
 use BackedEnum;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -30,6 +33,47 @@ class PluginClientResource extends Resource
     protected static ?string $pluralModelLabel = 'Plugin-Kunden';
 
     protected static ?int $navigationSort = 10;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Kundendaten')
+                    ->icon('heroicon-o-building-office')
+                    ->schema([
+                        Select::make('customer_id')
+                            ->label('Verknüpfter Kunde (optional)')
+                            ->relationship('customer', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Kein Kunde verknüpft'),
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('company_name')
+                                    ->label('Firma')
+                                    ->required()
+                                    ->maxLength(255),
+                                TextInput::make('contact_name')
+                                    ->label('Ansprechpartner')
+                                    ->maxLength(255),
+                            ]),
+                        TextInput::make('email')
+                            ->label('E-Mail')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                        Select::make('status')
+                            ->label('Status')
+                            ->options([
+                                'active' => 'Aktiv',
+                                'inactive' => 'Inaktiv',
+                                'suspended' => 'Gesperrt',
+                            ])
+                            ->default('active')
+                            ->required(),
+                    ]),
+            ]);
+    }
 
     public static function infolist(Schema $schema): Schema
     {
@@ -153,7 +197,9 @@ class PluginClientResource extends Resource
     {
         return [
             'index' => Pages\ListPluginClients::route('/'),
+            'create' => Pages\CreatePluginClient::route('/create'),
             'view' => Pages\ViewPluginClient::route('/{record}'),
+            'edit' => Pages\EditPluginClient::route('/{record}/edit'),
         ];
     }
 
@@ -166,12 +212,12 @@ class PluginClientResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        return auth()->user() && auth()->user()->isAdmin() && auth()->user()->isActive();
     }
 
     public static function canEdit(Model $record): bool
     {
-        return false;
+        return auth()->user() && auth()->user()->isAdmin() && auth()->user()->isActive();
     }
 
     public static function canDelete(Model $record): bool
