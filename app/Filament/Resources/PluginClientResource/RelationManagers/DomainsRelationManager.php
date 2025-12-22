@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\PluginClientResource\RelationManagers;
 
 use BackedEnum;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -17,11 +17,11 @@ class DomainsRelationManager extends RelationManager
 
     protected static string|BackedEnum|null $icon = 'heroicon-o-globe-alt';
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('domain')
+            ->components([
+                TextInput::make('domain')
                     ->label('Domain')
                     ->required()
                     ->maxLength(255)
