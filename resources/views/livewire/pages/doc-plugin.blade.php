@@ -105,8 +105,103 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-6 py-12">
+        <!-- Step 1: Registration -->
+        <div class="mb-12">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            1
+                        </div>
+                        <h2 class="text-xl font-bold text-white">Schritt 1: Kostenlos registrieren</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-6">
+                        Um das Plugin zu nutzen, benötigen Sie einen kostenlosen API-Key. Registrieren Sie sich in wenigen Minuten und erhalten Sie sofortigen Zugang.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-check text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Kostenlos</h4>
+                                <p class="text-sm text-gray-500">Keine versteckten Kosten</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-bolt text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Sofortzugang</h4>
+                                <p class="text-sm text-gray-500">API-Key sofort verfügbar</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-shield-alt text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">DSGVO-konform</h4>
+                                <p class="text-sm text-gray-500">Ihre Daten sind sicher</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url('/plugin/register') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl">
+                        <i class="fas fa-user-plus"></i>
+                        Jetzt kostenlos registrieren
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Choose Plugin Option -->
+        <div class="mb-12">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            2
+                        </div>
+                        <h2 class="text-xl font-bold text-white">Schritt 2: Plugin-Variante auswählen</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">
+                        Wählen Sie die passende Plugin-Variante für Ihre Website. Alle Optionen enthalten die gleichen Daten und werden in Echtzeit aktualisiert.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <a href="#option-1" class="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-colors">
+                            <i class="fas fa-list text-blue-600 text-xl"></i>
+                            <div>
+                                <div class="font-medium text-gray-900">Option 1: Ereignisliste</div>
+                                <div class="text-sm text-gray-500">Für schmale Spalten</div>
+                            </div>
+                        </a>
+                        <a href="#option-2" class="flex items-center gap-3 p-4 bg-green-50 rounded-lg border-2 border-green-200 hover:border-green-400 transition-colors">
+                            <i class="fas fa-map text-green-600 text-xl"></i>
+                            <div>
+                                <div class="font-medium text-gray-900">Option 2: Kartenansicht</div>
+                                <div class="text-sm text-gray-500">Nur interaktive Karte</div>
+                            </div>
+                        </a>
+                        <a href="#option-3" class="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border-2 border-purple-200 hover:border-purple-400 transition-colors">
+                            <i class="fas fa-th-large text-purple-600 text-xl"></i>
+                            <div>
+                                <div class="font-medium text-gray-900">Option 3: Komplettansicht</div>
+                                <div class="text-sm text-gray-500">Liste + Karte kombiniert</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Option 1: Events List (1/3 width) -->
-        <div class="mb-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div id="option-1" class="mb-12 grid grid-cols-1 lg:grid-cols-3 gap-8 scroll-mt-6">
             <!-- Events List Preview -->
             <div class="option-card">
                 <div class="p-6 border-b border-gray-100">
@@ -233,7 +328,7 @@
         </div>
 
         <!-- Option 2: Map View (Full Width) -->
-        <div class="mb-12">
+        <div id="option-2" class="mb-12 scroll-mt-6">
             <div class="option-card">
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
@@ -272,7 +367,7 @@
         </div>
 
         <!-- Option 3: Dashboard (Full Width) -->
-        <div class="mb-12">
+        <div id="option-3" class="mb-12 scroll-mt-6">
             <div class="option-card">
                 <div class="p-6 border-b border-gray-100">
                     <div class="flex items-center justify-between mb-3">
