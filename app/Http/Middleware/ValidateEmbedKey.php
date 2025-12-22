@@ -26,15 +26,14 @@ class ValidateEmbedKey
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if request comes from an allowed domain (for docs/demos)
-        if ($this->isFromAllowedDomain($request)) {
-            return $next($request);
-        }
-
         $apiKey = $request->query('key');
+        $isFromAllowedDomain = $this->isFromAllowedDomain($request);
 
-        // Check if key is provided
+        // If no key provided, only allow from whitelisted domains
         if (empty($apiKey)) {
+            if ($isFromAllowedDomain) {
+                return $next($request);
+            }
             return $this->unauthorizedResponse('API-Key erforderlich. Fügen Sie ?key=YOUR_API_KEY zur URL hinzu.');
         }
 
@@ -59,12 +58,14 @@ class ValidateEmbedKey
             return $this->unauthorizedResponse('Plugin-Konto ist nicht aktiv.');
         }
 
-        // Optional: Validate domain (check Referer header)
-        $referer = $request->header('Referer');
-        if ($referer) {
-            $refererHost = parse_url($referer, PHP_URL_HOST);
-            if ($refererHost && !$this->isDomainAllowed($client, $refererHost)) {
-                return $this->unauthorizedResponse('Domain nicht autorisiert: ' . $refererHost);
+        // Validate domain (check Referer header) - skip for allowed dev domains
+        if (!$isFromAllowedDomain) {
+            $referer = $request->header('Referer');
+            if ($referer) {
+                $refererHost = parse_url($referer, PHP_URL_HOST);
+                if ($refererHost && !$this->isDomainAllowed($client, $refererHost)) {
+                    return $this->unauthorizedResponse('Domain nicht autorisiert: ' . $refererHost);
+                }
             }
         }
 
