@@ -63,8 +63,13 @@ class ValidateEmbedKey
             $referer = $request->header('Referer');
             if ($referer) {
                 $refererHost = parse_url($referer, PHP_URL_HOST);
-                if ($refererHost && !$this->isDomainAllowed($client, $refererHost)) {
-                    return $this->unauthorizedResponse('Domain nicht autorisiert: ' . $refererHost);
+                if ($refererHost) {
+                    $domainStatus = $this->getDomainStatus($client, $refererHost);
+                    if ($domainStatus === 'deactivated') {
+                        return $this->unauthorizedResponse('Diese Domain wurde vorübergehend deaktiviert. Bitte kontaktieren Sie den Administrator.');
+                    } elseif ($domainStatus === 'not_registered') {
+                        return $this->unauthorizedResponse('Domain nicht autorisiert: ' . $refererHost);
+                    }
                 }
             }
         }
@@ -111,27 +116,32 @@ class ValidateEmbedKey
     }
 
     /**
-     * Check if the domain is allowed for this client.
+     * Get domain status for this client.
+     *
+     * @return string 'allowed', 'deactivated', or 'not_registered'
      */
-    protected function isDomainAllowed(PluginClient $client, string $domain): bool
+    protected function getDomainStatus(PluginClient $client, string $domain): string
     {
         // Remove www. prefix for comparison
         $domain = preg_replace('/^www\./', '', strtolower($domain));
 
-        // Check if client has any active domains registered
-        $allowedDomains = $client->domains
-            ->where('is_active', true)
-            ->pluck('domain')
-            ->map(function ($d) {
-                return preg_replace('/^www\./', '', strtolower($d));
-            })->toArray();
-
-        // If no active domains registered, allow all (for testing)
-        if (empty($allowedDomains)) {
-            return true;
+        // If no domains registered at all, allow all (for testing)
+        if ($client->domains->isEmpty()) {
+            return 'allowed';
         }
 
-        return in_array($domain, $allowedDomains);
+        // Check all domains
+        foreach ($client->domains as $registeredDomain) {
+            $normalizedDomain = preg_replace('/^www\./', '', strtolower($registeredDomain->domain));
+
+            if ($normalizedDomain === $domain) {
+                // Domain found - check if active
+                return $registeredDomain->is_active ? 'allowed' : 'deactivated';
+            }
+        }
+
+        // Domain not found in registered domains
+        return 'not_registered';
     }
 
     /**
