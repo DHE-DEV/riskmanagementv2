@@ -107,6 +107,14 @@
             margin-top: 24px;
             color: #9CA3AF;
             font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .logo-img {
+            height: 24px;
+            width: auto;
         }
     </style>
 </head>
@@ -134,6 +142,7 @@
         </a>
 
         <div class="logo">
+            <img src="https://global-travel-monitor.eu/images/logo.svg" alt="Logo" class="logo-img">
             Global Travel Monitor
         </div>
     </div>
