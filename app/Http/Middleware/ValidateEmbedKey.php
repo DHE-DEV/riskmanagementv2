@@ -72,7 +72,7 @@ class ValidateEmbedKey
         }
 
         // Track usage event
-        $this->trackUsage($client, $request);
+        $this->trackUsage($client, $request, $apiKey);
 
         // Store client in request for potential use in views
         $request->attributes->set('plugin_client', $client);
@@ -136,13 +136,17 @@ class ValidateEmbedKey
     /**
      * Track usage event.
      */
-    protected function trackUsage(PluginClient $client, Request $request): void
+    protected function trackUsage(PluginClient $client, Request $request, string $publicKey): void
     {
         try {
+            $referer = $request->header('Referer');
+            $domain = $referer ? parse_url($referer, PHP_URL_HOST) : 'direct';
+
             PluginUsageEvent::create([
                 'plugin_client_id' => $client->id,
+                'public_key' => $publicKey,
                 'event_type' => 'embed_view',
-                'domain' => $request->header('Referer') ? parse_url($request->header('Referer'), PHP_URL_HOST) : null,
+                'domain' => $domain,
                 'path' => $request->path(),
                 'ip_hash' => PluginUsageEvent::hashIp($request->ip()),
                 'user_agent' => $request->userAgent() ? substr($request->userAgent(), 0, 255) : null,
