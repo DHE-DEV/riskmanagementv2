@@ -238,7 +238,7 @@
                             <i class="fas fa-copy"></i>
                         </button>
                         <code>&lt;iframe
-  src="{{ url('/embed/events') }}"
+  src="{{ url('/embed/events') }}?key=IHR_API_KEY"
   width="100%"
   height="600"
   frameborder="0"&gt;
@@ -364,7 +364,7 @@
                             <i class="fas fa-copy"></i>
                         </button>
                         <code>&lt;iframe
-  src="{{ url('/embed/map') }}"
+  src="{{ url('/embed/map') }}?key=IHR_API_KEY"
   width="100%"
   height="600"
   frameborder="0"&gt;
@@ -403,7 +403,7 @@
                             <i class="fas fa-copy"></i>
                         </button>
                         <code>&lt;iframe
-  src="{{ url('/embed/dashboard') }}"
+  src="{{ url('/embed/dashboard') }}?key=IHR_API_KEY"
   width="100%"
   height="800"
   frameborder="0"&gt;

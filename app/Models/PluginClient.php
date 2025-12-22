@@ -111,13 +111,10 @@ class PluginClient extends Model
         $appUrl = config('app.url');
 
         return <<<HTML
-<!-- Global Travel Monitor Plugin -->
-<script src="{$appUrl}/plugin/widget.js" data-key="{$key}"></script>
-
-<!-- Embed Options (use one or more): -->
-<iframe src="{$appUrl}/embed/events" width="100%" height="600" frameborder="0"></iframe>
-<iframe src="{$appUrl}/embed/map" width="100%" height="600" frameborder="0"></iframe>
-<iframe src="{$appUrl}/embed/dashboard" width="100%" height="800" frameborder="0"></iframe>
+<!-- Global Travel Monitor Plugin - Embed Options (use one): -->
+<iframe src="{$appUrl}/embed/events?key={$key}" width="100%" height="600" frameborder="0"></iframe>
+<iframe src="{$appUrl}/embed/map?key={$key}" width="100%" height="600" frameborder="0"></iframe>
+<iframe src="{$appUrl}/embed/dashboard?key={$key}" width="100%" height="800" frameborder="0"></iframe>
 HTML;
     }
 
