@@ -108,7 +108,7 @@
         <!-- Step 1: Registration -->
         <div class="mb-12">
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <div class="px-6 py-4" style="background: linear-gradient(to right, #8e9299, #50514d);">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
                             1
@@ -149,7 +149,7 @@
                             </div>
                         </div>
                     </div>
-                    <a href="{{ url('/plugin/register') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl">
+                    <a href="{{ url('/plugin/register') }}" class="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl hover:opacity-90" style="background: linear-gradient(to right, #8e9299, #50514d);">
                         <i class="fas fa-user-plus"></i>
                         Jetzt kostenlos registrieren
                         <i class="fas fa-arrow-right ml-2"></i>
@@ -161,7 +161,7 @@
         <!-- Step 2: Choose Plugin Option -->
         <div class="mb-12">
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                <div class="px-6 py-4" style="background: linear-gradient(to right, #8e9299, #50514d);">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
                             2
