@@ -4,9 +4,6 @@ namespace App\Filament\Resources\PluginClientResource\Tables;
 
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Actions\ViewAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 
 class PluginClientsTable
@@ -57,13 +54,15 @@ class PluginClientsTable
                     ->badge()
                     ->color('success'),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'success' => 'active',
-                        'warning' => 'inactive',
-                        'danger' => 'suspended',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'active' => 'success',
+                        'inactive' => 'warning',
+                        'suspended' => 'danger',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'active' => 'Aktiv',
                         'inactive' => 'Inaktiv',
@@ -96,11 +95,11 @@ class PluginClientsTable
                     ->toggle(),
             ])
             ->actions([
-                ViewAction::make()
+                Tables\Actions\ViewAction::make()
                     ->label('Details')
                     ->icon('heroicon-o-eye'),
 
-                Action::make('toggle_status')
+                Tables\Actions\Action::make('toggle_status')
                     ->label(fn ($record) => $record->status === 'active' ? 'Deaktivieren' : 'Aktivieren')
                     ->icon(fn ($record) => $record->status === 'active' ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn ($record) => $record->status === 'active' ? 'danger' : 'success')

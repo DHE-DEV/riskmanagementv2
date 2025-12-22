@@ -37,13 +37,14 @@ class UsageEventsRelationManager extends RelationManager
                     ->tooltip(fn ($record) => $record->path)
                     ->placeholder('-'),
 
-                Tables\Columns\BadgeColumn::make('event_type')
+                Tables\Columns\TextColumn::make('event_type')
                     ->label('Event-Typ')
-                    ->colors([
-                        'primary' => 'page_load',
-                        'success' => 'click',
-                        'info' => fn ($state) => $state !== 'page_load' && $state !== 'click',
-                    ]),
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'page_load' => 'primary',
+                        'click' => 'success',
+                        default => 'info',
+                    }),
 
                 Tables\Columns\TextColumn::make('user_agent')
                     ->label('Browser')
