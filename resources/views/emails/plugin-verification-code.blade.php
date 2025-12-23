@@ -83,7 +83,7 @@
     <div class="content">
         <p>Hallo {{ $contactName }},</p>
 
-        <p>vielen Dank für Ihre Registrierung beim Global Travel Monitor Plugin. Um Ihre E-Mail-Adresse zu bestätigen, geben Sie bitte den folgenden Code ein:</p>
+        <p>vielen Dank für die Registrierung beim Global Travel Monitor Plugin. Um die E-Mail-Adresse zu bestätigen, geben Sie bitte den folgenden Code im Abfragefenster ein:</p>
 
         <div class="code-box">
             <div class="code">{{ $code }}</div>
@@ -91,10 +91,6 @@
 
         <div class="info-box">
             <p><strong>Hinweis:</strong> Dieser Code ist {{ $expiryMinutes }} Minuten gültig und kann nur einmal verwendet werden.</p>
-        </div>
-
-        <div class="warning-box">
-            <p><strong>E-Mail nicht gefunden?</strong> Bitte überprüfen Sie auch Ihren Spam- oder Junk-Ordner. Manchmal landen automatisch generierte E-Mails dort.</p>
         </div>
 
         <p>Falls Sie diese Registrierung nicht angefordert haben, können Sie diese E-Mail ignorieren.</p>
