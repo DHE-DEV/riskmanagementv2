@@ -79,6 +79,13 @@
             <i class="fa-regular fa-ship text-2xl" aria-hidden="true"></i>
         </a>
         @endif
+
+        <!-- Plugin Dashboard -->
+        @if(auth('customer')->check() && auth('customer')->user()->pluginClient)
+        <a href="{{ route('plugin.dashboard') }}" class="p-3 {{ $active === 'plugin-dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Plugin Dashboard">
+            <i class="fa-regular fa-puzzle-piece text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
     </div>
 
     <!-- Bottom Buttons -->

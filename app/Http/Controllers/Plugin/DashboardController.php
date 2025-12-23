@@ -30,6 +30,7 @@ class DashboardController extends Controller
             'domains' => $pluginClient->domains,
             'embedSnippet' => $pluginClient->getEmbedSnippet(),
             'stats' => $stats,
+            'active' => 'plugin-dashboard',
         ]);
     }
 
