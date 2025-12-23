@@ -240,6 +240,56 @@
                                     </div>
                                 </div>
 
+                                <!-- Section: Business Type -->
+                                <div class="space-y-4 pt-4 border-t border-stone-200 dark:border-stone-800">
+                                    <h2 class="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wide">Geschäftstyp</h2>
+
+                                    <div x-data="{
+                                        selected: {{ json_encode(old('business_types', [])) }},
+                                        toggle(value) {
+                                            if (this.selected.includes(value)) {
+                                                this.selected = this.selected.filter(v => v !== value);
+                                            } else {
+                                                this.selected.push(value);
+                                            }
+                                        },
+                                        isSelected(value) {
+                                            return this.selected.includes(value);
+                                        }
+                                    }">
+                                        <p class="text-sm text-stone-600 dark:text-stone-400 mb-3">
+                                            Wählen Sie Ihren Geschäftstyp (Mehrfachauswahl möglich)
+                                        </p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="type in [
+                                                { value: 'travel_agency', label: 'Reisebüro' },
+                                                { value: 'organizer', label: 'Veranstalter' },
+                                                { value: 'online_provider', label: 'Online Anbieter' },
+                                                { value: 'mobile_travel_consultant', label: 'Mobiler Reiseberater' },
+                                                { value: 'software_provider', label: 'Softwareanbieter' },
+                                                { value: 'other', label: 'Sonstiges' }
+                                            ]" :key="type.value">
+                                                <button
+                                                    type="button"
+                                                    @click="toggle(type.value)"
+                                                    :class="isSelected(type.value)
+                                                        ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-600 dark:border-blue-600'
+                                                        : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-blue-400 dark:hover:border-blue-500'"
+                                                    class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
+                                                    x-text="type.label"
+                                                ></button>
+                                            </template>
+                                        </div>
+                                        <!-- Hidden inputs for form submission -->
+                                        <template x-for="value in selected" :key="value">
+                                            <input type="hidden" name="business_types[]" :value="value">
+                                        </template>
+                                    </div>
+                                    @error('business_types')
+                                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
                                 <!-- Section: Domain -->
                                 <div class="space-y-4 pt-4 border-t border-stone-200 dark:border-stone-800">
                                     <h2 class="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wide">Plugin-Einbindung</h2>

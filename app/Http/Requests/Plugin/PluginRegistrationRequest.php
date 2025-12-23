@@ -31,6 +31,10 @@ class PluginRegistrationRequest extends FormRequest
             'company_city' => ['required', 'string', 'max:255'],
             'company_country' => ['required', 'string', 'max:255'],
 
+            // Business Type
+            'business_types' => ['nullable', 'array'],
+            'business_types.*' => ['in:travel_agency,organizer,online_provider,mobile_travel_consultant,software_provider,other'],
+
             // Domain
             'domain' => [
                 'required',

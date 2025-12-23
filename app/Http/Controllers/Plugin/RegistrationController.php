@@ -143,6 +143,7 @@ class RegistrationController extends Controller
             'company_city' => $formData['company_city'],
             'company_country' => $formData['company_country'],
             'customer_type' => 'business',
+            'business_type' => $formData['business_types'] ?? [],
             'email_verified_at' => now(), // Email is now verified
         ]);
 
