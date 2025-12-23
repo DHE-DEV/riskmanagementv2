@@ -92,19 +92,33 @@ class WorkFlexService
             ];
         }
 
+        $requestData = [
+            'externalId' => $data['externalId'] ?? $this->generateExternalId(),
+            'nationality' => $data['nationality'],
+            'secondNationality' => $data['secondNationality'] ?? null,
+            'destinationCountry' => $data['destinationCountry'],
+            'residenceCountry' => $data['residenceCountry'],
+            'tripReason' => $data['tripReason'],
+            'tripStartDate' => $data['tripStartDate'],
+            'tripEndDate' => $data['tripEndDate'],
+        ];
+
+        $url = $this->baseUrl . '/visa-requirements/check';
+
+        Log::info('WorkFlex: Sending visa check request', [
+            'url' => $url,
+            'request_data' => $requestData,
+        ]);
+
         try {
             $response = Http::withToken($token)
                 ->timeout(30)
-                ->post($this->baseUrl . '/visa-requirements/check', [
-                    'externalId' => $data['externalId'] ?? $this->generateExternalId(),
-                    'nationality' => $data['nationality'],
-                    'secondNationality' => $data['secondNationality'] ?? null,
-                    'destinationCountry' => $data['destinationCountry'],
-                    'residenceCountry' => $data['residenceCountry'],
-                    'tripReason' => $data['tripReason'],
-                    'tripStartDate' => $data['tripStartDate'],
-                    'tripEndDate' => $data['tripEndDate'],
-                ]);
+                ->post($url, $requestData);
+
+            Log::info('WorkFlex: Visa check response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             if ($response->successful()) {
                 return [
@@ -115,22 +129,19 @@ class WorkFlexService
 
             // If token expired, clear cache and retry once
             if ($response->status() === 401) {
+                Log::info('WorkFlex: Token expired, retrying with new token');
                 $this->clearToken();
                 $token = $this->getAccessToken();
 
                 if ($token) {
                     $retryResponse = Http::withToken($token)
                         ->timeout(30)
-                        ->post($this->baseUrl . '/visa-requirements/check', [
-                            'externalId' => $data['externalId'] ?? $this->generateExternalId(),
-                            'nationality' => $data['nationality'],
-                            'secondNationality' => $data['secondNationality'] ?? null,
-                            'destinationCountry' => $data['destinationCountry'],
-                            'residenceCountry' => $data['residenceCountry'],
-                            'tripReason' => $data['tripReason'],
-                            'tripStartDate' => $data['tripStartDate'],
-                            'tripEndDate' => $data['tripEndDate'],
-                        ]);
+                        ->post($url, $requestData);
+
+                    Log::info('WorkFlex: Retry response', [
+                        'status' => $retryResponse->status(),
+                        'body' => $retryResponse->body(),
+                    ]);
 
                     if ($retryResponse->successful()) {
                         return [
