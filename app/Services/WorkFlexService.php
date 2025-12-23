@@ -28,6 +28,13 @@ class WorkFlexService
     {
         // Cache the token for 55 minutes (tokens typically expire after 1 hour)
         return Cache::remember('workflex_access_token', 55 * 60, function () {
+            Log::info('WorkFlex: Attempting to get access token', [
+                'auth_url' => $this->authUrl,
+                'client_id' => $this->clientId,
+                'client_secret_length' => strlen($this->clientSecret ?? ''),
+                'client_secret_preview' => substr($this->clientSecret ?? '', 0, 8) . '...',
+            ]);
+
             try {
                 $response = Http::asForm()->post($this->authUrl, [
                     'grant_type' => 'client_credentials',
@@ -35,8 +42,15 @@ class WorkFlexService
                     'client_secret' => $this->clientSecret,
                 ]);
 
+                Log::info('WorkFlex: Token response received', [
+                    'status' => $response->status(),
+                    'headers' => $response->headers(),
+                    'body_preview' => substr($response->body(), 0, 500),
+                ]);
+
                 if ($response->successful()) {
                     $data = $response->json();
+                    Log::info('WorkFlex: Token obtained successfully');
                     return $data['access_token'] ?? null;
                 }
 
@@ -49,6 +63,7 @@ class WorkFlexService
             } catch (\Exception $e) {
                 Log::error('WorkFlex token request exception', [
                     'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
                 return null;
             }
