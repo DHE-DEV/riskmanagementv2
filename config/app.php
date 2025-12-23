@@ -193,7 +193,23 @@ return [
     'navigation_booking_enabled' => env('NAVIGATION_BOOKING_ENABLED', true),
     'navigation_airports_enabled' => env('NAVIGATION_AIRPORTS_ENABLED', true),
     'navigation_branches_enabled' => env('NAVIGATION_BRANCHES_ENABLED', true),
+    'navigation_my_travelers_enabled' => env('NAVIGATION_MY_TRAVELERS_ENABLED', true),
     'navigation_cruise_enabled' => env('NAVIGATION_CRUISE_ENABLED', true),
     'navigation_center_map_enabled' => env('NAVIGATION_CENTER_MAP_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Dashboard Feature Visibility
+    |--------------------------------------------------------------------------
+    |
+    | These options control which features are visible in the customer dashboard.
+    | Each feature can be individually enabled or disabled via environment variables.
+    |
+    */
+
+    'customer_dashboard_interfaces_enabled' => env('CUSTOMER_DASHBOARD_INTERFACES_ENABLED', true),
+    'customer_dashboard_directory_enabled' => env('CUSTOMER_DASHBOARD_DIRECTORY_ENABLED', true),
+    'customer_dashboard_branches_box_enabled' => env('CUSTOMER_DASHBOARD_BRANCHES_BOX_ENABLED', true),
+    'customer_dashboard_branches_sidebar_enabled' => env('CUSTOMER_DASHBOARD_BRANCHES_SIDEBAR_ENABLED', true),
 
 ];

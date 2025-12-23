@@ -8,6 +8,7 @@
 
 @section('content')
     <!-- Sidebar -->
+    @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
     <div class="sidebar" x-data="branchManager()">
         <div class="p-4">
             <h2 class="text-xl font-bold text-gray-900 mb-4">
@@ -127,6 +128,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="p-8">
         <div class="max-w-7xl mx-auto">
@@ -1050,6 +1052,7 @@
                         </div>
                     </div>
 
+                    @if(config('app.customer_dashboard_interfaces_enabled', true))
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Schnittstellen
@@ -1144,7 +1147,9 @@
                             @endif
                         </div>
                     </div>
+                    @endif
 
+                    @if(config('app.customer_dashboard_directory_enabled', true))
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
                              isActive: {{ auth('customer')->user()->directory_listing_active ? 'true' : 'false' }},
@@ -1224,7 +1229,9 @@
                             </button>
                         </div>
                     </div>
+                    @endif
 
+                    @if(config('app.customer_dashboard_branches_box_enabled', true))
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
                              isActive: {{ auth('customer')->user()->branch_management_active ? 'true' : 'false' }},
@@ -1268,6 +1275,7 @@
                             </button>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
