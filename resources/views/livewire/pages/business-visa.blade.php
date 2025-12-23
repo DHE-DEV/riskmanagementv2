@@ -37,7 +37,6 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     @endif
     <style>
-        /* Basis-Layout */
         body {
             margin: 0;
             padding: 0;
@@ -51,7 +50,6 @@
             height: 100vh;
         }
 
-        /* Header - feststehend */
         .header {
             flex-shrink: 0;
             height: 64px;
@@ -61,7 +59,6 @@
             z-index: 10000;
         }
 
-        /* Footer - feststehend */
         .footer {
             flex-shrink: 0;
             height: 32px;
@@ -71,28 +68,24 @@
             border-top: 1px solid #e5e7eb;
         }
 
-        /* Hauptbereich - dynamisch */
         .main-content {
             flex: 1;
             display: flex;
             min-height: 0;
         }
 
-        /* Navigation - feste Breite */
         .navigation {
             flex-shrink: 0;
             width: 64px;
             background: black;
         }
 
-        /* Content Area */
         .content-area {
             flex: 1;
             overflow-y: auto;
-            background: #f3f4f6;
+            background: #f5f5f5;
         }
 
-        /* Custom Select Styling */
         select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -102,19 +95,86 @@
             padding-right: 2.5rem;
         }
 
-        /* Loading Spinner */
         .loading-spinner {
             border: 3px solid #f3f4f6;
-            border-top: 3px solid #3b82f6;
+            border-top: 3px solid #1e3a5f;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+
+        .field-label {
+            font-size: 0.875rem;
+            color: #1e3a5f;
+            margin-bottom: 0.25rem;
+        }
+
+        .field-label .required {
+            color: #3b82f6;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #334155;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .radio-option:last-child {
+            border-bottom: none;
+        }
+
+        .radio-option:hover {
+            background: #f8fafc;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.75rem;
+            accent-color: #1e3a5f;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 1.5rem;
         }
     </style>
 </head>
@@ -130,163 +190,109 @@
 
             <!-- Content Area -->
             <div class="content-area" x-data="businessVisaForm()">
-                <div class="max-w-4xl mx-auto py-8 px-4">
-                    <!-- Page Header -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
-                                <i class="fa-regular fa-id-card text-blue-600 text-2xl"></i>
-                            </div>
-                            <div>
-                                <h1 class="text-2xl font-bold text-gray-900">Business Visum Check</h1>
-                                <p class="text-gray-600">Prüfen Sie die Visumbestimmungen für Ihre Geschäftsreise</p>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Page Title -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <h1 class="text-xl font-semibold text-gray-900">Business Visum Check</h1>
+                    <p class="text-sm text-gray-500">Prüfen Sie die Visumbestimmungen für Ihre Geschäftsreise</p>
+                </div>
 
-                    <!-- Form -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <form @submit.prevent="submitForm">
-                            <!-- Nationality Section -->
-                            <div class="mb-8">
-                                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <i class="fa-regular fa-passport text-blue-500"></i>
-                                    Staatsangehörigkeit
-                                </h2>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="nationality" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Staatsangehörigkeit <span class="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            id="nationality"
-                                            x-model="formData.nationality"
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                            required
-                                        >
-                                            <option value="">Bitte wählen...</option>
-                                            @foreach($countries as $code => $name)
-                                                <option value="{{ $code }}">{{ $name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="secondNationality" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Zweite Staatsangehörigkeit (optional)
-                                        </label>
-                                        <select
-                                            id="secondNationality"
-                                            x-model="formData.secondNationality"
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                        >
-                                            <option value="">Keine</option>
-                                            @foreach($countries as $code => $name)
-                                                <option value="{{ $code }}">{{ $name }}</option>
-                                            @endforeach
-                                        </select>
+                <!-- Two Column Layout -->
+                <div class="flex gap-6 p-6 max-w-7xl mx-auto">
+                    <!-- Left Column: Form -->
+                    <div class="flex-1 min-w-0">
+                        <div class="bg-white rounded-lg shadow-sm">
+                            <form @submit.prevent="submitForm" class="p-6">
+                                <!-- Staatsangehörigkeit -->
+                                <div class="mb-6">
+                                    <div class="section-label">Staatsangehörigkeit</div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="field-label">Staatsangehörigkeit <span class="required">*</span></label>
+                                            <select x-model="formData.nationality" class="form-input" required>
+                                                <option value="">Bitte wählen...</option>
+                                                @foreach($countries as $code => $name)
+                                                    <option value="{{ $code }}">{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="field-label">Zweite Staatsangehörigkeit</label>
+                                            <select x-model="formData.secondNationality" class="form-input">
+                                                <option value="">Keine</option>
+                                                @foreach($countries as $code => $name)
+                                                    <option value="{{ $code }}">{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Countries Section -->
-                            <div class="mb-8">
-                                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <i class="fa-regular fa-globe text-blue-500"></i>
-                                    Länder
-                                </h2>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="residenceCountry" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Wohnsitzland <span class="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            id="residenceCountry"
-                                            x-model="formData.residenceCountry"
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                            required
-                                        >
-                                            <option value="">Bitte wählen...</option>
-                                            @foreach($countries as $code => $name)
-                                                <option value="{{ $code }}">{{ $name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="destinationCountry" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Zielland <span class="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            id="destinationCountry"
-                                            x-model="formData.destinationCountry"
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                            required
-                                        >
-                                            <option value="">Bitte wählen...</option>
-                                            @foreach($countries as $code => $name)
-                                                <option value="{{ $code }}">{{ $name }}</option>
-                                            @endforeach
-                                        </select>
+                                <!-- Reiseziel -->
+                                <div class="mb-6">
+                                    <div class="section-label">Reiseziel</div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="field-label">Wohnsitzland <span class="required">*</span></label>
+                                            <select x-model="formData.residenceCountry" class="form-input" required>
+                                                <option value="">Bitte wählen...</option>
+                                                @foreach($countries as $code => $name)
+                                                    <option value="{{ $code }}">{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="field-label">Zielland <span class="required">*</span></label>
+                                            <select x-model="formData.destinationCountry" class="form-input" required>
+                                                <option value="">Bitte wählen...</option>
+                                                @foreach($countries as $code => $name)
+                                                    <option value="{{ $code }}">{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Trip Details Section -->
-                            <div class="mb-8">
-                                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <i class="fa-regular fa-calendar text-blue-500"></i>
-                                    Reisedaten
-                                </h2>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="tripStartDate" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Reisebeginn <span class="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            id="tripStartDate"
-                                            x-model="formData.tripStartDate"
-                                            :min="today"
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                            required
-                                        >
-                                    </div>
-                                    <div>
-                                        <label for="tripEndDate" class="block text-sm font-medium text-gray-700 mb-1">
-                                            Reiseende <span class="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            id="tripEndDate"
-                                            x-model="formData.tripEndDate"
-                                            :min="formData.tripStartDate || today"
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                            required
-                                        >
+                                <!-- Reisezeitraum -->
+                                <div class="mb-6">
+                                    <div class="section-label">Reisezeitraum</div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="field-label">Reisebeginn <span class="required">*</span></label>
+                                            <input
+                                                type="date"
+                                                x-model="formData.tripStartDate"
+                                                :min="today"
+                                                class="form-input"
+                                                required
+                                            >
+                                        </div>
+                                        <div>
+                                            <label class="field-label">Reiseende <span class="required">*</span></label>
+                                            <input
+                                                type="date"
+                                                x-model="formData.tripEndDate"
+                                                :min="formData.tripStartDate || today"
+                                                class="form-input"
+                                                required
+                                            >
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Trip Reason Section -->
-                            <div class="mb-8">
-                                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <i class="fa-regular fa-briefcase text-blue-500"></i>
-                                    Reisegrund <span class="text-red-500">*</span>
-                                </h2>
-                                <div class="space-y-4">
+                                <!-- Reisegrund -->
+                                <div class="mb-6">
+                                    <div class="section-label">Reisegrund</div>
                                     @foreach($groupedReasons as $group => $reasons)
-                                        <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                                                <h3 class="text-sm font-semibold text-gray-700">{{ $group }}</h3>
-                                            </div>
-                                            <div class="p-4 space-y-2">
-                                                @foreach($reasons as $value => $reason)
-                                                    <label class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <div class="mb-4">
+                                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ $group }}</div>
+                                            <div class="border border-gray-100 rounded-lg overflow-hidden">
+                                                @foreach($reasons as $code => $reason)
+                                                    <label class="radio-option">
                                                         <input
                                                             type="radio"
                                                             name="tripReason"
-                                                            value="{{ $value }}"
+                                                            value="{{ $code }}"
                                                             x-model="formData.tripReason"
-                                                            class="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                                                         >
                                                         <span class="text-sm text-gray-700">{{ $reason['label'] }}</span>
                                                     </label>
@@ -295,97 +301,89 @@
                                         </div>
                                     @endforeach
                                 </div>
-                            </div>
 
-                            <!-- Error Message -->
-                            <div x-show="error" x-cloak class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                <div class="flex items-center gap-2 text-red-700">
-                                    <i class="fa-solid fa-circle-exclamation"></i>
-                                    <span x-text="error"></span>
+                                <!-- Error Message -->
+                                <div x-show="error" x-cloak class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    <div class="flex items-center gap-2 text-red-700 text-sm">
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+                                        <span x-text="error"></span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Submit Button -->
-                            <div class="flex justify-end">
+                                <!-- Submit Button -->
                                 <button
                                     type="submit"
                                     :disabled="loading"
-                                    class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors shadow-sm"
+                                    class="w-full py-3 px-4 bg-[#1e3a5f] hover:bg-[#2d4a6f] disabled:bg-[#1e3a5f]/70 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                                 >
                                     <template x-if="loading">
                                         <div class="loading-spinner"></div>
                                     </template>
-                                    <template x-if="!loading">
-                                        <i class="fa-solid fa-magnifying-glass"></i>
-                                    </template>
                                     <span x-text="loading ? 'Prüfung läuft...' : 'Visumbestimmungen prüfen'"></span>
+                                    <i x-show="!loading" class="fa-solid fa-arrow-right"></i>
                                 </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
+
+                        <!-- Disclaimer -->
+                        <p class="text-xs text-gray-400 text-center mt-4 px-4">
+                            Die bereitgestellten Informationen werden mit größter Sorgfalt recherchiert. Dennoch kann keine Gewähr für die Richtigkeit übernommen werden.
+                        </p>
                     </div>
 
-                    <!-- Results Section -->
-                    <div x-show="result" x-cloak class="bg-white rounded-lg shadow-sm p-6">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <i class="fa-regular fa-clipboard-check text-green-500"></i>
-                            Ergebnis der Visum-Prüfung
-                        </h2>
+                    <!-- Right Column: Results -->
+                    <div class="w-80 flex-shrink-0">
+                        <div class="result-card">
+                            <!-- Empty State -->
+                            <div x-show="!result" class="p-8 text-center">
+                                <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                                </div>
+                                <p class="text-sm text-gray-500">Füllen Sie das Formular aus,<br>um die Visumbestimmungen<br>zu prüfen.</p>
+                            </div>
 
-                        <template x-if="result">
-                            <div class="space-y-4">
-                                <!-- Visa Required Status -->
-                                <div class="p-4 rounded-lg" :class="result.visaQualification === 'VISA_REQUIRED' ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'">
+                            <!-- Results -->
+                            <div x-show="result" x-cloak class="p-5">
+                                <!-- Visa Status -->
+                                <div class="mb-4 p-4 rounded-lg" :class="result && result.visaQualification === 'VISA_REQUIRED' ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex-shrink-0">
-                                            <template x-if="result.visaQualification === 'VISA_REQUIRED'">
-                                                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-2xl"></i>
-                                            </template>
-                                            <template x-if="result.visaQualification !== 'VISA_REQUIRED'">
-                                                <i class="fa-solid fa-circle-check text-green-500 text-2xl"></i>
-                                            </template>
-                                        </div>
+                                        <template x-if="result && result.visaQualification === 'VISA_REQUIRED'">
+                                            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl"></i>
+                                        </template>
+                                        <template x-if="result && result.visaQualification !== 'VISA_REQUIRED'">
+                                            <i class="fa-solid fa-circle-check text-green-500 text-xl"></i>
+                                        </template>
                                         <div>
-                                            <h3 class="font-semibold" :class="result.visaQualification === 'VISA_REQUIRED' ? 'text-amber-800' : 'text-green-800'" x-text="result.visaQualification === 'VISA_REQUIRED' ? 'Visum erforderlich' : 'Kein Visum erforderlich'"></h3>
-                                            <template x-if="result.visaType">
-                                                <p class="text-sm font-medium" :class="result.visaQualification === 'VISA_REQUIRED' ? 'text-amber-700' : 'text-green-700'" x-text="result.visaType"></p>
-                                            </template>
+                                            <div class="font-semibold text-sm" :class="result && result.visaQualification === 'VISA_REQUIRED' ? 'text-amber-800' : 'text-green-800'" x-text="result && result.visaQualification === 'VISA_REQUIRED' ? 'Visum erforderlich' : 'Kein Visum erforderlich'"></div>
+                                            <div x-show="result && result.visaType" class="text-xs mt-0.5" :class="result && result.visaQualification === 'VISA_REQUIRED' ? 'text-amber-700' : 'text-green-700'" x-text="result ? result.visaType : ''"></div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Description -->
-                                <template x-if="result.description">
-                                    <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                            <i class="fa-regular fa-file-lines text-blue-500"></i>
-                                            Beschreibung
-                                        </h4>
-                                        <p class="text-sm text-gray-700" x-text="result.description"></p>
+                                <template x-if="result && result.description">
+                                    <div class="mb-4">
+                                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Beschreibung</div>
+                                        <p class="text-sm text-gray-700 leading-relaxed" x-text="result.description"></p>
                                     </div>
                                 </template>
 
-                                <!-- Visa Time -->
-                                <template x-if="result.visaTime">
-                                    <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                            <i class="fa-regular fa-clock text-blue-500"></i>
-                                            Bearbeitungszeit
-                                        </h4>
+                                <!-- Processing Time -->
+                                <template x-if="result && result.visaTime">
+                                    <div class="mb-4">
+                                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Bearbeitungszeit</div>
                                         <p class="text-sm text-gray-700" x-text="result.visaTime"></p>
                                     </div>
                                 </template>
 
-                                <!-- Visa Documents -->
-                                <template x-if="result.visaDocs">
-                                    <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                            <i class="fa-regular fa-folder-open text-blue-500"></i>
-                                            Erforderliche Dokumente
-                                        </h4>
-                                        <ul class="space-y-1">
+                                <!-- Documents -->
+                                <template x-if="result && result.visaDocs">
+                                    <div class="mb-4">
+                                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Erforderliche Dokumente</div>
+                                        <ul class="space-y-1.5">
                                             <template x-for="doc in result.visaDocs.split(';').map(d => d.trim()).filter(d => d)" :key="doc">
                                                 <li class="flex items-start gap-2 text-sm text-gray-700">
-                                                    <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                                                    <i class="fa-solid fa-check text-green-500 mt-0.5 text-xs"></i>
                                                     <span x-text="doc"></span>
                                                 </li>
                                             </template>
@@ -393,17 +391,14 @@
                                     </div>
                                 </template>
 
-                                <!-- Visa Fees -->
-                                <template x-if="result.visaFees">
-                                    <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                            <i class="fa-regular fa-credit-card text-blue-500"></i>
-                                            Gebühren
-                                        </h4>
-                                        <ul class="space-y-1">
+                                <!-- Fees -->
+                                <template x-if="result && result.visaFees">
+                                    <div class="mb-4">
+                                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Gebühren</div>
+                                        <ul class="space-y-1.5">
                                             <template x-for="fee in result.visaFees.split(';').map(f => f.trim()).filter(f => f)" :key="fee">
                                                 <li class="flex items-start gap-2 text-sm text-gray-700">
-                                                    <i class="fa-solid fa-euro-sign text-blue-500 mt-0.5 flex-shrink-0"></i>
+                                                    <i class="fa-solid fa-euro-sign text-blue-500 mt-0.5 text-xs"></i>
                                                     <span x-text="fee"></span>
                                                 </li>
                                             </template>
@@ -411,17 +406,13 @@
                                     </div>
                                 </template>
 
-                                <!-- Raw Response (Debug) -->
-                                <details class="border border-gray-200 rounded-lg">
-                                    <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        API-Antwort anzeigen
-                                    </summary>
-                                    <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
-                                        <pre class="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap" x-text="JSON.stringify(result, null, 2)"></pre>
-                                    </div>
+                                <!-- Raw Response Toggle -->
+                                <details class="mt-4 border-t border-gray-100 pt-4">
+                                    <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-600">API-Antwort anzeigen</summary>
+                                    <pre class="mt-2 text-xs text-gray-500 overflow-x-auto whitespace-pre-wrap bg-gray-50 p-2 rounded" x-text="JSON.stringify(result, null, 2)"></pre>
                                 </details>
                             </div>
-                        </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -449,7 +440,6 @@
                 today: new Date().toISOString().split('T')[0],
 
                 async submitForm() {
-                    // Validate
                     if (!this.formData.nationality || !this.formData.residenceCountry ||
                         !this.formData.destinationCountry || !this.formData.tripStartDate ||
                         !this.formData.tripEndDate || !this.formData.tripReason) {
@@ -485,13 +475,6 @@
                     } finally {
                         this.loading = false;
                     }
-                },
-
-                formatDetails(details) {
-                    if (typeof details === 'string') {
-                        return details.replace(/\n/g, '<br>');
-                    }
-                    return '';
                 }
             };
         }
