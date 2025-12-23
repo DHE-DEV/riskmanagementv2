@@ -139,7 +139,7 @@ class WorkFlexService
             'tripEndDate' => $data['tripEndDate'],
         ];
 
-        $url = $this->baseUrl . '/visa-requirements/check';
+        $url = $this->baseUrl . '/check';
 
         $this->addDebug('Sending request', [
             'url' => $url,
@@ -153,6 +153,7 @@ class WorkFlexService
 
         try {
             $response = Http::withToken($token)
+                ->accept('application/json')
                 ->timeout(30)
                 ->post($url, $requestData);
 
@@ -187,6 +188,7 @@ class WorkFlexService
                     ]);
 
                     $retryResponse = Http::withToken($token)
+                        ->accept('application/json')
                         ->timeout(30)
                         ->post($url, $requestData);
 
