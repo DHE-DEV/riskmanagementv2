@@ -195,6 +195,7 @@ return [
     'navigation_branches_enabled' => env('NAVIGATION_BRANCHES_ENABLED', true),
     'navigation_my_travelers_enabled' => env('NAVIGATION_MY_TRAVELERS_ENABLED', true),
     'navigation_cruise_enabled' => env('NAVIGATION_CRUISE_ENABLED', true),
+    'navigation_business_visa_enabled' => env('NAVIGATION_BUSINESS_VISA_ENABLED', true),
     'navigation_center_map_enabled' => env('NAVIGATION_CENTER_MAP_ENABLED', true),
 
     /*

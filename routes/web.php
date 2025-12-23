@@ -203,6 +203,10 @@ Route::get('/cruise', function () {
     return view('livewire.pages.cruise');
 })->name('cruise');
 
+Route::get('/business-visa', function () {
+    return view('livewire.pages.business-visa');
+})->name('business-visa');
+
 // Plugin/Embed Dokumentation
 Route::get('/doc-plugin', function () {
     return view('livewire.pages.doc-plugin');

@@ -80,6 +80,13 @@
         </a>
         @endif
 
+        <!-- Business Visum -->
+        @if(config('app.navigation_business_visa_enabled', true))
+        <a href="{{ route('business-visa') }}" class="p-3 {{ $active === 'business-visa' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Business Visum">
+            <i class="fa-regular fa-id-card text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
         <!-- Plugin Dashboard -->
         @if(auth('customer')->check() && auth('customer')->user()->pluginClient)
         <a href="{{ route('plugin.dashboard') }}" class="p-3 {{ $active === 'plugin-dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Plugin Dashboard">

@@ -1,0 +1,31 @@
+﻿INTERNAL_BUSINESS_WITHOUT_WORK_FOR_CLIENT(
+      "Internal business meetings - Internal business meetings without work for a client"),
+ INTERNAL_BUSINESS_WITH_WORK_FOR_CLIENT(
+      "Internal business meetings - Internal business meetings with work for a client"),
+ MEETINGS_WITH_OR_FOR_A_CLIENT(
+      "External business meetings - Meetings with / work for a client (e.g. consulting, auditing, or advisory services)"),
+ MEETINGS_WITH_POTENTIAL_CLIENTS("External business meetings - Meetings with potential clients"),
+ NEGOTIATING_CONTRACTS_OR_SIGNING_AGREEMENTS(
+      "External business meetings - Negotiating contracts or signing agreements"),
+ OTHER_EXTERNAL_BUSINESS(
+      "External business meetings - Other business meetings (e.g. without hands-on work, representational)"),
+ CONFERENCE("Conferences & offsites - Attending a conference or fair"),
+ TEAM_OFFSITE("Conferences & offsites - Attending a company offsite"),
+ SPEAKING_AT_CONFERENCE_UNPAID("Conferences & offsites - Speaking at a conference (unpaid)"),
+ SPEAKING_AT_CONFERENCE_PAID("Conferences & offsites - Speaking at a conference (paid)"),
+ ATTENDING_INTERNAL_TRAINING("Training & educational - Attending internal training"),
+ ATTENDING_EXTERNAL_TRAINING("Training & educational - Attending external training"),
+ DELIVERING_TRAINING_TO_INTERNAL_PARTICIPANTS("Training & educational - Delivering training to internal participants"),
+ DELIVERING_TRAINING_TO_EXTERNAL_PARTICIPANTS_UNPAID(
+      "Training & educational - Delivering training to external participants (unpaid)"),
+ DELIVERING_TRAINING_TO_EXTERNAL_PARTICIPANTS_PAID(
+      "Training & educational - Delivering training to external participants (paid)"),
+ PARTICIPATION_IN_RESEARCH_PROJECTS_AND_STUDIES(
+      "Training & educational - Participation in research projects and studies"),
+ ASSEMBLY_MAINTENANCE_REPAIR_INSTALLATION("Technical & manual work - Assembly, maintenance, repair, and installation"),
+ TECHNICAL_SUPPORT_OR_SUPERVISION("Technical & manual work - Technical support and/or supervision"),
+ OTHER_HANDS_ON_LABOUR(
+      "Technical & manual work - Other hands-on labour (e.g. test drives, seasonal labor, factory work, assembly line tasks etc.)"),
+ MARKET_RESEARCH_AND_EXPLORING_INVESTMENT_OPPORTUNITIES(
+      "Other - Doing market research and exploring investment opportunities"),
+ OTHER("Other");

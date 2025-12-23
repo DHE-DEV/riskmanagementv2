@@ -218,7 +218,7 @@
         @endif
 
         @if(count($stats['daily']) > 0)
-            <h3 class="text-md font-medium text-gray-900 mt-6 mb-4">Tägliche Aufrufe</h3>
+            <h3 class="text-md font-medium text-gray-900 mt-6 mb-4">Tägliche Aufrufe der Seiten mit Plugin</h3>
             @php
                 $maxCount = max($stats['daily']) ?: 1;
                 $dailyData = $stats['daily'];
