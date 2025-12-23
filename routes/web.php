@@ -252,6 +252,11 @@ Route::prefix('plugin')->name('plugin.')->group(function () {
     Route::middleware(['guest:customer'])->group(function () {
         Route::get('/register', [\App\Http\Controllers\Plugin\RegistrationController::class, 'show'])->name('register');
         Route::post('/register', [\App\Http\Controllers\Plugin\RegistrationController::class, 'store'])->name('register.store');
+
+        // Email verification
+        Route::get('/verify-email/{token}', [\App\Http\Controllers\Plugin\RegistrationController::class, 'showVerify'])->name('verify-email');
+        Route::post('/verify-email/{token}', [\App\Http\Controllers\Plugin\RegistrationController::class, 'verify'])->name('verify-email.verify');
+        Route::post('/verify-email/{token}/resend', [\App\Http\Controllers\Plugin\RegistrationController::class, 'resendCode'])->name('verify-email.resend');
     });
 
     // Protected: Plugin onboarding and dashboard
