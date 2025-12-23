@@ -354,43 +354,66 @@
                         <template x-if="result">
                             <div class="space-y-4">
                                 <!-- Visa Required Status -->
-                                <div class="p-4 rounded-lg" :class="result.visaRequired ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'">
+                                <div class="p-4 rounded-lg" :class="result.visaQualification === 'VISA_REQUIRED' ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'">
                                     <div class="flex items-center gap-3">
                                         <div class="flex-shrink-0">
-                                            <template x-if="result.visaRequired">
+                                            <template x-if="result.visaQualification === 'VISA_REQUIRED'">
                                                 <i class="fa-solid fa-triangle-exclamation text-amber-500 text-2xl"></i>
                                             </template>
-                                            <template x-if="!result.visaRequired">
+                                            <template x-if="result.visaQualification !== 'VISA_REQUIRED'">
                                                 <i class="fa-solid fa-circle-check text-green-500 text-2xl"></i>
                                             </template>
                                         </div>
                                         <div>
-                                            <h3 class="font-semibold" :class="result.visaRequired ? 'text-amber-800' : 'text-green-800'" x-text="result.visaRequired ? 'Visum erforderlich' : 'Kein Visum erforderlich'"></h3>
-                                            <p class="text-sm" :class="result.visaRequired ? 'text-amber-700' : 'text-green-700'" x-text="result.message || ''"></p>
+                                            <h3 class="font-semibold" :class="result.visaQualification === 'VISA_REQUIRED' ? 'text-amber-800' : 'text-green-800'" x-text="result.visaQualification === 'VISA_REQUIRED' ? 'Visum erforderlich' : 'Kein Visum erforderlich'"></h3>
+                                            <template x-if="result.visaType">
+                                                <p class="text-sm font-medium" :class="result.visaQualification === 'VISA_REQUIRED' ? 'text-amber-700' : 'text-green-700'" x-text="result.visaType"></p>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Additional Details -->
-                                <template x-if="result.details">
+                                <!-- Description -->
+                                <template x-if="result.description">
                                     <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-3">Details</h4>
-                                        <div class="prose prose-sm max-w-none text-gray-700" x-html="formatDetails(result.details)"></div>
+                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                            <i class="fa-regular fa-file-lines text-blue-500"></i>
+                                            Beschreibung
+                                        </h4>
+                                        <p class="text-sm text-gray-700" x-text="result.description"></p>
                                     </div>
                                 </template>
 
-                                <!-- Requirements -->
-                                <template x-if="result.requirements && result.requirements.length > 0">
+                                <!-- Visa Time -->
+                                <template x-if="result.visaTime">
                                     <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-3">Anforderungen</h4>
-                                        <ul class="space-y-2">
-                                            <template x-for="req in result.requirements" :key="req">
-                                                <li class="flex items-start gap-2 text-sm text-gray-700">
-                                                    <i class="fa-solid fa-check text-blue-500 mt-0.5"></i>
-                                                    <span x-text="req"></span>
-                                                </li>
-                                            </template>
-                                        </ul>
+                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                            <i class="fa-regular fa-clock text-blue-500"></i>
+                                            Bearbeitungszeit
+                                        </h4>
+                                        <p class="text-sm text-gray-700" x-text="result.visaTime"></p>
+                                    </div>
+                                </template>
+
+                                <!-- Visa Documents -->
+                                <template x-if="result.visaDocs">
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                            <i class="fa-regular fa-folder-open text-blue-500"></i>
+                                            Erforderliche Dokumente
+                                        </h4>
+                                        <p class="text-sm text-gray-700" x-text="result.visaDocs"></p>
+                                    </div>
+                                </template>
+
+                                <!-- Visa Fees -->
+                                <template x-if="result.visaFees">
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                            <i class="fa-regular fa-credit-card text-blue-500"></i>
+                                            Gebühren
+                                        </h4>
+                                        <p class="text-sm text-gray-700" x-text="result.visaFees"></p>
                                     </div>
                                 </template>
 
