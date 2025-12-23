@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Plugin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Plugin\PluginRegistrationRequest;
-use App\Mail\PluginKeyMail;
 use App\Mail\PluginVerificationCodeMail;
 use App\Models\Customer;
 use App\Models\PluginClient;
@@ -165,14 +164,11 @@ class RegistrationController extends Controller
         // Add domain
         $pluginClient->addDomain($formData['domain']);
 
-        // Send welcome email with key and snippet
-        Mail::to($customer->email)->send(new PluginKeyMail($pluginClient));
-
         // Log in the customer
         Auth::guard('customer')->login($customer);
 
         return redirect()->route('plugin.dashboard')
-            ->with('success', 'Willkommen! Ihr Plugin-Zugang wurde erstellt. Die Zugangsdaten wurden auch an Ihre E-Mail-Adresse gesendet.');
+            ->with('success', 'Willkommen! Ihr Plugin-Zugang wurde erstellt.');
     }
 
     public function resendCode(string $token): RedirectResponse

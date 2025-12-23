@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Plugin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Plugin\OnboardingRequest;
-use App\Mail\PluginKeyMail;
 use App\Models\PluginClient;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class OnboardingController extends Controller
@@ -51,10 +49,7 @@ class OnboardingController extends Controller
         // Add domain
         $pluginClient->addDomain($request->validated('domain'));
 
-        // Send welcome email with key and snippet
-        Mail::to($customer->email)->send(new PluginKeyMail($pluginClient));
-
         return redirect()->route('plugin.dashboard')
-            ->with('success', 'Ihr Plugin-Account wurde erfolgreich erstellt! Die Zugangsdaten wurden an Ihre E-Mail-Adresse gesendet.');
+            ->with('success', 'Ihr Plugin-Account wurde erfolgreich erstellt!');
     }
 }
