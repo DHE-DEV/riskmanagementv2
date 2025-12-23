@@ -197,9 +197,9 @@
                 </div>
 
                 <!-- Two Column Layout -->
-                <div class="flex gap-6 p-6 max-w-7xl mx-auto">
+                <div class="flex gap-6 p-6">
                     <!-- Left Column: Form -->
-                    <div class="flex-1 min-w-0">
+                    <div class="w-[55%] min-w-0">
                         <div class="bg-white rounded-lg shadow-sm">
                             <form @submit.prevent="submitForm" class="p-6">
                                 <!-- Staatsangehörigkeit -->
@@ -332,7 +332,7 @@
                     </div>
 
                     <!-- Right Column: Results -->
-                    <div class="w-80 flex-shrink-0">
+                    <div class="w-[45%] flex-shrink-0">
                         <div class="result-card">
                             <!-- Empty State -->
                             <div x-show="!result" class="p-8 text-center">
