@@ -238,7 +238,7 @@
                             <i class="fas fa-copy"></i>
                         </button>
                         <code>&lt;iframe
-  src="{{ url('/embed/events') }}?key=IHR_API_KEY"
+  src="https://global-travel-monitor.eu/embed/events?key=IHR_API_KEY"
   width="400"
   height="600"
   frameborder="0"&gt;
@@ -364,7 +364,7 @@
                             <i class="fas fa-copy"></i>
                         </button>
                         <code>&lt;iframe
-  src="{{ url('/embed/map') }}?key=IHR_API_KEY"
+  src="https://global-travel-monitor.eu/embed/map?key=IHR_API_KEY"
   width="100%"
   height="600"
   frameborder="0"&gt;
@@ -403,7 +403,7 @@
                             <i class="fas fa-copy"></i>
                         </button>
                         <code>&lt;iframe
-  src="{{ url('/embed/dashboard') }}?key=IHR_API_KEY"
+  src="https://global-travel-monitor.eu/embed/dashboard?key=IHR_API_KEY"
   width="100%"
   height="800"
   frameborder="0"&gt;
@@ -479,7 +479,7 @@
                     <p class="text-sm text-blue-800">
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Beispiel mit mehreren Parametern:</strong><br>
-                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">{{ url('/embed/events') }}?key=IHR_API_KEY&timePeriod=future&priorities=high,medium&continents=EU</code>
+                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">https://global-travel-monitor.eu/embed/events?key=IHR_API_KEY&timePeriod=future&priorities=high,medium&continents=EU</code>
                     </p>
                 </div>
 
