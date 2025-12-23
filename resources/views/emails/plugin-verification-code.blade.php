@@ -95,7 +95,7 @@
 
         <p>Falls Sie diese Registrierung nicht angefordert haben, können Sie diese E-Mail ignorieren.</p>
 
-        <p>Mit freundlichen Grüßen,<br>Ihr Global Travel Monitor Team</p>
+        <p>Mit freundlichen Grüßen,<br>Ihr Team von Passolution</p>
     </div>
 
     <div class="footer">
