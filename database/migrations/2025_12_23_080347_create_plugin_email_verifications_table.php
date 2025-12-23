@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('token', 64)->unique();
             $table->string('email')->index();
             $table->string('code', 6);
-            $table->json('form_data');
+            $table->text('form_data');
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamp('expires_at');
             $table->timestamp('verified_at')->nullable();
