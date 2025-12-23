@@ -28,13 +28,6 @@ class WorkFlexService
     {
         // Cache the token for 55 minutes (tokens typically expire after 1 hour)
         return Cache::remember('workflex_access_token', 55 * 60, function () {
-            Log::info('WorkFlex: Attempting to get access token', [
-                'auth_url' => $this->authUrl,
-                'client_id' => $this->clientId,
-                'client_secret_length' => strlen($this->clientSecret ?? ''),
-                'client_secret_preview' => substr($this->clientSecret ?? '', 0, 8) . '...',
-            ]);
-
             try {
                 $response = Http::asForm()->post($this->authUrl, [
                     'grant_type' => 'client_credentials',
@@ -42,15 +35,8 @@ class WorkFlexService
                     'client_secret' => $this->clientSecret,
                 ]);
 
-                Log::info('WorkFlex: Token response received', [
-                    'status' => $response->status(),
-                    'headers' => $response->headers(),
-                    'body_preview' => substr($response->body(), 0, 500),
-                ]);
-
                 if ($response->successful()) {
                     $data = $response->json();
-                    Log::info('WorkFlex: Token obtained successfully');
                     return $data['access_token'] ?? null;
                 }
 
@@ -63,7 +49,6 @@ class WorkFlexService
             } catch (\Exception $e) {
                 Log::error('WorkFlex token request exception', [
                     'message' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
                 ]);
                 return null;
             }
@@ -78,55 +63,19 @@ class WorkFlexService
         Cache::forget('workflex_access_token');
     }
 
-    protected array $debugLog = [];
-
-    /**
-     * Get debug log
-     */
-    public function getDebugLog(): array
-    {
-        return $this->debugLog;
-    }
-
-    /**
-     * Add to debug log
-     */
-    protected function addDebug(string $message, array $context = []): void
-    {
-        $this->debugLog[] = [
-            'time' => now()->format('H:i:s.u'),
-            'message' => $message,
-            'context' => $context,
-        ];
-    }
-
     /**
      * Check visa requirements
      */
     public function checkVisaRequirements(array $data): array
     {
-        $this->debugLog = [];
-
-        $this->addDebug('Starting visa check', [
-            'auth_url' => $this->authUrl,
-            'base_url' => $this->baseUrl,
-            'client_id' => $this->clientId,
-        ]);
-
         $token = $this->getAccessToken();
 
         if (!$token) {
-            $this->addDebug('Failed to obtain access token');
             return [
                 'success' => false,
                 'error' => 'Could not obtain access token',
-                'debug' => $this->debugLog,
             ];
         }
-
-        $this->addDebug('Token obtained', [
-            'token_preview' => substr($token, 0, 20) . '****',
-        ]);
 
         $requestData = [
             'externalId' => $data['externalId'] ?? $this->generateExternalId(),
@@ -141,72 +90,34 @@ class WorkFlexService
 
         $url = $this->baseUrl . '/check';
 
-        $this->addDebug('Sending request', [
-            'url' => $url,
-            'request_data' => $requestData,
-        ]);
-
-        Log::info('WorkFlex: Sending visa check request', [
-            'url' => $url,
-            'request_data' => $requestData,
-        ]);
-
         try {
             $response = Http::withToken($token)
                 ->accept('application/json')
                 ->timeout(30)
                 ->post($url, $requestData);
 
-            $this->addDebug('Response received', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            Log::info('WorkFlex: Visa check response', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
             if ($response->successful()) {
                 return [
                     'success' => true,
                     'data' => $response->json(),
-                    'debug' => $this->debugLog,
                 ];
             }
 
             // If token expired, clear cache and retry once
             if ($response->status() === 401) {
-                $this->addDebug('Token expired, retrying with new token');
-                Log::info('WorkFlex: Token expired, retrying with new token');
                 $this->clearToken();
                 $token = $this->getAccessToken();
 
                 if ($token) {
-                    $this->addDebug('New token obtained', [
-                        'token_preview' => substr($token, 0, 20) . '****',
-                    ]);
-
                     $retryResponse = Http::withToken($token)
                         ->accept('application/json')
                         ->timeout(30)
                         ->post($url, $requestData);
 
-                    $this->addDebug('Retry response', [
-                        'status' => $retryResponse->status(),
-                        'body' => $retryResponse->body(),
-                    ]);
-
-                    Log::info('WorkFlex: Retry response', [
-                        'status' => $retryResponse->status(),
-                        'body' => $retryResponse->body(),
-                    ]);
-
                     if ($retryResponse->successful()) {
                         return [
                             'success' => true,
                             'data' => $retryResponse->json(),
-                            'debug' => $this->debugLog,
                         ];
                     }
                 }
@@ -222,13 +133,8 @@ class WorkFlexService
                 'error' => 'Visa check request failed',
                 'status' => $response->status(),
                 'details' => $response->json(),
-                'debug' => $this->debugLog,
             ];
         } catch (\Exception $e) {
-            $this->addDebug('Exception occurred', [
-                'message' => $e->getMessage(),
-            ]);
-
             Log::error('WorkFlex visa check exception', [
                 'message' => $e->getMessage(),
             ]);
@@ -236,7 +142,6 @@ class WorkFlexService
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
-                'debug' => $this->debugLog,
             ];
         }
     }
