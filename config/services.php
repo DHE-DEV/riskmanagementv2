@@ -97,4 +97,12 @@ return [
         'demo_key' => env('PLUGIN_DEMO_KEY'),
     ],
 
+    // WorkFlex Visa API
+    'workflex' => [
+        'client_id' => env('WORKFLEX_CLIENT_ID'),
+        'client_secret' => env('WORKFLEX_CLIENT_SECRET'),
+        'base_url' => env('WORKFLEX_BASE_URL', 'https://api.workflex.io'),
+        'auth_url' => env('WORKFLEX_AUTH_URL', 'https://auth.workflex.io/oauth2/token'),
+    ],
+
 ];

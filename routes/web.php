@@ -203,9 +203,8 @@ Route::get('/cruise', function () {
     return view('livewire.pages.cruise');
 })->name('cruise');
 
-Route::get('/business-visa', function () {
-    return view('livewire.pages.business-visa');
-})->name('business-visa');
+Route::get('/business-visa', [\App\Http\Controllers\BusinessVisaController::class, 'index'])->name('business-visa');
+Route::post('/business-visa/check', [\App\Http\Controllers\BusinessVisaController::class, 'check'])->name('business-visa.check');
 
 // Plugin/Embed Dokumentation
 Route::get('/doc-plugin', function () {
