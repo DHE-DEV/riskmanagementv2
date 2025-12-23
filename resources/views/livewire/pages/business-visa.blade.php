@@ -382,7 +382,14 @@
                                             <i class="fa-regular fa-folder-open text-blue-500"></i>
                                             Erforderliche Dokumente
                                         </h4>
-                                        <p class="text-sm text-gray-700" x-text="result.visaDocs"></p>
+                                        <ul class="space-y-1">
+                                            <template x-for="doc in result.visaDocs.split(';').map(d => d.trim()).filter(d => d)" :key="doc">
+                                                <li class="flex items-start gap-2 text-sm text-gray-700">
+                                                    <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                                                    <span x-text="doc"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
                                     </div>
                                 </template>
 
@@ -393,7 +400,14 @@
                                             <i class="fa-regular fa-credit-card text-blue-500"></i>
                                             Gebühren
                                         </h4>
-                                        <p class="text-sm text-gray-700" x-text="result.visaFees"></p>
+                                        <ul class="space-y-1">
+                                            <template x-for="fee in result.visaFees.split(';').map(f => f.trim()).filter(f => f)" :key="fee">
+                                                <li class="flex items-start gap-2 text-sm text-gray-700">
+                                                    <i class="fa-solid fa-euro-sign text-blue-500 mt-0.5 flex-shrink-0"></i>
+                                                    <span x-text="fee"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
                                     </div>
                                 </template>
 
