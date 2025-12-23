@@ -50,6 +50,7 @@ class BusinessVisaController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $result['data'],
+                'debug' => $result['debug'] ?? [],
             ]);
         }
 
@@ -57,6 +58,7 @@ class BusinessVisaController extends Controller
             'success' => false,
             'error' => $result['error'] ?? 'An error occurred',
             'details' => $result['details'] ?? null,
+            'debug' => $result['debug'] ?? [],
         ], 422);
     }
 

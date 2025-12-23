@@ -305,6 +305,26 @@
                                 </div>
                             </div>
 
+                            <!-- Debug Log -->
+                            <div x-show="debugLog && debugLog.length > 0" x-cloak class="mb-6">
+                                <details class="border border-gray-300 rounded-lg bg-gray-900">
+                                    <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-gray-200 hover:bg-gray-800">
+                                        <i class="fa-solid fa-bug mr-2"></i> Debug Log (<span x-text="debugLog.length"></span> Einträge)
+                                    </summary>
+                                    <div class="px-4 py-3 border-t border-gray-700 max-h-96 overflow-y-auto">
+                                        <template x-for="(entry, index) in debugLog" :key="index">
+                                            <div class="mb-3 pb-3 border-b border-gray-700 last:border-0">
+                                                <div class="flex items-center gap-2 text-xs text-gray-400 mb-1">
+                                                    <span class="font-mono" x-text="entry.time"></span>
+                                                    <span class="font-semibold text-green-400" x-text="entry.message"></span>
+                                                </div>
+                                                <pre class="text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono" x-text="JSON.stringify(entry.context, null, 2)"></pre>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </details>
+                            </div>
+
                             <!-- Submit Button -->
                             <div class="flex justify-end">
                                 <button
@@ -409,6 +429,7 @@
                 loading: false,
                 error: null,
                 result: null,
+                debugLog: [],
                 today: new Date().toISOString().split('T')[0],
 
                 async submitForm() {
@@ -423,6 +444,7 @@
                     this.loading = true;
                     this.error = null;
                     this.result = null;
+                    this.debugLog = [];
 
                     try {
                         const response = await fetch('{{ route("business-visa.check") }}', {
@@ -436,6 +458,11 @@
                         });
 
                         const data = await response.json();
+
+                        // Always capture debug log if available
+                        if (data.debug) {
+                            this.debugLog = data.debug;
+                        }
 
                         if (data.success) {
                             this.result = data.data;
