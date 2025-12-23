@@ -101,8 +101,8 @@ return [
     'workflex' => [
         'client_id' => env('WORKFLEX_CLIENT_ID'),
         'client_secret' => env('WORKFLEX_CLIENT_SECRET'),
-        'base_url' => env('WORKFLEX_BASE_URL', 'https://api.workflex.io'),
-        'auth_url' => env('WORKFLEX_AUTH_URL', 'https://auth.workflex.io/oauth2/token'),
+        'base_url' => env('WORKFLEX_BASE_URL', 'https://visa-api.getworkflex.com/visa-api/v1'),
+        'auth_url' => env('WORKFLEX_AUTH_URL', 'https://visa-api.getworkflex.com/visa-api/v1/oauth2/token'),
     ],
 
 ];
