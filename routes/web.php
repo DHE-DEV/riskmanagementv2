@@ -203,8 +203,19 @@ Route::get('/cruise', function () {
     return view('livewire.pages.cruise');
 })->name('cruise');
 
-Route::get('/business-visa', [\App\Http\Controllers\BusinessVisaController::class, 'index'])->name('business-visa');
-Route::post('/business-visa/check', [\App\Http\Controllers\BusinessVisaController::class, 'check'])->name('business-visa.check');
+Route::get('/business-visa', function () {
+    if (!config('app.business_visa_enabled', true)) {
+        abort(404);
+    }
+    return app(\App\Http\Controllers\BusinessVisaController::class)->index();
+})->name('business-visa');
+
+Route::post('/business-visa/check', function (\Illuminate\Http\Request $request) {
+    if (!config('app.business_visa_enabled', true)) {
+        abort(404);
+    }
+    return app(\App\Http\Controllers\BusinessVisaController::class)->check($request);
+})->name('business-visa.check');
 
 // Plugin/Embed Dokumentation
 Route::get('/doc-plugin', function () {
