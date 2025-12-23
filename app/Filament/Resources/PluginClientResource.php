@@ -111,8 +111,8 @@ class PluginClientResource extends Resource
                             ->schema([
                                 TextEntry::make('customer.name')
                                     ->label('Kunde')
-                                    ->url(fn ($record) => $record->customer_id
-                                        ? route('filament.admin.resources.customers.customers.edit', ['record' => $record->customer_id])
+                                    ->url(fn ($record) => $record->customer
+                                        ? route('filament.admin.resources.customers.edit', ['record' => $record->customer_id])
                                         : null)
                                     ->openUrlInNewTab()
                                     ->icon('heroicon-o-arrow-top-right-on-square')
@@ -158,7 +158,7 @@ class PluginClientResource extends Resource
                                     }),
                             ]),
                     ])
-                    ->visible(fn ($record) => $record->customer_id !== null),
+                    ->visible(fn ($record) => $record->customer !== null),
 
                 Section::make('Kundendaten')
                     ->icon('heroicon-o-building-office')
