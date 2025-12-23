@@ -10,7 +10,27 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Font Awesome Einbindung: 1) Kit per .env (bevorzugt), 2) lokal (Zip entpackt), 3) CDN-Fallback -->
+    @php($faKit = config('services.fontawesome.kit'))
+    @if(!empty($faKit))
+        <script src="https://kit.fontawesome.com/{{ e($faKit) }}.js" crossorigin="anonymous" onload="window.__faKitOk=true" onerror="window.__faKitOk=false"></script>
+        <script>
+        (function(){
+            function addCss(href){
+                var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
+            }
+            var fallbackHref = '{{ file_exists(public_path('vendor/fontawesome/css/all.min.css')) ? asset('vendor/fontawesome/css/all.min.css') : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }}';
+            window.addEventListener('DOMContentLoaded', function(){
+                setTimeout(function(){ if(!window.__faKitOk){ addCss(fallbackHref); } }, 800);
+            });
+        })();
+        </script>
+    @elseif (file_exists(public_path('vendor/fontawesome/css/all.min.css')))
+        <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}" />
+    @else
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    @endif
 
     <style>
         body {
