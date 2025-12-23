@@ -273,10 +273,6 @@
                                     Reisegrund <span class="text-red-500">*</span>
                                 </h2>
                                 <div class="space-y-4">
-                                    @php
-                                        $groupedReasons = collect($tripReasons)->groupBy('group');
-                                    @endphp
-
                                     @foreach($groupedReasons as $group => $reasons)
                                         <div class="border border-gray-200 rounded-lg overflow-hidden">
                                             <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">

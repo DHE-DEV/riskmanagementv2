@@ -20,10 +20,12 @@ class BusinessVisaController extends Controller
     {
         $tripReasons = WorkFlexService::getTripReasons();
         $countries = $this->getCountries();
+        $groupedReasons = collect($tripReasons)->groupBy('group');
 
         return view('livewire.pages.business-visa', [
             'tripReasons' => $tripReasons,
             'countries' => $countries,
+            'groupedReasons' => $groupedReasons,
         ]);
     }
 
