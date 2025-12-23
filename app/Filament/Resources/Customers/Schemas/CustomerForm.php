@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Customers\Schemas;
 
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -40,9 +42,24 @@ class CustomerForm
                                             ->maxLength(255)
                                             ->unique(ignorable: fn ($record) => $record),
 
-                                        TextInput::make('customer_type')
+                                        Select::make('customer_type')
                                             ->label('Kundentyp')
-                                            ->disabled(),
+                                            ->options([
+                                                'private' => 'Privatkunde',
+                                                'business' => 'Firmenkunde',
+                                            ]),
+
+                                        CheckboxList::make('business_type')
+                                            ->label('Geschäftstyp')
+                                            ->options([
+                                                'travel_agency' => 'Reisebüro',
+                                                'organizer' => 'Veranstalter',
+                                                'online_provider' => 'Online Anbieter',
+                                                'mobile_travel_consultant' => 'Mobiler Reiseberater',
+                                                'software_provider' => 'Softwareanbieter',
+                                                'other' => 'Sonstiges',
+                                            ])
+                                            ->columns(2),
 
                                         TextInput::make('provider')
                                             ->label('Login via')

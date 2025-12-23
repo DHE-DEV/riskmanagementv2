@@ -358,6 +358,20 @@
                                 >
                                     Mobiler Reiseberater
                                 </button>
+                                <button
+                                    @click="toggleBusinessType('software_provider')"
+                                    :class="isBusinessTypeSelected('software_provider') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Softwareanbieter
+                                </button>
+                                <button
+                                    @click="toggleBusinessType('other')"
+                                    :class="isBusinessTypeSelected('other') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-white text-gray-700 border border-gray-300'"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors hover:shadow-md"
+                                >
+                                    Sonstiges
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -725,7 +739,7 @@
                          x-data="{
                              customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}',
                              businessTypeLabels: {{ json_encode(array_map(function($type) {
-                                 $labels = ['travel_agency' => 'Reisebüro', 'organizer' => 'Veranstalter', 'online_provider' => 'Online Anbieter', 'mobile_travel_consultant' => 'Mobiler Reiseberater'];
+                                 $labels = ['travel_agency' => 'Reisebüro', 'organizer' => 'Veranstalter', 'online_provider' => 'Online Anbieter', 'mobile_travel_consultant' => 'Mobiler Reiseberater', 'software_provider' => 'Softwareanbieter', 'other' => 'Sonstiges'];
                                  return $labels[$type] ?? $type;
                              }, auth('customer')->user()->business_type ?? [])) }}
                          }"
