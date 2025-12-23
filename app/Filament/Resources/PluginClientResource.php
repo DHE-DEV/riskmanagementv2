@@ -104,6 +104,62 @@ class PluginClientResource extends Resource
     {
         return $schema
             ->components([
+                Section::make('Verknüpfter Kunde')
+                    ->icon('heroicon-o-user')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('customer.name')
+                                    ->label('Kunde')
+                                    ->url(fn ($record) => $record->customer_id
+                                        ? route('filament.admin.resources.customers.customers.edit', ['record' => $record->customer_id])
+                                        : null)
+                                    ->openUrlInNewTab()
+                                    ->icon('heroicon-o-arrow-top-right-on-square')
+                                    ->iconPosition('after')
+                                    ->placeholder('Kein Kunde verknüpft'),
+                                TextEntry::make('customer.email')
+                                    ->label('Kunden-E-Mail')
+                                    ->copyable()
+                                    ->placeholder('-'),
+                                TextEntry::make('customer.customer_type')
+                                    ->label('Kundentyp')
+                                    ->badge()
+                                    ->color(fn (?string $state): string => match ($state) {
+                                        'business' => 'success',
+                                        'private' => 'info',
+                                        default => 'gray',
+                                    })
+                                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                        'business' => 'Firmenkunde',
+                                        'private' => 'Privatkunde',
+                                        default => '-',
+                                    }),
+                                TextEntry::make('customer.business_type')
+                                    ->label('Geschäftstyp')
+                                    ->badge()
+                                    ->color('primary')
+                                    ->formatStateUsing(function ($state): string {
+                                        if (empty($state)) {
+                                            return '-';
+                                        }
+                                        $labels = [
+                                            'travel_agency' => 'Reisebüro',
+                                            'organizer' => 'Veranstalter',
+                                            'online_provider' => 'Online Anbieter',
+                                            'mobile_travel_consultant' => 'Mobiler Reiseberater',
+                                            'software_provider' => 'Softwareanbieter',
+                                            'other' => 'Sonstiges',
+                                        ];
+                                        if (is_array($state)) {
+                                            return implode(', ', array_map(fn ($t) => $labels[$t] ?? $t, $state));
+                                        }
+                                        return $labels[$state] ?? $state;
+                                    }),
+                            ]),
+                    ])
+                    ->visible(fn ($record) => $record->customer_id !== null),
+
                 Section::make('Kundendaten')
                     ->icon('heroicon-o-building-office')
                     ->schema([
