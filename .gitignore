@@ -24,3 +24,6 @@ yarn-error.log
 /.zed
 # Auto-generated sitemap
 /public/sitemap.xml
+
+workflex_token.txt
+workflex_curl_request.txt
