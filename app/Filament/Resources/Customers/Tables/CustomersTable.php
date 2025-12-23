@@ -8,6 +8,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -132,15 +133,20 @@ class CustomersTable
                 EditAction::make(),
                 DeleteAction::make()
                     ->label('Löschen')
-                    ->modalHeading('Customer löschen')
-                    ->modalDescription('Möchten Sie diesen Customer wirklich löschen? Dies ist ein Soft Delete.')
-                    ->successNotificationTitle('Customer gelöscht'),
+                    ->modalHeading('Kunde löschen')
+                    ->modalDescription('Möchten Sie diesen Kunden wirklich löschen? Dies ist ein Soft Delete.')
+                    ->successNotificationTitle('Kunde gelöscht'),
+                RestoreAction::make()
+                    ->label('Wiederherstellen')
+                    ->modalHeading('Kunde wiederherstellen')
+                    ->modalDescription('Möchten Sie diesen Kunden wiederherstellen?')
+                    ->successNotificationTitle('Kunde wurde wiederhergestellt'),
                 ForceDeleteAction::make()
                     ->label('Endgültig löschen')
-                    ->modalHeading('Customer endgültig löschen')
-                    ->modalDescription('ACHTUNG: Dies löscht den Customer permanent aus der Datenbank. Der Benutzer kann sich danach erneut registrieren. Diese Aktion kann nicht rückgängig gemacht werden!')
+                    ->modalHeading('Kunde endgültig löschen')
+                    ->modalDescription('ACHTUNG: Dies löscht den Kunden permanent aus der Datenbank. Der Benutzer kann sich danach erneut registrieren. Diese Aktion kann nicht rückgängig gemacht werden!')
                     ->modalSubmitActionLabel('Endgültig löschen')
-                    ->successNotificationTitle('Customer wurde endgültig gelöscht')
+                    ->successNotificationTitle('Kunde wurde endgültig gelöscht')
                     ->color('danger'),
             ])
             ->toolbarActions([
@@ -149,15 +155,15 @@ class CustomersTable
                         ->label('Ausgewählte löschen'),
                     ForceDeleteBulkAction::make()
                         ->label('Ausgewählte endgültig löschen')
-                        ->modalHeading('Customers endgültig löschen')
-                        ->modalDescription('ACHTUNG: Dies löscht die ausgewählten Customers permanent. Sie können sich danach erneut registrieren.')
+                        ->modalHeading('Kunden endgültig löschen')
+                        ->modalDescription('ACHTUNG: Dies löscht die ausgewählten Kunden permanent. Sie können sich danach erneut registrieren.')
                         ->modalSubmitActionLabel('Endgültig löschen'),
                     RestoreBulkAction::make()
                         ->label('Ausgewählte wiederherstellen'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->emptyStateHeading('Keine Customers')
-            ->emptyStateDescription('Es wurden noch keine Customers registriert.');
+            ->emptyStateHeading('Keine Kunden')
+            ->emptyStateDescription('Es wurden noch keine Kunden registriert.');
     }
 }
