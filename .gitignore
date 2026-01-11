@@ -27,3 +27,7 @@ yarn-error.log
 
 workflex_token.txt
 workflex_curl_request.txt
+
+# Playwright
+playwright-report/
+test-results/
