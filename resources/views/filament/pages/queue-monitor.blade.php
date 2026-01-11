@@ -1,4 +1,55 @@
 <x-filament-panels::page>
+    {{-- Worker Status Banner --}}
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; margin-bottom: 1.5rem; border-radius: 12px; {{ $workerStatus['is_running'] ? 'background: #dcfce7; border: 1px solid #86efac;' : 'background: #fef3c7; border: 1px solid #fcd34d;' }}">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            @if($workerStatus['is_running'])
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite;"></div>
+                <span style="font-weight: 600; color: #166534;">Worker aktiv</span>
+                @if($workerStatus['processing'] > 0)
+                    <span style="font-size: 0.875rem; color: #15803d;">{{ $workerStatus['processing'] }} Job(s) werden verarbeitet</span>
+                @endif
+            @else
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
+                <span style="font-weight: 600; color: #92400e;">Worker inaktiv</span>
+                <span style="font-size: 0.875rem; color: #a16207;">Jobs werden nicht automatisch verarbeitet</span>
+            @endif
+        </div>
+        <div style="display: flex; gap: 8px;">
+            @if($stats['pending'] > 0)
+                <button
+                    wire:click="processNextJob"
+                    style="display: inline-flex; align-items: center; gap: 6px; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s;"
+                    onmouseover="this.style.background='#f9fafb'; this.style.borderColor='#9ca3af'"
+                    onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                    </svg>
+                    Nächsten Job
+                </button>
+                <button
+                    wire:click="processAllJobs"
+                    wire:confirm="Alle {{ $stats['pending'] }} Jobs jetzt verarbeiten? Dies kann einige Zeit dauern."
+                    style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 0.15s;"
+                    onmouseover="this.style.background='#1d4ed8'"
+                    onmouseout="this.style.background='#2563eb'"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954l-7.108 4.061A1.125 1.125 0 0 1 3 16.811V8.69ZM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954l-7.108 4.061a1.125 1.125 0 0 1-1.683-.977V8.69Z" />
+                    </svg>
+                    Alle verarbeiten
+                </button>
+            @endif
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+
     {{-- Stats Overview --}}
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
         {{-- Wartende Jobs --}}

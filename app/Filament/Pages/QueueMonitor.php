@@ -62,6 +62,7 @@ class QueueMonitor extends Page
             'pendingJobs' => $this->getPendingJobs(),
             'failedJobs' => $this->getFailedJobs(),
             'stats' => $this->getStats(),
+            'workerStatus' => $this->getWorkerStatus(),
         ];
     }
 
@@ -113,12 +114,86 @@ class QueueMonitor extends Page
         return [
             'pending' => DB::table('jobs')->count(),
             'failed' => DB::table('failed_jobs')->count(),
+            'processing' => DB::table('jobs')->whereNotNull('reserved_at')->count(),
             'queues' => DB::table('jobs')
                 ->select('queue', DB::raw('count(*) as count'))
                 ->groupBy('queue')
                 ->pluck('count', 'queue')
                 ->toArray(),
         ];
+    }
+
+    public function getWorkerStatus(): array
+    {
+        $processing = DB::table('jobs')->whereNotNull('reserved_at')->count();
+        $pending = DB::table('jobs')->count();
+
+        // Check if worker process is running
+        $isRunning = $this->checkWorkerProcess();
+
+        return [
+            'is_running' => $isRunning,
+            'processing' => $processing,
+            'pending' => $pending,
+        ];
+    }
+
+    protected function checkWorkerProcess(): bool
+    {
+        // Check for queue:work processes
+        $output = shell_exec('pgrep -f "queue:work" 2>/dev/null');
+
+        return !empty(trim($output ?? ''));
+    }
+
+    public function processNextJob(): void
+    {
+        $pendingCount = DB::table('jobs')->count();
+
+        if ($pendingCount === 0) {
+            Notification::make()
+                ->title('Keine Jobs in der Queue')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        // Process one job
+        Artisan::call('queue:work', [
+            '--once' => true,
+            '--tries' => 3,
+        ]);
+
+        Notification::make()
+            ->title('Job verarbeitet')
+            ->success()
+            ->send();
+    }
+
+    public function processAllJobs(): void
+    {
+        $pendingCount = DB::table('jobs')->count();
+
+        if ($pendingCount === 0) {
+            Notification::make()
+                ->title('Keine Jobs in der Queue')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        // Process all jobs (with stop-when-empty)
+        Artisan::call('queue:work', [
+            '--stop-when-empty' => true,
+            '--tries' => 3,
+        ]);
+
+        Notification::make()
+            ->title('Alle Jobs wurden verarbeitet')
+            ->success()
+            ->send();
     }
 
     protected function extractJobName(array $payload): string
