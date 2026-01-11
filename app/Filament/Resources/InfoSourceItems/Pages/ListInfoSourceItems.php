@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\InfoSourceItems\Pages;
 
 use App\Filament\Resources\InfoSourceItems\InfoSourceItemResource;
+use App\Jobs\FetchInfoSourceJob;
 use App\Models\InfoSource;
-use App\Services\FeedFetcherService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
@@ -22,23 +22,29 @@ class ListInfoSourceItems extends ListRecords
                 ->color('primary')
                 ->requiresConfirmation()
                 ->modalHeading('Alle aktiven Feeds abrufen?')
-                ->modalDescription('Dies wird alle aktiven Datenquellen abrufen, die eine Aktualisierung benötigen.')
-                ->action(function (FeedFetcherService $fetcher) {
-                    $stats = $fetcher->fetchAll();
+                ->modalDescription('Die Jobs werden in die Queue gestellt und im Hintergrund abgearbeitet. Fortschritt unter System → Queue.')
+                ->action(function () {
+                    $sources = InfoSource::active()->ordered()->get();
 
-                    if ($stats['errors'] > 0) {
+                    if ($sources->isEmpty()) {
                         Notification::make()
-                            ->title('Feeds abgerufen mit Fehlern')
-                            ->body("Neu: {$stats['new']}, Aktualisiert: {$stats['updated']}, Fehler: {$stats['errors']}")
+                            ->title('Keine aktiven Datenquellen')
+                            ->body('Es gibt keine aktiven Datenquellen zum Abrufen.')
                             ->warning()
                             ->send();
-                    } else {
-                        Notification::make()
-                            ->title('Feeds erfolgreich abgerufen')
-                            ->body("Neu: {$stats['new']}, Aktualisiert: {$stats['updated']}")
-                            ->success()
-                            ->send();
+
+                        return;
                     }
+
+                    foreach ($sources as $source) {
+                        dispatch(new FetchInfoSourceJob($source));
+                    }
+
+                    Notification::make()
+                        ->title('Jobs in Queue gestellt')
+                        ->body("{$sources->count()} Feed-Jobs wurden in die Queue gestellt.")
+                        ->success()
+                        ->send();
                 }),
         ];
     }
