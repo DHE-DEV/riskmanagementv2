@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\FetchInfoSourceJob;
 use App\Models\InfoSource;
 use App\Services\FeedFetcherService;
 use Illuminate\Console\Command;
@@ -11,7 +12,9 @@ class FetchInfoSources extends Command
     protected $signature = 'feeds:fetch
                             {--source= : Fetch a specific source by code}
                             {--all : Fetch all active sources, ignoring refresh interval}
-                            {--force : Force fetch even if not active}';
+                            {--force : Force fetch even if not active}
+                            {--sync : Run synchronously instead of using queue}
+                            {--queue= : Specify queue name}';
 
     protected $description = 'Fetch data from configured info sources (RSS feeds, APIs)';
 
@@ -20,6 +23,8 @@ class FetchInfoSources extends Command
         $sourceCode = $this->option('source');
         $fetchAll = $this->option('all');
         $force = $this->option('force');
+        $runSync = $this->option('sync');
+        $queueName = $this->option('queue');
 
         if ($sourceCode) {
             // Fetch specific source
@@ -35,9 +40,14 @@ class FetchInfoSources extends Command
                 return Command::FAILURE;
             }
 
-            $this->info("Fetching: {$source->name}");
-            $stats = $fetcher->fetch($source);
-            $this->displayStats($stats);
+            if ($runSync) {
+                $this->info("Fetching: {$source->name}");
+                $stats = $fetcher->fetch($source);
+                $this->displayStats($stats);
+            } else {
+                $this->dispatchJob($source, $queueName);
+                $this->info("Job dispatched for: {$source->name}");
+            }
 
             return Command::SUCCESS;
         }
@@ -60,7 +70,16 @@ class FetchInfoSources extends Command
             return Command::SUCCESS;
         }
 
-        $this->info("Fetching {$sources->count()} source(s)...");
+        if ($runSync) {
+            return $this->fetchSynchronously($sources, $fetcher);
+        }
+
+        return $this->dispatchJobs($sources, $queueName);
+    }
+
+    protected function fetchSynchronously($sources, FeedFetcherService $fetcher): int
+    {
+        $this->info("Fetching {$sources->count()} source(s) synchronously...");
         $this->newLine();
 
         $totalStats = ['fetched' => 0, 'new' => 0, 'updated' => 0, 'errors' => 0];
@@ -87,6 +106,34 @@ class FetchInfoSources extends Command
         $this->displayStats($totalStats);
 
         return $totalStats['errors'] > 0 ? Command::FAILURE : Command::SUCCESS;
+    }
+
+    protected function dispatchJobs($sources, ?string $queueName): int
+    {
+        $this->info("Dispatching {$sources->count()} job(s) to queue...");
+        $this->newLine();
+
+        foreach ($sources as $source) {
+            $this->dispatchJob($source, $queueName);
+            $this->line("  [{$source->code}] {$source->name} - Job dispatched");
+        }
+
+        $this->newLine();
+        $this->info("All {$sources->count()} jobs dispatched to queue.");
+        $this->info("Monitor progress at: /admin/queue-monitor");
+
+        return Command::SUCCESS;
+    }
+
+    protected function dispatchJob(InfoSource $source, ?string $queueName): void
+    {
+        $job = new FetchInfoSourceJob($source);
+
+        if ($queueName) {
+            $job->onQueue($queueName);
+        }
+
+        dispatch($job);
     }
 
     protected function displayStats(array $stats): void

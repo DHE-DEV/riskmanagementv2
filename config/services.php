@@ -53,6 +53,8 @@ return [
         'oauth_authorize_url' => env('PASSOLUTION_OAUTH_AUTHORIZE_URL', 'https://web.passolution.eu/oauth/authorize'),
         'oauth_token_url' => env('PASSOLUTION_OAUTH_TOKEN_URL', 'https://web.passolution.eu/oauth/token'),
         'oauth_refresh_url' => env('PASSOLUTION_OAUTH_REFRESH_URL', 'https://web.passolution.eu/oauth/token/refresh'),
+        // Scheduled sync settings
+        'sync_enabled' => env('PASSOLUTION_SYNC_ENABLED', true),
     ],
 
     // PDS API - For SSO token-based API access

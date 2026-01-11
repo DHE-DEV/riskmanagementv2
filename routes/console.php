@@ -39,6 +39,24 @@ Schedule::command('sitemap:generate')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/sitemap-generation-schedule.log'));
 
+// Info Sources Synchronization (RSS Feeds, APIs) - runs hourly
+Schedule::command('feeds:fetch')
+    ->hourly()
+    ->withoutOverlapping(10)
+    ->runInBackground()
+    ->emailOutputOnFailure(config('mail.admin_email', 'admin@passolution.eu'))
+    ->appendOutputTo(storage_path('logs/feeds-fetch-schedule.log'));
+
+// Infosystem Entries Synchronization (Passolution API) - runs hourly
+if (config('services.passolution.sync_enabled')) {
+    Schedule::command('infosystem:sync --limit=100')
+        ->hourly()
+        ->withoutOverlapping(10)
+        ->runInBackground()
+        ->emailOutputOnFailure(config('mail.admin_email', 'admin@passolution.eu'))
+        ->appendOutputTo(storage_path('logs/infosystem-sync-schedule.log'));
+}
+
 // Travel Detail Module - Scheduled Cleanup (nur wenn aktiviert)
 if (config('travel_detail.enabled') && config('travel_detail.retention.scheduled_cleanup_enabled')) {
     $cleanupTime = config('travel_detail.retention.cleanup_time', '03:00');
