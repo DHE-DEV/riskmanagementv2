@@ -1019,7 +1019,7 @@
                         <span>Filter</span>
                         <span id="activeFilterIndicator" class="hidden ml-2 flex items-center gap-1">
                             <span class="px-2 py-0.5 text-xs font-semibold bg-blue-500 text-white rounded-full">Aktiv</span>
-                            <button onclick="event.stopPropagation(); resetAllFilters();" class="p-0.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded transition-colors" title="Filter zurücksetzen">
+                            <button onclick="event.stopPropagation(); window.location.reload();" class="p-0.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded transition-colors" title="Filter zurücksetzen">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
