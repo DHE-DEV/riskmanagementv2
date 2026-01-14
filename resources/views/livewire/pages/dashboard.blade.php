@@ -1697,9 +1697,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             openEventById(eventId);
         }, 1500); // Warte bis Events geladen sind
     } else if (countryCode) {
-        // Land-Code ohne Koordinaten - Land finden und als Filter setzen
-        setTimeout(() => {
-            openCountryByCode(countryCode);
+        // Land-Codes ohne Koordinaten - Länder finden und als Filter setzen
+        // Unterstützt mehrere Länder: ?country=de,es,it
+        setTimeout(async () => {
+            const countryCodes = countryCode.split(',').map(c => c.trim().toUpperCase());
+            let firstCountryLoaded = false;
+
+            for (const code of countryCodes) {
+                try {
+                    const response = await fetch(`/api/countries/locate?q=${encodeURIComponent(code)}`);
+                    const result = await response.json();
+
+                    if (result.data && result.data.name) {
+                        // Nur beim ersten Land zur Position zoomen
+                        if (!firstCountryLoaded && result.data.latitude && result.data.longitude) {
+                            map.setView([result.data.latitude, result.data.longitude], 5);
+                            firstCountryLoaded = true;
+                        }
+
+                        // Land zum Filter hinzufügen
+                        addCountryToFilter(result.data.name, result.data.iso_code);
+                    }
+                } catch (error) {
+                    console.error('Error loading country:', code, error);
+                }
+            }
         }, 1500); // Warte bis Events geladen sind
     }
 
