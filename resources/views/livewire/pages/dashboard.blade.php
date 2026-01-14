@@ -1634,8 +1634,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadCountryMappingsFromDB();
 
     await loadEventTypes(); // Load event types first
-    await loadInitialData();
     renderContinents();
+    applyUrlFilterParams(); // Apply URL filter parameters before loading data
+    await loadInitialData();
     updateLastUpdated();
     updateFilterIndicator(); // Check initial filter state
 
@@ -5348,6 +5349,160 @@ function updateFilterIndicator() {
     } else {
         indicator.classList.add('hidden');
     }
+}
+
+// Apply filter settings from URL parameters
+function applyUrlFilterParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Risk filter: ?risk=red,orange or ?risk=info,green,orange,red
+    const riskParam = urlParams.get('risk');
+    if (riskParam) {
+        const activeRisks = riskParam.split(',').map(r => r.trim().toLowerCase());
+        window.riskFilter = {
+            info: activeRisks.includes('info'),
+            green: activeRisks.includes('green'),
+            orange: activeRisks.includes('orange'),
+            red: activeRisks.includes('red')
+        };
+
+        // Update risk filter button UI
+        ['info', 'green', 'orange', 'red'].forEach(risk => {
+            const btn = document.getElementById(`risk-${risk}`);
+            if (btn) {
+                if (window.riskFilter[risk]) {
+                    const colorStyle = risk === 'info' ? 'background-color: #0066cc; border-color: #0066cc;' :
+                                      risk === 'green' ? 'background-color: #0fb67f; border-color: #0fb67f;' :
+                                      risk === 'orange' ? 'background-color: #e6a50a; border-color: #e6a50a;' :
+                                      'background-color: #ff0000; border-color: #ff0000;';
+                    btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors text-white';
+                    btn.style.cssText = colorStyle;
+                } else {
+                    btn.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+                    btn.style.cssText = '';
+                }
+            }
+        });
+
+        // Update toggle all button
+        const toggleAllRiskBtn = document.getElementById('toggleAllRiskLevels');
+        if (toggleAllRiskBtn) {
+            const allActive = window.riskFilter.info && window.riskFilter.green && window.riskFilter.orange && window.riskFilter.red;
+            toggleAllRiskBtn.textContent = allActive ? 'Alle ausblenden' : 'Alle einblenden';
+            toggleAllRiskBtn.className = allActive
+                ? 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium'
+                : 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 font-medium';
+        }
+    }
+
+    // Event type filter: ?eventType=1,2,3
+    const eventTypeParam = urlParams.get('eventType');
+    if (eventTypeParam && eventTypes && eventTypes.length > 0) {
+        const activeTypes = eventTypeParam.split(',').map(id => parseInt(id.trim()));
+
+        // Set all to false first, then enable only specified ones
+        eventTypes.forEach(eventType => {
+            window.eventTypeFilter[eventType.id] = activeTypes.includes(eventType.id);
+
+            const btn = document.getElementById(`event-type-${eventType.id}`);
+            if (btn) {
+                if (window.eventTypeFilter[eventType.id]) {
+                    btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black flex flex-col items-center justify-center gap-1 overflow-hidden';
+                } else {
+                    btn.className = 'px-2 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50 flex flex-col items-center justify-center gap-1 overflow-hidden';
+                }
+            }
+        });
+
+        // Update toggle all button
+        const toggleAllBtn = document.getElementById('toggleAllEventTypes');
+        if (toggleAllBtn) {
+            const allActive = eventTypes.every(et => window.eventTypeFilter[et.id]);
+            toggleAllBtn.textContent = allActive ? 'Alle ausblenden' : 'Alle einblenden';
+            toggleAllBtn.className = allActive
+                ? 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2'
+                : 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300 col-span-2';
+        }
+    }
+
+    // Continent filter: ?continent=1,2,3
+    const continentParam = urlParams.get('continent');
+    if (continentParam && continents && continents.length > 0) {
+        const activeContinents = continentParam.split(',').map(id => parseInt(id.trim()));
+        window.selectedContinents = new Set(activeContinents);
+
+        // Update continent button UI
+        const buttons = document.querySelectorAll('#continentsList button:not(#toggleAllContinents)');
+        buttons.forEach((button, index) => {
+            const buttonContinentId = continents[index]?.id;
+            if (buttonContinentId) {
+                if (window.selectedContinents.has(buttonContinentId)) {
+                    button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+                } else {
+                    button.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+                }
+            }
+        });
+
+        // Update toggle all button
+        const toggleAllContinentsBtn = document.getElementById('toggleAllContinents');
+        if (toggleAllContinentsBtn) {
+            const allSelected = continents.every(c => window.selectedContinents.has(c.id));
+            toggleAllContinentsBtn.textContent = allSelected ? 'Alle ausblenden' : 'Alle einblenden';
+            toggleAllContinentsBtn.className = allSelected
+                ? 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black font-medium'
+                : 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 font-medium';
+        }
+    }
+
+    // Time period filter: ?timePeriod=7days or ?timePeriod=30days or ?timePeriod=none
+    const timePeriodParam = urlParams.get('timePeriod');
+    if (timePeriodParam) {
+        const validPeriods = ['all', '7days', '30days', 'none'];
+        if (validPeriods.includes(timePeriodParam)) {
+            window.timePeriodFilter = timePeriodParam;
+
+            // Update time period button UI
+            const allButton = document.getElementById('period-all');
+            const button7days = document.getElementById('period-7days');
+            const button30days = document.getElementById('period-30days');
+
+            if (timePeriodParam === 'all') {
+                if (allButton) {
+                    allButton.textContent = 'Alle ausblenden';
+                    allButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+                }
+                if (button7days) button7days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+                if (button30days) button30days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black';
+            } else if (timePeriodParam === 'none') {
+                if (allButton) {
+                    allButton.textContent = 'Alle einblenden';
+                    allButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+                }
+                if (button7days) button7days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300';
+                if (button30days) button30days.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-white text-gray-700 border-gray-300';
+            } else {
+                // 7days or 30days selected
+                if (allButton) {
+                    allButton.textContent = 'Alle einblenden';
+                    allButton.className = 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+                }
+                if (button7days) {
+                    button7days.className = timePeriodParam === '7days'
+                        ? 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black'
+                        : 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+                }
+                if (button30days) {
+                    button30days.className = timePeriodParam === '30days'
+                        ? 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black'
+                        : 'px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300';
+                }
+            }
+        }
+    }
+
+    // Update filter indicator after applying URL params
+    updateFilterIndicator();
 }
 
 // Reset all filters to default
