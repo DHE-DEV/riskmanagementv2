@@ -87,6 +87,13 @@
         </a>
         @endif
 
+        <!-- VisumPoint Check -->
+        @if(config('app.navigation_visumpoint_enabled', true))
+        <a href="{{ route('visumpoint') }}" class="p-3 {{ $active === 'visumpoint-check' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Visum Check (VisumPoint)">
+            <i class="fa-regular fa-stamp text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
         <!-- Plugin Dashboard -->
         @if(auth('customer')->check() && auth('customer')->user()->pluginClient)
         <a href="{{ route('plugin.dashboard') }}" class="p-3 {{ $active === 'plugin-dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Plugin Dashboard">

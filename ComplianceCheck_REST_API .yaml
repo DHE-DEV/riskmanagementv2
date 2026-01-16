@@ -1,0 +1,585 @@
+openapi: 3.0.1
+info:
+  title: ComplianceCheck REST API
+  termsOfService: https://www.visumpoint.de/index.php?site=agb
+  contact:
+    email: miesen@miesen-partner.de
+  version: '1.1.0'
+servers:
+  - url: https://www.visumpoint.de/REST/ComplianceCheck/API.php
+  - url: http://127.0.0.1/ComplianceCheck/API.php
+paths:
+
+  /#BeginSession:
+    post:
+      tags:
+        - Sessions
+      summary: Begin a new session
+      description: >-
+        Before calling any other function of the ComplianceCheck REST API, a new session
+        has to be started. BeginSession returns a SID (Session ID), that has to
+        be provided on all subsequent calls to the API. A session has an
+        inactivity timeout after which further API calls fail and a new SID has
+        to be obtained using BeginSession in order to start a new session.
+      operationId: BeginSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - Organization
+                - AccessToken
+                - Function
+              properties:
+                Function:
+                  type: string
+                  description: The function to execute
+                  enum:
+                    - BeginSession
+                RequestID:
+                  type: string
+                  description: >-
+                    An optional arbitrary id returned as-is to the caller for internal
+                    reference
+                  example: SeqNo1894
+                Organization:
+                  type: string
+                  description: >-
+                    The name of the organization/customer/client requesting
+                    access to the REST API
+                  example: AcmeCorporation
+                AccessToken:
+                  type: string
+                  description: >-
+                    The organizations access token (aka password) to access
+                    the REST API. This password is provided by VisumPoint when
+                    the organization is registered with VisumPoint for using
+                    the ComplianceCheck REST API.
+                  example: OurBestKeptSecret
+        required: true
+      responses:
+        '200':
+          description: >-
+            On Result=='OK' returns a SID (session id) to be used for
+            accessing other API functions
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/BeginSessionResponse'
+                  - $ref: '#/components/schemas/ErrorResponse'
+
+  /#EndSession:
+    post:
+      tags:
+        - Sessions
+      summary: End a session
+      description: >-
+        This closes a session and invalidates the SID parameter. No further
+        calls to the API using this SID are possible
+      operationId: EndSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - Function
+              type: object
+              allOf:
+                - properties:
+                    Function:
+                      type: string
+                      description: The function to execute
+                      enum:
+                        - EndSession
+                - $ref: '#/components/schemas/DefaultParams'
+        required: true
+      responses:
+        '200':
+          description: >-
+            On Result=='OK' the session related to the provided SID is destroyed
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - $ref: '#/components/schemas/SuccessResponse'
+
+  /#GetVisaTypes:
+    post:
+      tags:
+        - Checks
+      summary: >-
+        Check which visa types are available for given DestinationCountry,
+        Nationality and CountryOfResidence
+      description: >-
+        This function checks which visa types are available for the given
+        DestinationCountry, Nationality and CountryOfResidence. On success, an array
+        of visa type IDs is returned. Each visa type ID may be used in a subsequent
+        call to GetVisaTypeDetails to get detailed information about the respective
+        visa type.
+      operationId: GetVisaTypes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - Function
+                - DestinationCountry
+                - Nationality
+                - CountryOfResidence
+              type: object
+              allOf:
+                - properties:
+                    Function:
+                      type: string
+                      description: The function to execute
+                      enum:
+                        - GetVisaTypes
+                    DestinationCountry:
+                      type: string
+                      description: The 3-letter ISO code of the destination country
+                      example: ITA, DEU, FRA
+                    Nationality:
+                      type: string
+                      description: The 3-letter ISO code of the nationality of the traveller
+                      example: USA, IND, CHN
+                    CountryOfResidence:
+                      type: string
+                      description: >-
+                        The 3-letter ISO code of the country of residence of the traveller.
+                - $ref: '#/components/schemas/DefaultParams'
+        required: true
+      responses:
+        '200':
+          description: >-
+            On Result=='OK', an array of IDs of visa types matching the provided
+            DestinationCountry, Nationality and CountryOfResidence is returned. Each
+            visa type ID may be used in a subsequent call to GetVisaTypeDetails to
+            get detailed information about the respective visa type.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - $ref: '#/components/schemas/GetVisaTypesResponse'
+
+  /#GetVisaRequirements:
+    post:
+      tags:
+        - Checks
+      summary: >-
+        Check which visa requirements apply for given DestinationCountry,
+        Nationality, CountryOfResidence and VisaTypeID
+      description: >-
+        This function checks which visa requirements apply for the given
+        DestinationCountry, Nationality, CountryOfResidence and VisaTypeID. On success, an
+        array of visa requirement IDs is returned. Each visa requirement ID may be used
+        in a subsequent call to GetVisaRequirementDetails to get detailed information
+      operationId: GetVisaRequirements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - Function
+                - DestinationCountry
+                - Nationality
+                - CountryOfResidence
+              type: object
+              allOf:
+                - properties:
+                    Function:
+                      type: string
+                      description: The function to execute
+                      enum:
+                        - GetVisaRequirements
+                    DestinationCountry:
+                      type: string
+                      description: The 3-letter ISO code of the destination country
+                      example: ITA, DEU, FRA
+                    Nationality:
+                      type: string
+                      description: The 3-letter ISO code of the nationality of the traveller
+                      example: USA, IND, CHN
+                    CountryOfResidence:
+                      type: string
+                      description: >-
+                        The 3-letter ISO code of the country of residence of the traveller.
+                    VisaTypeID:
+                      type: string
+                      description: The ID of the visa type to get the particular requirements for
+                      example: a92bf2e6cfc6d98c3fe51c84a43bcbd4
+                - $ref: '#/components/schemas/DefaultParams'
+        required: true
+      responses:
+        '200':
+          description: >-
+            On Result=='OK',
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - $ref: '#/components/schemas/GetVisaRequirementsResponse'
+
+  /#GetVisaTypeDetails:
+    post:
+      tags:
+        - Details
+      summary: >-
+        Get detailed information about a visa type given its VisaTypeID
+      description: >-
+        This function returns detailed information about a visa type given its
+        VisaTypeID, as obtained e.g. from a previous call to GetVisaTypes.
+      operationId: GetVisaTypeDetails
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - Function
+                - VisaTypeID
+              type: object
+              allOf:
+                - properties:
+                    Function:
+                      type: string
+                      description: The function to execute
+                      enum:
+                        - GetVisaTypeDetails
+                    VisaTypeID:
+                      type: string
+                      description: The ID of the visa type to get the details for
+                      example: a92bf2e6cfc6d98c3fe51c84a43bcbd4
+                - $ref: '#/components/schemas/DefaultParams'
+        required: true
+      responses:
+        '200':
+          description: >-
+            On Result=='OK', detailed information about the visa type identified
+            by the provided VisaTypeID is returned.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - $ref: '#/components/schemas/GetVisaTypeDetailsResponse'
+
+
+  /#GetVisaRequirementDetails:
+    post:
+      tags:
+        - Details
+      summary: >-
+        Get detailed information about a visa requirement given its
+        VisaRequirementID
+      description: >-
+        This function returns detailed information about a visa requirement
+        given its VisaRequirementID, as obtained e.g. from a previous call to
+        GetVisaRequirements.
+      operationId: GetVisaRequirementDetails
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - Function
+                - VisaRequirementID
+              type: object
+              allOf:
+                - properties:
+                    Function:
+                      type: string
+                      description: The function to execute
+                      enum:
+                        - GetVisaRequirementDetails
+                    VisaRequirementID:
+                      type: string
+                      description: The ID of the visa requirement to get the details for
+                      example: r1s2q3t4u5v6w7x8y9z0a1b2c3d4e5f6
+                - $ref: '#/components/schemas/DefaultParams'
+        required: true
+      responses:
+        '200':
+          description: >-
+            On Result=='OK', detailed information about the visa requirement
+            identified by the provided VisaRequirementID is returned.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - $ref: '#/components/schemas/GetVisaRequirementDetailsResponse'
+
+components:
+  schemas:
+
+    DefaultParams:
+      required:
+        - SID
+      type: object
+      properties:
+        RequestID:
+          type: string
+          description: >-
+            An optional arbitrary id returned as-is to the caller for internal
+            reference
+          example: SeqNo1894
+        SID:
+          type: string
+          description: The session id received from a previous call to BeginSession()
+          example: egi9fh714dc9oqcgi313s6quqs
+
+    FunctionalError:
+      type: object
+      properties:
+        ErrorID:
+          type: string
+          description: Unique 'speaking' ID string of the error
+          example: ESessionInvalid, EAccessTokenInvalid, EOrganisationUnknown
+        ErrorParams:
+          type: array
+          description: >-
+            An array of values replacing any placeholders in the error message.
+            May be used on the client side to build language or locale specific
+            error messages. See main description for usage.
+          items:
+            type: string
+      description: >-
+        A functional error is a response message to a failed function call, e.g.
+        if a parameter is missing, a parameter is unknown, a passed value is out
+        of bounds, a requested function is not implemented. It may also
+        represent state errors, such as 'user not yet authenticated'. Also,
+        function specific errors are returned, e.g. 'This state is not a state
+        of the US'. Contrary to generic errors, functional errors do have a
+        unique ErrorID, that exactly specifies the kind of error, e.g.
+        'EAccessTokenInvalid', which means that the provided access token is
+        invalid. The program on the client side may match the ErrorID to a
+        (language/locale) specific error message, e.g. for
+        'EAccessTokenInvalid' the message to the user may be "Das eingegebene
+        Passwort ist ungültig". A full list of of English error messages and
+        their mapping to all possible ErrorIDs can be obtained. These error
+        messages may contain "%s" format placeholders. These placeholders can be
+        filled up with the values in ErrorParams using the format() function of
+        the respective programming language used. As an example, the error
+        message may be 'The state "%s" is not a state of the US'. Say the client
+        runs in a German environment, the equivalent client side message would
+        be 'Der Staat "%s" ist kein Staat der USA'. In this case, the array in
+        ErrorParams may e.g. contain the string 'Bayern', to say that 'Bayern'
+        is not a known amercican state.
+
+    GenericError:
+      type: object
+      properties:
+        ErrorID:
+          type: string
+          nullable: true
+          description: >-
+            On generic program errors, the ErrorID is undetermined and therefore
+            uniquely null. This exactly differentiates generic errors from
+            function errors.
+          enum:
+            - null
+        ErrorCode:
+          type: integer
+          format: int32
+          description: A numeric code further itentifying the error
+          example: 4711
+        ErrorFile:
+          type: string
+          description: The program file in which the error occured
+          example: C:\dev\rest\login.php
+        ErrorFunction:
+          type: string
+          description: The name of the internal function in which the error occured
+          example: BeginSession()
+        ErrorLine:
+          type: integer
+          format: int32
+          description: The number of the line of code in which the error occured
+          example: 42
+        CatchFile:
+          type: string
+          description: The program file in which the unhandled error was caught
+          example: C:\dev\rest\dispatch.php
+        CatchFunction:
+          type: string
+          description: The name of the function in which the unhandled error was caught
+          example: CheckResult()
+        CatchAction:
+          type: string
+          description: What the CatchFunction was doing when the error occured
+          example: Check function name
+        CatchLine:
+          type: integer
+          format: int32
+          description: The number of the line of code in which the error was caught
+          example: 911
+      description: >-
+        A generic error is an unhandled or unexpected error that occured in the
+        server program code, such as 'Out of memory' or 'File unreadable' for
+        example. This may indicate a severe internal server error, should not
+        happen and should be reported to the system administrator.
+
+    ErrorDetails:
+      type: object
+      properties:
+        ErrorLogID:
+          type: integer
+          description: >-
+            The error was logged to the system log of the server under this
+            number
+          format: int32
+          example: 911
+        ErrorClass:
+          type: string
+          description: The category of error
+          example: EBaseRESTError, Exception
+        ErrorMessage:
+          type: string
+          description: A text in English language describing the error
+          example: Unknown username or password
+      oneOf:
+        - $ref: '#/components/schemas/FunctionalError'
+        - $ref: '#/components/schemas/GenericError'
+      required:
+        - ErrorLogID
+        - ErrorClass
+        - ErrorMessage
+
+    VersionResponse:
+      type: integer
+      format: int32
+      example: 18952
+      description: >-
+        This number is the internal version number of the API. The client should
+        stop calling any further API functions when the version number no longer
+        matches the expected version number. Instead, the client administrator
+        should be informed that there is a client-version vs server-version
+        mismatch and most likely the client software has to be updated.
+
+    RequestIDResponse:
+      type: string
+      description: >-
+        An optional arbitrary id passed in to the function as parameter RequestID,
+        returned as-is to the caller for internal reference
+      example: SeqNo1894
+
+    ErrorResponse:
+      type: object
+      properties:
+        Result:
+          type: string
+          enum:
+            - Error
+        ErrorDetails:
+          $ref: '#/components/schemas/ErrorDetails'
+        Version:
+          $ref: '#/components/schemas/VersionResponse'
+        RequestID:
+          $ref: '#/components/schemas/RequestIDResponse'
+      required:
+        - Result
+        - Version
+        - ErrorDetails
+      description: >-
+        The error response is returned when a function call fails. The Result
+        parameter returns 'Error' and the property ErrorDetails holds the error
+        details.
+
+    SuccessResponse:
+      type: object
+      properties:
+        Result:
+          type: string
+          enum:
+            - OK
+        Version:
+          $ref: '#/components/schemas/VersionResponse'
+        RequestID:
+          $ref: '#/components/schemas/RequestIDResponse'
+      required:
+        - Result
+        - Version
+      description: >-
+        The success response is returned when a function call succeeded. The
+        Result parameter returns 'OK'.
+
+    BeginSessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          required:
+            - SID
+          properties:
+            SID:
+              type: string
+              example: fluaur9igjko2pt7kbtd1k7s54
+              description: >-
+                The session id that allows temporary access to all
+                other API functions. The SID is a mandatory
+                parameter to all other functions the API offers
+                (with very few exceptions)
+
+    GetVisaTypesResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          required:
+            - VisaTypeIDs
+          properties:
+            VisaTypeIDs:
+              type: array
+              description: >-
+                An array of string visa type IDs representing the visa types
+                available for given DestinationCountry, Nationality and CountryOfResidence.
+                Call GetVisaTypeDetails to get detailed information about each visa type ID.
+              format: string
+              example: ['a92bf2e6cfc6d98c3fe51c84a43bcbd4','b1c3d4e5f60718293a4b5c6d7e8f9012']
+
+    GetVisaRequirementsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          required:
+            - VisaRequirementIDs
+          properties:
+            VisaRequirementIDs:
+              type: array
+              description: >-
+                An array of string visa requirement IDs representing the visa requirements
+                for the given DestinationCountry, Nationality, CountryOfResidence and VisaTypeID.
+                Call GetVisaRequirementDetails to get detailed information about each visa requirement ID.
+              format: string
+              example: ['r1s2q3t4u5v6w7x8y9z0a1b2c3d4e5f6','f6e5d4c3b2a1098y7x6w5v4u3t2s1r0q']
+
+    GetVisaTypeDetailsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          required:
+            - VisaTypeDetails
+          properties:
+            VisaTypeDetails:
+              type: string
+              example: 'This visa type allows a single entry for tourism purposes
+                for a duration of up to 90 days within a 180 day period.'
+              description: >-
+                A string containing detailed information
+                about the visa type identified by the provided VisaTypeID
+
+    GetVisaRequirementDetailsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          required:
+            - VisaRequirementDetails
+          properties:
+            VisaRequirementDetails:
+              type: string
+              example: 'The traveller must hold a passport valid for at least 6 months
+                beyond the intended stay.'
+              description: >-
+                A string containing detailed information
+                about the visa requirement identified by the provided VisaRequirementID

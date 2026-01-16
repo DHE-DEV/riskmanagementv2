@@ -107,4 +107,11 @@ return [
         'auth_url' => env('WORKFLEX_AUTH_URL', 'https://visa-api.getworkflex.com/visa-api/v1/oauth2/token'),
     ],
 
+    // VisumPoint ComplianceCheck API
+    'visumpoint' => [
+        'organization' => env('VISUMPOINT_ORGANIZATION'),
+        'access_token' => env('VISUMPOINT_ACCESS_TOKEN'),
+        'base_url' => env('VISUMPOINT_BASE_URL', 'https://www.visumpoint.de/REST/ComplianceCheck/API.php'),
+    ],
+
 ];

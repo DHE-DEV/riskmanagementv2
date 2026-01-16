@@ -217,6 +217,21 @@ Route::post('/business-visa/check', function (\Illuminate\Http\Request $request)
     return app(\App\Http\Controllers\BusinessVisaController::class)->check($request);
 })->name('business-visa.check');
 
+// VisumPoint Visa Check
+Route::get('/visumpoint', function () {
+    if (!config('app.visumpoint_enabled', true)) {
+        abort(404);
+    }
+    return app(\App\Http\Controllers\VisumPointController::class)->index();
+})->name('visumpoint');
+
+Route::post('/visumpoint/check', function (\Illuminate\Http\Request $request) {
+    if (!config('app.visumpoint_enabled', true)) {
+        abort(404);
+    }
+    return app(\App\Http\Controllers\VisumPointController::class)->check($request);
+})->name('visumpoint.check');
+
 // Plugin/Embed Dokumentation
 Route::get('/doc-plugin', function () {
     return view('livewire.pages.doc-plugin');
