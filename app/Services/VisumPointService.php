@@ -15,9 +15,9 @@ class VisumPointService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.visumpoint.base_url', 'https://www.visumpoint.de/REST/ComplianceCheck/API.php');
-        $this->organization = config('services.visumpoint.organization', '');
-        $this->accessToken = config('services.visumpoint.access_token', '');
+        $this->baseUrl = config('services.visumpoint.base_url') ?? 'https://www.visumpoint.de/REST/ComplianceCheck/API.php';
+        $this->organization = config('services.visumpoint.organization') ?? '';
+        $this->accessToken = config('services.visumpoint.access_token') ?? '';
     }
 
     /**
