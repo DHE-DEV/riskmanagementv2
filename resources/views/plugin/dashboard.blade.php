@@ -66,6 +66,61 @@
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
+
+        <!-- App-Integration Section -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">App-Integration</h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Ermöglicht die Nutzung in Desktop- und Mobile-Apps (WebView)
+                    </p>
+                </div>
+                <form action="{{ route('plugin.toggle-app-access') }}" method="POST">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $pluginClient->allow_app_access ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500' : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100 focus:ring-green-500' }}">
+                        @if($pluginClient->allow_app_access)
+                            <svg class="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Deaktivieren
+                        @else
+                            <svg class="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Aktivieren
+                        @endif
+                    </button>
+                </form>
+            </div>
+
+            @if($pluginClient->allow_app_access)
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div class="flex items-start gap-3">
+                        <svg class="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <h3 class="font-medium text-blue-900">Integration in Ihre App</h3>
+                            <p class="text-sm text-blue-700 mt-1">Laden Sie folgende URL in einem WebView:</p>
+                            <div class="mt-2 p-2 bg-white rounded border border-blue-200 overflow-x-auto">
+                                <code class="text-xs text-gray-800 font-mono break-all">{{ config('app.url') }}/embed/dashboard?key={{ $activeKey->public_key }}</code>
+                            </div>
+                            <p class="text-xs text-blue-600 mt-2">
+                                Funktioniert mit: Android WebView, iOS WKWebView, Electron, Qt WebEngine, etc.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p class="text-sm text-gray-600">
+                        Aktivieren Sie den App-Zugang, um das Plugin ohne Domain-Validierung in Desktop- oder Mobile-Apps nutzen zu können.
+                    </p>
+                </div>
+            @endif
+        </div>
     </div>
 
     <!-- Embed Options Section -->

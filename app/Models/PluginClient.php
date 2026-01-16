@@ -24,10 +24,12 @@ class PluginClient extends Model
         'city',
         'country',
         'status',
+        'allow_app_access',
     ];
 
     protected $casts = [
         'status' => 'string',
+        'allow_app_access' => 'boolean',
     ];
 
     protected static function booted(): void

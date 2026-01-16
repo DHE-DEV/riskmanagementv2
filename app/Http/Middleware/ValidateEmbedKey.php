@@ -61,24 +61,36 @@ class ValidateEmbedKey
         // Validate domain (check Referer header) - skip for allowed dev domains
         if (!$isFromAllowedDomain) {
             $referer = $request->header('Referer');
-            if ($referer) {
-                $refererHost = parse_url($referer, PHP_URL_HOST);
-                if ($refererHost) {
-                    $domainStatus = $this->getDomainStatus($client, $refererHost);
-                    if ($domainStatus === 'deactivated') {
-                        return $this->unauthorizedResponse('Diese Domain wurde vorübergehend deaktiviert. Bitte kontaktieren Sie den Administrator.');
-                    } elseif ($domainStatus === 'not_registered') {
-                        return $this->unauthorizedResponse('Domain nicht autorisiert: ' . $refererHost);
-                    }
+            $refererHost = $referer ? parse_url($referer, PHP_URL_HOST) : null;
+
+            // App-Modus: Kein Referer vorhanden
+            if (empty($refererHost)) {
+                if ($client->allow_app_access) {
+                    // App-Zugang erlaubt - track as app_view
+                    $this->trackUsage($client, $request, $apiKey, 'app_view', 'app');
+                    $request->attributes->set('plugin_client', $client);
+                    $request->attributes->set('access_mode', 'app');
+                    return $next($request);
                 }
+
+                return $this->unauthorizedResponse('App-Zugang nicht aktiviert. Bitte im Dashboard aktivieren.');
+            }
+
+            // Web-Embed-Modus: Domain validieren
+            $domainStatus = $this->getDomainStatus($client, $refererHost);
+            if ($domainStatus === 'deactivated') {
+                return $this->unauthorizedResponse('Diese Domain wurde vorübergehend deaktiviert. Bitte kontaktieren Sie den Administrator.');
+            } elseif ($domainStatus === 'not_registered') {
+                return $this->unauthorizedResponse('Domain nicht autorisiert: ' . $refererHost);
             }
         }
 
-        // Track usage event
-        $this->trackUsage($client, $request, $apiKey);
+        // Track usage event (Web-Embed)
+        $this->trackUsage($client, $request, $apiKey, 'embed_view', 'embed');
 
         // Store client in request for potential use in views
         $request->attributes->set('plugin_client', $client);
+        $request->attributes->set('access_mode', 'embed');
 
         return $next($request);
     }
@@ -147,16 +159,16 @@ class ValidateEmbedKey
     /**
      * Track usage event.
      */
-    protected function trackUsage(PluginClient $client, Request $request, string $publicKey): void
+    protected function trackUsage(PluginClient $client, Request $request, string $publicKey, string $eventType = 'embed_view', string $accessMode = 'embed'): void
     {
         try {
             $referer = $request->header('Referer');
-            $domain = $referer ? parse_url($referer, PHP_URL_HOST) : 'direct';
+            $domain = $accessMode === 'app' ? 'app' : ($referer ? parse_url($referer, PHP_URL_HOST) : 'direct');
 
             PluginUsageEvent::create([
                 'plugin_client_id' => $client->id,
                 'public_key' => $publicKey,
-                'event_type' => 'embed_view',
+                'event_type' => $eventType,
                 'domain' => $domain,
                 'path' => $request->path(),
                 'ip_hash' => PluginUsageEvent::hashIp($request->ip()),

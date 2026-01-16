@@ -284,6 +284,7 @@ Route::prefix('plugin')->name('plugin.')->group(function () {
         Route::post('/add-domain', [\App\Http\Controllers\Plugin\DashboardController::class, 'addDomain'])->name('add-domain');
         Route::delete('/remove-domain/{domainId}', [\App\Http\Controllers\Plugin\DashboardController::class, 'removeDomain'])->name('remove-domain');
         Route::post('/regenerate-key', [\App\Http\Controllers\Plugin\DashboardController::class, 'regenerateKey'])->name('regenerate-key');
+        Route::post('/toggle-app-access', [\App\Http\Controllers\Plugin\DashboardController::class, 'toggleAppAccess'])->name('toggle-app-access');
     });
 });
 

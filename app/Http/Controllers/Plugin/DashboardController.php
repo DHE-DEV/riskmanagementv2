@@ -94,6 +94,24 @@ class DashboardController extends Controller
         return back()->with('success', 'Neuer API-Key wurde generiert. Der alte Key ist nicht mehr gültig.');
     }
 
+    public function toggleAppAccess(): RedirectResponse
+    {
+        $customer = auth('customer')->user();
+        $pluginClient = $customer->pluginClient;
+
+        if (!$pluginClient) {
+            return redirect()->route('plugin.onboarding');
+        }
+
+        $pluginClient->update([
+            'allow_app_access' => !$pluginClient->allow_app_access
+        ]);
+
+        return back()->with('success', $pluginClient->allow_app_access
+            ? 'App-Zugang aktiviert'
+            : 'App-Zugang deaktiviert');
+    }
+
     protected function getUsageStats($pluginClient): array
     {
         $thirtyDaysAgo = now()->subDays(30);

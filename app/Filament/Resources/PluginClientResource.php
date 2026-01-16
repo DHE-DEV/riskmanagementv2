@@ -10,6 +10,8 @@ use App\Models\PluginClient;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -71,6 +73,10 @@ class PluginClientResource extends Resource
                             ])
                             ->default('active')
                             ->required(),
+                        Toggle::make('allow_app_access')
+                            ->label('App-Zugang erlaubt')
+                            ->helperText('Ermöglicht Nutzung ohne Domain-Validierung (für WebView-Apps)')
+                            ->default(false),
                     ]),
                 Section::make('Adresse')
                     ->icon('heroicon-o-map-pin')
@@ -187,6 +193,13 @@ class PluginClientResource extends Resource
                                         'suspended' => 'Gesperrt',
                                         default => $state,
                                     }),
+                                IconEntry::make('allow_app_access')
+                                    ->label('App-Zugang')
+                                    ->boolean()
+                                    ->trueIcon('heroicon-o-device-phone-mobile')
+                                    ->falseIcon('heroicon-o-x-mark')
+                                    ->trueColor('success')
+                                    ->falseColor('gray'),
                             ]),
                     ]),
 

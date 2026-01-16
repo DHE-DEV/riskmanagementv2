@@ -6,6 +6,7 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -75,6 +76,15 @@ class PluginClientsTable
                         'suspended' => 'Gesperrt',
                         default => $state,
                     }),
+
+                IconColumn::make('allow_app_access')
+                    ->label('App')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-device-phone-mobile')
+                    ->falseIcon('heroicon-o-x-mark')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Registriert am')
