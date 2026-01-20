@@ -149,6 +149,10 @@ class RegistrationController extends Controller
         // Fire registered event
         event(new Registered($customer));
 
+        // Determine app access based on usage type
+        $usageType = $formData['usage_type'] ?? 'website';
+        $allowAppAccess = in_array($usageType, ['app', 'both']);
+
         // Create plugin client
         $pluginClient = PluginClient::create([
             'customer_id' => $customer->id,
@@ -156,13 +160,16 @@ class RegistrationController extends Controller
             'contact_name' => $formData['contact_name'],
             'email' => $formData['email'],
             'status' => 'active',
+            'allow_app_access' => $allowAppAccess,
         ]);
 
         // Generate API key
         $pluginClient->generateKey();
 
-        // Add domain
-        $pluginClient->addDomain($formData['domain']);
+        // Add domain if provided (not required for app-only usage)
+        if (!empty($formData['domain'])) {
+            $pluginClient->addDomain($formData['domain']);
+        }
 
         // Log in the customer
         Auth::guard('customer')->login($customer);

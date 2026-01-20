@@ -15,6 +15,9 @@ class PluginRegistrationRequest extends FormRequest
 
     public function rules(): array
     {
+        $usageType = $this->input('usage_type', 'website');
+        $domainRequired = in_array($usageType, ['website', 'both']);
+
         return [
             // Account
             'email' => ['required', 'string', 'email', 'max:255', 'unique:' . Customer::class],
@@ -35,9 +38,12 @@ class PluginRegistrationRequest extends FormRequest
             'business_types' => ['nullable', 'array'],
             'business_types.*' => ['in:travel_agency,organizer,online_provider,mobile_travel_consultant,software_provider,other'],
 
-            // Domain
+            // Usage Type
+            'usage_type' => ['required', 'in:website,app,both'],
+
+            // Domain (conditional based on usage_type)
             'domain' => [
-                'required',
+                $domainRequired ? 'required' : 'nullable',
                 'string',
                 'max:255',
                 'regex:/^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/',
@@ -69,6 +75,7 @@ class PluginRegistrationRequest extends FormRequest
             'company_postal_code' => 'PLZ',
             'company_city' => 'Ort',
             'company_country' => 'Land',
+            'usage_type' => 'Nutzungsart',
             'domain' => 'Domain',
         ];
     }

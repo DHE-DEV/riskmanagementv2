@@ -290,20 +290,69 @@
                                     @enderror
                                 </div>
 
-                                <!-- Section: Domain -->
-                                <div class="space-y-4 pt-4 border-t border-stone-200 dark:border-stone-800">
+                                <!-- Section: Usage Type & Domain -->
+                                <div class="space-y-4 pt-4 border-t border-stone-200 dark:border-stone-800" x-data="{
+                                    usageType: '{{ old('usage_type', 'website') }}',
+                                    needsDomain() {
+                                        return this.usageType === 'website' || this.usageType === 'both';
+                                    }
+                                }">
                                     <h2 class="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wide">Plugin-Einbindung</h2>
 
+                                    <!-- Usage Type Selection -->
                                     <div>
+                                        <p class="text-sm text-stone-600 dark:text-stone-400 mb-3">
+                                            Wie möchten Sie das Plugin nutzen?
+                                        </p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                @click="usageType = 'website'"
+                                                :class="usageType === 'website'
+                                                    ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-600 dark:border-blue-600'
+                                                    : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-blue-400 dark:hover:border-blue-500'"
+                                                class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
+                                            >
+                                                Website
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="usageType = 'app'"
+                                                :class="usageType === 'app'
+                                                    ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-600 dark:border-blue-600'
+                                                    : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-blue-400 dark:hover:border-blue-500'"
+                                                class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
+                                            >
+                                                App (WebView)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="usageType = 'both'"
+                                                :class="usageType === 'both'
+                                                    ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-600 dark:border-blue-600'
+                                                    : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-blue-400 dark:hover:border-blue-500'"
+                                                class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
+                                            >
+                                                Beides
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="usage_type" :value="usageType">
+                                        @error('usage_type')
+                                            <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Domain Field (conditional) -->
+                                    <div x-show="needsDomain()" x-transition>
                                         <label for="domain" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                            Ihre Website-Domain *
+                                            Ihre Website-Domain <span x-show="needsDomain()">*</span>
                                         </label>
                                         <input
                                             id="domain"
                                             type="text"
                                             name="domain"
                                             value="{{ old('domain') }}"
-                                            required
+                                            :required="needsDomain()"
                                             placeholder="ihre-website.de"
                                             class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                         >
@@ -313,6 +362,18 @@
                                         @error('domain')
                                             <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                         @enderror
+                                    </div>
+
+                                    <!-- App Info -->
+                                    <div x-show="usageType === 'app'" x-transition class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                                        <div class="flex items-start gap-3">
+                                            <svg class="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <p class="text-sm text-blue-700 dark:text-blue-300">
+                                                Nach der Registrierung erhalten Sie eine URL, die Sie in Ihrer App (Android WebView, iOS WKWebView, Electron, etc.) laden können.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
 
