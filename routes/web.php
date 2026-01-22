@@ -219,14 +219,14 @@ Route::post('/business-visa/check', function (\Illuminate\Http\Request $request)
 
 // VisumPoint Visa Check
 Route::get('/visumpoint', function () {
-    if (!config('app.visumpoint_enabled', true)) {
+    if (!config('app.visumpoint_enabled')) {
         abort(404);
     }
     return app(\App\Http\Controllers\VisumPointController::class)->index();
 })->name('visumpoint');
 
 Route::post('/visumpoint/check', function (\Illuminate\Http\Request $request) {
-    if (!config('app.visumpoint_enabled', true)) {
+    if (!config('app.visumpoint_enabled')) {
         abort(404);
     }
     return app(\App\Http\Controllers\VisumPointController::class)->check($request);
