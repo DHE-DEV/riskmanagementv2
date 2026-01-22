@@ -166,6 +166,24 @@ class PluginClientResource extends Resource
                     ])
                     ->visible(fn ($record) => $record->customer !== null),
 
+                Section::make('Adresse')
+                    ->icon('heroicon-o-map-pin')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('street')
+                                    ->label('Straße'),
+                                TextEntry::make('house_number')
+                                    ->label('Hausnummer'),
+                                TextEntry::make('postal_code')
+                                    ->label('PLZ'),
+                                TextEntry::make('city')
+                                    ->label('Ort'),
+                                TextEntry::make('country')
+                                    ->label('Land'),
+                            ]),
+                    ]),
+
                 Section::make('Kundendaten')
                     ->icon('heroicon-o-building-office')
                     ->schema([
@@ -203,74 +221,55 @@ class PluginClientResource extends Resource
                             ]),
                     ]),
 
-                Section::make('Adresse')
-                    ->icon('heroicon-o-map-pin')
+                Grid::make(2)
                     ->schema([
-                        Grid::make(2)
+                        Section::make('API-Zugang')
+                            ->icon('heroicon-o-key')
                             ->schema([
-                                TextEntry::make('street')
-                                    ->label('Straße'),
-                                TextEntry::make('house_number')
-                                    ->label('Hausnummer'),
-                                TextEntry::make('postal_code')
-                                    ->label('PLZ'),
-                                TextEntry::make('city')
-                                    ->label('Ort'),
-                                TextEntry::make('country')
-                                    ->label('Land'),
+                                TextEntry::make('activeKey.public_key')
+                                    ->label('Aktiver API-Key')
+                                    ->copyable()
+                                    ->copyMessage('API-Key kopiert!')
+                                    ->fontFamily('mono'),
+                                TextEntry::make('activeKey.created_at')
+                                    ->label('Key erstellt am')
+                                    ->dateTime('d.m.Y H:i'),
+                                TextEntry::make('integration_url_events')
+                                    ->label('Ereignisliste')
+                                    ->getStateUsing(fn ($record) => $record->activeKey
+                                        ? 'https://global-travel-monitor.eu/embed/events?key=' . $record->activeKey->public_key
+                                        : null)
+                                    ->copyable()
+                                    ->copyMessage('Link kopiert!')
+                                    ->fontFamily('mono')
+                                    ->icon('heroicon-o-clipboard-document')
+                                    ->iconPosition('after')
+                                    ->placeholder('Kein API-Key vorhanden'),
+                                TextEntry::make('integration_url_map')
+                                    ->label('Kartenansicht')
+                                    ->getStateUsing(fn ($record) => $record->activeKey
+                                        ? 'https://global-travel-monitor.eu/embed/map?key=' . $record->activeKey->public_key
+                                        : null)
+                                    ->copyable()
+                                    ->copyMessage('Link kopiert!')
+                                    ->fontFamily('mono')
+                                    ->icon('heroicon-o-clipboard-document')
+                                    ->iconPosition('after')
+                                    ->placeholder('Kein API-Key vorhanden'),
+                                TextEntry::make('integration_url_dashboard')
+                                    ->label('Komplettansicht')
+                                    ->getStateUsing(fn ($record) => $record->activeKey
+                                        ? 'https://global-travel-monitor.eu/embed/dashboard?key=' . $record->activeKey->public_key
+                                        : null)
+                                    ->copyable()
+                                    ->copyMessage('Link kopiert!')
+                                    ->fontFamily('mono')
+                                    ->icon('heroicon-o-clipboard-document')
+                                    ->iconPosition('after')
+                                    ->placeholder('Kein API-Key vorhanden'),
                             ]),
-                    ]),
-
-                Section::make('API-Zugang')
-                    ->icon('heroicon-o-key')
-                    ->schema([
-                        TextEntry::make('activeKey.public_key')
-                            ->label('Aktiver API-Key')
-                            ->copyable()
-                            ->copyMessage('API-Key kopiert!')
-                            ->fontFamily('mono'),
-                        TextEntry::make('activeKey.created_at')
-                            ->label('Key erstellt am')
-                            ->dateTime('d.m.Y H:i'),
-                        TextEntry::make('integration_url_events')
-                            ->label('Ereignisliste')
-                            ->getStateUsing(fn ($record) => $record->activeKey
-                                ? 'https://global-travel-monitor.eu/embed/events?key=' . $record->activeKey->public_key
-                                : null)
-                            ->copyable()
-                            ->copyMessage('Link kopiert!')
-                            ->fontFamily('mono')
-                            ->icon('heroicon-o-clipboard-document')
-                            ->iconPosition('after')
-                            ->placeholder('Kein API-Key vorhanden'),
-                        TextEntry::make('integration_url_map')
-                            ->label('Kartenansicht')
-                            ->getStateUsing(fn ($record) => $record->activeKey
-                                ? 'https://global-travel-monitor.eu/embed/map?key=' . $record->activeKey->public_key
-                                : null)
-                            ->copyable()
-                            ->copyMessage('Link kopiert!')
-                            ->fontFamily('mono')
-                            ->icon('heroicon-o-clipboard-document')
-                            ->iconPosition('after')
-                            ->placeholder('Kein API-Key vorhanden'),
-                        TextEntry::make('integration_url_dashboard')
-                            ->label('Komplettansicht')
-                            ->getStateUsing(fn ($record) => $record->activeKey
-                                ? 'https://global-travel-monitor.eu/embed/dashboard?key=' . $record->activeKey->public_key
-                                : null)
-                            ->copyable()
-                            ->copyMessage('Link kopiert!')
-                            ->fontFamily('mono')
-                            ->icon('heroicon-o-clipboard-document')
-                            ->iconPosition('after')
-                            ->placeholder('Kein API-Key vorhanden'),
-                    ]),
-
-                Section::make('Statistik')
-                    ->icon('heroicon-o-chart-bar')
-                    ->schema([
-                        Grid::make(3)
+                        Section::make('Statistik')
+                            ->icon('heroicon-o-chart-bar')
                             ->schema([
                                 TextEntry::make('usage_events_count')
                                     ->label('Gesamtaufrufe')
