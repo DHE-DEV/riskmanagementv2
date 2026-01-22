@@ -232,6 +232,39 @@ class PluginClientResource extends Resource
                         TextEntry::make('activeKey.created_at')
                             ->label('Key erstellt am')
                             ->dateTime('d.m.Y H:i'),
+                        TextEntry::make('integration_url_events')
+                            ->label('Ereignisliste')
+                            ->getStateUsing(fn ($record) => $record->activeKey
+                                ? 'https://global-travel-monitor.eu/embed/events?key=' . $record->activeKey->public_key
+                                : null)
+                            ->copyable()
+                            ->copyMessage('Link kopiert!')
+                            ->fontFamily('mono')
+                            ->icon('heroicon-o-clipboard-document')
+                            ->iconPosition('after')
+                            ->placeholder('Kein API-Key vorhanden'),
+                        TextEntry::make('integration_url_map')
+                            ->label('Kartenansicht')
+                            ->getStateUsing(fn ($record) => $record->activeKey
+                                ? 'https://global-travel-monitor.eu/embed/map?key=' . $record->activeKey->public_key
+                                : null)
+                            ->copyable()
+                            ->copyMessage('Link kopiert!')
+                            ->fontFamily('mono')
+                            ->icon('heroicon-o-clipboard-document')
+                            ->iconPosition('after')
+                            ->placeholder('Kein API-Key vorhanden'),
+                        TextEntry::make('integration_url_dashboard')
+                            ->label('Komplettansicht')
+                            ->getStateUsing(fn ($record) => $record->activeKey
+                                ? 'https://global-travel-monitor.eu/embed/dashboard?key=' . $record->activeKey->public_key
+                                : null)
+                            ->copyable()
+                            ->copyMessage('Link kopiert!')
+                            ->fontFamily('mono')
+                            ->icon('heroicon-o-clipboard-document')
+                            ->iconPosition('after')
+                            ->placeholder('Kein API-Key vorhanden'),
                     ]),
 
                 Section::make('Statistik')
