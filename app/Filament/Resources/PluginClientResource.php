@@ -111,10 +111,12 @@ class PluginClientResource extends Resource
         return $schema
             ->components([
                 Grid::make(2)
+                    ->extraAttributes(['class' => 'items-start'])
                     ->schema([
                         // Linke Spalte
                         Grid::make(1)
                             ->columnSpan(1)
+                            ->extraAttributes(['class' => 'flex flex-col gap-6'])
                             ->schema([
                                 Section::make('Kundendaten')
                                     ->icon('heroicon-o-building-office')
@@ -229,6 +231,7 @@ class PluginClientResource extends Resource
                         // Rechte Spalte
                         Grid::make(1)
                             ->columnSpan(1)
+                            ->extraAttributes(['class' => 'flex flex-col gap-6'])
                             ->schema([
                                 Section::make('Statistik')
                                     ->icon('heroicon-o-chart-bar')
