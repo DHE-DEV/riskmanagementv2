@@ -110,197 +110,201 @@ class PluginClientResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Verknüpfter Kunde')
-                    ->icon('heroicon-o-user')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextEntry::make('customer.name')
-                                    ->label('Kunde')
-                                    ->url(fn ($record) => $record->customer
-                                        ? route('filament.admin.resources.customers.edit', ['record' => $record->customer_id])
-                                        : null)
-                                    ->openUrlInNewTab()
-                                    ->icon('heroicon-o-arrow-top-right-on-square')
-                                    ->iconPosition('after')
-                                    ->placeholder('Kein Kunde verknüpft'),
-                                TextEntry::make('customer.email')
-                                    ->label('Kunden-E-Mail')
-                                    ->copyable()
-                                    ->placeholder('-'),
-                                TextEntry::make('customer.customer_type')
-                                    ->label('Kundentyp')
-                                    ->badge()
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        'business' => 'success',
-                                        'private' => 'info',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                        'business' => 'Firmenkunde',
-                                        'private' => 'Privatkunde',
-                                        default => '-',
-                                    }),
-                                TextEntry::make('customer.business_type')
-                                    ->label('Geschäftstyp')
-                                    ->badge()
-                                    ->color('primary')
-                                    ->formatStateUsing(function ($state): string {
-                                        if (empty($state)) {
-                                            return '-';
-                                        }
-                                        $labels = [
-                                            'travel_agency' => 'Reisebüro',
-                                            'organizer' => 'Veranstalter',
-                                            'online_provider' => 'Online Anbieter',
-                                            'mobile_travel_consultant' => 'Mobiler Reiseberater',
-                                            'software_provider' => 'Softwareanbieter',
-                                            'other' => 'Sonstiges',
-                                        ];
-                                        if (is_array($state)) {
-                                            return implode(', ', array_map(fn ($t) => $labels[$t] ?? $t, $state));
-                                        }
-                                        return $labels[$state] ?? $state;
-                                    }),
-                            ]),
-                    ])
-                    ->visible(fn ($record) => $record->customer !== null),
-
-                Section::make('Adresse')
-                    ->icon('heroicon-o-map-pin')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextEntry::make('street')
-                                    ->label('Straße'),
-                                TextEntry::make('house_number')
-                                    ->label('Hausnummer'),
-                                TextEntry::make('postal_code')
-                                    ->label('PLZ'),
-                                TextEntry::make('city')
-                                    ->label('Ort'),
-                                TextEntry::make('country')
-                                    ->label('Land'),
-                            ]),
-                    ]),
-
-                Section::make('Kundendaten')
-                    ->icon('heroicon-o-building-office')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextEntry::make('company_name')
-                                    ->label('Firma'),
-                                TextEntry::make('contact_name')
-                                    ->label('Ansprechpartner'),
-                                TextEntry::make('email')
-                                    ->label('E-Mail')
-                                    ->copyable(),
-                                TextEntry::make('status')
-                                    ->label('Status')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'active' => 'success',
-                                        'inactive' => 'warning',
-                                        'suspended' => 'danger',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        'active' => 'Aktiv',
-                                        'inactive' => 'Inaktiv',
-                                        'suspended' => 'Gesperrt',
-                                        default => $state,
-                                    }),
-                                IconEntry::make('allow_app_access')
-                                    ->label('App-Zugang')
-                                    ->boolean()
-                                    ->trueIcon('heroicon-o-device-phone-mobile')
-                                    ->falseIcon('heroicon-o-x-mark')
-                                    ->trueColor('success')
-                                    ->falseColor('gray'),
-                            ]),
-                    ]),
-
                 Grid::make(2)
                     ->schema([
-                        Section::make('API-Zugang')
-                            ->icon('heroicon-o-key')
+                        // Linke Spalte
+                        Grid::make(1)
                             ->schema([
-                                TextEntry::make('activeKey.public_key')
-                                    ->label('Aktiver API-Key')
-                                    ->copyable()
-                                    ->copyMessage('API-Key kopiert!')
-                                    ->fontFamily('mono'),
-                                TextEntry::make('activeKey.created_at')
-                                    ->label('Key erstellt am')
-                                    ->dateTime('d.m.Y H:i'),
-                                TextEntry::make('integration_url_events')
-                                    ->label('Ereignisliste')
-                                    ->getStateUsing(fn ($record) => $record->activeKey
-                                        ? 'https://global-travel-monitor.eu/embed/events?key=' . $record->activeKey->public_key
-                                        : null)
-                                    ->copyable()
-                                    ->copyMessage('Link kopiert!')
-                                    ->fontFamily('mono')
-                                    ->icon('heroicon-o-clipboard-document')
-                                    ->iconPosition('after')
-                                    ->placeholder('Kein API-Key vorhanden'),
-                                TextEntry::make('integration_url_map')
-                                    ->label('Kartenansicht')
-                                    ->getStateUsing(fn ($record) => $record->activeKey
-                                        ? 'https://global-travel-monitor.eu/embed/map?key=' . $record->activeKey->public_key
-                                        : null)
-                                    ->copyable()
-                                    ->copyMessage('Link kopiert!')
-                                    ->fontFamily('mono')
-                                    ->icon('heroicon-o-clipboard-document')
-                                    ->iconPosition('after')
-                                    ->placeholder('Kein API-Key vorhanden'),
-                                TextEntry::make('integration_url_dashboard')
-                                    ->label('Komplettansicht')
-                                    ->getStateUsing(fn ($record) => $record->activeKey
-                                        ? 'https://global-travel-monitor.eu/embed/dashboard?key=' . $record->activeKey->public_key
-                                        : null)
-                                    ->copyable()
-                                    ->copyMessage('Link kopiert!')
-                                    ->fontFamily('mono')
-                                    ->icon('heroicon-o-clipboard-document')
-                                    ->iconPosition('after')
-                                    ->placeholder('Kein API-Key vorhanden'),
+                                Section::make('Kundendaten')
+                                    ->icon('heroicon-o-building-office')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextEntry::make('company_name')
+                                                    ->label('Firma'),
+                                                TextEntry::make('contact_name')
+                                                    ->label('Ansprechpartner'),
+                                                TextEntry::make('email')
+                                                    ->label('E-Mail')
+                                                    ->copyable(),
+                                                TextEntry::make('status')
+                                                    ->label('Status')
+                                                    ->badge()
+                                                    ->color(fn (string $state): string => match ($state) {
+                                                        'active' => 'success',
+                                                        'inactive' => 'warning',
+                                                        'suspended' => 'danger',
+                                                        default => 'gray',
+                                                    })
+                                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                                        'active' => 'Aktiv',
+                                                        'inactive' => 'Inaktiv',
+                                                        'suspended' => 'Gesperrt',
+                                                        default => $state,
+                                                    }),
+                                                IconEntry::make('allow_app_access')
+                                                    ->label('App-Zugang')
+                                                    ->boolean()
+                                                    ->trueIcon('heroicon-o-device-phone-mobile')
+                                                    ->falseIcon('heroicon-o-x-mark')
+                                                    ->trueColor('success')
+                                                    ->falseColor('gray'),
+                                            ]),
+                                    ]),
+                                Section::make('Verknüpfter Kunde')
+                                    ->icon('heroicon-o-user')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextEntry::make('customer.name')
+                                                    ->label('Kunde')
+                                                    ->url(fn ($record) => $record->customer
+                                                        ? route('filament.admin.resources.customers.edit', ['record' => $record->customer_id])
+                                                        : null)
+                                                    ->openUrlInNewTab()
+                                                    ->icon('heroicon-o-arrow-top-right-on-square')
+                                                    ->iconPosition('after')
+                                                    ->placeholder('Kein Kunde verknüpft'),
+                                                TextEntry::make('customer.email')
+                                                    ->label('Kunden-E-Mail')
+                                                    ->copyable()
+                                                    ->placeholder('-'),
+                                                TextEntry::make('customer.customer_type')
+                                                    ->label('Kundentyp')
+                                                    ->badge()
+                                                    ->color(fn (?string $state): string => match ($state) {
+                                                        'business' => 'success',
+                                                        'private' => 'info',
+                                                        default => 'gray',
+                                                    })
+                                                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                                        'business' => 'Firmenkunde',
+                                                        'private' => 'Privatkunde',
+                                                        default => '-',
+                                                    }),
+                                                TextEntry::make('customer.business_type')
+                                                    ->label('Geschäftstyp')
+                                                    ->badge()
+                                                    ->color('primary')
+                                                    ->formatStateUsing(function ($state): string {
+                                                        if (empty($state)) {
+                                                            return '-';
+                                                        }
+                                                        $labels = [
+                                                            'travel_agency' => 'Reisebüro',
+                                                            'organizer' => 'Veranstalter',
+                                                            'online_provider' => 'Online Anbieter',
+                                                            'mobile_travel_consultant' => 'Mobiler Reiseberater',
+                                                            'software_provider' => 'Softwareanbieter',
+                                                            'other' => 'Sonstiges',
+                                                        ];
+                                                        if (is_array($state)) {
+                                                            return implode(', ', array_map(fn ($t) => $labels[$t] ?? $t, $state));
+                                                        }
+                                                        return $labels[$state] ?? $state;
+                                                    }),
+                                            ]),
+                                    ])
+                                    ->visible(fn ($record) => $record->customer !== null),
+                                Section::make('Adresse')
+                                    ->icon('heroicon-o-map-pin')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextEntry::make('street')
+                                                    ->label('Straße'),
+                                                TextEntry::make('house_number')
+                                                    ->label('Hausnummer'),
+                                                TextEntry::make('postal_code')
+                                                    ->label('PLZ'),
+                                                TextEntry::make('city')
+                                                    ->label('Ort'),
+                                                TextEntry::make('country')
+                                                    ->label('Land'),
+                                            ]),
+                                    ]),
                             ]),
-                        Section::make('Statistik')
-                            ->icon('heroicon-o-chart-bar')
+                        // Rechte Spalte
+                        Grid::make(1)
                             ->schema([
-                                TextEntry::make('usage_events_count')
-                                    ->label('Gesamtaufrufe')
-                                    ->getStateUsing(fn ($record) => $record->usageEvents()->count())
-                                    ->badge()
-                                    ->color('success'),
-                                TextEntry::make('usage_events_30days')
-                                    ->label('Aufrufe (30 Tage)')
-                                    ->getStateUsing(fn ($record) => $record->usageEvents()->where('created_at', '>=', now()->subDays(30))->count())
-                                    ->badge()
-                                    ->color('info'),
-                                TextEntry::make('usage_events_today')
-                                    ->label('Aufrufe (heute)')
-                                    ->getStateUsing(fn ($record) => $record->usageEvents()->whereDate('created_at', today())->count())
-                                    ->badge()
-                                    ->color('primary'),
-                            ]),
-                    ]),
-
-                Section::make('Zeitstempel')
-                    ->icon('heroicon-o-clock')
-                    ->collapsed()
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextEntry::make('created_at')
-                                    ->label('Registriert am')
-                                    ->dateTime('d.m.Y H:i'),
-                                TextEntry::make('updated_at')
-                                    ->label('Aktualisiert am')
-                                    ->dateTime('d.m.Y H:i'),
+                                Section::make('Statistik')
+                                    ->icon('heroicon-o-chart-bar')
+                                    ->schema([
+                                        TextEntry::make('usage_events_count')
+                                            ->label('Gesamtaufrufe')
+                                            ->getStateUsing(fn ($record) => $record->usageEvents()->count())
+                                            ->badge()
+                                            ->color('success'),
+                                        TextEntry::make('usage_events_30days')
+                                            ->label('Aufrufe (30 Tage)')
+                                            ->getStateUsing(fn ($record) => $record->usageEvents()->where('created_at', '>=', now()->subDays(30))->count())
+                                            ->badge()
+                                            ->color('info'),
+                                        TextEntry::make('usage_events_today')
+                                            ->label('Aufrufe (heute)')
+                                            ->getStateUsing(fn ($record) => $record->usageEvents()->whereDate('created_at', today())->count())
+                                            ->badge()
+                                            ->color('primary'),
+                                    ]),
+                                Section::make('API-Zugang')
+                                    ->icon('heroicon-o-key')
+                                    ->schema([
+                                        TextEntry::make('activeKey.public_key')
+                                            ->label('Aktiver API-Key')
+                                            ->copyable()
+                                            ->copyMessage('API-Key kopiert!')
+                                            ->fontFamily('mono'),
+                                        TextEntry::make('activeKey.created_at')
+                                            ->label('Key erstellt am')
+                                            ->dateTime('d.m.Y H:i'),
+                                        TextEntry::make('integration_url_events')
+                                            ->label('Ereignisliste')
+                                            ->getStateUsing(fn ($record) => $record->activeKey
+                                                ? 'https://global-travel-monitor.eu/embed/events?key=' . $record->activeKey->public_key
+                                                : null)
+                                            ->copyable()
+                                            ->copyMessage('Link kopiert!')
+                                            ->fontFamily('mono')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->iconPosition('after')
+                                            ->placeholder('Kein API-Key vorhanden'),
+                                        TextEntry::make('integration_url_map')
+                                            ->label('Kartenansicht')
+                                            ->getStateUsing(fn ($record) => $record->activeKey
+                                                ? 'https://global-travel-monitor.eu/embed/map?key=' . $record->activeKey->public_key
+                                                : null)
+                                            ->copyable()
+                                            ->copyMessage('Link kopiert!')
+                                            ->fontFamily('mono')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->iconPosition('after')
+                                            ->placeholder('Kein API-Key vorhanden'),
+                                        TextEntry::make('integration_url_dashboard')
+                                            ->label('Komplettansicht')
+                                            ->getStateUsing(fn ($record) => $record->activeKey
+                                                ? 'https://global-travel-monitor.eu/embed/dashboard?key=' . $record->activeKey->public_key
+                                                : null)
+                                            ->copyable()
+                                            ->copyMessage('Link kopiert!')
+                                            ->fontFamily('mono')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->iconPosition('after')
+                                            ->placeholder('Kein API-Key vorhanden'),
+                                    ]),
+                                Section::make('Zeitstempel')
+                                    ->icon('heroicon-o-clock')
+                                    ->collapsed()
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextEntry::make('created_at')
+                                                    ->label('Registriert am')
+                                                    ->dateTime('d.m.Y H:i'),
+                                                TextEntry::make('updated_at')
+                                                    ->label('Aktualisiert am')
+                                                    ->dateTime('d.m.Y H:i'),
+                                            ]),
+                                    ]),
                             ]),
                     ]),
             ]);
