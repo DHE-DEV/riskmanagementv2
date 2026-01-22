@@ -115,7 +115,7 @@ class PluginClientResource extends Resource
                     ->schema([
                         // Linke Spalte (Hauptinhalt) - 2/3 Breite
                         Group::make()
-                            ->columnSpan(['lg' => 2])
+                            ->columnSpan(['default' => 1, 'lg' => 2])
                             ->schema([
                                 Section::make('Kundendaten')
                                     ->icon('heroicon-o-building-office')
@@ -229,7 +229,7 @@ class PluginClientResource extends Resource
 
                         // Rechte Spalte (Sidebar) - 1/3 Breite
                         Group::make()
-                            ->columnSpan(['lg' => 1])
+                            ->columnSpan(['default' => 1, 'lg' => 1])
                             ->schema([
                                 Section::make('Statistik')
                                     ->icon('heroicon-o-chart-bar')
