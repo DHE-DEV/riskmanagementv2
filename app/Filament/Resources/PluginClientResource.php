@@ -14,6 +14,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
@@ -110,13 +111,11 @@ class PluginClientResource extends Resource
     {
         return $schema
             ->components([
-                Grid::make(2)
-                    ->extraAttributes(['class' => 'items-start'])
+                Grid::make(['default' => 1, 'lg' => 3])
                     ->schema([
-                        // Linke Spalte
-                        Grid::make(1)
-                            ->columnSpan(1)
-                            ->extraAttributes(['class' => 'flex flex-col gap-6'])
+                        // Linke Spalte (Hauptinhalt) - 2/3 Breite
+                        Group::make()
+                            ->columnSpan(['lg' => 2])
                             ->schema([
                                 Section::make('Kundendaten')
                                     ->icon('heroicon-o-building-office')
@@ -228,10 +227,9 @@ class PluginClientResource extends Resource
                                     ]),
                             ]),
 
-                        // Rechte Spalte
-                        Grid::make(1)
-                            ->columnSpan(1)
-                            ->extraAttributes(['class' => 'flex flex-col gap-6'])
+                        // Rechte Spalte (Sidebar) - 1/3 Breite
+                        Group::make()
+                            ->columnSpan(['lg' => 1])
                             ->schema([
                                 Section::make('Statistik')
                                     ->icon('heroicon-o-chart-bar')
