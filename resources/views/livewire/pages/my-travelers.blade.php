@@ -1,9 +1,11 @@
 @php
     $active = 'my-travelers';
+    $version = '1.0.1'; // Cache buster
 @endphp
 <!DOCTYPE html>
 <html lang="de">
 <head>
+    <!-- Version: {{ $version }} - {{ now()->format('Y-m-d H:i:s') }} -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
