@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.7'; // Cache buster - Preserve map view when traveler is selected
+    $version = '1.0.8'; // Cache buster - Separate server/client Reverb config
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -2067,11 +2067,12 @@
         if (typeof window.Echo === 'function') {
             window.echoInstance = new window.Echo({
                 broadcaster: 'pusher',
-                key: '{{ config('broadcasting.connections.reverb.key') }}',
-                wsHost: '{{ config('broadcasting.connections.reverb.options.host') }}',
-                wsPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
-                wssPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
-                forceTLS: ('{{ config('broadcasting.connections.reverb.options.scheme', 'http') }}' === 'https'),
+                key: '{{ env('REVERB_APP_KEY') }}',
+                // Frontend connects to public Reverb endpoint (via nginx proxy on production)
+                wsHost: '{{ env('REVERB_HOST', 'localhost') }}',
+                wsPort: {{ env('REVERB_PORT', 8080) }},
+                wssPort: {{ env('REVERB_PORT', 8080) }},
+                forceTLS: ('{{ env('REVERB_SCHEME', 'http') }}' === 'https'),
                 disableStats: true,
                 cluster: 'mt1',
                 enabledTransports: ['ws', 'wss'],
