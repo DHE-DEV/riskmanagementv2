@@ -218,17 +218,70 @@
                     </div>
                 </div>
                 @else
+                <!-- Stats Box -->
                 <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-600">
-                                Reisende, die heute unterwegs sind
+                                Gefundene Reisen
                             </p>
                             <p class="text-2xl font-bold text-gray-900" x-text="travelers.length"></p>
                         </div>
                         <button @click="loadTravelers()" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Aktualisieren">
                             <i class="fa-regular fa-arrows-rotate" :class="{ 'loading-spinner': loading }"></i>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">
+                        <i class="fa-regular fa-filter mr-2"></i>
+                        Filter
+                    </h3>
+
+                    <!-- Quick Date Filters -->
+                    <div class="mb-4">
+                        <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button @click="filters.dateFilter = 'today'; loadTravelers()"
+                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                    :class="filters.dateFilter === 'today' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                Heute
+                            </button>
+                            <button @click="filters.dateFilter = '7days'; loadTravelers()"
+                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                    :class="filters.dateFilter === '7days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                7 Tage
+                            </button>
+                            <button @click="filters.dateFilter = '14days'; loadTravelers()"
+                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                    :class="filters.dateFilter === '14days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                14 Tage
+                            </button>
+                            <button @click="filters.dateFilter = '30days'; loadTravelers()"
+                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                    :class="filters.dateFilter === '30days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                30 Tage
+                            </button>
+                            <button @click="filters.dateFilter = 'all'; loadTravelers()"
+                                    class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2"
+                                    :class="filters.dateFilter === 'all' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                Alle Reisen
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="text-xs font-medium text-gray-700 mb-2 block">Status</label>
+                        <select x-model="filters.status" @change="loadTravelers()"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="all">Alle Status</option>
+                            <option value="upcoming">Bevorstehend</option>
+                            <option value="traveling">Unterwegs</option>
+                            <option value="completed">Abgeschlossen</option>
+                        </select>
                     </div>
                 </div>
 
@@ -342,6 +395,10 @@
             loading: false,
             error: null,
             map: null,
+            filters: {
+                dateFilter: 'today',
+                status: 'all',
+            },
             markersLayer: null,
             markers: {},
 
@@ -407,7 +464,13 @@
                 this.error = null;
 
                 try {
-                    const response = await fetch('{{ route("my-travelers.active") }}', {
+                    // Build query parameters from filters
+                    const params = new URLSearchParams({
+                        date_filter: this.filters.dateFilter,
+                        status: this.filters.status,
+                    });
+
+                    const response = await fetch('{{ route("my-travelers.active") }}?' + params.toString(), {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')

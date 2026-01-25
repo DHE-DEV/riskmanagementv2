@@ -37,9 +37,9 @@ class MyTravelersController extends Controller
     }
 
     /**
-     * Get active travelers (travel-detail links for today)
+     * Get active travelers (travel-detail links with filters)
      */
-    public function getActiveTravelers()
+    public function getActiveTravelers(Request $request)
     {
         $customer = auth('customer')->user();
 
@@ -55,14 +55,39 @@ class MyTravelersController extends Controller
         }
 
         try {
-            $today = now()->format('Y-m-d');
+            // Get filter parameters
+            $dateFilter = $request->input('date_filter', 'today');
+            $statusFilter = $request->input('status', 'all');
+
+            // Calculate date range based on filter
+            $today = now()->startOfDay();
+            $filter = [];
+
+            switch ($dateFilter) {
+                case 'today':
+                    $filter['start_date'] = ['<=' => $today->format('Y-m-d')];
+                    $filter['end_date'] = ['>=' => $today->format('Y-m-d')];
+                    break;
+                case '7days':
+                    $filter['start_date'] = ['<=' => $today->copy()->addDays(7)->format('Y-m-d')];
+                    $filter['end_date'] = ['>=' => $today->format('Y-m-d')];
+                    break;
+                case '14days':
+                    $filter['start_date'] = ['<=' => $today->copy()->addDays(14)->format('Y-m-d')];
+                    $filter['end_date'] = ['>=' => $today->format('Y-m-d')];
+                    break;
+                case '30days':
+                    $filter['start_date'] = ['<=' => $today->copy()->addDays(30)->format('Y-m-d')];
+                    $filter['end_date'] = ['>=' => $today->format('Y-m-d')];
+                    break;
+                case 'all':
+                    // No date filter
+                    break;
+            }
 
             // Use PdsApiService to fetch travel-details
             $response = $this->pdsApiService->get($customer, '/travel-details', [
-                'filter' => [
-                    'start_date' => ['<=' => $today],
-                    'end_date' => ['>=' => $today],
-                ],
+                'filter' => $filter,
                 'include' => 'countries',
             ]);
 
@@ -94,7 +119,16 @@ class MyTravelersController extends Controller
                     'travelers_count' => $traveler['travelers_count'] ?? 1,
                     'status' => $this->getTravelStatus($traveler),
                 ];
-            })->values()->all();
+            });
+
+            // Apply status filter
+            if ($statusFilter !== 'all') {
+                $processedTravelers = $processedTravelers->filter(function ($traveler) use ($statusFilter) {
+                    return $traveler['status'] === $statusFilter;
+                });
+            }
+
+            $processedTravelers = $processedTravelers->values()->all();
 
             return response()->json([
                 'success' => true,
