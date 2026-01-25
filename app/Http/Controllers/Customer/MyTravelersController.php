@@ -52,7 +52,7 @@ class MyTravelersController extends Controller
         $allTravelers = [];
 
         // Get filter parameters
-        $dateFilter = $request->input('date_filter', 'today'); // today, 7days, 14days, 30days, all, custom
+        $dateFilter = $request->input('date_filter', '30days'); // today, 7days, 14days, 30days, all, custom
         $statusFilter = $request->input('status', 'all'); // all, confirmed, active, completed, upcoming
         $sourceFilter = $request->input('source', 'all'); // all, local, api
         $searchQuery = $request->input('search', '');

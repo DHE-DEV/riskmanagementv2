@@ -560,7 +560,7 @@
             error: null,
             map: null,
             filters: {
-                dateFilter: 'today',
+                dateFilter: '30days',
                 status: 'all',
                 source: 'all',
                 search: '',
