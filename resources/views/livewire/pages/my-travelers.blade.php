@@ -2005,7 +2005,7 @@
                 wsPort: {{ config('broadcasting.connections.reverb.port') }},
                 wssPort: {{ config('broadcasting.connections.reverb.port') }},
                 forceTLS: ('{{ config('broadcasting.connections.reverb.scheme') }}' === 'https'),
-                enabledTransports: ['ws', 'wss'],
+                enabledTransports: ['ws', 'wss']
             });
         }
 
@@ -2018,10 +2018,16 @@
                 const notificationTitle = event.was_updated ? 'Reise aktualisiert' : 'Neue Reise importiert';
                 const notificationMessage = `${notificationTitle}: ${event.folder_name} (${event.folder_number})`;
 
-                showNotification(notificationMessage, 'success');
+                // Get Alpine data and show notification
+                const alpineData = Alpine.$data(document.querySelector('[x-data]'));
+                if (alpineData && alpineData.showNotification) {
+                    alpineData.showNotification(notificationMessage, 'success');
+                }
 
                 // Reload the travelers list
-                loadActiveTravelers();
+                if (alpineData && alpineData.loadTravelers) {
+                    alpineData.loadTravelers();
+                }
             });
     });
     @endauth
