@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.2'; // Cache buster - JS syntax fix
+    $version = '1.0.4'; // Cache buster - Fix Reverb config paths
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -116,13 +116,77 @@
         .map-container {
             flex: 1;
             position: relative;
-            height: 100%;
+            min-height: 0; /* wichtig für Flexbox */
             overflow: hidden;
         }
 
         #travelers-map {
-            width: 100%;
-            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        /* Travel Details Sidebar Styles */
+        .travel-sidebar {
+            position: fixed;
+            top: 64px; /* Header height */
+            bottom: 32px; /* Footer height */
+            right: -400px; /* Start hidden */
+            width: 400px;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+            transition: right 0.3s ease-in-out;
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .travel-sidebar.w-2x { width: 800px; right: -800px; }
+        .travel-sidebar.w-3x { width: 1200px; right: -1200px; }
+
+        .travel-sidebar.open { right: 0; }
+
+        .travel-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+        }
+
+        .travel-sidebar-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .travel-close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .travel-close-btn:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .travel-sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
         }
 
         /* Travel Details Sidebar Styles */
@@ -2001,10 +2065,10 @@
             window.Echo = new Echo({
                 broadcaster: 'reverb',
                 key: '{{ config('broadcasting.connections.reverb.key') }}',
-                wsHost: '{{ config('broadcasting.connections.reverb.host') }}',
-                wsPort: {{ config('broadcasting.connections.reverb.port') }},
-                wssPort: {{ config('broadcasting.connections.reverb.port') }},
-                forceTLS: ('{{ config('broadcasting.connections.reverb.scheme') }}' === 'https'),
+                wsHost: '{{ config('broadcasting.connections.reverb.options.host') }}',
+                wsPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
+                wssPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
+                forceTLS: ('{{ config('broadcasting.connections.reverb.options.scheme', 'http') }}' === 'https'),
                 enabledTransports: ['ws', 'wss']
             });
         }
