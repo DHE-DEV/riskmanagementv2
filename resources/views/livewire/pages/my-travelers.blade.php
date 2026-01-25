@@ -573,8 +573,10 @@
             airportMarkers: [],
 
             init() {
+                console.log('travelersApp initialized');
                 // Wait for DOM to be ready
                 this.$nextTick(() => {
+                    console.log('DOM ready, initializing map and loading travelers');
                     this.initMap();
                     this.loadTravelers();
                 });
@@ -636,6 +638,7 @@
             },
 
             async loadTravelers() {
+                console.log('loadTravelers() called with filters:', this.filters);
                 this.loading = true;
                 this.error = null;
 
@@ -648,7 +651,10 @@
                         search: this.filters.search,
                     });
 
-                    const response = await fetch('{{ route("my-travelers.active") }}?' + params.toString(), {
+                    const url = '{{ route("my-travelers.active") }}?' + params.toString();
+                    console.log('Fetching travelers from:', url);
+
+                    const response = await fetch(url, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -656,13 +662,16 @@
                     });
 
                     const data = await response.json();
+                    console.log('Response data:', data);
 
                     if (!data.success) {
+                        console.error('API returned error:', data.message);
                         this.error = data.message || 'Fehler beim Laden der Reisenden';
                         return;
                     }
 
                     this.travelers = data.travelers || [];
+                    console.log('Loaded travelers:', this.travelers.length);
                     this.updateMapMarkers();
 
                 } catch (err) {
