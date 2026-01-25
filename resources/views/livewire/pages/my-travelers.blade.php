@@ -574,9 +574,7 @@
 
             init() {
                 this.initMap();
-                @if($hasValidToken)
                 this.loadTravelers();
-                @endif
             },
 
             initMap() {
