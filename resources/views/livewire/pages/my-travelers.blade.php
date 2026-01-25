@@ -346,10 +346,13 @@
             markers: {},
 
             init() {
-                this.initMap();
-                @if($hasValidToken)
-                this.loadTravelers();
-                @endif
+                // Wait for DOM to be ready
+                this.$nextTick(() => {
+                    this.initMap();
+                    @if($hasValidToken)
+                    this.loadTravelers();
+                    @endif
+                });
             },
 
             initMap() {
@@ -390,6 +393,13 @@
                 });
 
                 this.map.addLayer(this.markersLayer);
+
+                // Force map to recalculate size after initialization
+                setTimeout(() => {
+                    if (this.map) {
+                        this.map.invalidateSize();
+                    }
+                }, 100);
             },
 
             async loadTravelers() {
