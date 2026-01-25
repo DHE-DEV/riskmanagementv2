@@ -170,6 +170,84 @@
                 </div>
             </div>
 
+            <!-- API Box -->
+            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6" x-data="apiTokenManager()">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fa-regular fa-key text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">API</h3>
+                        <p class="text-sm text-gray-600">Verwalten Sie Ihren API-Zugriffsschlüssel</p>
+                    </div>
+                </div>
+
+                <!-- Token Display Area -->
+                <div x-show="generatedToken" x-cloak class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p class="text-sm text-green-800 font-medium mb-2">
+                        <i class="fa-regular fa-check-circle mr-1"></i>
+                        API Token erfolgreich generiert
+                    </p>
+                    <div class="flex gap-2 items-center">
+                        <input
+                            type="text"
+                            x-model="generatedToken"
+                            readonly
+                            class="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono select-all"
+                            @click="$el.select()"
+                        >
+                        <button
+                            @click="copyToken"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                            <i class="fa-regular fa-copy"></i>
+                            <span x-text="copied ? 'Kopiert!' : 'Kopieren'"></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-green-700 mt-2">
+                        <i class="fa-regular fa-info-circle mr-1"></i>
+                        Bitte speichern Sie diesen Token sicher. Er wird nur einmal angezeigt.
+                    </p>
+                </div>
+
+                <!-- Info when no token generated -->
+                <div x-show="!generatedToken && !hasToken" x-cloak class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fa-regular fa-info-circle mr-1"></i>
+                        Sie haben noch keinen API-Token. Generieren Sie einen Token, um auf die API zugreifen zu können.
+                    </p>
+                </div>
+
+                <!-- Info when token exists -->
+                <div x-show="!generatedToken && hasToken" x-cloak class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fa-regular fa-shield-check mr-1"></i>
+                        Sie haben bereits einen aktiven API-Token. Das Generieren eines neuen Tokens widerruft automatisch den alten.
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3">
+                    <button
+                        @click="generateToken"
+                        :disabled="loading"
+                        :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
+                        class="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2">
+                        <i class="fa-regular" :class="loading ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+                        <span x-text="loading ? 'Wird generiert...' : (hasToken ? 'Neuen Token generieren' : 'Token generieren')"></span>
+                    </button>
+
+                    <button
+                        x-show="hasToken && !generatedToken"
+                        @click="revokeToken"
+                        :disabled="loading"
+                        :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'"
+                        class="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2">
+                        <i class="fa-regular fa-trash"></i>
+                        <span>Token widerrufen</span>
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                 <div class="mb-6">
                     <p class="text-gray-600 mt-1">
@@ -1295,6 +1373,11 @@
                     </div>
                     @endif
                 </div>
+
+                {{-- Auto-Refresh Settings for My Travelers --}}
+                <div class="mt-6">
+                    <livewire:customer.travelers-auto-refresh-settings />
+                </div>
             </div>
         </div>
     </div>
@@ -1432,6 +1515,129 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
+function apiTokenManager() {
+    return {
+        generatedToken: '',
+        hasToken: false,
+        loading: false,
+        copied: false,
+
+        async init() {
+            await this.checkTokenStatus();
+        },
+
+        async checkTokenStatus() {
+            try {
+                const response = await fetch('{{ route('customer.api-tokens.status') }}', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.hasToken = data.has_token;
+                }
+            } catch (error) {
+                console.error('Error checking token status:', error);
+            }
+        },
+
+        async generateToken() {
+            if (this.loading) return;
+
+            if (this.hasToken && !confirm('Das Generieren eines neuen Tokens widerruft automatisch den alten Token. Fortfahren?')) {
+                return;
+            }
+
+            this.loading = true;
+
+            try {
+                const response = await fetch('{{ route('customer.api-tokens.generate') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.generatedToken = data.token;
+                    this.hasToken = true;
+                    this.copied = false;
+
+                    // Auto-select the token
+                    setTimeout(() => {
+                        const input = this.$el.querySelector('input[type="text"]');
+                        if (input) {
+                            input.select();
+                        }
+                    }, 100);
+                } else {
+                    alert('Fehler beim Generieren des Tokens: ' + (data.message || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                console.error('Error generating token:', error);
+                alert('Fehler beim Generieren des Tokens. Bitte versuchen Sie es erneut.');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async revokeToken() {
+            if (!confirm('Möchten Sie den API-Token wirklich widerrufen? Dies kann nicht rückgängig gemacht werden.')) {
+                return;
+            }
+
+            this.loading = true;
+
+            try {
+                const response = await fetch('{{ route('customer.api-tokens.revoke') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.generatedToken = '';
+                    this.hasToken = false;
+                    alert('Token wurde erfolgreich widerrufen.');
+                } else {
+                    alert('Fehler beim Widerrufen des Tokens: ' + (data.message || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                console.error('Error revoking token:', error);
+                alert('Fehler beim Widerrufen des Tokens. Bitte versuchen Sie es erneut.');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async copyToken() {
+            try {
+                await navigator.clipboard.writeText(this.generatedToken);
+                this.copied = true;
+
+                setTimeout(() => {
+                    this.copied = false;
+                }, 2000);
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+                alert('Fehler beim Kopieren in die Zwischenablage');
+            }
+        }
+    };
+}
+
 function branchManager() {
     return {
         showModal: false,

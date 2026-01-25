@@ -1,11 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\GdacsController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\EventFeedController;
 use App\Http\Controllers\CountryFeedController;
+use App\Http\Controllers\EventFeedController;
+use App\Http\Controllers\SettingsController;
 use App\Models\EventClick;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $eventId = request()->query('event');
@@ -13,7 +12,7 @@ Route::get('/', function () {
     $sharedEvent = null;
 
     // Detect mobile/tablet devices
-    $agent = new \Jenssegers\Agent\Agent();
+    $agent = new \Jenssegers\Agent\Agent;
     $isMobile = $agent->isMobile() || $agent->isTablet();
 
     // Load shared event if event ID is provided
@@ -36,7 +35,7 @@ Route::get('/', function () {
                 ]);
             } catch (\Exception $e) {
                 // Silently fail - don't break the page for tracking errors
-                \Log::warning('Direct link tracking failed: ' . $e->getMessage());
+                \Log::warning('Direct link tracking failed: '.$e->getMessage());
             }
         }
 
@@ -49,7 +48,7 @@ Route::get('/', function () {
     }
 
     // Mobile routing (without event parameter)
-    if ($isMobile && !$eventId) {
+    if ($isMobile && ! $eventId) {
         // Map view for mobile
         if ($viewParam === 'map') {
             return view('livewire.pages.dashboard-mobile-map');
@@ -123,9 +122,10 @@ Route::get('/auth-debug', function () {
 });
 
 Route::get('/entry-conditions', function () {
-    if (!config('app.entry_conditions_enabled', true)) {
+    if (! config('app.entry_conditions_enabled', true)) {
         abort(404);
     }
+
     return view('livewire.pages.entry-conditions');
 })->name('entry-conditions');
 
@@ -175,7 +175,7 @@ Route::prefix('feed')->name('feed.')->group(function () {
 });
 
 Route::get('/booking', function () {
-    if (!config('app.dashboard_booking_enabled', true)) {
+    if (! config('app.dashboard_booking_enabled', true)) {
         abort(404);
     }
 
@@ -188,7 +188,7 @@ Route::get('/booking', function () {
 
 Route::get('/branches', function () {
     // Nur für eingeloggte Kunden mit aktiviertem Branch Management
-    if (!auth('customer')->check() || !auth('customer')->user()->branch_management_active) {
+    if (! auth('customer')->check() || ! auth('customer')->user()->branch_management_active) {
         abort(404);
     }
 
@@ -204,31 +204,35 @@ Route::get('/cruise', function () {
 })->name('cruise');
 
 Route::get('/business-visa', function () {
-    if (!config('app.business_visa_enabled', true)) {
+    if (! config('app.business_visa_enabled', true)) {
         abort(404);
     }
+
     return app(\App\Http\Controllers\BusinessVisaController::class)->index();
 })->name('business-visa');
 
 Route::post('/business-visa/check', function (\Illuminate\Http\Request $request) {
-    if (!config('app.business_visa_enabled', true)) {
+    if (! config('app.business_visa_enabled', true)) {
         abort(404);
     }
+
     return app(\App\Http\Controllers\BusinessVisaController::class)->check($request);
 })->name('business-visa.check');
 
 // VisumPoint Visa Check
 Route::get('/visumpoint', function () {
-    if (!config('app.visumpoint_enabled')) {
+    if (! config('app.visumpoint_enabled')) {
         abort(404);
     }
+
     return app(\App\Http\Controllers\VisumPointController::class)->index();
 })->name('visumpoint');
 
 Route::post('/visumpoint/check', function (\Illuminate\Http\Request $request) {
-    if (!config('app.visumpoint_enabled')) {
+    if (! config('app.visumpoint_enabled')) {
         abort(404);
     }
+
     return app(\App\Http\Controllers\VisumPointController::class)->check($request);
 })->name('visumpoint.check');
 
@@ -245,6 +249,14 @@ Route::get('/my-travelers', [\App\Http\Controllers\Customer\MyTravelersControlle
 Route::get('/my-travelers/active', [\App\Http\Controllers\Customer\MyTravelersController::class, 'getActiveTravelers'])
     ->middleware('auth:customer')
     ->name('my-travelers.active');
+
+Route::get('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer\MyTravelersController::class, 'getFolderDetails'])
+    ->middleware('auth:customer')
+    ->name('my-travelers.folder');
+
+Route::delete('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer\MyTravelersController::class, 'deleteFolder'])
+    ->middleware('auth:customer')
+    ->name('my-travelers.folder.delete');
 
 Route::middleware([
     'auth:sanctum',

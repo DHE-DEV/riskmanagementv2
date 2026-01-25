@@ -9,16 +9,19 @@ use Illuminate\Support\Facades\Log;
 class WorkFlexService
 {
     protected string $clientId;
+
     protected string $clientSecret;
+
     protected string $baseUrl;
+
     protected string $authUrl;
 
     public function __construct()
     {
-        $this->clientId = config('services.workflex.client_id');
-        $this->clientSecret = config('services.workflex.client_secret');
-        $this->baseUrl = config('services.workflex.base_url');
-        $this->authUrl = config('services.workflex.auth_url');
+        $this->clientId = config('services.workflex.client_id') ?? '';
+        $this->clientSecret = config('services.workflex.client_secret') ?? '';
+        $this->baseUrl = config('services.workflex.base_url') ?? 'https://visa-api.getworkflex.com/visa-api/v1';
+        $this->authUrl = config('services.workflex.auth_url') ?? 'https://visa-api.getworkflex.com/visa-api/v1/oauth2/token';
     }
 
     /**
@@ -37,6 +40,7 @@ class WorkFlexService
 
                 if ($response->successful()) {
                     $data = $response->json();
+
                     return $data['access_token'] ?? null;
                 }
 
@@ -50,6 +54,7 @@ class WorkFlexService
                 Log::error('WorkFlex token request exception', [
                     'message' => $e->getMessage(),
                 ]);
+
                 return null;
             }
         });
@@ -70,7 +75,7 @@ class WorkFlexService
     {
         $token = $this->getAccessToken();
 
-        if (!$token) {
+        if (! $token) {
             return [
                 'success' => false,
                 'error' => 'Could not obtain access token',
@@ -88,7 +93,7 @@ class WorkFlexService
             'tripEndDate' => $data['tripEndDate'],
         ];
 
-        $url = $this->baseUrl . '/check';
+        $url = $this->baseUrl.'/check';
 
         try {
             $response = Http::withToken($token)
@@ -245,5 +250,13 @@ class WorkFlexService
                 'label' => 'Other',
             ],
         ];
+    }
+
+    /**
+     * Check if the service is configured
+     */
+    public function isConfigured(): bool
+    {
+        return ! empty($this->clientId) && ! empty($this->clientSecret);
     }
 }

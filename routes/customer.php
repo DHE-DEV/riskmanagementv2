@@ -88,6 +88,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::post('/{branch}/cancel-deletion', [\App\Http\Controllers\Customer\BranchController::class, 'cancelScheduledDeletion'])->name('cancel-deletion');
         });
 
+        // API Token routes
+        Route::prefix('api-tokens')->name('api-tokens.')->group(function () {
+            Route::post('/generate', [\App\Http\Controllers\Customer\ApiTokenController::class, 'generate'])->name('generate');
+            Route::post('/revoke', [\App\Http\Controllers\Customer\ApiTokenController::class, 'revoke'])->name('revoke');
+            Route::get('/status', [\App\Http\Controllers\Customer\ApiTokenController::class, 'status'])->name('status');
+        });
+
         // Notification routes
         Route::prefix('notifications')->name('notifications.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])->name('index');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Folder\Folder;
 use App\Services\PdsApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +24,7 @@ class MyTravelersController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (!$customer) {
+        if (! $customer) {
             return redirect()->route('customer.login');
         }
 
@@ -37,82 +38,348 @@ class MyTravelersController extends Controller
     }
 
     /**
-     * Get active travelers (travel-detail links for today)
+     * Get active travelers (travel-detail links + local folders)
+     * Supports filtering by date range, status, source
      */
-    public function getActiveTravelers()
+    public function getActiveTravelers(Request $request)
     {
         $customer = auth('customer')->user();
 
-        if (!$customer) {
+        if (! $customer) {
             return response()->json(['success' => false, 'message' => 'Nicht authentifiziert'], 401);
         }
 
-        if (!$customer->hasAnyActiveToken()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Keine gültige API-Verbindung. Bitte melden Sie sich erneut via SSO an oder verbinden Sie die Passolution-Integration.',
-            ], 403);
+        $allTravelers = [];
+
+        // Get filter parameters
+        $dateFilter = $request->input('date_filter', 'today'); // today, 7days, 14days, 30days, all, custom
+        $statusFilter = $request->input('status', 'all'); // all, confirmed, active, completed, upcoming
+        $sourceFilter = $request->input('source', 'all'); // all, local, api
+        $searchQuery = $request->input('search', '');
+
+        // Calculate date range based on filter
+        $dateRange = $this->calculateDateRange($dateFilter, $request);
+
+        // 1. Load LOCAL FOLDERS (from folder system)
+        if (in_array($sourceFilter, ['all', 'local'])) {
+            try {
+                $query = Folder::with(['participants', 'itineraries.hotelServices', 'itineraries.flightServices'])
+                    ->where('customer_id', $customer->id);
+
+                // Apply date filter
+                if ($dateRange['start'] && $dateRange['end']) {
+                    $query->where(function ($q) use ($dateRange) {
+                        $q->whereBetween('travel_start_date', [$dateRange['start'], $dateRange['end']])
+                            ->orWhereBetween('travel_end_date', [$dateRange['start'], $dateRange['end']])
+                            ->orWhere(function ($q2) use ($dateRange) {
+                                $q2->where('travel_start_date', '<=', $dateRange['start'])
+                                    ->where('travel_end_date', '>=', $dateRange['end']);
+                            });
+                    });
+                } elseif ($dateRange['start']) {
+                    $query->where('travel_end_date', '>=', $dateRange['start']);
+                } elseif ($dateRange['end']) {
+                    $query->where('travel_start_date', '<=', $dateRange['end']);
+                }
+
+                // Apply status filter
+                if ($statusFilter !== 'all') {
+                    if ($statusFilter === 'upcoming') {
+                        $query->where('travel_start_date', '>', now());
+                    } elseif ($statusFilter === 'completed') {
+                        $query->where('travel_end_date', '<', now())
+                            ->orWhere('status', 'completed');
+                    } else {
+                        $query->where('status', $statusFilter);
+                    }
+                }
+
+                // Apply search filter
+                if ($searchQuery) {
+                    $query->where(function ($q) use ($searchQuery) {
+                        $q->where('folder_name', 'like', '%'.$searchQuery.'%')
+                            ->orWhere('folder_number', 'like', '%'.$searchQuery.'%')
+                            ->orWhere('primary_destination', 'like', '%'.$searchQuery.'%');
+                    });
+                }
+
+                $localFolders = $query->orderBy('travel_start_date', 'desc')->get();
+
+                foreach ($localFolders as $folder) {
+                    $allTravelers[] = $this->formatFolderAsTraveler($folder);
+                }
+
+                Log::info('MyTravelersController: Loaded local folders', [
+                    'customer_id' => $customer->id,
+                    'count' => $localFolders->count(),
+                ]);
+            } catch (\Exception $e) {
+                Log::error('MyTravelersController: Error loading local folders', [
+                    'customer_id' => $customer->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
-        try {
-            $today = now()->format('Y-m-d');
+        // 2. Load API TRAVELERS (if API token exists)
+        if (in_array($sourceFilter, ['all', 'api']) && $customer->hasAnyActiveToken()) {
+            try {
+                // Build API filter
+                $apiFilter = [];
+                if ($dateRange['start'] && $dateRange['end']) {
+                    $apiFilter['start_date'] = ['<=' => $dateRange['end']];
+                    $apiFilter['end_date'] = ['>=' => $dateRange['start']];
+                } elseif ($dateRange['start']) {
+                    $apiFilter['end_date'] = ['>=' => $dateRange['start']];
+                } elseif ($dateRange['end']) {
+                    $apiFilter['start_date'] = ['<=' => $dateRange['end']];
+                }
 
-            // Use PdsApiService to fetch travel-details
-            $response = $this->pdsApiService->get($customer, '/travel-details', [
-                'filter' => [
-                    'start_date' => ['<=' => $today],
-                    'end_date' => ['>=' => $today],
-                ],
-                'include' => 'countries',
-            ]);
-
-            if (!$response || !$response->successful()) {
-                Log::warning('MyTravelersController: Failed to fetch travel-detail links', [
-                    'customer_id' => $customer->id,
-                    'status' => $response?->status(),
-                    'body' => $response?->body(),
+                // Use PdsApiService to fetch travel-details
+                $response = $this->pdsApiService->get($customer, '/travel-details', [
+                    'filter' => $apiFilter,
+                    'include' => 'countries',
                 ]);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Fehler beim Abrufen der Reisenden',
-                ], 500);
+                if ($response && $response->successful()) {
+                    $data = $response->json();
+                    $apiTravelers = $data['data'] ?? [];
+
+                    // Process API travelers
+                    foreach ($apiTravelers as $traveler) {
+                        $processedTraveler = [
+                            'id' => 'api-'.($traveler['id'] ?? uniqid()),
+                            'title' => $traveler['title'] ?? 'Reisender',
+                            'start_date' => $traveler['start_date'] ?? null,
+                            'end_date' => $traveler['end_date'] ?? null,
+                            'countries' => $traveler['countries'] ?? [],
+                            'destination' => $this->extractDestination($traveler),
+                            'travelers_count' => $traveler['travelers_count'] ?? 1,
+                            'status' => $this->getTravelStatus($traveler),
+                            'source' => 'api',
+                            'source_label' => 'PDS API',
+                        ];
+
+                        // Apply search filter
+                        if ($searchQuery) {
+                            $matchesSearch = stripos($processedTraveler['title'], $searchQuery) !== false ||
+                                           stripos($processedTraveler['destination']['name'] ?? '', $searchQuery) !== false;
+                            if (! $matchesSearch) {
+                                continue;
+                            }
+                        }
+
+                        // Apply status filter
+                        if ($statusFilter !== 'all' && $processedTraveler['status'] !== $statusFilter) {
+                            continue;
+                        }
+
+                        $allTravelers[] = $processedTraveler;
+                    }
+
+                    Log::info('MyTravelersController: Loaded API travelers', [
+                        'customer_id' => $customer->id,
+                        'count' => count($apiTravelers),
+                        'filtered_count' => count(array_filter($allTravelers, fn ($t) => $t['source'] === 'api')),
+                    ]);
+                } else {
+                    Log::warning('MyTravelersController: Failed to fetch API travelers', [
+                        'customer_id' => $customer->id,
+                        'status' => $response?->status(),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('MyTravelersController: Error fetching API travelers', [
+                    'customer_id' => $customer->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
-
-            $data = $response->json();
-            $travelers = $data['data'] ?? [];
-
-            // Process travelers to extract destination coordinates
-            $processedTravelers = collect($travelers)->map(function ($traveler) {
-                return [
-                    'id' => $traveler['id'] ?? null,
-                    'title' => $traveler['title'] ?? 'Reisender',
-                    'start_date' => $traveler['start_date'] ?? null,
-                    'end_date' => $traveler['end_date'] ?? null,
-                    'countries' => $traveler['countries'] ?? [],
-                    'destination' => $this->extractDestination($traveler),
-                    'travelers_count' => $traveler['travelers_count'] ?? 1,
-                    'status' => $this->getTravelStatus($traveler),
-                ];
-            })->values()->all();
-
-            return response()->json([
-                'success' => true,
-                'travelers' => $processedTravelers,
-                'count' => count($processedTravelers),
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('MyTravelersController: Error fetching travelers', [
-                'customer_id' => $customer->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Ein Fehler ist aufgetreten',
-            ], 500);
         }
+
+        // Sort by start date (descending - newest first)
+        usort($allTravelers, function ($a, $b) {
+            $dateA = $a['start_date'] ?? '1900-01-01';
+            $dateB = $b['start_date'] ?? '1900-01-01';
+
+            return strcmp($dateB, $dateA);
+        });
+
+        return response()->json([
+            'success' => true,
+            'travelers' => $allTravelers,
+            'count' => count($allTravelers),
+            'sources' => [
+                'local' => count(array_filter($allTravelers, fn ($t) => ($t['source'] ?? 'local') === 'local')),
+                'api' => count(array_filter($allTravelers, fn ($t) => ($t['source'] ?? null) === 'api')),
+            ],
+            'filters' => [
+                'date_filter' => $dateFilter,
+                'status' => $statusFilter,
+                'source' => $sourceFilter,
+                'search' => $searchQuery,
+                'date_range' => $dateRange,
+            ],
+        ]);
+    }
+
+    /**
+     * Calculate date range based on filter type
+     */
+    private function calculateDateRange(string $dateFilter, Request $request): array
+    {
+        $today = now()->startOfDay();
+
+        switch ($dateFilter) {
+            case 'today':
+                return [
+                    'start' => $today->format('Y-m-d'),
+                    'end' => $today->format('Y-m-d'),
+                ];
+
+            case '7days':
+                return [
+                    'start' => $today->format('Y-m-d'),
+                    'end' => $today->copy()->addDays(7)->format('Y-m-d'),
+                ];
+
+            case '14days':
+                return [
+                    'start' => $today->format('Y-m-d'),
+                    'end' => $today->copy()->addDays(14)->format('Y-m-d'),
+                ];
+
+            case '30days':
+                return [
+                    'start' => $today->format('Y-m-d'),
+                    'end' => $today->copy()->addDays(30)->format('Y-m-d'),
+                ];
+
+            case 'custom':
+                return [
+                    'start' => $request->input('start_date'),
+                    'end' => $request->input('end_date'),
+                ];
+
+            case 'all':
+            default:
+                return [
+                    'start' => null,
+                    'end' => null,
+                ];
+        }
+    }
+
+    /**
+     * Format a Folder model as a traveler for the map display
+     */
+    private function formatFolderAsTraveler(Folder $folder): array
+    {
+        // Try to get primary destination coordinates
+        $destination = null;
+
+        // First try: Get from first hotel with coordinates
+        if ($folder->itineraries->isNotEmpty()) {
+            foreach ($folder->itineraries as $itinerary) {
+                $hotel = $itinerary->hotelServices->first(fn ($h) => $h->lat && $h->lng);
+                if ($hotel) {
+                    $destination = [
+                        'lat' => (float) $hotel->lat,
+                        'lng' => (float) $hotel->lng,
+                        'name' => $hotel->city.', '.$hotel->country_code,
+                    ];
+                    break;
+                }
+            }
+        }
+
+        // Fallback: Try to parse primary_destination (e.g. "Bangkok, Thailand")
+        if (! $destination && $folder->primary_destination) {
+            // Try to get country code from primary_destination
+            $parts = explode(',', $folder->primary_destination);
+            if (count($parts) >= 2) {
+                $countryName = trim($parts[1]);
+                // Try to find country code (simple mapping, could be improved)
+                $countryCode = $this->findCountryCodeByName($countryName);
+                if ($countryCode && isset(self::$countryCoordinates[$countryCode])) {
+                    $destination = self::$countryCoordinates[$countryCode];
+                }
+            }
+        }
+
+        // Get booking reference from first itinerary if available
+        $bookingReference = null;
+        if ($folder->itineraries && $folder->itineraries->count() > 0) {
+            $bookingReference = $folder->itineraries->first()->booking_reference;
+        }
+
+        return [
+            'id' => 'folder-'.$folder->id,
+            'folder_id' => $folder->id,
+            'title' => $folder->folder_name ?? 'Reise '.$folder->folder_number,
+            'start_date' => $folder->travel_start_date?->format('Y-m-d'),
+            'end_date' => $folder->travel_end_date?->format('Y-m-d'),
+            'countries' => [], // Could be extracted from itineraries if needed
+            'destination' => $destination,
+            'travelers_count' => $folder->participants->count(),
+            'status' => $this->getTravelStatusFromFolder($folder),
+            'source' => 'local',
+            'source_label' => 'Lokal importiert',
+            'folder_number' => $folder->folder_number,
+            'booking_reference' => $bookingReference,
+        ];
+    }
+
+    /**
+     * Simple country name to code mapping
+     */
+    private function findCountryCodeByName(string $name): ?string
+    {
+        $name = strtolower(trim($name));
+        $mapping = [
+            'thailand' => 'TH',
+            'deutschland' => 'DE',
+            'germany' => 'DE',
+            'frankreich' => 'FR',
+            'france' => 'FR',
+            'spanien' => 'ES',
+            'spain' => 'ES',
+            'italien' => 'IT',
+            'italy' => 'IT',
+            'österreich' => 'AT',
+            'austria' => 'AT',
+            'schweiz' => 'CH',
+            'switzerland' => 'CH',
+            'usa' => 'US',
+            'vereinigte staaten' => 'US',
+            'united states' => 'US',
+            // Add more as needed
+        ];
+
+        return $mapping[$name] ?? null;
+    }
+
+    /**
+     * Get travel status from Folder model
+     */
+    private function getTravelStatusFromFolder(Folder $folder): string
+    {
+        $today = now()->startOfDay();
+        $startDate = $folder->travel_start_date?->startOfDay();
+        $endDate = $folder->travel_end_date?->startOfDay();
+
+        if (! $startDate || ! $endDate) {
+            return 'unknown';
+        }
+
+        if ($today->lt($startDate)) {
+            return 'upcoming';
+        }
+
+        if ($today->gt($endDate)) {
+            return 'completed';
+        }
+
+        return 'traveling';
     }
 
     /**
@@ -266,7 +533,7 @@ class MyTravelersController extends Controller
         $startDate = isset($traveler['start_date']) ? \Carbon\Carbon::parse($traveler['start_date'])->startOfDay() : null;
         $endDate = isset($traveler['end_date']) ? \Carbon\Carbon::parse($traveler['end_date'])->startOfDay() : null;
 
-        if (!$startDate || !$endDate) {
+        if (! $startDate || ! $endDate) {
             return 'unknown';
         }
 
@@ -279,5 +546,275 @@ class MyTravelersController extends Controller
         }
 
         return 'traveling';
+    }
+
+    /**
+     * Delete a folder and all its related data
+     */
+    public function deleteFolder(string $folderId)
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false, 'message' => 'Nicht authentifiziert'], 401);
+        }
+
+        try {
+            // Find folder and verify ownership
+            $folder = Folder::where('customer_id', $customer->id)->findOrFail($folderId);
+
+            // Store folder name for response
+            $folderName = $folder->folder_name ?? $folder->folder_number;
+
+            // Delete folder (cascade will handle related data)
+            $folder->delete();
+
+            Log::info('MyTravelersController: Folder deleted', [
+                'folder_id' => $folderId,
+                'customer_id' => $customer->id,
+                'folder_name' => $folderName,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Reise '{$folderName}' wurde erfolgreich gelöscht.",
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reise nicht gefunden oder keine Berechtigung',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('MyTravelersController: Error deleting folder', [
+                'folder_id' => $folderId,
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Fehler beim Löschen der Reise',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get detailed folder information for sidebar
+     */
+    public function getFolderDetails(string $folderId)
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false, 'message' => 'Nicht authentifiziert'], 401);
+        }
+
+        try {
+            // Load folder with all relations
+            $folder = Folder::with([
+                'customer',
+                'participants',
+                'itineraries.hotelServices',
+                'itineraries.flightServices.segments.departureAirport',
+                'itineraries.flightServices.segments.arrivalAirport',
+                'itineraries.shipServices',
+                'itineraries.carRentalServices',
+            ])
+                ->where('customer_id', $customer->id)
+                ->findOrFail($folderId);
+
+            // Format folder data for frontend
+            $folderData = [
+                'id' => $folder->id,
+                'folder_number' => $folder->folder_number,
+                'folder_name' => $folder->folder_name,
+                'travel_start_date' => $folder->travel_start_date?->format('Y-m-d'),
+                'travel_end_date' => $folder->travel_end_date?->format('Y-m-d'),
+                'primary_destination' => $folder->primary_destination,
+                'status' => $folder->status,
+                'travel_type' => $folder->travel_type,
+                'currency' => $folder->currency,
+                'notes' => $folder->notes,
+
+                // Custom Fields
+                'custom_fields' => [
+                    [
+                        'label' => $folder->custom_field_1_label,
+                        'value' => $folder->custom_field_1_value,
+                    ],
+                    [
+                        'label' => $folder->custom_field_2_label,
+                        'value' => $folder->custom_field_2_value,
+                    ],
+                    [
+                        'label' => $folder->custom_field_3_label,
+                        'value' => $folder->custom_field_3_value,
+                    ],
+                    [
+                        'label' => $folder->custom_field_4_label,
+                        'value' => $folder->custom_field_4_value,
+                    ],
+                    [
+                        'label' => $folder->custom_field_5_label,
+                        'value' => $folder->custom_field_5_value,
+                    ],
+                ],
+
+                // Customer
+                'customer' => $folder->customer ? [
+                    'salutation' => $folder->customer->salutation,
+                    'first_name' => $folder->customer->first_name,
+                    'last_name' => $folder->customer->last_name,
+                    'email' => $folder->customer->email,
+                    'phone' => $folder->customer->phone,
+                ] : null,
+
+                // Participants
+                'participants' => $folder->participants->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'salutation' => $p->salutation,
+                        'first_name' => $p->first_name,
+                        'last_name' => $p->last_name,
+                        'birth_date' => $p->birth_date?->format('Y-m-d'),
+                        'nationality' => $p->nationality,
+                        'passport_number' => $p->passport_number,
+                        'is_main_contact' => $p->is_main_contact,
+                        'participant_type' => $p->participant_type,
+                    ];
+                })->toArray(),
+
+                // Itineraries with services
+                'itineraries' => $folder->itineraries->map(function ($itinerary) {
+                    return [
+                        'id' => $itinerary->id,
+                        'itinerary_name' => $itinerary->itinerary_name,
+                        'start_date' => $itinerary->start_date?->format('Y-m-d'),
+                        'end_date' => $itinerary->end_date?->format('Y-m-d'),
+                        'status' => $itinerary->status,
+                        'booking_reference' => $itinerary->booking_reference,
+                        'provider_name' => $itinerary->provider_name,
+                        'currency' => $itinerary->currency,
+
+                        // Hotels
+                        'hotels' => $itinerary->hotelServices->map(function ($hotel) {
+                            return [
+                                'id' => $hotel->id,
+                                'hotel_name' => $hotel->hotel_name,
+                                'city' => $hotel->city,
+                                'country_code' => $hotel->country_code,
+                                'lat' => $hotel->lat,
+                                'lng' => $hotel->lng,
+                                'check_in_date' => $hotel->check_in_date?->format('Y-m-d'),
+                                'check_out_date' => $hotel->check_out_date?->format('Y-m-d'),
+                                'nights' => $hotel->nights,
+                                'room_type' => $hotel->room_type,
+                                'room_count' => $hotel->room_count,
+                                'booking_reference' => $hotel->booking_reference,
+                                'status' => $hotel->status,
+                            ];
+                        })->toArray(),
+
+                        // Flights
+                        'flights' => $itinerary->flightServices->map(function ($flight) {
+                            return [
+                                'id' => $flight->id,
+                                'booking_reference' => $flight->booking_reference,
+                                'airline_pnr' => $flight->airline_pnr,
+                                'service_type' => $flight->service_type,
+                                'origin_airport_code' => $flight->origin_airport_code,
+                                'destination_airport_code' => $flight->destination_airport_code,
+                                'departure_time' => $flight->departure_time?->format('Y-m-d H:i'),
+                                'arrival_time' => $flight->arrival_time?->format('Y-m-d H:i'),
+                                'status' => $flight->status,
+                                'segments' => $flight->segments->map(function ($segment) {
+                                    return [
+                                        'segment_number' => $segment->segment_number,
+                                        'airline_code' => $segment->airline_code,
+                                        'flight_number' => $segment->flight_number,
+                                        'departure_airport_code' => $segment->departure_airport_code,
+                                        'departure_airport' => $segment->departureAirport ? [
+                                            'code' => $segment->departure_airport_code,
+                                            'name' => $segment->departureAirport->name,
+                                            'city' => $segment->departureAirport->municipality,
+                                            'lat' => $segment->departureAirport->latitude_deg ? (float) $segment->departureAirport->latitude_deg : null,
+                                            'lng' => $segment->departureAirport->longitude_deg ? (float) $segment->departureAirport->longitude_deg : null,
+                                        ] : null,
+                                        'arrival_airport_code' => $segment->arrival_airport_code,
+                                        'arrival_airport' => $segment->arrivalAirport ? [
+                                            'code' => $segment->arrival_airport_code,
+                                            'name' => $segment->arrivalAirport->name,
+                                            'city' => $segment->arrivalAirport->municipality,
+                                            'lat' => $segment->arrivalAirport->latitude_deg ? (float) $segment->arrivalAirport->latitude_deg : null,
+                                            'lng' => $segment->arrivalAirport->longitude_deg ? (float) $segment->arrivalAirport->longitude_deg : null,
+                                        ] : null,
+                                        'departure_time' => $segment->departure_time?->format('Y-m-d H:i'),
+                                        'arrival_time' => $segment->arrival_time?->format('Y-m-d H:i'),
+                                        'departure_terminal' => $segment->departure_terminal,
+                                        'arrival_terminal' => $segment->arrival_terminal,
+                                        'aircraft_type' => $segment->aircraft_type,
+                                        'cabin_class' => $segment->cabin_class,
+                                        'duration_minutes' => $segment->duration_minutes,
+                                    ];
+                                })->toArray(),
+                            ];
+                        })->toArray(),
+
+                        // Ships
+                        'ships' => $itinerary->shipServices->map(function ($ship) {
+                            return [
+                                'id' => $ship->id,
+                                'ship_name' => $ship->ship_name,
+                                'cruise_line' => $ship->cruise_line,
+                                'departure_port' => $ship->departure_port,
+                                'arrival_port' => $ship->arrival_port,
+                                'departure_date' => $ship->departure_date?->format('Y-m-d'),
+                                'arrival_date' => $ship->arrival_date?->format('Y-m-d'),
+                                'cabin_number' => $ship->cabin_number,
+                                'cabin_type' => $ship->cabin_type,
+                                'status' => $ship->status,
+                            ];
+                        })->toArray(),
+
+                        // Car Rentals
+                        'car_rentals' => $itinerary->carRentalServices->map(function ($car) {
+                            return [
+                                'id' => $car->id,
+                                'rental_company' => $car->rental_company,
+                                'vehicle_type' => $car->vehicle_type,
+                                'pickup_location' => $car->pickup_location,
+                                'dropoff_location' => $car->dropoff_location,
+                                'pickup_date' => $car->pickup_date?->format('Y-m-d H:i'),
+                                'dropoff_date' => $car->dropoff_date?->format('Y-m-d H:i'),
+                                'status' => $car->status,
+                            ];
+                        })->toArray(),
+                    ];
+                })->toArray(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $folderData,
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reise nicht gefunden',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('MyTravelersController: Error loading folder details', [
+                'folder_id' => $folderId,
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Fehler beim Laden der Reisedetails',
+            ], 500);
+        }
     }
 }

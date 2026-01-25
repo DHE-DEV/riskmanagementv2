@@ -30,7 +30,7 @@
             function addCss(href){
                 var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
             }
-            var fallbackHref = '{{ file_exists(public_path('vendor/fontawesome/css/all.min.css')) ? asset('vendor/fontawesome/css/all.min.css') : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }}';
+            var fallbackHref = '{{ file_exists(public_path('vendor/fontawesome/css/all.min.css')) ? asset('vendor/fontawesome/css/all.min.css') : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css' }}';
             window.addEventListener('DOMContentLoaded', function(){
                 setTimeout(function(){ if(!window.__faKitOk){ addCss(fallbackHref); } }, 800);
             });
@@ -39,7 +39,7 @@
     @elseif (file_exists(public_path('vendor/fontawesome/css/all.min.css')))
         <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}" />
     @else
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
     @endif
     <style>
         /* Basis-Layout */

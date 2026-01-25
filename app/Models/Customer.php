@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Customer extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
@@ -61,6 +62,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // PDS API Token for calling pds-api
         'pds_api_token',
         'pds_api_token_expires_at',
+        // Auto-refresh settings for My Travelers
+        'auto_refresh_travelers',
+        'travelers_refresh_interval',
     ];
 
     protected $hidden = [
@@ -91,7 +95,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
      */
     public function hasVerifiedEmail(): bool
     {
-        return !is_null($this->email_verified_at);
+        return ! is_null($this->email_verified_at);
     }
 
     /**
@@ -99,7 +103,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
      */
     public function isSocialLogin(): bool
     {
-        return !is_null($this->provider);
+        return ! is_null($this->provider);
     }
 
     /**
@@ -107,8 +111,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
      */
     public function hasActivePassolution(): bool
     {
-        return !is_null($this->passolution_access_token)
-            && !is_null($this->passolution_token_expires_at)
+        return ! is_null($this->passolution_access_token)
+            && ! is_null($this->passolution_token_expires_at)
             && $this->passolution_token_expires_at->isFuture();
     }
 
@@ -118,8 +122,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
      */
     public function hasValidPdsApiToken(): bool
     {
-        return !is_null($this->pds_api_token)
-            && !is_null($this->pds_api_token_expires_at)
+        return ! is_null($this->pds_api_token)
+            && ! is_null($this->pds_api_token_expires_at)
             && $this->pds_api_token_expires_at->isFuture();
     }
 

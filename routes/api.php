@@ -3,10 +3,10 @@
 use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
 use App\Http\Controllers\Api\Plugin\HandshakeController;
-use App\Http\Controllers\Api\V1\TripController;
+use App\Http\Controllers\Api\ShareLinkController;
 use App\Http\Controllers\Api\V1\ProximityController;
 use App\Http\Controllers\Api\V1\ShareLinkController as V1ShareLinkController;
-use App\Http\Controllers\Api\ShareLinkController;
+use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
@@ -65,7 +65,7 @@ Route::get('/continents', function () {
                 'name_en' => $continent->getName('en'),
                 'sort_order' => $continent->sort_order,
             ];
-        })
+        }),
     ]);
 })->name('continents.list');
 
@@ -110,13 +110,13 @@ Route::prefix('booking-locations')->group(function () {
 Route::get('/countries-geojson', function () {
     $path = storage_path('app/private/countries.geojson');
 
-    if (!file_exists($path)) {
+    if (! file_exists($path)) {
         return response()->json(['error' => 'GeoJSON file not found'], 404);
     }
 
     return response()->file($path, [
         'Content-Type' => 'application/geo+json',
-        'Cache-Control' => 'public, max-age=86400' // Cache for 24 hours
+        'Cache-Control' => 'public, max-age=86400', // Cache for 24 hours
     ]);
 })->name('countries.geojson');
 
@@ -174,6 +174,35 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         Route::post('/affected-by-event/{event}', [ProximityController::class, 'affectedByEvent'])->name('v1.proximity.affected-by-event');
         Route::post('/trips-in-country', [ProximityController::class, 'tripsInCountry'])->name('v1.proximity.trips-in-country');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Folder Management API Routes (Customer-Protected)
+|--------------------------------------------------------------------------
+|
+| These routes handle folder/trip management for travel agencies.
+| Protected by customer authentication.
+|
+*/
+Route::prefix('customer/folders')->middleware(['auth:sanctum'])->group(function () {
+    // Folder CRUD
+    Route::get('/', [\App\Http\Controllers\Api\FolderApiController::class, 'index'])->name('customer.folders.index');
+    Route::get('/{id}', [\App\Http\Controllers\Api\FolderApiController::class, 'show'])->name('customer.folders.show');
+
+    // Map locations
+    Route::get('/map-locations', [\App\Http\Controllers\Api\FolderApiController::class, 'getMapLocations'])->name('customer.folders.map-locations');
+
+    // Proximity queries
+    Route::post('/near-point', [\App\Http\Controllers\Api\FolderApiController::class, 'getTravelersNearPoint'])->name('customer.folders.near-point');
+    Route::post('/in-country', [\App\Http\Controllers\Api\FolderApiController::class, 'getTravelersInCountry'])->name('customer.folders.in-country');
+    Route::post('/affected-folders', [\App\Http\Controllers\Api\FolderApiController::class, 'getAffectedFolders'])->name('customer.folders.affected');
+    Route::get('/statistics', [\App\Http\Controllers\Api\FolderApiController::class, 'getTravelerStatistics'])->name('customer.folders.statistics');
+
+    // Import functionality
+    Route::post('/import', [\App\Http\Controllers\Api\FolderImportController::class, 'import'])->name('customer.folders.import');
+    Route::get('/imports', [\App\Http\Controllers\Api\FolderImportController::class, 'listImports'])->name('customer.folders.imports.list');
+    Route::get('/imports/{logId}/status', [\App\Http\Controllers\Api\FolderImportController::class, 'getImportStatus'])->name('customer.folders.imports.status');
 });
 
 /*

@@ -1,0 +1,954 @@
+openapi: 3.0.3
+info:
+  title: Folder Import API
+  description: |
+    API für den Import von Reisedaten (Folders) mit Hotels, Flügen, Kreuzfahrten und Mietwagen.
+
+    ## Features
+    - Token-basierte Authentifizierung mit Laravel Sanctum
+    - Queue-basierter Import für große Datenmengen
+    - Automatisches Airport-Matching (IATA-Codes)
+    - Automatisches Country-Matching
+    - Automatische Timeline-Generierung
+    - Geocoding und Kartendarstellung
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: https://your-domain.com/api
+    description: Production Server
+  - url: http://localhost:8001/api
+    description: Development Server
+
+tags:
+  - name: Authentication
+    description: Token-Verwaltung
+  - name: Import
+    description: Folder-Import Operationen
+  - name: Status
+    description: Import-Status Abfragen
+
+security:
+  - bearerAuth: []
+
+paths:
+  /my-travelers/api-tokens/generate:
+    post:
+      tags:
+        - Authentication
+      summary: API Token generieren
+      description: Generiert einen neuen API-Token für den authentifizierten Customer
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Token erfolgreich generiert
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: "2|RHej0fNgjGSzvPrEcSuY7nMGI7fldCnOMoBrpl2T173373b5"
+                  message:
+                    type: string
+                    example: "API Token erfolgreich generiert"
+
+  /customer/folders/import:
+    post:
+      tags:
+        - Import
+      summary: Folder importieren
+      description: |
+        Importiert einen kompletten Folder mit allen zugehörigen Daten.
+        Der Import läuft im Hintergrund (Queue), Response enthält eine log_id zum Status-Tracking.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderImportRequest'
+            examples:
+              minimal:
+                summary: Minimales Beispiel
+                value:
+                  source: api
+                  provider: "Test System"
+                  data:
+                    folder:
+                      folder_name: "Test Reise"
+                      travel_start_date: "2026-06-01"
+                      travel_end_date: "2026-06-14"
+                    customer:
+                      first_name: "Max"
+                      last_name: "Mustermann"
+                    participants:
+                      - first_name: "Max"
+                        last_name: "Mustermann"
+                        is_main_contact: true
+                    itineraries:
+                      - itinerary_name: "Hauptreise"
+                        hotels:
+                          - hotel_name: "Test Hotel"
+                            check_in_date: "2026-06-01"
+                            check_out_date: "2026-06-14"
+              complete:
+                summary: Vollständiges Beispiel
+                value:
+                  source: api
+                  provider: "TUI Reisebüro München"
+                  data:
+                    folder:
+                      folder_name: "Mallorca Sommerurlaub 2026"
+                      travel_start_date: "2026-07-15"
+                      travel_end_date: "2026-07-29"
+                      primary_destination: "Palma, Spanien"
+                      travel_type: leisure
+                      status: confirmed
+                      currency: EUR
+                      custom_field_1_label: "TUI Buchungsnummer"
+                      custom_field_1_value: "TUI-2026-12345"
+                    customer:
+                      salutation: Frau
+                      first_name: Anna
+                      last_name: Müller
+                      email: anna.mueller@example.com
+                      phone: "+49 89 12345678"
+                      city: München
+                      country_code: DE
+                    participants:
+                      - salutation: Frau
+                        first_name: Anna
+                        last_name: Müller
+                        birth_date: "1985-03-15"
+                        nationality: DE
+                        passport_number: "C01X12345"
+                        is_main_contact: true
+                        participant_type: adult
+                    itineraries:
+                      - itinerary_name: "Mallorca Hauptreise"
+                        start_date: "2026-07-15"
+                        end_date: "2026-07-29"
+                        status: confirmed
+                        booking_reference: "MAL-2026-001"
+                        currency: EUR
+                        hotels:
+                          - hotel_name: "Hotel Paraíso del Mar"
+                            city: Palma
+                            country_code: ES
+                            lat: 39.569900
+                            lng: 2.650900
+                            check_in_date: "2026-07-15"
+                            check_out_date: "2026-07-29"
+                            nights: 14
+                            room_type: "Superior Doppelzimmer"
+                            board_type: "All Inclusive"
+                            booking_reference: "HTL-001"
+                            total_amount: 2450.00
+                            status: confirmed
+                        flights:
+                          - booking_reference: "LH-PMI-001"
+                            service_type: outbound
+                            status: ticketed
+                            segments:
+                              - segment_number: 1
+                                departure_airport_code: MUC
+                                departure_time: "2026-07-15 10:00:00"
+                                arrival_airport_code: PMI
+                                arrival_time: "2026-07-15 12:15:00"
+                                airline_code: LH
+                                flight_number: "1802"
+                                cabin_class: economy
+      responses:
+        '202':
+          description: Import erfolgreich in Queue eingereiht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Import queued successfully"
+                  log_id:
+                    type: string
+                    format: uuid
+                    example: "019bef38-f2bc-73fc-bdbc-228ff5a8421e"
+        '422':
+          description: Validierungsfehler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  errors:
+                    type: object
+                    example:
+                      source: ["The source field is required."]
+                      data.folder.folder_name: ["The folder name must not exceed 255 characters."]
+        '401':
+          description: Nicht authentifiziert
+        '500':
+          description: Server-Fehler
+
+  /customer/folders/imports/{logId}/status:
+    get:
+      tags:
+        - Status
+      summary: Import-Status abrufen
+      description: Ruft den aktuellen Status eines Imports ab
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "019bef38-f2bc-73fc-bdbc-228ff5a8421e"
+      responses:
+        '200':
+          description: Import-Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ImportStatus'
+        '404':
+          description: Import-Log nicht gefunden
+
+  /customer/folders/imports:
+    get:
+      tags:
+        - Status
+      summary: Liste aller Imports
+      description: Ruft eine paginierte Liste aller Imports des authentifizierten Customers ab
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Liste der Imports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ImportStatus'
+                      current_page:
+                        type: integer
+                      total:
+                        type: integer
+                      per_page:
+                        type: integer
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: "Sanctum Token"
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: laravel_session
+
+  schemas:
+    FolderImportRequest:
+      type: object
+      required:
+        - source
+        - provider
+        - data
+      properties:
+        source:
+          type: string
+          enum: [api, file, manual]
+          description: Import-Quelle
+        provider:
+          type: string
+          maxLength: 128
+          description: Name des Datenlieferanten
+        data:
+          $ref: '#/components/schemas/FolderData'
+        mapping_config:
+          type: object
+          description: Optionale Mapping-Konfiguration
+
+    FolderData:
+      type: object
+      required:
+        - folder
+        - itineraries
+      properties:
+        folder:
+          $ref: '#/components/schemas/Folder'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Participant'
+        itineraries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Itinerary'
+
+    Folder:
+      type: object
+      properties:
+        folder_number:
+          type: string
+          maxLength: 64
+          description: Eindeutige Vorgangsnummer (wird automatisch generiert falls nicht angegeben)
+        folder_name:
+          type: string
+          maxLength: 255
+        travel_start_date:
+          type: string
+          format: date
+          example: "2026-07-15"
+        travel_end_date:
+          type: string
+          format: date
+          example: "2026-07-29"
+        primary_destination:
+          type: string
+          maxLength: 255
+        status:
+          type: string
+          enum: [draft, confirmed, active, completed, cancelled]
+          default: draft
+        travel_type:
+          type: string
+          enum: [business, leisure, mixed]
+          default: leisure
+        agent_name:
+          type: string
+          maxLength: 255
+        notes:
+          type: string
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: EUR
+          example: EUR
+        custom_field_1_label:
+          type: string
+          maxLength: 100
+        custom_field_1_value:
+          type: string
+        custom_field_2_label:
+          type: string
+          maxLength: 100
+        custom_field_2_value:
+          type: string
+        custom_field_3_label:
+          type: string
+          maxLength: 100
+        custom_field_3_value:
+          type: string
+        custom_field_4_label:
+          type: string
+          maxLength: 100
+        custom_field_4_value:
+          type: string
+        custom_field_5_label:
+          type: string
+          maxLength: 100
+        custom_field_5_value:
+          type: string
+
+    Customer:
+      type: object
+      required:
+        - first_name
+        - last_name
+      properties:
+        salutation:
+          type: string
+          enum: [mr, mrs, diverse, Herr, Frau, Divers]
+          description: "Wird automatisch gemappt: Herr→mr, Frau→mrs, Divers→diverse"
+        title:
+          type: string
+          maxLength: 64
+        first_name:
+          type: string
+          maxLength: 128
+        last_name:
+          type: string
+          maxLength: 128
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 64
+        mobile:
+          type: string
+          maxLength: 64
+        street:
+          type: string
+          maxLength: 255
+        house_number:
+          type: string
+          maxLength: 20
+        postal_code:
+          type: string
+          maxLength: 20
+        city:
+          type: string
+          maxLength: 128
+        country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          example: DE
+        birth_date:
+          type: string
+          format: date
+        nationality:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        notes:
+          type: string
+
+    Participant:
+      type: object
+      required:
+        - first_name
+        - last_name
+      properties:
+        salutation:
+          type: string
+          enum: [mr, mrs, child, infant, diverse]
+        title:
+          type: string
+          maxLength: 64
+        first_name:
+          type: string
+          maxLength: 128
+        last_name:
+          type: string
+          maxLength: 128
+        birth_date:
+          type: string
+          format: date
+        nationality:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        passport_number:
+          type: string
+          maxLength: 64
+        passport_issue_date:
+          type: string
+          format: date
+        passport_expiry_date:
+          type: string
+          format: date
+        passport_issuing_country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 64
+        dietary_requirements:
+          type: string
+        medical_conditions:
+          type: string
+        notes:
+          type: string
+        is_main_contact:
+          type: boolean
+          default: false
+        participant_type:
+          type: string
+          enum: [adult, child, infant]
+          default: adult
+
+    Itinerary:
+      type: object
+      properties:
+        booking_reference:
+          type: string
+          maxLength: 64
+        itinerary_name:
+          type: string
+          maxLength: 255
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+          default: pending
+        provider_name:
+          type: string
+          maxLength: 255
+        provider_reference:
+          type: string
+          maxLength: 128
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: EUR
+        notes:
+          type: string
+        hotels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hotel'
+        flights:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flight'
+        ships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ship'
+        car_rentals:
+          type: array
+          items:
+            $ref: '#/components/schemas/CarRental'
+
+    Hotel:
+      type: object
+      required:
+        - hotel_name
+        - check_in_date
+        - check_out_date
+      properties:
+        hotel_name:
+          type: string
+          maxLength: 255
+        hotel_code:
+          type: string
+          maxLength: 64
+        hotel_code_type:
+          type: string
+          maxLength: 32
+        street:
+          type: string
+          maxLength: 255
+        postal_code:
+          type: string
+          maxLength: 20
+        city:
+          type: string
+          maxLength: 128
+        country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        lat:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: "Breitengrad (WGS 84)"
+        lng:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: "Längengrad (WGS 84)"
+        check_in_date:
+          type: string
+          format: date
+        check_out_date:
+          type: string
+          format: date
+        nights:
+          type: integer
+          minimum: 1
+        room_type:
+          type: string
+          maxLength: 128
+        room_count:
+          type: integer
+          minimum: 1
+          default: 1
+        board_type:
+          type: string
+          maxLength: 64
+        booking_reference:
+          type: string
+          maxLength: 64
+        total_amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: EUR
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled]
+          default: pending
+        notes:
+          type: string
+
+    Flight:
+      type: object
+      required:
+        - segments
+      properties:
+        booking_reference:
+          type: string
+          maxLength: 64
+        service_type:
+          type: string
+          enum: [outbound, return, multi_leg]
+          default: outbound
+        airline_pnr:
+          type: string
+          maxLength: 32
+        ticket_numbers:
+          type: array
+          items:
+            type: string
+        total_amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: EUR
+        status:
+          type: string
+          enum: [pending, ticketed, cancelled]
+          default: pending
+        segments:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/FlightSegment'
+
+    FlightSegment:
+      type: object
+      required:
+        - departure_airport_code
+        - departure_time
+        - arrival_airport_code
+        - arrival_time
+      properties:
+        segment_number:
+          type: integer
+          minimum: 1
+          default: 1
+        departure_airport_code:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          example: MUC
+          description: "IATA 3-Letter Code - System matched automatisch zu airport_codes_1"
+        departure_time:
+          type: string
+          format: date-time
+          example: "2026-07-15 10:00:00"
+        departure_terminal:
+          type: string
+          maxLength: 16
+        departure_country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          description: "Wird automatisch ermittelt"
+        departure_lat:
+          type: number
+          format: double
+          description: "Wird automatisch ermittelt"
+        departure_lng:
+          type: number
+          format: double
+          description: "Wird automatisch ermittelt"
+        arrival_airport_code:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          example: PMI
+          description: "IATA 3-Letter Code - System matched automatisch zu airport_codes_1"
+        arrival_time:
+          type: string
+          format: date-time
+          example: "2026-07-15 12:15:00"
+        arrival_terminal:
+          type: string
+          maxLength: 16
+        arrival_country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          description: "Wird automatisch ermittelt"
+        arrival_lat:
+          type: number
+          format: double
+          description: "Wird automatisch ermittelt"
+        arrival_lng:
+          type: number
+          format: double
+          description: "Wird automatisch ermittelt"
+        airline_code:
+          type: string
+          pattern: "^[A-Z0-9]{2,3}$"
+          example: LH
+        flight_number:
+          type: string
+          maxLength: 10
+          example: "1802"
+        aircraft_type:
+          type: string
+          maxLength: 32
+          example: A320
+        duration_minutes:
+          type: integer
+          minimum: 1
+        booking_class:
+          type: string
+          maxLength: 2
+        cabin_class:
+          type: string
+          enum: [economy, premium_economy, business, first]
+          default: economy
+
+    Ship:
+      type: object
+      required:
+        - ship_name
+        - embarkation_date
+        - disembarkation_date
+      properties:
+        ship_name:
+          type: string
+          maxLength: 255
+        cruise_line:
+          type: string
+          maxLength: 128
+        ship_code:
+          type: string
+          maxLength: 64
+        embarkation_date:
+          type: string
+          format: date
+        disembarkation_date:
+          type: string
+          format: date
+        nights:
+          type: integer
+          minimum: 1
+        embarkation_port:
+          type: string
+          maxLength: 128
+        embarkation_country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        embarkation_lat:
+          type: number
+          format: double
+        embarkation_lng:
+          type: number
+          format: double
+        disembarkation_port:
+          type: string
+          maxLength: 128
+        disembarkation_country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        disembarkation_lat:
+          type: number
+          format: double
+        disembarkation_lng:
+          type: number
+          format: double
+        cabin_number:
+          type: string
+          maxLength: 32
+        cabin_type:
+          type: string
+          maxLength: 128
+        cabin_category:
+          type: string
+          maxLength: 64
+        deck:
+          type: string
+          maxLength: 32
+        booking_reference:
+          type: string
+          maxLength: 64
+        total_amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: EUR
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled]
+          default: pending
+        port_calls:
+          type: array
+          items:
+            type: object
+            properties:
+              port:
+                type: string
+              country:
+                type: string
+                pattern: "^[A-Z]{2}$"
+              arrival:
+                type: string
+                format: date
+              departure:
+                type: string
+                format: date
+        notes:
+          type: string
+
+    CarRental:
+      type: object
+      required:
+        - pickup_location
+        - pickup_datetime
+        - return_location
+        - return_datetime
+      properties:
+        rental_company:
+          type: string
+          maxLength: 128
+        booking_reference:
+          type: string
+          maxLength: 64
+        pickup_location:
+          type: string
+          maxLength: 255
+        pickup_country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        pickup_lat:
+          type: number
+          format: double
+        pickup_lng:
+          type: number
+          format: double
+        pickup_datetime:
+          type: string
+          format: date-time
+        return_location:
+          type: string
+          maxLength: 255
+        return_country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        return_lat:
+          type: number
+          format: double
+        return_lng:
+          type: number
+          format: double
+        return_datetime:
+          type: string
+          format: date-time
+        vehicle_category:
+          type: string
+          maxLength: 64
+        vehicle_type:
+          type: string
+          maxLength: 128
+        vehicle_make_model:
+          type: string
+          maxLength: 255
+        transmission:
+          type: string
+          enum: [manual, automatic]
+        fuel_type:
+          type: string
+          enum: [petrol, diesel, electric, hybrid]
+        rental_days:
+          type: integer
+          minimum: 1
+        total_amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: EUR
+        insurance_options:
+          type: array
+          items:
+            type: object
+        extras:
+          type: array
+          items:
+            type: object
+        status:
+          type: string
+          enum: [pending, confirmed, picked_up, returned, cancelled]
+          default: pending
+        notes:
+          type: string
+
+    ImportStatus:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        folder_id:
+          type: string
+          format: uuid
+          nullable: true
+        records_imported:
+          type: integer
+        records_failed:
+          type: integer
+        error_message:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
