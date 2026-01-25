@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.4'; // Cache buster - Fix Reverb config paths
+    $version = '1.0.5'; // Cache buster - Add broadcast auth for customer guard
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -2069,11 +2069,18 @@
                 wsPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
                 wssPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
                 forceTLS: ('{{ config('broadcasting.connections.reverb.options.scheme', 'http') }}' === 'https'),
-                enabledTransports: ['ws', 'wss']
+                enabledTransports: ['ws', 'wss'],
+                authEndpoint: '/customer/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                }
             });
         }
 
         // Subscribe to customer's private channel for folder updates
+        console.log('Subscribing to channel: customer.{{ auth('customer')->id() }}');
         Echo.private('customer.{{ auth('customer')->id() }}')
             .listen('.folder.imported', (event) => {
                 console.log('Folder imported/updated:', event);

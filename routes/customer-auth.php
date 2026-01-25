@@ -49,3 +49,14 @@ Route::middleware('auth:customer')->prefix('customer')->name('customer.')->group
     // Dashboard (handled by routes/customer.php to avoid duplication)
     // Route::get('dashboard', ...)->name('dashboard');
 });
+
+// Broadcast authentication for customer guard
+Route::middleware('auth:customer')->post('/customer/broadcasting/auth', function (\Illuminate\Http\Request $request) {
+    $customer = auth('customer')->user();
+
+    if (!$customer) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    return \Illuminate\Support\Facades\Broadcast::auth($request);
+})->name('customer.broadcasting.auth');
