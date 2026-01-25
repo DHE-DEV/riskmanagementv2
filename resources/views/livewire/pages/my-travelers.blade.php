@@ -573,8 +573,11 @@
             airportMarkers: [],
 
             init() {
-                this.initMap();
-                this.loadTravelers();
+                // Wait for DOM to be ready
+                this.$nextTick(() => {
+                    this.initMap();
+                    this.loadTravelers();
+                });
             },
 
             initMap() {
@@ -623,6 +626,13 @@
                 // Initialize airport markers layer (no clustering)
                 this.airportMarkersLayer = L.layerGroup();
                 this.map.addLayer(this.airportMarkersLayer);
+
+                // Force map to recalculate size after initialization
+                setTimeout(() => {
+                    if (this.map) {
+                        this.map.invalidateSize();
+                    }
+                }, 100);
             },
 
             async loadTravelers() {
