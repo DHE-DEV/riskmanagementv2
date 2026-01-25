@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.1'; // Cache buster
+    $version = '1.0.2'; // Cache buster - JS syntax fix
 @endphp
 <!DOCTYPE html>
 <html lang="de">
