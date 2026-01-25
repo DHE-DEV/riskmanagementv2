@@ -99,7 +99,21 @@ class FolderImportService
 
             // Broadcast real-time event to customer
             $wasUpdated = $folder->wasRecentlyCreated === false;
-            broadcast(new FolderImported($folder, $wasUpdated))->toOthers();
+            Log::info('Broadcasting FolderImported event', [
+                'folder_id' => $folder->id,
+                'customer_id' => $folder->customer_id,
+                'was_updated' => $wasUpdated,
+                'channel' => 'customer.' . $folder->customer_id,
+            ]);
+            try {
+                broadcast(new FolderImported($folder, $wasUpdated));
+                Log::info('FolderImported broadcast sent successfully');
+            } catch (\Exception $e) {
+                Log::error('FolderImported broadcast failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
 
             // Rebuild timeline in the background
             $this->timelineBuilder->rebuildForFolder($folder);

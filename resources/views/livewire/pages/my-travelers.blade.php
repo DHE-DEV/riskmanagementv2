@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.5'; // Cache buster - Add broadcast auth for customer guard
+    $version = '1.0.7'; // Cache buster - Preserve map view when traveler is selected
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -703,8 +703,9 @@
                 }, 100);
             },
 
-            async loadTravelers() {
-                console.log('loadTravelers() called with filters:', this.filters);
+            async loadTravelers(options = {}) {
+                const { preserveView = false } = options;
+                console.log('loadTravelers() called with filters:', this.filters, 'preserveView:', preserveView);
                 this.loading = true;
                 this.error = null;
 
@@ -738,7 +739,8 @@
 
                     this.travelers = data.travelers || [];
                     console.log('Loaded travelers:', this.travelers.length);
-                    this.updateMapMarkers();
+                    // Skip fitBounds if we're preserving the view (e.g., during real-time updates while viewing a trip)
+                    this.updateMapMarkers(preserveView || this.selectedTraveler !== null);
 
                 } catch (err) {
                     console.error('Error loading travelers:', err);
@@ -757,7 +759,7 @@
                 };
             },
 
-            updateMapMarkers() {
+            updateMapMarkers(skipFitBounds = false) {
                 // Clear existing markers
                 this.markersLayer.clearLayers();
                 this.markers = {};
@@ -771,8 +773,8 @@
                     }
                 });
 
-                // Fit bounds if markers exist
-                if (Object.keys(this.markers).length > 0) {
+                // Fit bounds if markers exist and we're not skipping (e.g., when a traveler is selected)
+                if (!skipFitBounds && Object.keys(this.markers).length > 0) {
                     const bounds = this.markersLayer.getBounds();
                     if (bounds.isValid()) {
                         this.map.fitBounds(bounds, { padding: [50, 50] });
@@ -2061,14 +2063,17 @@
     // Initialize Laravel Echo for real-time updates
     @auth('customer')
     document.addEventListener('DOMContentLoaded', function() {
-        if (window.Echo === undefined) {
-            window.Echo = new Echo({
-                broadcaster: 'reverb',
+        // Echo ist nach dem Laden der Library der Konstruktor - wir müssen eine Instanz erstellen
+        if (typeof window.Echo === 'function') {
+            window.echoInstance = new window.Echo({
+                broadcaster: 'pusher',
                 key: '{{ config('broadcasting.connections.reverb.key') }}',
                 wsHost: '{{ config('broadcasting.connections.reverb.options.host') }}',
                 wsPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
                 wssPort: {{ config('broadcasting.connections.reverb.options.port', 8080) }},
                 forceTLS: ('{{ config('broadcasting.connections.reverb.options.scheme', 'http') }}' === 'https'),
+                disableStats: true,
+                cluster: 'mt1',
                 enabledTransports: ['ws', 'wss'],
                 authEndpoint: '/customer/broadcasting/auth',
                 auth: {
@@ -2081,7 +2086,7 @@
 
         // Subscribe to customer's private channel for folder updates
         console.log('Subscribing to channel: customer.{{ auth('customer')->id() }}');
-        Echo.private('customer.{{ auth('customer')->id() }}')
+        window.echoInstance.private('customer.{{ auth('customer')->id() }}')
             .listen('.folder.imported', (event) => {
                 console.log('Folder imported/updated:', event);
 

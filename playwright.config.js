@@ -68,10 +68,11 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'php artisan serve --host=0.0.0.0 --port=8000',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // Disabled - use existing server at riskmanagementv2.local
+  // webServer: {
+  //   command: 'php artisan serve --host=0.0.0.0 --port=8000',
+  //   url: 'http://localhost:8000',
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120000,
+  // },
 });
