@@ -647,74 +647,179 @@
          x-transition:leave-end="opacity-0">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showRawDataModal = false"></div>
-            <div class="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col"
+            <div class="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-y-4"
                  x-transition:enter-end="opacity-100 translate-y-0">
                 <!-- Modal Header -->
-                <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200">
+                <div class="flex items-start justify-between px-6 py-5 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                     <div class="flex-1 min-w-0">
-                        <h3 class="text-lg font-semibold text-gray-900" x-text="rawDataTitle"></h3>
+                        <h3 class="text-xl font-bold text-gray-900" x-text="rawDataTitle"></h3>
                         <template x-if="rawData && rawData.tid">
-                            <p class="text-sm text-gray-600 mt-1">
-                                <span class="text-gray-500">ID:</span>
+                            <p class="text-sm text-gray-500 mt-1 font-mono">
                                 <a :href="'https://travel-details.eu/tid=' + rawData.tid + '?preview'"
                                    target="_blank"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline font-mono"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline"
                                    x-text="rawData.tid"></a>
                             </p>
                         </template>
-                        <template x-if="rawData && rawData.cruise_compass">
-                            <p class="text-sm text-gray-600 mt-1">
-                                <span class="text-gray-500">Cruise ID:</span>
-                                <span class="font-mono" x-text="rawData.cruise_compass"></span>
-                            </p>
-                        </template>
-                        <template x-if="rawData && (rawData.start_date || rawData.end_date)">
-                            <p class="text-sm text-gray-600 mt-1">
-                                <i class="fa-regular fa-calendar mr-1 text-gray-400"></i>
-                                <span x-text="formatDate(rawData.start_date)"></span>
-                                <template x-if="rawData.end_date">
-                                    <span> - <span x-text="formatDate(rawData.end_date)"></span></span>
-                                </template>
-                            </p>
-                        </template>
-                        <template x-if="rawData && rawData.note">
-                            <p class="text-sm text-gray-600 mt-1">
-                                <i class="fa-regular fa-note-sticky mr-1 text-gray-400"></i>
-                                <span x-text="rawData.note"></span>
-                            </p>
-                        </template>
-                        <template x-if="rawData && rawData.nationalities && rawData.nationalities.length > 0">
-                            <p class="text-sm text-gray-600 mt-1">
-                                <i class="fa-regular fa-flag mr-1 text-gray-400"></i>
-                                <span class="text-gray-500">Nationalitäten:</span>
-                                <span x-text="rawData.nationalities.join(', ')"></span>
-                            </p>
-                        </template>
-                        <template x-if="rawData && rawData.destinations && rawData.destinations.length > 0">
-                            <p class="text-sm text-gray-600 mt-1">
-                                <i class="fa-regular fa-location-dot mr-1 text-gray-400"></i>
-                                <span class="text-gray-500">Ziele:</span>
-                                <span x-text="rawData.destinations.join(', ')"></span>
-                            </p>
-                        </template>
                     </div>
-                    <button @click="showRawDataModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-4">
+                    <button @click="showRawDataModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200 ml-4 transition-colors">
                         <i class="fa-regular fa-xmark text-xl"></i>
                     </button>
                 </div>
+
                 <!-- Modal Body -->
-                <div class="flex-1 overflow-y-auto p-6">
-                    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words" x-text="rawDataJson"></pre>
+                <div class="flex-1 overflow-y-auto">
+                    <!-- Info Grid -->
+                    <div class="p-6 grid grid-cols-2 gap-4">
+                        <!-- Reference ID -->
+                        <template x-if="rawData && rawData.reference_id">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Referenz-ID</p>
+                                <p class="mt-1 font-mono text-sm text-gray-900 flex items-center gap-2">
+                                    <span x-text="rawData.reference_id"></span>
+                                    <button @click="copyToClipboardAndNotify(rawData.reference_id, 'Referenz-ID')"
+                                            class="text-gray-400 hover:text-blue-600 transition-colors"
+                                            title="Kopieren">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </p>
+                            </div>
+                        </template>
+
+                        <!-- Cruise ID -->
+                        <template x-if="rawData && rawData.cruise_compass">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Cruise ID</p>
+                                <p class="mt-1 font-mono text-sm text-gray-900" x-text="rawData.cruise_compass"></p>
+                            </div>
+                        </template>
+
+                        <!-- Date Range -->
+                        <template x-if="rawData && (rawData.start_date || rawData.end_date)">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Reisezeitraum</p>
+                                <p class="mt-1 text-sm text-gray-900 flex items-center gap-1">
+                                    <i class="fa-regular fa-calendar text-gray-400"></i>
+                                    <span x-text="formatDate(rawData.start_date)"></span>
+                                    <template x-if="rawData.end_date">
+                                        <span>
+                                            <span class="text-gray-400 mx-1">-</span>
+                                            <span x-text="formatDate(rawData.end_date)"></span>
+                                        </span>
+                                    </template>
+                                </p>
+                            </div>
+                        </template>
+
+                        <!-- Visits / Statistics -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Aufrufe</p>
+                            <p class="mt-1 text-sm text-gray-900 flex items-center gap-1">
+                                <i class="fa-regular fa-eye text-gray-400"></i>
+                                <span x-text="rawData?.visits ?? 0"></span>
+                                <template x-if="rawData && rawData.last_visited_at">
+                                    <span class="text-gray-500 text-xs ml-2">
+                                        (zuletzt: <span x-text="formatDate(rawData.last_visited_at)"></span>)
+                                    </span>
+                                </template>
+                                <template x-if="rawData && !rawData.last_visited_at && rawData.visits === 0">
+                                    <span class="text-gray-400 text-xs ml-1">(noch nie aufgerufen)</span>
+                                </template>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Destinations -->
+                    <template x-if="rawData && rawData.destinations && rawData.destinations.length > 0">
+                        <div class="px-6 pb-4">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Reiseziele</p>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="dest in rawData.destinations" :key="dest">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fa-regular fa-location-dot mr-1"></i>
+                                        <span x-text="dest"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Nationalities -->
+                    <template x-if="rawData && rawData.nationalities && rawData.nationalities.length > 0">
+                        <div class="px-6 pb-4">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Nationalitäten</p>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="nat in rawData.nationalities" :key="nat">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
+                                        <i class="fa-regular fa-flag mr-1"></i>
+                                        <span x-text="nat"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Tour Operators -->
+                    <template x-if="rawData && rawData.tour_operators && rawData.tour_operators.length > 0">
+                        <div class="px-6 pb-4">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Reiseveranstalter</p>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="op in rawData.tour_operators" :key="op">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fa-regular fa-building mr-1"></i>
+                                        <span x-text="op"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Individual Contents -->
+                    <template x-if="rawData && rawData.individual_contents && rawData.individual_contents.length > 0">
+                        <div class="px-6 pb-4">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Individuelle Inhalte</p>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="content in rawData.individual_contents" :key="content">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800">
+                                        <i class="fa-regular fa-file-lines mr-1"></i>
+                                        <span x-text="content"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Note -->
+                    <template x-if="rawData && rawData.note">
+                        <div class="px-6 pb-4">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Notiz</p>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p class="text-sm text-yellow-800 flex items-start gap-2">
+                                    <i class="fa-regular fa-note-sticky mt-0.5 text-yellow-600"></i>
+                                    <span x-text="rawData.note"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Raw JSON (Collapsible) -->
+                    <div class="px-6 pb-6">
+                        <button @click="showRawJson = !showRawJson"
+                                class="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 uppercase tracking-wide font-medium transition-colors">
+                            <i class="fa-regular" :class="showRawJson ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                            <span>Raw JSON</span>
+                        </button>
+                        <div x-show="showRawJson" x-collapse class="mt-3">
+                            <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words max-h-64 overflow-y-auto" x-text="rawDataJson"></pre>
+                        </div>
+                    </div>
                 </div>
+
                 <!-- Modal Footer -->
-                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
-                    <button @click="copyRawData()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                        <i class="fa-regular fa-copy mr-2"></i>
-                        Kopieren
-                    </button>
-                    <button @click="showRawDataModal = false" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                <div class="flex items-center justify-end px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                    <button @click="showRawDataModal = false" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                         Schließen
                     </button>
                 </div>
@@ -752,6 +857,7 @@
             rawDataJson: '',
             rawDataTitle: '',
             rawData: null,
+            showRawJson: false,
 
             init() {
                 console.log('travelersApp initialized');
@@ -1442,7 +1548,17 @@
                 this.rawData = traveler.raw_data || traveler;
                 this.rawDataTitle = this.rawData.trip_name || traveler.trip_id || traveler.title || 'Reise';
                 this.rawDataJson = JSON.stringify(this.rawData, null, 2);
+                this.showRawJson = false;
                 this.showRawDataModal = true;
+            },
+
+            copyToClipboardAndNotify(text, label) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.showNotification(label + ' kopiert', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    this.showNotification('Fehler beim Kopieren', 'error');
+                });
             },
 
             copyRawData() {
