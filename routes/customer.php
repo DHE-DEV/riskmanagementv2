@@ -62,12 +62,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::post('/profile/toggle-branch-management', [\App\Http\Controllers\Customer\ProfileController::class, 'toggleBranchManagement'])
             ->name('profile.toggle-branch-management');
 
-        // Passolution OAuth routes
+        // Passolution OAuth routes (require auth)
         Route::get('/passolution/authorize', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'redirect'])
             ->name('passolution.authorize');
-
-        Route::get('/passolution/callback', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'callback'])
-            ->name('passolution.callback');
 
         Route::post('/passolution/disconnect', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'disconnect'])
             ->name('passolution.disconnect');
@@ -103,6 +100,10 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::delete('/{id}', [\App\Http\Controllers\Customer\NotificationController::class, 'delete'])->name('delete');
         });
     });
+
+    // Passolution OAuth callback (no auth required - user returns from external OAuth)
+    Route::get('/passolution/callback', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'callback'])
+        ->name('passolution.callback');
 
     // Authentication Routes
     Route::middleware(['guest:'.config('fortify.guard')])->group(function () use ($enableViews) {

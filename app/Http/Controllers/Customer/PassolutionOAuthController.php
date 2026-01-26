@@ -39,6 +39,17 @@ class PassolutionOAuthController extends Controller
      */
     public function callback(Request $request)
     {
+        // Check if user is still logged in
+        if (!auth('customer')->check()) {
+            // Store OAuth data in session for processing after login
+            session(['passolution_oauth_pending' => [
+                'code' => $request->code,
+                'state' => $request->state,
+            ]]);
+            return redirect()->route('customer.login')
+                ->with('error', 'Bitte melden Sie sich an, um die Passolution-Integration abzuschließen.');
+        }
+
         // Verify state to prevent CSRF
         $state = session('passolution_oauth_state');
         if (!$state || $state !== $request->state) {
