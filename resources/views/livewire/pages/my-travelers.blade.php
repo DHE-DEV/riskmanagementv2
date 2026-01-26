@@ -698,9 +698,9 @@
 
                         <!-- Date Range -->
                         <template x-if="rawData && (rawData.start_date || rawData.end_date)">
-                            <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="bg-gray-50 rounded-lg p-3 text-right">
                                 <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Reisezeitraum</p>
-                                <p class="mt-1 text-sm text-gray-900 flex items-center gap-1">
+                                <p class="mt-1 text-sm text-gray-900 flex items-center justify-end gap-1">
                                     <i class="fa-regular fa-calendar text-gray-400"></i>
                                     <span x-text="formatDate(rawData.start_date)"></span>
                                     <template x-if="rawData.end_date">
