@@ -151,103 +151,6 @@
             </div>
             @endif
 
-            <!-- Plugin Box -->
-            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fa-regular fa-puzzle-piece text-blue-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Plugin</h3>
-                            <p class="text-sm text-gray-600">Integrieren Sie den Global Travel Monitor auf Ihrer Website</p>
-                        </div>
-                    </div>
-                    <a href="{{ route('plugin.dashboard') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                        <span>Zum Plugin</span>
-                        <i class="fa-regular fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- API Box -->
-            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6" x-data="apiTokenManager()">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <i class="fa-regular fa-key text-purple-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">API</h3>
-                        <p class="text-sm text-gray-600">Verwalten Sie Ihren API-Zugriffsschlüssel</p>
-                    </div>
-                </div>
-
-                <!-- Token Display Area -->
-                <div x-show="generatedToken" x-cloak class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <p class="text-sm text-green-800 font-medium mb-2">
-                        <i class="fa-regular fa-check-circle mr-1"></i>
-                        API Token erfolgreich generiert
-                    </p>
-                    <div class="flex gap-2 items-center">
-                        <input
-                            type="text"
-                            x-model="generatedToken"
-                            readonly
-                            class="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono select-all"
-                            @click="$el.select()"
-                        >
-                        <button
-                            @click="copyToken"
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-                            <i class="fa-regular fa-copy"></i>
-                            <span x-text="copied ? 'Kopiert!' : 'Kopieren'"></span>
-                        </button>
-                    </div>
-                    <p class="text-xs text-green-700 mt-2">
-                        <i class="fa-regular fa-info-circle mr-1"></i>
-                        Bitte speichern Sie diesen Token sicher. Er wird nur einmal angezeigt.
-                    </p>
-                </div>
-
-                <!-- Info when no token generated -->
-                <div x-show="!generatedToken && !hasToken" x-cloak class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p class="text-sm text-blue-800">
-                        <i class="fa-regular fa-info-circle mr-1"></i>
-                        Sie haben noch keinen API-Token. Generieren Sie einen Token, um auf die API zugreifen zu können.
-                    </p>
-                </div>
-
-                <!-- Info when token exists -->
-                <div x-show="!generatedToken && hasToken" x-cloak class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p class="text-sm text-yellow-800">
-                        <i class="fa-regular fa-shield-check mr-1"></i>
-                        Sie haben bereits einen aktiven API-Token. Das Generieren eines neuen Tokens widerruft automatisch den alten.
-                    </p>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex gap-3">
-                    <button
-                        @click="generateToken"
-                        :disabled="loading"
-                        :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
-                        class="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2">
-                        <i class="fa-regular" :class="loading ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
-                        <span x-text="loading ? 'Wird generiert...' : (hasToken ? 'Neuen Token generieren' : 'Token generieren')"></span>
-                    </button>
-
-                    <button
-                        x-show="hasToken && !generatedToken"
-                        @click="revokeToken"
-                        :disabled="loading"
-                        :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'"
-                        class="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2">
-                        <i class="fa-regular fa-trash"></i>
-                        <span>Token widerrufen</span>
-                    </button>
-                </div>
-            </div>
-
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
                 <div class="mb-6">
                     <p class="text-gray-600 mt-1">
@@ -855,6 +758,7 @@
                         </div>
                     </div>
 
+                    <!--
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             E-Mail Status
@@ -872,15 +776,84 @@
                             @endif
                         </p>
                     </div>
+                    -->
 
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Mitglied seit
+                            Status
                         </h3>
-                        <p class="text-sm text-gray-700">
-                            {{ auth('customer')->user()->created_at->format('d.m.Y') }}
-                        </p>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Profil:</span>
+                                @if(auth('customer')->user()->customer_type)
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Vollständig
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Unvollständig
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">E-Mail:</span>
+                                @if(auth('customer')->user()->hasVerifiedEmail())
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Verifiziert
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Nicht verifiziert
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Konto:</span>
+                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                    Aktiv
+                                </span>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Konto
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Mitglied seit:</span>
+                                @if(auth('customer')->user()->customer_type)
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        {{ auth('customer')->user()->created_at->format('d.m.Y') }}
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Unbekannt
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Abo:</span>
+                                @if(auth('customer')->user()->hasVerifiedEmail())
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Kostenloses Abo
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Unbekannt
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Funktionen:</span>
+                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                    Eingeschränkt
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6"
@@ -1106,43 +1079,51 @@
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                    @if(config('app.customer_dashboard_branches_box_enabled', true))
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-data="{
+                             isActive: {{ auth('customer')->user()->branch_management_active ? 'true' : 'false' }},
+                             async toggleBranchManagement() {
+                                 try {
+                                     const response = await fetch('{{ route('customer.profile.toggle-branch-management') }}', {
+                                         method: 'POST',
+                                         headers: {
+                                             'Content-Type': 'application/json',
+                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                             'Accept': 'application/json'
+                                         },
+                                         body: JSON.stringify({ active: !this.isActive })
+                                     });
+                                     const data = await response.json();
+                                     if (data.success) {
+                                         this.isActive = data.branch_management_active;
+                                         window.dispatchEvent(new CustomEvent('branch-management-updated', {
+                                             detail: { active: data.branch_management_active }
+                                         }));
+                                         // Seite neu laden, damit das Firmensymbol in der Navigation angezeigt wird
+                                         window.location.reload();
+                                     }
+                                 } catch (error) {
+                                     console.error('Fehler beim Speichern:', error);
+                                     alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+                                 }
+                             }
+                         }">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Status
+                            Filialen & Standorte
                         </h3>
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Profil:</span>
-                                @if(auth('customer')->user()->customer_type)
-                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                        Vollständig
-                                    </span>
-                                @else
-                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
-                                        Unvollständig
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">E-Mail:</span>
-                                @if(auth('customer')->user()->hasVerifiedEmail())
-                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                        Verifiziert
-                                    </span>
-                                @else
-                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
-                                        Nicht verifiziert
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Konto:</span>
-                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                    Aktiv
-                                </span>
-                            </div>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Verwalten Sie zugehörige Filialen und Standorte.
+                        </p>
+                        <div>
+                            <button @click="toggleBranchManagement()"
+                                    :class="isActive ? 'bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                                    class="px-3 py-1 text-xs font-medium rounded border transition-colors">
+                                <span x-text="isActive ? 'Deaktivieren' : 'Aktivieren'"></span>
+                            </button>
                         </div>
                     </div>
+                    @endif
 
                 </div>
 
@@ -1161,7 +1142,7 @@
                         @endphp
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Passolution</span>
+                                <span class="text-sm text-gray-700">Passolution Datenservice</span>
                                 @if($hasActiveToken)
                                     <div class="flex items-center gap-2">
                                         @if($tokenSource === 'oauth')
@@ -1327,51 +1308,130 @@
                     </div>
                     @endif
 
-                    @if(config('app.customer_dashboard_branches_box_enabled', true))
-                    <div class="bg-white p-6 rounded-lg border border-gray-200"
-                         x-data="{
-                             isActive: {{ auth('customer')->user()->branch_management_active ? 'true' : 'false' }},
-                             async toggleBranchManagement() {
-                                 try {
-                                     const response = await fetch('{{ route('customer.profile.toggle-branch-management') }}', {
-                                         method: 'POST',
-                                         headers: {
-                                             'Content-Type': 'application/json',
-                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                             'Accept': 'application/json'
-                                         },
-                                         body: JSON.stringify({ active: !this.isActive })
-                                     });
-                                     const data = await response.json();
-                                     if (data.success) {
-                                         this.isActive = data.branch_management_active;
-                                         window.dispatchEvent(new CustomEvent('branch-management-updated', {
-                                             detail: { active: data.branch_management_active }
-                                         }));
-                                         // Seite neu laden, damit das Firmensymbol in der Navigation angezeigt wird
-                                         window.location.reload();
-                                     }
-                                 } catch (error) {
-                                     console.error('Fehler beim Speichern:', error);
-                                     alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
-                                 }
-                             }
-                         }">
+                    
+                    <!---
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Filialen & Standorte
+                            Testbox 1
                         </h3>
-                        <p class="text-sm text-gray-600 mb-4">
-                            Verwalten Sie zugehörige Filialen und Standorte.
+                        <p class="text-sm text-gray-700">
+                            {{ auth('customer')->user()->created_at->format('d.m.Y') }}
                         </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Testbox 2
+                        </h3>
+                        <p class="text-sm text-gray-700">
+                            {{ auth('customer')->user()->created_at->format('d.m.Y') }}
+                        </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Testbox 3
+                        </h3>
+                        <p class="text-sm text-gray-700">
+                            {{ auth('customer')->user()->created_at->format('d.m.Y') }}
+                        </p>
+                    </div>
+                    --->
+                </div>
+
+                <!-- Plugin Box -->
+                <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mt-6 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fa-regular fa-puzzle-piece text-blue-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Plugin</h3>
+                                <p class="text-sm text-gray-600">Integrieren Sie den Global Travel Monitor auf Ihrer Website</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('plugin.dashboard') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <span>Zum Plugin</span>
+                            <i class="fa-regular fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- API Box -->
+                <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6" x-data="apiTokenManager()">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fa-regular fa-key text-purple-600 text-xl"></i>
+                        </div>
                         <div>
-                            <button @click="toggleBranchManagement()"
-                                    :class="isActive ? 'bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                                    class="px-3 py-1 text-xs font-medium rounded border transition-colors">
-                                <span x-text="isActive ? 'Deaktivieren' : 'Integrieren'"></span>
-                            </button>
+                            <h3 class="text-lg font-semibold text-gray-900">API</h3>
+                            <p class="text-sm text-gray-600">Verwalten Sie Ihren API-Zugriffsschlüssel</p>
                         </div>
                     </div>
-                    @endif
+
+                    <!-- Token Display Area -->
+                    <div x-show="generatedToken" x-cloak class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm text-green-800 font-medium mb-2">
+                            <i class="fa-regular fa-check-circle mr-1"></i>
+                            API Token erfolgreich generiert
+                        </p>
+                        <div class="flex gap-2 items-center">
+                            <input
+                                type="text"
+                                x-model="generatedToken"
+                                readonly
+                                class="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono select-all"
+                                @click="$el.select()"
+                            >
+                            <button
+                                @click="copyToken"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                <i class="fa-regular fa-copy"></i>
+                                <span x-text="copied ? 'Kopiert!' : 'Kopieren'"></span>
+                            </button>
+                        </div>
+                        <p class="text-xs text-green-700 mt-2">
+                            <i class="fa-regular fa-info-circle mr-1"></i>
+                            Bitte speichern Sie diesen Token sicher. Er wird nur einmal angezeigt.
+                        </p>
+                    </div>
+
+                    <!-- Info when no token generated -->
+                    <div x-show="!generatedToken && !hasToken" x-cloak class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="fa-regular fa-info-circle mr-1"></i>
+                            Sie haben noch keinen API-Token. Generieren Sie einen Token, um auf die API zugreifen zu können.
+                        </p>
+                    </div>
+
+                    <!-- Info when token exists -->
+                    <div x-show="!generatedToken && hasToken" x-cloak class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm text-yellow-800">
+                            <i class="fa-regular fa-shield-check mr-1"></i>
+                            Sie haben bereits einen aktiven API-Token. Das Generieren eines neuen Tokens widerruft automatisch den alten Token. Bitte beachten Sie, dass die Tokens bei verknüpften Services aktualisiert werden müssen.
+                        </p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-3">
+                        <button
+                            @click="generateToken"
+                            :disabled="loading"
+                            :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
+                            class="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2">
+                            <i class="fa-regular" :class="loading ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+                            <span x-text="loading ? 'Wird generiert...' : (hasToken ? 'Neuen Token generieren' : 'Token generieren')"></span>
+                        </button>
+
+                        <button
+                            x-show="hasToken && !generatedToken"
+                            @click="revokeToken"
+                            :disabled="loading"
+                            :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'"
+                            class="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2">
+                            <i class="fa-regular fa-trash"></i>
+                            <span>Token widerrufen</span>
+                        </button>
+                    </div>
                 </div>
 
                 {{-- Auto-Refresh Settings for My Travelers --}}
