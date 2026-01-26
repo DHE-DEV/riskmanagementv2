@@ -657,7 +657,7 @@
                         <h3 class="text-xl font-bold text-gray-900" x-text="rawDataTitle"></h3>
                         <template x-if="rawData && rawData.tid">
                             <p class="text-sm text-gray-500 mt-1 font-mono">
-                                <a :href="'https://travel-details.eu/tid=' + rawData.tid + '?preview'"
+                                <a :href="'https://travel-details.eu/de?tid=' + rawData.tid + '&preview'"
                                    target="_blank"
                                    class="text-blue-600 hover:text-blue-800 hover:underline"
                                    x-text="rawData.tid"></a>
