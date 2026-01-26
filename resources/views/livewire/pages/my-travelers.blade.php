@@ -652,11 +652,25 @@
                  x-transition:enter-start="opacity-0 translate-y-4"
                  x-transition:enter-end="opacity-100 translate-y-0">
                 <!-- Modal Header -->
-                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fa-regular fa-code mr-2"></i>
-                        API Response - <span x-text="rawDataTitle"></span>
-                    </h3>
+                <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900" x-text="rawDataTitle"></h3>
+                        <template x-if="rawData && rawData.tid">
+                            <p class="text-sm text-gray-600 mt-1">
+                                <span class="text-gray-500">ID:</span>
+                                <a :href="'https://travel-details.de/tid=' + rawData.tid + '?preview'"
+                                   target="_blank"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline font-mono"
+                                   x-text="rawData.tid"></a>
+                            </p>
+                        </template>
+                        <template x-if="rawData && rawData.cruise_compass">
+                            <p class="text-sm text-gray-600 mt-1">
+                                <span class="text-gray-500">Cruise ID:</span>
+                                <span class="font-mono" x-text="rawData.cruise_compass"></span>
+                            </p>
+                        </template>
+                    </div>
                     <button @click="showRawDataModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
                         <i class="fa-regular fa-xmark text-xl"></i>
                     </button>
@@ -708,6 +722,7 @@
             showRawDataModal: false,
             rawDataJson: '',
             rawDataTitle: '',
+            rawData: null,
 
             init() {
                 console.log('travelersApp initialized');
@@ -1395,8 +1410,9 @@
             },
 
             showRawData(traveler) {
-                this.rawDataTitle = traveler.trip_id || traveler.title || 'Reise';
-                this.rawDataJson = JSON.stringify(traveler.raw_data || traveler, null, 2);
+                this.rawData = traveler.raw_data || traveler;
+                this.rawDataTitle = this.rawData.trip_name || traveler.trip_id || traveler.title || 'Reise';
+                this.rawDataJson = JSON.stringify(this.rawData, null, 2);
                 this.showRawDataModal = true;
             },
 
