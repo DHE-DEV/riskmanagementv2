@@ -1147,7 +1147,7 @@
                                     <div class="flex items-center gap-2">
                                         @if($tokenSource === 'oauth')
                                             {{-- OAuth Token kann manuell getrennt werden --}}
-                                            <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
+                                            <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline pt-5">
                                                 @csrf
                                                 <button type="submit" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                                                         onclick="return confirm('Möchten Sie die Passolution-Integration wirklich deaktivieren?')"
