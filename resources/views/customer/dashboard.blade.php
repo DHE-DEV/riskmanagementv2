@@ -1129,7 +1129,7 @@
 
                 {{-- Empfohlene Einstellungen - sichtbar für alle Kunden --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                    @if(config('app.customer_dashboard_interfaces_enabled', true))
+                    <!-- @if(config('app.customer_dashboard_interfaces_enabled', true)) -->
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Schnittstellen
@@ -1224,7 +1224,7 @@
                             @endif
                         </div>
                     </div>
-                    @endif
+                    <!-- @endif -->
 
                     @if(config('app.customer_dashboard_directory_enabled', true))
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
