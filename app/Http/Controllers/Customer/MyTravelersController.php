@@ -147,11 +147,11 @@ class MyTravelersController extends Controller
 
                     // Process API travelers
                     foreach ($apiTravelers as $traveler) {
-                        $tripId = $traveler['id'] ?? null;
+                        $tripId = $traveler['tid'] ?? $traveler['id'] ?? null;
                         $processedTraveler = [
                             'id' => 'api-'.($tripId ?? uniqid()),
                             'trip_id' => $tripId,
-                            'title' => $traveler['title'] ?? null,
+                            'title' => $traveler['trip_name'] ?? null,
                             'start_date' => $traveler['start_date'] ?? null,
                             'end_date' => $traveler['end_date'] ?? null,
                             'countries' => $traveler['countries'] ?? [],
