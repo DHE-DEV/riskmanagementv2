@@ -653,12 +653,12 @@
                  x-transition:enter-end="opacity-100 translate-y-0">
                 <!-- Modal Header -->
                 <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200">
-                    <div>
+                    <div class="flex-1 min-w-0">
                         <h3 class="text-lg font-semibold text-gray-900" x-text="rawDataTitle"></h3>
                         <template x-if="rawData && rawData.tid">
                             <p class="text-sm text-gray-600 mt-1">
                                 <span class="text-gray-500">ID:</span>
-                                <a :href="'https://travel-details.de/tid=' + rawData.tid + '?preview'"
+                                <a :href="'https://travel-details.eu/tid=' + rawData.tid + '?preview'"
                                    target="_blank"
                                    class="text-blue-600 hover:text-blue-800 hover:underline font-mono"
                                    x-text="rawData.tid"></a>
@@ -670,8 +670,37 @@
                                 <span class="font-mono" x-text="rawData.cruise_compass"></span>
                             </p>
                         </template>
+                        <template x-if="rawData && (rawData.start_date || rawData.end_date)">
+                            <p class="text-sm text-gray-600 mt-1">
+                                <i class="fa-regular fa-calendar mr-1 text-gray-400"></i>
+                                <span x-text="formatDate(rawData.start_date)"></span>
+                                <template x-if="rawData.end_date">
+                                    <span> - <span x-text="formatDate(rawData.end_date)"></span></span>
+                                </template>
+                            </p>
+                        </template>
+                        <template x-if="rawData && rawData.note">
+                            <p class="text-sm text-gray-600 mt-1">
+                                <i class="fa-regular fa-note-sticky mr-1 text-gray-400"></i>
+                                <span x-text="rawData.note"></span>
+                            </p>
+                        </template>
+                        <template x-if="rawData && rawData.nationalities && rawData.nationalities.length > 0">
+                            <p class="text-sm text-gray-600 mt-1">
+                                <i class="fa-regular fa-flag mr-1 text-gray-400"></i>
+                                <span class="text-gray-500">Nationalitäten:</span>
+                                <span x-text="rawData.nationalities.join(', ')"></span>
+                            </p>
+                        </template>
+                        <template x-if="rawData && rawData.destinations && rawData.destinations.length > 0">
+                            <p class="text-sm text-gray-600 mt-1">
+                                <i class="fa-regular fa-location-dot mr-1 text-gray-400"></i>
+                                <span class="text-gray-500">Ziele:</span>
+                                <span x-text="rawData.destinations.join(', ')"></span>
+                            </p>
+                        </template>
                     </div>
-                    <button @click="showRawDataModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                    <button @click="showRawDataModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-4">
                         <i class="fa-regular fa-xmark text-xl"></i>
                     </button>
                 </div>
