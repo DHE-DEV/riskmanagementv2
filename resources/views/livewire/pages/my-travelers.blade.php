@@ -558,7 +558,7 @@
                                             <img src="https://global-travel-monitor.eu/Passolution-Logo-klein.png"
                                                  alt="Passolution"
                                                  title="Passolution Datenservice"
-                                                 class="h-4">
+                                                 class="h-2">
                                         </template>
                                         <template x-if="traveler.countries && traveler.countries.length > 0">
                                             <div class="flex flex-wrap gap-1">
