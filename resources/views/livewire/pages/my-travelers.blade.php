@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.12'; // Cache buster - Remove debug output
+    $version = '1.0.13'; // Cache buster - Remove console.log statements
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -938,10 +938,8 @@
             showRawJson: false,
 
             init() {
-                console.log('travelersApp initialized');
                 // Wait for DOM to be ready
                 this.$nextTick(() => {
-                    console.log('DOM ready, initializing map and loading travelers');
                     this.initMap();
                     this.loadTravelers();
                 });
@@ -1010,7 +1008,6 @@
                     this.pagination.currentPage = page;
                 }
 
-                console.log('loadTravelers() called with filters:', this.filters, 'page:', this.pagination.currentPage, 'preserveView:', preserveView);
                 this.loading = true;
                 this.error = null;
 
@@ -1026,7 +1023,6 @@
                     });
 
                     const url = '{{ route("my-travelers.active") }}?' + params.toString();
-                    console.log('Fetching travelers from:', url);
 
                     const response = await fetch(url, {
                         headers: {
@@ -1036,10 +1032,8 @@
                     });
 
                     const data = await response.json();
-                    console.log('Response data:', data);
 
                     if (!data.success) {
-                        console.error('API returned error:', data.message);
                         this.error = data.message || 'Fehler beim Laden der Reisenden';
                         return;
                     }
@@ -1062,7 +1056,6 @@
                         this.sourceTotals.api = data.sourceTotals.api || 0;
                     }
 
-                    console.log('Loaded travelers:', this.travelers.length, 'pagination:', this.pagination);
                     // Skip fitBounds if we're preserving the view (e.g., during real-time updates while viewing a trip)
                     this.updateMapMarkers(preserveView || this.selectedTraveler !== null);
 
@@ -2442,11 +2435,8 @@
         }
 
         // Subscribe to customer's private channel for folder updates
-        console.log('Subscribing to channel: customer.{{ auth('customer')->id() }}');
         window.echoInstance.private('customer.{{ auth('customer')->id() }}')
             .listen('.folder.imported', (event) => {
-                console.log('Folder imported/updated:', event);
-
                 // Show notification
                 const notificationTitle = event.was_updated ? 'Reise aktualisiert' : 'Neue Reise importiert';
                 const notificationMessage = `${notificationTitle}: ${event.folder_name} (${event.folder_number})`;
