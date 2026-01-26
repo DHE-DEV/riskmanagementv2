@@ -1149,9 +1149,10 @@
                                             {{-- OAuth Token kann manuell getrennt werden --}}
                                             <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
                                                 @csrf
-                                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline"
-                                                        onclick="return confirm('Möchten Sie die Passolution-Integration wirklich deaktivieren?')">
-                                                    Trennen
+                                                <button type="submit" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                                        onclick="return confirm('Möchten Sie die Passolution-Integration wirklich deaktivieren?')"
+                                                        title="Verbindung trennen">
+                                                    <i class="fa-regular fa-trash-can"></i>
                                                 </button>
                                             </form>
                                         @endif
