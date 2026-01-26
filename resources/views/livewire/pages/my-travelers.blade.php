@@ -555,10 +555,10 @@
                                             </span>
                                         </template>
                                         <template x-if="traveler.source === 'api'">
-                                            <img src="https://www.passolution.eu/favicon.ico"
+                                            <img src="https://global-travel-monitor.eu/Passolution-Logo-klein.png"
                                                  alt="Passolution"
                                                  title="Passolution Datenservice"
-                                                 class="w-4 h-4">
+                                                 class="h-4">
                                         </template>
                                         <template x-if="traveler.countries && traveler.countries.length > 0">
                                             <div class="flex flex-wrap gap-1">
