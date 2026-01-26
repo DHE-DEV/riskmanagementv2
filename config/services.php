@@ -63,6 +63,7 @@ return [
     'pds_api' => [
         'base_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
         'timeout' => env('PDS_API_TIMEOUT', 30),
+        'detailed_logging' => env('PDS_API_DETAILED_LOGGING', false),
     ],
 
     'openai' => [

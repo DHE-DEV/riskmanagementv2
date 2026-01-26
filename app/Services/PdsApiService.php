@@ -30,6 +30,11 @@ class PdsApiService
     protected int $timeout;
 
     /**
+     * Enable detailed logging of requests and responses
+     */
+    protected bool $detailedLogging;
+
+    /**
      * Constructor
      *
      * Base URL comes from PASSOLUTION_API_URL environment variable
@@ -39,6 +44,7 @@ class PdsApiService
     {
         $this->baseUrl = config('services.pds_api.base_url', 'https://api.passolution.eu/api/v2');
         $this->timeout = config('services.pds_api.timeout', 30);
+        $this->detailedLogging = config('services.pds_api.detailed_logging', false);
     }
 
     /**
@@ -70,15 +76,18 @@ class PdsApiService
             return null;
         }
 
+        $url = $this->buildUrl($endpoint);
+        $this->logRequest('GET', $url, $query, $customer);
+
         try {
             $response = $this->client($customer)
-                ->get($this->buildUrl($endpoint), $query);
+                ->get($url, $query);
 
-            $this->logResponse('GET', $endpoint, $response, $customer);
+            $this->logResponse('GET', $url, $response, $customer);
 
             return $response;
         } catch (\Exception $e) {
-            $this->logError('GET', $endpoint, $e, $customer);
+            $this->logError('GET', $url, $e, $customer);
             return null;
         }
     }
@@ -101,15 +110,18 @@ class PdsApiService
             return null;
         }
 
+        $url = $this->buildUrl($endpoint);
+        $this->logRequest('POST', $url, $data, $customer);
+
         try {
             $response = $this->client($customer)
-                ->post($this->buildUrl($endpoint), $data);
+                ->post($url, $data);
 
-            $this->logResponse('POST', $endpoint, $response, $customer);
+            $this->logResponse('POST', $url, $response, $customer);
 
             return $response;
         } catch (\Exception $e) {
-            $this->logError('POST', $endpoint, $e, $customer);
+            $this->logError('POST', $url, $e, $customer);
             return null;
         }
     }
@@ -132,15 +144,18 @@ class PdsApiService
             return null;
         }
 
+        $url = $this->buildUrl($endpoint);
+        $this->logRequest('PUT', $url, $data, $customer);
+
         try {
             $response = $this->client($customer)
-                ->put($this->buildUrl($endpoint), $data);
+                ->put($url, $data);
 
-            $this->logResponse('PUT', $endpoint, $response, $customer);
+            $this->logResponse('PUT', $url, $response, $customer);
 
             return $response;
         } catch (\Exception $e) {
-            $this->logError('PUT', $endpoint, $e, $customer);
+            $this->logError('PUT', $url, $e, $customer);
             return null;
         }
     }
@@ -162,15 +177,18 @@ class PdsApiService
             return null;
         }
 
+        $url = $this->buildUrl($endpoint);
+        $this->logRequest('DELETE', $url, [], $customer);
+
         try {
             $response = $this->client($customer)
-                ->delete($this->buildUrl($endpoint));
+                ->delete($url);
 
-            $this->logResponse('DELETE', $endpoint, $response, $customer);
+            $this->logResponse('DELETE', $url, $response, $customer);
 
             return $response;
         } catch (\Exception $e) {
-            $this->logError('DELETE', $endpoint, $e, $customer);
+            $this->logError('DELETE', $url, $e, $customer);
             return null;
         }
     }
@@ -201,40 +219,97 @@ class PdsApiService
     }
 
     /**
+     * Log API request
+     *
+     * @param string $method
+     * @param string $url
+     * @param array $data
+     * @param Customer $customer
+     */
+    protected function logRequest(string $method, string $url, array $data, Customer $customer): void
+    {
+        if (!$this->detailedLogging) {
+            return;
+        }
+
+        Log::channel('pds_api')->info('PdsApiService: REQUEST', [
+            'method' => $method,
+            'url' => $url,
+            'customer_id' => $customer->id,
+            'customer_email' => $customer->email,
+            'request_body' => $data,
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
      * Log API response
      *
      * @param string $method
-     * @param string $endpoint
+     * @param string $url
      * @param Response $response
      * @param Customer $customer
      */
-    protected function logResponse(string $method, string $endpoint, Response $response, Customer $customer): void
+    protected function logResponse(string $method, string $url, Response $response, Customer $customer): void
     {
-        Log::info('PdsApiService: API call completed', [
+        $logData = [
             'method' => $method,
-            'endpoint' => $endpoint,
+            'url' => $url,
             'customer_id' => $customer->id,
             'status' => $response->status(),
             'successful' => $response->successful(),
-        ]);
+        ];
+
+        // Always log basic info
+        Log::info('PdsApiService: API call completed', $logData);
+
+        // Detailed logging if enabled
+        if ($this->detailedLogging) {
+            $responseBody = $response->body();
+            // Truncate response body if too large (> 10KB)
+            if (strlen($responseBody) > 10240) {
+                $responseBody = substr($responseBody, 0, 10240) . '... [TRUNCATED]';
+            }
+
+            Log::channel('pds_api')->info('PdsApiService: RESPONSE', [
+                'method' => $method,
+                'url' => $url,
+                'customer_id' => $customer->id,
+                'status' => $response->status(),
+                'successful' => $response->successful(),
+                'response_headers' => $response->headers(),
+                'response_body' => $responseBody,
+                'timestamp' => now()->toIso8601String(),
+            ]);
+        }
     }
 
     /**
      * Log API error
      *
      * @param string $method
-     * @param string $endpoint
+     * @param string $url
      * @param \Exception $e
      * @param Customer $customer
      */
-    protected function logError(string $method, string $endpoint, \Exception $e, Customer $customer): void
+    protected function logError(string $method, string $url, \Exception $e, Customer $customer): void
     {
-        Log::error('PdsApiService: API call failed', [
+        $logData = [
             'method' => $method,
-            'endpoint' => $endpoint,
+            'url' => $url,
             'customer_id' => $customer->id,
             'error' => $e->getMessage(),
-        ]);
+        ];
+
+        Log::error('PdsApiService: API call failed', $logData);
+
+        // Detailed logging if enabled
+        if ($this->detailedLogging) {
+            Log::channel('pds_api')->error('PdsApiService: ERROR', array_merge($logData, [
+                'trace' => $e->getTraceAsString(),
+                'timestamp' => now()->toIso8601String(),
+            ]));
+        }
     }
 
     /**
