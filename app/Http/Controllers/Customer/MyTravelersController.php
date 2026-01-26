@@ -160,6 +160,7 @@ class MyTravelersController extends Controller
                             'status' => $this->getTravelStatus($traveler),
                             'source' => 'api',
                             'source_label' => 'PDS API',
+                            'raw_data' => $traveler, // Store raw API response for debugging
                         ];
 
                         // Apply search filter

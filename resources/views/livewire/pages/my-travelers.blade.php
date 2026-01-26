@@ -541,6 +541,14 @@
                                         </template>
                                     </div>
                                     <div class="flex flex-col items-end gap-1">
+                                        <!-- JSON Debug Button (only for API travelers) -->
+                                        <template x-if="traveler.source === 'api' && traveler.raw_data">
+                                            <button @click.stop="showRawData(traveler)"
+                                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                                    title="API Response anzeigen">
+                                                <i class="fa-regular fa-code"></i>
+                                            </button>
+                                        </template>
                                         <!-- Delete Button (only for local folders) -->
                                         <template x-if="traveler.source === 'local' && traveler.folder_id">
                                             <button @click.stop="confirmDelete(traveler)"
@@ -626,6 +634,50 @@
 
     <!-- Footer -->
     <x-public-footer />
+
+    <!-- Raw Data Modal -->
+    <div x-show="showRawDataModal"
+         x-cloak
+         class="fixed inset-0 z-[9999] overflow-y-auto"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showRawDataModal = false"></div>
+            <div class="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-y-4"
+                 x-transition:enter-end="opacity-100 translate-y-0">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fa-regular fa-code mr-2"></i>
+                        API Response - <span x-text="rawDataTitle"></span>
+                    </h3>
+                    <button @click="showRawDataModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                        <i class="fa-regular fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <!-- Modal Body -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words" x-text="rawDataJson"></pre>
+                </div>
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+                    <button @click="copyRawData()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="fa-regular fa-copy mr-2"></i>
+                        Kopieren
+                    </button>
+                    <button @click="showRawDataModal = false" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Leaflet JS -->
@@ -652,6 +704,10 @@
             hotelMarkers: [],
             airportMarkersLayer: null,
             airportMarkers: [],
+            // Raw data modal
+            showRawDataModal: false,
+            rawDataJson: '',
+            rawDataTitle: '',
 
             init() {
                 console.log('travelersApp initialized');
@@ -1336,6 +1392,21 @@
                         document.body.removeChild(notification);
                     }, 300);
                 }, 4000);
+            },
+
+            showRawData(traveler) {
+                this.rawDataTitle = traveler.trip_id || traveler.title || 'Reise';
+                this.rawDataJson = JSON.stringify(traveler.raw_data || traveler, null, 2);
+                this.showRawDataModal = true;
+            },
+
+            copyRawData() {
+                navigator.clipboard.writeText(this.rawDataJson).then(() => {
+                    this.showNotification('JSON in Zwischenablage kopiert', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    this.showNotification('Fehler beim Kopieren', 'error');
+                });
             }
         };
     }
