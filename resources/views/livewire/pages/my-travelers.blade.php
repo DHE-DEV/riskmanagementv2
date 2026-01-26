@@ -357,14 +357,14 @@
                             <p class="text-sm text-gray-600">
                                 Gefundene Reisen
                             </p>
-                            <p class="text-2xl font-bold text-gray-900" x-text="travelers.length"></p>
+                            <p class="text-2xl font-bold text-gray-900" x-text="pagination.total"></p>
                         </div>
                         <button @click="loadTravelers()" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Aktualisieren">
                             <i class="fa-regular fa-arrows-rotate" :class="{ 'loading-spinner': loading }"></i>
                         </button>
                     </div>
                     <!-- Source breakdown -->
-                    <div class="flex gap-2 text-xs" x-show="travelers.length > 0">
+                    <div class="flex gap-2 text-xs" x-show="pagination.total > 0">
                         <div class="flex items-center gap-1">
                             <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                             <span class="text-gray-600">
