@@ -17,12 +17,15 @@ class FolderImportService
 
     protected AirportLookupService $airportLookup;
 
+    protected bool $detailedLogging;
+
     public function __construct(
         TimelineBuilderService $timelineBuilder,
         AirportLookupService $airportLookup
     ) {
         $this->timelineBuilder = $timelineBuilder;
         $this->airportLookup = $airportLookup;
+        $this->detailedLogging = config('services.folder_import.detailed_logging', false);
     }
 
     /**
@@ -31,6 +34,16 @@ class FolderImportService
     public function import(FolderImportLog $importLog): bool
     {
         $importLog->markAsStarted();
+
+        if ($this->detailedLogging) {
+            Log::channel('folder_import')->info('FolderImportService: PROCESSING STARTED', [
+                'import_log_id' => $importLog->id,
+                'customer_id' => $importLog->customer_id,
+                'import_source' => $importLog->import_source,
+                'provider_name' => $importLog->provider_name,
+                'timestamp' => now()->toIso8601String(),
+            ]);
+        }
 
         try {
             // Parse the source data
@@ -68,6 +81,17 @@ class FolderImportService
                 }
             }
             $importLog->update(['folder_id' => $folder->id]);
+
+            if ($this->detailedLogging) {
+                Log::channel('folder_import')->info('FolderImportService: FOLDER CREATED/UPDATED', [
+                    'import_log_id' => $importLog->id,
+                    'folder_id' => $folder->id,
+                    'folder_number' => $folder->folder_number,
+                    'folder_name' => $folder->folder_name,
+                    'was_updated' => !$folder->wasRecentlyCreated,
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            }
 
             // Import customer data
             if (isset($data['customer'])) {
@@ -122,6 +146,19 @@ class FolderImportService
 
             $importLog->markAsCompleted($recordsImported);
 
+            if ($this->detailedLogging) {
+                Log::channel('folder_import')->info('FolderImportService: IMPORT COMPLETED', [
+                    'import_log_id' => $importLog->id,
+                    'folder_id' => $folder->id,
+                    'folder_number' => $folder->folder_number,
+                    'records_imported' => $recordsImported,
+                    'participants_count' => $folder->participants()->count(),
+                    'itineraries_count' => $folder->itineraries()->count(),
+                    'duration_ms' => $importLog->started_at ? now()->diffInMilliseconds($importLog->started_at) : null,
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            }
+
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
@@ -130,6 +167,15 @@ class FolderImportService
                 'import_log_id' => $importLog->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Also log to dedicated channel
+            Log::channel('folder_import')->error('FolderImportService: IMPORT FAILED', [
+                'import_log_id' => $importLog->id,
+                'customer_id' => $importLog->customer_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'timestamp' => now()->toIso8601String(),
             ]);
 
             $importLog->markAsFailed($e->getMessage());

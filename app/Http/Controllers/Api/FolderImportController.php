@@ -7,15 +7,43 @@ use App\Jobs\Folder\ProcessFolderImportJob;
 use App\Models\Folder\FolderImportLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class FolderImportController extends Controller
 {
     /**
+     * Enable detailed logging of folder imports
+     */
+    protected bool $detailedLogging;
+
+    public function __construct()
+    {
+        $this->detailedLogging = config('services.folder_import.detailed_logging', false);
+    }
+
+    /**
      * Import folder data.
      */
     public function import(Request $request): JsonResponse
     {
+        $customer = $request->user();
+
+        // Log incoming request if detailed logging is enabled
+        if ($this->detailedLogging) {
+            Log::channel('folder_import')->info('FolderImport: INCOMING REQUEST', [
+                'customer_id' => $customer?->id,
+                'customer_email' => $customer?->email,
+                'source' => $request->input('source'),
+                'provider' => $request->input('provider'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'request_data' => $request->input('data'),
+                'mapping_config' => $request->input('mapping_config'),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'source' => 'required|in:file,api,manual',
             'provider' => 'required|string|max:128',
@@ -24,6 +52,14 @@ class FolderImportController extends Controller
         ]);
 
         if ($validator->fails()) {
+            if ($this->detailedLogging) {
+                Log::channel('folder_import')->warning('FolderImport: VALIDATION FAILED', [
+                    'customer_id' => $customer?->id,
+                    'errors' => $validator->errors()->toArray(),
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            }
+
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
@@ -31,9 +67,6 @@ class FolderImportController extends Controller
         }
 
         try {
-            // Get authenticated user (Customer model via Sanctum token)
-            $customer = $request->user();
-
             // Create import log
             $log = FolderImportLog::create([
                 'customer_id' => $customer->id,
@@ -44,6 +77,16 @@ class FolderImportController extends Controller
                 'mapping_config' => $request->input('mapping_config'),
             ]);
 
+            if ($this->detailedLogging) {
+                Log::channel('folder_import')->info('FolderImport: IMPORT LOG CREATED', [
+                    'log_id' => $log->id,
+                    'customer_id' => $customer->id,
+                    'source' => $request->input('source'),
+                    'provider' => $request->input('provider'),
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            }
+
             // Dispatch background job
             ProcessFolderImportJob::dispatch($log->id);
 
@@ -53,6 +96,13 @@ class FolderImportController extends Controller
                 'log_id' => $log->id,
             ], 202);
         } catch (\Exception $e) {
+            Log::channel('folder_import')->error('FolderImport: QUEUE FAILED', [
+                'customer_id' => $customer?->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to queue import',

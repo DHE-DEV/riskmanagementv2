@@ -159,6 +159,14 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'folder_import' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/folder-import.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

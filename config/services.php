@@ -66,6 +66,11 @@ return [
         'detailed_logging' => env('PDS_API_DETAILED_LOGGING', false),
     ],
 
+    // Folder Import Settings
+    'folder_import' => [
+        'detailed_logging' => env('FOLDER_IMPORT_DETAILED_LOGGING', false),
+    ],
+
     'openai' => [
         'key' => env('RISK_CHARGPT_KEY'),
     ],
