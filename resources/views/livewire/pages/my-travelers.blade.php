@@ -541,7 +541,7 @@
                                     </template>
                                 </div>
                                 <!-- Footer Row: Badges and Actions -->
-                                <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                                <div class="flex items-center justify-between mt-3">
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
                                               :class="getStatusClass(traveler.status)">
