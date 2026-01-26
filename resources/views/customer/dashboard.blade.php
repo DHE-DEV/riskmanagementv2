@@ -1127,7 +1127,6 @@
 
                 </div>
 
-                ---
                 {{-- Empfohlene Einstellungen - sichtbar für alle Kunden --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                     <!-- @if(config('app.customer_dashboard_interfaces_enabled', true)) -->
