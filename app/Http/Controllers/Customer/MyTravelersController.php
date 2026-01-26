@@ -51,6 +51,7 @@ class MyTravelersController extends Controller
 
         $allTravelers = [];
         $apiPagination = null;
+        $sourceTotals = ['local' => 0, 'api' => 0];
 
         // Get filter parameters
         $dateFilter = $request->input('date_filter', '30days'); // today, 7days, 14days, 30days, all, custom
@@ -109,6 +110,9 @@ class MyTravelersController extends Controller
                 }
 
                 $localFolders = $query->orderBy('travel_start_date', 'desc')->get();
+
+                // Store total count of local folders
+                $sourceTotals['local'] = $localFolders->count();
 
                 foreach ($localFolders as $folder) {
                     $allTravelers[] = $this->formatFolderAsTraveler($folder);
@@ -170,6 +174,8 @@ class MyTravelersController extends Controller
                             'from' => $data['meta']['from'] ?? 0,
                             'to' => $data['meta']['to'] ?? 0,
                         ];
+                        // Store total API count from pagination metadata
+                        $sourceTotals['api'] = $data['meta']['total'] ?? 0;
                     }
 
                     // Process API travelers
@@ -236,6 +242,7 @@ class MyTravelersController extends Controller
                 'local' => count(array_filter($allTravelers, fn ($t) => ($t['source'] ?? 'local') === 'local')),
                 'api' => count(array_filter($allTravelers, fn ($t) => ($t['source'] ?? null) === 'api')),
             ],
+            'sourceTotals' => $sourceTotals,
             'filters' => [
                 'date_filter' => $dateFilter,
                 'status' => $statusFilter,

@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.8'; // Cache buster - Separate server/client Reverb config
+    $version = '1.0.9'; // Cache buster - Collapsible filter, source totals
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -11,7 +11,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Meine Reisenden - Global Travel Monitor</title>
 
-    <!-- Alpine.js -->
+    <!-- Alpine.js with Collapse plugin -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Laravel Echo + Pusher for Real-time Updates -->
@@ -350,7 +351,99 @@
                 </div>
                 @endif
 
-                <!-- Stats Box -->
+                <!-- Filter Section (Collapsible) -->
+                <div class="bg-white rounded-lg border border-gray-200 mb-4">
+                    <button @click="filterOpen = !filterOpen"
+                            class="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-900 flex items-center">
+                            <i class="fa-regular fa-filter mr-2"></i>
+                            Filter
+                        </h3>
+                        <i class="fa-regular fa-chevron-down text-gray-500 transition-transform duration-200"
+                           :class="{ 'rotate-180': filterOpen }"></i>
+                    </button>
+
+                    <div x-show="filterOpen" x-collapse class="px-4 pb-4">
+                        <!-- Quick Date Filters -->
+                        <div class="mb-4">
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button @click="filters.dateFilter = 'today'; loadTravelers({page: 1})"
+                                        class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                        :class="filters.dateFilter === 'today' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                    Heute
+                                </button>
+                                <button @click="filters.dateFilter = '7days'; loadTravelers({page: 1})"
+                                        class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                        :class="filters.dateFilter === '7days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                    7 Tage
+                                </button>
+                                <button @click="filters.dateFilter = '14days'; loadTravelers({page: 1})"
+                                        class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                        :class="filters.dateFilter === '14days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                    14 Tage
+                                </button>
+                                <button @click="filters.dateFilter = '30days'; loadTravelers({page: 1})"
+                                        class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                        :class="filters.dateFilter === '30days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                    30 Tage
+                                </button>
+                                <button @click="filters.dateFilter = 'all'; loadTravelers({page: 1})"
+                                        class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2"
+                                        :class="filters.dateFilter === 'all' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                    Alle Reisen
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="mb-4">
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Status</label>
+                            <select x-model="filters.status" @change="loadTravelers({page: 1})"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all">Alle Status</option>
+                                <option value="upcoming">Bevorstehend</option>
+                                <option value="traveling">Unterwegs</option>
+                                <option value="confirmed">Bestätigt</option>
+                                <option value="active">Aktiv</option>
+                                <option value="completed">Abgeschlossen</option>
+                            </select>
+                        </div>
+
+                        <!-- Source Filter -->
+                        <div class="mb-4">
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Quelle</label>
+                            <select x-model="filters.source" @change="loadTravelers({page: 1})"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all">Alle Quellen</option>
+                                <option value="local">Nur Lokal</option>
+                                <option value="api">Nur Passolution Datenservice</option>
+                            </select>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="mb-3">
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Suche</label>
+                            <div class="relative">
+                                <input type="text"
+                                       x-model="filters.search"
+                                       @input.debounce.500ms="loadTravelers({page: 1})"
+                                       placeholder="Name, Ziel, Folder..."
+                                       class="w-full px-3 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <i class="fa-regular fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- Reset Filters -->
+                        <button @click="resetFilters(); loadTravelers({page: 1})"
+                                class="w-full px-3 py-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors">
+                            <i class="fa-regular fa-rotate-left mr-1"></i>
+                            Filter zurücksetzen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gefundene Reisen Section -->
                 <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
                     <div class="flex items-center justify-between mb-3">
                         <div>
@@ -368,101 +461,16 @@
                         <div class="flex items-center gap-1">
                             <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                             <span class="text-gray-600">
-                                <span x-text="travelers.filter(t => t.source === 'local').length"></span> Lokal
+                                <span x-text="sourceTotals.local"></span> Lokal
                             </span>
                         </div>
                         <div class="flex items-center gap-1">
                             <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
                             <span class="text-gray-600">
-                                <span x-text="travelers.filter(t => t.source === 'api').length"></span> Passolution Datenservice
+                                <span x-text="sourceTotals.api"></span> Passolution Datenservice
                             </span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Filter Section -->
-                <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-3">
-                        <i class="fa-regular fa-filter mr-2"></i>
-                        Filter
-                    </h3>
-
-                    <!-- Quick Date Filters -->
-                    <div class="mb-4">
-                        <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button @click="filters.dateFilter = 'today'; loadTravelers({page: 1})"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                    :class="filters.dateFilter === 'today' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                Heute
-                            </button>
-                            <button @click="filters.dateFilter = '7days'; loadTravelers({page: 1})"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                    :class="filters.dateFilter === '7days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                7 Tage
-                            </button>
-                            <button @click="filters.dateFilter = '14days'; loadTravelers({page: 1})"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                    :class="filters.dateFilter === '14days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                14 Tage
-                            </button>
-                            <button @click="filters.dateFilter = '30days'; loadTravelers({page: 1})"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                    :class="filters.dateFilter === '30days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                30 Tage
-                            </button>
-                            <button @click="filters.dateFilter = 'all'; loadTravelers({page: 1})"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2"
-                                    :class="filters.dateFilter === 'all' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                Alle Reisen
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Status Filter -->
-                    <div class="mb-4">
-                        <label class="text-xs font-medium text-gray-700 mb-2 block">Status</label>
-                        <select x-model="filters.status" @change="loadTravelers({page: 1})"
-                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all">Alle Status</option>
-                            <option value="upcoming">Bevorstehend</option>
-                            <option value="traveling">Unterwegs</option>
-                            <option value="confirmed">Bestätigt</option>
-                            <option value="active">Aktiv</option>
-                            <option value="completed">Abgeschlossen</option>
-                        </select>
-                    </div>
-
-                    <!-- Source Filter -->
-                    <div class="mb-4">
-                        <label class="text-xs font-medium text-gray-700 mb-2 block">Quelle</label>
-                        <select x-model="filters.source" @change="loadTravelers({page: 1})"
-                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all">Alle Quellen</option>
-                            <option value="local">Nur Lokal</option>
-                            <option value="api">Nur Passolution Datenservice</option>
-                        </select>
-                    </div>
-
-                    <!-- Search -->
-                    <div class="mb-3">
-                        <label class="text-xs font-medium text-gray-700 mb-2 block">Suche</label>
-                        <div class="relative">
-                            <input type="text"
-                                   x-model="filters.search"
-                                   @input.debounce.500ms="loadTravelers({page: 1})"
-                                   placeholder="Name, Ziel, Folder..."
-                                   class="w-full px-3 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <i class="fa-regular fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                        </div>
-                    </div>
-
-                    <!-- Reset Filters -->
-                    <button @click="resetFilters(); loadTravelers({page: 1})"
-                            class="w-full px-3 py-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors">
-                        <i class="fa-regular fa-rotate-left mr-1"></i>
-                        Filter zurücksetzen
-                    </button>
                 </div>
 
                 <!-- Loading State -->
@@ -901,6 +909,7 @@
                 source: 'all',
                 search: '',
             },
+            filterOpen: false,
             markersLayer: null,
             markers: {},
             hotelMarkersLayer: null,
@@ -915,6 +924,11 @@
                 total: 0,
                 from: 0,
                 to: 0,
+            },
+            // Source totals (total count per source, not just current page)
+            sourceTotals: {
+                local: 0,
+                api: 0,
             },
             // Raw data modal
             showRawDataModal: false,
@@ -1040,6 +1054,12 @@
                         this.pagination.total = data.pagination.total;
                         this.pagination.from = data.pagination.from;
                         this.pagination.to = data.pagination.to;
+                    }
+
+                    // Update source totals
+                    if (data.sourceTotals) {
+                        this.sourceTotals.local = data.sourceTotals.local || 0;
+                        this.sourceTotals.api = data.sourceTotals.api || 0;
                     }
 
                     console.log('Loaded travelers:', this.travelers.length, 'pagination:', this.pagination);
