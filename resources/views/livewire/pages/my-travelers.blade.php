@@ -507,7 +507,22 @@
                                  :class="{ 'active': selectedTraveler?.id === traveler.id }">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1 cursor-pointer" @click="selectTraveler(traveler)">
-                                        <h4 class="font-semibold text-gray-900 text-sm" x-text="traveler.title"></h4>
+                                        <!-- API travelers: show trip_id as header -->
+                                        <template x-if="traveler.source === 'api' && traveler.trip_id">
+                                            <p class="text-xs text-gray-500 font-mono">
+                                                <i class="fa-regular fa-hashtag mr-1"></i>
+                                                <span x-text="traveler.trip_id"></span>
+                                            </p>
+                                        </template>
+                                        <!-- Title -->
+                                        <template x-if="traveler.title">
+                                            <h4 class="font-semibold text-gray-900 text-sm" x-text="traveler.title"></h4>
+                                        </template>
+                                        <!-- Local folders without title: show folder number -->
+                                        <template x-if="!traveler.title && traveler.folder_number">
+                                            <h4 class="font-semibold text-gray-900 text-sm" x-text="'Reise ' + traveler.folder_number"></h4>
+                                        </template>
+                                        <!-- Destination -->
                                         <template x-if="traveler.destination">
                                             <p class="text-xs text-gray-600 mt-1">
                                                 <i class="fa-regular fa-location-dot mr-1"></i>
