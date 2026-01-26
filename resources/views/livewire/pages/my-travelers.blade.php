@@ -664,10 +664,8 @@
                             <p class="text-sm text-gray-500 mt-1 font-mono">
                                 <a :href="'https://travel-details.eu/de?tid=' + rawData.tid + '&preview'"
                                    target="_blank"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
-                                    <span x-text="rawData.tid"></span>
-                                    <i class="fa-regular fa-arrow-up-right-from-square text-xs"></i>
-                                </a>
+                                   class="text-blue-600 hover:text-blue-800 hover:underline"
+                                   x-text="rawData.tid"></a>
                             </p>
                         </template>
                     </div>
