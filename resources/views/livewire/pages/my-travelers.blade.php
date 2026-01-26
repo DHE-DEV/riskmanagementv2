@@ -697,7 +697,14 @@
                         <template x-if="rawData && rawData.cruise_compass && rawData.cruise_compass.cruise_id">
                             <div class="bg-gray-50 rounded-lg p-3 text-left">
                                 <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Cruise ID</p>
-                                <p class="mt-1 font-mono text-sm text-gray-900" x-text="rawData.cruise_compass.cruise_id"></p>
+                                <p class="mt-1 font-mono text-sm text-gray-900 flex items-center gap-2">
+                                    <span x-text="rawData.cruise_compass.cruise_id"></span>
+                                    <button @click="copyToClipboardAndNotify(rawData.cruise_compass.cruise_id, 'Cruise ID')"
+                                            class="text-gray-400 hover:text-blue-600 transition-colors"
+                                            title="Kopieren">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </p>
                             </div>
                         </template>
 
