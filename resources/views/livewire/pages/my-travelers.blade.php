@@ -555,10 +555,10 @@
                                             </span>
                                         </template>
                                         <template x-if="traveler.source === 'api'">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700" title="PDS API">
-                                                <i class="fa-regular fa-cloud mr-1"></i>
-                                                API
-                                            </span>
+                                            <img src="https://www.passolution.eu/favicon.ico"
+                                                 alt="Passolution"
+                                                 title="Passolution Datenservice"
+                                                 class="w-4 h-4">
                                         </template>
                                         <template x-if="traveler.countries && traveler.countries.length > 0">
                                             <div class="flex flex-wrap gap-1">
