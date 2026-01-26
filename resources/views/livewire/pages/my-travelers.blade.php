@@ -374,7 +374,7 @@
                         <div class="flex items-center gap-1">
                             <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
                             <span class="text-gray-600">
-                                <span x-text="travelers.filter(t => t.source === 'api').length"></span> API
+                                <span x-text="travelers.filter(t => t.source === 'api').length"></span> Passolution Datenservice
                             </span>
                         </div>
                     </div>
@@ -391,27 +391,27 @@
                     <div class="mb-4">
                         <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
                         <div class="grid grid-cols-2 gap-2">
-                            <button @click="filters.dateFilter = 'today'; loadTravelers()"
+                            <button @click="filters.dateFilter = 'today'; loadTravelers({page: 1})"
                                     class="px-3 py-2 text-xs rounded-lg border transition-colors"
                                     :class="filters.dateFilter === 'today' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                 Heute
                             </button>
-                            <button @click="filters.dateFilter = '7days'; loadTravelers()"
+                            <button @click="filters.dateFilter = '7days'; loadTravelers({page: 1})"
                                     class="px-3 py-2 text-xs rounded-lg border transition-colors"
                                     :class="filters.dateFilter === '7days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                 7 Tage
                             </button>
-                            <button @click="filters.dateFilter = '14days'; loadTravelers()"
+                            <button @click="filters.dateFilter = '14days'; loadTravelers({page: 1})"
                                     class="px-3 py-2 text-xs rounded-lg border transition-colors"
                                     :class="filters.dateFilter === '14days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                 14 Tage
                             </button>
-                            <button @click="filters.dateFilter = '30days'; loadTravelers()"
+                            <button @click="filters.dateFilter = '30days'; loadTravelers({page: 1})"
                                     class="px-3 py-2 text-xs rounded-lg border transition-colors"
                                     :class="filters.dateFilter === '30days' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                 30 Tage
                             </button>
-                            <button @click="filters.dateFilter = 'all'; loadTravelers()"
+                            <button @click="filters.dateFilter = 'all'; loadTravelers({page: 1})"
                                     class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2"
                                     :class="filters.dateFilter === 'all' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                 Alle Reisen
@@ -422,7 +422,7 @@
                     <!-- Status Filter -->
                     <div class="mb-4">
                         <label class="text-xs font-medium text-gray-700 mb-2 block">Status</label>
-                        <select x-model="filters.status" @change="loadTravelers()"
+                        <select x-model="filters.status" @change="loadTravelers({page: 1})"
                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="all">Alle Status</option>
                             <option value="upcoming">Bevorstehend</option>
@@ -436,11 +436,11 @@
                     <!-- Source Filter -->
                     <div class="mb-4">
                         <label class="text-xs font-medium text-gray-700 mb-2 block">Quelle</label>
-                        <select x-model="filters.source" @change="loadTravelers()"
+                        <select x-model="filters.source" @change="loadTravelers({page: 1})"
                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="all">Alle Quellen</option>
                             <option value="local">Nur Lokal</option>
-                            <option value="api">Nur API</option>
+                            <option value="api">Nur Passolution Datenservice</option>
                         </select>
                     </div>
 
@@ -450,7 +450,7 @@
                         <div class="relative">
                             <input type="text"
                                    x-model="filters.search"
-                                   @input.debounce.500ms="loadTravelers()"
+                                   @input.debounce.500ms="loadTravelers({page: 1})"
                                    placeholder="Name, Ziel, Folder..."
                                    class="w-full px-3 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <i class="fa-regular fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
@@ -458,7 +458,7 @@
                     </div>
 
                     <!-- Reset Filters -->
-                    <button @click="resetFilters(); loadTravelers()"
+                    <button @click="resetFilters(); loadTravelers({page: 1})"
                             class="w-full px-3 py-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors">
                         <i class="fa-regular fa-rotate-left mr-1"></i>
                         Filter zurücksetzen
@@ -595,6 +595,49 @@
                                 </div>
                             </div>
                         </template>
+                    </div>
+                </template>
+
+                <!-- Pagination -->
+                <template x-if="!loading && pagination.lastPage > 1">
+                    <div class="flex items-center justify-between mt-4 px-2">
+                        <div class="text-xs text-gray-500">
+                            <span x-text="pagination.from"></span> - <span x-text="pagination.to"></span> von <span x-text="pagination.total"></span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <!-- Previous -->
+                            <button @click="goToPage(pagination.currentPage - 1)"
+                                    :disabled="pagination.currentPage <= 1"
+                                    class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i class="fa-regular fa-chevron-left"></i>
+                            </button>
+
+                            <!-- Page numbers -->
+                            <template x-for="p in Math.min(5, pagination.lastPage)" :key="p">
+                                <button @click="goToPage(p)"
+                                        :class="p === pagination.currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100'"
+                                        class="px-2.5 py-1 text-xs rounded border min-w-[28px]"
+                                        x-text="p"></button>
+                            </template>
+
+                            <!-- Ellipsis and last page if needed -->
+                            <template x-if="pagination.lastPage > 5">
+                                <span class="text-gray-400 px-1">...</span>
+                            </template>
+                            <template x-if="pagination.lastPage > 5">
+                                <button @click="goToPage(pagination.lastPage)"
+                                        :class="pagination.lastPage === pagination.currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100'"
+                                        class="px-2.5 py-1 text-xs rounded border min-w-[28px]"
+                                        x-text="pagination.lastPage"></button>
+                            </template>
+
+                            <!-- Next -->
+                            <button @click="goToPage(pagination.currentPage + 1)"
+                                    :disabled="pagination.currentPage >= pagination.lastPage"
+                                    class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i class="fa-regular fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </template>
             </div>
@@ -864,6 +907,15 @@
             hotelMarkers: [],
             airportMarkersLayer: null,
             airportMarkers: [],
+            // Pagination
+            pagination: {
+                currentPage: 1,
+                lastPage: 1,
+                perPage: 25,
+                total: 0,
+                from: 0,
+                to: 0,
+            },
             // Raw data modal
             showRawDataModal: false,
             rawDataJson: '',
@@ -937,8 +989,14 @@
             },
 
             async loadTravelers(options = {}) {
-                const { preserveView = false } = options;
-                console.log('loadTravelers() called with filters:', this.filters, 'preserveView:', preserveView);
+                const { preserveView = false, page = null } = options;
+
+                // Update page if specified
+                if (page !== null) {
+                    this.pagination.currentPage = page;
+                }
+
+                console.log('loadTravelers() called with filters:', this.filters, 'page:', this.pagination.currentPage, 'preserveView:', preserveView);
                 this.loading = true;
                 this.error = null;
 
@@ -949,6 +1007,8 @@
                         status: this.filters.status,
                         source: this.filters.source,
                         search: this.filters.search,
+                        page: this.pagination.currentPage,
+                        per_page: this.pagination.perPage,
                     });
 
                     const url = '{{ route("my-travelers.active") }}?' + params.toString();
@@ -971,7 +1031,18 @@
                     }
 
                     this.travelers = data.travelers || [];
-                    console.log('Loaded travelers:', this.travelers.length);
+
+                    // Update pagination
+                    if (data.pagination) {
+                        this.pagination.currentPage = data.pagination.current_page;
+                        this.pagination.lastPage = data.pagination.last_page;
+                        this.pagination.perPage = data.pagination.per_page;
+                        this.pagination.total = data.pagination.total;
+                        this.pagination.from = data.pagination.from;
+                        this.pagination.to = data.pagination.to;
+                    }
+
+                    console.log('Loaded travelers:', this.travelers.length, 'pagination:', this.pagination);
                     // Skip fitBounds if we're preserving the view (e.g., during real-time updates while viewing a trip)
                     this.updateMapMarkers(preserveView || this.selectedTraveler !== null);
 
@@ -983,6 +1054,11 @@
                 }
             },
 
+            goToPage(page) {
+                if (page < 1 || page > this.pagination.lastPage) return;
+                this.loadTravelers({ page: page });
+            },
+
             resetFilters() {
                 this.filters = {
                     dateFilter: 'today',
@@ -990,6 +1066,7 @@
                     source: 'all',
                     search: '',
                 };
+                this.pagination.currentPage = 1;
             },
 
             updateMapMarkers(skipFitBounds = false) {

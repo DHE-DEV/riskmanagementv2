@@ -50,12 +50,17 @@ class MyTravelersController extends Controller
         }
 
         $allTravelers = [];
+        $apiPagination = null;
 
         // Get filter parameters
         $dateFilter = $request->input('date_filter', '30days'); // today, 7days, 14days, 30days, all, custom
         $statusFilter = $request->input('status', 'all'); // all, confirmed, active, completed, upcoming
         $sourceFilter = $request->input('source', 'all'); // all, local, api
         $searchQuery = $request->input('search', '');
+
+        // Pagination parameters
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 25);
 
         // Calculate date range based on filter
         $dateRange = $this->calculateDateRange($dateFilter, $request);
@@ -129,7 +134,8 @@ class MyTravelersController extends Controller
                 $apiRequestBody = [
                     'sort_by' => 'start_date',
                     'sort_order' => 'desc',
-                    'per_page' => 100,
+                    'page' => $page,
+                    'per_page' => $perPage,
                 ];
 
                 // Date filters
@@ -153,6 +159,18 @@ class MyTravelersController extends Controller
                 if ($response && $response->successful()) {
                     $data = $response->json();
                     $apiTravelers = $data['data'] ?? [];
+
+                    // Store pagination metadata
+                    if (isset($data['meta'])) {
+                        $apiPagination = [
+                            'current_page' => $data['meta']['current_page'] ?? 1,
+                            'last_page' => $data['meta']['last_page'] ?? 1,
+                            'per_page' => $data['meta']['per_page'] ?? $perPage,
+                            'total' => $data['meta']['total'] ?? 0,
+                            'from' => $data['meta']['from'] ?? 0,
+                            'to' => $data['meta']['to'] ?? 0,
+                        ];
+                    }
 
                     // Process API travelers
                     foreach ($apiTravelers as $traveler) {
@@ -224,6 +242,14 @@ class MyTravelersController extends Controller
                 'source' => $sourceFilter,
                 'search' => $searchQuery,
                 'date_range' => $dateRange,
+            ],
+            'pagination' => $apiPagination ?? [
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $perPage,
+                'total' => count($allTravelers),
+                'from' => count($allTravelers) > 0 ? 1 : 0,
+                'to' => count($allTravelers),
             ],
         ]);
     }
