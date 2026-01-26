@@ -124,22 +124,31 @@ class MyTravelersController extends Controller
         // 2. Load API TRAVELERS (if API token exists)
         if (in_array($sourceFilter, ['all', 'api']) && $customer->hasAnyActiveToken()) {
             try {
-                // Build API filter
-                $apiFilter = [];
+                // Build API request body according to Passolution API docs
+                // POST /travel-details with JSON body
+                $apiRequestBody = [
+                    'sort_by' => 'start_date',
+                    'sort_order' => 'desc',
+                    'per_page' => 100,
+                ];
+
+                // Date filters
                 if ($dateRange['start'] && $dateRange['end']) {
-                    $apiFilter['start_date'] = ['<=' => $dateRange['end']];
-                    $apiFilter['end_date'] = ['>=' => $dateRange['start']];
+                    $apiRequestBody['start_date'] = ['<=' => $dateRange['end']];
+                    $apiRequestBody['end_date'] = ['>=' => $dateRange['start']];
                 } elseif ($dateRange['start']) {
-                    $apiFilter['end_date'] = ['>=' => $dateRange['start']];
+                    $apiRequestBody['end_date'] = ['>=' => $dateRange['start']];
                 } elseif ($dateRange['end']) {
-                    $apiFilter['start_date'] = ['<=' => $dateRange['end']];
+                    $apiRequestBody['start_date'] = ['<=' => $dateRange['end']];
                 }
 
-                // Use PdsApiService to fetch travel-details
-                $response = $this->pdsApiService->get($customer, '/travel-details', [
-                    'filter' => $apiFilter,
-                    'include' => 'countries',
-                ]);
+                // Search filter - use trip_name with like operator
+                if ($searchQuery) {
+                    $apiRequestBody['trip_name'] = ['like' => '%' . $searchQuery . '%'];
+                }
+
+                // Use PdsApiService POST to fetch travel-details
+                $response = $this->pdsApiService->post($customer, '/travel-details', $apiRequestBody);
 
                 if ($response && $response->successful()) {
                     $data = $response->json();
@@ -163,15 +172,6 @@ class MyTravelersController extends Controller
                             'raw_data' => $traveler, // Store raw API response for debugging
                         ];
 
-                        // Apply search filter
-                        if ($searchQuery) {
-                            $matchesSearch = stripos($processedTraveler['title'], $searchQuery) !== false ||
-                                           stripos($processedTraveler['destination']['name'] ?? '', $searchQuery) !== false;
-                            if (! $matchesSearch) {
-                                continue;
-                            }
-                        }
-
                         // Apply status filter
                         if ($statusFilter !== 'all' && $processedTraveler['status'] !== $statusFilter) {
                             continue;
@@ -182,13 +182,16 @@ class MyTravelersController extends Controller
 
                     Log::info('MyTravelersController: Loaded API travelers', [
                         'customer_id' => $customer->id,
+                        'request_body' => $apiRequestBody,
                         'count' => count($apiTravelers),
                         'filtered_count' => count(array_filter($allTravelers, fn ($t) => $t['source'] === 'api')),
                     ]);
                 } else {
                     Log::warning('MyTravelersController: Failed to fetch API travelers', [
                         'customer_id' => $customer->id,
+                        'request_body' => $apiRequestBody,
                         'status' => $response?->status(),
+                        'response_body' => $response?->body(),
                     ]);
                 }
             } catch (\Exception $e) {
