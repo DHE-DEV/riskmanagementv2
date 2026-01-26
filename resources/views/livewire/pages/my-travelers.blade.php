@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.9'; // Cache buster - Collapsible filter, source totals
+    $version = '1.0.10'; // Cache buster - German map labels
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -958,8 +958,8 @@
                     minZoom: 2
                 });
 
-                // Add OpenStreetMap tile layer
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                // Add OpenStreetMap German tile layer (German labels)
+                L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                     maxZoom: 19
                 }).addTo(this.map);
