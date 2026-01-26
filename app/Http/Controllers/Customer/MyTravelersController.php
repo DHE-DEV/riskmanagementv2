@@ -66,23 +66,6 @@ class MyTravelersController extends Controller
         // Calculate date range based on filter
         $dateRange = $this->calculateDateRange($dateFilter, $request);
 
-        // DEBUG: Log filter parameters
-        $debug = [
-            'customer_id' => $customer->id,
-            'customer_email' => $customer->email,
-            'filters' => [
-                'date_filter' => $dateFilter,
-                'status_filter' => $statusFilter,
-                'source_filter' => $sourceFilter,
-                'search' => $searchQuery,
-                'date_range' => $dateRange,
-            ],
-            'total_folders_for_customer' => Folder::where('customer_id', $customer->id)->count(),
-            'has_api_token' => $customer->hasAnyActiveToken(),
-        ];
-
-        Log::info('MyTravelersController: DEBUG - Request parameters', $debug);
-
         // 1. Load LOCAL FOLDERS (from folder system)
         if (in_array($sourceFilter, ['all', 'local'])) {
             try {
@@ -251,10 +234,6 @@ class MyTravelersController extends Controller
             return strcmp($dateB, $dateA);
         });
 
-        // Add debug info to response
-        $debug['local_folders_loaded'] = $sourceTotals['local'];
-        $debug['api_travelers_loaded'] = $sourceTotals['api'];
-
         return response()->json([
             'success' => true,
             'travelers' => $allTravelers,
@@ -264,7 +243,6 @@ class MyTravelersController extends Controller
                 'api' => count(array_filter($allTravelers, fn ($t) => ($t['source'] ?? null) === 'api')),
             ],
             'sourceTotals' => $sourceTotals,
-            'debug' => $debug,
             'filters' => [
                 'date_filter' => $dateFilter,
                 'status' => $statusFilter,
