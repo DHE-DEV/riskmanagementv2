@@ -675,7 +675,7 @@
                     <div class="p-6 grid grid-cols-2 gap-4">
                         <!-- Reference ID -->
                         <template x-if="rawData && rawData.reference_id">
-                            <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="bg-gray-50 rounded-lg p-3 text-left">
                                 <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Referenz-ID</p>
                                 <p class="mt-1 font-mono text-sm text-gray-900 flex items-center gap-2">
                                     <span x-text="rawData.reference_id"></span>
@@ -690,7 +690,7 @@
 
                         <!-- Cruise ID -->
                         <template x-if="rawData && rawData.cruise_compass">
-                            <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="bg-gray-50 rounded-lg p-3 text-left">
                                 <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Cruise ID</p>
                                 <p class="mt-1 font-mono text-sm text-gray-900" x-text="rawData.cruise_compass"></p>
                             </div>
@@ -714,7 +714,7 @@
                         </template>
 
                         <!-- Visits / Statistics -->
-                        <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="bg-gray-50 rounded-lg p-3 text-left">
                             <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Aufrufe</p>
                             <p class="mt-1 text-sm text-gray-900 flex items-center gap-1">
                                 <i class="fa-regular fa-eye text-gray-400"></i>
