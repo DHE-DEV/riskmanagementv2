@@ -507,13 +507,6 @@
                                  :class="{ 'active': selectedTraveler?.id === traveler.id }">
                                 <!-- Main Content -->
                                 <div class="cursor-pointer" @click="selectTraveler(traveler)">
-                                    <!-- API travelers: show trip_id as header -->
-                                    <template x-if="traveler.source === 'api' && traveler.trip_id">
-                                        <p class="text-xs text-gray-500 font-mono">
-                                            <i class="fa-regular fa-hashtag mr-1"></i>
-                                            <span x-text="traveler.trip_id"></span>
-                                        </p>
-                                    </template>
                                     <!-- Title -->
                                     <template x-if="traveler.title">
                                         <h4 class="font-semibold text-gray-900 text-sm" x-text="traveler.title"></h4>
@@ -521,6 +514,13 @@
                                     <!-- Local folders without title: show folder number -->
                                     <template x-if="!traveler.title && traveler.folder_number">
                                         <h4 class="font-semibold text-gray-900 text-sm" x-text="'Reise ' + traveler.folder_number"></h4>
+                                    </template>
+                                    <!-- API travelers: show trip_id below title -->
+                                    <template x-if="traveler.source === 'api' && traveler.trip_id">
+                                        <p class="text-xs text-gray-500 font-mono mt-0.5">
+                                            <i class="fa-regular fa-hashtag mr-1"></i>
+                                            <span x-text="traveler.trip_id"></span>
+                                        </p>
                                     </template>
                                     <!-- Destination -->
                                     <template x-if="traveler.destination">
