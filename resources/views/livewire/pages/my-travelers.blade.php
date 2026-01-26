@@ -505,58 +505,44 @@
                         <template x-for="traveler in travelers" :key="traveler.id">
                             <div class="traveler-card bg-white p-4 rounded-lg border border-gray-200"
                                  :class="{ 'active': selectedTraveler?.id === traveler.id }">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1 cursor-pointer" @click="selectTraveler(traveler)">
-                                        <!-- API travelers: show trip_id as header -->
-                                        <template x-if="traveler.source === 'api' && traveler.trip_id">
-                                            <p class="text-xs text-gray-500 font-mono">
-                                                <i class="fa-regular fa-hashtag mr-1"></i>
-                                                <span x-text="traveler.trip_id"></span>
-                                            </p>
-                                        </template>
-                                        <!-- Title -->
-                                        <template x-if="traveler.title">
-                                            <h4 class="font-semibold text-gray-900 text-sm" x-text="traveler.title"></h4>
-                                        </template>
-                                        <!-- Local folders without title: show folder number -->
-                                        <template x-if="!traveler.title && traveler.folder_number">
-                                            <h4 class="font-semibold text-gray-900 text-sm" x-text="'Reise ' + traveler.folder_number"></h4>
-                                        </template>
-                                        <!-- Destination -->
-                                        <template x-if="traveler.destination">
-                                            <p class="text-xs text-gray-600 mt-1">
-                                                <i class="fa-regular fa-location-dot mr-1"></i>
-                                                <span x-text="traveler.destination.name"></span>
-                                            </p>
-                                        </template>
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            <i class="fa-regular fa-calendar mr-1"></i>
-                                            <span x-text="formatDateRange(traveler.start_date, traveler.end_date)"></span>
+                                <!-- Main Content -->
+                                <div class="cursor-pointer" @click="selectTraveler(traveler)">
+                                    <!-- API travelers: show trip_id as header -->
+                                    <template x-if="traveler.source === 'api' && traveler.trip_id">
+                                        <p class="text-xs text-gray-500 font-mono">
+                                            <i class="fa-regular fa-hashtag mr-1"></i>
+                                            <span x-text="traveler.trip_id"></span>
                                         </p>
-                                        <template x-if="traveler.travelers_count > 1">
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                <i class="fa-regular fa-users mr-1"></i>
-                                                <span x-text="traveler.travelers_count + ' Personen'"></span>
-                                            </p>
-                                        </template>
-                                    </div>
-                                    <div class="flex flex-col items-end gap-1">
-                                        <!-- JSON Debug Button (only for API travelers) -->
-                                        <template x-if="traveler.source === 'api' && traveler.raw_data">
-                                            <button @click.stop="showRawData(traveler)"
-                                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                                                    title="API Response anzeigen">
-                                                <i class="fa-regular fa-code"></i>
-                                            </button>
-                                        </template>
-                                        <!-- Delete Button (only for local folders) -->
-                                        <template x-if="traveler.source === 'local' && traveler.folder_id">
-                                            <button @click.stop="confirmDelete(traveler)"
-                                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
-                                                    title="Reise löschen">
-                                                <i class="fa-regular fa-trash"></i>
-                                            </button>
-                                        </template>
+                                    </template>
+                                    <!-- Title -->
+                                    <template x-if="traveler.title">
+                                        <h4 class="font-semibold text-gray-900 text-sm" x-text="traveler.title"></h4>
+                                    </template>
+                                    <!-- Local folders without title: show folder number -->
+                                    <template x-if="!traveler.title && traveler.folder_number">
+                                        <h4 class="font-semibold text-gray-900 text-sm" x-text="'Reise ' + traveler.folder_number"></h4>
+                                    </template>
+                                    <!-- Destination -->
+                                    <template x-if="traveler.destination">
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            <i class="fa-regular fa-location-dot mr-1"></i>
+                                            <span x-text="traveler.destination.name"></span>
+                                        </p>
+                                    </template>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <i class="fa-regular fa-calendar mr-1"></i>
+                                        <span x-text="formatDateRange(traveler.start_date, traveler.end_date)"></span>
+                                    </p>
+                                    <template x-if="traveler.travelers_count > 1">
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <i class="fa-regular fa-users mr-1"></i>
+                                            <span x-text="traveler.travelers_count + ' Personen'"></span>
+                                        </p>
+                                    </template>
+                                </div>
+                                <!-- Footer Row: Badges and Actions -->
+                                <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                                    <div class="flex items-center gap-2 flex-wrap">
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
                                               :class="getStatusClass(traveler.status)">
                                             <span x-text="getStatusLabel(traveler.status)"></span>
@@ -575,7 +561,7 @@
                                             </span>
                                         </template>
                                         <template x-if="traveler.countries && traveler.countries.length > 0">
-                                            <div class="flex flex-wrap gap-1 justify-end mt-1">
+                                            <div class="flex flex-wrap gap-1">
                                                 <template x-for="country in traveler.countries.slice(0, 3)" :key="country.iso2 || country.id">
                                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600"
                                                           x-text="country.iso2 || country.name?.substring(0, 2)"></span>
@@ -585,6 +571,24 @@
                                                           x-text="'+' + (traveler.countries.length - 3)"></span>
                                                 </template>
                                             </div>
+                                        </template>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <!-- Details Button (only for API travelers) -->
+                                        <template x-if="traveler.source === 'api' && traveler.raw_data">
+                                            <button @click.stop="showRawData(traveler)"
+                                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+                                                    title="Details anzeigen">
+                                                <i class="fa-regular fa-circle-info"></i>
+                                            </button>
+                                        </template>
+                                        <!-- Delete Button (only for local folders) -->
+                                        <template x-if="traveler.source === 'local' && traveler.folder_id">
+                                            <button @click.stop="confirmDelete(traveler)"
+                                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                                    title="Reise löschen">
+                                                <i class="fa-regular fa-trash"></i>
+                                            </button>
                                         </template>
                                     </div>
                                 </div>
