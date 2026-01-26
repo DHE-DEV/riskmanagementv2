@@ -1127,6 +1127,7 @@
 
                 </div>
 
+                ---
                 {{-- Empfohlene Einstellungen - sichtbar für alle Kunden --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                     <!-- @if(config('app.customer_dashboard_interfaces_enabled', true)) -->
@@ -1460,9 +1461,11 @@
         overflow-y: auto;
         z-index: 50;
     }
+    @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
     .main-content > .p-8 {
         margin-left: 320px;
     }
+    @endif
     #branches-map {
         height: 400px;
         border-radius: 8px;
