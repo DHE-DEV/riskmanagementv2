@@ -1,6 +1,6 @@
 @php
     $active = 'my-travelers';
-    $version = '1.0.10'; // Cache buster - German map labels
+    $version = '1.0.11'; // Cache buster - Debug output
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -1037,6 +1037,19 @@
 
                     const data = await response.json();
                     console.log('Response data:', data);
+
+                    // DEBUG: Detaillierte Ausgabe
+                    if (data.debug) {
+                        console.log('%c=== DEBUG INFO ===', 'background: #ff0; color: #000; font-weight: bold; padding: 4px;');
+                        console.log('Customer ID:', data.debug.customer_id);
+                        console.log('Customer Email:', data.debug.customer_email);
+                        console.log('Total Folders in DB für diesen Kunden:', data.debug.total_folders_for_customer);
+                        console.log('Hat API Token:', data.debug.has_api_token);
+                        console.log('Filter:', data.debug.filters);
+                        console.log('Geladene lokale Folders:', data.debug.local_folders_loaded);
+                        console.log('Geladene API Travelers:', data.debug.api_travelers_loaded);
+                        console.log('%c=================', 'background: #ff0; color: #000; font-weight: bold; padding: 4px;');
+                    }
 
                     if (!data.success) {
                         console.error('API returned error:', data.message);
