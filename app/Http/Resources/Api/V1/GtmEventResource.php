@@ -10,7 +10,7 @@ class GtmEventResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->uuid,
             'title' => $this->title,
             'description' => $this->description ? strip_tags($this->description) : null,
             'priority' => $this->priority,

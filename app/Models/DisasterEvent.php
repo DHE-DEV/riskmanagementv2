@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class DisasterEvent extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'title',
         'description',
         'severity',
@@ -280,5 +282,16 @@ class DisasterEvent extends Model
             'orange' => 'Orange',
             'red' => 'Rot',
         ];
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($event) {
+            if (empty($event->uuid)) {
+                $event->uuid = Str::uuid();
+            }
+        });
     }
 }

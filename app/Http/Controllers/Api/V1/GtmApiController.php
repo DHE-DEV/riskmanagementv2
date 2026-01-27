@@ -53,10 +53,10 @@ class GtmApiController extends Controller
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         $events = $this->eventService->getActiveEvents();
-        $event = $events->firstWhere('id', $id);
+        $event = $events->firstWhere('uuid', $id);
 
         if (!$event) {
             return response()->json([

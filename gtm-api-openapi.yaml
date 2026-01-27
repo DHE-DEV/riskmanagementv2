@@ -133,7 +133,7 @@ paths:
               example:
                 success: true
                 data:
-                  - id: 1
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
                     title: "Earthquake in Turkey"
                     description: "A 6.2 magnitude earthquake struck southeastern Turkey."
                     priority: high
@@ -169,7 +169,7 @@ paths:
                       continent: Asia
                     created_at: "2025-03-15T09:00:00Z"
                     updated_at: "2025-03-15T10:15:00Z"
-                  - id: 2
+                  - id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
                     title: "Political Unrest in Nairobi"
                     description: "Large-scale protests reported in the capital."
                     priority: medium
@@ -232,11 +232,11 @@ paths:
         - name: id
           in: path
           required: true
-          description: The unique identifier of the event.
+          description: The unique identifier (UUID) of the event.
           schema:
-            type: integer
-            minimum: 1
-          example: 1
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         "200":
           description: Single event object
@@ -416,9 +416,10 @@ components:
       description: A security or travel risk event.
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
           description: Unique identifier of the event.
-          example: 1
+          example: "550e8400-e29b-41d4-a716-446655440000"
         title:
           type: string
           description: Short title summarizing the event.

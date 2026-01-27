@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 use Spatie\Feed\Feedable;
 use Spatie\Feed\FeedItem;
 
@@ -14,6 +15,7 @@ class CustomEvent extends Model implements Feedable
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'title',
         'description',
         'event_type',
@@ -576,6 +578,12 @@ class CustomEvent extends Model implements Feedable
     protected static function boot()
     {
         parent::boot();
+
+        static::creating(function ($event) {
+            if (empty($event->uuid)) {
+                $event->uuid = Str::uuid();
+            }
+        });
 
         // Automatically set archived_at when archiving
         static::updating(function ($event) {
