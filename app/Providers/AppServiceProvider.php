@@ -9,6 +9,9 @@ use App\Observers\BranchObserver;
 use App\Observers\CustomEventObserver;
 use App\Observers\CustomerObserver;
 use Filament\Support\Facades\FilamentView;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 
@@ -44,5 +47,13 @@ class AppServiceProvider extends ServiceProvider
             'panels::head.end',
             fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">')
         );
+
+        // GTM API Rate Limiter - per customer, configurable rate limit
+        RateLimiter::for('gtm-api', function (Request $request) {
+            $customer = $request->user();
+            $limit = $customer?->gtm_api_rate_limit ?? 60;
+
+            return Limit::perMinute($limit)->by($customer?->id ?: $request->ip());
+        });
     }
 }

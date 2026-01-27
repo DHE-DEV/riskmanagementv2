@@ -220,3 +220,23 @@ Route::prefix('plugin')->group(function () {
         ->middleware(['throttle:60,1'])
         ->name('plugin.handshake');
 });
+
+/*
+|--------------------------------------------------------------------------
+| GTM API Routes (Customer-Protected)
+|--------------------------------------------------------------------------
+|
+| Global Travel Monitor JSON API for customers.
+| Protected by Sanctum token authentication with gtm:read ability.
+|
+*/
+Route::prefix('v1/gtm')->middleware([
+    'auth:sanctum',
+    \App\Http\Middleware\GtmApiAuthenticate::class,
+    \App\Http\Middleware\GtmApiRequestLogger::class,
+    'throttle:gtm-api',
+])->group(function () {
+    Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.gtm.events.index');
+    Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.gtm.events.show');
+    Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.gtm.countries');
+});

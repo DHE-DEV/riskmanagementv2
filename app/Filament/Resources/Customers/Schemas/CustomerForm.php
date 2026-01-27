@@ -86,6 +86,22 @@ class CustomerForm
                                         ->label('Profil-Vervollständigung ausblenden'),
                                 ]),
 
+                            Section::make('GTM API Einstellungen')
+                                ->schema([
+                                    Toggle::make('gtm_api_enabled')
+                                        ->label('GTM API Zugang aktiv')
+                                        ->helperText('Aktiviert den Zugang zur Global Travel Monitor JSON API. Der Kunde muss seinen API-Token neu generieren.'),
+
+                                    TextInput::make('gtm_api_rate_limit')
+                                        ->label('Rate Limit (Anfragen/Minute)')
+                                        ->numeric()
+                                        ->default(60)
+                                        ->minValue(1)
+                                        ->maxValue(1000)
+                                        ->helperText('Maximale API-Anfragen pro Minute für diesen Kunden'),
+                                ])
+                                ->collapsible(),
+
                             Section::make('Passolution Integration')
                                 ->schema([
                                     Grid::make(2)->schema([

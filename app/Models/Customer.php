@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -65,6 +66,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // Auto-refresh settings for My Travelers
         'auto_refresh_travelers',
         'travelers_refresh_interval',
+        // GTM API settings
+        'gtm_api_enabled',
+        'gtm_api_rate_limit',
     ];
 
     protected $hidden = [
@@ -88,6 +92,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'address' => 'array',
         // PDS API Token
         'pds_api_token_expires_at' => 'datetime',
+        // GTM API
+        'gtm_api_enabled' => 'boolean',
+        'gtm_api_rate_limit' => 'integer',
     ];
 
     /**
@@ -196,5 +203,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
     public function hasPluginClient(): bool
     {
         return $this->pluginClient()->exists();
+    }
+
+    public function gtmApiRequestLogs(): HasMany
+    {
+        return $this->hasMany(GtmApiRequestLog::class);
     }
 }

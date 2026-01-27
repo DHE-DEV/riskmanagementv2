@@ -18,12 +18,14 @@ class ApiTokenController extends Controller
         // Delete all existing tokens for this customer
         $customer->tokens()->delete();
 
-        // Create new token
-        $token = $customer->createToken('api-access-token', [
-            'folder:import',
-            'folder:read',
-            'folder:write',
-        ]);
+        // Create new token with abilities based on customer settings
+        $abilities = ['folder:import', 'folder:read', 'folder:write'];
+
+        if ($customer->gtm_api_enabled) {
+            $abilities[] = 'gtm:read';
+        }
+
+        $token = $customer->createToken('api-access-token', $abilities);
 
         return response()->json([
             'success' => true,

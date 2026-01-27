@@ -1,0 +1,750 @@
+openapi: 3.0.3
+info:
+  title: Global Travel Monitor API
+  version: "1.0.0"
+  description: |
+    The Global Travel Monitor (GTM) API provides access to global security and travel risk
+    events. It allows consumers to query current events filtered by priority, country,
+    event type, and region, as well as retrieve per-country summaries with active event counts.
+
+    ## Authentication
+    All endpoints require a valid Bearer token issued via Laravel Sanctum.
+    Include the token in the `Authorization` header:
+    ```
+    Authorization: Bearer <your-token>
+    ```
+
+    ## Rate Limiting
+    API requests are subject to rate limiting. When the limit is exceeded, a `429` response
+    is returned. Check the `Retry-After` header for the number of seconds to wait.
+
+    ## Pagination
+    List endpoints support pagination through `page` and `per_page` query parameters.
+    Pagination metadata is included in the `meta` object of every list response.
+  contact:
+    name: API Support
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.example.com/api/v1/gtm
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Events
+    description: Security and travel risk events
+  - name: Countries
+    description: Country data with active event counts
+
+paths:
+  /events:
+    get:
+      operationId: listEvents
+      summary: List events
+      description: |
+        Retrieve a paginated list of events. Results can be filtered by priority,
+        country, event type, and region. Events are returned in descending order
+        by creation date.
+      tags:
+        - Events
+      parameters:
+        - name: priority
+          in: query
+          required: false
+          description: |
+            Filter events by priority level. Only events matching the given
+            priority are returned.
+          schema:
+            type: string
+            enum:
+              - high
+              - medium
+              - low
+              - info
+          example: high
+        - name: country
+          in: query
+          required: false
+          description: |
+            Filter events by country ISO code (two-letter ISO 3166-1 alpha-2).
+            Only events associated with the specified country are returned.
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 2
+          example: DE
+        - name: event_type
+          in: query
+          required: false
+          description: |
+            Filter events by event type code. Only events tagged with the
+            specified type are returned.
+          schema:
+            type: string
+          example: natural_disaster
+        - name: region
+          in: query
+          required: false
+          description: |
+            Filter events by geographic region or continent code.
+          schema:
+            type: string
+          example: europe
+        - name: per_page
+          in: query
+          required: false
+          description: |
+            Number of events to return per page. Defaults to 25. Maximum is 100.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+          example: 25
+        - name: page
+          in: query
+          required: false
+          description: |
+            The page number to retrieve. Defaults to 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+      responses:
+        "200":
+          description: Paginated list of events
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Event"
+                      meta:
+                        $ref: "#/components/schemas/PaginationMeta"
+              example:
+                success: true
+                data:
+                  - id: 1
+                    title: "Earthquake in Turkey"
+                    description: "A 6.2 magnitude earthquake struck southeastern Turkey."
+                    priority: high
+                    start_date: "2025-03-15T08:30:00Z"
+                    end_date: null
+                    latitude: 37.7749
+                    longitude: 35.3214
+                    event_types:
+                      - code: natural_disaster
+                        name: Natural Disaster
+                        color: "#e74c3c"
+                        icon: earthquake
+                    event_type:
+                      code: natural_disaster
+                      name: Natural Disaster
+                      color: "#e74c3c"
+                      icon: earthquake
+                    category:
+                      id: 2
+                      name: Naturkatastrophe
+                      color: "#e74c3c"
+                    countries:
+                      - iso_code: TR
+                        iso3_code: TUR
+                        name: Tuerkei
+                        name_en: Turkey
+                        continent: Asia
+                    country:
+                      iso_code: TR
+                      iso3_code: TUR
+                      name: Tuerkei
+                      name_en: Turkey
+                      continent: Asia
+                    created_at: "2025-03-15T09:00:00Z"
+                    updated_at: "2025-03-15T10:15:00Z"
+                  - id: 2
+                    title: "Political Unrest in Nairobi"
+                    description: "Large-scale protests reported in the capital."
+                    priority: medium
+                    start_date: "2025-03-14T12:00:00Z"
+                    end_date: "2025-03-16T18:00:00Z"
+                    latitude: -1.2921
+                    longitude: 36.8219
+                    event_types:
+                      - code: political_unrest
+                        name: Political Unrest
+                        color: "#f39c12"
+                        icon: protest
+                    event_type:
+                      code: political_unrest
+                      name: Political Unrest
+                      color: "#f39c12"
+                      icon: protest
+                    category:
+                      id: 5
+                      name: Politische Lage
+                      color: "#f39c12"
+                    countries:
+                      - iso_code: KE
+                        iso3_code: KEN
+                        name: Kenia
+                        name_en: Kenya
+                        continent: Africa
+                    country:
+                      iso_code: KE
+                      iso3_code: KEN
+                      name: Kenia
+                      name_en: Kenya
+                      continent: Africa
+                    created_at: "2025-03-14T13:00:00Z"
+                    updated_at: "2025-03-14T13:00:00Z"
+                meta:
+                  current_page: 1
+                  per_page: 25
+                  total: 142
+                  last_page: 6
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /events/{id}:
+    get:
+      operationId: getEvent
+      summary: Get a single event
+      description: |
+        Retrieve a single event by its unique identifier. Returns the full
+        event object including all related data.
+      tags:
+        - Events
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the event.
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        "200":
+          description: Single event object
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Event"
+              example:
+                success: true
+                data:
+                  id: 1
+                  title: "Earthquake in Turkey"
+                  description: "A 6.2 magnitude earthquake struck southeastern Turkey."
+                  priority: high
+                  start_date: "2025-03-15T08:30:00Z"
+                  end_date: null
+                  latitude: 37.7749
+                  longitude: 35.3214
+                  event_types:
+                    - code: natural_disaster
+                      name: Natural Disaster
+                      color: "#e74c3c"
+                      icon: earthquake
+                  event_type:
+                    code: natural_disaster
+                    name: Natural Disaster
+                    color: "#e74c3c"
+                    icon: earthquake
+                  category:
+                    id: 2
+                    name: Naturkatastrophe
+                    color: "#e74c3c"
+                  countries:
+                    - iso_code: TR
+                      iso3_code: TUR
+                      name: Tuerkei
+                      name_en: Turkey
+                      continent: Asia
+                  country:
+                    iso_code: TR
+                    iso3_code: TUR
+                    name: Tuerkei
+                    name_en: Turkey
+                    continent: Asia
+                  created_at: "2025-03-15T09:00:00Z"
+                  updated_at: "2025-03-15T10:15:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /countries:
+    get:
+      operationId: listCountries
+      summary: List countries with active event counts
+      description: |
+        Retrieve a list of all countries along with the number of currently
+        active events in each country. Countries with zero active events are
+        included in the response. The list is not paginated.
+      tags:
+        - Countries
+      responses:
+        "200":
+          description: List of countries with active event counts
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Country"
+              example:
+                success: true
+                data:
+                  - iso_code: DE
+                    iso3_code: DEU
+                    name: Deutschland
+                    name_en: Germany
+                    continent: Europe
+                    continent_de: Europa
+                    lat: 51.1657
+                    lng: 10.4515
+                    is_eu_member: true
+                    is_schengen_member: true
+                    active_events_count: 3
+                  - iso_code: TR
+                    iso3_code: TUR
+                    name: Tuerkei
+                    name_en: Turkey
+                    continent: Asia
+                    continent_de: Asien
+                    lat: 38.9637
+                    lng: 35.2433
+                    is_eu_member: false
+                    is_schengen_member: false
+                    active_events_count: 7
+                  - iso_code: KE
+                    iso3_code: KEN
+                    name: Kenia
+                    name_en: Kenya
+                    continent: Africa
+                    continent_de: Afrika
+                    lat: -0.0236
+                    lng: 37.9062
+                    is_eu_member: false
+                    is_schengen_member: false
+                    active_events_count: 2
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+      description: |
+        Laravel Sanctum bearer token. Obtain a token by authenticating
+        through the application login endpoint.
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates whether the request was successful.
+          example: true
+      required:
+        - success
+
+    PaginationMeta:
+      type: object
+      description: Pagination metadata for list endpoints.
+      properties:
+        current_page:
+          type: integer
+          description: The current page number.
+          example: 1
+        per_page:
+          type: integer
+          description: Number of items per page.
+          example: 25
+        total:
+          type: integer
+          description: Total number of items across all pages.
+          example: 142
+        last_page:
+          type: integer
+          description: The last available page number.
+          example: 6
+      required:
+        - current_page
+        - per_page
+        - total
+        - last_page
+
+    Event:
+      type: object
+      description: A security or travel risk event.
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the event.
+          example: 1
+        title:
+          type: string
+          description: Short title summarizing the event.
+          example: "Earthquake in Turkey"
+        description:
+          type: string
+          nullable: true
+          description: Detailed description of the event.
+          example: "A 6.2 magnitude earthquake struck southeastern Turkey."
+        priority:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+            - info
+          description: Priority level indicating the severity of the event.
+          example: high
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Start date and time of the event in ISO 8601 format.
+          example: "2025-03-15T08:30:00Z"
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date and time of the event in ISO 8601 format. Null if ongoing.
+          example: null
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          description: Latitude coordinate of the event location.
+          example: 37.7749
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          description: Longitude coordinate of the event location.
+          example: 35.3214
+        event_types:
+          type: array
+          description: List of event types associated with this event.
+          items:
+            $ref: "#/components/schemas/EventType"
+        event_type:
+          nullable: true
+          description: Primary event type. Null if no types are assigned.
+          allOf:
+            - $ref: "#/components/schemas/EventType"
+        category:
+          nullable: true
+          description: Category of the event. Null if uncategorized.
+          allOf:
+            - $ref: "#/components/schemas/Category"
+        countries:
+          type: array
+          description: List of countries affected by this event.
+          items:
+            $ref: "#/components/schemas/EventCountry"
+        country:
+          nullable: true
+          description: Primary country associated with the event. Null if no countries are assigned.
+          allOf:
+            - $ref: "#/components/schemas/EventCountry"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the event was created in ISO 8601 format.
+          example: "2025-03-15T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the event was last updated in ISO 8601 format.
+          example: "2025-03-15T10:15:00Z"
+      required:
+        - id
+        - title
+        - priority
+        - event_types
+        - countries
+        - created_at
+        - updated_at
+
+    EventType:
+      type: object
+      description: Classification type for an event.
+      properties:
+        code:
+          type: string
+          description: Machine-readable code for the event type.
+          example: natural_disaster
+        name:
+          type: string
+          description: Human-readable name of the event type.
+          example: Natural Disaster
+        color:
+          type: string
+          description: Hex color code for UI display.
+          example: "#e74c3c"
+        icon:
+          type: string
+          description: Icon identifier for UI display.
+          example: earthquake
+      required:
+        - code
+        - name
+        - color
+        - icon
+
+    Category:
+      type: object
+      description: Broader category grouping for events.
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the category.
+          example: 2
+        name:
+          type: string
+          description: Name of the category.
+          example: Naturkatastrophe
+        color:
+          type: string
+          description: Hex color code for UI display.
+          example: "#e74c3c"
+      required:
+        - id
+        - name
+        - color
+
+    EventCountry:
+      type: object
+      description: Country reference as embedded in an event response.
+      properties:
+        iso_code:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 country code.
+          example: TR
+        iso3_code:
+          type: string
+          description: Three-letter ISO 3166-1 alpha-3 country code.
+          example: TUR
+        name:
+          type: string
+          description: Country name in German.
+          example: Tuerkei
+        name_en:
+          type: string
+          description: Country name in English.
+          example: Turkey
+        continent:
+          type: string
+          description: Continent the country belongs to.
+          example: Asia
+      required:
+        - iso_code
+        - iso3_code
+        - name
+        - name_en
+        - continent
+
+    Country:
+      type: object
+      description: Full country object returned by the countries endpoint.
+      properties:
+        iso_code:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 country code.
+          example: DE
+        iso3_code:
+          type: string
+          description: Three-letter ISO 3166-1 alpha-3 country code.
+          example: DEU
+        name:
+          type: string
+          description: Country name in German.
+          example: Deutschland
+        name_en:
+          type: string
+          description: Country name in English.
+          example: Germany
+        continent:
+          type: string
+          nullable: true
+          description: Continent name in English.
+          example: Europe
+        continent_de:
+          type: string
+          nullable: true
+          description: Continent name in German.
+          example: Europa
+        lat:
+          type: number
+          format: double
+          nullable: true
+          description: Latitude of the country centroid.
+          example: 51.1657
+        lng:
+          type: number
+          format: double
+          nullable: true
+          description: Longitude of the country centroid.
+          example: 10.4515
+        is_eu_member:
+          type: boolean
+          description: Whether the country is a member of the European Union.
+          example: true
+        is_schengen_member:
+          type: boolean
+          description: Whether the country is a member of the Schengen Area.
+          example: true
+        active_events_count:
+          type: integer
+          description: Number of currently active events in this country.
+          example: 3
+      required:
+        - iso_code
+        - iso3_code
+        - name
+        - name_en
+        - is_eu_member
+        - is_schengen_member
+        - active_events_count
+
+    Error:
+      type: object
+      description: Standard error response body.
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Human-readable error message.
+          example: "Unauthenticated."
+      required:
+        - success
+        - message
+
+    ValidationError:
+      type: object
+      description: Validation error response body with per-field error messages.
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Summary error message.
+          example: "The given data was invalid."
+        errors:
+          type: object
+          description: Object mapping field names to arrays of error messages.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            priority:
+              - "The selected priority is invalid."
+            per_page:
+              - "The per page field must be between 1 and 100."
+      required:
+        - success
+        - message
+        - errors
+
+  responses:
+    Unauthenticated:
+      description: Authentication token is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            success: false
+            message: "Unauthenticated."
+
+    Forbidden:
+      description: The authenticated user does not have permission to access this resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            success: false
+            message: "Forbidden."
+
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            success: false
+            message: "Resource not found."
+
+    TooManyRequests:
+      description: Rate limit exceeded. Retry after the number of seconds specified in the Retry-After header.
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying.
+          schema:
+            type: integer
+            example: 60
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            success: false
+            message: "Too many requests. Please try again later."
+
+    ValidationError:
+      description: Request validation failed. Check the errors object for field-specific messages.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+          example:
+            success: false
+            message: "The given data was invalid."
+            errors:
+              priority:
+                - "The selected priority is invalid."
