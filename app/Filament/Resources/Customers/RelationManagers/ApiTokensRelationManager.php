@@ -97,10 +97,14 @@ class ApiTokensRelationManager extends RelationManager
                     ->using(function (array $data, RelationManager $livewire): void {
                         $customer = $livewire->getOwnerRecord();
 
+                        $expiresAt = isset($data['expires_at'])
+                            ? new \DateTimeImmutable($data['expires_at'])
+                            : null;
+
                         $token = $customer->createToken(
                             'admin:' . $data['name'],
                             $data['abilities'],
-                            $data['expires_at'] ?? null,
+                            $expiresAt,
                         );
 
                         $plainText = $token->plainTextToken;
