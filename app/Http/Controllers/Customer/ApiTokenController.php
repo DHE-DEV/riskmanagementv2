@@ -15,8 +15,9 @@ class ApiTokenController extends Controller
     {
         $customer = auth('customer')->user();
 
-        // Delete all existing tokens for this customer
-        $customer->tokens()->delete();
+        // Delete only self-created and legacy tokens (preserve admin-created tokens)
+        $customer->tokens()->where('name', 'like', 'self:%')->delete();
+        $customer->tokens()->where('name', 'api-access-token')->delete();
 
         // Create new token with abilities based on customer settings
         $abilities = ['folder:import', 'folder:read', 'folder:write'];
@@ -25,7 +26,7 @@ class ApiTokenController extends Controller
             $abilities[] = 'gtm:read';
         }
 
-        $token = $customer->createToken('api-access-token', $abilities);
+        $token = $customer->createToken('self:api-access-token', $abilities);
 
         return response()->json([
             'success' => true,
@@ -41,8 +42,9 @@ class ApiTokenController extends Controller
     {
         $customer = auth('customer')->user();
 
-        // Delete all tokens
-        $customer->tokens()->delete();
+        // Delete only self-created and legacy tokens (preserve admin-created tokens)
+        $customer->tokens()->where('name', 'like', 'self:%')->delete();
+        $customer->tokens()->where('name', 'api-access-token')->delete();
 
         return response()->json([
             'success' => true,
@@ -56,12 +58,23 @@ class ApiTokenController extends Controller
     public function status(Request $request): JsonResponse
     {
         $customer = auth('customer')->user();
-        $hasToken = $customer->tokens()->count() > 0;
+        $selfTokenCount = $customer->tokens()
+            ->where(function ($query) {
+                $query->where('name', 'like', 'self:%')
+                    ->orWhere('name', 'api-access-token');
+            })
+            ->count();
+
+        $adminTokenCount = $customer->tokens()
+            ->where('name', 'like', 'admin:%')
+            ->count();
 
         return response()->json([
             'success' => true,
-            'has_token' => $hasToken,
-            'token_count' => $customer->tokens()->count(),
+            'has_token' => ($selfTokenCount + $adminTokenCount) > 0,
+            'token_count' => $selfTokenCount + $adminTokenCount,
+            'self_token_count' => $selfTokenCount,
+            'admin_token_count' => $adminTokenCount,
         ]);
     }
 }

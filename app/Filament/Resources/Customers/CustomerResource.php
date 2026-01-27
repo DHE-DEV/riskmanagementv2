@@ -44,6 +44,7 @@ class CustomerResource extends Resource
     {
         return [
             RelationManagers\BranchesRelationManager::class,
+            RelationManagers\ApiTokensRelationManager::class,
             RelationManagers\GtmApiRequestLogsRelationManager::class,
         ];
     }
