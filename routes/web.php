@@ -258,6 +258,19 @@ Route::delete('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer
     ->middleware('auth:customer')
     ->name('my-travelers.folder.delete');
 
+// Risiko-Ubersicht - Lander mit Events und betroffene Reisende
+Route::get('/risk-overview', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'index'])
+    ->middleware('auth:customer')
+    ->name('risk-overview');
+
+Route::get('/risk-overview/data', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getData'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.data');
+
+Route::get('/risk-overview/country/{countryCode}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getCountryDetails'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.country');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

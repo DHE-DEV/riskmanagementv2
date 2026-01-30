@@ -7,6 +7,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -101,6 +102,109 @@ class CustomerForm
                                         ->helperText('Maximale API-Anfragen pro Minute für diesen Kunden'),
                                 ])
                                 ->collapsible(),
+
+                            Section::make('Feature-Überschreibungen')
+                                ->description('Überschreiben Sie die globalen .env-Einstellungen für diesen Kunden. Leere Felder verwenden die Standard-Einstellung.')
+                                ->relationship('featureOverrides')
+                                ->schema([
+                                    Placeholder::make('info')
+                                        ->content('Aktiviert = Feature für diesen Kunden einblenden, auch wenn global deaktiviert. Deaktiviert = Feature ausblenden, auch wenn global aktiviert. Nicht gesetzt = Globale Einstellung verwenden.')
+                                        ->columnSpanFull(),
+
+                                    Grid::make(2)->schema([
+                                        Select::make('navigation_events_enabled')
+                                            ->label('Ereignisse')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_entry_conditions_enabled')
+                                            ->label('Einreisebestimmungen')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_booking_enabled')
+                                            ->label('Buchung')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_airports_enabled')
+                                            ->label('Flughäfen')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_branches_enabled')
+                                            ->label('Filialen')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_my_travelers_enabled')
+                                            ->label('Meine Reisenden')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_risk_overview_enabled')
+                                            ->label('Risiko-Übersicht')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_cruise_enabled')
+                                            ->label('Kreuzfahrten')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_business_visa_enabled')
+                                            ->label('Business Visum')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+
+                                        Select::make('navigation_center_map_enabled')
+                                            ->label('Karte zentrieren')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
+                                    ]),
+                                ])
+                                ->collapsible()
+                                ->collapsed(),
 
                             Section::make('Passolution Integration')
                                 ->schema([

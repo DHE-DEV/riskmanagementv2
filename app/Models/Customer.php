@@ -209,4 +209,18 @@ class Customer extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(GtmApiRequestLog::class);
     }
+
+    public function featureOverrides(): HasOne
+    {
+        return $this->hasOne(CustomerFeatureOverride::class);
+    }
+
+    /**
+     * Check if a specific feature is enabled for this customer.
+     * Uses customer-specific overrides or falls back to .env defaults.
+     */
+    public function isFeatureEnabled(string $featureKey): bool
+    {
+        return app(\App\Services\CustomerFeatureService::class)->isFeatureEnabled($featureKey, $this);
+    }
 }
