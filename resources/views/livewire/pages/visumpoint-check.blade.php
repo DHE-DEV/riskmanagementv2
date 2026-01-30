@@ -392,6 +392,65 @@
                                     <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-600">API-Antwort anzeigen</summary>
                                     <pre class="mt-2 text-xs text-gray-500 overflow-x-auto whitespace-pre-wrap bg-gray-50 p-3 rounded max-h-64 overflow-y-auto" x-text="JSON.stringify(result, null, 2)"></pre>
                                 </details>
+
+                                <!-- Debug Log Toggle -->
+                                <details class="mt-3 border-t border-gray-100 pt-4" x-show="debugLog && debugLog.length > 0">
+                                    <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+                                        <i class="fa-solid fa-bug mr-1"></i>API-Requests anzeigen (<span x-text="debugLog ? debugLog.length : 0"></span> Aufrufe)
+                                    </summary>
+                                    <div class="mt-2 space-y-3">
+                                        <template x-for="(entry, index) in debugLog" :key="index">
+                                            <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="text-xs font-semibold text-gray-700" x-text="entry.function"></span>
+                                                    <span class="text-xs text-gray-400" x-text="entry.timestamp"></span>
+                                                </div>
+
+                                                <!-- cURL Command (masked) -->
+                                                <div class="mb-3">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <div class="text-xs font-medium text-purple-600">cURL (maskiert):</div>
+                                                        <button
+                                                            type="button"
+                                                            @click="navigator.clipboard.writeText(entry.curlMasked); $el.textContent = 'Kopiert!'; setTimeout(() => $el.textContent = 'Kopieren', 1500)"
+                                                            class="text-xs text-purple-500 hover:text-purple-700"
+                                                        >Kopieren</button>
+                                                    </div>
+                                                    <pre class="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap bg-purple-50 p-2 rounded font-mono" x-text="entry.curlMasked"></pre>
+                                                </div>
+
+                                                <!-- cURL Command (full - collapsible) -->
+                                                <details class="mb-3">
+                                                    <summary class="text-xs text-orange-600 cursor-pointer hover:text-orange-700">
+                                                        <i class="fa-solid fa-key mr-1"></i>cURL mit echtem Token anzeigen
+                                                    </summary>
+                                                    <div class="mt-1">
+                                                        <div class="flex items-center justify-end mb-1">
+                                                            <button
+                                                                type="button"
+                                                                @click="navigator.clipboard.writeText(entry.curl); $el.textContent = 'Kopiert!'; setTimeout(() => $el.textContent = 'Kopieren', 1500)"
+                                                                class="text-xs text-orange-500 hover:text-orange-700"
+                                                            >Kopieren</button>
+                                                        </div>
+                                                        <pre class="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap bg-orange-50 p-2 rounded font-mono border border-orange-200" x-text="entry.curl"></pre>
+                                                    </div>
+                                                </details>
+
+                                                <!-- Request Body -->
+                                                <div class="mb-2">
+                                                    <div class="text-xs font-medium text-blue-600 mb-1">Request Body:</div>
+                                                    <pre class="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap bg-blue-50 p-2 rounded" x-text="JSON.stringify(entry.request.bodyMasked, null, 2)"></pre>
+                                                </div>
+
+                                                <!-- Response -->
+                                                <div>
+                                                    <div class="text-xs font-medium mb-1" :class="entry.error ? 'text-red-600' : 'text-green-600'" x-text="entry.error ? 'Error: ' + entry.error : 'Response:'"></div>
+                                                    <pre class="text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap p-2 rounded" :class="entry.error ? 'bg-red-50' : 'bg-green-50'" x-text="JSON.stringify(entry.response, null, 2)"></pre>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </details>
                             </div>
                         </div>
                     </div>
@@ -415,6 +474,7 @@
                 loading: false,
                 error: null,
                 result: null,
+                debugLog: [],
 
                 async submitForm() {
                     if (!this.formData.nationality || !this.formData.residenceCountry || !this.formData.destinationCountry) {
@@ -425,6 +485,7 @@
                     this.loading = true;
                     this.error = null;
                     this.result = null;
+                    this.debugLog = [];
 
                     try {
                         const response = await fetch('{{ route("visumpoint.check") }}', {
@@ -439,10 +500,17 @@
 
                         const data = await response.json();
 
+                        // Always capture debug log
+                        if (data.debugLog) {
+                            this.debugLog = data.debugLog;
+                        }
+
                         if (data.success) {
                             this.result = data.data;
                         } else {
                             this.error = data.error || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
+                            // Show debug log even on error
+                            this.result = { _errorResponse: true };
                         }
                     } catch (err) {
                         console.error('Error:', err);

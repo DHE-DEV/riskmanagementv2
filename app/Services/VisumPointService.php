@@ -12,6 +12,7 @@ class VisumPointService
     protected string $organization;
     protected string $accessToken;
     protected int $sessionTimeout = 300; // 5 minutes
+    protected array $debugLog = [];
 
     public function __construct()
     {
@@ -46,15 +47,19 @@ class VisumPointService
      */
     protected function beginSession(): ?string
     {
+        $requestData = [
+            'Function' => 'BeginSession',
+            'Organization' => $this->organization,
+            'AccessToken' => $this->accessToken,
+        ];
+
         try {
-            $response = Http::timeout(30)->post($this->baseUrl, [
-                'Function' => 'BeginSession',
-                'Organization' => $this->organization,
-                'AccessToken' => $this->accessToken,
-            ]);
+            $response = Http::timeout(30)->post($this->baseUrl, $requestData);
 
             if ($response->successful()) {
                 $data = $response->json();
+
+                $this->addDebugLog('BeginSession', $requestData, $data);
 
                 if (($data['Result'] ?? '') === 'OK' && isset($data['SID'])) {
                     return $data['SID'];
@@ -63,6 +68,8 @@ class VisumPointService
                 Log::warning('VisumPoint BeginSession failed', [
                     'response' => $data,
                 ]);
+            } else {
+                $this->addDebugLog('BeginSession', $requestData, $response->json(), 'HTTP ' . $response->status());
             }
 
             Log::error('VisumPoint BeginSession request failed', [
@@ -72,6 +79,8 @@ class VisumPointService
 
             return null;
         } catch (\Exception $e) {
+            $this->addDebugLog('BeginSession', $requestData, null, $e->getMessage());
+
             Log::error('VisumPoint BeginSession exception', [
                 'message' => $e->getMessage(),
             ]);
@@ -90,19 +99,22 @@ class VisumPointService
             return [
                 'success' => false,
                 'error' => 'Could not establish session',
+                'debugLog' => $this->debugLog,
             ];
         }
 
-        try {
-            $requestData = array_merge([
-                'Function' => $function,
-                'SID' => $sid,
-            ], $params);
+        $requestData = array_merge([
+            'Function' => $function,
+            'SID' => $sid,
+        ], $params);
 
+        try {
             $response = Http::timeout(30)->post($this->baseUrl, $requestData);
 
             if ($response->successful()) {
                 $data = $response->json();
+
+                $this->addDebugLog($function, $requestData, $data);
 
                 // Check for session errors and retry
                 if (($data['Result'] ?? '') === 'Error') {
@@ -127,11 +139,15 @@ class VisumPointService
                 ];
             }
 
+            $this->addDebugLog($function, $requestData, $response->json(), 'HTTP ' . $response->status());
+
             return [
                 'success' => false,
                 'error' => 'Request failed with status ' . $response->status(),
             ];
         } catch (\Exception $e) {
+            $this->addDebugLog($function, $requestData, null, $e->getMessage());
+
             Log::error('VisumPoint API call exception', [
                 'function' => $function,
                 'message' => $e->getMessage(),
@@ -328,5 +344,73 @@ class VisumPointService
     public function isConfigured(): bool
     {
         return !empty($this->organization) && !empty($this->accessToken);
+    }
+
+    /**
+     * Get the debug log of all API calls
+     */
+    public function getDebugLog(): array
+    {
+        return $this->debugLog;
+    }
+
+    /**
+     * Clear the debug log
+     */
+    public function clearDebugLog(): void
+    {
+        $this->debugLog = [];
+    }
+
+    /**
+     * Add entry to debug log
+     */
+    protected function addDebugLog(string $function, array $request, $response, ?string $error = null): void
+    {
+        $this->debugLog[] = [
+            'timestamp' => now()->toIso8601String(),
+            'function' => $function,
+            'request' => [
+                'url' => $this->baseUrl,
+                'method' => 'POST',
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ],
+                'body' => $request,
+                'bodyMasked' => $this->maskSensitiveData($request),
+            ],
+            'curl' => $this->generateCurlCommand($request),
+            'curlMasked' => $this->generateCurlCommand($this->maskSensitiveData($request)),
+            'response' => $response,
+            'error' => $error,
+        ];
+    }
+
+    /**
+     * Generate a cURL command for the request
+     */
+    protected function generateCurlCommand(array $requestData): string
+    {
+        $jsonBody = json_encode($requestData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $escapedBody = str_replace("'", "'\\''", $jsonBody);
+
+        return sprintf(
+            "curl -X POST '%s' \\\n  -H 'Content-Type: application/json' \\\n  -H 'Accept: application/json' \\\n  -d '%s'",
+            $this->baseUrl,
+            $escapedBody
+        );
+    }
+
+    /**
+     * Mask sensitive data in request for debug output
+     */
+    protected function maskSensitiveData(array $data): array
+    {
+        $masked = $data;
+        if (isset($masked['AccessToken'])) {
+            $masked['AccessToken'] = substr($masked['AccessToken'], 0, 4) . '****';
+        }
+        return $masked;
     }
 }

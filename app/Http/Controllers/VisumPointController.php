@@ -56,10 +56,13 @@ class VisumPointController extends Controller
             $residence3
         );
 
+        $debugLog = $this->visumPointService->getDebugLog();
+
         if ($result['success']) {
             return response()->json([
                 'success' => true,
                 'data' => $result['data'],
+                'debugLog' => $debugLog,
             ]);
         }
 
@@ -67,6 +70,7 @@ class VisumPointController extends Controller
             'success' => false,
             'error' => $result['error'] ?? 'Ein Fehler ist aufgetreten',
             'details' => $result['details'] ?? null,
+            'debugLog' => $result['debugLog'] ?? $debugLog,
         ], 422);
     }
 
