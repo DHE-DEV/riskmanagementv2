@@ -247,7 +247,7 @@
     </style>
 </head>
 <body>
-<div class="app-container" x-data="riskOverviewApp()">
+<div class="app-container" x-data="riskOverviewApp()" @open-event-modal.window="openEventModal($event.detail)">
     <!-- Header -->
     <x-public-header />
 
@@ -741,7 +741,7 @@
 
                         <!-- Calendar Content -->
                         <template x-if="!loadingCountryDetails && countryDetails">
-                            <div class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="calendarView()">
+                            <div class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="{ ...calendarView(), get events() { return countryDetails.events }, get travelers() { return countryDetails.travelers } }">
                                 <!-- Calendar Header -->
                                 <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
                                     <div class="flex items-center gap-2">
@@ -753,13 +753,14 @@
                                             <i class="fa-regular fa-chevron-right"></i>
                                         </button>
                                     </div>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-4">
                                         <button @click="goToToday()" class="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
                                             Heute
                                         </button>
-                                        <span class="text-xs text-gray-500">
-                                            <span x-text="$parent.countryDetails.travelers.length"></span> Reisen
-                                        </span>
+                                        <div class="flex items-center gap-3 text-xs text-gray-500">
+                                            <span><span x-text="events.length"></span> Ereignisse</span>
+                                            <span><span x-text="travelers.length"></span> Reisen</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -775,14 +776,14 @@
                                     <!-- Calendar Days -->
                                     <div class="grid grid-cols-7 gap-1">
                                         <template x-for="day in calendarDays" :key="day.date">
-                                            <div class="min-h-[100px] border rounded-lg p-1 transition-colors"
+                                            <div class="min-h-[120px] border rounded-lg p-1.5 transition-colors"
                                                  :class="{
                                                      'bg-white border-gray-200': day.isCurrentMonth,
                                                      'bg-gray-50 border-gray-100': !day.isCurrentMonth,
                                                      'ring-2 ring-blue-500 ring-inset': day.isToday
                                                  }">
-                                                <!-- Day Number -->
-                                                <div class="text-right mb-1">
+                                                <!-- Day Header with Number and Traveler Count -->
+                                                <div class="flex items-center justify-between mb-1.5">
                                                     <span class="text-xs font-medium px-1.5 py-0.5 rounded"
                                                           :class="{
                                                               'bg-blue-500 text-white': day.isToday,
@@ -790,15 +791,52 @@
                                                               'text-gray-400': !day.isCurrentMonth
                                                           }"
                                                           x-text="day.dayNumber"></span>
+                                                    <!-- Traveler count badge -->
+                                                    <template x-if="getTravelersForDay(day.date, travelers).length > 0">
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                                                              :title="getTravelersForDay(day.date, travelers).length + ' betroffene Reisen'">
+                                                            <i class="fa-regular fa-users text-[10px]"></i>
+                                                            <span x-text="getTravelersForDay(day.date, travelers).length"></span>
+                                                        </span>
+                                                    </template>
                                                 </div>
 
-                                                <!-- Travelers on this day -->
-                                                <div class="space-y-0.5 max-h-[70px] overflow-y-auto">
-                                                    <template x-for="traveler in getTravelersForDay(day.date, $parent.countryDetails.travelers)" :key="traveler.folder_id">
-                                                        <div class="text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
-                                                             :class="getTravelerDayClass(traveler, day.date)"
-                                                             :title="traveler.folder_name + ' (' + formatDateShort(traveler.start_date) + ' - ' + formatDateShort(traveler.end_date) + ')'">
-                                                            <span x-text="traveler.folder_name.substring(0, 15) + (traveler.folder_name.length > 15 ? '...' : '')"></span>
+                                                <!-- Events grouped by priority -->
+                                                <div class="space-y-1 max-h-[85px] overflow-y-auto">
+                                                    <!-- High priority events -->
+                                                    <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'high')" :key="'high-' + event.id">
+                                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-800 cursor-pointer hover:bg-red-200 transition-colors truncate"
+                                                             @click="$dispatch('open-event-modal', event)"
+                                                             :title="event.title">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                                                            <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
+                                                        </div>
+                                                    </template>
+                                                    <!-- Medium priority events -->
+                                                    <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'medium')" :key="'medium-' + event.id">
+                                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-800 cursor-pointer hover:bg-orange-200 transition-colors truncate"
+                                                             @click="$dispatch('open-event-modal', event)"
+                                                             :title="event.title">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0"></span>
+                                                            <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
+                                                        </div>
+                                                    </template>
+                                                    <!-- Low priority events -->
+                                                    <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'low')" :key="'low-' + event.id">
+                                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200 transition-colors truncate"
+                                                             @click="$dispatch('open-event-modal', event)"
+                                                             :title="event.title">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0"></span>
+                                                            <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
+                                                        </div>
+                                                    </template>
+                                                    <!-- Info priority events -->
+                                                    <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'info')" :key="'info-' + event.id">
+                                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200 transition-colors truncate"
+                                                             @click="$dispatch('open-event-modal', event)"
+                                                             :title="event.title">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                                                            <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
                                                         </div>
                                                     </template>
                                                 </div>
@@ -807,22 +845,30 @@
                                     </div>
 
                                     <!-- Legend -->
-                                    <div class="mt-4 flex items-center gap-4 text-xs text-gray-600">
+                                    <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+                                        <span class="font-medium text-gray-700">Schweregrad:</span>
                                         <div class="flex items-center gap-1">
-                                            <span class="w-3 h-3 rounded bg-green-100 border border-green-300"></span>
-                                            <span>Startdatum</span>
+                                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                            <span>Kritisch</span>
                                         </div>
                                         <div class="flex items-center gap-1">
-                                            <span class="w-3 h-3 rounded bg-blue-100 border border-blue-300"></span>
-                                            <span>Reise läuft</span>
+                                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                                            <span>Hoch</span>
                                         </div>
                                         <div class="flex items-center gap-1">
-                                            <span class="w-3 h-3 rounded bg-red-100 border border-red-300"></span>
-                                            <span>Enddatum</span>
+                                            <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                            <span>Mittel</span>
                                         </div>
                                         <div class="flex items-center gap-1">
-                                            <span class="w-3 h-3 rounded bg-purple-100 border border-purple-300"></span>
-                                            <span>API-Daten</span>
+                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                            <span>Info</span>
+                                        </div>
+                                        <div class="flex items-center gap-1 ml-4 pl-4 border-l border-gray-300">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                                <i class="fa-regular fa-users text-[10px]"></i>
+                                                <span>n</span>
+                                            </span>
+                                            <span>Betroffene Reisen</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1698,6 +1744,28 @@
                     const end = t.end_date.split('T')[0];
                     return dateStr >= start && dateStr <= end;
                 }).sort((a, b) => a.start_date.localeCompare(b.start_date));
+            },
+
+            getEventsForDay(dateStr, events) {
+                if (!events) return [];
+
+                // Priority order for sorting
+                const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
+
+                return events.filter(e => {
+                    const start = e.start_date ? e.start_date.split('T')[0] : null;
+                    const end = e.end_date ? e.end_date.split('T')[0] : null;
+
+                    // If no end date, event is active from start date onwards (show for 30 days)
+                    if (!end) {
+                        const startDate = new Date(start);
+                        const checkDate = new Date(dateStr);
+                        const daysDiff = Math.floor((checkDate - startDate) / (1000 * 60 * 60 * 24));
+                        return dateStr >= start && daysDiff <= 30;
+                    }
+
+                    return dateStr >= start && dateStr <= end;
+                }).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
             },
 
             getTravelerDayClass(traveler, dateStr) {
