@@ -598,7 +598,7 @@
                                     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center">
                                             <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
-                                            Ereignisse in <span class="ml-1" x-text="countryDetails.country.name"></span>
+                                            Ereignisse
                                             <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
                                         </h3>
                                     </div>
@@ -853,7 +853,7 @@
                                     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center">
                                             <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
-                                            Ereignisse in <span class="ml-1" x-text="countryDetails.country.name"></span>
+                                            Ereignisse
                                             <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
                                         </h3>
                                     </div>
