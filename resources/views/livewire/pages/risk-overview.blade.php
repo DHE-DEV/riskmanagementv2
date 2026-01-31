@@ -220,7 +220,7 @@
     </style>
 </head>
 <body>
-<div class="app-container" x-data="riskOverviewApp()" @open-event-modal.window="openEventModal($event.detail)">
+<div class="app-container" x-data="riskOverviewApp()" @open-event-modal.window="openEventModal($event.detail)" @open-traveler-modal.window="openTravelerModal($event.detail)">
     <!-- Header -->
     <x-public-header />
 
@@ -636,7 +636,8 @@
                                     <div class="flex-1 overflow-y-auto p-4">
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
-                                                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+                                                     @click="openTravelerModal(traveler)">
                                                     <div class="flex items-start justify-between">
                                                         <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
                                                         <span class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs"
@@ -1031,7 +1032,9 @@
                                     </h4>
                                     <div class="space-y-3">
                                         <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
-                                            <div class="p-3 rounded-lg" :class="traveler.source === 'api' ? 'bg-purple-50' : 'bg-blue-50'">
+                                            <div class="p-3 rounded-lg cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
+                                                 :class="traveler.source === 'api' ? 'bg-purple-50' : 'bg-blue-50'"
+                                                 @click="openTravelerModal(traveler)">
                                                 <div class="flex items-center justify-between">
                                                     <h5 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h5>
                                                     <div class="flex items-center gap-2">
@@ -1060,7 +1063,7 @@
                                                               x-text="tripProgress.progress + '%'"></span>
                                                     </div>
                                                 </div>
-                                                                                            </div>
+                                            </div>
                                         </template>
                                         <template x-if="countryDetails.travelers.length === 0">
                                             <p class="text-sm text-gray-500 text-center py-4">Keine Reisenden in diesem Land</p>
@@ -1157,8 +1160,9 @@
                                     <div class="flex-1 overflow-y-auto">
                                         <div class="divide-y divide-gray-200">
                                             <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
-                                                <div class="px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+                                                <div class="px-4 py-3 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                                                      :class="traveler.source === 'api' ? 'border-l-4 border-l-purple-400' : ''"
+                                                     @click="openTravelerModal(traveler)"
                                                      x-data="{ tripProgress: getTripProgress(traveler.start_date, traveler.end_date) }">
                                                     <div class="flex items-center justify-between">
                                                         <div class="flex items-center gap-2">
@@ -1374,6 +1378,205 @@
             </div>
         </div>
     </div>
+
+    <!-- Traveler Detail Modal -->
+    <div x-show="showTravelerModal"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[200000] overflow-y-auto"
+         aria-labelledby="traveler-modal-title"
+         role="dialog"
+         aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="closeTravelerModal()"></div>
+
+        <!-- Modal Container -->
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div x-show="showTravelerModal"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 @click.stop
+                 class="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden">
+
+                <!-- Modal Header -->
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between z-10">
+                    <div class="pr-10">
+                        <h3 id="traveler-modal-title" class="text-lg font-semibold text-gray-900" x-text="selectedTraveler?.folder_name"></h3>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                  :class="selectedTraveler?.source === 'api' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'"
+                                  x-text="selectedTraveler?.source_label || (selectedTraveler?.source === 'api' ? 'PDS API' : 'Lokal importiert')"></span>
+                            <span class="text-sm text-gray-500" x-text="selectedTraveler?.participant_count + ' Teilnehmer'"></span>
+                        </div>
+                    </div>
+                    <!-- Close Button -->
+                    <button @click="closeTravelerModal()"
+                            class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fa-regular fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="px-6 py-5 overflow-y-auto max-h-[calc(85vh-140px)]">
+                    <!-- Trip Progress -->
+                    <div class="mb-6" x-data="{ tripProgress: getTripProgress(selectedTraveler?.start_date, selectedTraveler?.end_date) }">
+                        <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Reisestatus</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium"
+                                      :class="{
+                                          'text-gray-500': tripProgress.status === 'upcoming',
+                                          'text-green-600': tripProgress.status === 'active',
+                                          'text-gray-500': tripProgress.status === 'completed'
+                                      }"
+                                      x-text="tripProgress.status === 'upcoming' ? 'Noch nicht gestartet' : tripProgress.status === 'active' ? 'Reise aktiv' : 'Abgeschlossen'"></span>
+                                <span x-show="tripProgress.started" class="text-sm font-bold text-gray-700"
+                                      x-text="tripProgress.progress + '%'"></span>
+                            </div>
+                            <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500"
+                                     :class="{
+                                         'bg-gray-300': !tripProgress.started,
+                                         'bg-green-500': tripProgress.status === 'active',
+                                         'bg-gray-400': tripProgress.status === 'completed'
+                                     }"
+                                     :style="'width: ' + (tripProgress.started ? tripProgress.progress : 100) + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <!-- Folder Number -->
+                        <template x-if="selectedTraveler?.folder_number">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center gap-2 text-gray-500 mb-1">
+                                    <i class="fa-regular fa-hashtag"></i>
+                                    <span class="text-xs font-medium uppercase tracking-wider">Vorgangsnummer</span>
+                                </div>
+                                <p class="text-gray-900 font-medium font-mono" x-text="selectedTraveler?.folder_number"></p>
+                            </div>
+                        </template>
+
+                        <!-- Trip ID (for API travelers) -->
+                        <template x-if="selectedTraveler?.trip_id">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center gap-2 text-gray-500 mb-1">
+                                    <i class="fa-regular fa-fingerprint"></i>
+                                    <span class="text-xs font-medium uppercase tracking-wider">Trip ID</span>
+                                </div>
+                                <p class="text-gray-900 font-medium font-mono" x-text="selectedTraveler?.trip_id"></p>
+                            </div>
+                        </template>
+
+                        <!-- Start Date -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 text-gray-500 mb-1">
+                                <i class="fa-regular fa-plane-departure"></i>
+                                <span class="text-xs font-medium uppercase tracking-wider">Reisebeginn</span>
+                            </div>
+                            <p class="text-gray-900 font-medium" x-text="formatDate(selectedTraveler?.start_date)"></p>
+                        </div>
+
+                        <!-- End Date -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 text-gray-500 mb-1">
+                                <i class="fa-regular fa-plane-arrival"></i>
+                                <span class="text-xs font-medium uppercase tracking-wider">Reiseende</span>
+                            </div>
+                            <p class="text-gray-900 font-medium" x-text="formatDate(selectedTraveler?.end_date)"></p>
+                        </div>
+
+                        <!-- Participant Count -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 text-gray-500 mb-1">
+                                <i class="fa-regular fa-users"></i>
+                                <span class="text-xs font-medium uppercase tracking-wider">Anzahl Teilnehmer</span>
+                            </div>
+                            <p class="text-gray-900 font-medium" x-text="selectedTraveler?.participant_count || 1"></p>
+                        </div>
+
+                        <!-- Source -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 text-gray-500 mb-1">
+                                <i class="fa-regular fa-database"></i>
+                                <span class="text-xs font-medium uppercase tracking-wider">Datenquelle</span>
+                            </div>
+                            <p class="text-gray-900 font-medium" x-text="selectedTraveler?.source_label || (selectedTraveler?.source === 'api' ? 'PDS API' : 'Lokal importiert')"></p>
+                        </div>
+                    </div>
+
+                    <!-- Participants List -->
+                    <template x-if="selectedTraveler?.participants && selectedTraveler?.participants.length > 0">
+                        <div class="mb-6">
+                            <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Teilnehmer</h4>
+                            <div class="bg-gray-50 rounded-lg divide-y divide-gray-200">
+                                <template x-for="(participant, idx) in selectedTraveler.participants" :key="idx">
+                                    <div class="p-3 flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <i class="fa-regular fa-user text-blue-600 text-sm"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-900" x-text="participant.name || 'Unbenannt'"></span>
+                                        </div>
+                                        <template x-if="participant.is_main_contact">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                                <i class="fa-regular fa-star mr-1"></i>
+                                                Hauptkontakt
+                                            </span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Trip Duration Info -->
+                    <div class="mb-6" x-data="{
+                        get duration() {
+                            if (!selectedTraveler?.start_date || !selectedTraveler?.end_date) return null;
+                            const start = new Date(selectedTraveler.start_date);
+                            const end = new Date(selectedTraveler.end_date);
+                            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                            return days;
+                        }
+                    }">
+                        <template x-if="duration">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Reisedauer</h4>
+                                <div class="bg-blue-50 rounded-lg p-4 flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="fa-regular fa-calendar-days text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-2xl font-bold text-blue-700" x-text="duration"></p>
+                                        <p class="text-sm text-blue-600" x-text="duration === 1 ? 'Tag' : 'Tage'"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-end">
+                    <button @click="closeTravelerModal()"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-lg text-sm font-medium text-white hover:bg-gray-800 transition-colors">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Leaflet JS -->
@@ -1392,6 +1595,8 @@
             countryDetails: null,
             selectedEvent: null,
             showEventModal: false,
+            selectedTraveler: null,
+            showTravelerModal: false,
             loading: false,
             loadingCountryDetails: false,
             error: null,
@@ -1446,10 +1651,14 @@
                     this.initMap();
                     this.loadData();
 
-                    // ESC key to close modal
+                    // ESC key to close modals
                     document.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape' && this.showEventModal) {
-                            this.closeEventModal();
+                        if (e.key === 'Escape') {
+                            if (this.showTravelerModal) {
+                                this.closeTravelerModal();
+                            } else if (this.showEventModal) {
+                                this.closeEventModal();
+                            }
                         }
                     });
 
@@ -1680,6 +1889,18 @@
             closeEventModal() {
                 this.showEventModal = false;
                 this.selectedEvent = null;
+                document.body.style.overflow = '';
+            },
+
+            openTravelerModal(traveler) {
+                this.selectedTraveler = traveler;
+                this.showTravelerModal = true;
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeTravelerModal() {
+                this.showTravelerModal = false;
+                this.selectedTraveler = null;
                 document.body.style.overflow = '';
             },
 
