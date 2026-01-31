@@ -30,16 +30,12 @@
 
         <!-- Ereignisse Button (nur für Dashboard) -->
         @if($featureService->isFeatureEnabled('navigation_events_enabled', $customer))
-        @php
-            $isAirportsParam = request()->has('airports') && request()->get('airports') == '1';
-            $isEventsActive = $active === 'dashboard' && !$isAirportsParam;
-        @endphp
         @if($active === 'dashboard')
-        <button class="p-3 {{ $isEventsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors" title="Ereignisse" onclick="showSidebarLiveStatistics()">
+        <button class="p-3 bg-white text-black rounded-lg transition-colors" title="Ereignisse" onclick="showSidebarLiveStatistics()">
             <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
         </button>
         @else
-        <a href="{{ route('home') }}" class="p-3 {{ $isEventsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Ereignisse">
+        <a href="{{ route('home') }}" class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Ereignisse">
             <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
         </a>
         @endif
@@ -61,18 +57,9 @@
 
         <!-- Flughäfen -->
         @if($featureService->isFeatureEnabled('navigation_airports_enabled', $customer))
-            @php
-                $isAirportsActive = request()->has('airports') && request()->get('airports') == '1';
-            @endphp
-            @if($active === 'dashboard')
-                <button class="p-3 {{ $isAirportsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors" title="Flughäfen" onclick="createAirportSidebar()">
-                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </button>
-            @else
-                <a href="/?airports=1" class="p-3 {{ $isAirportsActive ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Flughäfen">
-                    <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
-                </a>
-            @endif
+        <a href="{{ route('airports') }}" class="p-3 {{ $active === 'airports' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Flughäfen">
+            <i class="fa-regular fa-plane text-2xl" aria-hidden="true"></i>
+        </a>
         @endif
 
         <!-- Filialen & Standorte -->

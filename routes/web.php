@@ -204,6 +204,15 @@ Route::get('/cruise', function () {
     return view('livewire.pages.cruise');
 })->name('cruise');
 
+Route::get('/airports', function () {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_airports_enabled')) {
+        abort(404);
+    }
+
+    return view('livewire.pages.airports');
+})->name('airports');
+
 Route::get('/business-visa', function () {
     $featureService = app(\App\Services\CustomerFeatureService::class);
     if (! $featureService->isFeatureEnabled('navigation_business_visa_enabled')) {

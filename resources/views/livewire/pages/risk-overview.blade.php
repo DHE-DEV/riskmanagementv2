@@ -548,6 +548,12 @@
                     <i class="fa-regular fa-list mr-2"></i>
                     Liste
                 </button>
+                <button @click="activeTab = 'calendar'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'calendar' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                    <i class="fa-regular fa-calendar-days mr-2"></i>
+                    Kalender
+                </button>
                 <button @click="activeTab = 'map'"
                         class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
                         :class="activeTab === 'map' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
@@ -555,7 +561,7 @@
                     Karte
                 </button>
                 <!-- Selected country indicator -->
-                <template x-if="selectedCountry && (activeTab === 'list' || activeTab === 'tiles')">
+                <template x-if="selectedCountry && (activeTab === 'list' || activeTab === 'tiles' || activeTab === 'calendar')">
                     <div class="ml-auto flex items-center gap-2 text-sm text-gray-600">
                         <span class="font-medium" x-text="selectedCountry.country.name"></span>
                         <button @click="selectedCountry = null; countryDetails = null" class="text-gray-400 hover:text-gray-600">
@@ -700,6 +706,124 @@
                                                 <p>Keine Reisenden in diesem Land im ausgewählten Zeitraum</p>
                                             </div>
                                         </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Calendar View -->
+            <div x-show="activeTab === 'calendar'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
+                <!-- No country selected -->
+                <template x-if="!selectedCountry">
+                    <div class="flex-1 flex items-center justify-center bg-gray-50">
+                        <div class="text-center">
+                            <i class="fa-regular fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
+                            <h3 class="font-semibold text-gray-700">Land auswählen</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Wählen Sie ein Land in der linken Sidebar aus, um den Kalender anzuzeigen.
+                            </p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Country selected - Calendar view -->
+                <template x-if="selectedCountry">
+                    <div class="flex-1 flex flex-col min-h-0">
+                        <!-- Loading -->
+                        <template x-if="loadingCountryDetails">
+                            <div class="flex-1 flex items-center justify-center">
+                                <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
+                            </div>
+                        </template>
+
+                        <!-- Calendar Content -->
+                        <template x-if="!loadingCountryDetails && countryDetails">
+                            <div class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="calendarView()">
+                                <!-- Calendar Header -->
+                                <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <button @click="prevMonth()" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                                            <i class="fa-regular fa-chevron-left"></i>
+                                        </button>
+                                        <h3 class="text-sm font-semibold text-gray-900 min-w-[150px] text-center" x-text="monthYearLabel"></h3>
+                                        <button @click="nextMonth()" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                                            <i class="fa-regular fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="goToToday()" class="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                                            Heute
+                                        </button>
+                                        <span class="text-xs text-gray-500">
+                                            <span x-text="$parent.countryDetails.travelers.length"></span> Reisen
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Calendar Grid -->
+                                <div class="flex-1 overflow-y-auto p-4">
+                                    <!-- Weekday Headers -->
+                                    <div class="grid grid-cols-7 gap-1 mb-2">
+                                        <template x-for="day in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']" :key="day">
+                                            <div class="text-center text-xs font-medium text-gray-500 py-2" x-text="day"></div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Calendar Days -->
+                                    <div class="grid grid-cols-7 gap-1">
+                                        <template x-for="day in calendarDays" :key="day.date">
+                                            <div class="min-h-[100px] border rounded-lg p-1 transition-colors"
+                                                 :class="{
+                                                     'bg-white border-gray-200': day.isCurrentMonth,
+                                                     'bg-gray-50 border-gray-100': !day.isCurrentMonth,
+                                                     'ring-2 ring-blue-500 ring-inset': day.isToday
+                                                 }">
+                                                <!-- Day Number -->
+                                                <div class="text-right mb-1">
+                                                    <span class="text-xs font-medium px-1.5 py-0.5 rounded"
+                                                          :class="{
+                                                              'bg-blue-500 text-white': day.isToday,
+                                                              'text-gray-900': day.isCurrentMonth && !day.isToday,
+                                                              'text-gray-400': !day.isCurrentMonth
+                                                          }"
+                                                          x-text="day.dayNumber"></span>
+                                                </div>
+
+                                                <!-- Travelers on this day -->
+                                                <div class="space-y-0.5 max-h-[70px] overflow-y-auto">
+                                                    <template x-for="traveler in getTravelersForDay(day.date, $parent.countryDetails.travelers)" :key="traveler.folder_id">
+                                                        <div class="text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
+                                                             :class="getTravelerDayClass(traveler, day.date)"
+                                                             :title="traveler.folder_name + ' (' + formatDateShort(traveler.start_date) + ' - ' + formatDateShort(traveler.end_date) + ')'">
+                                                            <span x-text="traveler.folder_name.substring(0, 15) + (traveler.folder_name.length > 15 ? '...' : '')"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Legend -->
+                                    <div class="mt-4 flex items-center gap-4 text-xs text-gray-600">
+                                        <div class="flex items-center gap-1">
+                                            <span class="w-3 h-3 rounded bg-green-100 border border-green-300"></span>
+                                            <span>Startdatum</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="w-3 h-3 rounded bg-blue-100 border border-blue-300"></span>
+                                            <span>Reise läuft</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="w-3 h-3 rounded bg-red-100 border border-red-300"></span>
+                                            <span>Enddatum</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="w-3 h-3 rounded bg-purple-100 border border-purple-300"></span>
+                                            <span>API-Daten</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1500,6 +1624,102 @@
                 const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
 
                 return { started: true, progress, status: 'active' };
+            },
+        };
+    }
+
+    function calendarView() {
+        return {
+            currentDate: new Date(),
+
+            get monthYearLabel() {
+                const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+                return months[this.currentDate.getMonth()] + ' ' + this.currentDate.getFullYear();
+            },
+
+            get calendarDays() {
+                const year = this.currentDate.getFullYear();
+                const month = this.currentDate.getMonth();
+
+                // First day of the month
+                const firstDay = new Date(year, month, 1);
+                // Last day of the month
+                const lastDay = new Date(year, month + 1, 0);
+
+                // Start from Monday of the week containing the first day
+                const startDate = new Date(firstDay);
+                const dayOfWeek = startDate.getDay();
+                // Adjust for Monday start (0 = Sunday, so we need to go back)
+                const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                startDate.setDate(startDate.getDate() - daysToSubtract);
+
+                // End on Sunday of the week containing the last day
+                const endDate = new Date(lastDay);
+                const lastDayOfWeek = endDate.getDay();
+                const daysToAdd = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
+                endDate.setDate(endDate.getDate() + daysToAdd);
+
+                const days = [];
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const current = new Date(startDate);
+                while (current <= endDate) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    days.push({
+                        date: dateStr,
+                        dayNumber: current.getDate(),
+                        isCurrentMonth: current.getMonth() === month,
+                        isToday: current.getTime() === today.getTime(),
+                    });
+                    current.setDate(current.getDate() + 1);
+                }
+
+                return days;
+            },
+
+            prevMonth() {
+                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+            },
+
+            nextMonth() {
+                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+            },
+
+            goToToday() {
+                this.currentDate = new Date();
+            },
+
+            getTravelersForDay(dateStr, travelers) {
+                if (!travelers) return [];
+
+                return travelers.filter(t => {
+                    const start = t.start_date.split('T')[0];
+                    const end = t.end_date.split('T')[0];
+                    return dateStr >= start && dateStr <= end;
+                }).sort((a, b) => a.start_date.localeCompare(b.start_date));
+            },
+
+            getTravelerDayClass(traveler, dateStr) {
+                const start = traveler.start_date.split('T')[0];
+                const end = traveler.end_date.split('T')[0];
+                const isApi = traveler.source === 'api';
+
+                if (isApi) {
+                    if (dateStr === start) return 'bg-purple-200 text-purple-800 border-l-2 border-purple-500';
+                    if (dateStr === end) return 'bg-purple-100 text-purple-700 border-r-2 border-purple-500';
+                    return 'bg-purple-50 text-purple-600';
+                }
+
+                if (dateStr === start) return 'bg-green-200 text-green-800 border-l-2 border-green-500';
+                if (dateStr === end) return 'bg-red-100 text-red-700 border-r-2 border-red-500';
+                return 'bg-blue-100 text-blue-700';
+            },
+
+            formatDateShort(dateStr) {
+                if (!dateStr) return '-';
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
             },
         };
     }
