@@ -651,12 +651,12 @@ class RiskOverviewService
             }
         }
 
-        // Sort by start_date descending
+        // Sort by start_date ascending (earliest first)
         usort($travelers, function ($a, $b) {
-            $dateA = $a['start_date'] ?? '1900-01-01';
-            $dateB = $b['start_date'] ?? '1900-01-01';
+            $dateA = $a['start_date'] ?? '9999-12-31';
+            $dateB = $b['start_date'] ?? '9999-12-31';
 
-            return strcmp($dateB, $dateA);
+            return strcmp($dateA, $dateB);
         });
 
         return $travelers;
@@ -726,12 +726,12 @@ class RiskOverviewService
             }
         }
 
-        // Sort by start_date descending
+        // Sort by start_date ascending (earliest first)
         usort($travelers, function ($a, $b) {
-            $dateA = $a['start_date'] ?? '1900-01-01';
-            $dateB = $b['start_date'] ?? '1900-01-01';
+            $dateA = $a['start_date'] ?? '9999-12-31';
+            $dateB = $b['start_date'] ?? '9999-12-31';
 
-            return strcmp($dateB, $dateA);
+            return strcmp($dateA, $dateB);
         });
 
         return $travelers;
