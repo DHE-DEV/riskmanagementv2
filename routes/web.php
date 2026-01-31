@@ -204,7 +204,8 @@ Route::get('/cruise', function () {
 })->name('cruise');
 
 Route::get('/business-visa', function () {
-    if (! config('app.business_visa_enabled', true)) {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_business_visa_enabled')) {
         abort(404);
     }
 
@@ -212,7 +213,8 @@ Route::get('/business-visa', function () {
 })->name('business-visa');
 
 Route::post('/business-visa/check', function (\Illuminate\Http\Request $request) {
-    if (! config('app.business_visa_enabled', true)) {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_business_visa_enabled')) {
         abort(404);
     }
 
@@ -221,7 +223,8 @@ Route::post('/business-visa/check', function (\Illuminate\Http\Request $request)
 
 // VisumPoint Visa Check
 Route::get('/visumpoint', function () {
-    if (! config('app.visumpoint_enabled')) {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_visumpoint_enabled')) {
         abort(404);
     }
 
@@ -229,7 +232,8 @@ Route::get('/visumpoint', function () {
 })->name('visumpoint');
 
 Route::post('/visumpoint/check', function (\Illuminate\Http\Request $request) {
-    if (! config('app.visumpoint_enabled')) {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_visumpoint_enabled')) {
         abort(404);
     }
 
