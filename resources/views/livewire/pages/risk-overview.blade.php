@@ -741,7 +741,90 @@
 
                         <!-- Calendar Content -->
                         <template x-if="!loadingCountryDetails && countryDetails">
-                            <div class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="{ ...calendarView(), get events() { return countryDetails.events }, get travelers() { return countryDetails.travelers } }">
+                            <div class="flex-1 flex flex-col min-h-0 overflow-hidden"
+                                 x-data="{
+                                     currentMonth: new Date().getMonth(),
+                                     currentYear: new Date().getFullYear(),
+                                     get monthYearLabel() {
+                                         const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+                                         return months[this.currentMonth] + ' ' + this.currentYear;
+                                     },
+                                     prevMonth() {
+                                         if (this.currentMonth === 0) {
+                                             this.currentMonth = 11;
+                                             this.currentYear--;
+                                         } else {
+                                             this.currentMonth--;
+                                         }
+                                     },
+                                     nextMonth() {
+                                         if (this.currentMonth === 11) {
+                                             this.currentMonth = 0;
+                                             this.currentYear++;
+                                         } else {
+                                             this.currentMonth++;
+                                         }
+                                     },
+                                     goToToday() {
+                                         const today = new Date();
+                                         this.currentMonth = today.getMonth();
+                                         this.currentYear = today.getFullYear();
+                                     },
+                                     get calendarDays() {
+                                         const year = this.currentYear;
+                                         const month = this.currentMonth;
+                                         const firstDay = new Date(year, month, 1);
+                                         const lastDay = new Date(year, month + 1, 0);
+                                         const startDate = new Date(firstDay);
+                                         const dayOfWeek = startDate.getDay();
+                                         const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                                         startDate.setDate(startDate.getDate() - daysToSubtract);
+                                         const endDate = new Date(lastDay);
+                                         const lastDayOfWeek = endDate.getDay();
+                                         const daysToAdd = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
+                                         endDate.setDate(endDate.getDate() + daysToAdd);
+                                         const days = [];
+                                         const today = new Date();
+                                         today.setHours(0, 0, 0, 0);
+                                         const current = new Date(startDate);
+                                         while (current <= endDate) {
+                                             const dateStr = current.toISOString().split('T')[0];
+                                             days.push({
+                                                 date: dateStr,
+                                                 dayNumber: current.getDate(),
+                                                 isCurrentMonth: current.getMonth() === month,
+                                                 isToday: current.getTime() === today.getTime()
+                                             });
+                                             current.setDate(current.getDate() + 1);
+                                         }
+                                         return days;
+                                     },
+                                     get events() { return countryDetails?.events || [] },
+                                     get travelers() { return countryDetails?.travelers || [] },
+                                     getTravelersForDay(dateStr, travelers) {
+                                         if (!travelers) return [];
+                                         return travelers.filter(t => {
+                                             const start = t.start_date?.split('T')[0];
+                                             const end = t.end_date?.split('T')[0];
+                                             return start && end && dateStr >= start && dateStr <= end;
+                                         });
+                                     },
+                                     getEventsForDay(dateStr, events) {
+                                         if (!events) return [];
+                                         const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
+                                         return events.filter(e => {
+                                             const start = e.start_date?.split('T')[0];
+                                             const end = e.end_date?.split('T')[0];
+                                             if (!end) {
+                                                 const startDate = new Date(start);
+                                                 const checkDate = new Date(dateStr);
+                                                 const daysDiff = Math.floor((checkDate - startDate) / (1000 * 60 * 60 * 24));
+                                                 return dateStr >= start && daysDiff <= 30;
+                                             }
+                                             return dateStr >= start && dateStr <= end;
+                                         }).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+                                     }
+                                 }">
                                 <!-- Calendar Header -->
                                 <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
                                     <div class="flex items-center gap-1">
@@ -1674,123 +1757,6 @@
         };
     }
 
-    function calendarView() {
-        return {
-            currentDate: new Date(),
-
-            get monthYearLabel() {
-                const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-                return months[this.currentDate.getMonth()] + ' ' + this.currentDate.getFullYear();
-            },
-
-            get calendarDays() {
-                const year = this.currentDate.getFullYear();
-                const month = this.currentDate.getMonth();
-
-                // First day of the month
-                const firstDay = new Date(year, month, 1);
-                // Last day of the month
-                const lastDay = new Date(year, month + 1, 0);
-
-                // Start from Monday of the week containing the first day
-                const startDate = new Date(firstDay);
-                const dayOfWeek = startDate.getDay();
-                // Adjust for Monday start (0 = Sunday, so we need to go back)
-                const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                startDate.setDate(startDate.getDate() - daysToSubtract);
-
-                // End on Sunday of the week containing the last day
-                const endDate = new Date(lastDay);
-                const lastDayOfWeek = endDate.getDay();
-                const daysToAdd = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
-                endDate.setDate(endDate.getDate() + daysToAdd);
-
-                const days = [];
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                const current = new Date(startDate);
-                while (current <= endDate) {
-                    const dateStr = current.toISOString().split('T')[0];
-                    days.push({
-                        date: dateStr,
-                        dayNumber: current.getDate(),
-                        isCurrentMonth: current.getMonth() === month,
-                        isToday: current.getTime() === today.getTime(),
-                    });
-                    current.setDate(current.getDate() + 1);
-                }
-
-                return days;
-            },
-
-            prevMonth() {
-                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
-            },
-
-            nextMonth() {
-                this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
-            },
-
-            goToToday() {
-                this.currentDate = new Date();
-            },
-
-            getTravelersForDay(dateStr, travelers) {
-                if (!travelers) return [];
-
-                return travelers.filter(t => {
-                    const start = t.start_date.split('T')[0];
-                    const end = t.end_date.split('T')[0];
-                    return dateStr >= start && dateStr <= end;
-                }).sort((a, b) => a.start_date.localeCompare(b.start_date));
-            },
-
-            getEventsForDay(dateStr, events) {
-                if (!events) return [];
-
-                // Priority order for sorting
-                const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
-
-                return events.filter(e => {
-                    const start = e.start_date ? e.start_date.split('T')[0] : null;
-                    const end = e.end_date ? e.end_date.split('T')[0] : null;
-
-                    // If no end date, event is active from start date onwards (show for 30 days)
-                    if (!end) {
-                        const startDate = new Date(start);
-                        const checkDate = new Date(dateStr);
-                        const daysDiff = Math.floor((checkDate - startDate) / (1000 * 60 * 60 * 24));
-                        return dateStr >= start && daysDiff <= 30;
-                    }
-
-                    return dateStr >= start && dateStr <= end;
-                }).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-            },
-
-            getTravelerDayClass(traveler, dateStr) {
-                const start = traveler.start_date.split('T')[0];
-                const end = traveler.end_date.split('T')[0];
-                const isApi = traveler.source === 'api';
-
-                if (isApi) {
-                    if (dateStr === start) return 'bg-purple-200 text-purple-800 border-l-2 border-purple-500';
-                    if (dateStr === end) return 'bg-purple-100 text-purple-700 border-r-2 border-purple-500';
-                    return 'bg-purple-50 text-purple-600';
-                }
-
-                if (dateStr === start) return 'bg-green-200 text-green-800 border-l-2 border-green-500';
-                if (dateStr === end) return 'bg-red-100 text-red-700 border-r-2 border-red-500';
-                return 'bg-blue-100 text-blue-700';
-            },
-
-            formatDateShort(dateStr) {
-                if (!dateStr) return '-';
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-            },
-        };
-    }
 </script>
 </body>
 </html>
