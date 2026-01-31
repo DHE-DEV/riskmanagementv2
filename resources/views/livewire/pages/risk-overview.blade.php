@@ -372,7 +372,7 @@
                 <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
                     <div class="flex items-center justify-between mb-3">
                         <div>
-                            <p class="text-sm text-gray-600">Lander mit Ereignissen</p>
+                            <p class="text-sm text-gray-600">Länder mit Ereignissen</p>
                             <p class="text-lg font-bold text-gray-900" x-text="filteredSummary.total_countries"></p>
                         </div>
                         <button @click="loadData()" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Aktualisieren">
@@ -642,7 +642,7 @@
                                                         <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
                                                         <span class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs"
                                                               :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'"
-                                                              x-text="traveler.source_label || (traveler.source === 'api' ? 'PDS API' : 'Lokal')"></span>
+                                                              x-text="traveler.source_label || (traveler.source === 'api' ? 'PDS API' : 'GTM')"></span>
                                                     </div>
                                                     <!-- Trip Progress Bar -->
                                                     <div class="mt-2" x-data="{ tripProgress: getTripProgress(traveler.start_date, traveler.end_date) }">
@@ -1040,7 +1040,7 @@
                                                     <div class="flex items-center gap-2">
                                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs"
                                                               :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
-                                                              x-text="traveler.source === 'api' ? 'API' : 'Lokal'"></span>
+                                                              x-text="traveler.source === 'api' ? 'API' : 'GTM'"></span>
                                                         <span class="text-xs text-gray-500">
                                                             <i class="fa-regular fa-users mr-1"></i>
                                                             <span x-text="traveler.participant_count"></span>
@@ -1169,7 +1169,7 @@
                                                             <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
                                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs"
                                                                   :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'"
-                                                                  x-text="traveler.source === 'api' ? 'API' : 'Lokal'"></span>
+                                                                  x-text="traveler.source === 'api' ? 'API' : 'GTM'"></span>
                                                         </div>
                                                         <span class="text-xs text-gray-500" x-text="traveler.participant_count + ' Teilnehmer'"></span>
                                                     </div>
@@ -1414,7 +1414,7 @@
                         <div class="flex items-center gap-2 mt-1">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                                   :class="selectedTraveler?.source === 'api' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'"
-                                  x-text="selectedTraveler?.source_label || (selectedTraveler?.source === 'api' ? 'PDS API' : 'Lokal importiert')"></span>
+                                  x-text="selectedTraveler?.source_label || (selectedTraveler?.source === 'api' ? 'PDS API' : 'GTM')"></span>
                             <span class="text-sm text-gray-500" x-text="selectedTraveler?.participant_count + ' Teilnehmer'"></span>
                         </div>
                     </div>
@@ -1511,7 +1511,7 @@
                                 <i class="fa-regular fa-database"></i>
                                 <span class="text-xs font-medium uppercase tracking-wider">Datenquelle</span>
                             </div>
-                            <p class="text-gray-900 font-medium" x-text="selectedTraveler?.source_label || (selectedTraveler?.source === 'api' ? 'PDS API' : 'Lokal importiert')"></p>
+                            <p class="text-gray-900 font-medium" x-text="selectedTraveler?.source_label || (selectedTraveler?.source === 'api' ? 'PDS API' : 'GTM')"></p>
                         </div>
                     </div>
 
