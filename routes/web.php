@@ -175,7 +175,8 @@ Route::prefix('feed')->name('feed.')->group(function () {
 });
 
 Route::get('/booking', function () {
-    if (! config('app.dashboard_booking_enabled', true)) {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_booking_enabled')) {
         abort(404);
     }
 
