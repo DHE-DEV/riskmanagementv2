@@ -802,16 +802,26 @@
                                      get events() { return countryDetails?.events || [] },
                                      get travelers() { return countryDetails?.travelers || [] },
                                      getTravelersForDay(dateStr, travelers) {
-                                         if (!travelers) return [];
+                                         if (!travelers || !Array.isArray(travelers)) return [];
                                          return travelers.filter(t => {
-                                             const start = t.start_date?.split('T')[0];
-                                             const end = t.end_date?.split('T')[0];
-                                             return start && end && dateStr >= start && dateStr <= end;
+                                             if (!t.start_date || !t.end_date) return false;
+                                             const start = t.start_date.split('T')[0];
+                                             const end = t.end_date.split('T')[0];
+                                             return dateStr >= start && dateStr <= end;
                                          });
                                      },
                                      getTravelerCountForDay(dateStr, travelers) {
-                                         const tripsOnDay = this.getTravelersForDay(dateStr, travelers);
-                                         return tripsOnDay.reduce((sum, t) => sum + (t.participant_count || 1), 0);
+                                         if (!travelers || !Array.isArray(travelers)) return 0;
+                                         let count = 0;
+                                         travelers.forEach(t => {
+                                             if (!t.start_date || !t.end_date) return;
+                                             const start = t.start_date.split('T')[0];
+                                             const end = t.end_date.split('T')[0];
+                                             if (dateStr >= start && dateStr <= end) {
+                                                 count += (t.participant_count || 1);
+                                             }
+                                         });
+                                         return count;
                                      },
                                      getEventsForDay(dateStr, events) {
                                          if (!events) return [];
