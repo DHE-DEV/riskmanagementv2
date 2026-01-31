@@ -1458,12 +1458,21 @@
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <!-- Folder Number -->
                         <template x-if="selectedTraveler?.folder_number">
-                            <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="bg-gray-50 rounded-lg p-4"
+                                 x-data="{ copied: false }">
                                 <div class="flex items-center gap-2 text-gray-500 mb-1">
                                     <i class="fa-regular fa-hashtag"></i>
                                     <span class="text-xs font-medium uppercase tracking-wider">Vorgangsnummer</span>
                                 </div>
-                                <p class="text-gray-900 font-medium font-mono" x-text="selectedTraveler?.folder_number"></p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-gray-900 font-medium font-mono cursor-pointer hover:text-blue-600 transition-colors"
+                                       @click="navigator.clipboard.writeText(selectedTraveler?.folder_number); copied = true; setTimeout(() => copied = false, 2000)"
+                                       :title="copied ? 'Kopiert!' : 'Klicken zum Kopieren'"
+                                       x-text="selectedTraveler?.folder_number"></p>
+                                    <i class="fa-regular text-sm transition-all"
+                                       :class="copied ? 'fa-check text-green-500' : 'fa-copy text-gray-400 hover:text-blue-500 cursor-pointer'"
+                                       @click="navigator.clipboard.writeText(selectedTraveler?.folder_number); copied = true; setTimeout(() => copied = false, 2000)"></i>
+                                </div>
                             </div>
                         </template>
 
@@ -1474,7 +1483,15 @@
                                     <i class="fa-regular fa-fingerprint"></i>
                                     <span class="text-xs font-medium uppercase tracking-wider">Trip ID</span>
                                 </div>
-                                <p class="text-gray-900 font-medium font-mono" x-text="selectedTraveler?.trip_id"></p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-gray-900 font-medium font-mono" x-text="selectedTraveler?.trip_id"></p>
+                                    <a :href="'https://travel-details.eu/de?tid=' + selectedTraveler?.trip_id + '&preview'"
+                                       target="_blank"
+                                       class="text-blue-500 hover:text-blue-700 transition-colors"
+                                       title="In neuem Tab öffnen">
+                                        <i class="fa-regular fa-arrow-up-right-from-square text-sm"></i>
+                                    </a>
+                                </div>
                             </div>
                         </template>
 
