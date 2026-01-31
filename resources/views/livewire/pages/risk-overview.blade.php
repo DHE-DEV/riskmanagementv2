@@ -444,7 +444,7 @@
                         <template x-for="country in filteredCountries" :key="country.country.code">
                             <div class="bg-white rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-50 transition-colors"
                                  :style="'border-left-color: ' + (country.highest_priority === 'high' ? '#ff0000' : country.highest_priority === 'medium' ? '#e6a50a' : country.highest_priority === 'low' ? '#0fad78' : '#0066cc')"
-                                 :class="{ 'ring-2 ring-blue-500 bg-blue-50': selectedCountry?.country?.code === country.country.code }"
+                                 :class="{ 'ring-2 ring-blue-500/50 bg-blue-50': selectedCountry?.country?.code === country.country.code }"
                                  @click="selectCountry(country)">
                                 <div class="flex items-start space-x-2">
                                     <!-- Priority Dot -->
