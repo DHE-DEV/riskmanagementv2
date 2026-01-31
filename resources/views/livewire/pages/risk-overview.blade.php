@@ -1428,7 +1428,7 @@
                 <!-- Modal Body -->
                 <div class="px-6 py-5 overflow-y-auto max-h-[calc(85vh-140px)]">
                     <!-- Trip Progress -->
-                    <div class="mb-6" x-data="{ tripProgress: getTripProgress(selectedTraveler?.start_date, selectedTraveler?.end_date) }">
+                    <div class="mb-6" x-data="{ get tripProgress() { return selectedTraveler ? getTripProgress(selectedTraveler.start_date, selectedTraveler.end_date) : { started: false, progress: 0, status: 'upcoming' }; } }">
                         <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Reisestatus</h4>
                         <div class="bg-gray-50 rounded-lg p-4">
                             <div class="flex items-center justify-between mb-2">
