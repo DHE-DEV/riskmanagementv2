@@ -442,7 +442,7 @@
                 <template x-if="!loading && !error && filteredCountries.length > 0">
                     <div class="space-y-2">
                         <template x-for="country in filteredCountries" :key="country.country.code">
-                            <div class="bg-gray-50 rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                            <div class="bg-white rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-50 transition-colors"
                                  :style="'border-left-color: ' + (country.highest_priority === 'high' ? '#ff0000' : country.highest_priority === 'medium' ? '#e6a50a' : country.highest_priority === 'low' ? '#0fad78' : '#0066cc')"
                                  :class="{ 'ring-2 ring-blue-500 bg-blue-50': selectedCountry?.country?.code === country.country.code }"
                                  @click="selectCountry(country)">
@@ -471,14 +471,18 @@
                                            }"
                                            x-text="country.highest_priority === 'high' ? 'KRITISCH' : country.highest_priority === 'medium' ? 'HOCH' : country.highest_priority === 'low' ? 'MITTEL' : 'INFORMATION'"></p>
                                         <!-- Stats -->
-                                        <p class="text-xs text-gray-600 mt-1">
-                                            <span x-text="country.total_events + ' Ereignis' + (country.total_events !== 1 ? 'se' : '')"></span>
+                                        <div class="flex items-center gap-3 text-xs text-gray-600 mt-1">
+                                            <span class="flex items-center gap-1">
+                                                <i class="fa-regular fa-triangle-exclamation"></i>
+                                                <span x-text="country.total_events + ' Ereignis' + (country.total_events !== 1 ? 'se' : '')"></span>
+                                            </span>
                                             <template x-if="country.affected_travelers > 0">
-                                                <span class="text-blue-600 font-medium">
-                                                    • <span x-text="country.affected_travelers + ' Reisende'"></span>
+                                                <span class="flex items-center gap-1 text-blue-600 font-medium">
+                                                    <i class="fa-regular fa-users"></i>
+                                                    <span x-text="country.affected_travelers + ' Reisende'"></span>
                                                 </span>
                                             </template>
-                                        </p>
+                                        </div>
                                         <!-- Priority Breakdown -->
                                         <div class="flex flex-wrap gap-1 mt-2">
                                             <template x-if="country.events_by_priority.high > 0">
