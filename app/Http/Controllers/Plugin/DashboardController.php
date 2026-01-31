@@ -11,7 +11,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function show(): View
+    public function show(): View|RedirectResponse
     {
         $customer = auth('customer')->user();
         $pluginClient = $customer->pluginClient;
