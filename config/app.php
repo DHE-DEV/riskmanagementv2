@@ -200,6 +200,7 @@ return [
     'navigation_cruise_enabled' => env('NAVIGATION_CRUISE_ENABLED', true),
     'navigation_business_visa_enabled' => env('NAVIGATION_BUSINESS_VISA_ENABLED', true),
     'navigation_center_map_enabled' => env('NAVIGATION_CENTER_MAP_ENABLED', true),
+    'navigation_visumpoint_enabled' => env('NAVIGATION_VISUMPOINT_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

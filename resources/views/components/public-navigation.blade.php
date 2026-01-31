@@ -100,7 +100,7 @@
         @endif
 
         <!-- VisumPoint Check -->
-        @if(config('app.visumpoint_enabled'))
+        @if($featureService->isFeatureEnabled('navigation_visumpoint_enabled', $customer))
         <a href="{{ route('visumpoint') }}" class="p-3 {{ $active === 'visumpoint-check' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Visum Check (VisumPoint)">
             <i class="fa-regular fa-stamp text-2xl" aria-hidden="true"></i>
         </a>
