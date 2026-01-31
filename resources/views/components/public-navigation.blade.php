@@ -18,7 +18,7 @@
 <nav class="navigation flex flex-col items-center py-4 h-full">
     <!-- Top Buttons (scrollable) -->
     <div class="flex-1 overflow-y-auto nav-scrollable w-full">
-        <div class="flex flex-col items-center space-y-6">
+        <div class="flex flex-col items-center space-y-3">
         <!-- Menü Button -->
         @if(config('app.navigation_menu_enabled', true))
         <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Menü" onclick="toggleRightContainer()">
