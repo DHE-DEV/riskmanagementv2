@@ -809,6 +809,10 @@
                                              return start && end && dateStr >= start && dateStr <= end;
                                          });
                                      },
+                                     getTravelerCountForDay(dateStr, travelers) {
+                                         const tripsOnDay = this.getTravelersForDay(dateStr, travelers);
+                                         return tripsOnDay.reduce((sum, t) => sum + (t.participant_count || 1), 0);
+                                     },
                                      getEventsForDay(dateStr, events) {
                                          if (!events) return [];
                                          const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
@@ -875,11 +879,11 @@
                                                           }"
                                                           x-text="day.dayNumber"></span>
                                                     <!-- Traveler count badge -->
-                                                    <template x-if="getTravelersForDay(day.date, travelers).length > 0">
+                                                    <template x-if="getTravelerCountForDay(day.date, travelers) > 0">
                                                         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-                                                              :title="getTravelersForDay(day.date, travelers).length + ' betroffene Reisen'">
+                                                              :title="getTravelerCountForDay(day.date, travelers) + ' Reisende in ' + getTravelersForDay(day.date, travelers).length + ' Reisen'">
                                                             <i class="fa-regular fa-users text-[10px]"></i>
-                                                            <span x-text="getTravelersForDay(day.date, travelers).length"></span>
+                                                            <span x-text="getTravelerCountForDay(day.date, travelers)"></span>
                                                         </span>
                                                     </template>
                                                 </div>
@@ -951,7 +955,7 @@
                                                 <i class="fa-regular fa-users text-[10px]"></i>
                                                 <span>n</span>
                                             </span>
-                                            <span>Betroffene Reisen</span>
+                                            <span>Betroffene Reisende</span>
                                         </div>
                                     </div>
                                 </div>
