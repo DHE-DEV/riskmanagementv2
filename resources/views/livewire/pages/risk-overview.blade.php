@@ -461,15 +461,6 @@
                                             <span class="text-xs font-medium uppercase text-gray-800" x-text="country.country.name"></span>
                                             <span class="text-xs font-mono text-gray-400 flex-shrink-0" x-text="country.country.code"></span>
                                         </div>
-                                        <!-- Severity Label -->
-                                        <p class="text-[11px] mt-0.5"
-                                           :class="{
-                                               'text-red-600': country.highest_priority === 'high',
-                                               'text-orange-600': country.highest_priority === 'medium',
-                                               'text-green-600': country.highest_priority === 'low',
-                                               'text-blue-600': country.highest_priority === 'info'
-                                           }"
-                                           x-text="country.highest_priority === 'high' ? 'KRITISCH' : country.highest_priority === 'medium' ? 'HOCH' : country.highest_priority === 'low' ? 'MITTEL' : 'INFORMATION'"></p>
                                         <!-- Stats -->
                                         <div class="flex items-center gap-3 text-xs text-gray-600 mt-1">
                                             <span class="flex items-center gap-1">
