@@ -657,7 +657,12 @@
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
                                                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                                                    <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
+                                                    <div class="flex items-start justify-between">
+                                                        <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
+                                                        <span class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs"
+                                                              :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'"
+                                                              x-text="traveler.source_label || (traveler.source === 'api' ? 'PDS API' : 'Lokal')"></span>
+                                                    </div>
                                                     <!-- Trip Progress Bar -->
                                                     <div class="mt-2" x-data="{ tripProgress: getTripProgress(traveler.start_date, traveler.end_date) }">
                                                         <div class="flex justify-between text-xs text-gray-600 mb-1">
@@ -773,13 +778,18 @@
                                     </h4>
                                     <div class="space-y-3">
                                         <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
-                                            <div class="bg-blue-50 p-3 rounded-lg">
+                                            <div class="p-3 rounded-lg" :class="traveler.source === 'api' ? 'bg-purple-50' : 'bg-blue-50'">
                                                 <div class="flex items-center justify-between">
                                                     <h5 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h5>
-                                                    <span class="text-xs text-gray-500">
-                                                        <i class="fa-regular fa-users mr-1"></i>
-                                                        <span x-text="traveler.participant_count"></span>
-                                                    </span>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs"
+                                                              :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                                                              x-text="traveler.source === 'api' ? 'API' : 'Lokal'"></span>
+                                                        <span class="text-xs text-gray-500">
+                                                            <i class="fa-regular fa-users mr-1"></i>
+                                                            <span x-text="traveler.participant_count"></span>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <!-- Trip Progress Bar -->
                                                 <div class="mt-2" x-data="{ tripProgress: getTripProgress(traveler.start_date, traveler.end_date) }">
@@ -895,9 +905,15 @@
                                         <div class="divide-y divide-gray-200">
                                             <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
                                                 <div class="px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+                                                     :class="traveler.source === 'api' ? 'border-l-4 border-l-purple-400' : ''"
                                                      x-data="{ tripProgress: getTripProgress(traveler.start_date, traveler.end_date) }">
                                                     <div class="flex items-center justify-between">
-                                                        <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
+                                                        <div class="flex items-center gap-2">
+                                                            <h4 class="text-xs font-medium text-gray-800" x-text="traveler.folder_name"></h4>
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs"
+                                                                  :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'"
+                                                                  x-text="traveler.source === 'api' ? 'API' : 'Lokal'"></span>
+                                                        </div>
                                                         <span class="text-xs text-gray-500" x-text="traveler.participant_count + ' Teilnehmer'"></span>
                                                     </div>
                                                     <div class="mt-2 flex items-center gap-4">

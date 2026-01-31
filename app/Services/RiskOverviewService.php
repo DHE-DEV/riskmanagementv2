@@ -3,18 +3,148 @@
 namespace App\Services;
 
 use App\Models\Country;
+use App\Models\Customer;
 use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class RiskOverviewService
 {
     protected GtmEventService $gtmEventService;
 
-    public function __construct(GtmEventService $gtmEventService)
+    protected PdsApiService $pdsApiService;
+
+    public function __construct(GtmEventService $gtmEventService, PdsApiService $pdsApiService)
     {
         $this->gtmEventService = $gtmEventService;
+        $this->pdsApiService = $pdsApiService;
+    }
+
+    /**
+     * Fetch travelers from Passolution API with 1000 records.
+     * Returns travelers grouped by country code.
+     *
+     * @return array<string, array> Country code => travelers array
+     */
+    protected function fetchApiTravelers(Customer $customer, string $startDate, string $endDate): array
+    {
+        if (! $this->pdsApiService->hasValidToken($customer)) {
+            Log::info('RiskOverviewService: Customer has no valid API token, skipping API fetch', [
+                'customer_id' => $customer->id,
+            ]);
+
+            return [];
+        }
+
+        try {
+            $apiRequestBody = [
+                'sort_by' => 'start_date',
+                'sort_order' => 'desc',
+                'page' => 1,
+                'per_page' => 1000,
+                'start_date' => ['<=' => $endDate],
+                'end_date' => ['>=' => $startDate],
+            ];
+
+            Log::info('RiskOverviewService: Fetching API travelers', [
+                'customer_id' => $customer->id,
+                'request_body' => $apiRequestBody,
+            ]);
+
+            $response = $this->pdsApiService->post($customer, '/travel-details', $apiRequestBody);
+
+            if (! $response || ! $response->successful()) {
+                Log::warning('RiskOverviewService: Failed to fetch API travelers', [
+                    'customer_id' => $customer->id,
+                    'status' => $response?->status(),
+                ]);
+
+                return [];
+            }
+
+            $data = $response->json();
+            $apiTravelers = $data['data'] ?? [];
+
+            Log::info('RiskOverviewService: Received API travelers', [
+                'customer_id' => $customer->id,
+                'count' => count($apiTravelers),
+                'total_in_api' => $data['meta']['total'] ?? 'unknown',
+            ]);
+
+            // Group travelers by country code
+            $travelersByCountry = [];
+
+            foreach ($apiTravelers as $traveler) {
+                $countryCodes = $this->extractCountryCodesFromApiTraveler($traveler);
+
+                foreach ($countryCodes as $countryCode) {
+                    if (! isset($travelersByCountry[$countryCode])) {
+                        $travelersByCountry[$countryCode] = [];
+                    }
+
+                    $travelersByCountry[$countryCode][] = [
+                        'trip_id' => $traveler['tid'] ?? $traveler['id'] ?? null,
+                        'folder_id' => 'api-'.($traveler['tid'] ?? $traveler['id'] ?? uniqid()),
+                        'folder_name' => $traveler['trip_name'] ?? 'Unbenannte Reise',
+                        'folder_number' => $traveler['tid'] ?? null,
+                        'start_date' => $traveler['start_date'] ?? null,
+                        'end_date' => $traveler['end_date'] ?? null,
+                        'participant_count' => $traveler['travelers_count'] ?? 1,
+                        'participants' => [],
+                        'source' => 'api',
+                        'source_label' => 'PDS API',
+                    ];
+                }
+            }
+
+            return $travelersByCountry;
+        } catch (\Exception $e) {
+            Log::error('RiskOverviewService: Error fetching API travelers', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Extract country codes from API traveler data.
+     */
+    protected function extractCountryCodesFromApiTraveler(array $traveler): array
+    {
+        $countryCodes = [];
+
+        // From countries array
+        if (isset($traveler['countries']) && is_array($traveler['countries'])) {
+            foreach ($traveler['countries'] as $country) {
+                if (isset($country['code'])) {
+                    $countryCodes[] = strtoupper($country['code']);
+                }
+            }
+        }
+
+        // From destinations array (country codes)
+        if (isset($traveler['destinations']) && is_array($traveler['destinations'])) {
+            foreach ($traveler['destinations'] as $code) {
+                if (is_string($code)) {
+                    $countryCodes[] = strtoupper($code);
+                }
+            }
+        }
+
+        // From destinations_list array
+        if (isset($traveler['destinations_list']) && is_array($traveler['destinations_list'])) {
+            foreach ($traveler['destinations_list'] as $dest) {
+                if (isset($dest['code'])) {
+                    $countryCodes[] = strtoupper($dest['code']);
+                }
+            }
+        }
+
+        return array_unique($countryCodes);
     }
 
     /**
@@ -160,7 +290,7 @@ class RiskOverviewService
     }
 
     /**
-     * Enrich country data with traveler counts from customer's folders.
+     * Enrich country data with traveler counts from customer's folders and API.
      */
     protected function enrichWithTravelerCounts(Collection $countriesData, int $customerId, int $daysAhead): Collection
     {
@@ -183,7 +313,7 @@ class RiskOverviewService
         // Convert to array for modification
         $data = $countriesData->all();
 
-        // Count travelers per country based on hotel/flight destinations
+        // Count travelers per country based on hotel/flight destinations (local folders)
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
@@ -191,6 +321,24 @@ class RiskOverviewService
                 if (isset($data[$countryCode])) {
                     $travelerCount = $folder->participants->count() ?: 1;
                     $data[$countryCode]['affected_travelers'] += $travelerCount;
+                }
+            }
+        }
+
+        // Fetch and count API travelers
+        $customer = Customer::find($customerId);
+        if ($customer) {
+            $apiTravelersByCountry = $this->fetchApiTravelers(
+                $customer,
+                $today->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            );
+
+            foreach ($apiTravelersByCountry as $countryCode => $travelers) {
+                if (isset($data[$countryCode])) {
+                    foreach ($travelers as $traveler) {
+                        $data[$countryCode]['affected_travelers'] += $traveler['participant_count'];
+                    }
                 }
             }
         }
@@ -222,7 +370,7 @@ class RiskOverviewService
         // Convert to array for modification
         $data = $countriesData->all();
 
-        // Count travelers per country based on hotel/flight destinations
+        // Count travelers per country based on hotel/flight destinations (local folders)
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
@@ -230,6 +378,24 @@ class RiskOverviewService
                 if (isset($data[$countryCode])) {
                     $travelerCount = $folder->participants->count() ?: 1;
                     $data[$countryCode]['affected_travelers'] += $travelerCount;
+                }
+            }
+        }
+
+        // Fetch and count API travelers
+        $customer = Customer::find($customerId);
+        if ($customer) {
+            $apiTravelersByCountry = $this->fetchApiTravelers(
+                $customer,
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            );
+
+            foreach ($apiTravelersByCountry as $countryCode => $travelers) {
+                if (isset($data[$countryCode])) {
+                    foreach ($travelers as $traveler) {
+                        $data[$countryCode]['affected_travelers'] += $traveler['participant_count'];
+                    }
                 }
             }
         }
@@ -423,6 +589,7 @@ class RiskOverviewService
 
     /**
      * Get travelers currently in or traveling to a specific country.
+     * Includes both local folders and API travelers.
      */
     public function getTravelersInCountry(int $customerId, string $countryCode, int $daysAhead = 30): array
     {
@@ -444,6 +611,7 @@ class RiskOverviewService
 
         $travelers = [];
 
+        // Add local folder travelers
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
@@ -461,15 +629,42 @@ class RiskOverviewService
                         ];
                     })->toArray(),
                     'participant_count' => $folder->participants->count() ?: 1,
+                    'source' => 'local',
+                    'source_label' => 'Lokal importiert',
                 ];
             }
         }
+
+        // Add API travelers
+        $customer = Customer::find($customerId);
+        if ($customer) {
+            $apiTravelersByCountry = $this->fetchApiTravelers(
+                $customer,
+                $today->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            );
+
+            if (isset($apiTravelersByCountry[$countryCode])) {
+                foreach ($apiTravelersByCountry[$countryCode] as $apiTraveler) {
+                    $travelers[] = $apiTraveler;
+                }
+            }
+        }
+
+        // Sort by start_date descending
+        usort($travelers, function ($a, $b) {
+            $dateA = $a['start_date'] ?? '1900-01-01';
+            $dateB = $b['start_date'] ?? '1900-01-01';
+
+            return strcmp($dateB, $dateA);
+        });
 
         return $travelers;
     }
 
     /**
      * Get travelers in a specific country using custom date range.
+     * Includes both local folders and API travelers.
      */
     public function getTravelersInCountryByDateRange(int $customerId, string $countryCode, string $dateFrom, ?string $dateTo = null): array
     {
@@ -491,6 +686,7 @@ class RiskOverviewService
 
         $travelers = [];
 
+        // Add local folder travelers
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
@@ -508,9 +704,35 @@ class RiskOverviewService
                         ];
                     })->toArray(),
                     'participant_count' => $folder->participants->count() ?: 1,
+                    'source' => 'local',
+                    'source_label' => 'Lokal importiert',
                 ];
             }
         }
+
+        // Add API travelers
+        $customer = Customer::find($customerId);
+        if ($customer) {
+            $apiTravelersByCountry = $this->fetchApiTravelers(
+                $customer,
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            );
+
+            if (isset($apiTravelersByCountry[$countryCode])) {
+                foreach ($apiTravelersByCountry[$countryCode] as $apiTraveler) {
+                    $travelers[] = $apiTraveler;
+                }
+            }
+        }
+
+        // Sort by start_date descending
+        usort($travelers, function ($a, $b) {
+            $dateA = $a['start_date'] ?? '1900-01-01';
+            $dateB = $b['start_date'] ?? '1900-01-01';
+
+            return strcmp($dateB, $dateA);
+        });
 
         return $travelers;
     }
