@@ -744,17 +744,17 @@
                             <div class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="{ ...calendarView(), get events() { return countryDetails.events }, get travelers() { return countryDetails.travelers } }">
                                 <!-- Calendar Header -->
                                 <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <button @click="prevMonth()" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                                            <i class="fa-regular fa-chevron-left"></i>
+                                    <div class="flex items-center gap-1">
+                                        <button @click="prevMonth()" class="p-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-colors" title="Vorheriger Monat">
+                                            <i class="fa-regular fa-chevron-left text-gray-700"></i>
                                         </button>
-                                        <h3 class="text-sm font-semibold text-gray-900 min-w-[150px] text-center" x-text="monthYearLabel"></h3>
-                                        <button @click="nextMonth()" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                                            <i class="fa-regular fa-chevron-right"></i>
+                                        <h3 class="text-sm font-bold text-gray-900 min-w-[160px] text-center px-3" x-text="monthYearLabel"></h3>
+                                        <button @click="nextMonth()" class="p-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-colors" title="Nächster Monat">
+                                            <i class="fa-regular fa-chevron-right text-gray-700"></i>
                                         </button>
                                     </div>
                                     <div class="flex items-center gap-4">
-                                        <button @click="goToToday()" class="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                                        <button @click="goToToday()" class="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
                                             Heute
                                         </button>
                                         <div class="flex items-center gap-3 text-xs text-gray-500">
