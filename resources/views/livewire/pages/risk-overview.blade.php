@@ -878,13 +878,18 @@
                                                               'text-gray-400': !day.isCurrentMonth
                                                           }"
                                                           x-text="day.dayNumber"></span>
-                                                    <!-- Traveler count badge -->
-                                                    <template x-if="getTravelerCountForDay(day.date, travelers) > 0">
-                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-                                                              :title="getTravelerCountForDay(day.date, travelers) + ' Reisende in ' + getTravelersForDay(day.date, travelers).length + ' Reisen'">
-                                                            <i class="fa-regular fa-users text-[10px]"></i>
-                                                            <span x-text="getTravelerCountForDay(day.date, travelers)"></span>
-                                                        </span>
+                                                    <!-- Traveler count badges -->
+                                                    <template x-if="getTravelersForDay(day.date, travelers).length > 0">
+                                                        <div class="flex items-center gap-1">
+                                                            <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700" title="Reisen">
+                                                                <i class="fa-regular fa-suitcase"></i>
+                                                                <span x-text="getTravelersForDay(day.date, travelers).length"></span>
+                                                            </span>
+                                                            <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700" title="Reisende">
+                                                                <i class="fa-regular fa-users"></i>
+                                                                <span x-text="getTravelerCountForDay(day.date, travelers)"></span>
+                                                            </span>
+                                                        </div>
                                                     </template>
                                                 </div>
 
@@ -951,11 +956,18 @@
                                             <span>Info</span>
                                         </div>
                                         <div class="flex items-center gap-1 ml-4 pl-4 border-l border-gray-300">
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                            <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-green-100 text-green-700">
+                                                <i class="fa-regular fa-suitcase text-[10px]"></i>
+                                                <span>n</span>
+                                            </span>
+                                            <span>Reisen</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-blue-100 text-blue-700">
                                                 <i class="fa-regular fa-users text-[10px]"></i>
                                                 <span>n</span>
                                             </span>
-                                            <span>Betroffene Reisende</span>
+                                            <span>Reisende</span>
                                         </div>
                                     </div>
                                 </div>
