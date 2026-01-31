@@ -22,6 +22,7 @@ class CustomerFeatureOverride extends Model
         'navigation_cruise_enabled',
         'navigation_business_visa_enabled',
         'navigation_center_map_enabled',
+        'navigation_visumpoint_enabled',
     ];
 
     protected $casts = [
@@ -35,6 +36,7 @@ class CustomerFeatureOverride extends Model
         'navigation_cruise_enabled' => 'boolean',
         'navigation_business_visa_enabled' => 'boolean',
         'navigation_center_map_enabled' => 'boolean',
+        'navigation_visumpoint_enabled' => 'boolean',
     ];
 
     /**
@@ -61,6 +63,7 @@ class CustomerFeatureOverride extends Model
             'navigation_cruise_enabled',
             'navigation_business_visa_enabled',
             'navigation_center_map_enabled',
+            'navigation_visumpoint_enabled',
         ];
     }
 
@@ -80,6 +83,7 @@ class CustomerFeatureOverride extends Model
             'navigation_cruise_enabled' => 'Kreuzfahrten',
             'navigation_business_visa_enabled' => 'Business Visum',
             'navigation_center_map_enabled' => 'Karte zentrieren',
+            'navigation_visumpoint_enabled' => 'VisumPoint',
         ];
     }
 }
