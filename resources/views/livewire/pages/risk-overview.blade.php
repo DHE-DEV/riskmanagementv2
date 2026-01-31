@@ -812,6 +812,23 @@
                                              }
                                              return dateStr >= start && dateStr <= end;
                                          }).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+                                     },
+                                     isDateInFilterRange(dateStr) {
+                                         const checkDate = new Date(dateStr);
+                                         checkDate.setHours(0, 0, 0, 0);
+                                         const today = new Date();
+                                         today.setHours(0, 0, 0, 0);
+
+                                         if (filters.customDateRange && filters.dateFrom) {
+                                             const fromDate = new Date(filters.dateFrom);
+                                             fromDate.setHours(0, 0, 0, 0);
+                                             const toDate = filters.dateTo ? new Date(filters.dateTo) : new Date(fromDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                                             toDate.setHours(23, 59, 59, 999);
+                                             return checkDate >= fromDate && checkDate <= toDate;
+                                         } else {
+                                             const endDate = new Date(today.getTime() + filters.days * 24 * 60 * 60 * 1000);
+                                             return checkDate >= today && checkDate <= endDate;
+                                         }
                                      }
                                  }">
                                 <!-- Calendar Header -->
@@ -863,8 +880,8 @@
                                                               'text-gray-400': !day.isCurrentMonth
                                                           }"
                                                           x-text="day.dayNumber"></span>
-                                                    <!-- Traveler count badges -->
-                                                    <template x-if="getTravelersForDay(day.date, travelers).length > 0">
+                                                    <!-- Traveler count badges (only for days in filter range) -->
+                                                    <template x-if="isDateInFilterRange(day.date) && getTravelersForDay(day.date, travelers).length > 0">
                                                         <div class="flex items-center gap-1">
                                                             <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700" title="Reisen">
                                                                 <i class="fa-regular fa-suitcase"></i>
