@@ -179,33 +179,6 @@
             padding: 20px;
         }
 
-        /* Country Card Styling */
-        .country-card {
-            transition: all 0.2s ease;
-            border-left: 4px solid transparent;
-        }
-
-        .country-card:hover {
-            transform: translateX(4px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .country-card.active {
-            border-left: 4px solid #3b82f6 !important;
-            background-color: #dbeafe !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-        }
-
-        /* Priority Colors */
-        .priority-high { background-color: #fef2f2; border-color: #ef4444; }
-        .priority-high .priority-dot { background-color: #ef4444; }
-        .priority-medium { background-color: #fff7ed; border-color: #f97316; }
-        .priority-medium .priority-dot { background-color: #f97316; }
-        .priority-low { background-color: #fefce8; border-color: #eab308; }
-        .priority-low .priority-dot { background-color: #eab308; }
-        .priority-info { background-color: #eff6ff; border-color: #3b82f6; }
-        .priority-info .priority-dot { background-color: #3b82f6; }
-
         /* Loading Animation */
         .loading-spinner {
             animation: spin 1s linear infinite;
@@ -467,63 +440,69 @@
 
                 <!-- Countries List -->
                 <template x-if="!loading && !error && filteredCountries.length > 0">
-                    <div class="space-y-3">
+                    <div class="space-y-2">
                         <template x-for="country in filteredCountries" :key="country.country.code">
-                            <div class="country-card bg-white p-4 rounded-lg border border-gray-200 cursor-pointer"
-                                 :class="[
-                                     'priority-' + country.highest_priority,
-                                     { 'active': selectedCountry?.country?.code === country.country.code }
-                                 ]"
+                            <div class="bg-gray-50 rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                                 :style="'border-left-color: ' + (country.highest_priority === 'high' ? '#ff0000' : country.highest_priority === 'medium' ? '#e6a50a' : country.highest_priority === 'low' ? '#0fad78' : '#0066cc')"
+                                 :class="{ 'ring-2 ring-blue-500 bg-blue-50': selectedCountry?.country?.code === country.country.code }"
                                  @click="selectCountry(country)">
-                                <!-- Header Row -->
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <span class="priority-dot w-3 h-3 rounded-full"></span>
-                                        <h4 class="text-xs font-medium uppercase text-gray-800" x-text="country.country.name"></h4>
-                                    </div>
-                                    <span class="text-xs font-mono text-gray-500" x-text="country.country.code"></span>
-                                </div>
-
-                                <!-- Stats Row -->
-                                <div class="flex items-center gap-4 text-xs text-gray-600">
-                                    <div class="flex items-center gap-1">
-                                        <i class="fa-regular fa-triangle-exclamation"></i>
-                                        <span x-text="country.total_events + ' Ereignis' + (country.total_events !== 1 ? 'se' : '')"></span>
-                                    </div>
-                                    <template x-if="country.affected_travelers > 0">
-                                        <div class="flex items-center gap-1 text-blue-600 font-medium">
-                                            <i class="fa-regular fa-users"></i>
-                                            <span x-text="country.affected_travelers + ' Reisende'"></span>
+                                <div class="flex items-start space-x-2">
+                                    <!-- Priority Dot -->
+                                    <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                                         :class="{
+                                             'bg-red-500': country.highest_priority === 'high',
+                                             'bg-orange-500': country.highest_priority === 'medium',
+                                             'bg-green-500': country.highest_priority === 'low',
+                                             'bg-blue-500': country.highest_priority === 'info'
+                                         }"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <!-- Country Name & Code -->
+                                        <div class="flex items-start justify-between gap-2">
+                                            <span class="text-xs font-medium uppercase text-gray-800" x-text="country.country.name"></span>
+                                            <span class="text-xs font-mono text-gray-400 flex-shrink-0" x-text="country.country.code"></span>
                                         </div>
-                                    </template>
-                                </div>
-
-                                <!-- Priority Breakdown -->
-                                <div class="flex gap-2 mt-2">
-                                    <template x-if="country.events_by_priority.high > 0">
-                                        <span class="inline-flex items-center gap-[5px] px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700">
-                                            <span x-text="country.events_by_priority.high"></span>
-                                            <span>Kritisch</span>
-                                        </span>
-                                    </template>
-                                    <template x-if="country.events_by_priority.medium > 0">
-                                        <span class="inline-flex items-center gap-[5px] px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-700">
-                                            <span x-text="country.events_by_priority.medium"></span>
-                                            <span>Hoch</span>
-                                        </span>
-                                    </template>
-                                    <template x-if="country.events_by_priority.low > 0">
-                                        <span class="inline-flex items-center gap-[5px] px-1.5 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700">
-                                            <span x-text="country.events_by_priority.low"></span>
-                                            <span>Mittel</span>
-                                        </span>
-                                    </template>
-                                    <template x-if="country.events_by_priority.info > 0">
-                                        <span class="inline-flex items-center gap-[5px] px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
-                                            <span x-text="country.events_by_priority.info"></span>
-                                            <span>Info</span>
-                                        </span>
-                                    </template>
+                                        <!-- Severity Label -->
+                                        <p class="text-[11px] mt-0.5"
+                                           :class="{
+                                               'text-red-600': country.highest_priority === 'high',
+                                               'text-orange-600': country.highest_priority === 'medium',
+                                               'text-green-600': country.highest_priority === 'low',
+                                               'text-blue-600': country.highest_priority === 'info'
+                                           }"
+                                           x-text="country.highest_priority === 'high' ? 'KRITISCH' : country.highest_priority === 'medium' ? 'HOCH' : country.highest_priority === 'low' ? 'MITTEL' : 'INFORMATION'"></p>
+                                        <!-- Stats -->
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            <span x-text="country.total_events + ' Ereignis' + (country.total_events !== 1 ? 'se' : '')"></span>
+                                            <template x-if="country.affected_travelers > 0">
+                                                <span class="text-blue-600 font-medium">
+                                                    • <span x-text="country.affected_travelers + ' Reisende'"></span>
+                                                </span>
+                                            </template>
+                                        </p>
+                                        <!-- Priority Breakdown -->
+                                        <div class="flex flex-wrap gap-1 mt-2">
+                                            <template x-if="country.events_by_priority.high > 0">
+                                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-700">
+                                                    <span x-text="country.events_by_priority.high"></span> Kritisch
+                                                </span>
+                                            </template>
+                                            <template x-if="country.events_by_priority.medium > 0">
+                                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-orange-100 text-orange-700">
+                                                    <span x-text="country.events_by_priority.medium"></span> Hoch
+                                                </span>
+                                            </template>
+                                            <template x-if="country.events_by_priority.low > 0">
+                                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-700">
+                                                    <span x-text="country.events_by_priority.low"></span> Mittel
+                                                </span>
+                                            </template>
+                                            <template x-if="country.events_by_priority.info > 0">
+                                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700">
+                                                    <span x-text="country.events_by_priority.info"></span> Info
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </template>
