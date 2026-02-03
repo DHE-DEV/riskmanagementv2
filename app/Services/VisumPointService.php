@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 class VisumPointService
 {
     protected string $baseUrl;
-    protected string $organization;
+    protected string $userName;
     protected string $accessToken;
     protected int $sessionTimeout = 300; // 5 minutes
     protected array $debugLog = [];
@@ -17,7 +17,7 @@ class VisumPointService
     public function __construct()
     {
         $this->baseUrl = config('services.visumpoint.base_url') ?? 'https://www.visumpoint.de/REST/ComplianceCheck/API.php';
-        $this->organization = config('services.visumpoint.organization') ?? '';
+        $this->userName = config('services.visumpoint.user_name') ?? '';
         $this->accessToken = config('services.visumpoint.access_token') ?? '';
     }
 
@@ -26,7 +26,7 @@ class VisumPointService
      */
     protected function getSessionId(): ?string
     {
-        $cacheKey = 'visumpoint_session_' . md5($this->organization);
+        $cacheKey = 'visumpoint_session_' . md5($this->userName);
 
         return Cache::remember($cacheKey, $this->sessionTimeout, function () {
             return $this->beginSession();
@@ -38,7 +38,7 @@ class VisumPointService
      */
     public function clearSession(): void
     {
-        $cacheKey = 'visumpoint_session_' . md5($this->organization);
+        $cacheKey = 'visumpoint_session_' . md5($this->userName);
         Cache::forget($cacheKey);
     }
 
@@ -49,8 +49,8 @@ class VisumPointService
     {
         $requestData = [
             'Function' => 'BeginSession',
-            'Organization' => $this->organization,
             'AccessToken' => $this->accessToken,
+            'UserName' => $this->userName,
         ];
 
         try {
@@ -343,7 +343,7 @@ class VisumPointService
      */
     public function isConfigured(): bool
     {
-        return !empty($this->organization) && !empty($this->accessToken);
+        return !empty($this->userName) && !empty($this->accessToken);
     }
 
     /**

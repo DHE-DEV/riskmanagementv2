@@ -115,7 +115,7 @@ return [
 
     // VisumPoint ComplianceCheck API
     'visumpoint' => [
-        'organization' => env('VISUMPOINT_ORGANIZATION'),
+        'user_name' => env('VISUMPOINT_USERNAME'),
         'access_token' => env('VISUMPOINT_ACCESS_TOKEN'),
         'base_url' => env('VISUMPOINT_BASE_URL', 'https://www.visumpoint.de/REST/ComplianceCheck/API.php'),
     ],
