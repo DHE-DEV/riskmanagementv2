@@ -11,6 +11,7 @@ class VisumPointService
     protected string $baseUrl;
     protected string $userName;
     protected string $accessToken;
+    protected string $language = 'de'; // Default language
     protected int $sessionTimeout = 300; // 5 minutes
     protected array $debugLog = [];
 
@@ -166,6 +167,7 @@ class VisumPointService
     public function getVisaTypes(string $destinationCountry, string $nationality, string $countryOfResidence): array
     {
         return $this->apiCall('GetVisaTypes', [
+            'Language' => $this->language,
             'DestinationCountry' => $destinationCountry,
             'Nationality' => $nationality,
             'CountryOfResidence' => $countryOfResidence,
@@ -178,6 +180,7 @@ class VisumPointService
     public function getVisaTypeDetails(string $visaTypeId): array
     {
         return $this->apiCall('GetVisaTypeDetails', [
+            'Language' => $this->language,
             'VisaTypeID' => $visaTypeId,
         ]);
     }
@@ -188,6 +191,7 @@ class VisumPointService
     public function getVisaRequirements(string $destinationCountry, string $nationality, string $countryOfResidence, ?string $visaTypeId = null): array
     {
         $params = [
+            'Language' => $this->language,
             'DestinationCountry' => $destinationCountry,
             'Nationality' => $nationality,
             'CountryOfResidence' => $countryOfResidence,
@@ -206,6 +210,7 @@ class VisumPointService
     public function getVisaRequirementDetails(string $visaRequirementId): array
     {
         return $this->apiCall('GetVisaRequirementDetails', [
+            'Language' => $this->language,
             'VisaRequirementID' => $visaRequirementId,
         ]);
     }
