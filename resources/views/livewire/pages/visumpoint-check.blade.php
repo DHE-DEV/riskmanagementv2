@@ -293,19 +293,6 @@
                         <p class="text-xs text-gray-400 text-center mt-4 px-4">
                             Die bereitgestellten Informationen werden mit größter Sorgfalt recherchiert. Dennoch kann keine Gewähr für die Richtigkeit übernommen werden.
                         </p>
-
-                        <!-- Link to other service -->
-                        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div class="flex items-start gap-3">
-                                <i class="fa-solid fa-info-circle text-blue-500 mt-0.5"></i>
-                                <div>
-                                    <p class="text-sm text-blue-800">
-                                        Für detaillierte Prüfungen mit Reisezeitraum und Reisegrund nutzen Sie unseren
-                                        <a href="{{ route('business-visa') }}" class="font-medium underline hover:text-blue-600">Business Visum Check</a>.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Right Column: Results -->
