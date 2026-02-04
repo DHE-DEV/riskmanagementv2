@@ -73,6 +73,62 @@ class FolderParticipant extends BaseCustomerModel
     }
 
     /**
+     * Set the salutation attribute (convert empty string to null).
+     */
+    public function setSalutationAttribute($value)
+    {
+        $this->attributes['salutation'] = $value === '' ? null : $value;
+    }
+
+    /**
+     * Set the title attribute (convert empty string to null).
+     */
+    public function setTitleAttribute($value)
+    {
+        $this->attributes['title'] = $value === '' ? null : $value;
+    }
+
+    /**
+     * Set the nationality attribute (convert empty string to null).
+     */
+    public function setNationalityAttribute($value)
+    {
+        $this->attributes['nationality'] = $value === '' ? null : $value;
+    }
+
+    /**
+     * Set the passport_number attribute (convert empty string to null).
+     */
+    public function setPassportNumberAttribute($value)
+    {
+        $this->attributes['passport_number'] = $value === '' ? null : $value;
+    }
+
+    /**
+     * Set the passport_issuing_country attribute (convert empty string to null).
+     */
+    public function setPassportIssuingCountryAttribute($value)
+    {
+        $this->attributes['passport_issuing_country'] = $value === '' ? null : $value;
+    }
+
+    /**
+     * Set the email attribute (convert empty string to null).
+     */
+    public function setEmailAttribute($value)
+    {
+        $this->attributes['email'] = $value === '' ? null : $value;
+    }
+
+    /**
+     * Set the phone attribute (convert empty string to null).
+     */
+    public function setPhoneAttribute($value)
+    {
+        $this->attributes['phone'] = $value === '' ? null : $value;
+    }
+
+    /**
      * Get the folder that owns the participant.
      */
     public function folder(): BelongsTo
