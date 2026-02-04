@@ -40,6 +40,39 @@ class FolderParticipant extends BaseCustomerModel
     ];
 
     /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Convert empty strings to null for nullable fields before saving
+        static::saving(function ($model) {
+            $nullableFields = [
+                'salutation',
+                'title',
+                'birth_date',
+                'nationality',
+                'passport_number',
+                'passport_issue_date',
+                'passport_expiry_date',
+                'passport_issuing_country',
+                'email',
+                'phone',
+                'dietary_requirements',
+                'medical_conditions',
+                'notes',
+            ];
+
+            foreach ($nullableFields as $field) {
+                if ($model->$field === '') {
+                    $model->$field = null;
+                }
+            }
+        });
+    }
+
+    /**
      * Get the folder that owns the participant.
      */
     public function folder(): BelongsTo
