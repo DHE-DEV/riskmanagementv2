@@ -310,52 +310,99 @@
                             <!-- Results -->
                             <div x-show="result" x-cloak class="p-5">
                                 <!-- Visa Status Header -->
-                                <div class="mb-5 p-4 rounded-lg" :class="result && result.visaRequired ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'">
-                                    <div class="flex items-center gap-3">
+                                <div class="mb-5 p-5 rounded-lg shadow-sm" :class="result && result.visaRequired ? 'bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200' : 'bg-gradient-to-r from-green-50 to-green-100 border border-green-200'">
+                                    <div class="flex items-start gap-4">
                                         <template x-if="result && result.visaRequired">
-                                            <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                                                <i class="fa-solid fa-passport text-amber-600"></i>
+                                            <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                                                <i class="fa-solid fa-passport text-white text-xl"></i>
                                             </div>
                                         </template>
                                         <template x-if="result && !result.visaRequired">
-                                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                                <i class="fa-solid fa-circle-check text-green-600"></i>
+                                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                                                <i class="fa-solid fa-circle-check text-white text-xl"></i>
                                             </div>
                                         </template>
-                                        <div>
-                                            <div class="font-semibold" :class="result && result.visaRequired ? 'text-amber-800' : 'text-green-800'" x-text="result ? result.message : ''"></div>
-                                            <div class="text-xs mt-0.5" :class="result && result.visaRequired ? 'text-amber-600' : 'text-green-600'">
-                                                <span x-text="result && result.visaTypes ? result.visaTypes.length + ' Visum-Typ(en) gefunden' : ''"></span>
+                                        <div class="flex-1">
+                                            <div class="font-bold text-lg mb-1" :class="result && result.visaRequired ? 'text-amber-900' : 'text-green-900'" x-text="result ? result.message : ''"></div>
+
+                                            <!-- Travel Details -->
+                                            <div class="flex items-center gap-2 text-xs mb-2" :class="result && result.visaRequired ? 'text-amber-700' : 'text-green-700'">
+                                                <span x-show="result && result.nationality" class="flex items-center gap-1">
+                                                    <i class="fa-solid fa-flag"></i>
+                                                    <span x-text="result.nationality"></span>
+                                                </span>
+                                                <span x-show="result && result.nationality && result.destinationCountry">→</span>
+                                                <span x-show="result && result.destinationCountry" class="flex items-center gap-1">
+                                                    <i class="fa-solid fa-location-dot"></i>
+                                                    <span x-text="result.destinationCountry"></span>
+                                                </span>
                                             </div>
+
+                                            <!-- Visa Count -->
+                                            <template x-if="result && result.visaRequired && result.visaTypes">
+                                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" :class="result.visaRequired ? 'bg-amber-200 text-amber-800' : 'bg-green-200 text-green-800'">
+                                                    <i class="fa-solid fa-layer-group"></i>
+                                                    <span x-text="result.visaTypes.length + ' Visum-Typ' + (result.visaTypes.length !== 1 ? 'en' : '')"></span>
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Visa Types -->
+                                <!-- Visa Types with Requirements -->
                                 <template x-if="result && result.visaTypes && result.visaTypes.length > 0">
                                     <div class="mb-5">
-                                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Verfügbare Visum-Typen</div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                                Verfügbare Visum-Typen (<span x-text="result.totalVisaTypes || result.visaTypes.length"></span>)
+                                            </div>
+                                        </div>
+
                                         <template x-for="(type, index) in result.visaTypes" :key="type.id">
-                                            <div class="visa-type-card">
-                                                <div class="flex items-start gap-3">
-                                                    <div class="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-emerald-700" x-text="index + 1"></div>
-                                                    <div class="flex-1">
-                                                        <p class="text-sm text-gray-700 leading-relaxed" x-text="type.details"></p>
+                                            <div class="mb-4 bg-white border border-emerald-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                                <!-- Visa Type Header -->
+                                                <div class="bg-gradient-to-r from-emerald-50 to-emerald-100 p-4 border-b border-emerald-200">
+                                                    <div class="flex items-start gap-3">
+                                                        <div class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white shadow-sm" x-text="index + 1"></div>
+                                                        <div class="flex-1">
+                                                            <h4 class="font-semibold text-emerald-900 text-sm mb-1">
+                                                                <i class="fa-solid fa-passport text-emerald-600 mr-2"></i>
+                                                                Visum-Typ <span x-text="index + 1"></span>
+                                                            </h4>
+                                                            <p class="text-sm text-emerald-800 leading-relaxed" x-text="type.details"></p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </template>
 
-                                <!-- Requirements -->
-                                <template x-if="result && result.requirements && result.requirements.length > 0">
-                                    <div class="mb-5">
-                                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Anforderungen</div>
-                                        <template x-for="req in result.requirements" :key="req.id">
-                                            <div class="requirement-item">
-                                                <i class="fa-solid fa-file-lines text-amber-500 mt-0.5"></i>
-                                                <p class="text-sm text-gray-700" x-text="req.details"></p>
+                                                <!-- Requirements for this Visa Type -->
+                                                <template x-if="type.requirements && type.requirements.length > 0">
+                                                    <div class="p-4 bg-amber-50/50">
+                                                        <div class="flex items-center gap-2 mb-3">
+                                                            <i class="fa-solid fa-list-check text-amber-600"></i>
+                                                            <div class="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+                                                                Anforderungen (<span x-text="type.requirements.length"></span>)
+                                                            </div>
+                                                        </div>
+                                                        <div class="space-y-2">
+                                                            <template x-for="(req, reqIndex) in type.requirements" :key="req.id">
+                                                                <div class="flex items-start gap-3 p-3 bg-white border border-amber-200 rounded-md">
+                                                                    <div class="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold text-amber-700" x-text="reqIndex + 1"></div>
+                                                                    <p class="text-sm text-gray-700 leading-relaxed flex-1" x-text="req.details"></p>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- No Requirements -->
+                                                <template x-if="!type.requirements || type.requirements.length === 0">
+                                                    <div class="p-4 bg-gray-50">
+                                                        <p class="text-xs text-gray-500 italic flex items-center gap-2">
+                                                            <i class="fa-solid fa-info-circle"></i>
+                                                            Keine spezifischen Anforderungen verfügbar
+                                                        </p>
+                                                    </div>
+                                                </template>
                                             </div>
                                         </template>
                                     </div>

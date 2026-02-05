@@ -240,41 +240,41 @@ class VisumPointService
             ];
         }
 
-        // Step 2: Get details for each visa type
+        // Step 2: Get details for each visa type AND their requirements
         $visaTypes = [];
         foreach ($visaTypeIds as $typeId) {
             $detailsResult = $this->getVisaTypeDetails($typeId);
 
             if ($detailsResult['success']) {
-                $visaTypes[] = [
+                $visaTypeData = [
                     'id' => $typeId,
                     'details' => $detailsResult['data']['VisaTypeDetails'] ?? 'Keine Details verfügbar',
+                    'requirements' => [],
                 ];
-            }
-        }
 
-        // Step 3: Get requirements (optional, for first visa type)
-        $requirements = [];
-        if (!empty($visaTypeIds)) {
-            $reqResult = $this->getVisaRequirements(
-                $destinationCountry,
-                $nationality,
-                $countryOfResidence,
-                $visaTypeIds[0]
-            );
+                // Get requirements for THIS visa type
+                $reqResult = $this->getVisaRequirements(
+                    $destinationCountry,
+                    $nationality,
+                    $countryOfResidence,
+                    $typeId
+                );
 
-            if ($reqResult['success']) {
-                $reqIds = $reqResult['data']['VisaRequirementIDs'] ?? [];
+                if ($reqResult['success']) {
+                    $reqIds = $reqResult['data']['VisaRequirementIDs'] ?? [];
 
-                foreach ($reqIds as $reqId) {
-                    $reqDetails = $this->getVisaRequirementDetails($reqId);
-                    if ($reqDetails['success']) {
-                        $requirements[] = [
-                            'id' => $reqId,
-                            'details' => $reqDetails['data']['VisaRequirementDetails'] ?? 'Keine Details verfügbar',
-                        ];
+                    foreach ($reqIds as $reqId) {
+                        $reqDetails = $this->getVisaRequirementDetails($reqId);
+                        if ($reqDetails['success']) {
+                            $visaTypeData['requirements'][] = [
+                                'id' => $reqId,
+                                'details' => $reqDetails['data']['VisaRequirementDetails'] ?? 'Keine Details verfügbar',
+                            ];
+                        }
                     }
                 }
+
+                $visaTypes[] = $visaTypeData;
             }
         }
 
@@ -284,7 +284,7 @@ class VisumPointService
                 'visaRequired' => true,
                 'message' => 'Visum erforderlich',
                 'visaTypes' => $visaTypes,
-                'requirements' => $requirements,
+                'totalVisaTypes' => count($visaTypes),
                 'destinationCountry' => $destinationCountry,
                 'nationality' => $nationality,
                 'countryOfResidence' => $countryOfResidence,
