@@ -367,6 +367,7 @@ class VisumPointService
             if (!$typesResult['success']) {
                 // Clean up session before returning error
                 $this->endSession();
+                $typesResult['debugLog'] = $this->debugLog;
                 return $typesResult;
             }
 
@@ -384,11 +385,14 @@ class VisumPointService
                         'visaTypes' => [],
                         'format' => $format,
                     ],
+                    'debugLog' => $this->debugLog,
                 ];
             }
 
             // Step 2: Get details for each visa type AND their requirements
             $visaTypes = [];
+            $errors = [];
+
             foreach ($visaTypeIds as $typeId) {
                 $detailsResult = $this->getVisaTypeDetails($typeId, $format);
 
@@ -418,11 +422,39 @@ class VisumPointService
                                     'id' => $reqId,
                                     'details' => $reqDetails['data']['VisaRequirementDetails'] ?? 'Keine Details verfügbar',
                                 ];
+                            } else {
+                                // Collect requirement detail errors
+                                $errors[] = [
+                                    'context' => 'GetVisaRequirementDetails',
+                                    'visaTypeId' => $typeId,
+                                    'requirementId' => $reqId,
+                                    'error' => $reqDetails['error'] ?? 'Unknown error',
+                                    'errorId' => $reqDetails['errorId'] ?? null,
+                                    'details' => $reqDetails['details'] ?? null,
+                                ];
                             }
                         }
+                    } else {
+                        // Collect requirement errors
+                        $errors[] = [
+                            'context' => 'GetVisaRequirements',
+                            'visaTypeId' => $typeId,
+                            'error' => $reqResult['error'] ?? 'Unknown error',
+                            'errorId' => $reqResult['errorId'] ?? null,
+                            'details' => $reqResult['details'] ?? null,
+                        ];
                     }
 
                     $visaTypes[] = $visaTypeData;
+                } else {
+                    // Collect visa type detail errors
+                    $errors[] = [
+                        'context' => 'GetVisaTypeDetails',
+                        'visaTypeId' => $typeId,
+                        'error' => $detailsResult['error'] ?? 'Unknown error',
+                        'errorId' => $detailsResult['errorId'] ?? null,
+                        'details' => $detailsResult['details'] ?? null,
+                    ];
                 }
             }
 
@@ -440,7 +472,9 @@ class VisumPointService
                     'nationality' => $nationality,
                     'countryOfResidence' => $countryOfResidence,
                     'format' => $format,
+                    'errors' => $errors, // Include any errors that occurred during processing
                 ],
+                'debugLog' => $this->debugLog,
             ];
         } catch (\Exception $e) {
             // Clean up session on exception
@@ -456,6 +490,7 @@ class VisumPointService
             return [
                 'success' => false,
                 'error' => 'An error occurred during visa check: ' . $e->getMessage(),
+                'debugLog' => $this->debugLog,
             ];
         }
     }

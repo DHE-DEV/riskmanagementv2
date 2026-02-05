@@ -443,6 +443,69 @@
                                     </div>
                                 </div>
 
+                                <!-- API Errors Display -->
+                                <template x-if="result && result.errors && result.errors.length > 0">
+                                    <div class="mb-5">
+                                        <div class="bg-red-50 border border-red-200 rounded-lg overflow-hidden">
+                                            <div class="bg-red-100 px-4 py-3 border-b border-red-200">
+                                                <div class="flex items-center gap-2">
+                                                    <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                                                    <h4 class="font-semibold text-red-900 text-sm">API-Fehler während der Verarbeitung</h4>
+                                                    <span class="ml-auto text-xs bg-red-200 text-red-800 px-2 py-1 rounded-full font-semibold" x-text="result.errors.length + ' Fehler'"></span>
+                                                </div>
+                                                <p class="text-xs text-red-700 mt-1">Bei einigen API-Aufrufen sind Fehler aufgetreten. Möglicherweise sind nicht alle Informationen vollständig.</p>
+                                            </div>
+                                            <div class="p-4 space-y-3">
+                                                <template x-for="(error, errorIndex) in result.errors" :key="errorIndex">
+                                                    <div class="bg-white border border-red-300 rounded-md p-3">
+                                                        <div class="flex items-start gap-2 mb-2">
+                                                            <div class="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold text-red-700" x-text="errorIndex + 1"></div>
+                                                            <div class="flex-1">
+                                                                <div class="text-xs font-semibold text-red-800 mb-1" x-text="error.context"></div>
+                                                                <div class="text-sm text-red-700 mb-2" x-text="error.error"></div>
+
+                                                                <!-- Detailed Error Information -->
+                                                                <template x-if="error.details">
+                                                                    <div class="mt-2 p-2 bg-red-50 rounded text-xs space-y-1">
+                                                                        <div x-show="error.errorId" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">Error ID:</span>
+                                                                            <span class="text-red-600 font-mono" x-text="error.errorId || 'N/A'"></span>
+                                                                        </div>
+                                                                        <div x-show="error.details.ErrorLogID" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">Log ID:</span>
+                                                                            <span class="text-red-600 font-mono" x-text="error.details.ErrorLogID"></span>
+                                                                        </div>
+                                                                        <div x-show="error.details.ErrorClass" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">Error Class:</span>
+                                                                            <span class="text-red-600 font-mono" x-text="error.details.ErrorClass"></span>
+                                                                        </div>
+                                                                        <div x-show="error.details.ErrorFile" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">File:</span>
+                                                                            <span class="text-red-600 font-mono text-xs break-all" x-text="error.details.ErrorFile"></span>
+                                                                        </div>
+                                                                        <div x-show="error.details.ErrorLine" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">Line:</span>
+                                                                            <span class="text-red-600 font-mono" x-text="error.details.ErrorLine"></span>
+                                                                        </div>
+                                                                        <div x-show="error.details.CatchAction" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">Context:</span>
+                                                                            <span class="text-red-600" x-text="error.details.CatchAction"></span>
+                                                                        </div>
+                                                                        <div x-show="error.visaTypeId" class="flex gap-2">
+                                                                            <span class="font-semibold text-red-700">Visa Type ID:</span>
+                                                                            <span class="text-red-600 font-mono text-xs break-all" x-text="error.visaTypeId"></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
                                 <!-- Visa Types with Requirements -->
                                 <template x-if="result && result.visaTypes && result.visaTypes.length > 0">
                                     <div class="mb-5">
