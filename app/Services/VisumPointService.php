@@ -177,24 +177,26 @@ class VisumPointService
     /**
      * Get details for a specific visa type
      */
-    public function getVisaTypeDetails(string $visaTypeId): array
+    public function getVisaTypeDetails(string $visaTypeId, string $format = 'markdown'): array
     {
         return $this->apiCall('GetVisaTypeDetails', [
             'Language' => $this->language,
             'VisaTypeID' => $visaTypeId,
+            'Format' => $format,
         ]);
     }
 
     /**
      * Get visa requirements for given parameters
      */
-    public function getVisaRequirements(string $destinationCountry, string $nationality, string $countryOfResidence, ?string $visaTypeId = null): array
+    public function getVisaRequirements(string $destinationCountry, string $nationality, string $countryOfResidence, ?string $visaTypeId = null, string $format = 'markdown'): array
     {
         $params = [
             'Language' => $this->language,
             'DestinationCountry' => $destinationCountry,
             'Nationality' => $nationality,
             'CountryOfResidence' => $countryOfResidence,
+            'Format' => $format,
         ];
 
         if ($visaTypeId) {
@@ -207,11 +209,12 @@ class VisumPointService
     /**
      * Get details for a specific visa requirement
      */
-    public function getVisaRequirementDetails(string $visaRequirementId): array
+    public function getVisaRequirementDetails(string $visaRequirementId, string $format = 'markdown'): array
     {
         return $this->apiCall('GetVisaRequirementDetails', [
             'Language' => $this->language,
             'VisaRequirementID' => $visaRequirementId,
+            'Format' => $format,
         ]);
     }
 

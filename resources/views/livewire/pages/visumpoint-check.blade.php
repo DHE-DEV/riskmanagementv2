@@ -9,6 +9,9 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -170,6 +173,41 @@
             border: 1px solid #fef08a;
             border-radius: 0.375rem;
             margin-bottom: 0.5rem;
+        }
+
+        /* Markdown prose styling */
+        .prose h5 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-top: 0.75rem;
+            margin-bottom: 0.5rem;
+            color: #065f46;
+        }
+
+        .prose ul {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            list-style-type: disc;
+        }
+
+        .prose li {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .prose strong {
+            font-weight: 600;
+            color: #047857;
+        }
+
+        .prose p {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .prose-emerald h5 {
+            color: #047857;
         }
     </style>
 </head>
@@ -365,11 +403,11 @@
                                                     <div class="flex items-start gap-3">
                                                         <div class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white shadow-sm" x-text="index + 1"></div>
                                                         <div class="flex-1">
-                                                            <h4 class="font-semibold text-emerald-900 text-sm mb-1">
+                                                            <h4 class="font-semibold text-emerald-900 text-sm mb-2">
                                                                 <i class="fa-solid fa-passport text-emerald-600 mr-2"></i>
                                                                 Visum-Typ <span x-text="index + 1"></span>
                                                             </h4>
-                                                            <p class="text-sm text-emerald-800 leading-relaxed" x-text="type.details"></p>
+                                                            <div class="prose prose-sm prose-emerald max-w-none text-emerald-800" x-html="marked.parse(type.details || '')"></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -385,9 +423,9 @@
                                                         </div>
                                                         <div class="space-y-2">
                                                             <template x-for="(req, reqIndex) in type.requirements" :key="req.id">
-                                                                <div class="flex items-start gap-3 p-3 bg-white border border-amber-200 rounded-md">
-                                                                    <div class="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold text-amber-700" x-text="reqIndex + 1"></div>
-                                                                    <p class="text-sm text-gray-700 leading-relaxed flex-1" x-text="req.details"></p>
+                                                                <div class="flex items-start gap-3 p-4 bg-white border border-amber-200 rounded-md">
+                                                                    <div class="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold text-amber-700 mt-1" x-text="reqIndex + 1"></div>
+                                                                    <div class="prose prose-sm max-w-none text-gray-700 flex-1" x-html="marked.parse(req.details || '')"></div>
                                                                 </div>
                                                             </template>
                                                         </div>
