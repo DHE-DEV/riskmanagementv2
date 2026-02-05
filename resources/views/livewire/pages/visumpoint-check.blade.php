@@ -265,6 +265,20 @@
                     <div class="w-[45%] min-w-0">
                         <div class="bg-white rounded-lg shadow-sm">
                             <form @submit.prevent="submitForm" class="p-6">
+                                <!-- Language Selection -->
+                                <div class="mb-6">
+                                    <div class="section-label">Sprache / Language / Langue</div>
+                                    <div>
+                                        <label class="field-label">Ausgabesprache <span class="required">*</span></label>
+                                        <select x-model="formData.language" class="form-input" required>
+                                            <option value="de">🇩🇪 Deutsch</option>
+                                            <option value="en">🇬🇧 English</option>
+                                            <option value="fr">🇫🇷 Français</option>
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1">Die Sprache, in der die Visum-Informationen angezeigt werden</p>
+                                    </div>
+                                </div>
+
                                 <!-- Staatsangehörigkeit -->
                                 <div class="mb-6">
                                     <div class="section-label">Reisender</div>
@@ -301,6 +315,42 @@
                                                 <option value="{{ $code }}">{{ $name }}</option>
                                             @endforeach
                                         </select>
+                                    </div>
+                                </div>
+
+                                <!-- Format Selection -->
+                                <div class="mb-6">
+                                    <div class="section-label">Ausgabeformat</div>
+                                    <div>
+                                        <label class="field-label">Format <span class="required">*</span></label>
+                                        <select x-model="formData.format" class="form-input" required>
+                                            <option value="markdown">
+                                                <i class="fa-solid fa-file-lines"></i> Markdown (empfohlen)
+                                            </option>
+                                            <option value="html">
+                                                <i class="fa-brands fa-html5"></i> HTML
+                                            </option>
+                                            <option value="text">
+                                                <i class="fa-solid fa-align-left"></i> Klartext
+                                            </option>
+                                            <option value="json">
+                                                <i class="fa-solid fa-code"></i> JSON
+                                            </option>
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1.5">
+                                            <template x-if="formData.format === 'markdown'">
+                                                <span><i class="fa-solid fa-info-circle"></i> Beste Formatierung mit Überschriften und Listen</span>
+                                            </template>
+                                            <template x-if="formData.format === 'html'">
+                                                <span><i class="fa-solid fa-info-circle"></i> HTML-formatierte Ausgabe</span>
+                                            </template>
+                                            <template x-if="formData.format === 'text'">
+                                                <span><i class="fa-solid fa-info-circle"></i> Einfache Textausgabe ohne Formatierung</span>
+                                            </template>
+                                            <template x-if="formData.format === 'json'">
+                                                <span><i class="fa-solid fa-info-circle"></i> Strukturierte Daten für Entwickler</span>
+                                            </template>
+                                        </p>
                                     </div>
                                 </div>
 
@@ -347,6 +397,12 @@
 
                             <!-- Results -->
                             <div x-show="result" x-cloak class="p-5">
+                                <!-- Format Indicator -->
+                                <div x-show="result && result.format" class="mb-3 flex items-center gap-2 text-xs text-gray-500">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Ausgabeformat: <span class="font-semibold capitalize" x-text="result.format"></span></span>
+                                </div>
+
                                 <!-- Visa Status Header -->
                                 <div class="mb-5 p-5 rounded-lg shadow-sm" :class="result && result.visaRequired ? 'bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200' : 'bg-gradient-to-r from-green-50 to-green-100 border border-green-200'">
                                     <div class="flex items-start gap-4">
@@ -407,7 +463,7 @@
                                                                 <i class="fa-solid fa-passport text-emerald-600 mr-2"></i>
                                                                 Visum-Typ <span x-text="index + 1"></span>
                                                             </h4>
-                                                            <div class="prose prose-sm prose-emerald max-w-none text-emerald-800" x-html="marked.parse(type.details || '')"></div>
+                                                            <div class="prose prose-sm prose-emerald max-w-none text-emerald-800" x-html="formatContent(type.details || '', result.format)"></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -425,7 +481,7 @@
                                                             <template x-for="(req, reqIndex) in type.requirements" :key="req.id">
                                                                 <div class="flex items-start gap-3 p-4 bg-white border border-amber-200 rounded-md">
                                                                     <div class="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold text-amber-700 mt-1" x-text="reqIndex + 1"></div>
-                                                                    <div class="prose prose-sm max-w-none text-gray-700 flex-1" x-html="marked.parse(req.details || '')"></div>
+                                                                    <div class="prose prose-sm max-w-none text-gray-700 flex-1" x-html="formatContent(req.details || '', result.format)"></div>
                                                                 </div>
                                                             </template>
                                                         </div>
@@ -539,14 +595,38 @@
         function visumPointForm() {
             return {
                 formData: {
+                    language: 'de',
                     nationality: '',
                     residenceCountry: '',
                     destinationCountry: '',
+                    format: 'markdown',
                 },
                 loading: false,
                 error: null,
                 result: null,
                 debugLog: [],
+
+                formatContent(content, format) {
+                    if (!content) return '';
+
+                    switch (format) {
+                        case 'markdown':
+                            return marked.parse(content);
+                        case 'html':
+                            return content;
+                        case 'text':
+                            return '<pre class="whitespace-pre-wrap font-sans">' + content + '</pre>';
+                        case 'json':
+                            try {
+                                const parsed = JSON.parse(content);
+                                return '<pre class="text-xs overflow-x-auto">' + JSON.stringify(parsed, null, 2) + '</pre>';
+                            } catch (e) {
+                                return '<pre class="whitespace-pre-wrap">' + content + '</pre>';
+                            }
+                        default:
+                            return marked.parse(content);
+                    }
+                },
 
                 async submitForm() {
                     if (!this.formData.nationality || !this.formData.residenceCountry || !this.formData.destinationCountry) {

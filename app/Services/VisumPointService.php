@@ -14,6 +14,10 @@ class VisumPointService
     protected string $language = 'de'; // Default language
     protected int $sessionTimeout = 300; // 5 minutes
     protected array $debugLog = [];
+    protected ?string $currentSessionId = null;
+
+    // Supported languages
+    protected array $supportedLanguages = ['de', 'en', 'fr'];
 
     public function __construct()
     {
@@ -23,15 +27,74 @@ class VisumPointService
     }
 
     /**
+     * Set the language for API calls
+     *
+     * @param string $language Language code (de, en, fr)
+     * @return self
+     */
+    public function setLanguage(string $language): self
+    {
+        // Validate and set language
+        if (in_array($language, $this->supportedLanguages)) {
+            $this->language = $language;
+        } else {
+            // Default to 'de' if invalid language is provided
+            $this->language = 'de';
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the current language
+     *
+     * @return string
+     */
+    public function getLanguage(): string
+    {
+        return $this->language;
+    }
+
+    /**
+     * Get supported languages
+     *
+     * @return array
+     */
+    public function getSupportedLanguages(): array
+    {
+        return $this->supportedLanguages;
+    }
+
+    /**
+     * Destructor to clean up session on object destruction
+     */
+    public function __destruct()
+    {
+        // Silently cleanup on destruction
+        try {
+            $this->endSession();
+        } catch (\Exception $e) {
+            // Ignore errors during destruction
+        }
+    }
+
+    /**
      * Get or create a session ID
      */
     protected function getSessionId(): ?string
     {
         $cacheKey = 'visumpoint_session_' . md5($this->userName);
 
-        return Cache::remember($cacheKey, $this->sessionTimeout, function () {
+        $sessionId = Cache::remember($cacheKey, $this->sessionTimeout, function () {
             return $this->beginSession();
         });
+
+        // Track the current session ID for cleanup
+        if ($sessionId) {
+            $this->currentSessionId = $sessionId;
+        }
+
+        return $sessionId;
     }
 
     /**
@@ -86,6 +149,80 @@ class VisumPointService
                 'message' => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    /**
+     * End the current session with the API
+     */
+    public function endSession(): bool
+    {
+        // Get the session ID to end
+        $sessionId = $this->currentSessionId;
+
+        // If no session is tracked, check cache
+        if (!$sessionId) {
+            $cacheKey = 'visumpoint_session_' . md5($this->userName);
+            $sessionId = Cache::get($cacheKey);
+        }
+
+        // No session to end
+        if (!$sessionId) {
+            return true;
+        }
+
+        $requestData = [
+            'Function' => 'EndSession',
+            'SID' => $sessionId,
+        ];
+
+        try {
+            $response = Http::timeout(30)->post($this->baseUrl, $requestData);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                $this->addDebugLog('EndSession', $requestData, $data);
+
+                // Clear the cached session regardless of API response
+                $this->clearSession();
+                $this->currentSessionId = null;
+
+                if (($data['Result'] ?? '') === 'OK') {
+                    return true;
+                }
+
+                Log::warning('VisumPoint EndSession failed', [
+                    'response' => $data,
+                ]);
+
+                return false;
+            }
+
+            $this->addDebugLog('EndSession', $requestData, $response->json(), 'HTTP ' . $response->status());
+
+            // Clear the session anyway to prevent reuse
+            $this->clearSession();
+            $this->currentSessionId = null;
+
+            Log::error('VisumPoint EndSession request failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return false;
+        } catch (\Exception $e) {
+            $this->addDebugLog('EndSession', $requestData, null, $e->getMessage());
+
+            // Clear the session anyway to prevent reuse
+            $this->clearSession();
+            $this->currentSessionId = null;
+
+            Log::error('VisumPoint EndSession exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
         }
     }
 
@@ -221,78 +358,106 @@ class VisumPointService
     /**
      * Complete visa check: Get types and their details
      */
-    public function checkVisa(string $destinationCountry, string $nationality, string $countryOfResidence): array
+    public function checkVisa(string $destinationCountry, string $nationality, string $countryOfResidence, string $format = 'markdown'): array
     {
-        // Step 1: Get available visa types
-        $typesResult = $this->getVisaTypes($destinationCountry, $nationality, $countryOfResidence);
+        try {
+            // Step 1: Get available visa types
+            $typesResult = $this->getVisaTypes($destinationCountry, $nationality, $countryOfResidence);
 
-        if (!$typesResult['success']) {
-            return $typesResult;
-        }
+            if (!$typesResult['success']) {
+                // Clean up session before returning error
+                $this->endSession();
+                return $typesResult;
+            }
 
-        $visaTypeIds = $typesResult['data']['VisaTypeIDs'] ?? [];
+            $visaTypeIds = $typesResult['data']['VisaTypeIDs'] ?? [];
 
-        if (empty($visaTypeIds)) {
+            if (empty($visaTypeIds)) {
+                // Clean up session before returning
+                $this->endSession();
+
+                return [
+                    'success' => true,
+                    'data' => [
+                        'visaRequired' => false,
+                        'message' => 'Kein Visum erforderlich für diese Kombination.',
+                        'visaTypes' => [],
+                        'format' => $format,
+                    ],
+                ];
+            }
+
+            // Step 2: Get details for each visa type AND their requirements
+            $visaTypes = [];
+            foreach ($visaTypeIds as $typeId) {
+                $detailsResult = $this->getVisaTypeDetails($typeId, $format);
+
+                if ($detailsResult['success']) {
+                    $visaTypeData = [
+                        'id' => $typeId,
+                        'details' => $detailsResult['data']['VisaTypeDetails'] ?? 'Keine Details verfügbar',
+                        'requirements' => [],
+                    ];
+
+                    // Get requirements for THIS visa type
+                    $reqResult = $this->getVisaRequirements(
+                        $destinationCountry,
+                        $nationality,
+                        $countryOfResidence,
+                        $typeId,
+                        $format
+                    );
+
+                    if ($reqResult['success']) {
+                        $reqIds = $reqResult['data']['VisaRequirementIDs'] ?? [];
+
+                        foreach ($reqIds as $reqId) {
+                            $reqDetails = $this->getVisaRequirementDetails($reqId, $format);
+                            if ($reqDetails['success']) {
+                                $visaTypeData['requirements'][] = [
+                                    'id' => $reqId,
+                                    'details' => $reqDetails['data']['VisaRequirementDetails'] ?? 'Keine Details verfügbar',
+                                ];
+                            }
+                        }
+                    }
+
+                    $visaTypes[] = $visaTypeData;
+                }
+            }
+
+            // Clean up session after successful completion
+            $this->endSession();
+
             return [
                 'success' => true,
                 'data' => [
-                    'visaRequired' => false,
-                    'message' => 'Kein Visum erforderlich für diese Kombination.',
-                    'visaTypes' => [],
+                    'visaRequired' => true,
+                    'message' => 'Visum erforderlich',
+                    'visaTypes' => $visaTypes,
+                    'totalVisaTypes' => count($visaTypes),
+                    'destinationCountry' => $destinationCountry,
+                    'nationality' => $nationality,
+                    'countryOfResidence' => $countryOfResidence,
+                    'format' => $format,
                 ],
             ];
-        }
+        } catch (\Exception $e) {
+            // Clean up session on exception
+            $this->endSession();
 
-        // Step 2: Get details for each visa type AND their requirements
-        $visaTypes = [];
-        foreach ($visaTypeIds as $typeId) {
-            $detailsResult = $this->getVisaTypeDetails($typeId);
-
-            if ($detailsResult['success']) {
-                $visaTypeData = [
-                    'id' => $typeId,
-                    'details' => $detailsResult['data']['VisaTypeDetails'] ?? 'Keine Details verfügbar',
-                    'requirements' => [],
-                ];
-
-                // Get requirements for THIS visa type
-                $reqResult = $this->getVisaRequirements(
-                    $destinationCountry,
-                    $nationality,
-                    $countryOfResidence,
-                    $typeId
-                );
-
-                if ($reqResult['success']) {
-                    $reqIds = $reqResult['data']['VisaRequirementIDs'] ?? [];
-
-                    foreach ($reqIds as $reqId) {
-                        $reqDetails = $this->getVisaRequirementDetails($reqId);
-                        if ($reqDetails['success']) {
-                            $visaTypeData['requirements'][] = [
-                                'id' => $reqId,
-                                'details' => $reqDetails['data']['VisaRequirementDetails'] ?? 'Keine Details verfügbar',
-                            ];
-                        }
-                    }
-                }
-
-                $visaTypes[] = $visaTypeData;
-            }
-        }
-
-        return [
-            'success' => true,
-            'data' => [
-                'visaRequired' => true,
-                'message' => 'Visum erforderlich',
-                'visaTypes' => $visaTypes,
-                'totalVisaTypes' => count($visaTypes),
+            Log::error('VisumPoint checkVisa exception', [
+                'message' => $e->getMessage(),
                 'destinationCountry' => $destinationCountry,
                 'nationality' => $nationality,
                 'countryOfResidence' => $countryOfResidence,
-            ],
-        ];
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'An error occurred during visa check: ' . $e->getMessage(),
+            ];
+        }
     }
 
     /**

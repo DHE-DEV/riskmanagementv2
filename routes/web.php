@@ -250,6 +250,15 @@ Route::post('/visumpoint/check', function (\Illuminate\Http\Request $request) {
     return app(\App\Http\Controllers\VisumPointController::class)->check($request);
 })->name('visumpoint.check');
 
+Route::post('/visumpoint/end-session', function () {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_visumpoint_enabled')) {
+        abort(404);
+    }
+
+    return app(\App\Http\Controllers\VisumPointController::class)->endSession();
+})->name('visumpoint.end-session');
+
 // Plugin/Embed Dokumentation
 Route::get('/doc-plugin', function () {
     return view('livewire.pages.doc-plugin');

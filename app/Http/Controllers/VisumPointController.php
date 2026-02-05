@@ -36,6 +36,8 @@ class VisumPointController extends Controller
             'nationality' => 'required|string|size:2',
             'destinationCountry' => 'required|string|size:2',
             'residenceCountry' => 'required|string|size:2',
+            'language' => 'nullable|string|in:de,en,fr',
+            'format' => 'nullable|string|in:markdown,html,text,json',
         ]);
 
         if (!$this->visumPointService->isConfigured()) {
@@ -45,15 +47,21 @@ class VisumPointController extends Controller
             ], 503);
         }
 
+        // Set language if provided, defaults to 'de'
+        $language = $validated['language'] ?? 'de';
+        $this->visumPointService->setLanguage($language);
+
         // Convert 2-letter to 3-letter ISO codes
         $nationality3 = VisumPointService::iso2to3($validated['nationality']);
         $destination3 = VisumPointService::iso2to3($validated['destinationCountry']);
         $residence3 = VisumPointService::iso2to3($validated['residenceCountry']);
+        $format = $validated['format'] ?? 'markdown';
 
         $result = $this->visumPointService->checkVisa(
             $destination3,
             $nationality3,
-            $residence3
+            $residence3,
+            $format
         );
 
         $debugLog = $this->visumPointService->getDebugLog();
@@ -72,6 +80,26 @@ class VisumPointController extends Controller
             'details' => $result['details'] ?? null,
             'debugLog' => $result['debugLog'] ?? $debugLog,
         ], 422);
+    }
+
+    /**
+     * Manually end the current session
+     */
+    public function endSession(): JsonResponse
+    {
+        $result = $this->visumPointService->endSession();
+
+        if ($result) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Session erfolgreich beendet',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Fehler beim Beenden der Session',
+        ], 500);
     }
 
     /**
