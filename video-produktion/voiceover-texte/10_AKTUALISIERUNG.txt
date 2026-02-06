@@ -1,3 +1,5 @@
-Die Daten aktualisieren sich automatisch.
+[professionell] Die Daten aktualisieren sich automatisch.
 
-Mit dem Aktualisieren-Button können Sie jederzeit manuell die neuesten Informationen abrufen.
+[pause:0.3s]
+
+[anweisend] Mit dem Aktualisieren-Button können Sie jederzeit manuell die neuesten Informationen abrufen.

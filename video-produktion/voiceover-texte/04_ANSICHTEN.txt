@@ -1,5 +1,7 @@
-Sie haben zwei Darstellungsoptionen:
+[freundlich] Sie haben zwei Darstellungsoptionen:
 
-Die interaktive Weltkarte zeigt geografisch... wo Ereignisse stattfinden. Farbcodierte Marker zeigen sofort die Priorität... rot für kritisch... orange für hoch... gelb für mittel.
+[erklärend] Die interaktive Weltkarte zeigt geografisch [pause:0.2s] wo Ereignisse stattfinden. Farbcodierte Marker zeigen sofort die Priorität [pause:0.2s] [Aufzählung] rot für kritisch [pause:0.2s] orange für hoch [pause:0.2s] gelb für mittel.
 
-Die Kachelansicht bietet eine kompakte Übersicht aller betroffenen Länder... mit detaillierten Informationen auf einen Blick.
+[pause:0.4s]
+
+Die Kachelansicht bietet eine kompakte Übersicht aller betroffenen Länder [pause:0.2s] mit detaillierten Informationen auf einen Blick.

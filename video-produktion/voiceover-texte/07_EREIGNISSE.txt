@@ -1,3 +1,5 @@
-Jedes Ereignis enthält wichtige Informationen: Titel... Beschreibung... Ereignistyp... und Zeitraum. Die farbliche Kennzeichnung zeigt sofort die Priorität.
+[professionell] Jedes Ereignis enthält wichtige Informationen: [pause:0.2s] [Aufzählung] Titel [pause:0.2s] Beschreibung [pause:0.2s] Ereignistyp [pause:0.2s] und Zeitraum. [pause:0.3s] Die farbliche Kennzeichnung zeigt sofort die Priorität.
 
-Ein Klick auf ein Ereignis öffnet alle verfügbaren Details... so bleiben Sie umfassend informiert.
+[pause:0.3s]
+
+[betont] Ein Klick auf ein Ereignis öffnet alle verfügbaren Details [pause:0.2s] [zufrieden] so bleiben Sie umfassend informiert.

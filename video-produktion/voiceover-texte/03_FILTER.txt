@@ -1,9 +1,9 @@
-Mit den intelligenten Filtern passen Sie die Ansicht an Ihre Bedürfnisse an:
+[enthusiastisch] Mit den intelligenten Filtern passen Sie die Ansicht an Ihre Bedürfnisse an:
 
-Wählen Sie den Zeitraum... von 7 Tagen bis zu 3 Monaten... oder definieren Sie einen individuellen Datumsbereich.
+[erklärend] Wählen Sie den Zeitraum [pause:0.2s] von 7 Tagen bis zu 3 Monaten [pause:0.2s] oder definieren Sie einen individuellen Datumsbereich.
 
-Filtern Sie nach Priorität... zeigen Sie nur kritische Ereignisse an.
+Filtern Sie nach Priorität [pause:0.2s] zeigen Sie [betont] nur kritische Ereignisse an.
 
-Oder konzentrieren Sie sich auf Länder... in denen sich tatsächlich Ihre Reisenden aufhalten.
+Oder konzentrieren Sie sich auf Länder [pause:0.2s] in denen sich tatsächlich Ihre Reisenden aufhalten.
 
-Die Länderliste können Sie nach verschiedenen Kriterien sortieren.
+[ruhig] Die Länderliste können Sie nach verschiedenen Kriterien sortieren.

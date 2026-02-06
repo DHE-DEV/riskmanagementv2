@@ -1,3 +1,3 @@
-Willkommen zur Risiko-Übersicht... Ihrer zentralen Anlaufstelle für weltweite Reisesicherheit.
+[freundlich] Willkommen zur Risiko-Übersicht [pause:0.3s] Ihrer zentralen Anlaufstelle für weltweite Reisesicherheit.
 
-Mit dieser Funktion behalten Sie jederzeit den Überblick... über aktuelle Ereignisse... und betroffene Reisende.
+[enthusiastisch] Mit dieser Funktion behalten Sie jederzeit den Überblick [pause:0.2s] über aktuelle Ereignisse [pause:0.2s] und betroffene Reisende.

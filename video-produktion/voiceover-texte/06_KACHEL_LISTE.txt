@@ -1,5 +1,5 @@
-Auch hier können Sie zwischen zwei Darstellungen wählen:
+[freundlich] Auch hier können Sie zwischen zwei Darstellungen wählen:
 
-Die Kachelansicht zeigt alle Details übersichtlich aufbereitet.
+[erklärend] Die Kachelansicht zeigt alle Details übersichtlich aufbereitet.
 
-Die Listenansicht ist kompakter... und ideal für eine schnelle Übersicht bei vielen Einträgen.
+Die Listenansicht ist kompakter [pause:0.2s] und ideal für eine schnelle Übersicht bei vielen Einträgen.

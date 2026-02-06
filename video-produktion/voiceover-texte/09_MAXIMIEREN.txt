@@ -1,5 +1,9 @@
-Brauchen Sie mehr Platz für Details?
+[fragend] Brauchen Sie mehr Platz für Details?
 
-Mit der Maximieren-Funktion können Sie jeden Bereich auf die volle Höhe erweitern.
+[pause:0.3s]
 
-Ein erneuter Klick stellt die normale Ansicht wieder her... so arbeiten Sie flexibel und fokussiert.
+[enthusiastisch] Mit der Maximieren-Funktion können Sie jeden Bereich auf die volle Höhe erweitern.
+
+[pause:0.3s]
+
+[ruhig] Ein erneuter Klick stellt die normale Ansicht wieder her [pause:0.2s] [zufrieden] so arbeiten Sie flexibel und fokussiert.

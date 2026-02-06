@@ -1,3 +1,3 @@
-Auf einen Blick sehen Sie die wichtigsten Kennzahlen:
+[professionell] Auf einen Blick sehen Sie die wichtigsten Kennzahlen:
 
-Wie viele Länder sind betroffen?... Wie viele aktive Ereignisse gibt es?... Und vor allem... wie viele Ihrer Reisenden befinden sich in diesen Gebieten?
+[Aufzählung] Wie viele Länder sind betroffen? [pause:0.3s] Wie viele aktive Ereignisse gibt es? [pause:0.3s] Und vor allem [betont] wie viele Ihrer Reisenden befinden sich in diesen Gebieten?

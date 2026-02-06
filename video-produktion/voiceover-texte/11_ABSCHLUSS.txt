@@ -1,5 +1,9 @@
-Die Risiko-Übersicht... Ihr zentrales Werkzeug für proaktives Reiserisiko-Management.
+[betont] Die Risiko-Übersicht [pause:0.3s] [stolz] Ihr zentrales Werkzeug für proaktives Reiserisiko-Management.
 
-Behalten Sie den Überblick... schützen Sie Ihre Reisenden... und reagieren Sie schnell auf weltweite Ereignisse.
+[pause:0.4s]
 
-Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.
+[motivierend] Behalten Sie den Überblick [pause:0.2s] schützen Sie Ihre Reisenden [pause:0.2s] und reagieren Sie schnell auf weltweite Ereignisse.
+
+[pause:0.4s]
+
+[freundlich] Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.
