@@ -575,7 +575,7 @@
                             <div class="flex-1 flex flex-col min-h-0">
                                 <!-- Top: Events (50%) -->
                                 <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
-                                     :class="maximizedSection === 'events' ? 'flex-[2]' : maximizedSection === 'travelers' ? 'flex-[0.1]' : 'flex-1'">
+                                     :class="maximizedSection === 'events' ? 'flex-1' : maximizedSection === 'travelers' ? 'flex-none h-[52px]' : 'flex-1'">
                                     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
                                             <span class="flex items-center cursor-pointer hover:text-orange-600 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
@@ -639,7 +639,7 @@
 
                                 <!-- Bottom: Travelers (50%) -->
                                 <div class="min-h-0 overflow-hidden flex flex-col transition-all"
-                                     :class="maximizedSection === 'travelers' ? 'flex-[2]' : maximizedSection === 'events' ? 'flex-[0.1]' : 'flex-1'">
+                                     :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
                                     <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
                                             <span class="flex items-center cursor-pointer hover:text-blue-600 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
@@ -1149,7 +1149,7 @@
                             <div class="flex-1 flex flex-col min-h-0">
                                 <!-- Top: Events (50%) -->
                                 <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
-                                     :class="maximizedSection === 'events' ? 'flex-[2]' : maximizedSection === 'travelers' ? 'flex-[0.1]' : 'flex-1'">
+                                     :class="maximizedSection === 'events' ? 'flex-1' : maximizedSection === 'travelers' ? 'flex-none h-[52px]' : 'flex-1'">
                                     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
                                             <span class="flex items-center cursor-pointer hover:text-orange-600 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
@@ -1206,7 +1206,7 @@
 
                                 <!-- Bottom: Travelers (50%) -->
                                 <div class="min-h-0 overflow-hidden flex flex-col transition-all"
-                                     :class="maximizedSection === 'travelers' ? 'flex-[2]' : maximizedSection === 'events' ? 'flex-[0.1]' : 'flex-1'">
+                                     :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
                                     <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
                                             <span class="flex items-center cursor-pointer hover:text-blue-600 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
