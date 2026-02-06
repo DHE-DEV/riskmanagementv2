@@ -1,0 +1,88 @@
+Marcus - Iconic 
+
+[announcer voice] Willkommen bei Travel Alert... Ihrer zentralen Anlaufstelle für weltweite Reisesicherheit.
+
+[thoughtful] Mit dieser Funktion behalten Sie jederzeit den Überblick... über aktuelle Ereignisse, wichtige Informationen... und betroffene Reisen und Reisende.
+
+[professionell] Auf einen Blick sehen Sie die wichtigsten Kennzahlen:
+
+[Aufzählung] Wie viele Länder sind betroffen? [pause:0.3s] Wie viele aktive Ereignisse gibt es? [pause:0.3s] Und vor allem [betont] wie viele Ihrer Reisenden befinden sich in diesen Gebieten?
+
+
+[enthusiastisch] Mit den intelligenten Filtern passen Sie die Ansicht an Ihre Bedürfnisse an:
+
+[erklärend] Wählen Sie den Zeitraum [pause:0.2s] von 7 Tagen bis zu 30 Tagen [pause:0.2s] oder definieren Sie einen individuellen Datumsbereich.
+
+Filtern Sie nach Priorität [pause:0.2s] zeigen Sie [betont] nur kritische Ereignisse an.
+
+Oder konzentrieren Sie sich auf Länder [pause:0.2s] in denen sich tatsächlich Ihre Reisenden aufhalten.
+
+[ruhig] Die Länderliste können Sie nach verschiedenen Kriterien sortieren.
+
+
+[freundlich] Sie haben zwei Darstellungsoptionen:
+
+[erklärend] Die interaktive Weltkarte zeigt geografisch [pause:0.2s] wo Ereignisse stattfinden. Farbcodierte Marker zeigen sofort die Priorität [pause:0.2s] [Aufzählung] rot für kritisch [pause:0.2s] orange für hoch [pause:0.2s] gelb für mittel.
+
+[pause:0.4s]
+
+Die Kachelansicht bietet eine kompakte Übersicht aller betroffenen Länder [pause:0.2s] mit detaillierten Informationen auf einen Blick.
+
+
+[anweisend] Klicken Sie auf ein Land [pause:0.2s] um detaillierte Informationen zu erhalten.
+
+[ruhig] Die rechte Sidebar öffnet sich automatisch [pause:0.3s] und zeigt Ihnen zwei wichtige Bereiche: [pause:0.2s] [Aufzählung] Aktuelle Ereignisse [pause:0.2s] und betroffene Reisen.
+
+
+[freundlich] Auch hier können Sie zwischen zwei Darstellungen wählen:
+
+[erklärend] Die Kachelansicht zeigt alle Details übersichtlich aufbereitet.
+
+Die Listenansicht ist kompakter [pause:0.2s] und ideal für eine schnelle Übersicht bei vielen Einträgen.
+
+
+[professionell] Jedes Ereignis enthält wichtige Informationen: [pause:0.2s] [Aufzählung] Titel [pause:0.2s] Beschreibung [pause:0.2s] Ereignistyp [pause:0.2s] und Zeitraum. [pause:0.3s] Die farbliche Kennzeichnung zeigt sofort die Priorität.
+
+[pause:0.3s]
+
+[betont] Ein Klick auf ein Ereignis öffnet alle verfügbaren Details [pause:0.2s] [zufrieden] so bleiben Sie umfassend informiert.
+
+
+[erklärend] Im Bereich "Betroffene Reisen" sehen Sie genau [pause:0.2s] welche Ihrer Reisenden sich im betroffenen Gebiet aufhalten.
+
+[pause:0.3s]
+
+[Aufzählung] Sie sehen: Den Folder-Namen und Kunden [pause:0.3s] den genauen Reisezeitraum [pause:0.3s] die Quelle der Information [pause:0.2s] ob aus Ihrem System oder über API importiert.
+
+[pause:0.3s]
+
+[freundlich] Ein Fortschrittsbalken zeigt visuell [pause:0.2s] in welcher Phase sich die Reise befindet.
+
+
+[fragend] Brauchen Sie mehr Platz für Details?
+
+[pause:0.3s]
+
+[enthusiastisch] Mit der Maximieren-Funktion können Sie jeden Bereich auf die volle Höhe erweitern.
+
+[pause:0.3s]
+
+[ruhig] Ein erneuter Klick stellt die normale Ansicht wieder her [pause:0.2s] [zufrieden] so arbeiten Sie flexibel und fokussiert.
+
+
+[professionell] Die Daten aktualisieren sich automatisch.
+
+[pause:0.3s]
+
+[anweisend] Mit dem Aktualisieren-Button können Sie jederzeit manuell die neuesten Informationen abrufen.
+
+
+[betont] Die Risiko-Übersicht [pause:0.3s] [stolz] Ihr zentrales Werkzeug für proaktives Reiserisiko-Management.
+
+[pause:0.4s]
+
+[motivierend] Behalten Sie den Überblick [pause:0.2s] schützen Sie Ihre Reisenden [pause:0.2s] und reagieren Sie schnell auf weltweite Ereignisse.
+
+[pause:0.4s]
+
+[freundlich] Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.

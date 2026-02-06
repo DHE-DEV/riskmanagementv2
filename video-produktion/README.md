@@ -73,9 +73,11 @@ Alle Texte finden Sie in: `voiceover-texte/`
 ## 🎯 WICHTIGSTE TIPPS
 
 ### ElevenLabs Settings
-- **Stimme:** Deutsche Business-Stimme
+- **Modell:** Eleven V3
+- **Stimme:** Marcus - Iconic Charming
 - **Stability:** 75%
 - **Clarity:** 75%
+- **Style Exaggeration:** 10%
 - **Format:** MP3, 44.1kHz
 
 ### Camtasia Settings

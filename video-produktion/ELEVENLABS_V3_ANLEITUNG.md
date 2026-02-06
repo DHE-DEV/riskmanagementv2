@@ -16,10 +16,10 @@ Eleven v3 ist das bisher ausdrucksstärkste Text-to-Speech-Modell von ElevenLabs
 - Wählen Sie **"Eleven v3"** als Modell
 
 ### 2. Stimme auswählen
-Empfohlene deutsche Stimmen:
-- **Daniel** (männlich, professionell)
-- **Bella** (weiblich, freundlich)
-- **Callum** (männlich, enthusiastisch)
+**Verwendete Stimme für dieses Projekt:**
+- ✅ **Marcus - Iconic Charming**
+  - Charakteristik: Charmant, professionell, vertrauenswürdig
+  - Ideal für Business-Videos und Produktpräsentationen
 
 ### 3. Text einfügen
 - Öffnen Sie `voiceover-texte/01_INTRO.txt`
@@ -227,7 +227,7 @@ den Überblick [pause:0.2s] über aktuelle Ereignisse
 ## 💡 PROFI-TIPPS
 
 ### 1. Konsistenz wahren
-- Nutzen Sie **dieselbe Stimme** für alle 11 Szenen
+- Nutzen Sie **Marcus - Iconic Charming** für alle 11 Szenen
 - Behalten Sie die **gleichen Settings** bei
 - Generieren Sie alle Audios **am selben Tag**
 
