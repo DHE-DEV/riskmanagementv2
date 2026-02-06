@@ -575,14 +575,17 @@
                             <div class="flex-1 flex flex-col min-h-0">
                                 <!-- Top: Events (50%) -->
                                 <div class="flex-1 min-h-0 border-b border-gray-200 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-                                            <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
-                                            Ereignisse
-                                            <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
+                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 cursor-pointer hover:bg-gray-100 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
+                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                            <span class="flex items-center">
+                                                <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
+                                                Ereignisse
+                                                <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
+                                            </span>
+                                            <i class="fa-regular transition-transform" :class="eventsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
                                         </h3>
                                     </div>
-                                    <div class="flex-1 overflow-y-auto p-4">
+                                    <div class="flex-1 overflow-y-auto p-4" x-show="!eventsCollapsed">
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <template x-for="event in countryDetails.events" :key="event.id">
                                                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
@@ -626,14 +629,17 @@
 
                                 <!-- Bottom: Travelers (50%) -->
                                 <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
-                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-                                            <i class="fa-regular fa-users mr-2 text-blue-500"></i>
-                                            Betroffene Reisen
-                                            <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.travelers.length + ')'"></span>
+                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0 cursor-pointer hover:bg-blue-100 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
+                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                            <span class="flex items-center">
+                                                <i class="fa-regular fa-users mr-2 text-blue-500"></i>
+                                                Betroffene Reisen
+                                                <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.travelers.length + ')'"></span>
+                                            </span>
+                                            <i class="fa-regular transition-transform" :class="travelersCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
                                         </h3>
                                     </div>
-                                    <div class="flex-1 overflow-y-auto p-4">
+                                    <div class="flex-1 overflow-y-auto p-4" x-show="!travelersCollapsed">
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
                                                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
@@ -1123,14 +1129,17 @@
                             <div class="flex-1 flex flex-col min-h-0">
                                 <!-- Top: Events (50%) -->
                                 <div class="flex-1 min-h-0 border-b border-gray-200 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-                                            <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
-                                            Ereignisse
-                                            <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
+                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 cursor-pointer hover:bg-gray-100 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
+                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                            <span class="flex items-center">
+                                                <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
+                                                Ereignisse
+                                                <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
+                                            </span>
+                                            <i class="fa-regular transition-transform" :class="eventsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
                                         </h3>
                                     </div>
-                                    <div class="flex-1 overflow-y-auto">
+                                    <div class="flex-1 overflow-y-auto" x-show="!eventsCollapsed">
                                         <div class="divide-y divide-gray-200">
                                             <template x-for="event in countryDetails.events" :key="event.id">
                                                 <div class="px-4 py-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-4 border-l-4"
@@ -1167,14 +1176,17 @@
 
                                 <!-- Bottom: Travelers (50%) -->
                                 <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
-                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center">
-                                            <i class="fa-regular fa-users mr-2 text-blue-500"></i>
-                                            Betroffene Reisen
-                                            <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.travelers.length + ')'"></span>
+                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0 cursor-pointer hover:bg-blue-100 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
+                                        <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                            <span class="flex items-center">
+                                                <i class="fa-regular fa-users mr-2 text-blue-500"></i>
+                                                Betroffene Reisen
+                                                <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.travelers.length + ')'"></span>
+                                            </span>
+                                            <i class="fa-regular transition-transform" :class="travelersCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
                                         </h3>
                                     </div>
-                                    <div class="flex-1 overflow-y-auto">
+                                    <div class="flex-1 overflow-y-auto" x-show="!travelersCollapsed">
                                         <div class="divide-y divide-gray-200">
                                             <template x-for="traveler in countryDetails.travelers" :key="traveler.folder_id">
                                                 <div class="px-4 py-3 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
@@ -1648,6 +1660,8 @@
             filterOpen: false,
             showCountrySidebar: false,
             activeTab: 'tiles',
+            eventsCollapsed: false,
+            travelersCollapsed: false,
 
             get filteredCountries() {
                 let result = this.countries;
