@@ -574,15 +574,25 @@
                         <template x-if="!loadingCountryDetails && countryDetails">
                             <div class="flex-1 flex flex-col min-h-0">
                                 <!-- Top: Events (50%) -->
-                                <div class="flex-1 min-h-0 border-b border-gray-200 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 cursor-pointer hover:bg-gray-100 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
+                                <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                                     :class="maximizedSection === 'events' ? 'flex-[2]' : maximizedSection === 'travelers' ? 'flex-[0.1]' : 'flex-1'">
+                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                            <span class="flex items-center">
+                                            <span class="flex items-center cursor-pointer hover:text-orange-600 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
                                                 <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
                                                 Ereignisse
                                                 <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
                                             </span>
-                                            <i class="fa-regular transition-transform" :class="eventsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                                            <div class="flex items-center gap-2">
+                                                <button @click.stop="toggleMaximize('events')"
+                                                        class="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                                                        :title="maximizedSection === 'events' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                                    <i class="fa-regular text-xs transition-all" :class="maximizedSection === 'events' ? 'fa-compress' : 'fa-expand'"></i>
+                                                </button>
+                                                <i class="fa-regular transition-transform cursor-pointer"
+                                                   :class="eventsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"
+                                                   @click="eventsCollapsed = !eventsCollapsed"></i>
+                                            </div>
                                         </h3>
                                     </div>
                                     <div class="flex-1 overflow-y-auto p-4" x-show="!eventsCollapsed">
@@ -628,15 +638,25 @@
                                 </div>
 
                                 <!-- Bottom: Travelers (50%) -->
-                                <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0 cursor-pointer hover:bg-blue-100 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
+                                <div class="min-h-0 overflow-hidden flex flex-col transition-all"
+                                     :class="maximizedSection === 'travelers' ? 'flex-[2]' : maximizedSection === 'events' ? 'flex-[0.1]' : 'flex-1'">
+                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                            <span class="flex items-center">
+                                            <span class="flex items-center cursor-pointer hover:text-blue-600 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
                                                 <i class="fa-regular fa-users mr-2 text-blue-500"></i>
                                                 Betroffene Reisen
                                                 <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.travelers.length + ')'"></span>
                                             </span>
-                                            <i class="fa-regular transition-transform" :class="travelersCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                                            <div class="flex items-center gap-2">
+                                                <button @click.stop="toggleMaximize('travelers')"
+                                                        class="p-1.5 hover:bg-blue-200 rounded transition-colors"
+                                                        :title="maximizedSection === 'travelers' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                                    <i class="fa-regular text-xs transition-all" :class="maximizedSection === 'travelers' ? 'fa-compress' : 'fa-expand'"></i>
+                                                </button>
+                                                <i class="fa-regular transition-transform cursor-pointer"
+                                                   :class="travelersCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"
+                                                   @click="travelersCollapsed = !travelersCollapsed"></i>
+                                            </div>
                                         </h3>
                                     </div>
                                     <div class="flex-1 overflow-y-auto p-4" x-show="!travelersCollapsed">
@@ -1128,15 +1148,25 @@
                         <template x-if="!loadingCountryDetails && countryDetails">
                             <div class="flex-1 flex flex-col min-h-0">
                                 <!-- Top: Events (50%) -->
-                                <div class="flex-1 min-h-0 border-b border-gray-200 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 cursor-pointer hover:bg-gray-100 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
+                                <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                                     :class="maximizedSection === 'events' ? 'flex-[2]' : maximizedSection === 'travelers' ? 'flex-[0.1]' : 'flex-1'">
+                                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                            <span class="flex items-center">
+                                            <span class="flex items-center cursor-pointer hover:text-orange-600 transition-colors" @click="eventsCollapsed = !eventsCollapsed">
                                                 <i class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
                                                 Ereignisse
                                                 <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.events.length + ')'"></span>
                                             </span>
-                                            <i class="fa-regular transition-transform" :class="eventsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                                            <div class="flex items-center gap-2">
+                                                <button @click.stop="toggleMaximize('events')"
+                                                        class="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                                                        :title="maximizedSection === 'events' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                                    <i class="fa-regular text-xs transition-all" :class="maximizedSection === 'events' ? 'fa-compress' : 'fa-expand'"></i>
+                                                </button>
+                                                <i class="fa-regular transition-transform cursor-pointer"
+                                                   :class="eventsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"
+                                                   @click="eventsCollapsed = !eventsCollapsed"></i>
+                                            </div>
                                         </h3>
                                     </div>
                                     <div class="flex-1 overflow-y-auto" x-show="!eventsCollapsed">
@@ -1175,15 +1205,25 @@
                                 </div>
 
                                 <!-- Bottom: Travelers (50%) -->
-                                <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
-                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0 cursor-pointer hover:bg-blue-100 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
+                                <div class="min-h-0 overflow-hidden flex flex-col transition-all"
+                                     :class="maximizedSection === 'travelers' ? 'flex-[2]' : maximizedSection === 'events' ? 'flex-[0.1]' : 'flex-1'">
+                                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
                                         <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                            <span class="flex items-center">
+                                            <span class="flex items-center cursor-pointer hover:text-blue-600 transition-colors" @click="travelersCollapsed = !travelersCollapsed">
                                                 <i class="fa-regular fa-users mr-2 text-blue-500"></i>
                                                 Betroffene Reisen
                                                 <span class="ml-2 text-gray-500 font-normal" x-text="'(' + countryDetails.travelers.length + ')'"></span>
                                             </span>
-                                            <i class="fa-regular transition-transform" :class="travelersCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                                            <div class="flex items-center gap-2">
+                                                <button @click.stop="toggleMaximize('travelers')"
+                                                        class="p-1.5 hover:bg-blue-200 rounded transition-colors"
+                                                        :title="maximizedSection === 'travelers' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                                    <i class="fa-regular text-xs transition-all" :class="maximizedSection === 'travelers' ? 'fa-compress' : 'fa-expand'"></i>
+                                                </button>
+                                                <i class="fa-regular transition-transform cursor-pointer"
+                                                   :class="travelersCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"
+                                                   @click="travelersCollapsed = !travelersCollapsed"></i>
+                                            </div>
                                         </h3>
                                     </div>
                                     <div class="flex-1 overflow-y-auto" x-show="!travelersCollapsed">
@@ -1662,6 +1702,26 @@
             activeTab: 'tiles',
             eventsCollapsed: false,
             travelersCollapsed: false,
+            maximizedSection: null, // null, 'events', or 'travelers'
+
+            toggleMaximize(section) {
+                if (this.maximizedSection === section) {
+                    // Restore normal view
+                    this.maximizedSection = null;
+                    this.eventsCollapsed = false;
+                    this.travelersCollapsed = false;
+                } else {
+                    // Maximize this section and collapse the other
+                    this.maximizedSection = section;
+                    if (section === 'events') {
+                        this.eventsCollapsed = false;
+                        this.travelersCollapsed = true;
+                    } else {
+                        this.eventsCollapsed = true;
+                        this.travelersCollapsed = false;
+                    }
+                }
+            },
 
             get filteredCountries() {
                 let result = this.countries;
