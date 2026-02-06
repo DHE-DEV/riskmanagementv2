@@ -1,0 +1,3 @@
+Die Daten aktualisieren sich automatisch.
+
+Mit dem Aktualisieren-Button können Sie jederzeit manuell die neuesten Informationen abrufen.

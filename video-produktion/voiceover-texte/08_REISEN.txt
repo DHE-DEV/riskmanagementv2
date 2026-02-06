@@ -1,0 +1,5 @@
+Im Bereich "Betroffene Reisen" sehen Sie genau... welche Ihrer Reisenden sich im betroffenen Gebiet aufhalten.
+
+Sie sehen: Den Folder-Namen und Kunden... den genauen Reisezeitraum... die Quelle der Information... ob aus Ihrem System oder über API importiert.
+
+Ein Fortschrittsbalken zeigt visuell... in welcher Phase sich die Reise befindet.

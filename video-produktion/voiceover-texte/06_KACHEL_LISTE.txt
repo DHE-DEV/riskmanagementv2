@@ -1,0 +1,5 @@
+Auch hier können Sie zwischen zwei Darstellungen wählen:
+
+Die Kachelansicht zeigt alle Details übersichtlich aufbereitet.
+
+Die Listenansicht ist kompakter... und ideal für eine schnelle Übersicht bei vielen Einträgen.
