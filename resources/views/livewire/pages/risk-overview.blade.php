@@ -1539,15 +1539,6 @@
                             <p class="text-gray-900 font-medium" x-text="formatDate(selectedTraveler?.end_date)"></p>
                         </div>
 
-                        <!-- Participant Count -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center gap-2 text-gray-500 mb-1">
-                                <i class="fa-regular fa-users"></i>
-                                <span class="text-xs font-medium uppercase tracking-wider">Anzahl Teilnehmer</span>
-                            </div>
-                            <p class="text-gray-900 font-medium" x-text="selectedTraveler?.participant_count || 1"></p>
-                        </div>
-
                     </div>
 
                     <!-- Participants List -->
