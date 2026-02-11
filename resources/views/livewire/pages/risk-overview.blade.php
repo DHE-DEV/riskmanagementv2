@@ -468,7 +468,9 @@
                                                 <span x-text="country.total_events + ' Ereignis' + (country.total_events !== 1 ? 'se' : '')"></span>
                                             </span>
                                             <template x-if="country.affected_travelers > 0">
-                                                <span class="flex items-center gap-1 text-blue-600 font-medium">
+                                                <span class="flex items-center gap-1 cursor-pointer rounded px-1.5 py-0.5 -mx-1.5 -my-0.5 transition-colors"
+                                                      :class="filters.onlyWithTravelers ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-500' : 'text-blue-600 font-medium hover:bg-blue-50'"
+                                                      @click.stop="filters.onlyWithTravelers = !filters.onlyWithTravelers; loadData()">
                                                     <i class="fa-regular fa-users"></i>
                                                     <span x-text="country.affected_travelers + (country.affected_travelers === 1 ? ' Reise' : ' Reisen')"></span>
                                                 </span>
