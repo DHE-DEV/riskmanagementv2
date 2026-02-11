@@ -370,16 +370,16 @@
 
                 <!-- Summary Stats -->
                 <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-gray-600">Länder mit Ereignissen</p>
-                            <p class="text-lg font-bold text-gray-900" x-text="filteredSummary.total_countries"></p>
-                        </div>
+                    <div class="flex items-center justify-end mb-3">
                         <button @click="loadData()" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Aktualisieren">
                             <i class="fa-regular fa-arrows-rotate" :class="{ 'loading-spinner': loading }"></i>
                         </button>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="bg-gray-50 rounded-lg p-2">
+                            <p class="text-lg font-bold text-gray-900" x-text="filteredSummary.total_countries"></p>
+                            <p class="text-xs text-gray-500">Länder</p>
+                        </div>
                         <div class="bg-gray-50 rounded-lg p-2">
                             <p class="text-lg font-bold text-gray-900" x-text="filteredSummary.total_events"></p>
                             <p class="text-xs text-gray-500">Ereignisse</p>
