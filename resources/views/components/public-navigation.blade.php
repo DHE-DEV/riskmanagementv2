@@ -76,9 +76,9 @@
         </a>
         @endif
 
-        <!-- Risiko-Übersicht -->
+        <!-- TravelAlert -->
         @if($featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer) && auth('customer')->check())
-        <a href="{{ route('risk-overview') }}" class="p-3 {{ $active === 'risk-overview' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Risiko-Übersicht">
+        <a href="{{ route('risk-overview') }}" class="p-3 {{ $active === 'risk-overview' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="TravelAlert">
             <i class="fa-regular fa-shield-exclamation text-2xl" aria-hidden="true"></i>
         </a>
         @endif

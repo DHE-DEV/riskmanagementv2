@@ -680,11 +680,6 @@
                                                            }"
                                                            x-text="tripProgress.status === 'upcoming' ? 'Noch nicht gestartet' : tripProgress.status === 'active' ? 'Reise aktiv' : 'Abgeschlossen'"></p>
                                                     </div>
-                                                    <div class="mt-3 pt-3 border-t border-gray-100" x-show="traveler.participant_count > 0">
-                                                        <p class="text-xs text-gray-500">
-                                                            <span x-text="traveler.participant_count"></span> Teilnehmer
-                                                        </p>
-                                                    </div>
                                                 </div>
                                             </template>
                                         </div>
@@ -1217,7 +1212,6 @@
                                                                   :class="traveler.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'"
                                                                   x-text="traveler.source === 'api' ? 'API' : 'GTM'"></span>
                                                         </div>
-                                                        <span class="text-xs text-gray-500" x-show="traveler.participant_count > 0" x-text="traveler.participant_count + ' Teilnehmer'"></span>
                                                     </div>
                                                     <div class="mt-2 flex items-center gap-4">
                                                         <div class="flex-1">
@@ -1447,9 +1441,6 @@
                 <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between z-10">
                     <div class="pr-10">
                         <h3 id="traveler-modal-title" class="text-lg font-semibold text-gray-900" x-text="selectedTraveler?.folder_name"></h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-sm text-gray-500" x-show="selectedTraveler?.participant_count > 0" x-text="selectedTraveler?.participant_count + ' Teilnehmer'"></span>
-                        </div>
                     </div>
                     <!-- Close Button -->
                     <button @click="closeTravelerModal()"
