@@ -1451,6 +1451,10 @@
                             </div>
                         </template>
 
+                    </div>
+
+                    <!-- Reisebeginn / Reiseende (always in one row) -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
                         <!-- Start Date -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <div class="flex items-center gap-2 text-gray-500 mb-1">
@@ -1468,7 +1472,6 @@
                             </div>
                             <p class="text-gray-900 font-medium" x-text="formatDate(selectedTraveler?.end_date)"></p>
                         </div>
-
                     </div>
 
                     <!-- Nationalities -->
