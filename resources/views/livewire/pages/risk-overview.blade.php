@@ -384,9 +384,11 @@
                             <p class="text-lg font-bold text-gray-900" x-text="filteredSummary.total_events"></p>
                             <p class="text-xs text-gray-500">Ereignisse</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-2">
-                            <p class="text-lg font-bold text-gray-900" x-text="filteredSummary.total_affected_travelers"></p>
-                            <p class="text-xs text-gray-500">Reisen</p>
+                        <div class="rounded-lg p-2 cursor-pointer transition-colors"
+                             :class="filters.onlyWithTravelers ? 'bg-blue-50 border border-blue-500' : 'bg-gray-50 hover:bg-gray-100'"
+                             @click="filters.onlyWithTravelers = !filters.onlyWithTravelers; loadData()">
+                            <p class="text-lg font-bold" :class="filters.onlyWithTravelers ? 'text-blue-700' : 'text-gray-900'" x-text="filteredSummary.total_affected_travelers"></p>
+                            <p class="text-xs" :class="filters.onlyWithTravelers ? 'text-blue-600' : 'text-gray-500'">Reisen</p>
                         </div>
                     </div>
                 </div>
@@ -468,9 +470,7 @@
                                                 <span x-text="country.total_events + ' Ereignis' + (country.total_events !== 1 ? 'se' : '')"></span>
                                             </span>
                                             <template x-if="country.affected_travelers > 0">
-                                                <span class="flex items-center gap-1 cursor-pointer rounded px-1.5 py-0.5 -mx-1.5 -my-0.5 transition-colors"
-                                                      :class="filters.onlyWithTravelers ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-500' : 'text-blue-600 font-medium hover:bg-blue-50'"
-                                                      @click.stop="filters.onlyWithTravelers = !filters.onlyWithTravelers; loadData()">
+                                                <span class="flex items-center gap-1 text-blue-600 font-medium">
                                                     <i class="fa-regular fa-users"></i>
                                                     <span x-text="country.affected_travelers + (country.affected_travelers === 1 ? ' Reise' : ' Reisen')"></span>
                                                 </span>
