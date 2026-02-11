@@ -1477,10 +1477,7 @@
                             <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Nationalitäten</h4>
                             <div class="flex flex-wrap gap-2">
                                 <template x-for="nat in selectedTraveler.nationalities" :key="nat.code">
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
-                                        <span x-text="nat.code" class="font-mono"></span>
-                                        <span x-text="nat.name" class="text-purple-600"></span>
-                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200" x-text="nat.name"></span>
                                 </template>
                             </div>
                         </div>
@@ -1492,10 +1489,7 @@
                             <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Reiseziele</h4>
                             <div class="flex flex-wrap gap-1.5">
                                 <template x-for="dest in selectedTraveler.destinations" :key="dest.code">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border border-gray-200">
-                                        <span x-text="dest.code" class="font-mono font-medium"></span>
-                                        <span x-text="dest.name" class="text-gray-500"></span>
-                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border border-gray-200" x-text="dest.name"></span>
                                 </template>
                             </div>
                         </div>
