@@ -1,6 +1,6 @@
 @extends('layouts.embed')
 
-@section('title', 'Risiko-Übersicht - Global Travel Monitor')
+@section('title', 'TravelAlert - Global Travel Monitor')
 @section('hide_default_badge', true)
 
 @push('head-scripts')
@@ -171,7 +171,7 @@
             <div class="p-4">
                 <h2 class="text-sm font-bold text-gray-900 mb-4">
                     <i class="fa-regular fa-shield-exclamation mr-2"></i>
-                    Risiko-Übersicht
+                    TravelAlert
                 </h2>
 
                 <!-- Filter Section -->
@@ -189,7 +189,7 @@
                     <div x-show="filterOpen" x-collapse class="px-4 pb-4">
                         <!-- Priority Filter -->
                         <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Prioritat</label>
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Risikostufe</label>
                             <div class="grid grid-cols-2 gap-2">
                                 <button @click="filters.priority = null; loadData()"
                                         class="px-3 py-2 text-xs rounded-lg border transition-colors"
