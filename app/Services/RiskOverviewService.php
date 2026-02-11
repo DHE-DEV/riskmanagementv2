@@ -313,19 +313,18 @@ class RiskOverviewService
         // Convert to array for modification
         $data = $countriesData->all();
 
-        // Count travelers per country based on hotel/flight destinations (local folders)
+        // Count trips (folders) per country based on hotel/flight destinations
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
             foreach ($countryCodes as $countryCode) {
                 if (isset($data[$countryCode])) {
-                    $travelerCount = $folder->participants->count() ?: 1;
-                    $data[$countryCode]['affected_travelers'] += $travelerCount;
+                    $data[$countryCode]['affected_travelers'] += 1;
                 }
             }
         }
 
-        // Fetch and count API travelers
+        // Fetch and count API trips
         $customer = Customer::find($customerId);
         if ($customer) {
             $apiTravelersByCountry = $this->fetchApiTravelers(
@@ -336,9 +335,7 @@ class RiskOverviewService
 
             foreach ($apiTravelersByCountry as $countryCode => $travelers) {
                 if (isset($data[$countryCode])) {
-                    foreach ($travelers as $traveler) {
-                        $data[$countryCode]['affected_travelers'] += $traveler['participant_count'];
-                    }
+                    $data[$countryCode]['affected_travelers'] += count($travelers);
                 }
             }
         }
@@ -370,19 +367,18 @@ class RiskOverviewService
         // Convert to array for modification
         $data = $countriesData->all();
 
-        // Count travelers per country based on hotel/flight destinations (local folders)
+        // Count trips (folders) per country based on hotel/flight destinations
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
             foreach ($countryCodes as $countryCode) {
                 if (isset($data[$countryCode])) {
-                    $travelerCount = $folder->participants->count() ?: 1;
-                    $data[$countryCode]['affected_travelers'] += $travelerCount;
+                    $data[$countryCode]['affected_travelers'] += 1;
                 }
             }
         }
 
-        // Fetch and count API travelers
+        // Fetch and count API trips
         $customer = Customer::find($customerId);
         if ($customer) {
             $apiTravelersByCountry = $this->fetchApiTravelers(
@@ -393,9 +389,7 @@ class RiskOverviewService
 
             foreach ($apiTravelersByCountry as $countryCode => $travelers) {
                 if (isset($data[$countryCode])) {
-                    foreach ($travelers as $traveler) {
-                        $data[$countryCode]['affected_travelers'] += $traveler['participant_count'];
-                    }
+                    $data[$countryCode]['affected_travelers'] += count($travelers);
                 }
             }
         }

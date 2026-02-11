@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CountryFeedController;
+use App\Http\Controllers\Embed\EmbedRiskOverviewController;
 use App\Http\Controllers\EventFeedController;
 use App\Http\Controllers\SettingsController;
 use App\Models\EventClick;
@@ -104,6 +105,28 @@ Route::prefix('embed')->name('embed.')->middleware(['allow.embedding', 'validate
     // Alias: /embed redirects to /embed/dashboard
     Route::get('/', function () {
         return redirect()->route('embed.dashboard');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Embed Risk-Overview Routes (with embedded login)
+|--------------------------------------------------------------------------
+|
+| Embeddable risk overview with built-in login flow.
+| No API key required - uses customer session auth.
+|
+| Usage:
+|   <iframe src="https://global-travel-monitor.eu/embed/risk-overview" width="100%" height="800"></iframe>
+|
+*/
+Route::prefix('embed/risk-overview')->name('embed.risk-overview')->middleware(['allow.embedding'])->group(function () {
+    Route::get('/', [EmbedRiskOverviewController::class, 'index']);
+    Route::post('/login', [EmbedRiskOverviewController::class, 'login'])->name('.login');
+
+    Route::middleware(['auth:customer'])->group(function () {
+        Route::get('/data', [EmbedRiskOverviewController::class, 'getData'])->name('.data');
+        Route::get('/country/{countryCode}', [EmbedRiskOverviewController::class, 'getCountryDetails'])->name('.country');
     });
 });
 

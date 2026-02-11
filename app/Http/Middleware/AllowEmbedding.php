@@ -30,7 +30,7 @@ class AllowEmbedding
 
         // Allow cross-origin access for embed resources
         $response->headers->set('Access-Control-Allow-Origin', '*');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
 
         return $response;

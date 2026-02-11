@@ -1,234 +1,171 @@
-@php
-    $active = 'risk-overview';
-    $version = '1.0.0';
-@endphp
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <!-- Version: {{ $version }} - {{ now()->format('Y-m-d H:i:s') }} -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Risiko-Ubersicht - Global Travel Monitor</title>
+@extends('layouts.embed')
 
-    <!-- Alpine.js with Collapse plugin -->
+@section('title', 'Risiko-Übersicht - Global Travel Monitor')
+@section('hide_default_badge', true)
+
+@push('head-scripts')
+    <!-- Alpine.js Collapse Plugin (used by sidebar filters) -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+@endpush
 
-    <!-- Favicons -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+@section('additional-styles')
+    /* Alpine.js cloak */
+    [x-cloak] { display: none !important; }
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
 
-    <!-- Font Awesome -->
-    @php($faKit = config('services.fontawesome.kit'))
-    @if(!empty($faKit))
-        <script src="https://kit.fontawesome.com/{{ e($faKit) }}.js" crossorigin="anonymous" onload="window.__faKitOk=true" onerror="window.__faKitOk=false"></script>
-        <script>
-        (function(){
-            function addCss(href){
-                var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
-            }
-            var fallbackHref = '{{ file_exists(public_path('vendor/fontawesome/css/all.min.css')) ? asset('vendor/fontawesome/css/all.min.css') : 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css' }}';
-            window.addEventListener('DOMContentLoaded', function(){
-                setTimeout(function(){ if(!window.__faKitOk){ addCss(fallbackHref); } }, 800);
-            });
-        })();
-        </script>
-    @elseif (file_exists(public_path('vendor/fontawesome/css/all.min.css')))
-        <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}" />
-    @else
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
-    @endif
+    .embed-container {
+        height: 100vh;
+    }
 
-    <style>
-        /* Alpine.js cloak */
-        [x-cloak] { display: none !important; }
+    .embed-content {
+        overflow: hidden;
+    }
 
-        /* Basis-Layout */
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
-        }
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
 
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+    /* Main content - fills entire viewport (no header/footer offset) */
+    .main-content {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+    }
 
-        /* Header - feststehend */
-        .header {
-            flex-shrink: 0;
-            height: 64px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 10000;
-        }
+    /* Sidebar */
+    .sidebar {
+        flex-shrink: 0;
+        width: 304px;
+        background: #f9fafb;
+        overflow-y: auto;
+        height: 100%;
+        position: relative;
+        border-right: 1px solid #e5e7eb;
+    }
 
-        /* Footer - feststehend */
-        .footer {
-            flex-shrink: 0;
-            height: 32px;
-            background: white;
-            color: black;
-            z-index: 9999;
-            border-top: 1px solid #e5e7eb;
-        }
+    /* Map Container */
+    .map-container {
+        flex: 1;
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+    }
 
-        /* Hauptbereich - dynamisch */
-        .main-content {
-            flex: 1;
-            display: flex;
-            min-height: 0;
-        }
+    #risk-map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
 
-        /* Navigation - feste Breite */
-        .navigation {
-            flex-shrink: 0;
-            width: 64px;
-            background: black;
-        }
+    /* Content Container with Tabs */
+    .content-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
 
-        /* Sidebar - feste Breite */
-        .sidebar {
-            flex-shrink: 0;
-            width: 304px;
-            background: #f9fafb;
-            overflow-y: auto;
-            height: 100%;
-            position: relative;
-            border-right: 1px solid #e5e7eb;
-        }
+    .tab-navigation {
+        flex-shrink: 0;
+    }
 
-        /* Map Container - nimmt restlichen Platz ein */
-        .map-container {
-            flex: 1;
-            position: relative;
-            min-height: 0;
-            overflow: hidden;
-        }
+    /* List View */
+    .list-view {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        background: #f9fafb;
+    }
 
-        #risk-map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-        }
+    /* Country Details Sidebar - no header/footer offset */
+    .country-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: -450px;
+        width: 450px;
+        background: white;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        transition: right 0.3s ease-in-out;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+    }
 
-        /* Content Container with Tabs */
-        .content-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-        }
+    .country-sidebar.open { right: 0; }
 
-        .tab-navigation {
-            flex-shrink: 0;
-        }
+    .country-sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f8fafc;
+    }
 
-        /* List View */
-        .list-view {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-            background: #f9fafb;
-        }
+    .country-sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
 
-        /* Country Details Sidebar */
-        .country-sidebar {
-            position: fixed;
-            top: 64px;
-            bottom: 32px;
-            right: -450px;
-            width: 450px;
-            background: white;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-            transition: right 0.3s ease-in-out;
-            z-index: 100000;
-            display: flex;
-            flex-direction: column;
-        }
+    /* Loading Animation */
+    .loading-spinner {
+        animation: spin 1s linear infinite;
+    }
 
-        .country-sidebar.open { right: 0; }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
 
-        .country-sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f8fafc;
-        }
+    /* Custom Leaflet Marker */
+    .event-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        font-weight: bold;
+        font-size: 12px;
+        color: white;
+    }
 
-        .country-sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
+    .event-marker-high { background-color: #ef4444; }
+    .event-marker-medium { background-color: #f97316; }
+    .event-marker-low { background-color: #eab308; }
+    .event-marker-info { background-color: #3b82f6; }
 
-        /* Loading Animation */
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-        }
+    /* Prose styling for event descriptions */
+    .prose p { margin-bottom: 0.75rem; }
+    .prose p:last-child { margin-bottom: 0; }
+    .prose ul, .prose ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+    .prose li { margin-bottom: 0.25rem; }
+    .prose a { color: #2563eb; text-decoration: underline; }
+    .prose a:hover { color: #1d4ed8; }
+    .prose strong { font-weight: 600; }
+    .prose h1, .prose h2, .prose h3, .prose h4 { font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .prose blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; margin: 0.75rem 0; font-style: italic; color: #6b7280; }
+@endsection
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+@section('content')
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
-        /* Custom Leaflet Marker */
-        .event-marker {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            font-weight: bold;
-            font-size: 12px;
-            color: white;
-        }
-
-        .event-marker-high { background-color: #ef4444; }
-        .event-marker-medium { background-color: #f97316; }
-        .event-marker-low { background-color: #eab308; }
-        .event-marker-info { background-color: #3b82f6; }
-
-        /* Prose styling for event descriptions */
-        .prose p { margin-bottom: 0.75rem; }
-        .prose p:last-child { margin-bottom: 0; }
-        .prose ul, .prose ol { margin: 0.75rem 0; padding-left: 1.5rem; }
-        .prose li { margin-bottom: 0.25rem; }
-        .prose a { color: #2563eb; text-decoration: underline; }
-        .prose a:hover { color: #1d4ed8; }
-        .prose strong { font-weight: 600; }
-        .prose h1, .prose h2, .prose h3, .prose h4 { font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
-        .prose blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; margin: 0.75rem 0; font-style: italic; color: #6b7280; }
-    </style>
-</head>
-<body>
 <div class="app-container" x-data="riskOverviewApp()" @open-event-modal.window="openEventModal($event.detail)" @open-traveler-modal.window="openTravelerModal($event.detail)">
-    <!-- Header -->
-    <x-public-header />
-
-    <!-- Main Content -->
+    <!-- Main Content (no header, no navigation) -->
     <div class="main-content">
-        <!-- Navigation -->
-        <x-public-navigation :active="$active" />
-
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="p-4">
@@ -893,7 +830,7 @@
                                                               'text-gray-400': !day.isCurrentMonth
                                                           }"
                                                           x-text="day.dayNumber"></span>
-                                                    <!-- Traveler count badges (only for days in filter range) -->
+                                                    <!-- Traveler count badges -->
                                                     <template x-if="isDateInFilterRange(day.date) && getTravelersForDay(day.date, travelers).length > 0">
                                                         <div class="flex items-center gap-1">
                                                             <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700" title="Reisen">
@@ -910,7 +847,6 @@
 
                                                 <!-- Events grouped by priority -->
                                                 <div class="space-y-1 max-h-[85px] overflow-y-auto">
-                                                    <!-- High priority events -->
                                                     <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'high')" :key="'high-' + event.id">
                                                         <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-800 cursor-pointer hover:bg-red-200 transition-colors truncate"
                                                              @click="$dispatch('open-event-modal', event)"
@@ -919,7 +855,6 @@
                                                             <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
                                                         </div>
                                                     </template>
-                                                    <!-- Medium priority events -->
                                                     <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'medium')" :key="'medium-' + event.id">
                                                         <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-800 cursor-pointer hover:bg-orange-200 transition-colors truncate"
                                                              @click="$dispatch('open-event-modal', event)"
@@ -928,7 +863,6 @@
                                                             <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
                                                         </div>
                                                     </template>
-                                                    <!-- Low priority events -->
                                                     <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'low')" :key="'low-' + event.id">
                                                         <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-800 cursor-pointer hover:bg-green-200 transition-colors truncate"
                                                              @click="$dispatch('open-event-modal', event)"
@@ -937,7 +871,6 @@
                                                             <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
                                                         </div>
                                                     </template>
-                                                    <!-- Info priority events -->
                                                     <template x-for="event in getEventsForDay(day.date, events).filter(e => e.priority === 'info')" :key="'info-' + event.id">
                                                         <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200 transition-colors truncate"
                                                              @click="$dispatch('open-event-modal', event)"
@@ -1261,9 +1194,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Footer -->
-    <x-public-footer />
 
     <!-- Event Detail Modal -->
     <div x-show="showEventModal"
@@ -1661,14 +1591,12 @@
             filterOpen: false,
             showCountrySidebar: false,
             activeTab: 'tiles',
-            maximizedSection: null, // null, 'events', or 'travelers'
+            maximizedSection: null,
 
             toggleMaximize(section) {
                 if (this.maximizedSection === section) {
-                    // Restore normal view
                     this.maximizedSection = null;
                 } else {
-                    // Maximize this section
                     this.maximizedSection = section;
                 }
             },
@@ -1720,7 +1648,7 @@
                         }
                     });
 
-                    // Watch for client-side filter changes to update map and auto-select first result
+                    // Watch for client-side filter changes
                     this.$watch('filters.onlyWithTravelers', () => {
                         this.updateMapMarkers();
                         this.reselectCountryIfNeeded();
@@ -1738,7 +1666,6 @@
                                 this.map.invalidateSize();
                             }, 100);
                         }
-                        // Close sidebar when switching to list view
                         if (newTab === 'list') {
                             this.showCountrySidebar = false;
                         }
@@ -1761,7 +1688,6 @@
                     maxZoom: 19
                 }).addTo(this.map);
 
-                // Window Resize
                 let resizeTimeout;
                 window.addEventListener('resize', () => {
                     clearTimeout(resizeTimeout);
@@ -1789,7 +1715,6 @@
                         params.append('priority', this.filters.priority);
                     }
 
-                    // Use custom date range or days
                     if (this.filters.customDateRange && this.filters.dateFrom) {
                         params.append('date_from', this.filters.dateFrom);
                         if (this.filters.dateTo) {
@@ -1799,12 +1724,18 @@
                         params.append('days', this.filters.days);
                     }
 
-                    const response = await fetch(`{{ route('risk-overview.data') }}?${params.toString()}`, {
+                    const response = await fetch(`{{ route('embed.risk-overview.data') }}?${params.toString()}`, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         },
                     });
+
+                    // Session expired - reload to show login
+                    if (response.status === 401) {
+                        window.location.reload();
+                        return;
+                    }
 
                     if (!response.ok) {
                         throw new Error('Fehler beim Laden der Daten');
@@ -1816,8 +1747,6 @@
                         this.countries = result.data.countries;
                         this.summary = result.data.summary;
                         this.updateMapMarkers();
-
-                        // Re-select country if one was already selected (e.g. after filter change)
                         this.reselectCountryIfNeeded();
                     } else {
                         throw new Error(result.message || 'Unbekannter Fehler');
@@ -1830,11 +1759,9 @@
             },
 
             updateMapMarkers() {
-                // Clear existing markers
                 this.markers.forEach(marker => this.map.removeLayer(marker));
                 this.markers = [];
 
-                // Add markers for each country (use filtered list)
                 this.filteredCountries.forEach(country => {
                     if (country.country.lat && country.country.lng) {
                         const markerColor = this.getPriorityColor(country.highest_priority);
@@ -1851,7 +1778,6 @@
                             .addTo(this.map)
                             .on('click', () => this.selectCountry(country));
 
-                        // Tooltip
                         marker.bindTooltip(`
                             <strong>${country.country.name}</strong><br>
                             ${country.total_events} Ereignis${country.total_events !== 1 ? 'se' : ''}<br>
@@ -1865,7 +1791,6 @@
                     }
                 });
 
-                // Fit bounds if we have markers
                 if (this.markers.length > 0) {
                     const group = L.featureGroup(this.markers);
                     this.map.fitBounds(group.getBounds().pad(0.1));
@@ -1887,10 +1812,8 @@
                 this.loadingCountryDetails = true;
                 this.countryDetails = null;
 
-                // Only show sidebar in map view
                 if (this.activeTab === 'map') {
                     this.showCountrySidebar = true;
-                    // Center map on country
                     if (country.country.lat && country.country.lng) {
                         this.map.setView([country.country.lat, country.country.lng], 5);
                     }
@@ -1899,7 +1822,6 @@
                 try {
                     const params = new URLSearchParams();
 
-                    // Use custom date range or days
                     if (this.filters.customDateRange && this.filters.dateFrom) {
                         params.append('date_from', this.filters.dateFrom);
                         if (this.filters.dateTo) {
@@ -1909,12 +1831,18 @@
                         params.append('days', this.filters.days);
                     }
 
-                    const response = await fetch(`{{ url('/risk-overview/country') }}/${country.country.code}?${params.toString()}`, {
+                    const response = await fetch(`{{ url('/embed/risk-overview/country') }}/${country.country.code}?${params.toString()}`, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         },
                     });
+
+                    // Session expired - reload to show login
+                    if (response.status === 401) {
+                        window.location.reload();
+                        return;
+                    }
 
                     if (!response.ok) {
                         throw new Error('Fehler beim Laden der Details');
@@ -1963,21 +1891,17 @@
             },
 
             reselectCountryIfNeeded() {
-                // Only re-select if a country was already selected by the user
                 if (!this.selectedCountry) {
                     return;
                 }
 
-                // Check if the currently selected country is still in the filtered list
                 const stillVisible = this.filteredCountries.find(
                     c => c.country.code === this.selectedCountry.country.code
                 );
 
                 if (stillVisible) {
-                    // Refresh details with updated data
                     this.selectCountry(stillVisible);
                 } else {
-                    // Selected country no longer in filtered results, clear selection
                     this.selectedCountry = null;
                     this.countryDetails = null;
                 }
@@ -2022,17 +1946,14 @@
                 const end = new Date(endDate);
                 end.setHours(0, 0, 0, 0);
 
-                // Trip hasn't started yet
                 if (today < start) {
                     return { started: false, progress: 0, status: 'upcoming' };
                 }
 
-                // Trip has ended
                 if (today > end) {
                     return { started: true, progress: 100, status: 'completed' };
                 }
 
-                // Trip is in progress
                 const totalDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
                 const elapsedDays = Math.ceil((today - start) / (1000 * 60 * 60 * 24)) + 1;
                 const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
@@ -2041,7 +1962,5 @@
             },
         };
     }
-
 </script>
-</body>
-</html>
+@endsection

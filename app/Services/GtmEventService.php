@@ -23,6 +23,10 @@ class GtmEventService
                 ->notArchived()
                 ->approved()
                 ->where('start_date', '<=', now())
+                ->where(function ($query) {
+                    $query->whereNull('end_date')
+                          ->orWhere('end_date', '>=', now());
+                })
                 ->with([
                     'country.continent', 'country.capital',
                     'countries.continent', 'countries.capital',

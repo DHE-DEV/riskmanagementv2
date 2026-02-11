@@ -1208,18 +1208,6 @@
                                             </span>
                                         </div>
 
-                                        @if($customer->passolution_features && count($customer->passolution_features) > 0)
-                                            <div class="mt-2">
-                                                <span class="text-xs text-gray-600 block mb-2">Freigeschaltete Features:</span>
-                                                <div class="flex flex-wrap gap-1 justify-end">
-                                                    @foreach($passolutionService->getFeatureLabels($customer->passolution_features) as $featureLabel)
-                                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300">
-                                                            {{ $featureLabel }}
-                                                        </span>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
                                     </div>
                                 @endif
                             @endif
