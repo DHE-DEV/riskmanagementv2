@@ -73,11 +73,33 @@ class RiskOverviewService
                 'total_in_api' => $data['meta']['total'] ?? 'unknown',
             ]);
 
+            // Pre-load country names for resolving ISO codes
+            $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
+                $codes = $t['destinations'] ?? [];
+                $nationalities = $t['nationalities'] ?? [];
+                return array_merge($codes, $nationalities);
+            })->unique()->values()->toArray();
+
+            $countryNames = Country::whereIn('iso_code', $allIsoCodes)
+                ->pluck('name_translations', 'iso_code')
+                ->map(fn ($translations) => $translations['de'] ?? $translations['en'] ?? null)
+                ->toArray();
+
             // Group travelers by country code
             $travelersByCountry = [];
 
             foreach ($apiTravelers as $traveler) {
                 $countryCodes = $this->extractCountryCodesFromApiTraveler($traveler);
+
+                // Resolve destination codes to names
+                $destinations = collect($traveler['destinations'] ?? [])
+                    ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                    ->values()->toArray();
+
+                // Resolve nationality codes to names
+                $nationalities = collect($traveler['nationalities'] ?? [])
+                    ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                    ->values()->toArray();
 
                 foreach ($countryCodes as $countryCode) {
                     if (! isset($travelersByCountry[$countryCode])) {
@@ -93,6 +115,9 @@ class RiskOverviewService
                         'end_date' => $traveler['end_date'] ?? null,
                         'participant_count' => $traveler['travelers_count'] ?? 1,
                         'participants' => [],
+                        'destinations' => $destinations,
+                        'nationalities' => $nationalities,
+                        'with_minors' => $traveler['travel']['with_minors'] ?? false,
                         'source' => 'api',
                         'source_label' => 'PDS API',
                     ];
