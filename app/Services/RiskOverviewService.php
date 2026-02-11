@@ -110,7 +110,7 @@ class RiskOverviewService
                         'trip_id' => $traveler['tid'] ?? $traveler['id'] ?? null,
                         'folder_id' => 'api-'.($traveler['tid'] ?? $traveler['id'] ?? uniqid()),
                         'folder_name' => $traveler['trip_name'] ?? 'Unbenannte Reise',
-                        'folder_number' => $traveler['tid'] ?? null,
+                        'folder_number' => null,
                         'start_date' => $traveler['start_date'] ?? null,
                         'end_date' => $traveler['end_date'] ?? null,
                         'participant_count' => $traveler['travelers_count'] ?? 1,
