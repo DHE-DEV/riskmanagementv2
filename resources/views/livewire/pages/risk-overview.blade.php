@@ -388,7 +388,7 @@
                              :class="filters.onlyWithTravelers ? 'bg-blue-50 border border-blue-500' : 'bg-gray-50 hover:bg-gray-100'"
                              @click="filters.onlyWithTravelers = !filters.onlyWithTravelers; loadData()">
                             <p class="text-lg font-bold" :class="filters.onlyWithTravelers ? 'text-blue-700' : 'text-gray-900'" x-text="filteredSummary.total_affected_travelers"></p>
-                            <p class="text-xs" :class="filters.onlyWithTravelers ? 'text-blue-600' : 'text-gray-500'">Reisen</p>
+                            <p class="text-xs" :class="filters.onlyWithTravelers ? 'text-blue-600' : 'text-gray-500'">Betroffene Reisen</p>
                         </div>
                     </div>
                 </div>
