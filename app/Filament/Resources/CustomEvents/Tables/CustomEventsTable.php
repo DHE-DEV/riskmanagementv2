@@ -11,6 +11,7 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -80,6 +81,28 @@ class CustomEventsTable
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
                     ->badge()
                     ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+
+                TextColumn::make('review_status')
+                    ->label('Review')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'approved' => 'success',
+                        'pending_review' => 'warning',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'approved' => 'Freigegeben',
+                        'pending_review' => 'Ausstehend',
+                        'rejected' => 'Abgelehnt',
+                        default => $state,
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                TextColumn::make('apiClient.name')
+                    ->label('API-Quelle')
+                    ->placeholder('Intern')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('archived')
                     ->label('Archiviert')
@@ -182,6 +205,14 @@ class CustomEventsTable
                     ->placeholder('Alle Events')
                     ->trueLabel('Nur archivierte')
                     ->falseLabel('Nur nicht-archivierte'),
+
+                SelectFilter::make('review_status')
+                    ->label('Review-Status')
+                    ->options([
+                        'approved' => 'Freigegeben',
+                        'pending_review' => 'Ausstehend',
+                        'rejected' => 'Abgelehnt',
+                    ]),
 
                 Filter::make('start_date')
                     ->label('Startdatum')
@@ -290,6 +321,32 @@ class CustomEventsTable
                     ->label('Anzeigen'),
                 EditAction::make()
                     ->label('Bearbeiten'),
+                Action::make('approve')
+                    ->label('Freigeben')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (CustomEvent $record): bool => $record->review_status === 'pending_review')
+                    ->requiresConfirmation()
+                    ->action(function (CustomEvent $record) {
+                        $record->approve(auth()->id());
+                        Notification::make()
+                            ->title('Event freigegeben')
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('reject')
+                    ->label('Ablehnen')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (CustomEvent $record): bool => $record->review_status === 'pending_review')
+                    ->requiresConfirmation()
+                    ->action(function (CustomEvent $record) {
+                        $record->reject(auth()->id());
+                        Notification::make()
+                            ->title('Event abgelehnt')
+                            ->warning()
+                            ->send();
+                    }),
                 Action::make('duplicate')
                     ->label('Duplizieren')
                     ->icon('heroicon-o-document-duplicate')

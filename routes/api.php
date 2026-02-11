@@ -4,6 +4,8 @@ use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
 use App\Http\Controllers\Api\Plugin\HandshakeController;
 use App\Http\Controllers\Api\ShareLinkController;
+use App\Http\Controllers\Api\V1\EventApiController;
+use App\Http\Controllers\Api\V1\EventReferenceController;
 use App\Http\Controllers\Api\V1\ProximityController;
 use App\Http\Controllers\Api\V1\ShareLinkController as V1ShareLinkController;
 use App\Http\Controllers\Api\V1\TripController;
@@ -11,6 +13,8 @@ use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
 use App\Http\Controllers\SocialLinkController;
+use App\Http\Middleware\ApiClientAuthenticate;
+use App\Http\Middleware\ApiClientRequestLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -239,4 +243,35 @@ Route::prefix('v1/gtm')->middleware([
     Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.gtm.events.index');
     Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.gtm.events.show');
     Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.gtm.countries');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Event API Routes (API-Client-Protected)
+|--------------------------------------------------------------------------
+|
+| REST API for external API clients to create and manage events.
+| Protected by Sanctum token authentication with API client validation.
+|
+*/
+Route::prefix('v1/events')->middleware([
+    'auth:sanctum',
+    ApiClientAuthenticate::class,
+    ApiClientRequestLogger::class,
+    'throttle:api-client',
+])->group(function () {
+    Route::get('/', [EventApiController::class, 'index'])->name('v1.events.index');
+    Route::post('/', [EventApiController::class, 'store'])->name('v1.events.store');
+    Route::get('/{uuid}', [EventApiController::class, 'show'])->name('v1.events.show');
+    Route::put('/{uuid}', [EventApiController::class, 'update'])->name('v1.events.update');
+    Route::delete('/{uuid}', [EventApiController::class, 'destroy'])->name('v1.events.destroy');
+});
+
+// Event API Reference Data (API-Client-Protected, read-only)
+Route::prefix('v1')->middleware([
+    'auth:sanctum',
+    ApiClientAuthenticate::class,
+])->group(function () {
+    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('v1.api-client.event-types');
+    Route::get('/countries', [EventReferenceController::class, 'countries'])->name('v1.api-client.countries');
 });

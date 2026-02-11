@@ -21,11 +21,13 @@ class GtmEventService
         return Cache::remember('gtm_active_events', $cacheDuration, function () {
             return CustomEvent::active()
                 ->notArchived()
+                ->approved()
                 ->where('start_date', '<=', now())
                 ->with([
                     'country.continent', 'country.capital',
                     'countries.continent', 'countries.capital',
                     'eventType', 'eventTypes', 'eventCategory',
+                    'apiClient',
                 ])
                 ->orderBy('start_date', 'desc')
                 ->limit(100)

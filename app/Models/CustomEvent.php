@@ -43,6 +43,10 @@ class CustomEvent extends Model implements Feedable
         'created_by',
         'updated_by',
         'selected_display_event_type_id',
+        'api_client_id',
+        'review_status',
+        'reviewed_at',
+        'reviewed_by',
     ];
 
     protected $casts = [
@@ -54,6 +58,7 @@ class CustomEvent extends Model implements Feedable
         'archived' => 'boolean',
         'archived_at' => 'datetime',
         'tags' => 'array',
+        'reviewed_at' => 'datetime',
     ];
 
     protected $attributes = [
@@ -143,6 +148,64 @@ class CustomEvent extends Model implements Feedable
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * API Client relation.
+     */
+    public function apiClient(): BelongsTo
+    {
+        return $this->belongsTo(ApiClient::class);
+    }
+
+    /**
+     * Reviewer relation.
+     */
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Scope: pending review.
+     */
+    public function scopePendingReview($query)
+    {
+        return $query->where('review_status', 'pending_review');
+    }
+
+    /**
+     * Scope: approved.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('review_status', 'approved');
+    }
+
+    /**
+     * Approve this event.
+     */
+    public function approve(int $userId): void
+    {
+        $this->update([
+            'review_status' => 'approved',
+            'is_active' => true,
+            'reviewed_at' => now(),
+            'reviewed_by' => $userId,
+        ]);
+    }
+
+    /**
+     * Reject this event.
+     */
+    public function reject(int $userId): void
+    {
+        $this->update([
+            'review_status' => 'rejected',
+            'is_active' => false,
+            'reviewed_at' => now(),
+            'reviewed_by' => $userId,
+        ]);
     }
 
     /**

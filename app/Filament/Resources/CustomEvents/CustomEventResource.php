@@ -69,6 +69,7 @@ class CustomEventResource extends Resource
     {
         // Zeige alle Datensätze an, auch archivierte und deaktivierte
         return parent::getEloquentQuery()
+            ->with(['apiClient'])
             ->withCount('clicks');
     }
 
@@ -82,12 +83,21 @@ class CustomEventResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        $total = static::getModel()::count();
+        $pending = static::getModel()::where('review_status', 'pending_review')->count();
+
+        if ($pending > 0) {
+            return "{$total} ({$pending} neu)";
+        }
+
+        return (string) $total;
     }
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return 'success';
+        $pending = static::getModel()::where('review_status', 'pending_review')->count();
+
+        return $pending > 0 ? 'warning' : 'success';
     }
 
     public static function getNavigationGroup(): ?string

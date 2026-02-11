@@ -21,6 +21,7 @@ class CustomEventController extends Controller
             $settings = EventDisplaySetting::current();
 
             $events = CustomEvent::visible()
+                ->approved()
                 ->where('archived', false)
                 ->where('priority', '!=', 'critical')
                 ->where(function ($query) {
@@ -41,7 +42,7 @@ class CustomEventController extends Controller
                           ->whereDoesntHave('eventTypes');
                     });
                 })
-                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
+                ->with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital', 'apiClient'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($event) use ($settings) {
@@ -100,6 +101,8 @@ class CustomEventController extends Controller
                         'updated_at' => $event->updated_at,
                         'creator_name' => $event->creator?->name,
                         'updater_name' => $event->updater?->name,
+                        'source_logo' => $event->apiClient?->getLogoUrl() ?? '/Passolution-Logo-klein.png',
+                        'source_name' => $event->apiClient?->company_name ?? 'Passolution',
                     ];
                 });
 
@@ -130,6 +133,7 @@ class CustomEventController extends Controller
             $settings = EventDisplaySetting::current();
 
             $events = CustomEvent::visible()
+                ->approved()
                 ->where('archived', false)
                 ->where('priority', '!=', 'critical')
                 ->where(function ($query) {
@@ -150,7 +154,7 @@ class CustomEventController extends Controller
                     })
                     ->orWhereNull('event_type_id');
                 })
-                ->with(['country', 'eventType', 'eventTypes', 'countries.capital'])
+                ->with(['country', 'eventType', 'eventTypes', 'countries.capital', 'apiClient'])
                 ->get()
                 ->map(function ($event) use ($settings) {
                     // Verwende neue getDisplayIcon() Methode für intelligente Icon-Auswahl
@@ -202,6 +206,8 @@ class CustomEventController extends Controller
                         'archived_at' => $event->archived_at,
                         'start_date' => optional($event->start_date)?->toDateTimeString(),
                         'end_date' => $event->end_date,
+                        'source_logo' => $event->apiClient?->getLogoUrl() ?? '/Passolution-Logo-klein.png',
+                        'source_name' => $event->apiClient?->company_name ?? 'Passolution',
                     ];
                 });
 
@@ -472,7 +478,7 @@ class CustomEventController extends Controller
             // Lade Settings
             $settings = EventDisplaySetting::current();
 
-            $event = CustomEvent::with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital'])
+            $event = CustomEvent::with(['creator', 'updater', 'country', 'eventType', 'eventTypes', 'countries.capital', 'apiClient'])
                 ->findOrFail($eventId);
 
             // Format the event data similar to getDashboardEvents
@@ -530,6 +536,8 @@ class CustomEventController extends Controller
                 'creator_name' => $event->creator?->name,
                 'updater_name' => $event->updater?->name,
                 'source' => 'custom',
+                'source_logo' => $event->apiClient?->getLogoUrl() ?? '/Passolution-Logo-klein.png',
+                'source_name' => $event->apiClient?->company_name ?? 'Passolution',
             ];
 
             return response()->json([

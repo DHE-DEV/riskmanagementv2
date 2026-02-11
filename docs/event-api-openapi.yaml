@@ -1,0 +1,620 @@
+openapi: 3.0.3
+info:
+  title: Passolution Event API
+  description: |
+    REST API für externe Partner zur Erstellung und Verwaltung von Events
+    auf dem Risk Management Dashboard.
+  version: 1.0.0
+  contact:
+    name: Passolution Support
+
+servers:
+  - url: https://{domain}/api/v1
+    description: Produktionsserver
+    variables:
+      domain:
+        default: example.com
+        description: Domain der Installation
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Events
+    description: Event-CRUD-Operationen
+  - name: Referenzdaten
+    description: Nachschlage-Daten für Event-Erstellung
+
+paths:
+  /events:
+    get:
+      tags: [Events]
+      summary: Eigene Events auflisten
+      description: Gibt eine paginierte Liste aller Events des authentifizierten API-Kunden zurück.
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+          description: Einträge pro Seite
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Seitennummer
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+    post:
+      tags: [Events]
+      summary: Neues Event erstellen
+      description: |
+        Erstellt ein neues Event. Je nach Account-Einstellung wird das Event
+        sofort veröffentlicht (auto_approve) oder zur Prüfung eingereicht.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+            example:
+              title: Überschwemmung Bangkok
+              description: "<p>Schwere Überschwemmungen im Großraum Bangkok.</p>"
+              priority: high
+              start_date: "2026-02-11T08:00:00Z"
+              end_date: "2026-02-18T08:00:00Z"
+              event_type_codes: ["flood"]
+              country_codes: ["TH"]
+              latitude: 13.7563
+              longitude: 100.5018
+              tags: ["flooding", "bangkok"]
+              external_id: "EXT-2026-001"
+      responses:
+        '201':
+          description: Event erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Event created and published successfully.
+                  data:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /events/{uuid}:
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID des Events
+
+    get:
+      tags: [Events]
+      summary: Einzelnes Event anzeigen
+      responses:
+        '200':
+          description: Event gefunden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Events]
+      summary: Event aktualisieren
+      description: Nur die zu ändernden Felder müssen gesendet werden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+            example:
+              title: "Überschwemmung Bangkok - Entwarnung"
+              priority: low
+      responses:
+        '200':
+          description: Event erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Event updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags: [Events]
+      summary: Event löschen
+      description: Soft-Delete - das Event wird als gelöscht markiert.
+      responses:
+        '200':
+          description: Event erfolgreich gelöscht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Event deleted successfully.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /event-types:
+    get:
+      tags: [Referenzdaten]
+      summary: Verfügbare Event-Typen
+      description: Liste aller aktiven Event-Typen mit ihren Codes.
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventType'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /countries:
+    get:
+      tags: [Referenzdaten]
+      summary: Verfügbare Länder
+      description: Liste aller Länder mit ISO-Codes.
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Country'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: API-Token im Format "Bearer {token}"
+
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID des Events
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        title:
+          type: string
+          example: Überschwemmung Bangkok
+        description:
+          type: string
+          nullable: true
+          example: Schwere Überschwemmungen im Großraum Bangkok.
+        priority:
+          type: string
+          enum: [info, low, medium, high]
+          example: high
+        start_date:
+          type: string
+          format: date-time
+          example: "2026-02-11T08:00:00+00:00"
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-02-18T08:00:00+00:00"
+        latitude:
+          type: number
+          format: float
+          nullable: true
+          example: 13.7563
+        longitude:
+          type: number
+          format: float
+          nullable: true
+          example: 100.5018
+        review_status:
+          type: string
+          enum: [approved, pending_review, rejected]
+          description: |
+            - `approved` - Event ist freigegeben und sichtbar
+            - `pending_review` - Event wartet auf Freigabe
+            - `rejected` - Event wurde abgelehnt
+          example: approved
+        is_active:
+          type: boolean
+          description: Ob das Event auf dem Dashboard sichtbar ist
+          example: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: ["flooding", "bangkok"]
+        event_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventCountry'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateEventRequest:
+      type: object
+      required:
+        - title
+        - start_date
+        - event_type_codes
+        - country_codes
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Titel des Events
+        description:
+          type: string
+          maxLength: 10000
+          nullable: true
+          description: "Beschreibung (erlaubte HTML-Tags: p, br, strong, em, ul, ol, li, a)"
+        priority:
+          type: string
+          enum: [info, low, medium, high]
+          default: medium
+          description: Prioritätsstufe
+        start_date:
+          type: string
+          format: date-time
+          description: Startdatum (ISO 8601)
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Enddatum (muss nach start_date liegen)
+        event_type_codes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: "Event-Typ-Codes (aus GET /event-types)"
+          example: ["flood"]
+        country_codes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 2
+            maxLength: 2
+          description: "ISO-2-Ländercodes (aus GET /countries)"
+          example: ["TH"]
+        latitude:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          nullable: true
+          description: Breitengrad
+        longitude:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          nullable: true
+          description: Längengrad
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+            maxLength: 50
+          description: Schlagwörter
+        external_id:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Ihre interne Referenz-ID
+
+    UpdateEventRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 10000
+          nullable: true
+        priority:
+          type: string
+          enum: [info, low, medium, high]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        event_type_codes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        country_codes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 2
+            maxLength: 2
+        latitude:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          nullable: true
+        longitude:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          nullable: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+            maxLength: 50
+        external_id:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    EventType:
+      type: object
+      properties:
+        code:
+          type: string
+          example: flood
+        name:
+          type: string
+          example: Überschwemmung
+        color:
+          type: string
+          example: "#0066CC"
+        icon:
+          type: string
+          example: fa-water
+
+    Country:
+      type: object
+      properties:
+        iso_code:
+          type: string
+          example: TH
+        iso3_code:
+          type: string
+          example: THA
+        name:
+          type: string
+          example: Thailand
+        name_en:
+          type: string
+          example: Thailand
+
+    EventCountry:
+      type: object
+      properties:
+        iso_code:
+          type: string
+          example: TH
+        name:
+          type: string
+          example: Thailand
+        name_en:
+          type: string
+          example: Thailand
+
+    PaginationLinks:
+      type: object
+      properties:
+        first:
+          type: string
+        last:
+          type: string
+        prev:
+          type: string
+          nullable: true
+        next:
+          type: string
+          nullable: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        from:
+          type: integer
+        last_page:
+          type: integer
+        per_page:
+          type: integer
+        to:
+          type: integer
+        total:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The title field is required.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            title: ["The title field is required."]
+            event_type_codes: ["At least one event type code is required."]
+
+  responses:
+    Unauthenticated:
+      description: Nicht authentifiziert - Token fehlt oder ungültig
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Unauthenticated
+
+    Forbidden:
+      description: Zugriff verweigert
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Token does not have the required permissions.
+
+    NotFound:
+      description: Ressource nicht gefunden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Event not found.
+
+    ValidationError:
+      description: Validierungsfehler
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    TooManyRequests:
+      description: Rate Limit überschritten
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Sekunden bis zum nächsten erlaubten Request

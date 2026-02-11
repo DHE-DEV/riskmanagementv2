@@ -2755,7 +2755,7 @@ async function loadEventDetails(event) {
                     ` : ''}
                     <div class="info-item">
                         <span class="info-label">Quelle:</span>
-                        <span class="info-value">${event.source === 'custom' ? '<img src="/Passolution-Logo-klein.png" alt="Passolution" style="height:14px; vertical-align:middle;" />' : 'GDACS'}</span>
+                        <span class="info-value">${event.source === 'custom' ? (event.source_logo ? `<img src="${event.source_logo}" alt="${event.source_name || 'Quelle'}" style="height:14px; vertical-align:middle;" />` : (event.source_name || 'Intern')) : 'GDACS'}</span>
                     </div>
                     ${event.archived ? `
                     <div class="info-item col-span-2">
@@ -3413,7 +3413,7 @@ function createCustomMarker(event) {
 // Popup-Inhalt erstellen
 function createPopupContent(event) {
 	const sourceValue = event.source === 'custom'
-		? '<img src=\"/Passolution-Logo-klein.png\" alt=\"Passolution\" style=\"height:14px; vertical-align:middle;\" />'
+		? (event.source_logo ? `<img src="${event.source_logo}" alt="${event.source_name || 'Quelle'}" style="height:14px; vertical-align:middle;" />` : (event.source_name || 'Intern'))
 		: 'GDACS';
 
 	// Archivierungsstatus-Badge
@@ -4179,7 +4179,7 @@ function createEventElement(event) {
     const severityColor = sev.dot;
     const severityTextClass = sev.text;
     const rightHtml = event.source === 'custom'
-        ? '<img src="/Passolution-Logo-klein.png" alt="Passolution" style="height:12px;vertical-align:middle;" />'
+        ? (event.source_logo ? `<img src="${event.source_logo}" alt="${event.source_name || 'Quelle'}" style="height:12px;vertical-align:middle;" />` : `<span class="text-xs text-gray-500">${event.source_name || 'Intern'}</span>`)
         : '<span class="text-xs text-gray-500 uppercase">GDACS</span>';
     const displayDate = event.source === 'custom'
         ? (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : ''))
