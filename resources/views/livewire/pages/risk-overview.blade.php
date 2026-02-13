@@ -614,7 +614,7 @@
                                                         <div class="flex items-center gap-2">
                                                             <span x-text="event.event_type"></span>
                                                             <span>&bull;</span>
-                                                            <span x-text="formatDate(event.start_date)"></span>
+                                                            <span x-text="formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')"></span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1030,7 +1030,7 @@
                                                 <p class="text-xs text-gray-600 mt-1 line-clamp-2" x-text="event.description"></p>
                                                 <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
                                                     <span x-text="event.event_type"></span>
-                                                    <span x-text="formatDate(event.start_date)"></span>
+                                                    <span x-text="formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')"></span>
                                                 </div>
                                                 <template x-if="event.source_url">
                                                     <a :href="event.source_url" target="_blank" class="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 hover:text-blue-800">
@@ -1156,7 +1156,7 @@
                                                      }">
                                                     <div class="flex-1 min-w-0">
                                                         <h4 class="text-xs font-medium text-gray-800 truncate" x-text="event.title"></h4>
-                                                        <p class="text-xs text-gray-500 mt-0.5" x-text="event.event_type + ' • ' + formatDate(event.start_date)"></p>
+                                                        <p class="text-xs text-gray-500 mt-0.5" x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')"></p>
                                                     </div>
                                                     <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                                                           :class="{
