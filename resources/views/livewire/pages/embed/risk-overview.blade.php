@@ -468,6 +468,12 @@
                     <i class="fa-regular fa-map mr-2"></i>
                     Karte
                 </button>
+                <button @click="activeTab = 'trips'; if (!tripsLoaded) loadTrips();"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'trips' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                    <i class="fa-regular fa-suitcase-rolling mr-2"></i>
+                    Reisen
+                </button>
                 <!-- Selected country indicator -->
                 <template x-if="selectedCountry && (activeTab === 'list' || activeTab === 'tiles' || activeTab === 'calendar')">
                     <div class="ml-auto flex items-center gap-2 text-sm text-gray-600">
@@ -913,6 +919,156 @@
                                 </div>
                             </div>
                         </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Trips View -->
+            <div x-show="activeTab === 'trips'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
+                <!-- Loading -->
+                <template x-if="loadingTrips">
+                    <div class="flex-1 flex items-center justify-center">
+                        <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
+                    </div>
+                </template>
+
+                <!-- No trips -->
+                <template x-if="!loadingTrips && trips.length === 0">
+                    <div class="flex-1 flex items-center justify-center bg-gray-50">
+                        <div class="text-center">
+                            <i class="fa-regular fa-suitcase text-4xl text-gray-400 mb-3"></i>
+                            <h3 class="font-semibold text-gray-700">Keine Reisen gefunden</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Im ausgewählten Zeitraum sind keine Reisen vorhanden.
+                            </p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Trips list -->
+                <template x-if="!loadingTrips && trips.length > 0">
+                    <div class="flex-1 flex flex-col min-h-0">
+                        <!-- Summary bar -->
+                        <div class="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+                            <div class="flex items-center gap-4 text-sm text-gray-600">
+                                <span>
+                                    <i class="fa-regular fa-suitcase-rolling mr-1"></i>
+                                    <span x-text="tripsSummary.total_trips"></span> Reisen
+                                </span>
+                                <span>
+                                    <i class="fa-regular fa-triangle-exclamation mr-1 text-orange-500"></i>
+                                    <span x-text="tripsSummary.trips_with_events"></span> mit Ereignissen
+                                </span>
+                                <span>
+                                    <i class="fa-regular fa-bell mr-1"></i>
+                                    <span x-text="tripsSummary.total_events_across_trips"></span> Ereignisse gesamt
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Trip cards -->
+                        <div class="flex-1 overflow-y-auto p-4">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <template x-for="trip in trips" :key="trip.folder_id">
+                                    <div class="bg-white rounded-lg border shadow-sm overflow-hidden"
+                                         :class="trip.total_events > 0
+                                            ? (trip.highest_priority === 'high' ? 'border-red-300' : trip.highest_priority === 'medium' ? 'border-orange-300' : trip.highest_priority === 'low' ? 'border-yellow-300' : 'border-blue-300')
+                                            : 'border-gray-200 opacity-60'">
+                                        <!-- Trip header -->
+                                        <div class="p-4 border-b border-gray-100">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <h4 class="text-sm font-semibold text-gray-900" x-text="trip.folder_name"></h4>
+                                                <div class="flex items-center gap-2 flex-shrink-0">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                                          :class="trip.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'"
+                                                          x-text="trip.source_label"></span>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
+                                                <span>
+                                                    <i class="fa-regular fa-calendar mr-1"></i>
+                                                    <span x-text="formatDate(trip.start_date) + ' - ' + formatDate(trip.end_date)"></span>
+                                                </span>
+                                                <span>
+                                                    <i class="fa-regular fa-users mr-1"></i>
+                                                    <span x-text="trip.participant_count"></span> Teilnehmer
+                                                </span>
+                                            </div>
+
+                                            <!-- Progress bar -->
+                                            <div x-data="{ tripProgress: getTripProgress(trip.start_date, trip.end_date) }">
+                                                <div class="flex items-center" :class="tripProgress.started ? 'gap-2' : ''">
+                                                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div class="h-full rounded-full transition-all duration-300"
+                                                             :class="tripProgress.started ? 'bg-green-500' : 'bg-gray-300'"
+                                                             :style="'width: ' + (tripProgress.started ? tripProgress.progress : 100) + '%'"></div>
+                                                    </div>
+                                                    <span class="text-xs text-gray-400 w-auto"
+                                                          x-text="tripProgress.status === 'upcoming' ? 'Geplant' : tripProgress.status === 'active' ? tripProgress.progress + '%' : 'Beendet'"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Destination badges -->
+                                            <div class="flex flex-wrap gap-1 mt-2">
+                                                <template x-for="dest in trip.destinations" :key="dest.code">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
+                                                          x-text="dest.name"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <!-- Events section -->
+                                        <div class="p-4" x-show="trip.total_events > 0">
+                                            <h5 class="text-xs font-medium text-gray-500 mb-2">
+                                                <i class="fa-regular fa-triangle-exclamation mr-1"></i>
+                                                <span x-text="trip.total_events"></span> Ereignis<span x-show="trip.total_events !== 1">se</span>
+                                            </h5>
+                                            <div class="space-y-2">
+                                                <template x-for="event in trip.events" :key="event.id">
+                                                    <div class="p-2 rounded border-l-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                         @click="openEventModal(event)"
+                                                         :class="{
+                                                             'border-l-red-500 bg-red-50': event.priority === 'high',
+                                                             'border-l-orange-500 bg-orange-50': event.priority === 'medium',
+                                                             'border-l-yellow-500 bg-yellow-50': event.priority === 'low',
+                                                             'border-l-blue-500 bg-blue-50': event.priority === 'info'
+                                                         }">
+                                                        <div class="flex items-start justify-between">
+                                                            <div class="flex-1 min-w-0">
+                                                                <p class="text-xs font-medium text-gray-800 truncate" x-text="event.title"></p>
+                                                                <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+                                                                    <template x-for="mc in event.matched_countries" :key="mc.code">
+                                                                        <span class="text-xs text-gray-500 bg-white px-1.5 py-0.5 rounded"
+                                                                              x-text="mc.name"></span>
+                                                                    </template>
+                                                                    <span class="text-xs text-gray-400" x-text="'• ' + (event.event_type || '')"></span>
+                                                                </div>
+                                                            </div>
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ml-2"
+                                                                  :class="{
+                                                                      'bg-red-100 text-red-700': event.priority === 'high',
+                                                                      'bg-orange-100 text-orange-700': event.priority === 'medium',
+                                                                      'bg-yellow-100 text-yellow-700': event.priority === 'low',
+                                                                      'bg-blue-100 text-blue-700': event.priority === 'info'
+                                                                  }"
+                                                                  x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Info'"></span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <!-- No events -->
+                                        <div class="px-4 py-3" x-show="trip.total_events === 0">
+                                            <p class="text-xs text-gray-400 flex items-center">
+                                                <i class="fa-regular fa-check-circle mr-1 text-green-400"></i>
+                                                Keine Ereignisse
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                 </template>
             </div>
@@ -1598,6 +1754,10 @@
             showCountrySidebar: false,
             activeTab: 'tiles',
             maximizedSection: null,
+            trips: [],
+            tripsSummary: { total_trips: 0, trips_with_events: 0, total_events_across_trips: 0 },
+            loadingTrips: false,
+            tripsLoaded: false,
 
             toggleMaximize(section) {
                 if (this.maximizedSection === section) {
@@ -1753,6 +1913,13 @@
                         this.countries = result.data.countries;
                         this.summary = result.data.summary;
                         this.updateMapMarkers();
+
+                        // Invalidate trips data so it reloads on next tab visit
+                        this.tripsLoaded = false;
+                        if (this.activeTab === 'trips') {
+                            this.loadTrips();
+                        }
+
                         this.reselectCountryIfNeeded();
                     } else {
                         throw new Error(result.message || 'Unbekannter Fehler');
@@ -1761,6 +1928,54 @@
                     this.error = e.message;
                 } finally {
                     this.loading = false;
+                }
+            },
+
+            async loadTrips() {
+                this.loadingTrips = true;
+
+                try {
+                    const params = new URLSearchParams();
+                    if (this.filters.priority) {
+                        params.append('priority', this.filters.priority);
+                    }
+
+                    if (this.filters.customDateRange && this.filters.dateFrom) {
+                        params.append('date_from', this.filters.dateFrom);
+                        if (this.filters.dateTo) {
+                            params.append('date_to', this.filters.dateTo);
+                        }
+                    } else {
+                        params.append('days', this.filters.days);
+                    }
+
+                    const response = await fetch(`{{ route('embed.risk-overview.trips') }}?${params.toString()}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                    });
+
+                    if (response.status === 401) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Fehler beim Laden der Reisen');
+                    }
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.trips = result.data.trips;
+                        this.tripsSummary = result.data.summary;
+                        this.tripsLoaded = true;
+                    }
+                } catch (e) {
+                    console.error('Error loading trips:', e);
+                } finally {
+                    this.loadingTrips = false;
                 }
             },
 

@@ -127,6 +127,7 @@ Route::prefix('embed/risk-overview')->name('embed.risk-overview')->middleware(['
     Route::middleware(['auth:customer'])->group(function () {
         Route::get('/data', [EmbedRiskOverviewController::class, 'getData'])->name('.data');
         Route::get('/country/{countryCode}', [EmbedRiskOverviewController::class, 'getCountryDetails'])->name('.country');
+        Route::get('/trips', [EmbedRiskOverviewController::class, 'getTrips'])->name('.trips');
     });
 });
 
@@ -316,6 +317,10 @@ Route::get('/risk-overview/data', [\App\Http\Controllers\Customer\RiskOverviewCo
 Route::get('/risk-overview/country/{countryCode}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getCountryDetails'])
     ->middleware('auth:customer')
     ->name('risk-overview.country');
+
+Route::get('/risk-overview/trips', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getTrips'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.trips');
 
 Route::middleware([
     'auth:sanctum',

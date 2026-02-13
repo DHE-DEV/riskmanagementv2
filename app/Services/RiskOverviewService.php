@@ -489,6 +489,33 @@ class RiskOverviewService
     }
 
     /**
+     * Format a single event into an array for API responses.
+     */
+    protected function formatEvent(CustomEvent $event): array
+    {
+        return [
+            'id' => $event->id,
+            'uuid' => $event->uuid,
+            'title' => $event->title,
+            'description' => $event->description,
+            'popup_content' => $event->popup_content,
+            'priority' => $event->priority,
+            'severity' => $event->severity,
+            'start_date' => $event->start_date?->format('Y-m-d'),
+            'end_date' => $event->end_date?->format('Y-m-d'),
+            'event_type' => $event->eventType?->name ?? null,
+            'event_category' => $event->eventCategory?->name ?? null,
+            'latitude' => $event->latitude,
+            'longitude' => $event->longitude,
+            'radius_km' => $event->radius_km ?? null,
+            'data_source' => $event->data_source,
+            'tags' => $event->tags,
+            'created_at' => $event->created_at?->format('Y-m-d'),
+            'updated_at' => $event->updated_at?->format('Y-m-d'),
+        ];
+    }
+
+    /**
      * Get detailed risk information for a specific country.
      */
     public function getCountryRiskDetails(int $customerId, string $countryCode, int $daysAhead = 30): array
@@ -500,28 +527,7 @@ class RiskOverviewService
         $travelers = $this->getTravelersInCountry($customerId, $countryCode, $daysAhead);
 
         // Format events
-        $formattedEvents = $events->map(function (CustomEvent $event) {
-            return [
-                'id' => $event->id,
-                'uuid' => $event->uuid,
-                'title' => $event->title,
-                'description' => $event->description,
-                'popup_content' => $event->popup_content,
-                'priority' => $event->priority,
-                'severity' => $event->severity,
-                'start_date' => $event->start_date?->format('Y-m-d'),
-                'end_date' => $event->end_date?->format('Y-m-d'),
-                'event_type' => $event->eventType?->name ?? null,
-                'event_category' => $event->eventCategory?->name ?? null,
-                'latitude' => $event->latitude,
-                'longitude' => $event->longitude,
-                'radius_km' => $event->radius_km ?? null,
-                'data_source' => $event->data_source,
-                'tags' => $event->tags,
-                'created_at' => $event->created_at?->format('Y-m-d'),
-                'updated_at' => $event->updated_at?->format('Y-m-d'),
-            ];
-        })->values()->toArray();
+        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event))->values()->toArray();
 
         // Get country info
         $country = Country::where('iso_code', $countryCode)
@@ -559,28 +565,7 @@ class RiskOverviewService
         $travelers = $this->getTravelersInCountryByDateRange($customerId, $countryCode, $dateFrom, $dateTo);
 
         // Format events
-        $formattedEvents = $events->map(function (CustomEvent $event) {
-            return [
-                'id' => $event->id,
-                'uuid' => $event->uuid,
-                'title' => $event->title,
-                'description' => $event->description,
-                'popup_content' => $event->popup_content,
-                'priority' => $event->priority,
-                'severity' => $event->severity,
-                'start_date' => $event->start_date?->format('Y-m-d'),
-                'end_date' => $event->end_date?->format('Y-m-d'),
-                'event_type' => $event->eventType?->name ?? null,
-                'event_category' => $event->eventCategory?->name ?? null,
-                'latitude' => $event->latitude,
-                'longitude' => $event->longitude,
-                'radius_km' => $event->radius_km ?? null,
-                'data_source' => $event->data_source,
-                'tags' => $event->tags,
-                'created_at' => $event->created_at?->format('Y-m-d'),
-                'updated_at' => $event->updated_at?->format('Y-m-d'),
-            ];
-        })->values()->toArray();
+        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event))->values()->toArray();
 
         // Get country info
         $country = Country::where('iso_code', $countryCode)
@@ -754,5 +739,332 @@ class RiskOverviewService
         });
 
         return $travelers;
+    }
+
+    /**
+     * Fetch travelers from API grouped by trip ID instead of country.
+     *
+     * @return array<string, array> Trip ID => trip data with destinations
+     */
+    protected function fetchApiTravelersByTrip(Customer $customer, string $startDate, string $endDate): array
+    {
+        if (! $this->pdsApiService->hasValidToken($customer)) {
+            return [];
+        }
+
+        try {
+            $apiRequestBody = [
+                'sort_by' => 'start_date',
+                'sort_order' => 'desc',
+                'page' => 1,
+                'per_page' => 1000,
+                'start_date' => ['<=' => $endDate],
+                'end_date' => ['>=' => $startDate],
+            ];
+
+            $response = $this->pdsApiService->post($customer, '/travel-details', $apiRequestBody);
+
+            if (! $response || ! $response->successful()) {
+                return [];
+            }
+
+            $data = $response->json();
+            $apiTravelers = $data['data'] ?? [];
+
+            // Pre-load country names
+            $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
+                $codes = $t['destinations'] ?? [];
+                $nationalities = $t['nationalities'] ?? [];
+
+                return array_merge($codes, $nationalities);
+            })->unique()->values()->toArray();
+
+            $countryNames = Country::whereIn('iso_code', $allIsoCodes)
+                ->pluck('name_translations', 'iso_code')
+                ->map(fn ($translations) => $translations['de'] ?? $translations['en'] ?? null)
+                ->toArray();
+
+            // Group by trip ID
+            $tripsByTripId = [];
+
+            foreach ($apiTravelers as $traveler) {
+                $tripId = $traveler['tid'] ?? $traveler['id'] ?? uniqid();
+                $countryCodes = $this->extractCountryCodesFromApiTraveler($traveler);
+
+                $destinations = collect($traveler['destinations'] ?? [])
+                    ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                    ->values()->toArray();
+
+                $nationalities = collect($traveler['nationalities'] ?? [])
+                    ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                    ->values()->toArray();
+
+                $tripsByTripId[$tripId] = [
+                    'trip_id' => $tripId,
+                    'folder_id' => 'api-'.$tripId,
+                    'folder_name' => $traveler['trip_name'] ?? 'Unbenannte Reise',
+                    'start_date' => $traveler['start_date'] ?? null,
+                    'end_date' => $traveler['end_date'] ?? null,
+                    'participant_count' => $traveler['travelers_count'] ?? 1,
+                    'destinations' => $destinations,
+                    'destination_codes' => $countryCodes,
+                    'nationalities' => $nationalities,
+                    'source' => 'api',
+                    'source_label' => 'PDS API',
+                ];
+            }
+
+            return $tripsByTripId;
+        } catch (\Exception $e) {
+            Log::error('RiskOverviewService: Error fetching API travelers by trip', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Get trips with matched events from all destination countries.
+     */
+    public function getTripsWithEvents(int $customerId, ?string $priorityFilter = null, int $daysAhead = 30): array
+    {
+        $today = now()->startOfDay();
+        $endDate = $today->copy()->addDays($daysAhead);
+
+        return $this->buildTripsWithEvents(
+            $customerId,
+            $today,
+            $endDate,
+            $priorityFilter
+        );
+    }
+
+    /**
+     * Get trips with matched events using custom date range.
+     */
+    public function getTripsWithEventsByDateRange(int $customerId, string $dateFrom, ?string $dateTo = null, ?string $priorityFilter = null): array
+    {
+        $startDate = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $endDate = $dateTo ? \Carbon\Carbon::parse($dateTo)->endOfDay() : $startDate->copy()->addDays(30)->endOfDay();
+
+        return $this->buildTripsWithEvents(
+            $customerId,
+            $startDate,
+            $endDate,
+            $priorityFilter
+        );
+    }
+
+    /**
+     * Core logic for building trips with their matched events.
+     */
+    protected function buildTripsWithEvents(int $customerId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate, ?string $priorityFilter): array
+    {
+        // 1. Get all active events
+        $events = $this->gtmEventService->getActiveEvents($priorityFilter);
+
+        // 2. Index events by country code
+        $eventsByCountry = [];
+        foreach ($events as $event) {
+            $eventCountries = [];
+
+            if ($event->country_id && $event->country) {
+                $eventCountries[] = $event->country;
+            }
+
+            if ($event->countries->isNotEmpty()) {
+                foreach ($event->countries as $country) {
+                    $alreadyAdded = false;
+                    foreach ($eventCountries as $ec) {
+                        if ($ec->id === $country->id) {
+                            $alreadyAdded = true;
+                            break;
+                        }
+                    }
+                    if (! $alreadyAdded) {
+                        $eventCountries[] = $country;
+                    }
+                }
+            }
+
+            $formatted = $this->formatEvent($event);
+
+            foreach ($eventCountries as $country) {
+                $code = $country->iso_code;
+                $countryName = $country->name_translations['de'] ?? $country->name_translations['en'] ?? $country->iso_code;
+
+                if (! isset($eventsByCountry[$code])) {
+                    $eventsByCountry[$code] = [];
+                }
+
+                // Avoid duplicates
+                $alreadyAdded = false;
+                foreach ($eventsByCountry[$code] as $existing) {
+                    if ($existing['id'] === $formatted['id']) {
+                        $alreadyAdded = true;
+                        break;
+                    }
+                }
+
+                if (! $alreadyAdded) {
+                    $formatted['country_code'] = $code;
+                    $formatted['country_name'] = $countryName;
+                    $eventsByCountry[$code][] = $formatted;
+                }
+            }
+        }
+
+        // 3. Collect all trips (local folders + API)
+        $trips = [];
+
+        // Local folders
+        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'])
+            ->where('customer_id', $customerId)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('travel_start_date', [$startDate, $endDate])
+                    ->orWhereBetween('travel_end_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('travel_start_date', '<=', $startDate)
+                            ->where('travel_end_date', '>=', $endDate);
+                    });
+            })
+            ->get();
+
+        // Pre-load country names for folder destination codes
+        $allFolderCodes = collect();
+        foreach ($folders as $folder) {
+            $allFolderCodes = $allFolderCodes->merge($this->extractCountryCodesFromFolder($folder));
+        }
+        $folderCountryNames = [];
+        if ($allFolderCodes->isNotEmpty()) {
+            $folderCountryNames = Country::whereIn('iso_code', $allFolderCodes->unique()->toArray())
+                ->pluck('name_translations', 'iso_code')
+                ->map(fn ($translations) => $translations['de'] ?? $translations['en'] ?? null)
+                ->toArray();
+        }
+
+        foreach ($folders as $folder) {
+            $countryCodes = $this->extractCountryCodesFromFolder($folder);
+            $destinations = collect($countryCodes)->map(fn ($code) => [
+                'code' => $code,
+                'name' => $folderCountryNames[$code] ?? $code,
+            ])->values()->toArray();
+
+            $trips[] = [
+                'folder_id' => $folder->id,
+                'folder_name' => $folder->folder_name ?? 'Reise '.$folder->folder_number,
+                'folder_number' => $folder->folder_number,
+                'start_date' => $folder->travel_start_date?->format('Y-m-d'),
+                'end_date' => $folder->travel_end_date?->format('Y-m-d'),
+                'participant_count' => $folder->participants->count() ?: 1,
+                'destinations' => $destinations,
+                'destination_codes' => $countryCodes,
+                'source' => 'local',
+                'source_label' => 'Lokal importiert',
+            ];
+        }
+
+        // API trips
+        $customer = Customer::find($customerId);
+        if ($customer) {
+            $apiTrips = $this->fetchApiTravelersByTrip(
+                $customer,
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            );
+
+            foreach ($apiTrips as $trip) {
+                $trips[] = $trip;
+            }
+        }
+
+        // 4. Match events to trips
+        $tripsWithEvents = [];
+        $totalEventsAcrossTrips = 0;
+        $tripsWithEventsCount = 0;
+
+        foreach ($trips as $trip) {
+            $matchedEvents = [];
+            $seenEventIds = [];
+
+            foreach ($trip['destination_codes'] as $countryCode) {
+                if (! isset($eventsByCountry[$countryCode])) {
+                    continue;
+                }
+
+                foreach ($eventsByCountry[$countryCode] as $event) {
+                    if (in_array($event['id'], $seenEventIds)) {
+                        // Add country to matched_countries if not already there
+                        foreach ($matchedEvents as &$me) {
+                            if ($me['id'] === $event['id']) {
+                                if (! in_array($countryCode, array_column($me['matched_countries'], 'code'))) {
+                                    $me['matched_countries'][] = [
+                                        'code' => $countryCode,
+                                        'name' => $event['country_name'],
+                                    ];
+                                }
+                                break;
+                            }
+                        }
+                        unset($me);
+
+                        continue;
+                    }
+
+                    $seenEventIds[] = $event['id'];
+                    $eventWithMatch = $event;
+                    $eventWithMatch['matched_countries'] = [[
+                        'code' => $countryCode,
+                        'name' => $event['country_name'],
+                    ]];
+                    $matchedEvents[] = $eventWithMatch;
+                }
+            }
+
+            // Sort events by priority (high first)
+            $priorityOrder = ['high' => 4, 'medium' => 3, 'low' => 2, 'info' => 1];
+            usort($matchedEvents, function ($a, $b) use ($priorityOrder) {
+                return ($priorityOrder[$b['priority']] ?? 0) - ($priorityOrder[$a['priority']] ?? 0);
+            });
+
+            $highestPriority = ! empty($matchedEvents) ? $matchedEvents[0]['priority'] : null;
+
+            $tripData = $trip;
+            unset($tripData['destination_codes']);
+            $tripData['events'] = $matchedEvents;
+            $tripData['total_events'] = count($matchedEvents);
+            $tripData['highest_priority'] = $highestPriority;
+
+            $tripsWithEvents[] = $tripData;
+            $totalEventsAcrossTrips += count($matchedEvents);
+
+            if (count($matchedEvents) > 0) {
+                $tripsWithEventsCount++;
+            }
+        }
+
+        // 5. Sort: highest priority first, then event count, trips without events last
+        usort($tripsWithEvents, function ($a, $b) {
+            $priorityOrder = ['high' => 4, 'medium' => 3, 'low' => 2, 'info' => 1];
+            $aPriority = $priorityOrder[$a['highest_priority']] ?? 0;
+            $bPriority = $priorityOrder[$b['highest_priority']] ?? 0;
+
+            if ($aPriority !== $bPriority) {
+                return $bPriority - $aPriority;
+            }
+
+            return $b['total_events'] - $a['total_events'];
+        });
+
+        return [
+            'trips' => $tripsWithEvents,
+            'summary' => [
+                'total_trips' => count($tripsWithEvents),
+                'trips_with_events' => $tripsWithEventsCount,
+                'total_events_across_trips' => $totalEventsAcrossTrips,
+            ],
+        ];
     }
 }

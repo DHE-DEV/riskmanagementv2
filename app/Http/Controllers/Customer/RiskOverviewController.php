@@ -111,6 +111,62 @@ class RiskOverviewController extends Controller
     }
 
     /**
+     * Get trips with matched events from all destination countries.
+     */
+    public function getTrips(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false, 'message' => 'Nicht authentifiziert'], 401);
+        }
+
+        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
+            abort(404);
+        }
+
+        $priorityFilter = $request->input('priority');
+
+        if ($priorityFilter && ! in_array($priorityFilter, ['high', 'medium', 'low', 'info'])) {
+            $priorityFilter = null;
+        }
+
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        if ($dateFrom) {
+            $data = $this->riskOverviewService->getTripsWithEventsByDateRange(
+                $customer->id,
+                $dateFrom,
+                $dateTo,
+                $priorityFilter
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ]);
+        }
+
+        $daysAhead = (int) $request->input('days', 30);
+
+        if (! in_array($daysAhead, [7, 14, 30, 60, 90])) {
+            $daysAhead = 30;
+        }
+
+        $data = $this->riskOverviewService->getTripsWithEvents(
+            $customer->id,
+            $priorityFilter,
+            $daysAhead
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
+
+    /**
      * Get detailed risk information for a specific country.
      */
     public function getCountryDetails(Request $request, string $countryCode): JsonResponse
