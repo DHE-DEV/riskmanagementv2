@@ -980,7 +980,7 @@ class RiskOverviewService
             }
         }
 
-        // 4. Match events to trips
+        // 4. Match events to trips (by country AND date overlap)
         $tripsWithEvents = [];
         $totalEventsAcrossTrips = 0;
         $tripsWithEventsCount = 0;
@@ -989,12 +989,33 @@ class RiskOverviewService
             $matchedEvents = [];
             $seenEventIds = [];
 
+            $tripStart = $trip['start_date'] ? \Carbon\Carbon::parse($trip['start_date'])->startOfDay() : null;
+            $tripEnd = $trip['end_date'] ? \Carbon\Carbon::parse($trip['end_date'])->endOfDay() : null;
+
             foreach ($trip['destination_codes'] as $countryCode) {
                 if (! isset($eventsByCountry[$countryCode])) {
                     continue;
                 }
 
                 foreach ($eventsByCountry[$countryCode] as $event) {
+                    // Check date overlap: event must overlap with trip date range
+                    // Overlap condition: eventStart <= tripEnd AND eventEnd >= tripStart
+                    // Events without dates are always included (ongoing/permanent events)
+                    if ($tripStart && $tripEnd) {
+                        $eventStart = $event['start_date'] ? \Carbon\Carbon::parse($event['start_date'])->startOfDay() : null;
+                        $eventEnd = $event['end_date'] ? \Carbon\Carbon::parse($event['end_date'])->endOfDay() : null;
+
+                        // If event has a start date that is after the trip ends, skip
+                        if ($eventStart && $eventStart->gt($tripEnd)) {
+                            continue;
+                        }
+
+                        // If event has an end date that is before the trip starts, skip
+                        if ($eventEnd && $eventEnd->lt($tripStart)) {
+                            continue;
+                        }
+                    }
+
                     if (in_array($event['id'], $seenEventIds)) {
                         // Add country to matched_countries if not already there
                         foreach ($matchedEvents as &$me) {
