@@ -104,10 +104,34 @@
             flex-shrink: 0;
             width: 304px;
             background: #f9fafb;
-            overflow-y: auto;
+            overflow: hidden;
             height: 100%;
             position: relative;
             border-right: 1px solid #e5e7eb;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .sidebar.sidebar-expanded { width: 608px; }
+
+        .sidebar-inner {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+        }
+
+        .sidebar-main {
+            width: 304px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .trip-filter-panel {
+            width: 304px;
+            flex-shrink: 0;
+            border-left: 1px solid #e5e7eb;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f9fafb;
         }
 
         /* Map Container - nimmt restlichen Platz ein */
@@ -230,12 +254,157 @@
         <x-public-navigation :active="$active" />
 
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" :class="{ 'sidebar-expanded': showTripFilters && sidebarTab === 'reisen' }">
+            <div class="sidebar-inner">
+            <!-- Main Sidebar Content -->
+            <div class="sidebar-main">
             <div class="p-4">
-                <h2 class="text-sm font-bold text-gray-900 mb-4">
+                <h2 class="text-sm font-bold text-gray-900 mb-3">
                     <i class="fa-regular fa-shield-exclamation mr-2"></i>
                     TravelAlert
                 </h2>
+
+                <!-- Sidebar Tabs -->
+                <div class="flex border-b border-gray-200 mb-4">
+                    <button @click="sidebarTab = 'reisen'; if (!tripsLoaded) loadTrips();"
+                            class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+                            :class="sidebarTab === 'reisen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fa-regular fa-suitcase-rolling mr-1"></i>
+                        Reisen
+                    </button>
+                    <button @click="sidebarTab = 'laender'; showTripFilters = false"
+                            class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+                            :class="sidebarTab === 'laender' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fa-regular fa-globe mr-1"></i>
+                        Länder
+                    </button>
+                </div>
+
+                <!-- ==================== Tab: Reisen ==================== -->
+                <div x-show="sidebarTab === 'reisen'" x-cloak>
+                    <!-- Filter Toggle Button -->
+                    <button @click="showTripFilters = !showTripFilters"
+                            class="w-full mb-3 px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-between"
+                            :class="showTripFilters ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                        <span class="flex items-center">
+                            <i class="fa-regular fa-filter mr-2"></i>
+                            Filter
+                            <template x-if="filters.priority !== null || filters.days !== 30 || filters.customDateRange || filters.onlyWithEvents">
+                                <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-blue-500 text-white font-medium">aktiv</span>
+                            </template>
+                        </span>
+                        <i class="fa-regular fa-chevron-right transition-transform duration-200"
+                           :class="{ 'rotate-180': showTripFilters }"></i>
+                    </button>
+
+                    <!-- Loading -->
+                    <template x-if="loadingTrips">
+                        <div class="flex items-center justify-center py-8">
+                            <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
+                        </div>
+                    </template>
+
+                    <!-- No trips -->
+                    <template x-if="!loadingTrips && filteredTrips.length === 0">
+                        <div class="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300 text-center">
+                            <i class="fa-regular fa-suitcase text-4xl text-gray-400 mb-3"></i>
+                            <h3 class="font-semibold text-gray-700">Keine Reisen</h3>
+                            <p class="text-sm text-gray-500 mt-1">Im ausgewählten Zeitraum sind keine Reisen vorhanden.</p>
+                        </div>
+                    </template>
+
+                    <!-- Trips list -->
+                    <template x-if="!loadingTrips && filteredTrips.length > 0">
+                        <div>
+                            <!-- Summary -->
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 mb-3">
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div class="bg-gray-50 rounded-lg p-2">
+                                        <p class="text-lg font-bold text-gray-900" x-text="filteredTripsSummary.total_trips"></p>
+                                        <p class="text-xs text-gray-500">Reisen</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-2">
+                                        <p class="text-lg font-bold text-orange-600" x-text="filteredTripsSummary.trips_with_events"></p>
+                                        <p class="text-xs text-gray-500">Betroffen</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-2">
+                                        <p class="text-lg font-bold text-gray-900" x-text="filteredTripsSummary.total_events_across_trips"></p>
+                                        <p class="text-xs text-gray-500">Ereignisse</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Trip cards -->
+                            <div class="space-y-2">
+                                <template x-for="trip in filteredTrips" :key="trip.folder_id">
+                                    <div class="rounded-lg border-l-4 p-3 cursor-pointer transition-colors"
+                                         @click="selectTrip(trip)"
+                                         :style="'border-left-color: ' + (trip.total_events > 0
+                                            ? (trip.highest_priority === 'high' ? '#ef4444' : trip.highest_priority === 'medium' ? '#f97316' : trip.highest_priority === 'low' ? '#eab308' : '#3b82f6')
+                                            : '#d1d5db')"
+                                         :class="[
+                                             trip.total_events === 0 ? 'opacity-60' : '',
+                                             selectedTrip?.folder_id === trip.folder_id ? 'bg-blue-50 border border-blue-500 text-blue-700 font-semibold' : 'bg-white border border-gray-200 hover:bg-gray-50'
+                                         ]">
+                                        <!-- Trip name -->
+                                        <div class="mb-1">
+                                            <h4 class="text-xs font-semibold text-gray-900 line-clamp-2" x-text="trip.folder_name"></h4>
+                                        </div>
+
+                                        <!-- Dates & participants -->
+                                        <div class="flex items-center gap-2 text-[11px] text-gray-500 mb-1.5">
+                                            <span>
+                                                <i class="fa-regular fa-calendar mr-0.5"></i>
+                                                <span x-text="formatDate(trip.start_date) + ' - ' + formatDate(trip.end_date)"></span>
+                                            </span>
+                                            <span>
+                                                <i class="fa-regular fa-users mr-0.5"></i>
+                                                <span x-text="trip.participant_count"></span>
+                                            </span>
+                                            <span :class="trip.total_events > 0 ? 'text-orange-600' : 'text-green-600'">
+                                                <i class="fa-regular fa-triangle-exclamation mr-0.5"></i>
+                                                <span x-text="trip.total_events"></span>
+                                            </span>
+                                        </div>
+
+                                        <!-- Progress bar -->
+                                        <div x-data="{ tp: getTripProgress(trip.start_date, trip.end_date) }" class="mb-1.5">
+                                            <div class="flex items-center gap-1.5">
+                                                <div class="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                                                    <div class="h-full rounded-full transition-all duration-300"
+                                                         :class="tp.started ? 'bg-green-500' : 'bg-gray-300'"
+                                                         :style="'width: ' + (tp.started ? tp.progress : 100) + '%'"></div>
+                                                </div>
+                                                <span class="text-[10px] text-gray-400"
+                                                      x-text="tp.status === 'upcoming' ? 'Geplant' : tp.status === 'active' ? tp.progress + '%' : 'Beendet'"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Destinations -->
+                                        <div class="flex flex-wrap gap-1 mb-1.5">
+                                            <template x-for="dest in trip.destinations" :key="dest.code">
+                                                <button @click.stop="selectTrip(trip, dest.code)"
+                                                        class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] transition-colors hover:opacity-80"
+                                                        :class="{
+                                                            'bg-red-100 text-red-700': getTripCountryPriority(trip, dest.code) === 'high',
+                                                            'bg-orange-100 text-orange-700': getTripCountryPriority(trip, dest.code) === 'medium',
+                                                            'bg-green-100 text-green-700': getTripCountryPriority(trip, dest.code) === 'low',
+                                                            'bg-blue-100 text-blue-700': getTripCountryPriority(trip, dest.code) === 'info',
+                                                            'bg-gray-100 text-gray-600': !getTripCountryPriority(trip, dest.code)
+                                                        }"
+                                                        x-text="dest.name"></button>
+                                            </template>
+                                        </div>
+
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- ==================== Tab: Länder ==================== -->
+                <div x-show="sidebarTab === 'laender'">
 
                 <!-- Filter Section -->
                 <div class="bg-white rounded-lg border border-gray-200 mb-4">
@@ -303,21 +472,27 @@
                         <!-- Days Filter -->
                         <div class="mb-4">
                             <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum (Reisende)</label>
-                            <div class="grid grid-cols-3 gap-2 mb-2">
+                            <div class="grid grid-cols-4 gap-2 mb-2">
+                                <button @click="filters.days = 0; filters.customDateRange = false; loadData()"
+                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                        :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                    <span class="text-sm font-bold"><i class="fa-regular fa-calendar-day"></i></span>
+                                    <span>Heute</span>
+                                </button>
                                 <button @click="filters.days = 7; filters.customDateRange = false; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
                                         :class="filters.days === 7 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                     <span class="text-sm font-bold">7</span>
                                     <span>Tage</span>
                                 </button>
                                 <button @click="filters.days = 14; filters.customDateRange = false; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
                                         :class="filters.days === 14 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                     <span class="text-sm font-bold">14</span>
                                     <span>Tage</span>
                                 </button>
                                 <button @click="filters.days = 30; filters.customDateRange = false; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
                                         :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                     <span class="text-sm font-bold">30</span>
                                     <span>Tage</span>
@@ -500,11 +675,134 @@
                         </template>
                     </div>
                 </template>
-            </div>
-        </div>
 
-        <!-- Content Container with Tabs -->
-        <div class="content-container flex flex-col flex-1 min-h-0">
+                </div>
+                <!-- End Tab: Länder -->
+
+            </div>
+            </div><!-- /sidebar-main -->
+
+            <!-- Trip Filter Panel (right side, shown when toggled on Reisen tab) -->
+            <div class="trip-filter-panel" x-show="showTripFilters && sidebarTab === 'reisen'" x-cloak>
+                <h3 class="text-sm font-semibold text-gray-900 flex items-center mb-3">
+                    <i class="fa-regular fa-filter mr-2"></i>
+                    Filter
+                </h3>
+
+                <!-- Reset Filters -->
+                <button @click="resetFilters(); applyFilters()"
+                        class="w-full mb-4 px-3 py-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors">
+                    <i class="fa-regular fa-rotate-left mr-1"></i>
+                    Filter zurücksetzen
+                </button>
+
+                <!-- Priority Filter -->
+                <div class="mb-4">
+                    <label class="text-xs font-medium text-gray-700 mb-2 block">Risikostufe</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="filters.priority = null; applyFilters()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                :class="filters.priority === null ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            Alle
+                        </button>
+                        <button @click="filters.priority = 'high'; applyFilters()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                                :class="filters.priority === 'high' ? 'bg-red-50 border-red-500 text-red-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            Hoch
+                        </button>
+                        <button @click="filters.priority = 'medium'; applyFilters()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                                :class="filters.priority === 'medium' ? 'bg-orange-50 border-orange-500 text-orange-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                            Mittel
+                        </button>
+                        <button @click="filters.priority = 'low'; applyFilters()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                                :class="filters.priority === 'low' ? 'bg-green-50 border-green-500 text-green-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            Niedrig
+                        </button>
+                        <button @click="filters.priority = 'info'; applyFilters()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2 flex items-center justify-center gap-1"
+                                :class="filters.priority === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Information
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Days Filter -->
+                <div class="mb-4">
+                    <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
+                    <div class="grid grid-cols-4 gap-2 mb-2">
+                        <button @click="filters.days = 0; filters.customDateRange = false; applyFilters()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold"><i class="fa-regular fa-calendar-day"></i></span>
+                            <span>Heute</span>
+                        </button>
+                        <button @click="filters.days = 7; filters.customDateRange = false; applyFilters()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 7 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold">7</span>
+                            <span>Tage</span>
+                        </button>
+                        <button @click="filters.days = 14; filters.customDateRange = false; applyFilters()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 14 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold">14</span>
+                            <span>Tage</span>
+                        </button>
+                        <button @click="filters.days = 30; filters.customDateRange = false; applyFilters()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold">30</span>
+                            <span>Tage</span>
+                        </button>
+                    </div>
+                    <!-- Custom date range toggle -->
+                    <button @click="filters.customDateRange = !filters.customDateRange"
+                            class="w-full px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                            :class="filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                        <i class="fa-regular fa-calendar-range mr-1"></i>
+                        Eigener Zeitraum
+                    </button>
+                    <!-- Custom date inputs -->
+                    <div x-show="filters.customDateRange" x-collapse class="mt-2 space-y-2">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Von</label>
+                            <input type="date"
+                                   x-model="filters.dateFrom"
+                                   @change="applyFilters()"
+                                   class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Bis</label>
+                            <input type="date"
+                                   x-model="filters.dateTo"
+                                   @change="applyFilters()"
+                                   class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Only with events filter -->
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox"
+                               x-model="filters.onlyWithEvents"
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="text-xs font-medium text-gray-700">Nur mit Ereignissen</span>
+                    </label>
+                </div>
+            </div>
+
+            </div><!-- /sidebar-inner -->
+        </div><!-- /sidebar -->
+
+        <!-- Content Container: Länder -->
+        <div class="content-container flex flex-col flex-1 min-h-0" x-show="sidebarTab === 'laender'">
             <!-- Tab Navigation -->
             <div class="tab-navigation flex border-b border-gray-200 bg-white px-4">
                 <button @click="activeTab = 'tiles'"
@@ -1407,6 +1705,561 @@
                 </template>
             </div>
         </div>
+
+        <!-- Content Container: Reisen -->
+        <div class="content-container flex flex-col flex-1 min-h-0" x-show="sidebarTab === 'reisen'" x-cloak>
+            <!-- Tab Navigation -->
+            <div class="tab-navigation flex border-b border-gray-200 bg-white px-4">
+                <button @click="tripActiveTab = 'tiles'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="tripActiveTab === 'tiles' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                    <i class="fa-regular fa-grid-2 mr-2"></i>
+                    Kacheln
+                </button>
+                <button @click="tripActiveTab = 'list'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="tripActiveTab === 'list' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                    <i class="fa-regular fa-list mr-2"></i>
+                    Liste
+                </button>
+                <button @click="tripActiveTab = 'calendar'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="tripActiveTab === 'calendar' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                    <i class="fa-regular fa-calendar-days mr-2"></i>
+                    Kalender
+                </button>
+                <!-- Selected trip indicator -->
+                <template x-if="selectedTrip">
+                    <div class="ml-auto flex items-center gap-2 text-sm text-gray-600">
+                        <span class="font-medium" x-text="selectedTrip.folder_name"></span>
+                        <button @click="selectedTrip = null; selectedTripCountry = null; tripMaximizedSection = null" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa-regular fa-xmark"></i>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- No trip selected -->
+            <template x-if="!selectedTrip">
+                <div class="flex-1 flex items-center justify-center bg-gray-50">
+                    <div class="text-center">
+                        <i class="fa-regular fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
+                        <h3 class="font-semibold text-gray-700">Reise auswählen</h3>
+                        <p class="text-sm text-gray-500 mt-1">
+                            Wählen Sie eine Reise in der linken Sidebar aus, um Details anzuzeigen.
+                        </p>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Trip selected -->
+            <template x-if="selectedTrip">
+                <div class="flex-1 flex flex-col min-h-0">
+
+                    <!-- ===== Tiles View ===== -->
+                    <div x-show="tripActiveTab === 'tiles'" class="flex-1 flex flex-col min-h-0">
+                        <!-- Top: Ereignisse -->
+                        <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                             :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+                                <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fa-regular fa-triangle-exclamation mr-1 text-orange-500"></i>
+                                        Ereignisse
+                                        <span class="text-gray-500 font-normal" x-text="'(' + filteredTripEvents.length + ')'"></span>
+                                        <template x-if="selectedTripCountry">
+                                            <span class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+                                                :class="{
+                                                    'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
+                                                    'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
+                                                    'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
+                                                    'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
+                                                    'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
+                                                }">
+                                                <span x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
+                                                <button @click="selectedTripCountry = null" class="hover:opacity-70">
+                                                    <i class="fa-regular fa-xmark text-[10px]"></i>
+                                                </button>
+                                            </span>
+                                        </template>
+                                    </span>
+                                    <button @click="toggleTripMaximize('tripEvents')"
+                                            class="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                                            :title="tripMaximizedSection === 'tripEvents' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                        <i class="fa-regular text-xs transition-all" :class="tripMaximizedSection === 'tripEvents' ? 'fa-compress' : 'fa-expand'"></i>
+                                    </button>
+                                </h3>
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <template x-for="event in filteredTripEvents" :key="event.id">
+                                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
+                                             @click="openEventModal(event)"
+                                             :class="{
+                                                 'border-l-red-500': event.priority === 'high',
+                                                 'border-l-orange-500': event.priority === 'medium',
+                                                 'border-l-green-500': event.priority === 'low',
+                                                 'border-l-blue-500': event.priority === 'info'
+                                             }">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <h4 class="text-xs font-medium text-gray-800" x-text="event.title"></h4>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ml-2"
+                                                      :class="{
+                                                          'bg-red-100 text-red-700': event.priority === 'high',
+                                                          'bg-orange-100 text-orange-700': event.priority === 'medium',
+                                                          'bg-green-100 text-green-700': event.priority === 'low',
+                                                          'bg-blue-100 text-blue-700': event.priority === 'info'
+                                                      }"
+                                                      x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Information'"></span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 line-clamp-3" x-text="event.description"></p>
+                                            <div class="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                                                <span x-text="event.event_type"></span>
+                                                <span>&bull;</span>
+                                                <span x-text="formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')"></span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-1 mt-2">
+                                                <template x-for="mc in (event.matched_countries || [])" :key="mc.code">
+                                                    <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded" x-text="mc.name"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <template x-if="filteredTripEvents.length === 0">
+                                    <div class="text-center py-8 text-gray-500">
+                                        <i class="fa-regular fa-check-circle text-3xl text-green-500 mb-2"></i>
+                                        <p>Keine Ereignisse für diese Reise</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Reisedetails -->
+                        <div class="min-h-0 overflow-hidden flex flex-col transition-all"
+                             :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
+                                <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fa-regular fa-suitcase-rolling mr-1 text-blue-500"></i>
+                                        Reisedetails
+                                        <span class="text-xs font-normal text-gray-500 italic" x-text="selectedTrip.folder_name"></span>
+                                    </span>
+                                    <button @click="toggleTripMaximize('tripDetails')"
+                                            class="p-1.5 hover:bg-blue-200 rounded transition-colors"
+                                            :title="tripMaximizedSection === 'tripDetails' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                        <i class="fa-regular text-xs transition-all" :class="tripMaximizedSection === 'tripDetails' ? 'fa-compress' : 'fa-expand'"></i>
+                                    </button>
+                                </h3>
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-4">
+                                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                                    <!-- Info Grid -->
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                        <div class="bg-gray-50 rounded-lg p-3">
+                                            <p class="text-xs text-gray-500 mb-1">Reisebeginn</p>
+                                            <p class="text-sm font-semibold text-gray-900" x-text="formatDate(selectedTrip.start_date)"></p>
+                                        </div>
+                                        <div class="bg-gray-50 rounded-lg p-3">
+                                            <p class="text-xs text-gray-500 mb-1">Reiseende</p>
+                                            <p class="text-sm font-semibold text-gray-900" x-text="formatDate(selectedTrip.end_date)"></p>
+                                        </div>
+                                        <div class="bg-gray-50 rounded-lg p-3">
+                                            <p class="text-xs text-gray-500 mb-1">Teilnehmer</p>
+                                            <p class="text-sm font-semibold text-gray-900" x-text="selectedTrip.participant_count"></p>
+                                        </div>
+                                        <div></div>
+                                    </div>
+
+                                    <!-- Progress Bar -->
+                                    <div class="mb-4" x-data="{ tp: getTripProgress(selectedTrip.start_date, selectedTrip.end_date) }">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-xs font-medium text-gray-700">Reisefortschritt</span>
+                                            <span class="text-xs px-2 py-0.5 rounded font-medium"
+                                                  :class="{
+                                                      'bg-gray-100 text-gray-500': tp.status === 'upcoming',
+                                                      'bg-green-100 text-green-700': tp.status === 'active',
+                                                      'bg-gray-100 text-gray-500': tp.status === 'completed'
+                                                  }"
+                                                  x-text="tp.status === 'upcoming' ? 'Geplant' : tp.status === 'active' ? tp.progress + '% - Aktiv' : 'Beendet'"></span>
+                                        </div>
+                                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-300"
+                                                 :class="tp.started ? 'bg-green-500' : 'bg-gray-300'"
+                                                 :style="'width: ' + (tp.started ? tp.progress : 100) + '%'"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Destinations & Nationalities -->
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div x-show="selectedTrip.destinations && selectedTrip.destinations.length > 0">
+                                            <p class="text-xs font-medium text-gray-700 mb-2">Reiseziele</p>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                <template x-for="dest in (selectedTrip.destinations || [])" :key="dest.code">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-gray-100 text-gray-700"
+                                                          x-text="dest.name"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div x-show="selectedTrip.nationalities && selectedTrip.nationalities.length > 0">
+                                            <p class="text-xs font-medium text-gray-700 mb-2">Nationalitäten</p>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                <template x-for="nat in (selectedTrip.nationalities || [])" :key="nat.code">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-blue-50 text-blue-700"
+                                                          x-text="nat.name"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== List View ===== -->
+                    <div x-show="tripActiveTab === 'list'" x-cloak class="flex-1 flex flex-col min-h-0">
+                        <!-- Top: Ereignisse -->
+                        <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                             :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+                                <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fa-regular fa-triangle-exclamation mr-1 text-orange-500"></i>
+                                        Ereignisse
+                                        <span class="text-gray-500 font-normal" x-text="'(' + filteredTripEvents.length + ')'"></span>
+                                        <template x-if="selectedTripCountry">
+                                            <span class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+                                                :class="{
+                                                    'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
+                                                    'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
+                                                    'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
+                                                    'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
+                                                    'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
+                                                }">
+                                                <span x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
+                                                <button @click="selectedTripCountry = null" class="hover:opacity-70">
+                                                    <i class="fa-regular fa-xmark text-[10px]"></i>
+                                                </button>
+                                            </span>
+                                        </template>
+                                    </span>
+                                    <button @click="toggleTripMaximize('tripEvents')"
+                                            class="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                                            :title="tripMaximizedSection === 'tripEvents' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                        <i class="fa-regular text-xs transition-all" :class="tripMaximizedSection === 'tripEvents' ? 'fa-compress' : 'fa-expand'"></i>
+                                    </button>
+                                </h3>
+                            </div>
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="divide-y divide-gray-200">
+                                    <template x-for="event in filteredTripEvents" :key="event.id">
+                                        <div class="px-4 py-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-4 border-l-4"
+                                             @click="openEventModal(event)"
+                                             :class="{
+                                                 'border-l-red-500': event.priority === 'high',
+                                                 'border-l-orange-500': event.priority === 'medium',
+                                                 'border-l-green-500': event.priority === 'low',
+                                                 'border-l-blue-500': event.priority === 'info'
+                                             }">
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="text-xs font-medium text-gray-800 truncate" x-text="event.title"></h4>
+                                                <p class="text-xs text-gray-500 mt-0.5" x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')"></p>
+                                                <div class="flex flex-wrap gap-1 mt-1">
+                                                    <template x-for="mc in (event.matched_countries || [])" :key="mc.code">
+                                                        <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded" x-text="mc.name"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                                  :class="{
+                                                      'bg-red-100 text-red-700': event.priority === 'high',
+                                                      'bg-orange-100 text-orange-700': event.priority === 'medium',
+                                                      'bg-green-100 text-green-700': event.priority === 'low',
+                                                      'bg-blue-100 text-blue-700': event.priority === 'info'
+                                                  }"
+                                                  x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Information'"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <template x-if="filteredTripEvents.length === 0">
+                                    <div class="text-center py-8 text-gray-500">
+                                        <i class="fa-regular fa-check-circle text-3xl text-green-500 mb-2"></i>
+                                        <p>Keine Ereignisse für diese Reise</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Reisedetails -->
+                        <div class="min-h-0 overflow-hidden flex flex-col transition-all"
+                             :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
+                                <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fa-regular fa-suitcase-rolling mr-1 text-blue-500"></i>
+                                        Reisedetails
+                                        <span class="text-xs font-normal text-gray-500 italic" x-text="selectedTrip.folder_name"></span>
+                                    </span>
+                                    <button @click="toggleTripMaximize('tripDetails')"
+                                            class="p-1.5 hover:bg-blue-200 rounded transition-colors"
+                                            :title="tripMaximizedSection === 'tripDetails' ? 'Ansicht wiederherstellen' : 'Maximieren'">
+                                        <i class="fa-regular text-xs transition-all" :class="tripMaximizedSection === 'tripDetails' ? 'fa-compress' : 'fa-expand'"></i>
+                                    </button>
+                                </h3>
+                            </div>
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="divide-y divide-gray-200">
+                                    <!-- Trip info row -->
+                                    <div class="px-4 py-3 bg-white">
+                                        <div class="flex items-center gap-4">
+                                            <div class="flex-1" x-data="{ tp: getTripProgress(selectedTrip.start_date, selectedTrip.end_date) }">
+                                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                                    <span x-text="formatDate(selectedTrip.start_date)"></span>
+                                                    <span x-text="formatDate(selectedTrip.end_date)"></span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div class="h-full rounded-full transition-all duration-300"
+                                                             :class="tp.started ? 'bg-green-500' : 'bg-gray-300'"
+                                                             :style="'width: ' + (tp.started ? tp.progress : 100) + '%'"></div>
+                                                    </div>
+                                                    <span class="text-xs text-gray-500 w-auto"
+                                                          x-text="tp.status === 'upcoming' ? 'Geplant' : tp.status === 'active' ? tp.progress + '%' : 'Beendet'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                            <span><i class="fa-regular fa-users mr-1"></i> <span x-text="selectedTrip.participant_count"></span> Teilnehmer</span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 mt-2">
+                                            <div x-show="selectedTrip.destinations && selectedTrip.destinations.length > 0">
+                                                <p class="text-[10px] font-medium text-gray-500 mb-1">Reiseziele</p>
+                                                <div class="flex flex-wrap gap-1">
+                                                    <template x-for="dest in (selectedTrip.destinations || [])" :key="dest.code">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700" x-text="dest.name"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <div x-show="selectedTrip.nationalities && selectedTrip.nationalities.length > 0">
+                                                <p class="text-[10px] font-medium text-gray-500 mb-1">Nationalitäten</p>
+                                                <div class="flex flex-wrap gap-1">
+                                                    <template x-for="nat in (selectedTrip.nationalities || [])" :key="nat.code">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700" x-text="nat.name"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== Calendar View ===== -->
+                    <div x-show="tripActiveTab === 'calendar'" x-cloak class="flex-1 flex flex-col min-h-0 overflow-hidden"
+                         x-data="{
+                             currentMonth: new Date().getMonth(),
+                             currentYear: new Date().getFullYear(),
+                             get monthYearLabel() {
+                                 const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+                                 return months[this.currentMonth] + ' ' + this.currentYear;
+                             },
+                             prevMonth() {
+                                 if (this.currentMonth === 0) { this.currentMonth = 11; this.currentYear--; } else { this.currentMonth--; }
+                             },
+                             nextMonth() {
+                                 if (this.currentMonth === 11) { this.currentMonth = 0; this.currentYear++; } else { this.currentMonth++; }
+                             },
+                             goToToday() {
+                                 const today = new Date();
+                                 this.currentMonth = today.getMonth();
+                                 this.currentYear = today.getFullYear();
+                             },
+                             goToTripStart() {
+                                 if (selectedTrip?.start_date) {
+                                     const d = new Date(selectedTrip.start_date);
+                                     this.currentMonth = d.getMonth();
+                                     this.currentYear = d.getFullYear();
+                                 }
+                             },
+                             get calendarDays() {
+                                 const year = this.currentYear;
+                                 const month = this.currentMonth;
+                                 const firstDay = new Date(year, month, 1);
+                                 const lastDay = new Date(year, month + 1, 0);
+                                 const startDate = new Date(firstDay);
+                                 const dayOfWeek = startDate.getDay();
+                                 const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                                 startDate.setDate(startDate.getDate() - daysToSubtract);
+                                 const endDate = new Date(lastDay);
+                                 const lastDayOfWeek = endDate.getDay();
+                                 const daysToAdd = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
+                                 endDate.setDate(endDate.getDate() + daysToAdd);
+                                 const days = [];
+                                 const today = new Date();
+                                 today.setHours(0, 0, 0, 0);
+                                 const current = new Date(startDate);
+                                 while (current <= endDate) {
+                                     const dateStr = current.toISOString().split('T')[0];
+                                     days.push({
+                                         date: dateStr,
+                                         dayNumber: current.getDate(),
+                                         isCurrentMonth: current.getMonth() === month,
+                                         isToday: current.getTime() === today.getTime()
+                                     });
+                                     current.setDate(current.getDate() + 1);
+                                 }
+                                 return days;
+                             },
+                             isDateInTrip(dateStr) {
+                                 if (!selectedTrip) return false;
+                                 const start = selectedTrip.start_date?.split('T')[0];
+                                 const end = selectedTrip.end_date?.split('T')[0];
+                                 return dateStr >= start && dateStr <= end;
+                             },
+                             getEventsForDay(dateStr) {
+                                 const events = filteredTripEvents;
+                                 if (!events || events.length === 0) return [];
+                                 const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
+                                 return events.filter(e => {
+                                     const start = e.start_date?.split('T')[0];
+                                     const end = e.end_date?.split('T')[0];
+                                     if (!end) {
+                                         const startDate = new Date(start);
+                                         const checkDate = new Date(dateStr);
+                                         const daysDiff = Math.floor((checkDate - startDate) / (1000 * 60 * 60 * 24));
+                                         return dateStr >= start && daysDiff <= 30;
+                                     }
+                                     return dateStr >= start && dateStr <= end;
+                                 }).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+                             }
+                         }">
+                        <!-- Calendar Header -->
+                        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
+                            <div class="flex items-center gap-1">
+                                <button @click="prevMonth()" class="p-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-colors" title="Vorheriger Monat">
+                                    <i class="fa-regular fa-chevron-left text-gray-700"></i>
+                                </button>
+                                <h3 class="text-sm font-bold text-gray-900 min-w-[160px] text-center px-3" x-text="monthYearLabel"></h3>
+                                <button @click="nextMonth()" class="p-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-colors" title="Nächster Monat">
+                                    <i class="fa-regular fa-chevron-right text-gray-700"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @click="goToToday()" class="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                                    Heute
+                                </button>
+                                <button @click="goToTripStart()" class="px-3 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                                    Reisestart
+                                </button>
+                                <div class="flex items-center gap-3 text-xs text-gray-500 ml-2">
+                                    <span><span x-text="filteredTripEvents.length"></span> Ereignisse</span>
+                                </div>
+                                <template x-if="selectedTripCountry">
+                                    <span class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ml-2"
+                                        :class="{
+                                            'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
+                                            'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
+                                            'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
+                                            'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
+                                            'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
+                                        }">
+                                        <span x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
+                                        <button @click="selectedTripCountry = null" class="hover:opacity-70">
+                                            <i class="fa-regular fa-xmark text-[10px]"></i>
+                                        </button>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Calendar Grid -->
+                        <div class="flex-1 overflow-y-auto p-4">
+                            <!-- Weekday Headers -->
+                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                <template x-for="day in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']" :key="day">
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2" x-text="day"></div>
+                                </template>
+                            </div>
+
+                            <!-- Calendar Days -->
+                            <div class="grid grid-cols-7 gap-1">
+                                <template x-for="day in calendarDays" :key="day.date">
+                                    <div class="min-h-[120px] border rounded-lg p-1.5 transition-colors"
+                                         :class="{
+                                             'bg-green-50 border-green-200': day.isCurrentMonth && isDateInTrip(day.date),
+                                             'bg-white border-gray-200': day.isCurrentMonth && !isDateInTrip(day.date),
+                                             'bg-gray-50 border-gray-100': !day.isCurrentMonth,
+                                             'ring-2 ring-blue-500 ring-inset': day.isToday
+                                         }">
+                                        <!-- Day Number -->
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <span class="text-xs font-medium px-1.5 py-0.5 rounded"
+                                                  :class="{
+                                                      'bg-blue-500 text-white': day.isToday,
+                                                      'text-gray-900': day.isCurrentMonth && !day.isToday,
+                                                      'text-gray-400': !day.isCurrentMonth
+                                                  }"
+                                                  x-text="day.dayNumber"></span>
+                                            <template x-if="isDateInTrip(day.date)">
+                                                <span class="text-[10px] text-green-600"><i class="fa-regular fa-suitcase"></i></span>
+                                            </template>
+                                        </div>
+
+                                        <!-- Events -->
+                                        <div class="space-y-1 max-h-[85px] overflow-y-auto">
+                                            <template x-for="event in getEventsForDay(day.date)" :key="event.id + '-' + day.date">
+                                                <div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs cursor-pointer transition-colors truncate"
+                                                     @click="$dispatch('open-event-modal', event)"
+                                                     :title="event.title"
+                                                     :class="{
+                                                         'bg-red-100 text-red-800 hover:bg-red-200': event.priority === 'high',
+                                                         'bg-orange-100 text-orange-800 hover:bg-orange-200': event.priority === 'medium',
+                                                         'bg-green-100 text-green-800 hover:bg-green-200': event.priority === 'low',
+                                                         'bg-blue-100 text-blue-800 hover:bg-blue-200': event.priority === 'info'
+                                                     }">
+                                                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                          :class="{
+                                                              'bg-red-500': event.priority === 'high',
+                                                              'bg-orange-500': event.priority === 'medium',
+                                                              'bg-green-500': event.priority === 'low',
+                                                              'bg-blue-500': event.priority === 'info'
+                                                          }"></span>
+                                                    <span class="truncate" x-text="event.title.substring(0, 20) + (event.title.length > 20 ? '...' : '')"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Legend -->
+                            <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+                                <span class="font-medium text-gray-700">Schweregrad:</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-red-500"></span> <span>Hoch</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-orange-500"></span> <span>Mittel</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-green-500"></span> <span>Niedrig</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> <span>Information</span>
+                                </div>
+                                <div class="flex items-center gap-1 ml-4 pl-4 border-l border-gray-300">
+                                    <span class="w-3 h-3 rounded bg-green-50 border border-green-200"></span>
+                                    <span>Reisetage</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </template>
+        </div>
+
     </div>
 
     <!-- Footer -->
@@ -1812,15 +2665,22 @@
                 priority: null,
                 days: 30,
                 onlyWithTravelers: false,
+                onlyWithEvents: false,
                 country: '',
                 customDateRange: false,
                 dateFrom: '',
                 dateTo: '',
             },
             filterOpen: false,
+            showTripFilters: false,
             showCountrySidebar: false,
+            sidebarTab: 'reisen',
             activeTab: 'tiles',
             maximizedSection: null, // null, 'events', or 'travelers'
+            selectedTrip: null,
+            selectedTripCountry: null,
+            tripActiveTab: 'tiles',
+            tripMaximizedSection: null, // null, 'tripEvents', or 'tripDetails'
             trips: [],
             tripsSummary: { total_trips: 0, trips_with_events: 0, total_events_across_trips: 0 },
             loadingTrips: false,
@@ -1828,12 +2688,103 @@
 
             toggleMaximize(section) {
                 if (this.maximizedSection === section) {
-                    // Restore normal view
                     this.maximizedSection = null;
                 } else {
-                    // Maximize this section
                     this.maximizedSection = section;
                 }
+            },
+
+            toggleTripMaximize(section) {
+                if (this.tripMaximizedSection === section) {
+                    this.tripMaximizedSection = null;
+                } else {
+                    this.tripMaximizedSection = section;
+                }
+            },
+
+            selectTrip(trip, countryCode = null) {
+                this.selectedTrip = trip;
+                this.selectedTripCountry = countryCode;
+                this.tripMaximizedSection = null;
+            },
+
+            getTripCountryPriority(trip, countryCode) {
+                if (!trip.events || trip.events.length === 0) return null;
+                const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
+                let highest = null;
+                trip.events.forEach(e => {
+                    if (e.matched_countries && e.matched_countries.some(mc => mc.code === countryCode)) {
+                        if (highest === null || priorityOrder[e.priority] < priorityOrder[highest]) {
+                            highest = e.priority;
+                        }
+                    }
+                });
+                return highest;
+            },
+
+            get filteredTripEvents() {
+                if (!this.selectedTrip?.events) return [];
+                if (!this.selectedTripCountry) return this.selectedTrip.events;
+                return this.selectedTrip.events.filter(e =>
+                    e.matched_countries && e.matched_countries.some(mc => mc.code === this.selectedTripCountry)
+                );
+            },
+
+            get filteredTrips() {
+                let result = this.trips;
+                if (this.filters.priority) {
+                    result = result.filter(t => t.events && t.events.some(e => e.priority === this.filters.priority));
+                }
+                if (this.filters.onlyWithEvents) {
+                    result = result.filter(t => t.total_events > 0);
+                }
+
+                // Filter by travel date overlap
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let rangeStart, rangeEnd;
+
+                if (this.filters.customDateRange && this.filters.dateFrom) {
+                    rangeStart = new Date(this.filters.dateFrom);
+                    rangeStart.setHours(0, 0, 0, 0);
+                    rangeEnd = this.filters.dateTo ? new Date(this.filters.dateTo) : new Date(rangeStart);
+                    rangeEnd.setHours(0, 0, 0, 0);
+                } else {
+                    rangeStart = new Date(today);
+                    rangeEnd = new Date(today);
+                    if (this.filters.days > 0) {
+                        rangeEnd.setDate(rangeEnd.getDate() + this.filters.days);
+                    }
+                }
+
+                result = result.filter(t => {
+                    const tripStart = new Date(t.start_date);
+                    tripStart.setHours(0, 0, 0, 0);
+                    const tripEnd = new Date(t.end_date);
+                    tripEnd.setHours(0, 0, 0, 0);
+                    return tripStart <= rangeEnd && tripEnd >= rangeStart;
+                });
+
+                return result;
+            },
+
+            get filteredTripsSummary() {
+                const filtered = this.filteredTrips;
+                let tripsWithEvents = 0;
+                let totalEvents = 0;
+                filtered.forEach(t => {
+                    if (t.total_events > 0) tripsWithEvents++;
+                    totalEvents += t.total_events;
+                });
+                return {
+                    total_trips: filtered.length,
+                    trips_with_events: tripsWithEvents,
+                    total_events_across_trips: totalEvents,
+                };
+            },
+
+            async applyFilters() {
+                await Promise.all([this.loadData(), this.loadTrips()]);
             },
 
             get filteredCountries() {
@@ -1871,6 +2822,7 @@
                 this.$nextTick(() => {
                     this.initMap();
                     this.loadData();
+                    this.loadTrips();
 
                     // ESC key to close modals
                     document.addEventListener('keydown', (e) => {
@@ -1905,6 +2857,13 @@
                         if (newTab === 'list') {
                             this.showCountrySidebar = false;
                         }
+                    });
+
+                    // Watch for trip filter panel toggle to invalidate map size
+                    this.$watch('showTripFilters', () => {
+                        setTimeout(() => {
+                            if (this.map) this.map.invalidateSize();
+                        }, 350);
                     });
                 });
             },
@@ -2200,6 +3159,7 @@
                     priority: null,
                     days: 30,
                     onlyWithTravelers: false,
+                    onlyWithEvents: false,
                     country: '',
                     customDateRange: false,
                     dateFrom: '',
