@@ -920,7 +920,13 @@ class RiskOverviewService
         $trips = [];
 
         // Local folders
-        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants', 'labels'])
+        $folderEagerLoads = ['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'];
+        try {
+            \Illuminate\Support\Facades\Schema::hasTable('folder_label') && $folderEagerLoads[] = 'labels';
+        } catch (\Exception $e) {
+            // labels table may not exist yet
+        }
+        $folders = Folder::with($folderEagerLoads)
             ->where('customer_id', $customerId)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('travel_start_date', [$startDate, $endDate])
@@ -961,12 +967,14 @@ class RiskOverviewService
                 'participant_count' => $folder->participants->count() ?: 1,
                 'destinations' => $destinations,
                 'destination_codes' => $countryCodes,
-                'labels' => $folder->labels->map(fn ($l) => [
-                    'id' => $l->id,
-                    'name' => $l->name,
-                    'color' => $l->color,
-                    'icon' => $l->icon,
-                ])->toArray(),
+                'labels' => $folder->relationLoaded('labels')
+                    ? $folder->labels->map(fn ($l) => [
+                        'id' => $l->id,
+                        'name' => $l->name,
+                        'color' => $l->color,
+                        'icon' => $l->icon,
+                    ])->toArray()
+                    : [],
                 'source' => 'local',
                 'source_label' => 'Lokal importiert',
             ];
