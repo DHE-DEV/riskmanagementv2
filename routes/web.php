@@ -322,6 +322,18 @@ Route::get('/risk-overview/trips', [\App\Http\Controllers\Customer\RiskOverviewC
     ->middleware('auth:customer')
     ->name('risk-overview.trips');
 
+Route::get('/risk-overview/labels/search', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'searchLabels'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.search');
+
+Route::post('/risk-overview/folder/{folderId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.folder.labels.attach');
+
+Route::delete('/risk-overview/folder/{folderId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.folder.labels.detach');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

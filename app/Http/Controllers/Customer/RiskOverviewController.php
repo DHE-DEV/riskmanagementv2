@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Folder\Folder;
+use App\Models\Label;
 use App\Services\CustomerFeatureService;
 use App\Services\RiskOverviewService;
 use Illuminate\Http\JsonResponse;
@@ -216,6 +218,109 @@ class RiskOverviewController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data,
+        ]);
+    }
+
+    /**
+     * Search labels for autocomplete.
+     */
+    public function searchLabels(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json([], 401);
+        }
+
+        $query = $request->input('q', '');
+
+        $labels = Label::where('customer_id', $customer->id)
+            ->active()
+            ->where('name', 'like', '%'.$query.'%')
+            ->ordered()
+            ->limit(20)
+            ->get(['id', 'name', 'color', 'icon']);
+
+        return response()->json($labels);
+    }
+
+    /**
+     * Attach a label to a folder (create if new).
+     */
+    public function attachLabel(Request $request, string $folderId): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $folder = Folder::where('customer_id', $customer->id)->where('id', $folderId)->first();
+
+        if (! $folder) {
+            return response()->json(['success' => false, 'message' => 'Reise nicht gefunden'], 404);
+        }
+
+        $labelName = trim($request->input('name', ''));
+        $labelId = $request->input('label_id');
+
+        if ($labelId) {
+            $label = Label::where('customer_id', $customer->id)->where('id', $labelId)->first();
+        } else {
+            if (empty($labelName)) {
+                return response()->json(['success' => false, 'message' => 'Label-Name erforderlich'], 422);
+            }
+
+            $label = Label::where('customer_id', $customer->id)
+                ->where('name', $labelName)
+                ->first();
+
+            if (! $label) {
+                $label = Label::create([
+                    'customer_id' => $customer->id,
+                    'name' => $labelName,
+                ]);
+            }
+        }
+
+        if (! $label) {
+            return response()->json(['success' => false, 'message' => 'Label nicht gefunden'], 404);
+        }
+
+        $folder->labels()->syncWithoutDetaching([$label->id]);
+
+        $labels = $folder->labels()->get(['labels.id', 'name', 'color', 'icon']);
+
+        return response()->json([
+            'success' => true,
+            'labels' => $labels,
+        ]);
+    }
+
+    /**
+     * Detach a label from a folder.
+     */
+    public function detachLabel(string $folderId, string $labelId): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $folder = Folder::where('customer_id', $customer->id)->where('id', $folderId)->first();
+
+        if (! $folder) {
+            return response()->json(['success' => false, 'message' => 'Reise nicht gefunden'], 404);
+        }
+
+        $folder->labels()->detach($labelId);
+
+        $labels = $folder->labels()->get(['labels.id', 'name', 'color', 'icon']);
+
+        return response()->json([
+            'success' => true,
+            'labels' => $labels,
         ]);
     }
 }

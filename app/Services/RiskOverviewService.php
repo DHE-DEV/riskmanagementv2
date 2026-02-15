@@ -601,7 +601,7 @@ class RiskOverviewService
         $endDate = $today->copy()->addDays($daysAhead);
         $countryCode = strtoupper($countryCode);
 
-        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'])
+        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants', 'labels'])
             ->where('customer_id', $customerId)
             ->where(function ($query) use ($today, $endDate) {
                 $query->whereBetween('travel_start_date', [$today, $endDate])
@@ -676,7 +676,7 @@ class RiskOverviewService
         $endDate = $dateTo ? \Carbon\Carbon::parse($dateTo)->endOfDay() : $startDate->copy()->addDays(30)->endOfDay();
         $countryCode = strtoupper($countryCode);
 
-        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'])
+        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants', 'labels'])
             ->where('customer_id', $customerId)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('travel_start_date', [$startDate, $endDate])
@@ -920,7 +920,7 @@ class RiskOverviewService
         $trips = [];
 
         // Local folders
-        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'])
+        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants', 'labels'])
             ->where('customer_id', $customerId)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('travel_start_date', [$startDate, $endDate])
@@ -961,6 +961,12 @@ class RiskOverviewService
                 'participant_count' => $folder->participants->count() ?: 1,
                 'destinations' => $destinations,
                 'destination_codes' => $countryCodes,
+                'labels' => $folder->labels->map(fn ($l) => [
+                    'id' => $l->id,
+                    'name' => $l->name,
+                    'color' => $l->color,
+                    'icon' => $l->icon,
+                ])->toArray(),
                 'source' => 'local',
                 'source_label' => 'Lokal importiert',
             ];

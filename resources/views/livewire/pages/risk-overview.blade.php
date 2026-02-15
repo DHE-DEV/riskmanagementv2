@@ -1834,6 +1834,51 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Labels -->
+                                    <div class="mt-4" x-show="selectedTrip.source !== 'api'">
+                                        <p class="text-xs font-medium text-gray-700 mb-2">Labels</p>
+                                        <div class="flex flex-wrap gap-1.5 mb-2">
+                                            <template x-for="label in (selectedTrip.labels || [])" :key="label.id">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white"
+                                                      :style="'background-color: ' + label.color">
+                                                    <i class="fa-regular text-[10px]" :class="label.icon"></i>
+                                                    <span x-text="label.name"></span>
+                                                    <button @click.stop="detachLabel(label.id)" class="ml-0.5 hover:opacity-70">
+                                                        <i class="fa-regular fa-xmark text-[10px]"></i>
+                                                    </button>
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <div class="relative">
+                                            <input type="text"
+                                                   x-model="labelInput"
+                                                   @input="searchLabels()"
+                                                   @keydown.enter.prevent="addLabelFromInput()"
+                                                   @focus="if (labelInput.trim().length > 0) showLabelSuggestions = true"
+                                                   @click.away="showLabelSuggestions = false"
+                                                   placeholder="Label hinzufügen..."
+                                                   class="w-full text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                            <div x-show="showLabelSuggestions && (labelSuggestions.length > 0 || labelInput.trim().length > 0)"
+                                                 x-cloak
+                                                 class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                                <template x-for="suggestion in labelSuggestions" :key="suggestion.id">
+                                                    <button @click="attachLabel(suggestion.id, null)"
+                                                            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
+                                                        <span class="w-3 h-3 rounded-full flex-shrink-0" :style="'background-color: ' + suggestion.color"></span>
+                                                        <span x-text="suggestion.name"></span>
+                                                    </button>
+                                                </template>
+                                                <template x-if="labelInput.trim().length > 0 && !labelSuggestions.some(s => s.name.toLowerCase() === labelInput.trim().toLowerCase())">
+                                                    <button @click="addLabelFromInput()"
+                                                            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100 text-blue-600">
+                                                        <i class="fa-regular fa-plus text-[10px]"></i>
+                                                        <span>"<span x-text="labelInput.trim()"></span>" erstellen</span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1973,6 +2018,51 @@
                                                 <div class="flex flex-wrap gap-1">
                                                     <template x-for="nat in (selectedTrip.nationalities || [])" :key="nat.code">
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700" x-text="nat.name"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Labels -->
+                                        <div class="mt-3" x-show="selectedTrip.source !== 'api'">
+                                            <p class="text-[10px] font-medium text-gray-500 mb-1">Labels</p>
+                                            <div class="flex flex-wrap gap-1 mb-1.5">
+                                                <template x-for="label in (selectedTrip.labels || [])" :key="label.id">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] text-white"
+                                                          :style="'background-color: ' + label.color">
+                                                        <i class="fa-regular text-[9px]" :class="label.icon"></i>
+                                                        <span x-text="label.name"></span>
+                                                        <button @click.stop="detachLabel(label.id)" class="ml-0.5 hover:opacity-70">
+                                                            <i class="fa-regular fa-xmark text-[9px]"></i>
+                                                        </button>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                            <div class="relative">
+                                                <input type="text"
+                                                       x-model="labelInput"
+                                                       @input="searchLabels()"
+                                                       @keydown.enter.prevent="addLabelFromInput()"
+                                                       @focus="if (labelInput.trim().length > 0) showLabelSuggestions = true"
+                                                       @click.away="showLabelSuggestions = false"
+                                                       placeholder="Label hinzufügen..."
+                                                       class="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                                <div x-show="showLabelSuggestions && (labelSuggestions.length > 0 || labelInput.trim().length > 0)"
+                                                     x-cloak
+                                                     class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                                    <template x-for="suggestion in labelSuggestions" :key="suggestion.id">
+                                                        <button @click="attachLabel(suggestion.id, null)"
+                                                                class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
+                                                            <span class="w-3 h-3 rounded-full flex-shrink-0" :style="'background-color: ' + suggestion.color"></span>
+                                                            <span x-text="suggestion.name"></span>
+                                                        </button>
+                                                    </template>
+                                                    <template x-if="labelInput.trim().length > 0 && !labelSuggestions.some(s => s.name.toLowerCase() === labelInput.trim().toLowerCase())">
+                                                        <button @click="addLabelFromInput()"
+                                                                class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100 text-blue-600">
+                                                            <i class="fa-regular fa-plus text-[10px]"></i>
+                                                            <span>"<span x-text="labelInput.trim()"></span>" erstellen</span>
+                                                        </button>
                                                     </template>
                                                 </div>
                                             </div>
@@ -2686,6 +2776,13 @@
             loadingTrips: false,
             tripsLoaded: false,
 
+            // Labels
+            labelInput: '',
+            labelSuggestions: [],
+            labelLoading: false,
+            showLabelSuggestions: false,
+            labelDebounceTimer: null,
+
             toggleMaximize(section) {
                 if (this.maximizedSection === section) {
                     this.maximizedSection = null;
@@ -2706,6 +2803,92 @@
                 this.selectedTrip = trip;
                 this.selectedTripCountry = countryCode;
                 this.tripMaximizedSection = null;
+                this.labelInput = '';
+                this.labelSuggestions = [];
+                this.showLabelSuggestions = false;
+            },
+
+            searchLabels() {
+                clearTimeout(this.labelDebounceTimer);
+                if (this.labelInput.trim().length === 0) {
+                    this.labelSuggestions = [];
+                    this.showLabelSuggestions = false;
+                    return;
+                }
+                this.labelDebounceTimer = setTimeout(async () => {
+                    this.labelLoading = true;
+                    try {
+                        const resp = await fetch(`{{ route('risk-overview.labels.search') }}?q=${encodeURIComponent(this.labelInput.trim())}`);
+                        const data = await resp.json();
+                        // Filter out already attached labels
+                        const existingIds = (this.selectedTrip.labels || []).map(l => l.id);
+                        this.labelSuggestions = data.filter(l => !existingIds.includes(l.id));
+                        this.showLabelSuggestions = true;
+                    } catch (e) {
+                        console.error('Label search error', e);
+                    } finally {
+                        this.labelLoading = false;
+                    }
+                }, 250);
+            },
+
+            async attachLabel(labelId, labelName) {
+                if (!this.selectedTrip?.folder_id || this.selectedTrip.source === 'api') return;
+                try {
+                    const body = labelId ? { label_id: labelId } : { name: labelName };
+                    const resp = await fetch(`/risk-overview/folder/${this.selectedTrip.folder_id}/labels`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify(body),
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        this.selectedTrip.labels = data.labels;
+                        // Also update in trips array
+                        const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
+                        if (idx !== -1) this.trips[idx].labels = data.labels;
+                    }
+                } catch (e) {
+                    console.error('Attach label error', e);
+                }
+                this.labelInput = '';
+                this.labelSuggestions = [];
+                this.showLabelSuggestions = false;
+            },
+
+            async detachLabel(labelId) {
+                if (!this.selectedTrip?.folder_id || this.selectedTrip.source === 'api') return;
+                try {
+                    const resp = await fetch(`/risk-overview/folder/${this.selectedTrip.folder_id}/labels/${labelId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        this.selectedTrip.labels = data.labels;
+                        const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
+                        if (idx !== -1) this.trips[idx].labels = data.labels;
+                    }
+                } catch (e) {
+                    console.error('Detach label error', e);
+                }
+            },
+
+            addLabelFromInput() {
+                const name = this.labelInput.trim();
+                if (!name) return;
+                // Check if there's an exact match in suggestions
+                const match = this.labelSuggestions.find(l => l.name.toLowerCase() === name.toLowerCase());
+                if (match) {
+                    this.attachLabel(match.id, null);
+                } else {
+                    this.attachLabel(null, name);
+                }
             },
 
             getTripCountryPriority(trip, countryCode) {
