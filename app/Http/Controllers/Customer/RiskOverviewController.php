@@ -91,9 +91,14 @@ class RiskOverviewController extends Controller
         // Default: days ahead
         $daysAhead = (int) $request->input('days', 30);
 
-        // Validate days parameter
-        if (! in_array($daysAhead, [7, 14, 30, 60, 90])) {
+        // Validate days parameter (-1 = all)
+        if (! in_array($daysAhead, [-1, 0, 7, 14, 30, 60, 90, 180, 360])) {
             $daysAhead = 30;
+        }
+
+        // -1 means "Alle" (all trips) - use a large range
+        if ($daysAhead === -1) {
+            $daysAhead = 3650;
         }
 
         $data = $this->riskOverviewService->getAggregatedRiskData(
@@ -152,8 +157,14 @@ class RiskOverviewController extends Controller
 
         $daysAhead = (int) $request->input('days', 30);
 
-        if (! in_array($daysAhead, [7, 14, 30, 60, 90])) {
+        // Validate days parameter (-1 = all)
+        if (! in_array($daysAhead, [-1, 0, 7, 14, 30, 60, 90, 180, 360])) {
             $daysAhead = 30;
+        }
+
+        // -1 means "Alle" (all trips) - use a large range
+        if ($daysAhead === -1) {
+            $daysAhead = 3650;
         }
 
         $data = $this->riskOverviewService->getTripsWithEvents(
