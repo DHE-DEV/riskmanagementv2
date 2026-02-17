@@ -753,7 +753,18 @@
 
                 <!-- Days Filter -->
                 <div class="mb-4">
-                    <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
+                    <label class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                        Zeitraum
+                        <span x-data="{ showTooltip: false }" class="relative inline-flex">
+                            <button type="button" @click.stop="showTooltip = !showTooltip" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fa-regular fa-circle-info text-xs"></i>
+                            </button>
+                            <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
+                                 class="absolute left-0 top-full mt-1 z-50 w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden.
+                            </div>
+                        </span>
+                    </label>
                     <div class="grid grid-cols-4 gap-2 mb-1">
                         <button @click="filters.days = 0; filters.customDateRange = false; applyFilters()"
                                 class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
