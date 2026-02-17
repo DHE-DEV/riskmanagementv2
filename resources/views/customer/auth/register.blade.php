@@ -30,13 +30,13 @@
                                 <div class="flex w-full flex-col text-center mb-6">
                                     <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Registrierung erfolgreich!</h1>
                                     <p class="text-sm text-stone-600 dark:text-stone-400">
-                                        Wir haben Ihnen eine E-Mail mit dem Betreff <strong class="text-stone-900 dark:text-white">"Verify Email Address"</strong> gesendet.
+                                        Wir haben Ihnen eine E-Mail mit dem Betreff<br><strong class="text-stone-900 dark:text-white">"Verify Email Address"</strong> gesendet.
                                     </p>
                                 </div>
 
                                 <!-- Instructions -->
                                 <div class="mb-6 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 text-sm text-blue-800 dark:text-blue-200">
-                                    <p class="mb-2">Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie in der E-Mail auf die Schaltfläche <strong>"Verify Email Address"</strong> klicken.</p>
+                                    <p class="mb-2">Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie in der E-Mail auf die Schaltfläche<br><strong>"Verify Email Address"</strong> klicken.</p>
                                     <p>Erst danach ist Ihr Account aktiviert und Sie können sich einloggen.</p>
                                 </div>
 
