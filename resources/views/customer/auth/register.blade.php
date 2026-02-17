@@ -67,8 +67,8 @@
                             <div class="px-8 py-8 sm:px-10">
                                 <!-- Header -->
                                 <div class="flex w-full flex-col text-center mb-8">
-                                    <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Create account</h1>
-                                    <p class="text-sm text-stone-600 dark:text-stone-400">Get started with your customer account</p>
+                                    <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Konto erstellen</h1>
+                                    <p class="text-sm text-stone-600 dark:text-stone-400">Erstellen Sie Ihr Kundenkonto</p>
                                 </div>
 
                                 <!-- Social Registration Buttons -->
@@ -114,7 +114,7 @@
                                             <div class="w-full border-t border-stone-300 dark:border-stone-700"></div>
                                         </div>
                                         <div class="relative flex justify-center text-sm">
-                                            <span class="bg-white dark:bg-stone-950 px-4 text-stone-500 dark:text-stone-400">Or register with email</span>
+                                            <span class="bg-white dark:bg-stone-950 px-4 text-stone-500 dark:text-stone-400">Oder mit E-Mail registrieren</span>
                                         </div>
                                     </div>
                                 @endif
@@ -126,7 +126,7 @@
                                     <!-- Name -->
                                     <div>
                                         <label for="name" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                            Full name
+                                            Vollständiger Name
                                         </label>
                                         <input
                                             id="name"
@@ -136,7 +136,7 @@
                                             required
                                             autofocus
                                             autocomplete="name"
-                                            placeholder="John Doe"
+                                            placeholder="Max Mustermann"
                                             class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                         >
                                         @error('name')
@@ -147,7 +147,7 @@
                                     <!-- Email -->
                                     <div>
                                         <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                            Email address
+                                            E-Mail-Adresse
                                         </label>
                                         <input
                                             id="email"
@@ -156,7 +156,7 @@
                                             value="{{ old('email') }}"
                                             required
                                             autocomplete="email"
-                                            placeholder="email@example.com"
+                                            placeholder="ihre.email@beispiel.de"
                                             class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                         >
                                         @error('email')
@@ -167,7 +167,7 @@
                                     <!-- Password -->
                                     <div>
                                         <label for="password" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                            Password
+                                            Passwort
                                         </label>
                                         <input
                                             id="password"
@@ -175,7 +175,7 @@
                                             name="password"
                                             required
                                             autocomplete="new-password"
-                                            placeholder="Create a strong password"
+                                            placeholder="Sicheres Passwort erstellen"
                                             class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                         >
                                         @error('password')
@@ -186,7 +186,7 @@
                                     <!-- Password Confirmation -->
                                     <div>
                                         <label for="password_confirmation" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                            Confirm password
+                                            Passwort bestätigen
                                         </label>
                                         <input
                                             id="password_confirmation"
@@ -194,7 +194,7 @@
                                             name="password_confirmation"
                                             required
                                             autocomplete="new-password"
-                                            placeholder="Confirm your password"
+                                            placeholder="Passwort wiederholen"
                                             class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                         >
                                         @error('password_confirmation')
@@ -212,10 +212,11 @@
                                             class="mt-1 h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-blue-600 focus:ring-2 focus:ring-blue-500/20 dark:bg-stone-900"
                                         >
                                         <label for="terms" class="ml-2 block text-sm text-stone-700 dark:text-stone-300">
-                                            I agree to the
-                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Terms of Service</a>
-                                            and
-                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Privacy Policy</a>
+                                            Ich stimme den
+                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Nutzungsbedingungen</a>
+                                            und der
+                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Datenschutzerklärung</a>
+                                            zu
                                         </label>
                                     </div>
                                     @error('terms')
@@ -227,7 +228,7 @@
                                         type="submit"
                                         class="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950"
                                     >
-                                        Create account
+                                        Konto erstellen
                                     </button>
                                 </form>
                             </div>
@@ -235,9 +236,9 @@
 
                         <!-- Login Link -->
                         <div class="text-center text-sm text-stone-600 dark:text-stone-400">
-                            Already have an account?
+                            Bereits ein Konto?
                             <a href="{{ route('customer.login') }}" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                                Sign in
+                                Anmelden
                             </a>
                         </div>
                     @endif
