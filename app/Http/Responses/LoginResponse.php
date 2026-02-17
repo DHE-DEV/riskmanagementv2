@@ -28,6 +28,6 @@ class LoginResponse implements LoginResponseContract
             ]);
         }
 
-        return redirect()->intended(config('fortify.home'));
+        return redirect()->route('customer.dashboard');
     }
 }
