@@ -18,6 +18,7 @@ class VerifyEmailNotification extends VerifyEmail
             ->format('d.m.Y \u\m H:i \U\h\r');
 
         return (new MailMessage)
+            ->from(config('mail.from.address'), 'Global Travel Monitor')
             ->subject('E-Mail-Adresse bestätigen')
             ->line('Bitte klicken Sie auf die Schaltfläche unten, um Ihre E-Mail-Adresse zu bestätigen.')
             ->action('E-Mail-Adresse bestätigen', $url)
