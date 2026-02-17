@@ -850,6 +850,15 @@
                                x-model="filters.onlyWithEvents"
                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
                         <span class="text-xs font-medium text-gray-700">Nur mit Ereignissen</span>
+                        <span x-data="{ showTooltip: false }" class="relative inline-flex">
+                            <button type="button" @click.stop="showTooltip = !showTooltip" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fa-regular fa-circle-info text-xs"></i>
+                            </button>
+                            <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
+                                 class="absolute left-0 top-full mt-1 z-50 w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                Nur Reisen anzeigen, die von Ereignissen betroffen sind.
+                            </div>
+                        </span>
                     </label>
                 </div>
             </div>
