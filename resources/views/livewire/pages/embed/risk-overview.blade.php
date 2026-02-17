@@ -2685,31 +2685,33 @@
                     result = result.filter(t => t.total_events > 0);
                 }
 
-                // Filter by travel date overlap
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                let rangeStart, rangeEnd;
+                // Filter by travel date overlap (skip for "Alle" = -1)
+                if (this.filters.days !== -1) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    let rangeStart, rangeEnd;
 
-                if (this.filters.customDateRange && this.filters.dateFrom) {
-                    rangeStart = new Date(this.filters.dateFrom);
-                    rangeStart.setHours(0, 0, 0, 0);
-                    rangeEnd = this.filters.dateTo ? new Date(this.filters.dateTo) : new Date(rangeStart);
-                    rangeEnd.setHours(0, 0, 0, 0);
-                } else {
-                    rangeStart = new Date(today);
-                    rangeEnd = new Date(today);
-                    if (this.filters.days > 0) {
-                        rangeEnd.setDate(rangeEnd.getDate() + this.filters.days);
+                    if (this.filters.customDateRange && this.filters.dateFrom) {
+                        rangeStart = new Date(this.filters.dateFrom);
+                        rangeStart.setHours(0, 0, 0, 0);
+                        rangeEnd = this.filters.dateTo ? new Date(this.filters.dateTo) : new Date(rangeStart);
+                        rangeEnd.setHours(0, 0, 0, 0);
+                    } else {
+                        rangeStart = new Date(today);
+                        rangeEnd = new Date(today);
+                        if (this.filters.days > 0) {
+                            rangeEnd.setDate(rangeEnd.getDate() + this.filters.days);
+                        }
                     }
-                }
 
-                result = result.filter(t => {
-                    const tripStart = new Date(t.start_date);
-                    tripStart.setHours(0, 0, 0, 0);
-                    const tripEnd = new Date(t.end_date);
-                    tripEnd.setHours(0, 0, 0, 0);
-                    return tripStart <= rangeEnd && tripEnd >= rangeStart;
-                });
+                    result = result.filter(t => {
+                        const tripStart = new Date(t.start_date);
+                        tripStart.setHours(0, 0, 0, 0);
+                        const tripEnd = new Date(t.end_date);
+                        tripEnd.setHours(0, 0, 0, 0);
+                        return tripStart <= rangeEnd && tripEnd >= rangeStart;
+                    });
+                }
 
                 return result;
             },
