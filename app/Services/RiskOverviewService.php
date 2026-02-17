@@ -336,10 +336,11 @@ class RiskOverviewService
                     });
             });
         } else {
-            // No end date limit ("Alle"): all current and future trips
+            // "Alle": all current/future trips + trips without end date + trips ending beyond 360 days
             $query->where(function ($q) use ($today) {
                 $q->where('travel_end_date', '>=', $today)
-                    ->orWhere('travel_start_date', '>=', $today);
+                    ->orWhere('travel_start_date', '>=', $today)
+                    ->orWhereNull('travel_end_date');
             });
         }
 
@@ -624,10 +625,11 @@ class RiskOverviewService
                     });
             });
         } else {
-            // No end date limit ("Alle"): all current and future trips
+            // "Alle": all current/future trips + trips without end date
             $query->where(function ($q) use ($today) {
                 $q->where('travel_end_date', '>=', $today)
-                    ->orWhere('travel_start_date', '>=', $today);
+                    ->orWhere('travel_start_date', '>=', $today)
+                    ->orWhereNull('travel_end_date');
             });
         }
 
@@ -960,10 +962,11 @@ class RiskOverviewService
                     });
             });
         } else {
-            // No end date limit ("Alle"): all current and future trips
+            // "Alle": all current/future trips + trips without end date
             $folderQuery->where(function ($q) use ($startDate) {
                 $q->where('travel_end_date', '>=', $startDate)
-                    ->orWhere('travel_start_date', '>=', $startDate);
+                    ->orWhere('travel_start_date', '>=', $startDate)
+                    ->orWhereNull('travel_end_date');
             });
         }
 
