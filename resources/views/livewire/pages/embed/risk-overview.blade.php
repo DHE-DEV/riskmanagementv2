@@ -2644,7 +2644,7 @@
                 priority: null,
                 days: 30,
                 onlyWithTravelers: false,
-                onlyWithEvents: false,
+                onlyWithEvents: true,
                 country: '',
                 customDateRange: false,
                 dateFrom: '',
