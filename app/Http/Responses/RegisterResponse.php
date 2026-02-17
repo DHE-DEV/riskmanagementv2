@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use Illuminate\Support\Facades\Auth;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 
 class RegisterResponse implements RegisterResponseContract
@@ -14,7 +15,9 @@ class RegisterResponse implements RegisterResponseContract
      */
     public function toResponse($request)
     {
-        // Always redirect to the customer dashboard after registration
-        return redirect()->intended(config('fortify.home'));
+        Auth::guard('customer')->logout();
+
+        return redirect()->route('customer.register')
+            ->with('registration_success', true);
     }
 }
