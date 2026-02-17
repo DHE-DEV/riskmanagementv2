@@ -156,16 +156,17 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
     // Email Verification Routes
     if (Features::enabled(Features::emailVerification())) {
-        Route::middleware(['auth:'.config('fortify.guard')])->group(function () use ($enableViews) {
-            if ($enableViews) {
-                Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
-                    ->name('verification.notice');
-            }
+        // Verification link from email - no auth required
+        Route::get('/email/verify/{id}/{hash}', [\App\Http\Controllers\Auth\Customer\VerifyEmailController::class, '__invoke'])
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
 
-            Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
-                ->middleware(['signed', 'throttle:6,1'])
-                ->name('verification.verify');
+        // Redirect /email/verify to /customer/login
+        Route::get('/email/verify', function () {
+            return redirect()->route('customer.login');
+        })->name('verification.notice');
 
+        Route::middleware(['auth:'.config('fortify.guard')])->group(function () {
             Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
                 ->middleware('throttle:6,1')
                 ->name('verification.send');
