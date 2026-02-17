@@ -128,11 +128,6 @@ class EmbedRiskOverviewController extends Controller
             $daysAhead = 30;
         }
 
-        // -1 means "Alle" (all trips) - use a large range
-        if ($daysAhead === -1) {
-            $daysAhead = 3650;
-        }
-
         $data = $this->riskOverviewService->getAggregatedRiskData(
             $customer->id,
             $priorityFilter,
@@ -192,11 +187,6 @@ class EmbedRiskOverviewController extends Controller
         // Validate days parameter (-1 = all)
         if (! in_array($daysAhead, [-1, 0, 7, 14, 30, 60, 90, 180, 360])) {
             $daysAhead = 30;
-        }
-
-        // -1 means "Alle" (all trips) - use a large range
-        if ($daysAhead === -1) {
-            $daysAhead = 3650;
         }
 
         $data = $this->riskOverviewService->getTripsWithEvents(

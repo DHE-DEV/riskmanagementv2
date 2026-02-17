@@ -320,20 +320,27 @@ class RiskOverviewService
     protected function enrichWithTravelerCounts(Collection $countriesData, int $customerId, int $daysAhead): Collection
     {
         $today = now()->startOfDay();
-        $endDate = $today->copy()->addDays($daysAhead);
+        $endDate = $daysAhead === -1 ? null : $today->copy()->addDays($daysAhead);
 
         // Get all active folders for this customer in the date range
-        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments', 'participants'])
-            ->where('customer_id', $customerId)
-            ->where(function ($query) use ($today, $endDate) {
-                $query->whereBetween('travel_start_date', [$today, $endDate])
+        $query = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments', 'participants'])
+            ->where('customer_id', $customerId);
+
+        if ($endDate) {
+            $query->where(function ($q) use ($today, $endDate) {
+                $q->whereBetween('travel_start_date', [$today, $endDate])
                     ->orWhereBetween('travel_end_date', [$today, $endDate])
-                    ->orWhere(function ($q) use ($today, $endDate) {
-                        $q->where('travel_start_date', '<=', $today)
+                    ->orWhere(function ($sub) use ($today, $endDate) {
+                        $sub->where('travel_start_date', '<=', $today)
                             ->where('travel_end_date', '>=', $endDate);
                     });
-            })
-            ->get();
+            });
+        } else {
+            // No end date limit ("Alle"): all trips ending today or later
+            $query->where('travel_end_date', '>=', $today);
+        }
+
+        $folders = $query->get();
 
         // Convert to array for modification
         $data = $countriesData->all();
@@ -355,7 +362,7 @@ class RiskOverviewService
             $apiTravelersByCountry = $this->fetchApiTravelers(
                 $customer,
                 $today->format('Y-m-d'),
-                $endDate->format('Y-m-d')
+                $endDate ? $endDate->format('Y-m-d') : '2100-12-31'
             );
 
             foreach ($apiTravelersByCountry as $countryCode => $travelers) {
@@ -598,20 +605,26 @@ class RiskOverviewService
     public function getTravelersInCountry(int $customerId, string $countryCode, int $daysAhead = 30): array
     {
         $today = now()->startOfDay();
-        $endDate = $today->copy()->addDays($daysAhead);
+        $endDate = $daysAhead === -1 ? null : $today->copy()->addDays($daysAhead);
         $countryCode = strtoupper($countryCode);
 
-        $folders = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'])
-            ->where('customer_id', $customerId)
-            ->where(function ($query) use ($today, $endDate) {
-                $query->whereBetween('travel_start_date', [$today, $endDate])
+        $query = Folder::with(['itineraries.hotelServices', 'itineraries.flightServices.segments.arrivalAirport', 'participants'])
+            ->where('customer_id', $customerId);
+
+        if ($endDate) {
+            $query->where(function ($q) use ($today, $endDate) {
+                $q->whereBetween('travel_start_date', [$today, $endDate])
                     ->orWhereBetween('travel_end_date', [$today, $endDate])
-                    ->orWhere(function ($q) use ($today, $endDate) {
-                        $q->where('travel_start_date', '<=', $today)
+                    ->orWhere(function ($sub) use ($today, $endDate) {
+                        $sub->where('travel_start_date', '<=', $today)
                             ->where('travel_end_date', '>=', $endDate);
                     });
-            })
-            ->get();
+            });
+        } else {
+            $query->where('travel_end_date', '>=', $today);
+        }
+
+        $folders = $query->get();
 
         $travelers = [];
 
@@ -645,7 +658,7 @@ class RiskOverviewService
             $apiTravelersByCountry = $this->fetchApiTravelers(
                 $customer,
                 $today->format('Y-m-d'),
-                $endDate->format('Y-m-d')
+                $endDate ? $endDate->format('Y-m-d') : '2100-12-31'
             );
 
             if (isset($apiTravelersByCountry[$countryCode])) {
@@ -831,7 +844,8 @@ class RiskOverviewService
     public function getTripsWithEvents(int $customerId, ?string $priorityFilter = null, int $daysAhead = 30): array
     {
         $today = now()->startOfDay();
-        $endDate = $today->copy()->addDays($daysAhead);
+        // -1 means "Alle" = all current and future trips (no end date limit)
+        $endDate = $daysAhead === -1 ? null : $today->copy()->addDays($daysAhead);
 
         return $this->buildTripsWithEvents(
             $customerId,
@@ -860,7 +874,7 @@ class RiskOverviewService
     /**
      * Core logic for building trips with their matched events.
      */
-    protected function buildTripsWithEvents(int $customerId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate, ?string $priorityFilter): array
+    protected function buildTripsWithEvents(int $customerId, \Carbon\Carbon $startDate, ?\Carbon\Carbon $endDate, ?string $priorityFilter): array
     {
         // 1. Get all active events
         $events = $this->gtmEventService->getActiveEvents($priorityFilter);
@@ -926,17 +940,24 @@ class RiskOverviewService
         } catch (\Exception $e) {
             // labels table may not exist yet
         }
-        $folders = Folder::with($folderEagerLoads)
-            ->where('customer_id', $customerId)
-            ->where(function ($query) use ($startDate, $endDate) {
+        $folderQuery = Folder::with($folderEagerLoads)
+            ->where('customer_id', $customerId);
+
+        if ($endDate) {
+            $folderQuery->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('travel_start_date', [$startDate, $endDate])
                     ->orWhereBetween('travel_end_date', [$startDate, $endDate])
                     ->orWhere(function ($q) use ($startDate, $endDate) {
                         $q->where('travel_start_date', '<=', $startDate)
                             ->where('travel_end_date', '>=', $endDate);
                     });
-            })
-            ->get();
+            });
+        } else {
+            // No end date limit ("Alle"): all trips ending today or later
+            $folderQuery->where('travel_end_date', '>=', $startDate);
+        }
+
+        $folders = $folderQuery->get();
 
         // Pre-load country names for folder destination codes
         $allFolderCodes = collect();
@@ -983,10 +1004,11 @@ class RiskOverviewService
         // API trips
         $customer = Customer::find($customerId);
         if ($customer) {
+            $apiEndDate = $endDate ? $endDate->format('Y-m-d') : '2100-12-31';
             $apiTrips = $this->fetchApiTravelersByTrip(
                 $customer,
                 $startDate->format('Y-m-d'),
-                $endDate->format('Y-m-d')
+                $apiEndDate
             );
 
             foreach ($apiTrips as $trip) {
