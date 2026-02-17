@@ -673,12 +673,6 @@
                 <div class="mb-4">
                     <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum</label>
                     <div class="grid grid-cols-4 gap-2 mb-1">
-                        <button @click="filters.days = -1; filters.customDateRange = false; applyFilters()"
-                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                :class="filters.days === -1 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                            <span class="text-sm font-bold"><i class="fa-regular fa-infinity"></i></span>
-                            <span>Alle</span>
-                        </button>
                         <button @click="filters.days = 0; filters.customDateRange = false; applyFilters()"
                                 class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
                                 :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
@@ -697,14 +691,14 @@
                             <span class="text-sm font-bold">14</span>
                             <span>Tage</span>
                         </button>
-                    </div>
-                    <div class="grid grid-cols-4 gap-2 mb-2">
                         <button @click="filters.days = 30; filters.customDateRange = false; applyFilters()"
                                 class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
                                 :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                             <span class="text-sm font-bold">30</span>
                             <span>Tage</span>
                         </button>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 mb-2">
                         <button @click="filters.days = 90; filters.customDateRange = false; applyFilters()"
                                 class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
                                 :class="filters.days === 90 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
@@ -722,6 +716,12 @@
                                 :class="filters.days === 360 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                             <span class="text-sm font-bold">360</span>
                             <span>Tage</span>
+                        </button>
+                        <button @click="filters.days = -1; filters.customDateRange = false; applyFilters()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === -1 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold"><i class="fa-regular fa-infinity"></i></span>
+                            <span>Alle</span>
                         </button>
                     </div>
                     <!-- Custom date range toggle -->
