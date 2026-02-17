@@ -697,7 +697,7 @@
                                 <i class="fa-regular fa-circle-info text-xs"></i>
                             </button>
                             <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
-                                 class="absolute left-0 top-full mt-1 z-50 w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                 class="absolute left-0 top-full mt-1 z-[9999] w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
                                 Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden.
                             </div>
                         </span>
@@ -792,7 +792,7 @@
                                 <i class="fa-regular fa-circle-info text-xs"></i>
                             </button>
                             <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
-                                 class="absolute left-0 top-full mt-1 z-50 w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                 class="absolute left-0 top-full mt-1 z-[9999] w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
                                 Nur Reisen anzeigen, die von Ereignissen betroffen sind.
                             </div>
                         </span>
