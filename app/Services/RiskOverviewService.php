@@ -784,32 +784,14 @@ class RiskOverviewService
                 'end_date' => ['>=' => $startDate],
             ];
 
-            Log::info('RiskOverviewService: fetchApiTravelersByTrip request', [
-                'customer_id' => $customer->id,
-                'start_date_filter' => $startDate,
-                'end_date_filter' => $endDate,
-                'api_request_body' => $apiRequestBody,
-            ]);
-
             $response = $this->pdsApiService->post($customer, '/travel-details', $apiRequestBody);
 
             if (! $response || ! $response->successful()) {
-                Log::warning('RiskOverviewService: fetchApiTravelersByTrip failed', [
-                    'customer_id' => $customer->id,
-                    'status' => $response ? $response->status() : 'null',
-                ]);
-
                 return [];
             }
 
             $data = $response->json();
             $apiTravelers = $data['data'] ?? [];
-
-            Log::info('RiskOverviewService: fetchApiTravelersByTrip response', [
-                'customer_id' => $customer->id,
-                'total_trips_returned' => count($apiTravelers),
-                'total_in_response' => $data['total'] ?? 'n/a',
-            ]);
 
             // Pre-load country names
             $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
@@ -990,13 +972,6 @@ class RiskOverviewService
 
         $folders = $folderQuery->get();
 
-        Log::info('RiskOverviewService: buildTripsWithEvents query', [
-            'customer_id' => $customerId,
-            'start_date' => $startDate->format('Y-m-d'),
-            'end_date' => $endDate ? $endDate->format('Y-m-d') : 'ALL (no limit)',
-            'local_folders_found' => $folders->count(),
-        ]);
-
         // Pre-load country names for folder destination codes
         $allFolderCodes = collect();
         foreach ($folders as $folder) {
@@ -1152,13 +1127,6 @@ class RiskOverviewService
 
             return $b['total_events'] - $a['total_events'];
         });
-
-        Log::info('RiskOverviewService: buildTripsWithEvents result', [
-            'customer_id' => $customerId,
-            'total_trips' => count($tripsWithEvents),
-            'trips_with_events' => $tripsWithEventsCount,
-            'trip_names' => array_map(fn ($t) => $t['folder_name'].' ('.$t['source'].')', $tripsWithEvents),
-        ]);
 
         return [
             'trips' => $tripsWithEvents,
