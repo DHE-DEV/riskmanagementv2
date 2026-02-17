@@ -1862,14 +1862,8 @@
                                     <!-- Progress Bar -->
                                     <div class="mb-4" x-data="{ tp: getTripProgress(selectedTrip.start_date, selectedTrip.end_date) }">
                                         <div class="flex items-center justify-between mb-1">
-                                            <span class="text-xs font-medium text-gray-700">Reisefortschritt</span>
-                                            <span class="text-xs px-2 py-0.5 rounded font-medium"
-                                                  :class="{
-                                                      'bg-gray-100 text-gray-500': tp.status === 'upcoming',
-                                                      'bg-green-100 text-green-700': tp.status === 'active',
-                                                      'bg-gray-100 text-gray-500': tp.status === 'completed'
-                                                  }"
-                                                  x-text="tp.status === 'upcoming' ? 'Geplant' : tp.status === 'active' ? tp.progress + '% - Aktiv' : 'Beendet'"></span>
+                                            <span class="text-xs font-medium text-gray-700" x-text="formatDate(selectedTrip.start_date)"></span>
+                                            <span class="text-xs font-medium text-gray-700" x-text="formatDate(selectedTrip.end_date)"></span>
                                         </div>
                                         <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
                                             <div class="h-full rounded-full transition-all duration-300"
