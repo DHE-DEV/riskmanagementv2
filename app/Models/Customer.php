@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -96,6 +97,14 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'gtm_api_enabled' => 'boolean',
         'gtm_api_rate_limit' => 'integer',
     ];
+
+    /**
+     * Send the email verification notification in German.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
+    }
 
     /**
      * Check if customer has verified email
