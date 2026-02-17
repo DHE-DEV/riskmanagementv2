@@ -7,7 +7,6 @@ use App\Models\Customer;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -50,10 +49,8 @@ class RegisterController extends Controller
 
             event(new Registered($customer));
 
-            Auth::guard('customer')->login($customer);
-
-            return redirect()->route('customer.dashboard')
-                ->with('success', 'Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse.');
+            return redirect()->route('customer.register')
+                ->with('registration_success', true);
         } catch (\Exception $e) {
             return back()
                 ->withInput($request->only('name', 'email'))

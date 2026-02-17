@@ -50,6 +50,16 @@ class LoginController extends Controller
 
         RateLimiter::clear($this->throttleKey($request));
 
+        $customer = Auth::guard('customer')->user();
+
+        if (!$customer->hasVerifiedEmail()) {
+            Auth::guard('customer')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse, bevor Sie sich einloggen.',
+            ]);
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('customer.dashboard'))
