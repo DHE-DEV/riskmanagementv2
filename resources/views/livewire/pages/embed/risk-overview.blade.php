@@ -260,9 +260,11 @@
                                         <p class="text-lg font-bold text-gray-900" x-text="filteredTripsSummary.total_trips"></p>
                                         <p class="text-xs text-gray-500">Reisen</p>
                                     </div>
-                                    <div class="bg-gray-50 rounded-lg p-2">
-                                        <p class="text-lg font-bold text-orange-600" x-text="filteredTripsSummary.trips_with_events"></p>
-                                        <p class="text-xs text-gray-500">Betroffen</p>
+                                    <div class="rounded-lg p-2 cursor-pointer transition-colors"
+                                         :class="filters.onlyWithEvents ? 'bg-blue-50 border border-blue-500' : 'bg-gray-50 hover:bg-gray-100'"
+                                         @click="filters.onlyWithEvents = !filters.onlyWithEvents">
+                                        <p class="text-lg font-bold" :class="filters.onlyWithEvents ? 'text-blue-700' : 'text-orange-600'" x-text="filteredTripsSummary.trips_with_events"></p>
+                                        <p class="text-xs" :class="filters.onlyWithEvents ? 'text-blue-600' : 'text-gray-500'">Betroffen</p>
                                     </div>
                                     <div class="bg-gray-50 rounded-lg p-2">
                                         <p class="text-lg font-bold text-gray-900" x-text="filteredTripsSummary.total_events_across_trips"></p>
