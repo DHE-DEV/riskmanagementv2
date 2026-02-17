@@ -231,7 +231,7 @@
                             <span class="flex flex-wrap gap-1 mt-1">
                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
                                       :class="filters.customDateRange ? 'bg-blue-100 text-blue-700' : (filters.days !== 30 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
-                                      x-text="filters.customDateRange ? (filters.dateFrom + (filters.dateTo ? ' – ' + filters.dateTo : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
+                                      x-text="filters.customDateRange ? (formatDate(filters.dateFrom) + (filters.dateTo ? ' – ' + formatDate(filters.dateTo) : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
                                 <template x-if="filters.priority !== null">
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
                                           :class="{
