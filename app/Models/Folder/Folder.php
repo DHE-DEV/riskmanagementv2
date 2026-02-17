@@ -3,7 +3,9 @@
 namespace App\Models\Folder;
 
 use App\Models\Customer;
+use App\Models\Label;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -121,6 +123,15 @@ class Folder extends BaseCustomerModel
     public function carRentalServices(): HasMany
     {
         return $this->hasMany(FolderCarRentalService::class);
+    }
+
+    /**
+     * Get the labels for the folder.
+     */
+    public function labels(): BelongsToMany
+    {
+        return $this->belongsToMany(Label::class, 'folder_label')
+            ->withTimestamps();
     }
 
     /**

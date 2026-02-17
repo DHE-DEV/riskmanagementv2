@@ -215,6 +215,11 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(CustomerFeatureOverride::class);
     }
 
+    public function labels(): HasMany
+    {
+        return $this->hasMany(Label::class);
+    }
+
     /**
      * Check if a specific feature is enabled for this customer.
      * Uses customer-specific overrides or falls back to .env defaults.
