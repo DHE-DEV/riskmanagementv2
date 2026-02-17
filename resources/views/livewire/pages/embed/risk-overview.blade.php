@@ -222,7 +222,7 @@
                     <!-- Filter Toggle Button -->
                     <button @click="showTripFilters = !showTripFilters"
                             class="w-full mb-3 px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-between"
-                            :class="showTripFilters ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            :class="showTripFilters ? 'bg-white border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'"
                         <span class="flex-1 text-left">
                             <span class="flex items-center">
                                 <i class="fa-regular fa-filter mr-2"></i>
