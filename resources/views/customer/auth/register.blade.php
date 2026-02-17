@@ -215,7 +215,7 @@
                                             Ich stimme den
                                             <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Nutzungsbedingungen</a>
                                             und der
-                                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Datenschutzerklärung</a>
+                                            <a href="https://www.passolution.de/datenschutz/" target="_blank" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">Datenschutzerklärung</a>
                                             zu
                                         </label>
                                     </div>
