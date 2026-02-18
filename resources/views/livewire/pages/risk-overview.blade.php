@@ -336,9 +336,11 @@
                             <!-- Summary -->
                             <div class="bg-white p-3 rounded-lg border border-gray-200 mb-3">
                                 <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div class="bg-gray-50 rounded-lg p-2">
-                                        <p class="text-lg font-bold text-gray-900" x-text="filteredTripsSummary.total_trips"></p>
-                                        <p class="text-xs text-gray-500">Reisen</p>
+                                    <div class="rounded-lg p-2 cursor-pointer transition-colors"
+                                         :class="!filters.onlyWithEvents ? 'bg-blue-50 border border-blue-500' : 'bg-gray-50 hover:bg-gray-100'"
+                                         @click="filters.onlyWithEvents = false">
+                                        <p class="text-lg font-bold" :class="!filters.onlyWithEvents ? 'text-blue-700' : 'text-gray-900'" x-text="filteredTripsSummary.total_trips"></p>
+                                        <p class="text-xs" :class="!filters.onlyWithEvents ? 'text-blue-600' : 'text-gray-500'">Reisen</p>
                                     </div>
                                     <div class="rounded-lg p-2 cursor-pointer transition-colors"
                                          :class="filters.onlyWithEvents ? 'bg-blue-50 border border-blue-500' : 'bg-gray-50 hover:bg-gray-100'"
@@ -3021,7 +3023,7 @@
                     totalEvents += t.total_events;
                 });
                 return {
-                    total_trips: filtered.length,
+                    total_trips: this.trips.length,
                     trips_with_events: tripsWithEvents,
                     total_events_across_trips: totalEvents,
                 };
