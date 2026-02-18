@@ -221,33 +221,31 @@
                 <div x-show="sidebarTab === 'reisen'" x-cloak>
                     <!-- Filter Toggle Button -->
                     <button @click="showTripFilters = !showTripFilters"
-                            class="w-full mb-3 px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-between"
-                            :class="showTripFilters ? 'bg-white border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'"
-                        <span class="flex-1 text-left">
-                            <span class="flex items-center">
-                                <i class="fa-regular fa-filter mr-2"></i>
-                                Filter
-                            </span>
-                            <span class="flex flex-wrap gap-1 mt-1">
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
-                                      :class="filters.customDateRange ? 'bg-blue-100 text-blue-700' : (filters.days !== 30 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
-                                      x-text="filters.customDateRange ? (formatDate(filters.dateFrom) + (filters.dateTo ? ' – ' + formatDate(filters.dateTo) : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
-                                <template x-if="filters.priority !== null">
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
-                                          :class="{
-                                              'bg-red-100 text-red-700': filters.priority === 'high',
-                                              'bg-orange-100 text-orange-700': filters.priority === 'medium',
-                                              'bg-yellow-100 text-yellow-700': filters.priority === 'low',
-                                              'bg-blue-100 text-blue-700': filters.priority === 'info'
-                                          }"
-                                          x-text="filters.priority === 'high' ? 'Hoch' : filters.priority === 'medium' ? 'Mittel' : filters.priority === 'low' ? 'Niedrig' : 'Info'"></span>
-                                </template>
-                                <template x-if="filters.onlyWithEvents">
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-700">Nur betroffen</span>
-                                </template>
-                            </span>
+                            class="w-full mb-3 px-3 py-2 text-xs rounded-lg border transition-colors flex items-center gap-2"
+                            :class="showTripFilters ? 'bg-white border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                        <span class="flex items-center shrink-0">
+                            <i class="fa-regular fa-filter mr-2"></i>
+                            Filter
                         </span>
-                        <i class="fa-regular fa-chevron-right transition-transform duration-200"
+                        <span class="flex-1 flex flex-wrap gap-1 justify-end">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                  :class="filters.customDateRange ? 'bg-blue-100 text-blue-700' : (filters.days !== 30 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
+                                  x-text="filters.customDateRange ? (formatDate(filters.dateFrom) + (filters.dateTo ? ' – ' + formatDate(filters.dateTo) : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
+                            <template x-if="filters.priority !== null">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                      :class="{
+                                          'bg-red-100 text-red-700': filters.priority === 'high',
+                                          'bg-orange-100 text-orange-700': filters.priority === 'medium',
+                                          'bg-yellow-100 text-yellow-700': filters.priority === 'low',
+                                          'bg-blue-100 text-blue-700': filters.priority === 'info'
+                                      }"
+                                      x-text="filters.priority === 'high' ? 'Hoch' : filters.priority === 'medium' ? 'Mittel' : filters.priority === 'low' ? 'Niedrig' : 'Info'"></span>
+                            </template>
+                            <template x-if="filters.onlyWithEvents">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-700">Nur betroffen</span>
+                            </template>
+                        </span>
+                        <i class="fa-regular fa-chevron-right shrink-0 transition-transform duration-200"
                            :class="{ 'rotate-180': showTripFilters }"></i>
                     </button>
 
