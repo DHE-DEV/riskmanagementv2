@@ -191,7 +191,7 @@ class CountryFeedController extends Controller
         $xml .= '      <description>' . $this->escapeXml($descriptionText) . '</description>' . PHP_EOL;
 
         // Custom country namespace elements for structured data
-        $xml .= '      <country:name>' . $this->escapeXml($countryName) . '</country:name>' . PHP_EOL;
+        $xml .= '      <country:name_de>' . $this->escapeXml($countryName) . '</country:name_de>' . PHP_EOL;
         $xml .= '      <country:iso_code>' . $this->escapeXml($country->iso_code ?? '') . '</country:iso_code>' . PHP_EOL;
         $xml .= '      <country:iso3_code>' . $this->escapeXml($country->iso3_code ?? '') . '</country:iso3_code>' . PHP_EOL;
         $xml .= '      <country:is_eu_member>' . ($country->is_eu_member ? 'true' : 'false') . '</country:is_eu_member>' . PHP_EOL;
