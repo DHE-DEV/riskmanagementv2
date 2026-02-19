@@ -2,7 +2,9 @@
 
 ## Übersicht
 
-Die Event API ermöglicht es externen Partnern, eigene Events auf dem Risk Management Dashboard zu erstellen und zu verwalten. Events können über eine REST-API erstellt, aktualisiert, abgefragt und gelöscht werden.
+Die Event API ermöglicht es externen Partnern, Events auf dem Risk Management Dashboard abzurufen sowie — bei entsprechender Freischaltung — eigene Events zu erstellen und zu verwalten.
+
+> **Wichtig:** Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Passolution. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen `403 Forbidden` Response.
 
 ---
 
@@ -111,6 +113,8 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ## Events
 
 ### Event erstellen
+
+> Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
 POST /api/v1/events
@@ -272,6 +276,8 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ### Event aktualisieren
 
+> Erfordert Freischaltung der Event-Erstellung für Ihren Account.
+
 ```
 PUT /api/v1/events/{uuid}
 ```
@@ -303,6 +309,8 @@ curl -X PUT https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-ab
 ---
 
 ### Event löschen
+
+> Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
 DELETE /api/v1/events/{uuid}

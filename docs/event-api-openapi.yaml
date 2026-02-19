@@ -88,8 +88,9 @@ paths:
       tags: [Events]
       summary: Neues Event erstellen
       description: |
-        Erstellt ein neues Event. Je nach Account-Einstellung wird das Event
-        sofort veröffentlicht (auto_approve) oder zur Prüfung eingereicht.
+        Erstellt ein neues Event. Erfordert die Freischaltung der Event-Erstellung
+        für Ihren Account (403, falls nicht freigeschaltet). Je nach Account-Einstellung
+        wird das Event sofort veröffentlicht (auto_approve) oder zur Prüfung eingereicht.
       requestBody:
         required: true
         content:
@@ -169,7 +170,9 @@ paths:
     put:
       tags: [Events]
       summary: Event aktualisieren
-      description: Nur die zu ändernden Felder müssen gesendet werden.
+      description: |
+        Aktualisiert ein bestehendes Event. Nur die zu ändernden Felder müssen gesendet werden.
+        Erfordert die Freischaltung der Event-Erstellung für Ihren Account (403, falls nicht freigeschaltet).
       requestBody:
         required: true
         content:
@@ -207,7 +210,9 @@ paths:
     delete:
       tags: [Events]
       summary: Event löschen
-      description: Soft-Delete - das Event wird als gelöscht markiert.
+      description: |
+        Soft-Delete - das Event wird als gelöscht markiert.
+        Erfordert die Freischaltung der Event-Erstellung für Ihren Account (403, falls nicht freigeschaltet).
       responses:
         '200':
           description: Event erfolgreich gelöscht
