@@ -362,7 +362,7 @@
                     <p class="text-sm text-amber-800 mb-3">
                         Das Erstellen, Aktualisieren und Löschen von Events erfordert eine explizite Freischaltung.
                         Neben einem gültigen Token mit <code class="bg-amber-100 px-1 py-0.5 rounded">events:write</code>-Berechtigung
-                        muss Ihr API-Client zusätzlich für die Event-Erstellung freigeschaltet sein.
+                        muss Ihr API-Client zusätzlich für Schreiboperationen freigeschaltet sein.
                     </p>
                     <div class="text-sm text-amber-800 space-y-1.5">
                         <div class="flex items-start gap-2">
@@ -375,7 +375,11 @@
                         </div>
                         <div class="flex items-start gap-2">
                             <i class="fas fa-check-circle text-amber-600 mt-0.5"></i>
-                            <span>Event-Erstellung muss für Ihren Client freigeschaltet sein</span>
+                            <span>Schreibzugriff (POST, PUT, DELETE) muss für Ihren Client freigeschaltet sein</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-amber-600 mt-0.5"></i>
+                            <span>Sie können nur Ihre eigenen Events ändern und löschen</span>
                         </div>
                     </div>
                 </div>
@@ -465,6 +469,7 @@
                     <div class="p-4">
                         <p class="text-sm text-gray-600">
                             Aktualisiert ein bestehendes Event. Es können einzelne oder alle Felder aktualisiert werden.
+                            Erfordert Schreibfreischaltung. Sie können nur Ihre eigenen Events aktualisieren.
                         </p>
                     </div>
                 </div>
@@ -479,6 +484,7 @@
                     <div class="p-4">
                         <p class="text-sm text-gray-600">
                             Löscht ein Event anhand seiner UUID. Diese Aktion kann nicht rückgängig gemacht werden.
+                            Erfordert Schreibfreischaltung. Sie können nur Ihre eigenen Events löschen.
                         </p>
                     </div>
                 </div>
