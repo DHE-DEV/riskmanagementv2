@@ -202,18 +202,55 @@ curl -X POST https://global-travel-monitor.eu/api/v1/events \
 GET /api/v1/events
 ```
 
+Standardmäßig werden nur **eigene Events** zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter `scope` können Sie zusätzlich **Passolution-Events** und **Events von Partner-Gruppen** abrufen.
+
+Der `scope`-Parameter unterstützt **kommagetrennte Werte**, um mehrere Quellen gleichzeitig abzufragen.
+
 **Query-Parameter:**
 
 | Parameter | Typ | Beschreibung |
 |-----------|-----|--------------|
+| `scope` | string | Kommagetrennte Liste von Scope-Werten (Standard: `own`) |
 | `per_page` | integer | Einträge pro Seite (Standard: 25) |
 | `page` | integer | Seitennummer |
 
-**Beispiel:**
+**Scope-Werte:**
+
+| Wert | Beschreibung |
+|------|--------------|
+| `own` | Nur Ihre eigenen Events (Standard) |
+| `passolution` | Nur von Passolution bereitgestellte Events (aktiv und freigegeben) |
+| `all` | Ihre eigenen Events + Passolution-Events zusammen |
+| `{gruppen-slug}` | Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert). Wenn die Gruppe `include_passolution_events` aktiviert hat, werden zusätzlich Passolution-Events mitgeliefert. |
+
+> **Hinweis:** Partner-Events (über Gruppen) und Passolution-Events werden nur angezeigt, wenn sie aktiv, freigegeben und nicht archiviert sind.
+
+**Beispiele:**
 
 ```bash
+# Eigene Events (Standard)
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://global-travel-monitor.eu/api/v1/events?per_page=10&page=1"
+
+# Nur Passolution-Events
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://global-travel-monitor.eu/api/v1/events?scope=passolution"
+
+# Alle Events (eigene + Passolution)
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://global-travel-monitor.eu/api/v1/events?scope=all"
+
+# Eigene + Passolution (kommagetrennt, entspricht scope=all)
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://global-travel-monitor.eu/api/v1/events?scope=own,passolution"
+
+# Events einer Partner-Gruppe
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://global-travel-monitor.eu/api/v1/events?scope=meine-partner-gruppe"
+
+# Eigene Events + Partner-Gruppe kombiniert
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://global-travel-monitor.eu/api/v1/events?scope=own,meine-partner-gruppe"
 ```
 
 ---

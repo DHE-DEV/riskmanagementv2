@@ -26,8 +26,24 @@ paths:
     get:
       tags: [Events]
       summary: Eigene Events auflisten
-      description: Gibt eine paginierte Liste aller Events des authentifizierten API-Kunden zurück.
+      description: |
+        Gibt eine paginierte Liste von Events zurück. Standardmäßig werden nur eigene Events
+        (über Ihren API-Token erstellt) zurückgegeben. Mit dem Parameter `scope` können zusätzlich
+        von Passolution bereitgestellte Events abgerufen werden.
       parameters:
+        - name: scope
+          in: query
+          schema:
+            type: string
+            default: own
+          description: |
+            Kommagetrennte Liste von Scope-Werten. Mögliche Werte:
+            - `own` (Standard) – nur über Ihren API-Token erstellte Events
+            - `passolution` – nur von Passolution bereitgestellte Events (aktiv, freigegeben, nicht archiviert)
+            - `all` – eigene Events + Passolution-Events zusammen
+            - `{gruppen-slug}` – Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert)
+
+            Beispiele: `own`, `own,passolution`, `own,meine-partner-gruppe`
         - name: per_page
           in: query
           schema:
@@ -63,6 +79,8 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
@@ -43,6 +44,11 @@ class ApiClient extends Model
     public function requestLogs(): HasMany
     {
         return $this->hasMany(ApiClientRequestLog::class);
+    }
+
+    public function eventGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(EventGroup::class, 'api_client_event_group');
     }
 
     public function scopeActive($query)

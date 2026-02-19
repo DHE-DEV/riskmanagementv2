@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\EventApiResource;
 use App\Models\ApiClient;
 use App\Models\Country;
 use App\Models\CustomEvent;
+use App\Models\EventGroup;
 use App\Models\EventType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,10 +25,72 @@ class EventApiController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $apiClient = $request->attributes->get('api_client');
+        $scopeInput = $request->input('scope', 'own');
+        $scopes = array_map('trim', explode(',', $scopeInput));
+        $reservedScopes = ['own', 'passolution', 'all'];
 
-        $events = CustomEvent::where('api_client_id', $apiClient->id)
-            ->with(['eventTypes', 'countries'])
-            ->orderBy('created_at', 'desc')
+        // Validate each scope value
+        $groupSlugs = [];
+        foreach ($scopes as $scope) {
+            if (in_array($scope, $reservedScopes)) {
+                continue;
+            }
+            $groupSlugs[] = $scope;
+        }
+
+        // Resolve event groups from slugs
+        $eventGroups = collect();
+        if (!empty($groupSlugs)) {
+            $eventGroups = EventGroup::active()->whereIn('slug', $groupSlugs)->get();
+            $foundSlugs = $eventGroups->pluck('slug')->all();
+            $unknownSlugs = array_diff($groupSlugs, $foundSlugs);
+
+            if (!empty($unknownSlugs)) {
+                abort(422, 'Unknown scope value(s): ' . implode(', ', $unknownSlugs));
+            }
+        }
+
+        $query = CustomEvent::with(['eventTypes', 'countries']);
+
+        $query->where(function ($q) use ($scopes, $apiClient, $eventGroups) {
+            $includeOwn = in_array('own', $scopes) || in_array('all', $scopes);
+            $includePassolution = in_array('passolution', $scopes) || in_array('all', $scopes);
+
+            // Check if any event group includes passolution events
+            foreach ($eventGroups as $group) {
+                if ($group->include_passolution_events) {
+                    $includePassolution = true;
+                }
+            }
+
+            if ($includeOwn) {
+                $q->orWhere('api_client_id', $apiClient->id);
+            }
+
+            if ($includePassolution) {
+                $q->orWhere(function ($q2) {
+                    $q2->whereNull('api_client_id')
+                        ->active()
+                        ->approved()
+                        ->notArchived();
+                });
+            }
+
+            // Event group member events (active, approved, not archived)
+            foreach ($eventGroups as $group) {
+                $memberIds = $group->apiClients()->pluck('api_clients.id')->all();
+                if (!empty($memberIds)) {
+                    $q->orWhere(function ($q2) use ($memberIds) {
+                        $q2->whereIn('api_client_id', $memberIds)
+                            ->active()
+                            ->approved()
+                            ->notArchived();
+                    });
+                }
+            }
+        });
+
+        $events = $query->orderBy('created_at', 'desc')
             ->paginate($request->input('per_page', 25));
 
         return EventApiResource::collection($events);
