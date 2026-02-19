@@ -28,7 +28,7 @@
         setTimeout(() => span.textContent = 'Kopieren', 1500);
     }
 }" x-init="window.debugPanel = { log: (e, p, r, d, s) => $data.log(e, p, r, d, s) }"
-   style="position: fixed; bottom: 16px; right: 16px; z-index: 99999;"
+   style="position: fixed; bottom: 48px; right: 16px; z-index: 200000;"
 >
     {{-- Toggle Button --}}
     <button @click="open = !open"
