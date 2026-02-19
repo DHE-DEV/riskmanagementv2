@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\CustomEvent;
 use App\Models\EventType;
+use Illuminate\Support\Facades\Cache;
 
 class CustomEventObserver
 {
@@ -13,6 +14,8 @@ class CustomEventObserver
      */
     public function saved(CustomEvent $customEvent): void
     {
+        $this->clearFeedCaches();
+
         // Lade die EventTypes-Beziehung, falls noch nicht geladen
         if (!$customEvent->relationLoaded('eventTypes')) {
             $customEvent->load('eventTypes');
@@ -34,6 +37,41 @@ class CustomEventObserver
                     'event_type_id' => $firstEventTypeId,
                 ]);
             }
+        }
+    }
+
+    /**
+     * Handle the CustomEvent "deleted" event.
+     */
+    public function deleted(CustomEvent $customEvent): void
+    {
+        $this->clearFeedCaches();
+    }
+
+    /**
+     * Clear all feed caches so new/updated/deleted events are immediately visible.
+     */
+    private function clearFeedCaches(): void
+    {
+        // Static feed keys
+        Cache::forget('feed:all_events:rss');
+        Cache::forget('feed:all_events:atom');
+
+        // Priority feeds
+        foreach (['high', 'medium', 'low', 'info'] as $priority) {
+            Cache::forget("feed:priority:{$priority}:rss");
+        }
+
+        // Dynamic keys (country, type, region) — clear via database query
+        // since we can't enumerate all possible values
+        if (config('cache.default') === 'database') {
+            $table = config('cache.stores.database.table', 'cache');
+            $prefix = config('cache.prefix', '');
+            $pattern = ($prefix ? $prefix . '_' : '') . 'feed:%';
+
+            \Illuminate\Support\Facades\DB::table($table)
+                ->where('key', 'like', $pattern)
+                ->delete();
         }
     }
 }
