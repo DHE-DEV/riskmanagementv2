@@ -102,6 +102,14 @@ class EventApiController extends Controller
     public function store(StoreEventRequest $request): JsonResponse
     {
         $apiClient = $request->attributes->get('api_client');
+
+        if (!$apiClient->can_create_events) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not authorized to create events.',
+            ], 403);
+        }
+
         $validated = $request->validated();
 
         // Sanitize HTML in description
@@ -204,6 +212,14 @@ class EventApiController extends Controller
     public function update(UpdateEventRequest $request, string $uuid): JsonResponse
     {
         $apiClient = $request->attributes->get('api_client');
+
+        if (!$apiClient->can_create_events) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not authorized to manage events.',
+            ], 403);
+        }
+
         $validated = $request->validated();
 
         $event = CustomEvent::where('api_client_id', $apiClient->id)
@@ -297,6 +313,13 @@ class EventApiController extends Controller
     public function destroy(Request $request, string $uuid): JsonResponse
     {
         $apiClient = $request->attributes->get('api_client');
+
+        if (!$apiClient->can_create_events) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not authorized to manage events.',
+            ], 403);
+        }
 
         $event = CustomEvent::where('api_client_id', $apiClient->id)
             ->where('uuid', $uuid)

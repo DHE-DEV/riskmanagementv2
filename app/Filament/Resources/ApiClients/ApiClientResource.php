@@ -101,6 +101,9 @@ class ApiClientResource extends Resource
                                         'suspended' => 'Gesperrt',
                                         default => $state,
                                     }),
+                                IconEntry::make('can_create_events')
+                                    ->label('Event-Erstellung')
+                                    ->boolean(),
                                 IconEntry::make('auto_approve_events')
                                     ->label('Auto-Freigabe')
                                     ->boolean(),

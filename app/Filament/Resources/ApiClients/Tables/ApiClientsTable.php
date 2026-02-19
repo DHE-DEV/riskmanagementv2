@@ -43,6 +43,10 @@ class ApiClientsTable
                         default => $state,
                     }),
 
+                IconColumn::make('can_create_events')
+                    ->label('Event-Erstellung')
+                    ->boolean(),
+
                 IconColumn::make('auto_approve_events')
                     ->label('Auto-Freigabe')
                     ->boolean(),

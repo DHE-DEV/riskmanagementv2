@@ -66,6 +66,10 @@ class ApiClientForm
                             ])
                             ->default('active')
                             ->required(),
+                        Toggle::make('can_create_events')
+                            ->label('Event-Erstellung erlauben')
+                            ->helperText('Wenn aktiviert, kann dieser Kunde eigene Events per API erstellen, bearbeiten und löschen.')
+                            ->default(false),
                         Toggle::make('auto_approve_events')
                             ->label('Events automatisch freigeben')
                             ->helperText('Wenn aktiviert, werden Events dieses Kunden sofort veröffentlicht ohne Review.')

@@ -21,18 +21,21 @@ class ApiClient extends Model
         'logo_path',
         'status',
         'auto_approve_events',
+        'can_create_events',
         'rate_limit',
         'description',
     ];
 
     protected $casts = [
         'auto_approve_events' => 'boolean',
+        'can_create_events' => 'boolean',
         'rate_limit' => 'integer',
     ];
 
     protected $attributes = [
         'status' => 'active',
         'auto_approve_events' => false,
+        'can_create_events' => false,
         'rate_limit' => 60,
     ];
 
