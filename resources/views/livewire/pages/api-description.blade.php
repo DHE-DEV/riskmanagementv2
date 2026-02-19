@@ -143,6 +143,31 @@
                         Bei Verdacht auf Missbrauch kann der Token jederzeit widerrufen werden.
                     </p>
                 </div>
+
+                <!-- Token Abilities -->
+                <h4 class="text-sm font-semibold text-gray-700 mt-6 mb-3">Token-Berechtigungen</h4>
+                <p class="text-gray-600 text-sm mb-3">
+                    Jeder API-Token wird mit spezifischen Berechtigungen (Abilities) ausgestellt. Für die Event API wird die Berechtigung
+                    <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">events:write</code> benötigt.
+                </p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-2 px-3 font-semibold text-gray-700">Berechtigung</th>
+                                <th class="text-left py-2 px-3 font-semibold text-gray-700">Beschreibung</th>
+                                <th class="text-left py-2 px-3 font-semibold text-gray-700">Erforderlich für</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700">
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">events:write</code></td>
+                                <td class="py-2 px-3">Lese- und Schreibzugriff auf Events</td>
+                                <td class="py-2 px-3">Event API (alle Endpunkte)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -324,9 +349,50 @@
                 </h2>
             </div>
             <div class="p-6">
-                <p class="text-gray-600 mb-6">
+                <p class="text-gray-600 mb-4">
                     CRUD-API für API-Clients zum Verwalten eigener Events.
                 </p>
+
+                <!-- Permissions Info -->
+                <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <h4 class="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-shield-halved"></i>
+                        Berechtigungen für Event-Erstellung
+                    </h4>
+                    <p class="text-sm text-amber-800 mb-3">
+                        Das Erstellen, Aktualisieren und Löschen von Events erfordert eine explizite Freischaltung.
+                        Neben einem gültigen Token mit <code class="bg-amber-100 px-1 py-0.5 rounded">events:write</code>-Berechtigung
+                        muss Ihr API-Client zusätzlich für die Event-Erstellung freigeschaltet sein.
+                    </p>
+                    <div class="text-sm text-amber-800 space-y-1.5">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-amber-600 mt-0.5"></i>
+                            <span>API-Client muss den Status <code class="bg-amber-100 px-1 py-0.5 rounded">active</code> haben</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-amber-600 mt-0.5"></i>
+                            <span>Token benötigt die Berechtigung <code class="bg-amber-100 px-1 py-0.5 rounded">events:write</code></span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-amber-600 mt-0.5"></i>
+                            <span>Event-Erstellung muss für Ihren Client freigeschaltet sein</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Process Info -->
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-clipboard-check"></i>
+                        Review-Prozess
+                    </h4>
+                    <p class="text-sm text-blue-800">
+                        Neu erstellte Events durchlaufen standardmäßig einen Review-Prozess und werden erst nach Freigabe veröffentlicht
+                        (<code class="bg-blue-100 px-1 py-0.5 rounded">pending_review</code>).
+                        Für ausgewählte API-Clients kann eine automatische Freigabe aktiviert werden,
+                        sodass Events sofort sichtbar sind.
+                    </p>
+                </div>
 
                 <!-- GET /events -->
                 <div class="border border-gray-200 rounded-xl mb-6 overflow-hidden">
