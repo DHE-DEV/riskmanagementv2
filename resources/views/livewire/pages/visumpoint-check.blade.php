@@ -703,6 +703,7 @@
                     this.debugLog = [];
 
                     try {
+                        const fetchStart = performance.now();
                         const response = await fetch('{{ route("visumpoint.check") }}', {
                             method: 'POST',
                             headers: {
@@ -714,6 +715,7 @@
                         });
 
                         const data = await response.json();
+                        window.debugPanel?.log('/visumpoint/check', this.formData, data, performance.now() - fetchStart, data?.debug?.duration_ms);
 
                         // Always capture debug log
                         if (data.debugLog) {
@@ -737,5 +739,7 @@
             };
         }
     </script>
+
+    <x-debug-panel :isDebugUser="$isDebugUser ?? false" />
 </body>
 </html>

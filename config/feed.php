@@ -295,4 +295,14 @@ return [
      * Kann über .env konfiguriert werden: FEED_MAX_ITEMS=100
      */
     'max_items' => (int) env('FEED_MAX_ITEMS', 100),
+
+    /*
+     * =================================================================
+     * DEBUG PANEL
+     * =================================================================
+     * Kommaseparierte E-Mail-Adressen, die das Debug-Panel auf
+     * Visum- und Risk-Overview-Seiten sehen können.
+     * .env: DEBUG_EMAILS=user@example.com,admin@example.com
+     */
+    'debug_emails' => array_filter(array_map('trim', explode(',', env('DEBUG_EMAILS', '')))),
 ];

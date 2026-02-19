@@ -452,6 +452,7 @@
                     this.result = null;
 
                     try {
+                        const fetchStart = performance.now();
                         const response = await fetch('{{ route("business-visa.check") }}', {
                             method: 'POST',
                             headers: {
@@ -463,6 +464,7 @@
                         });
 
                         const data = await response.json();
+                        window.debugPanel?.log('/business-visa/check', this.formData, data, performance.now() - fetchStart, data?.debug?.duration_ms);
 
                         if (data.success) {
                             this.result = data.data;
@@ -479,5 +481,7 @@
             };
         }
     </script>
+
+    <x-debug-panel :isDebugUser="$isDebugUser ?? false" />
 </body>
 </html>

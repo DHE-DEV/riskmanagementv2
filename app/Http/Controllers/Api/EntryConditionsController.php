@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\Log;
 class EntryConditionsController extends Controller
 {
     /**
+     * Check if the current customer is a debug user.
+     */
+    private function isDebugUser(): bool
+    {
+        $customer = auth('customer')->user();
+        return $customer && in_array($customer->email, config('feed.debug_emails', []));
+    }
+
+    /**
      * Get API key - prioritize customer's token if available (SSO or OAuth)
      * Priorität: SSO-Token (pds_api_token) > OAuth-Token > globaler API-Key
      */
@@ -140,6 +149,7 @@ class EntryConditionsController extends Controller
      */
     public function search(Request $request)
     {
+        $startTime = microtime(true);
         $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
         $logData = [];
 
@@ -210,11 +220,15 @@ class EntryConditionsController extends Controller
                     ]));
                 }
 
-                return response()->json([
+                $searchResponse = [
                     'success' => true,
                     'destinations' => $data['destinations'] ?? [],
                     'meta' => $data['meta'] ?? null,
-                ]);
+                ];
+                if ($this->isDebugUser()) {
+                    $searchResponse['debug'] = ['duration_ms' => round((microtime(true) - $startTime) * 1000, 2)];
+                }
+                return response()->json($searchResponse);
             } else {
                 Log::error('Passolution API error', [
                     'status' => $response->status(),
@@ -264,6 +278,7 @@ class EntryConditionsController extends Controller
      */
     public function getDetails(Request $request)
     {
+        $startTime = microtime(true);
         $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
         $logData = [];
 
@@ -388,10 +403,14 @@ class EntryConditionsController extends Controller
                     ]));
                 }
 
-                return response()->json([
+                $detailsResponse = [
                     'success' => true,
                     'content' => $htmlContent,
-                ]);
+                ];
+                if ($this->isDebugUser()) {
+                    $detailsResponse['debug'] = ['duration_ms' => round((microtime(true) - $startTime) * 1000, 2)];
+                }
+                return response()->json($detailsResponse);
             } else {
                 Log::error('Passolution Details API error', [
                     'status' => $response->status(),
@@ -441,6 +460,7 @@ class EntryConditionsController extends Controller
      */
     public function getContent(Request $request)
     {
+        $startTime = microtime(true);
         $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
         $logData = [];
 
@@ -592,10 +612,14 @@ class EntryConditionsController extends Controller
                     ]));
                 }
 
-                return response()->json([
+                $contentResponse = [
                     'success' => true,
                     'content' => $htmlContent,
-                ]);
+                ];
+                if ($this->isDebugUser()) {
+                    $contentResponse['debug'] = ['duration_ms' => round((microtime(true) - $startTime) * 1000, 2)];
+                }
+                return response()->json($contentResponse);
             } else {
                 Log::error('Passolution Content API error', [
                     'status' => $response->status(),
@@ -645,6 +669,7 @@ class EntryConditionsController extends Controller
      */
     public function getPDF(Request $request)
     {
+        $startTime = microtime(true);
         $loggingEnabled = config('app.entry_conditions_logging_enabled', env('ENTRY_CONDITIONS_LOGGING_ENABLED', false));
         $logData = [];
 
@@ -811,10 +836,14 @@ class EntryConditionsController extends Controller
                 // Bereinige HTML-Content von ungültigen UTF-8 Zeichen
                 $cleanContent = mb_convert_encoding($htmlContent, 'UTF-8', 'UTF-8');
 
-                return response()->json([
+                $pdfResponse = [
                     'success' => true,
                     'content' => $cleanContent,
-                ]);
+                ];
+                if ($this->isDebugUser()) {
+                    $pdfResponse['debug'] = ['duration_ms' => round((microtime(true) - $startTime) * 1000, 2)];
+                }
+                return response()->json($pdfResponse);
             } else {
                 Log::error('Passolution PDF API error', [
                     'status' => $response->status(),

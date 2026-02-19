@@ -955,10 +955,12 @@
         async function loadCountryCoordinates() {
             try {
                 // Use all-coordinates endpoint to get ALL countries, not just available nationalities
+                const _t0 = performance.now();
                 const response = await fetch('/api/entry-conditions/all-coordinates', {
                     credentials: 'same-origin'
                 });
                 const data = await response.json();
+                window.debugPanel?.log('/api/entry-conditions/all-coordinates', {}, data, performance.now() - _t0, data?.debug?.duration_ms);
 
                 if (data.success && data.countries) {
                     data.countries.forEach(country => {
@@ -1252,6 +1254,7 @@
             try {
                 box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
                 // Use entry-conditions endpoint which filters by available nationalities
+                const _t1 = performance.now();
                 const res = await fetch('/api/entry-conditions/countries', {
                     headers: { 'Accept': 'application/json' },
                     credentials: 'same-origin'
@@ -1260,6 +1263,7 @@
                 if (!res.ok) throw new Error('Network error');
 
                 const data = await res.json();
+                window.debugPanel?.log('/api/entry-conditions/countries', { q }, data, performance.now() - _t1, data?.debug?.duration_ms);
                 const allCountries = Array.isArray(data.countries) ? data.countries : [];
 
                 // Filter countries based on search query (name or code)
@@ -1939,6 +1943,7 @@
                 const allDestinations = new Map();
 
                 for (const nationality of nationalityCodes) {
+                    const _ts1 = performance.now();
                     const response = await fetch('/api/entry-conditions/search', {
                         method: 'POST',
                         headers: {
@@ -1954,6 +1959,7 @@
                     });
 
                     const data = await response.json();
+                    window.debugPanel?.log('/api/entry-conditions/search', { nationality, filters }, data, performance.now() - _ts1, data?.debug?.duration_ms);
 
                     if (data.success && data.destinations) {
                         data.destinations.forEach(dest => {
@@ -2075,6 +2081,7 @@
                 const allDestinations = new Map(); // Um Duplikate zu vermeiden
 
                 for (const nationality of nationalityCodes) {
+                    const _ts2 = performance.now();
                     const response = await fetch('/api/entry-conditions/search', {
                         method: 'POST',
                         headers: {
@@ -2090,6 +2097,7 @@
                     });
 
                     const data = await response.json();
+                    window.debugPanel?.log('/api/entry-conditions/search', { nationality, filters }, data, performance.now() - _ts2, data?.debug?.duration_ms);
 
                     if (data.success && data.destinations) {
                         // Destinations hinzufügen (Duplikate vermeiden)
@@ -2174,6 +2182,7 @@
                         }
 
                         // API-Aufruf für diese Kombination
+                        const _tc = performance.now();
                         const response = await fetch('/api/entry-conditions/content', {
                             method: 'POST',
                             headers: {
@@ -2189,6 +2198,7 @@
                         });
 
                         const data = await response.json();
+                        window.debugPanel?.log('/api/entry-conditions/content', { countries: [destCode], nationalities: [natCode] }, data, performance.now() - _tc, data?.debug?.duration_ms);
 
                         // Ergebnis formatieren mit besserer Fehlerbehandlung
                         let contentHtml = '<p class="text-gray-500 text-sm">Keine Informationen verfügbar</p>';
@@ -2581,5 +2591,7 @@
             window.open(pdfUrl, '_blank');
         }
     </script>
+
+    <x-debug-panel :isDebugUser="$isDebugUser ?? false" />
 </body>
 </html>

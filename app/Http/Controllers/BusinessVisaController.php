@@ -31,10 +31,14 @@ class BusinessVisaController extends Controller
             $groupedReasons[$group][$code] = $reason;
         }
 
+        $customer = auth('customer')->user();
+        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+
         return view('livewire.pages.business-visa', [
             'tripReasons' => $tripReasons,
             'countries' => $countries,
             'groupedReasons' => $groupedReasons,
+            'isDebugUser' => $isDebugUser,
         ]);
     }
 
@@ -43,6 +47,8 @@ class BusinessVisaController extends Controller
      */
     public function check(Request $request): JsonResponse
     {
+        $startTime = microtime(true);
+
         $validated = $request->validate([
             'nationality' => 'required|string|size:2',
             'secondNationality' => 'nullable|string|size:2',
@@ -55,18 +61,31 @@ class BusinessVisaController extends Controller
 
         $result = $this->workFlexService->checkVisaRequirements($validated);
 
+        $durationMs = round((microtime(true) - $startTime) * 1000, 2);
+
+        $customer = auth('customer')->user();
+        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+
         if ($result['success']) {
-            return response()->json([
+            $response = [
                 'success' => true,
                 'data' => $result['data'],
-            ]);
+            ];
+            if ($isDebugUser) {
+                $response['debug'] = ['duration_ms' => $durationMs];
+            }
+            return response()->json($response);
         }
 
-        return response()->json([
+        $response = [
             'success' => false,
             'error' => $result['error'] ?? 'An error occurred',
             'details' => $result['details'] ?? null,
-        ], 422);
+        ];
+        if ($isDebugUser) {
+            $response['debug'] = ['duration_ms' => $durationMs];
+        }
+        return response()->json($response, 422);
     }
 
     /**

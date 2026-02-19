@@ -150,7 +150,12 @@ Route::get('/entry-conditions', function () {
         abort(404);
     }
 
-    return view('livewire.pages.entry-conditions');
+    $customer = auth('customer')->user();
+    $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+
+    return view('livewire.pages.entry-conditions', [
+        'isDebugUser' => $isDebugUser,
+    ]);
 })->name('entry-conditions');
 
 // RSS/Atom Feed Routes

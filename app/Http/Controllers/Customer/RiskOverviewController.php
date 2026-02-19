@@ -37,8 +37,11 @@ class RiskOverviewController extends Controller
             abort(404);
         }
 
+        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
+
         return view('livewire.pages.risk-overview', [
             'customer' => $customer,
+            'isDebugUser' => $isDebugUser,
         ]);
     }
 
@@ -47,6 +50,7 @@ class RiskOverviewController extends Controller
      */
     public function getData(Request $request): JsonResponse
     {
+        $startTime = microtime(true);
         $customer = auth('customer')->user();
 
         if (! $customer) {
@@ -56,6 +60,8 @@ class RiskOverviewController extends Controller
         if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
             abort(404);
         }
+
+        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
 
         $priorityFilter = $request->input('priority'); // null, high, medium, low, info
 
@@ -77,7 +83,7 @@ class RiskOverviewController extends Controller
                 $priorityFilter
             );
 
-            return response()->json([
+            $response = [
                 'success' => true,
                 'data' => $data,
                 'filters' => [
@@ -85,7 +91,16 @@ class RiskOverviewController extends Controller
                     'date_from' => $dateFrom,
                     'date_to' => $dateTo,
                 ],
-            ]);
+            ];
+
+            if ($isDebugUser) {
+                $response['debug'] = [
+                    'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                    'params' => $request->all(),
+                ];
+            }
+
+            return response()->json($response);
         }
 
         // Default: days ahead
@@ -102,14 +117,23 @@ class RiskOverviewController extends Controller
             $daysAhead
         );
 
-        return response()->json([
+        $response = [
             'success' => true,
             'data' => $data,
             'filters' => [
                 'priority' => $priorityFilter,
                 'days' => $daysAhead,
             ],
-        ]);
+        ];
+
+        if ($isDebugUser) {
+            $response['debug'] = [
+                'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                'params' => $request->all(),
+            ];
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -117,6 +141,7 @@ class RiskOverviewController extends Controller
      */
     public function getTrips(Request $request): JsonResponse
     {
+        $startTime = microtime(true);
         $customer = auth('customer')->user();
 
         if (! $customer) {
@@ -126,6 +151,8 @@ class RiskOverviewController extends Controller
         if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
             abort(404);
         }
+
+        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
 
         $priorityFilter = $request->input('priority');
 
@@ -144,10 +171,19 @@ class RiskOverviewController extends Controller
                 $priorityFilter
             );
 
-            return response()->json([
+            $response = [
                 'success' => true,
                 'data' => $data,
-            ]);
+            ];
+
+            if ($isDebugUser) {
+                $response['debug'] = [
+                    'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                    'params' => $request->all(),
+                ];
+            }
+
+            return response()->json($response);
         }
 
         $daysAhead = (int) $request->input('days', 30);
@@ -163,10 +199,19 @@ class RiskOverviewController extends Controller
             $daysAhead
         );
 
-        return response()->json([
+        $response = [
             'success' => true,
             'data' => $data,
-        ]);
+        ];
+
+        if ($isDebugUser) {
+            $response['debug'] = [
+                'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                'params' => $request->all(),
+            ];
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -174,6 +219,7 @@ class RiskOverviewController extends Controller
      */
     public function getCountryDetails(Request $request, string $countryCode): JsonResponse
     {
+        $startTime = microtime(true);
         $customer = auth('customer')->user();
 
         if (! $customer) {
@@ -183,6 +229,8 @@ class RiskOverviewController extends Controller
         if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
             abort(404);
         }
+
+        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
 
         // Check for custom date range
         $dateFrom = $request->input('date_from');
@@ -196,10 +244,19 @@ class RiskOverviewController extends Controller
                 $dateTo
             );
 
-            return response()->json([
+            $response = [
                 'success' => true,
                 'data' => $data,
-            ]);
+            ];
+
+            if ($isDebugUser) {
+                $response['debug'] = [
+                    'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                    'params' => array_merge($request->all(), ['country_code' => $countryCode]),
+                ];
+            }
+
+            return response()->json($response);
         }
 
         // Default: days ahead
@@ -216,10 +273,19 @@ class RiskOverviewController extends Controller
             $daysAhead
         );
 
-        return response()->json([
+        $response = [
             'success' => true,
             'data' => $data,
-        ]);
+        ];
+
+        if ($isDebugUser) {
+            $response['debug'] = [
+                'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                'params' => array_merge($request->all(), ['country_code' => $countryCode]),
+            ];
+        }
+
+        return response()->json($response);
     }
 
     /**

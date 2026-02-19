@@ -21,9 +21,13 @@ class VisumPointController extends Controller
         $countries = $this->getCountries();
         $isConfigured = $this->visumPointService->isConfigured();
 
+        $customer = auth('customer')->user();
+        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+
         return view('livewire.pages.visumpoint-check', [
             'countries' => $countries,
             'isConfigured' => $isConfigured,
+            'isDebugUser' => $isDebugUser,
         ]);
     }
 
@@ -32,6 +36,8 @@ class VisumPointController extends Controller
      */
     public function check(Request $request): JsonResponse
     {
+        $startTime = microtime(true);
+
         $validated = $request->validate([
             'nationality' => 'required|string|size:2',
             'destinationCountry' => 'required|string|size:2',
@@ -65,21 +71,33 @@ class VisumPointController extends Controller
         );
 
         $debugLog = $this->visumPointService->getDebugLog();
+        $durationMs = round((microtime(true) - $startTime) * 1000, 2);
+
+        $customer = auth('customer')->user();
+        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
 
         if ($result['success']) {
-            return response()->json([
+            $response = [
                 'success' => true,
                 'data' => $result['data'],
                 'debugLog' => $debugLog,
-            ]);
+            ];
+            if ($isDebugUser) {
+                $response['debug'] = ['duration_ms' => $durationMs];
+            }
+            return response()->json($response);
         }
 
-        return response()->json([
+        $response = [
             'success' => false,
             'error' => $result['error'] ?? 'Ein Fehler ist aufgetreten',
             'details' => $result['details'] ?? null,
             'debugLog' => $result['debugLog'] ?? $debugLog,
-        ], 422);
+        ];
+        if ($isDebugUser) {
+            $response['debug'] = ['duration_ms' => $durationMs];
+        }
+        return response()->json($response, 422);
     }
 
     /**
