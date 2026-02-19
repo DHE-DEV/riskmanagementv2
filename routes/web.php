@@ -8,6 +8,13 @@ use App\Models\EventClick;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    // API subdomain → serve API landing page
+    // (web.php routes are registered before api-subdomain.php and match all domains)
+    $apiDomain = config('app.api_domain') ?: 'api.global-travel-monitor.de';
+    if (request()->getHost() === $apiDomain) {
+        return view('api.landing');
+    }
+
     $eventId = request()->query('event');
     $viewParam = request()->query('view');
     $sharedEvent = null;
