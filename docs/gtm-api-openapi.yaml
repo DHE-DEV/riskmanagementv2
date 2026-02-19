@@ -9,12 +9,8 @@ info:
     name: Passolution Support
 
 servers:
-  - url: https://{domain}/api/v1/gtm
+  - url: https://global-travel-monitor.eu/api/v1/gtm
     description: Produktionsserver
-    variables:
-      domain:
-        default: example.com
-        description: Domain der Installation
 
 security:
   - BearerAuth: []
