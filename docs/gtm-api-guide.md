@@ -2,7 +2,9 @@
 
 ## Übersicht
 
-Die GTM API bietet Zugriff auf globale Sicherheits- und Reiserisiko-Events. Sie ermöglicht die Abfrage aktueller Events gefiltert nach Priorität, Land, Event-Typ und Region sowie Länder-Übersichten mit Anzahl aktiver Events.
+Die GTM API bietet **read-only** Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Passolution gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.
+
+Die API ermöglicht die Abfrage aktueller Events gefiltert nach Priorität, Land, Event-Typ und Region sowie Länder-Übersichten mit Anzahl aktiver Events.
 
 ---
 

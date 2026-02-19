@@ -28,9 +28,11 @@ paths:
       summary: Events auflisten
       description: |
         Gibt eine paginierte Liste aller aktuell aktiven Events zurück.
-        Es werden nur Events zurückgegeben, die freigegeben (approved), aktiv
-        und nicht archiviert sind, deren Startdatum in der Vergangenheit liegt
-        und deren Enddatum entweder null (andauernd) oder in der Zukunft liegt.
+        Dies umfasst sowohl von Passolution gepflegte Events als auch Events
+        von API-Partnern. Es werden nur Events zurückgegeben, die freigegeben
+        (approved), aktiv und nicht archiviert sind, deren Startdatum in der
+        Vergangenheit liegt und deren Enddatum entweder null (andauernd) oder
+        in der Zukunft liegt.
       parameters:
         - name: priority
           in: query
