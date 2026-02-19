@@ -18,16 +18,32 @@
 | Root & Fallback
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return response()->json([
-        'name' => 'Passolution API',
-        'documentation' => 'https://global-travel-monitor.eu/docs',
-        'endpoints' => [
-            'Event API' => '/v1/events',
-            'GTM API' => '/v1/gtm/events',
+$apiInfo = [
+    'name' => 'Passolution API',
+    'version' => 'v1',
+    'endpoints' => [
+        'Event API' => [
+            'GET /v1/events' => 'Events auflisten',
+            'POST /v1/events' => 'Event erstellen',
+            'GET /v1/events/{uuid}' => 'Event anzeigen',
+            'PUT /v1/events/{uuid}' => 'Event aktualisieren',
+            'DELETE /v1/events/{uuid}' => 'Event löschen',
         ],
-    ]);
-})->name('sub.root');
+        'Referenzdaten' => [
+            'GET /v1/event-types' => 'Verfügbare Event-Typen',
+            'GET /v1/countries' => 'Verfügbare Länder',
+        ],
+        'GTM API' => [
+            'GET /v1/gtm/events' => 'Aktive Events auflisten',
+            'GET /v1/gtm/events/{id}' => 'Event anzeigen',
+            'GET /v1/gtm/countries' => 'Länder mit aktiven Events',
+        ],
+    ],
+    'authentication' => 'Bearer Token via Authorization header',
+];
+
+Route::get('/', fn () => response()->json($apiInfo))->name('sub.root');
+Route::get('/v1', fn () => response()->json($apiInfo))->name('sub.v1.root');
 
 Route::fallback(function () {
     return response()->json([
