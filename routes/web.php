@@ -8,11 +8,6 @@ use App\Models\EventClick;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    // API subdomain → API description page
-    if (str_starts_with(request()->getHost(), 'api.')) {
-        return view('livewire.pages.api-description');
-    }
-
     $eventId = request()->query('event');
     $viewParam = request()->query('view');
     $sharedEvent = null;
