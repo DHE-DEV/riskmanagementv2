@@ -26,8 +26,6 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution. Er ist 1 Jahr 
 https://api.global-travel-monitor.de/v1
 ```
 
-Alternativ ist die API auch unter `https://global-travel-monitor.eu/api/v1` erreichbar. Wir empfehlen die Verwendung der API-Subdomain für neue Integrationen.
-
 ---
 
 ## Rate Limit

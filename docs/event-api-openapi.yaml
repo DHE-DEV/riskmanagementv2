@@ -10,9 +10,7 @@ info:
 
 servers:
   - url: https://api.global-travel-monitor.de/v1
-    description: Produktionsserver (empfohlen)
-  - url: https://global-travel-monitor.eu/api/v1
-    description: Produktionsserver (alternativ)
+    description: Produktionsserver
 
 security:
   - BearerAuth: []
