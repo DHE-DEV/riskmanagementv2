@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: Passolution Feed API
+  description: |
+    Öffentliche RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events
+    sowie Länderinformationen. Keine Authentifizierung erforderlich.
+
+    Feed-Antworten werden serverseitig gecacht (Standard: 1 Stunde).
+    Bei neuen oder geänderten Events wird der Cache automatisch invalidiert.
+  version: 1.0.0
+  contact:
+    name: Passolution Support
+
+servers:
+  - url: https://global-travel-monitor.eu/feed
+    description: Produktionsserver
+
+tags:
+  - name: Metadaten
+    description: Verfügbare Filter-Werte
+  - name: Event-Feeds
+    description: RSS/Atom-Feeds für Events
+  - name: Länder-Feeds
+    description: RSS-Feeds für Länderinformationen
+
+paths:
+  /events/meta.json:
+    get:
+      tags: [Metadaten]
+      summary: Verfügbare Priorities und Event-Typen
+      description: Gibt die gültigen Werte für Priority-Filter und Event-Typ-Filter als JSON zurück.
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meta'
+
+  /events/all.xml:
+    get:
+      tags: [Event-Feeds]
+      summary: Alle aktiven Events (RSS 2.0)
+      description: |
+        Liefert alle aktiven, nicht-archivierten Events als RSS 2.0 Feed.
+        Maximal 100 Events, sortiert nach Startdatum (neueste zuerst).
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+                description: RSS 2.0 XML mit benutzerdefinierten Namespaces
+
+  /events/all.atom:
+    get:
+      tags: [Event-Feeds]
+      summary: Alle aktiven Events (Atom 1.0)
+      description: |
+        Liefert alle aktiven, nicht-archivierten Events als Atom 1.0 Feed.
+        Maximal 100 Events, sortiert nach Startdatum (neueste zuerst).
+      responses:
+        '200':
+          description: Atom 1.0 Feed
+          content:
+            application/atom+xml:
+              schema:
+                type: string
+                description: Atom 1.0 XML
+
+  /events/priority/{priority}.xml:
+    parameters:
+      - name: priority
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [high, medium, low, info]
+        description: Prioritätsstufe
+    get:
+      tags: [Event-Feeds]
+      summary: Events nach Priorität (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '404':
+          description: Ungültige Priorität
+
+  /events/countries/{code}.xml:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "ISO 3166-1 alpha-2 (z.B. de) oder alpha-3 (z.B. deu), case-insensitive"
+    get:
+      tags: [Event-Feeds]
+      summary: Events nach Land (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '404':
+          description: Land nicht gefunden
+
+  /events/types/{type}.xml:
+    parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "Event-Typ-Code (aus meta.json), case-insensitive"
+    get:
+      tags: [Event-Feeds]
+      summary: Events nach Event-Typ (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '404':
+          description: Event-Typ nicht gefunden
+
+  /events/regions/{region}.xml:
+    parameters:
+      - name: region
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numerische Region-ID
+    get:
+      tags: [Event-Feeds]
+      summary: Events nach Region (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '404':
+          description: Region nicht gefunden
+
+  /countries/names/all.xml:
+    get:
+      tags: [Länder-Feeds]
+      summary: Alle Länder (RSS 2.0)
+      description: Verzeichnis aller Länder mit Details (Name, ISO-Codes, EU/Schengen-Status, Kontinent, Währung, Hauptstadt mit Koordinaten).
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+
+  /countries/continent/{code}.xml:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [EU, AS, AF, NA, SA, OC, AN]
+        description: "Kontinent-Code: EU (Europa), AS (Asien), AF (Afrika), NA (Nordamerika), SA (Südamerika), OC (Ozeanien), AN (Antarktis)"
+    get:
+      tags: [Länder-Feeds]
+      summary: Länder nach Kontinent (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '404':
+          description: Kontinent nicht gefunden
+
+  /countries/eu.xml:
+    get:
+      tags: [Länder-Feeds]
+      summary: EU-Mitgliedsstaaten (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+
+  /countries/schengen.xml:
+    get:
+      tags: [Länder-Feeds]
+      summary: Schengen-Staaten (RSS 2.0)
+      responses:
+        '200':
+          description: RSS 2.0 Feed
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Meta:
+      type: object
+      properties:
+        priorities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Priority'
+        event_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+
+    Priority:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [high, medium, low, info]
+          example: high
+        name_de:
+          type: string
+          example: Hoch
+        name_en:
+          type: string
+          example: High
+
+    EventType:
+      type: object
+      properties:
+        code:
+          type: string
+          example: earthquake
+        name:
+          type: string
+          example: Erdbeben
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          example: fa-house-crack
+        color:
+          type: string
+          example: "#FF0000"
