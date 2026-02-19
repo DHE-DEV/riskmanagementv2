@@ -217,4 +217,16 @@ return [
     'customer_dashboard_branches_box_enabled' => env('CUSTOMER_DASHBOARD_BRANCHES_BOX_ENABLED', true),
     'customer_dashboard_branches_sidebar_enabled' => env('CUSTOMER_DASHBOARD_BRANCHES_SIDEBAR_ENABLED', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | API Subdomain
+    |--------------------------------------------------------------------------
+    |
+    | Domain for the dedicated API subdomain (e.g. api.global-travel-monitor.de).
+    | When set, API routes are also available without the /api prefix.
+    |
+    */
+
+    'api_domain' => env('API_DOMAIN'),
+
 ];
