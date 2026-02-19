@@ -3568,5 +3568,7 @@
     }
 
 </script>
+
+    <x-debug-panel :isDebugUser="$isDebugUser ?? false" />
 </body>
 </html>
