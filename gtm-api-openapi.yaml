@@ -21,6 +21,12 @@ info:
     ## Pagination
     List endpoints support pagination through `page` and `per_page` query parameters.
     Pagination metadata is included in the `meta` object of every list response.
+
+    ## Event Limit
+    The events endpoint returns a maximum of 100 currently active events.
+    Events are pre-filtered to only include approved, active, non-archived events
+    whose start date is in the past and whose end date is either null (ongoing)
+    or in the future.
   contact:
     name: API Support
   license:
@@ -69,12 +75,13 @@ paths:
           in: query
           required: false
           description: |
-            Filter events by country ISO code (two-letter ISO 3166-1 alpha-2).
-            Only events associated with the specified country are returned.
+            Filter events by country ISO code. Accepts both two-letter
+            (ISO 3166-1 alpha-2, e.g. "DE") and three-letter
+            (ISO 3166-1 alpha-3, e.g. "DEU") country codes.
           schema:
             type: string
             minLength: 2
-            maxLength: 2
+            maxLength: 3
           example: DE
         - name: event_type
           in: query
@@ -89,10 +96,12 @@ paths:
           in: query
           required: false
           description: |
-            Filter events by geographic region or continent code.
+            Filter events by region ID. Use the numeric ID of a region
+            to narrow results to events in that region's country.
           schema:
-            type: string
-          example: europe
+            type: integer
+            minimum: 1
+          example: 3
         - name: per_page
           in: query
           required: false
@@ -302,9 +311,10 @@ paths:
       operationId: listCountries
       summary: List countries with active event counts
       description: |
-        Retrieve a list of all countries along with the number of currently
-        active events in each country. Countries with zero active events are
-        included in the response. The list is not paginated.
+        Retrieve a list of countries that have currently active events,
+        along with the number of active events in each country. Only
+        countries with at least one active event are included. The list
+        is sorted by active event count (descending) and is not paginated.
       tags:
         - Countries
       responses:

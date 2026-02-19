@@ -124,7 +124,7 @@ POST /api/v1/events
 | `description` | string | Nein | Beschreibung (max. 10.000 Zeichen, HTML erlaubt: p, br, strong, em, ul, ol, li, a) |
 | `priority` | string | Nein | Priorität: `info`, `low`, `medium` (Standard), `high` |
 | `start_date` | datetime | Ja | Startdatum (ISO 8601, z.B. `2026-02-11T08:00:00Z`) |
-| `end_date` | datetime | Nein | Enddatum (muss nach start_date liegen) |
+| `end_date` | datetime | Nein | Enddatum (muss gleich oder nach start_date liegen) |
 | `event_type_codes` | array | Ja | Event-Typ-Codes (mindestens 1, aus `/event-types`) |
 | `country_codes` | array | Ja | ISO-2-Ländercodes (mindestens 1, z.B. `["DE", "AT"]`) |
 | `latitude` | number | Nein | Breitengrad (-90 bis 90) |

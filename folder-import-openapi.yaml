@@ -35,7 +35,7 @@ security:
   - bearerAuth: []
 
 paths:
-  /my-travelers/api-tokens/generate:
+  /customer/api-tokens/generate:
     post:
       tags:
         - Authentication

@@ -374,7 +374,7 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: Enddatum (muss nach start_date liegen)
+          description: Enddatum (muss gleich oder nach start_date liegen)
         event_type_codes:
           type: array
           minItems: 1
