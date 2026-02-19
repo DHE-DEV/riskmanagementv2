@@ -93,13 +93,13 @@ curl -H "Authorization: Bearer {TOKEN}" \
     {
       "iso_code": "DE",
       "iso3_code": "DEU",
-      "name": "Deutschland",
+      "name_de": "Deutschland",
       "name_en": "Germany"
     },
     {
       "iso_code": "TH",
       "iso3_code": "THA",
-      "name": "Thailand",
+      "name_de": "Thailand",
       "name_en": "Thailand"
     }
   ]
@@ -182,7 +182,7 @@ curl -X POST https://[domain]/api/v1/events \
     "countries": [
       {
         "iso_code": "TH",
-        "name": "Thailand",
+        "name_de": "Thailand",
         "name_en": "Thailand"
       }
     ],

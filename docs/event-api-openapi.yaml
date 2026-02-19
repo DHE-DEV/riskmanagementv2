@@ -498,7 +498,7 @@ components:
         iso3_code:
           type: string
           example: THA
-        name:
+        name_de:
           type: string
           example: Thailand
         name_en:
@@ -511,7 +511,7 @@ components:
         iso_code:
           type: string
           example: TH
-        name:
+        name_de:
           type: string
           example: Thailand
         name_en:

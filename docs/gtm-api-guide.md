@@ -108,7 +108,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
         {
           "iso_code": "TR",
           "iso3_code": "TUR",
-          "name": "Tuerkei",
+          "name_de": "Tuerkei",
           "name_en": "Turkey",
           "continent": "Asia"
         }
@@ -116,7 +116,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "country": {
         "iso_code": "TR",
         "iso3_code": "TUR",
-        "name": "Tuerkei",
+        "name_de": "Tuerkei",
         "name_en": "Turkey",
         "continent": "Asia"
       },
@@ -185,7 +185,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       {
         "iso_code": "TR",
         "iso3_code": "TUR",
-        "name": "Tuerkei",
+        "name_de": "Tuerkei",
         "name_en": "Turkey",
         "continent": "Asia"
       }
@@ -193,7 +193,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "country": {
       "iso_code": "TR",
       "iso3_code": "TUR",
-      "name": "Tuerkei",
+      "name_de": "Tuerkei",
       "name_en": "Turkey",
       "continent": "Asia"
     },
@@ -231,7 +231,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     {
       "iso_code": "DE",
       "iso3_code": "DEU",
-      "name": "Deutschland",
+      "name_de": "Deutschland",
       "name_en": "Germany",
       "continent": "Europe",
       "continent_de": "Europa",
@@ -244,7 +244,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     {
       "iso_code": "TR",
       "iso3_code": "TUR",
-      "name": "Tuerkei",
+      "name_de": "Tuerkei",
       "name_en": "Turkey",
       "continent": "Asia",
       "continent_de": "Asien",
@@ -305,7 +305,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 |------|-----|--------------|
 | `iso_code` | string | ISO 3166-1 alpha-2 Code (z.B. `DE`) |
 | `iso3_code` | string | ISO 3166-1 alpha-3 Code (z.B. `DEU`) |
-| `name` | string | Ländername (deutsch) |
+| `name_de` | string | Ländername (deutsch) |
 | `name_en` | string | Ländername (englisch) |
 | `continent` | string | Kontinent |
 
@@ -315,7 +315,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 |------|-----|--------------|
 | `iso_code` | string | ISO 3166-1 alpha-2 Code |
 | `iso3_code` | string | ISO 3166-1 alpha-3 Code |
-| `name` | string | Ländername (deutsch) |
+| `name_de` | string | Ländername (deutsch) |
 | `name_en` | string | Ländername (englisch) |
 | `continent` | string / null | Kontinent (englisch) |
 | `continent_de` | string / null | Kontinent (deutsch) |
