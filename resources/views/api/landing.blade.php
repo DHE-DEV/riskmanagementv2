@@ -391,10 +391,6 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                         OpenAPI Spec
                     </a>
-                    <a href="/docs/feed-api-guide.md" class="btn btn-outline">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                        Anleitung
-                    </a>
                 </div>
             </div>
         </div>
@@ -1319,6 +1315,299 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <h3>Support</h3>
             <p>Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.</p>
+        </div>
+
+        {{-- ========================================== --}}
+        {{-- Feed API Guide --}}
+        {{-- ========================================== --}}
+        <div class="doc-section" id="feed-api-guide">
+            <h2>Feed API – Anleitung</h2>
+
+            <h3>Übersicht</h3>
+            <p>Die Feed API stellt aktuelle Sicherheits- und Reiserisiko-Events sowie Länderinformationen als RSS/Atom-Feeds bereit. Die Feeds können in Feed-Reader, CMS-Systeme oder eigene Anwendungen eingebunden werden.</p>
+            <p><strong>Keine Authentifizierung erforderlich</strong> – alle Feed-Endpunkte sind öffentlich zugänglich.</p>
+
+            <hr>
+
+            <h3>Base-URL</h3>
+            <pre><code>https://global-travel-monitor.eu/feed</code></pre>
+
+            <hr>
+
+            <h3>Caching</h3>
+            <p>Feed-Antworten werden serverseitig gecacht. Die Cache-Dauer beträgt standardmäßig <strong>1 Stunde</strong> (3600 Sekunden). Bei neuen oder geänderten Events wird der Cache automatisch invalidiert.</p>
+
+            <hr>
+
+            <h3>Metadaten</h3>
+
+            <h4>Verfügbare Priorities und Event-Typen</h4>
+            <pre><code>GET /feed/events/meta.json</code></pre>
+            <p>Gibt die gültigen Werte für Priority-Filter und Event-Typ-Filter als JSON zurück.</p>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/meta.json</code></pre>
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+  "priorities": [
+    { "code": "high", "name_de": "Hoch", "name_en": "High" },
+    { "code": "medium", "name_de": "Mittel", "name_en": "Medium" },
+    { "code": "low", "name_de": "Niedrig", "name_en": "Low" },
+    { "code": "info", "name_de": "Information", "name_en": "Info" }
+  ],
+  "event_types": [
+    {
+      "code": "earthquake",
+      "name": "Erdbeben",
+      "description": "...",
+      "icon": "fa-house-crack",
+      "color": "#FF0000"
+    }
+  ]
+}</code></pre>
+
+            <hr>
+
+            <h3>Event-Feeds</h3>
+            <p>Alle Event-Feeds liefern nur <strong>aktive, nicht-archivierte Events</strong>, deren Startdatum in der Vergangenheit liegt. Maximal 100 Events pro Feed, sortiert nach Startdatum (neueste zuerst).</p>
+
+            <h4>Alle Events</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Format</th><th>URL</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>RSS 2.0</td><td><code>/feed/events/all.xml</code></td></tr>
+                        <tr><td>Atom 1.0</td><td><code>/feed/events/all.atom</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/all.xml</code></pre>
+
+            <hr>
+
+            <h4>Events nach Priorität</h4>
+            <pre><code>GET /feed/events/priority/{priority}.xml</code></pre>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Gültige Werte</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>priority</code></td><td><code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/priority/high.xml</code></pre>
+
+            <hr>
+
+            <h4>Events nach Land</h4>
+            <pre><code>GET /feed/events/countries/{code}.xml</code></pre>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>code</code></td><td>ISO 3166-1 alpha-2 (z.B. <code>de</code>) oder alpha-3 (z.B. <code>deu</code>), case-insensitive</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/countries/de.xml</code></pre>
+
+            <hr>
+
+            <h4>Events nach Event-Typ</h4>
+            <pre><code>GET /feed/events/types/{type}.xml</code></pre>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>type</code></td><td>Event-Typ-Code (aus <code>meta.json</code>), case-insensitive</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/types/earthquake.xml</code></pre>
+
+            <hr>
+
+            <h4>Events nach Region</h4>
+            <pre><code>GET /feed/events/regions/{region}.xml</code></pre>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>region</code></td><td>Numerische Region-ID</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/regions/3.xml</code></pre>
+
+            <hr>
+
+            <h3>RSS-Struktur (Events)</h3>
+            <p>Jedes Event-Item im Feed enthält folgende Elemente:</p>
+
+            <h4>Standard-RSS-Elemente</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Element</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>&lt;title&gt;</code></td><td>Titel des Events</td></tr>
+                        <tr><td><code>&lt;link&gt;</code></td><td>URL zur Event-Detailseite</td></tr>
+                        <tr><td><code>&lt;guid&gt;</code></td><td>Permanenter Link (identisch mit <code>&lt;link&gt;</code>)</td></tr>
+                        <tr><td><code>&lt;description&gt;</code></td><td>Kurzübersicht: Typ, Zeitraum, Priorität, Länder</td></tr>
+                        <tr><td><code>&lt;content:encoded&gt;</code></td><td>Vollständige Beschreibung</td></tr>
+                        <tr><td><code>&lt;pubDate&gt;</code></td><td>Erstellungsdatum (RFC 2822)</td></tr>
+                        <tr><td><code>&lt;category&gt;</code></td><td>Priorität und Event-Typen</td></tr>
+                        <tr><td><code>&lt;dc:creator&gt;</code></td><td>Ersteller (falls vorhanden)</td></tr>
+                        <tr><td><code>&lt;source&gt;</code></td><td>Quellenangabe mit URL</td></tr>
+                        <tr><td><code>&lt;enclosure&gt;</code></td><td>Länderbild (JPEG, falls vorhanden)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Benutzerdefinierte Elemente: <code>article:data</code></h4>
+            <pre><code>&lt;article:data&gt;
+  &lt;article:start_date&gt;Mon, 11 Feb 2026 08:00:00 +0000&lt;/article:start_date&gt;
+  &lt;article:end_date&gt;Tue, 18 Feb 2026 08:00:00 +0000&lt;/article:end_date&gt;
+  &lt;article:priority&gt;high&lt;/article:priority&gt;
+  &lt;article:event_type code="earthquake"&gt;Erdbeben&lt;/article:event_type&gt;
+&lt;/article:data&gt;</code></pre>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Element</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>article:start_date</code></td><td>Startdatum des Events</td></tr>
+                        <tr><td><code>article:end_date</code></td><td>Enddatum des Events</td></tr>
+                        <tr><td><code>article:priority</code></td><td>Prioritätsstufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>article:event_type</code></td><td>Event-Typ mit <code>code</code>-Attribut und Name als Inhalt (mehrere möglich)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Benutzerdefinierte Elemente: <code>country:data</code></h4>
+            <p>Pro betroffenem Land wird ein <code>&lt;country:data&gt;</code>-Block ausgegeben:</p>
+            <pre><code>&lt;country:data&gt;
+  &lt;country:name_de&gt;Thailand&lt;/country:name_de&gt;
+  &lt;country:name_en&gt;Thailand&lt;/country:name_en&gt;
+  &lt;country:iso_code&gt;TH&lt;/country:iso_code&gt;
+  &lt;country:iso3_code&gt;THA&lt;/country:iso3_code&gt;
+  &lt;country:is_eu_member&gt;false&lt;/country:is_eu_member&gt;
+  &lt;country:is_schengen_member&gt;false&lt;/country:is_schengen_member&gt;
+  &lt;country:continent&gt;Asien&lt;/country:continent&gt;
+  &lt;country:currency_code&gt;THB&lt;/country:currency_code&gt;
+  &lt;country:phone_prefix&gt;+66&lt;/country:phone_prefix&gt;
+  &lt;country:capital&gt;
+    &lt;country:capital_name&gt;Bangkok&lt;/country:capital_name&gt;
+    &lt;geo:lat&gt;13.7563&lt;/geo:lat&gt;
+    &lt;geo:long&gt;100.5018&lt;/geo:long&gt;
+  &lt;/country:capital&gt;
+&lt;/country:data&gt;</code></pre>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Element</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>country:name_de</code></td><td>Ländername (deutsch)</td></tr>
+                        <tr><td><code>country:name_en</code></td><td>Ländername (englisch)</td></tr>
+                        <tr><td><code>country:iso_code</code></td><td>ISO 3166-1 alpha-2 Code</td></tr>
+                        <tr><td><code>country:iso3_code</code></td><td>ISO 3166-1 alpha-3 Code</td></tr>
+                        <tr><td><code>country:is_eu_member</code></td><td><code>true</code> / <code>false</code></td></tr>
+                        <tr><td><code>country:is_schengen_member</code></td><td><code>true</code> / <code>false</code></td></tr>
+                        <tr><td><code>country:continent</code></td><td>Kontinent (deutsch)</td></tr>
+                        <tr><td><code>country:currency_code</code></td><td>ISO 4217 Währungscode</td></tr>
+                        <tr><td><code>country:phone_prefix</code></td><td>Internationale Telefonvorwahl</td></tr>
+                        <tr><td><code>country:capital_name</code></td><td>Name der Hauptstadt</td></tr>
+                        <tr><td><code>geo:lat</code></td><td>Breitengrad der Hauptstadt</td></tr>
+                        <tr><td><code>geo:long</code></td><td>Längengrad der Hauptstadt</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>XML-Namespaces</h4>
+            <pre><code>&lt;rss version="2.0"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:country="http://global-travel-monitor.eu/ns/country"
+  xmlns:article="http://global-travel-monitor.eu/ns/article"
+  xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"&gt;</code></pre>
+
+            <hr>
+
+            <h3>Länder-Feeds</h3>
+            <p>Die Länder-Feeds liefern Verzeichnisse mit Länderdetails (Name, ISO-Codes, EU/Schengen-Status, Kontinent, Währung, Hauptstadt mit Koordinaten).</p>
+
+            <h4>Alle Länder</h4>
+            <pre><code>GET /feed/countries/names/all.xml</code></pre>
+
+            <h4>Länder nach Kontinent</h4>
+            <pre><code>GET /feed/countries/continent/{code}.xml</code></pre>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Gültige Werte</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>code</code></td><td><code>EU</code> (Europa), <code>AS</code> (Asien), <code>AF</code> (Afrika), <code>NA</code> (Nordamerika), <code>SA</code> (Südamerika), <code>OC</code> (Ozeanien), <code>AN</code> (Antarktis)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl https://global-travel-monitor.eu/feed/countries/continent/EU.xml</code></pre>
+
+            <h4>EU-Mitgliedsstaaten</h4>
+            <pre><code>GET /feed/countries/eu.xml</code></pre>
+
+            <h4>Schengen-Staaten</h4>
+            <pre><code>GET /feed/countries/schengen.xml</code></pre>
+
+            <hr>
+
+            <h3>Endpunkt-Übersicht</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Endpunkt</th><th>Format</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/feed/events/meta.json</code></td><td>JSON</td><td>Verfügbare Priorities und Event-Typen</td></tr>
+                        <tr><td><code>/feed/events/all.xml</code></td><td>RSS 2.0</td><td>Alle aktiven Events</td></tr>
+                        <tr><td><code>/feed/events/all.atom</code></td><td>Atom 1.0</td><td>Alle aktiven Events</td></tr>
+                        <tr><td><code>/feed/events/priority/{priority}.xml</code></td><td>RSS 2.0</td><td>Events nach Priorität</td></tr>
+                        <tr><td><code>/feed/events/countries/{code}.xml</code></td><td>RSS 2.0</td><td>Events nach Land</td></tr>
+                        <tr><td><code>/feed/events/types/{type}.xml</code></td><td>RSS 2.0</td><td>Events nach Event-Typ</td></tr>
+                        <tr><td><code>/feed/events/regions/{region}.xml</code></td><td>RSS 2.0</td><td>Events nach Region</td></tr>
+                        <tr><td><code>/feed/countries/names/all.xml</code></td><td>RSS 2.0</td><td>Alle Länder</td></tr>
+                        <tr><td><code>/feed/countries/continent/{code}.xml</code></td><td>RSS 2.0</td><td>Länder nach Kontinent</td></tr>
+                        <tr><td><code>/feed/countries/eu.xml</code></td><td>RSS 2.0</td><td>EU-Mitgliedsstaaten</td></tr>
+                        <tr><td><code>/feed/countries/schengen.xml</code></td><td>RSS 2.0</td><td>Schengen-Staaten</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <hr>
+
+            <h3>Support</h3>
+            <p>Bei Fragen zur Feed API wenden Sie sich an Ihren Ansprechpartner bei Passolution.</p>
         </div>
     </div>
 
