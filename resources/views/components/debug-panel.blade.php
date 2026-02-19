@@ -88,7 +88,14 @@
                             <pre class="bg-gray-950 border border-gray-800 rounded p-2 overflow-x-auto text-green-300 max-h-40 overflow-y-auto" x-text="JSON.stringify(entry.params, null, 2)"></pre>
                         </div>
                         <div>
-                            <div class="text-gray-400 font-semibold mb-1">Response</div>
+                            <div class="flex items-center justify-between mb-1">
+                                <div class="text-gray-400 font-semibold">Response</div>
+                                <button @click.stop="navigator.clipboard.writeText(JSON.stringify(entry.response, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
+                                        class="flex items-center gap-1 text-gray-500 hover:text-blue-400 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    <span>Kopieren</span>
+                                </button>
+                            </div>
                             <pre class="bg-gray-950 border border-gray-800 rounded p-2 overflow-x-auto text-blue-300 max-h-60 overflow-y-auto" x-text="JSON.stringify(entry.response, null, 2)"></pre>
                         </div>
                     </div>
