@@ -18,7 +18,7 @@
 | Landing Page, Docs & Fallback
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => view('api.landing'))->middleware('web')->name('sub.root');
+Route::get('/', fn () => view('api.landing'))->withoutMiddleware('api')->name('sub.root');
 
 Route::get('/v1', function () {
     return response()->json([
