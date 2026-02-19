@@ -180,6 +180,9 @@ Route::prefix('feed')->name('feed.')->group(function () {
 
         // Events by region
         Route::get('regions/{region}.xml', [EventFeedController::class, 'byRegion'])->name('regions');
+
+        // Meta: available priorities and event types
+        Route::get('meta.json', [EventFeedController::class, 'meta'])->name('meta');
     });
 
     // Country-Feeds: /feed/countries/...

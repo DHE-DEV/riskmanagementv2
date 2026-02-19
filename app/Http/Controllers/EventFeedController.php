@@ -6,6 +6,7 @@ use App\Models\CustomEvent;
 use App\Models\Country;
 use App\Models\EventType;
 use App\Models\Region;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -238,6 +239,29 @@ class EventFeedController extends Controller
             Log::error("Feed error for region {$regionId}: " . $e->getMessage());
             return $this->generateErrorResponse("Region not found: {$regionId}");
         }
+    }
+
+    /**
+     * Get available priorities and event types as JSON
+     */
+    public function meta(): JsonResponse
+    {
+        $priorities = [
+            ['code' => 'high', 'name_de' => 'Hoch', 'name_en' => 'High'],
+            ['code' => 'medium', 'name_de' => 'Mittel', 'name_en' => 'Medium'],
+            ['code' => 'low', 'name_de' => 'Niedrig', 'name_en' => 'Low'],
+            ['code' => 'info', 'name_de' => 'Information', 'name_en' => 'Info'],
+        ];
+
+        $eventTypes = EventType::active()
+            ->ordered()
+            ->get(['code', 'name', 'description', 'icon', 'color'])
+            ->toArray();
+
+        return response()->json([
+            'priorities' => $priorities,
+            'event_types' => $eventTypes,
+        ]);
     }
 
     /**
