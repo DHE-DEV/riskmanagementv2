@@ -9,8 +9,10 @@ info:
     name: Passolution Support
 
 servers:
+  - url: https://api.global-travel-monitor.eu/v1/gtm
+    description: Produktionsserver (empfohlen)
   - url: https://global-travel-monitor.eu/api/v1/gtm
-    description: Produktionsserver
+    description: Produktionsserver (alternativ)
 
 security:
   - BearerAuth: []

@@ -23,8 +23,10 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution. Er ist 1 Jahr 
 ## Base-URL
 
 ```
-https://global-travel-monitor.eu/api/v1
+https://api.global-travel-monitor.eu/v1
 ```
+
+Alternativ ist die API auch unter `https://global-travel-monitor.eu/api/v1` erreichbar. Wir empfehlen die Verwendung der API-Subdomain für neue Integrationen.
 
 ---
 
@@ -48,7 +50,7 @@ GET /api/v1/event-types
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://global-travel-monitor.eu/api/v1/event-types
+  https://api.global-travel-monitor.eu/v1/event-types
 ```
 
 **Response:**
@@ -83,7 +85,7 @@ GET /api/v1/countries
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://global-travel-monitor.eu/api/v1/countries
+  https://api.global-travel-monitor.eu/v1/countries
 ```
 
 **Response:**
@@ -139,7 +141,7 @@ POST /api/v1/events
 **Beispiel:**
 
 ```bash
-curl -X POST https://global-travel-monitor.eu/api/v1/events \
+curl -X POST https://api.global-travel-monitor.eu/v1/events \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -234,27 +236,27 @@ Der `scope`-Parameter unterstützt **kommagetrennte Werte**, um mehrere Quellen 
 ```bash
 # Eigene Events (Standard)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/v1/events?per_page=10&page=1"
+  "https://api.global-travel-monitor.eu/v1/events?per_page=10&page=1"
 
 # Nur Passolution-Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/v1/events?scope=passolution"
+  "https://api.global-travel-monitor.eu/v1/events?scope=passolution"
 
 # Alle Events (eigene + Passolution)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/v1/events?scope=all"
+  "https://api.global-travel-monitor.eu/v1/events?scope=all"
 
 # Eigene + Passolution (kommagetrennt, entspricht scope=all)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/v1/events?scope=own,passolution"
+  "https://api.global-travel-monitor.eu/v1/events?scope=own,passolution"
 
 # Events einer Partner-Gruppe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/v1/events?scope=meine-partner-gruppe"
+  "https://api.global-travel-monitor.eu/v1/events?scope=meine-partner-gruppe"
 
 # Eigene Events + Partner-Gruppe kombiniert
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/v1/events?scope=own,meine-partner-gruppe"
+  "https://api.global-travel-monitor.eu/v1/events?scope=own,meine-partner-gruppe"
 ```
 
 ---
@@ -269,7 +271,7 @@ GET /api/v1/events/{uuid}
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  https://api.global-travel-monitor.eu/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
@@ -287,7 +289,7 @@ Es müssen nur die zu ändernden Felder gesendet werden.
 **Beispiel:**
 
 ```bash
-curl -X PUT https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl -X PUT https://api.global-travel-monitor.eu/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -319,7 +321,7 @@ DELETE /api/v1/events/{uuid}
 **Beispiel:**
 
 ```bash
-curl -X DELETE https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl -X DELETE https://api.global-travel-monitor.eu/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}"
 ```
 
