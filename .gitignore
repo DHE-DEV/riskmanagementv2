@@ -31,3 +31,11 @@ workflex_curl_request.txt
 # Playwright
 playwright-report/
 test-results/
+tests/playwright/*.spec.js
+
+# Test/debug scripts
+test_*.sh
+folder_import_curl.sh
+
+# Screenshots
+myjack*.png
