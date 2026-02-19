@@ -21,7 +21,7 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution.
 ## Base-URL
 
 ```
-https://[domain]/api/v1/gtm
+https://global-travel-monitor.eu/api/v1/gtm
 ```
 
 ---
@@ -63,7 +63,7 @@ GET /events
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://[domain]/api/v1/gtm/events?priority=high&country=TR&region=3&per_page=10"
+  "https://global-travel-monitor.eu/api/v1/gtm/events?priority=high&country=TR&region=3&per_page=10"
 ```
 
 **Response (200 OK):**
@@ -141,7 +141,7 @@ GET /events/{uuid}
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://[domain]/api/v1/gtm/events/550e8400-e29b-41d4-a716-446655440000"
+  "https://global-travel-monitor.eu/api/v1/gtm/events/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200 OK):**
@@ -215,7 +215,7 @@ Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, z
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://[domain]/api/v1/gtm/countries"
+  "https://global-travel-monitor.eu/api/v1/gtm/countries"
 ```
 
 **Response (200 OK):**

@@ -21,7 +21,7 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution. Er ist 1 Jahr 
 ## Base-URL
 
 ```
-https://[domain]/api/v1
+https://global-travel-monitor.eu/api/v1
 ```
 
 ---
@@ -46,7 +46,7 @@ GET /api/v1/event-types
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://[domain]/api/v1/event-types
+  https://global-travel-monitor.eu/api/v1/event-types
 ```
 
 **Response:**
@@ -81,7 +81,7 @@ GET /api/v1/countries
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://[domain]/api/v1/countries
+  https://global-travel-monitor.eu/api/v1/countries
 ```
 
 **Response:**
@@ -135,7 +135,7 @@ POST /api/v1/events
 **Beispiel:**
 
 ```bash
-curl -X POST https://[domain]/api/v1/events \
+curl -X POST https://global-travel-monitor.eu/api/v1/events \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -213,7 +213,7 @@ GET /api/v1/events
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://[domain]/api/v1/events?per_page=10&page=1"
+  "https://global-travel-monitor.eu/api/v1/events?per_page=10&page=1"
 ```
 
 ---
@@ -228,7 +228,7 @@ GET /api/v1/events/{uuid}
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://[domain]/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
@@ -244,7 +244,7 @@ Es müssen nur die zu ändernden Felder gesendet werden.
 **Beispiel:**
 
 ```bash
-curl -X PUT https://[domain]/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl -X PUT https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -274,7 +274,7 @@ DELETE /api/v1/events/{uuid}
 **Beispiel:**
 
 ```bash
-curl -X DELETE https://[domain]/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl -X DELETE https://global-travel-monitor.eu/api/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}"
 ```
 

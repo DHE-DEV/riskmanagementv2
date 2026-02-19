@@ -11,7 +11,7 @@ Die Feed API stellt aktuelle Sicherheits- und Reiserisiko-Events sowie Länderin
 ## Base-URL
 
 ```
-https://[domain]/feed
+https://global-travel-monitor.eu/feed
 ```
 
 ---
@@ -35,7 +35,7 @@ Gibt die gültigen Werte für Priority-Filter und Event-Typ-Filter als JSON zur�
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/events/meta.json
+curl https://global-travel-monitor.eu/feed/events/meta.json
 ```
 
 **Response:**
@@ -76,7 +76,7 @@ Alle Event-Feeds liefern nur **aktive, nicht-archivierte Events**, deren Startda
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/events/all.xml
+curl https://global-travel-monitor.eu/feed/events/all.xml
 ```
 
 ---
@@ -94,7 +94,7 @@ GET /feed/events/priority/{priority}.xml
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/events/priority/high.xml
+curl https://global-travel-monitor.eu/feed/events/priority/high.xml
 ```
 
 ---
@@ -112,7 +112,7 @@ GET /feed/events/countries/{code}.xml
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/events/countries/de.xml
+curl https://global-travel-monitor.eu/feed/events/countries/de.xml
 ```
 
 ---
@@ -130,7 +130,7 @@ GET /feed/events/types/{type}.xml
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/events/types/earthquake.xml
+curl https://global-travel-monitor.eu/feed/events/types/earthquake.xml
 ```
 
 ---
@@ -148,7 +148,7 @@ GET /feed/events/regions/{region}.xml
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/events/regions/3.xml
+curl https://global-travel-monitor.eu/feed/events/regions/3.xml
 ```
 
 ---
@@ -265,7 +265,7 @@ GET /feed/countries/continent/{code}.xml
 **Beispiel:**
 
 ```bash
-curl https://[domain]/feed/countries/continent/EU.xml
+curl https://global-travel-monitor.eu/feed/countries/continent/EU.xml
 ```
 
 ### EU-Mitgliedsstaaten

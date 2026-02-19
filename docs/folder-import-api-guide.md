@@ -39,7 +39,7 @@ POST /customer/api-tokens/generate
 ## Base-URL
 
 ```
-https://[domain]/api
+https://global-travel-monitor.eu/api
 ```
 
 ---
@@ -303,7 +303,7 @@ Importiert einen kompletten Folder mit allen zugehörigen Daten. Der Import wird
 ### Minimaler Import (nur Hotel)
 
 ```bash
-curl -X POST https://[domain]/api/customer/folders/import \
+curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -345,7 +345,7 @@ curl -X POST https://[domain]/api/customer/folders/import \
 ### Vollständiger Import (Hotel + Flug)
 
 ```bash
-curl -X POST https://[domain]/api/customer/folders/import \
+curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -458,7 +458,7 @@ GET /customer/folders/imports/{log_id}/status
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://[domain]/api/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"
+  "https://global-travel-monitor.eu/api/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"
 ```
 
 **Response (200 OK):**
@@ -507,7 +507,7 @@ GET /customer/folders/imports
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://[domain]/api/customer/folders/imports?per_page=10"
+  "https://global-travel-monitor.eu/api/customer/folders/imports?per_page=10"
 ```
 
 ---
