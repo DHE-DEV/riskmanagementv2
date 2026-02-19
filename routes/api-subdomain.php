@@ -13,6 +13,29 @@
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| Root & Fallback
+|--------------------------------------------------------------------------
+*/
+Route::get('/', function () {
+    return response()->json([
+        'name' => 'Passolution API',
+        'documentation' => 'https://global-travel-monitor.eu/docs',
+        'endpoints' => [
+            'Event API' => '/v1/events',
+            'GTM API' => '/v1/gtm/events',
+        ],
+    ]);
+})->name('sub.root');
+
+Route::fallback(function () {
+    return response()->json([
+        'success' => false,
+        'message' => 'Endpoint not found. See / for available endpoints.',
+    ], 404);
+})->name('sub.fallback');
+
 use App\Http\Controllers\Api\V1\EventApiController;
 use App\Http\Controllers\Api\V1\EventReferenceController;
 use App\Http\Controllers\Api\V1\GtmApiController;
