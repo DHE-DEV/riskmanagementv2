@@ -45,7 +45,7 @@ class GtmEventResource extends JsonResource
                 $this->countries->map(fn($c) => [
                     'iso_code' => $c->iso_code,
                     'iso3_code' => $c->iso3_code,
-                    'name' => $c->getName('de'),
+                    'name_de' => $c->getName('de'),
                     'name_en' => $c->getName('en'),
                     'continent' => $c->continent?->getName('en'),
                 ])
@@ -54,7 +54,7 @@ class GtmEventResource extends JsonResource
                 $this->country ? [
                     'iso_code' => $this->country->iso_code,
                     'iso3_code' => $this->country->iso3_code,
-                    'name' => $this->country->getName('de'),
+                    'name_de' => $this->country->getName('de'),
                     'name_en' => $this->country->getName('en'),
                     'continent' => $this->country->continent?->getName('en'),
                 ] : null

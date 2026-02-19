@@ -12,7 +12,7 @@ class GtmCountryResource extends JsonResource
         return [
             'iso_code' => $this->iso_code,
             'iso3_code' => $this->iso3_code,
-            'name' => $this->getName('de'),
+            'name_de' => $this->getName('de'),
             'name_en' => $this->getName('en'),
             'continent' => $this->continent?->getName('en'),
             'continent_de' => $this->continent?->getName('de'),
