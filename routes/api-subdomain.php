@@ -15,35 +15,55 @@
 
 /*
 |--------------------------------------------------------------------------
-| Root & Fallback
+| Landing Page, Docs & Fallback
 |--------------------------------------------------------------------------
 */
-$apiInfo = [
-    'name' => 'Passolution API',
-    'version' => 'v1',
-    'endpoints' => [
-        'Event API' => [
-            'GET /v1/events' => 'Events auflisten',
-            'POST /v1/events' => 'Event erstellen',
-            'GET /v1/events/{uuid}' => 'Event anzeigen',
-            'PUT /v1/events/{uuid}' => 'Event aktualisieren',
-            'DELETE /v1/events/{uuid}' => 'Event löschen',
-        ],
-        'Referenzdaten' => [
-            'GET /v1/event-types' => 'Verfügbare Event-Typen',
-            'GET /v1/countries' => 'Verfügbare Länder',
-        ],
-        'GTM API' => [
-            'GET /v1/gtm/events' => 'Aktive Events auflisten',
-            'GET /v1/gtm/events/{id}' => 'Event anzeigen',
-            'GET /v1/gtm/countries' => 'Länder mit aktiven Events',
-        ],
-    ],
-    'authentication' => 'Bearer Token via Authorization header',
-];
+Route::get('/', fn () => view('api.landing'))->middleware('web')->name('sub.root');
 
-Route::get('/', fn () => response()->json($apiInfo))->name('sub.root');
-Route::get('/v1', fn () => response()->json($apiInfo))->name('sub.v1.root');
+Route::get('/v1', function () {
+    return response()->json([
+        'name' => 'Passolution API',
+        'version' => 'v1',
+        'documentation' => '/',
+        'endpoints' => [
+            'Event API' => '/v1/events',
+            'GTM API' => '/v1/gtm/events',
+            'Referenzdaten' => ['/v1/event-types', '/v1/countries'],
+        ],
+        'authentication' => 'Bearer Token via Authorization header',
+    ]);
+})->name('sub.v1.root');
+
+// Documentation file downloads
+Route::get('/docs/{file}', function (string $file) {
+    $allowed = [
+        'event-api-openapi.yaml',
+        'event-api-guide.md',
+        'gtm-api-openapi.yaml',
+        'gtm-api-guide.md',
+        'feed-api-openapi.yaml',
+        'feed-api-guide.md',
+        'folder-import-api-openapi.yaml',
+        'folder-import-api-guide.md',
+    ];
+
+    if (!in_array($file, $allowed)) {
+        abort(404);
+    }
+
+    $path = base_path("docs/{$file}");
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    $contentType = str_ends_with($file, '.yaml') ? 'application/x-yaml' : 'text/markdown';
+
+    return response()->file($path, [
+        'Content-Type' => $contentType,
+        'Content-Disposition' => "attachment; filename=\"{$file}\"",
+    ]);
+})->where('file', '[a-z0-9\-]+\.(yaml|md)')->name('sub.docs.download');
 
 Route::fallback(function () {
     return response()->json([
