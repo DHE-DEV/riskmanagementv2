@@ -194,7 +194,7 @@
 <body>
     <div class="header">
         <h1>Passolution API</h1>
-        <p>REST APIs für das Risk Management Dashboard</p>
+        <p>REST API Global Travel Monitor</p>
         <div class="base-url">https://api.global-travel-monitor.de/v1</div>
     </div>
 
