@@ -1,0 +1,423 @@
+openapi: 3.0.3
+info:
+  title: Passolution GTM API
+  description: |
+    Global Travel Monitor (GTM) API – Read-only Zugriff auf globale
+    Sicherheits- und Reiserisiko-Events sowie Länder-Übersichten.
+  version: 1.0.0
+  contact:
+    name: Passolution Support
+
+servers:
+  - url: https://{domain}/api/v1/gtm
+    description: Produktionsserver
+    variables:
+      domain:
+        default: example.com
+        description: Domain der Installation
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Events
+    description: Aktive Events abfragen
+  - name: Länder
+    description: Länder mit aktiven Events
+
+paths:
+  /events:
+    get:
+      tags: [Events]
+      summary: Events auflisten
+      description: |
+        Gibt eine paginierte Liste aller aktuell aktiven Events zurück.
+        Es werden nur Events zurückgegeben, die freigegeben (approved), aktiv
+        und nicht archiviert sind, deren Startdatum in der Vergangenheit liegt
+        und deren Enddatum entweder null (andauernd) oder in der Zukunft liegt.
+      parameters:
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [high, medium, low, info]
+          description: Filter nach Priorität
+        - name: country
+          in: query
+          schema:
+            type: string
+            maxLength: 3
+          description: "Filter nach Ländercode – ISO alpha-2 (z.B. DE) oder alpha-3 (z.B. DEU)"
+        - name: event_type
+          in: query
+          schema:
+            type: string
+            maxLength: 50
+          description: "Filter nach Event-Typ-Code (z.B. natural_disaster)"
+        - name: region
+          in: query
+          schema:
+            type: integer
+          description: Filter nach Region-ID (numerische ID)
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+          description: Einträge pro Seite
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Seitennummer
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /events/{uuid}:
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID des Events
+    get:
+      tags: [Events]
+      summary: Einzelnes Event anzeigen
+      responses:
+        '200':
+          description: Event gefunden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /countries:
+    get:
+      tags: [Länder]
+      summary: Länder mit aktiven Events auflisten
+      description: |
+        Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben,
+        zusammen mit der Anzahl aktiver Events. Sortiert nach Anzahl (absteigend).
+        Nicht paginiert.
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CountryWithEvents'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "API-Token im Format \"Bearer {token}\""
+
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID des Events
+          example: 550e8400-e29b-41d4-a716-446655440000
+        title:
+          type: string
+          example: Earthquake in Turkey
+        description:
+          type: string
+          nullable: true
+          example: A 6.2 magnitude earthquake struck southeastern Turkey.
+        priority:
+          type: string
+          enum: [high, medium, low, info]
+          example: high
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-03-15T08:30:00Z"
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: "null = andauernd"
+          example: null
+        latitude:
+          type: number
+          format: float
+          nullable: true
+          example: 37.7749
+        longitude:
+          type: number
+          format: float
+          nullable: true
+          example: 35.3214
+        event_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+        event_type:
+          nullable: true
+          description: Primärer Event-Typ
+          allOf:
+            - $ref: '#/components/schemas/EventType'
+        category:
+          nullable: true
+          description: Kategorie des Events
+          allOf:
+            - $ref: '#/components/schemas/Category'
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventCountry'
+        country:
+          nullable: true
+          description: Primäres Land
+          allOf:
+            - $ref: '#/components/schemas/EventCountry'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EventType:
+      type: object
+      properties:
+        code:
+          type: string
+          example: natural_disaster
+        name:
+          type: string
+          example: Natural Disaster
+        color:
+          type: string
+          example: "#e74c3c"
+        icon:
+          type: string
+          example: earthquake
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 2
+        name:
+          type: string
+          example: Naturkatastrophe
+        color:
+          type: string
+          example: "#e74c3c"
+
+    EventCountry:
+      type: object
+      properties:
+        iso_code:
+          type: string
+          example: TR
+        iso3_code:
+          type: string
+          example: TUR
+        name_de:
+          type: string
+          example: Tuerkei
+        name_en:
+          type: string
+          example: Turkey
+        continent:
+          type: string
+          nullable: true
+          example: Asia
+
+    CountryWithEvents:
+      type: object
+      properties:
+        iso_code:
+          type: string
+          example: DE
+        iso3_code:
+          type: string
+          example: DEU
+        name_de:
+          type: string
+          example: Deutschland
+        name_en:
+          type: string
+          example: Germany
+        continent:
+          type: string
+          nullable: true
+          example: Europe
+        continent_de:
+          type: string
+          nullable: true
+          example: Europa
+        lat:
+          type: number
+          format: float
+          nullable: true
+          example: 51.1657
+        lng:
+          type: number
+          format: float
+          nullable: true
+          example: 10.4515
+        is_eu_member:
+          type: boolean
+          example: true
+        is_schengen_member:
+          type: boolean
+          example: true
+        active_events_count:
+          type: integer
+          example: 3
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 25
+        total:
+          type: integer
+          example: 142
+        last_page:
+          type: integer
+          example: 6
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            priority: ["The selected priority is invalid."]
+            per_page: ["The per page field must be between 1 and 100."]
+
+  responses:
+    Unauthenticated:
+      description: Nicht authentifiziert – Token fehlt oder ungültig
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Unauthenticated.
+
+    Forbidden:
+      description: Zugriff verweigert
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Token does not have the required permissions.
+
+    NotFound:
+      description: Ressource nicht gefunden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Event not found
+
+    ValidationError:
+      description: Validierungsfehler
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    TooManyRequests:
+      description: Rate Limit überschritten (60 Requests pro Minute)
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Sekunden bis zum nächsten erlaubten Request
