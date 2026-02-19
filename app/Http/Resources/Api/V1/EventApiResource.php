@@ -32,7 +32,7 @@ class EventApiResource extends JsonResource
             'countries' => $this->whenLoaded('countries', fn () =>
                 $this->countries->map(fn ($c) => [
                     'iso_code' => $c->iso_code,
-                    'name' => $c->getName('de'),
+                    'name_de' => $c->getName('de'),
                     'name_en' => $c->getName('en'),
                 ])
             ),
