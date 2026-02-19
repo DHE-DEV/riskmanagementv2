@@ -17,11 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/customer.php'));
 
             // API subdomain routes (api.global-travel-monitor.de/v1/...)
-            if ($apiDomain = config('app.api_domain')) {
-                Route::domain($apiDomain)
-                    ->middleware('api')
-                    ->group(base_path('routes/api-subdomain.php'));
-            }
+            Route::domain(config('app.api_domain', env('API_DOMAIN', 'api.global-travel-monitor.de')))
+                ->middleware('api')
+                ->group(base_path('routes/api-subdomain.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
