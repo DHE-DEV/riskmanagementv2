@@ -23,6 +23,22 @@ class RiskOverviewService
     }
 
     /**
+     * Enable PDS API debug log collection for frontend.
+     */
+    public function enablePdsDebug(): void
+    {
+        $this->pdsApiService->enableDebug();
+    }
+
+    /**
+     * Get collected PDS API debug log entries.
+     */
+    public function getPdsDebugLog(): array
+    {
+        return $this->pdsApiService->getDebugLog();
+    }
+
+    /**
      * Fetch travelers from Passolution API with 1000 records.
      * Returns travelers grouped by country code.
      *

@@ -1818,6 +1818,9 @@
                                         <span class="text-xs text-gray-500 truncate" x-text="JSON.stringify(log.params)"></span>
                                     </div>
                                     <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+                                        <template x-if="log.pds_api_calls && log.pds_api_calls.length > 0">
+                                            <span class="px-1.5 py-0.5 text-xs font-semibold rounded bg-purple-900/60 text-purple-300 whitespace-nowrap" x-text="'PDS:' + log.pds_api_calls.length"></span>
+                                        </template>
                                         <span class="text-xs font-mono whitespace-nowrap"
                                               :class="log.duration_ms > 1000 ? 'text-red-400' : log.duration_ms > 500 ? 'text-yellow-400' : 'text-green-400'"
                                               x-text="log.duration_ms + 'ms'"></span>
@@ -1848,7 +1851,7 @@
                                             <pre class="text-xs font-mono text-green-400 bg-gray-950 rounded p-3 overflow-x-auto whitespace-pre-wrap" x-text="JSON.stringify(log.params, null, 2)"></pre>
                                         </div>
                                         <!-- Response -->
-                                        <div class="px-4 py-3">
+                                        <div class="px-4 py-3 border-b border-gray-800">
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="text-xs font-semibold text-gray-400">Response</div>
                                                 <button @click.stop="navigator.clipboard.writeText(JSON.stringify(log.response, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
@@ -1859,6 +1862,54 @@
                                             </div>
                                             <pre class="text-xs font-mono text-green-400 bg-gray-950 rounded p-3 overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto" x-text="JSON.stringify(log.response, null, 2)"></pre>
                                         </div>
+                                        <!-- PDS API Calls -->
+                                        <template x-if="log.pds_api_calls && log.pds_api_calls.length > 0">
+                                            <div class="px-4 py-3">
+                                                <div class="text-xs font-semibold text-purple-400 mb-2">
+                                                    <i class="fa-regular fa-server mr-1"></i>
+                                                    PDS API Calls <span class="text-gray-500 font-normal" x-text="'(' + log.pds_api_calls.length + ')'"></span>
+                                                </div>
+                                                <template x-for="(pds, pdsIdx) in log.pds_api_calls" :key="pdsIdx">
+                                                    <div class="mb-3 bg-gray-950 border border-purple-900/50 rounded-lg p-3">
+                                                        <div class="flex items-center justify-between mb-2">
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="px-1.5 py-0.5 text-xs font-bold rounded bg-purple-900/60 text-purple-300" x-text="pds.method"></span>
+                                                                <span class="text-xs font-mono text-purple-200 break-all" x-text="pds.url"></span>
+                                                            </div>
+                                                            <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                                                                <span class="text-xs font-mono" :class="pds.status === 200 ? 'text-green-400' : 'text-red-400'" x-text="pds.status || 'ERR'"></span>
+                                                                <span class="text-xs font-mono text-gray-500" x-text="pds.duration_ms + 'ms'"></span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <div class="text-xs text-gray-500">Request Body</div>
+                                                                <button @click.stop="navigator.clipboard.writeText(JSON.stringify(pds.request_body, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
+                                                                        class="flex items-center gap-1 text-xs text-gray-600 hover:text-purple-400 transition-colors">
+                                                                    <i class="fa-regular fa-copy"></i>
+                                                                    <span>Kopieren</span>
+                                                                </button>
+                                                            </div>
+                                                            <pre class="text-xs font-mono text-yellow-300 bg-gray-900 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-40 overflow-y-auto" x-text="JSON.stringify(pds.request_body, null, 2)"></pre>
+                                                        </div>
+                                                        <div>
+                                                            <div class="flex items-center justify-between mb-1">
+                                                                <div class="text-xs text-gray-500">Response Body</div>
+                                                                <button @click.stop="navigator.clipboard.writeText(JSON.stringify(pds.response_body, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
+                                                                        class="flex items-center gap-1 text-xs text-gray-600 hover:text-purple-400 transition-colors">
+                                                                    <i class="fa-regular fa-copy"></i>
+                                                                    <span>Kopieren</span>
+                                                                </button>
+                                                            </div>
+                                                            <pre class="text-xs font-mono text-blue-300 bg-gray-900 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-60 overflow-y-auto" x-text="JSON.stringify(pds.response_body, null, 2)"></pre>
+                                                        </div>
+                                                        <template x-if="pds.error">
+                                                            <div class="mt-2 text-xs text-red-400 font-mono" x-text="'Error: ' + pds.error"></div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -3521,6 +3572,7 @@
 
             logDebug(endpoint, params, result, fetchStartTime, fullUrl) {
                 if (!this.isDebugUser) return;
+                const pdsApiCalls = result?.debug?.pds_api_calls || [];
                 const entry = {
                     id: Date.now() + Math.random(),
                     timestamp: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }),
@@ -3530,11 +3582,12 @@
                     response: result,
                     duration_ms: Math.round(performance.now() - fetchStartTime),
                     server_duration_ms: result?.debug?.duration_ms || null,
+                    pds_api_calls: pdsApiCalls,
                     expanded: false,
                 };
                 this.debugLogs.unshift(entry);
                 if (window.debugPanel) {
-                    window.debugPanel.log(endpoint, { url: fullUrl, params: params }, result, entry.duration_ms, entry.server_duration_ms);
+                    window.debugPanel.log(endpoint, { url: fullUrl, params: params }, result, entry.duration_ms, entry.server_duration_ms, pdsApiCalls);
                 }
             },
 

@@ -3,7 +3,7 @@
 <div x-data="{
     open: false,
     entries: [],
-    log(endpoint, params, result, durationMs, serverDurationMs) {
+    log(endpoint, params, result, durationMs, serverDurationMs, pdsApiCalls) {
         this.entries.unshift({
             id: Date.now() + Math.random(),
             timestamp: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }),
@@ -12,6 +12,7 @@
             response: result,
             duration_ms: Math.round(durationMs),
             server_duration_ms: serverDurationMs || null,
+            pds_api_calls: pdsApiCalls || [],
             expanded: false,
         });
     },
@@ -27,7 +28,7 @@
         span.textContent = 'Kopiert!';
         setTimeout(() => span.textContent = 'Kopieren', 1500);
     }
-}" x-init="window.debugPanel = { log: (e, p, r, d, s) => $data.log(e, p, r, d, s) }"
+}" x-init="window.debugPanel = { log: (e, p, r, d, s, pds) => $data.log(e, p, r, d, s, pds) }"
    style="position: fixed; bottom: 48px; right: 16px; z-index: 200000;"
 >
     {{-- Toggle Button --}}
@@ -45,7 +46,7 @@
 
     {{-- Panel --}}
     <div x-show="open" x-cloak x-transition
-         class="absolute bottom-16 right-0 w-[520px] max-h-[70vh] bg-gray-950 border border-gray-700 rounded-lg shadow-2xl flex flex-col overflow-hidden"
+         class="absolute bottom-16 right-0 w-[580px] max-h-[70vh] bg-gray-950 border border-gray-700 rounded-lg shadow-2xl flex flex-col overflow-hidden"
          @click.outside="open = false">
 
         {{-- Header --}}
@@ -78,6 +79,9 @@
                             class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-800 transition-colors rounded-md">
                         <span class="text-gray-500 font-mono" x-text="entry.timestamp"></span>
                         <span class="text-orange-300 font-medium truncate flex-1" x-text="entry.endpoint"></span>
+                        <template x-if="entry.pds_api_calls.length > 0">
+                            <span class="px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300 font-medium" x-text="'PDS:' + entry.pds_api_calls.length"></span>
+                        </template>
                         <span class="font-mono" :class="durationColor(entry.duration_ms)" x-text="entry.duration_ms + 'ms'"></span>
                         <template x-if="entry.server_duration_ms !== null">
                             <span class="text-gray-500 font-mono" x-text="'(' + entry.server_duration_ms + 'ms srv)'"></span>
@@ -114,6 +118,53 @@
                             </div>
                             <pre class="bg-gray-950 border border-gray-800 rounded p-2 overflow-x-auto text-blue-300 max-h-60 overflow-y-auto" x-text="JSON.stringify(entry.response, null, 2)"></pre>
                         </div>
+                        {{-- PDS API Calls --}}
+                        <template x-if="entry.pds_api_calls && entry.pds_api_calls.length > 0">
+                            <div class="border-t border-gray-800 pt-2">
+                                <div class="text-purple-400 font-semibold mb-1.5">
+                                    PDS API <span class="text-gray-500 font-normal" x-text="'(' + entry.pds_api_calls.length + ' Calls)'"></span>
+                                </div>
+                                <template x-for="(pds, pdsIdx) in entry.pds_api_calls" :key="pdsIdx">
+                                    <div class="mb-2 bg-gray-950 border border-purple-900/40 rounded p-2">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="px-1 py-0.5 font-bold rounded bg-purple-900/60 text-purple-300" x-text="pds.method"></span>
+                                                <span class="font-mono text-purple-200 break-all" x-text="pds.url"></span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 flex-shrink-0 ml-1">
+                                                <span class="font-mono" :class="pds.status === 200 ? 'text-green-400' : 'text-red-400'" x-text="pds.status || 'ERR'"></span>
+                                                <span class="font-mono text-gray-500" x-text="pds.duration_ms + 'ms'"></span>
+                                            </div>
+                                        </div>
+                                        <div class="mb-1.5">
+                                            <div class="flex items-center justify-between mb-0.5">
+                                                <span class="text-gray-500">Request</span>
+                                                <button @click.stop="copyText($el, JSON.stringify(pds.request_body, null, 2))"
+                                                        class="flex items-center gap-1 text-gray-600 hover:text-purple-400 transition-colors">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                                    <span>Kopieren</span>
+                                                </button>
+                                            </div>
+                                            <pre class="bg-gray-900 border border-gray-800 rounded p-1.5 overflow-x-auto text-yellow-300 max-h-32 overflow-y-auto" x-text="JSON.stringify(pds.request_body, null, 2)"></pre>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-0.5">
+                                                <span class="text-gray-500">Response</span>
+                                                <button @click.stop="copyText($el, JSON.stringify(pds.response_body, null, 2))"
+                                                        class="flex items-center gap-1 text-gray-600 hover:text-purple-400 transition-colors">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                                    <span>Kopieren</span>
+                                                </button>
+                                            </div>
+                                            <pre class="bg-gray-900 border border-gray-800 rounded p-1.5 overflow-x-auto text-blue-300 max-h-48 overflow-y-auto" x-text="JSON.stringify(pds.response_body, null, 2)"></pre>
+                                        </div>
+                                        <template x-if="pds.error">
+                                            <div class="mt-1 text-red-400 font-mono" x-text="'Error: ' + pds.error"></div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </template>

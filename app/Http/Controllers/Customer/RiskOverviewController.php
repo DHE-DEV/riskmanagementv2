@@ -63,6 +63,10 @@ class RiskOverviewController extends Controller
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
 
+        if ($isDebugUser) {
+            $this->riskOverviewService->enablePdsDebug();
+        }
+
         $priorityFilter = $request->input('priority'); // null, high, medium, low, info
 
         // Validate priority parameter
@@ -97,6 +101,7 @@ class RiskOverviewController extends Controller
                 $response['debug'] = [
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
                     'params' => $request->all(),
+                    'pds_api_calls' => $this->riskOverviewService->getPdsDebugLog(),
                 ];
             }
 
@@ -130,6 +135,7 @@ class RiskOverviewController extends Controller
             $response['debug'] = [
                 'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
                 'params' => $request->all(),
+                'pds_api_calls' => $this->riskOverviewService->getPdsDebugLog(),
             ];
         }
 
@@ -153,6 +159,10 @@ class RiskOverviewController extends Controller
         }
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
+
+        if ($isDebugUser) {
+            $this->riskOverviewService->enablePdsDebug();
+        }
 
         $priorityFilter = $request->input('priority');
 
@@ -180,6 +190,7 @@ class RiskOverviewController extends Controller
                 $response['debug'] = [
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
                     'params' => $request->all(),
+                    'pds_api_calls' => $this->riskOverviewService->getPdsDebugLog(),
                 ];
             }
 
@@ -208,6 +219,7 @@ class RiskOverviewController extends Controller
             $response['debug'] = [
                 'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
                 'params' => $request->all(),
+                'pds_api_calls' => $this->riskOverviewService->getPdsDebugLog(),
             ];
         }
 
@@ -232,6 +244,10 @@ class RiskOverviewController extends Controller
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
 
+        if ($isDebugUser) {
+            $this->riskOverviewService->enablePdsDebug();
+        }
+
         // Check for custom date range
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
@@ -253,6 +269,7 @@ class RiskOverviewController extends Controller
                 $response['debug'] = [
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
                     'params' => array_merge($request->all(), ['country_code' => $countryCode]),
+                    'pds_api_calls' => $this->riskOverviewService->getPdsDebugLog(),
                 ];
             }
 
@@ -282,6 +299,7 @@ class RiskOverviewController extends Controller
             $response['debug'] = [
                 'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
                 'params' => array_merge($request->all(), ['country_code' => $countryCode]),
+                'pds_api_calls' => $this->riskOverviewService->getPdsDebugLog(),
             ];
         }
 

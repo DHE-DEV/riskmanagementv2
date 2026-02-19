@@ -35,6 +35,13 @@ class PdsApiService
     protected bool $detailedLogging;
 
     /**
+     * Collect debug info for frontend debug panel
+     */
+    protected bool $debugEnabled = false;
+
+    protected array $debugLog = [];
+
+    /**
      * Constructor
      *
      * Base URL comes from PASSOLUTION_API_URL environment variable
@@ -45,6 +52,23 @@ class PdsApiService
         $this->baseUrl = config('services.pds_api.base_url', 'https://api.passolution.eu/api/v2');
         $this->timeout = config('services.pds_api.timeout', 30);
         $this->detailedLogging = config('services.pds_api.detailed_logging', false);
+    }
+
+    /**
+     * Enable debug log collection for frontend debug panel.
+     */
+    public function enableDebug(): void
+    {
+        $this->debugEnabled = true;
+        $this->debugLog = [];
+    }
+
+    /**
+     * Get collected debug log entries.
+     */
+    public function getDebugLog(): array
+    {
+        return $this->debugLog;
     }
 
     /**
@@ -78,16 +102,19 @@ class PdsApiService
 
         $url = $this->buildUrl($endpoint);
         $this->logRequest('GET', $url, $query, $customer);
+        $debugStart = microtime(true);
 
         try {
             $response = $this->client($customer)
                 ->get($url, $query);
 
             $this->logResponse('GET', $url, $response, $customer);
+            $this->collectDebug('GET', $url, $query, $response, $debugStart);
 
             return $response;
         } catch (\Exception $e) {
             $this->logError('GET', $url, $e, $customer);
+            $this->collectDebug('GET', $url, $query, null, $debugStart, $e->getMessage());
             return null;
         }
     }
@@ -112,16 +139,19 @@ class PdsApiService
 
         $url = $this->buildUrl($endpoint);
         $this->logRequest('POST', $url, $data, $customer);
+        $debugStart = microtime(true);
 
         try {
             $response = $this->client($customer)
                 ->post($url, $data);
 
             $this->logResponse('POST', $url, $response, $customer);
+            $this->collectDebug('POST', $url, $data, $response, $debugStart);
 
             return $response;
         } catch (\Exception $e) {
             $this->logError('POST', $url, $e, $customer);
+            $this->collectDebug('POST', $url, $data, null, $debugStart, $e->getMessage());
             return null;
         }
     }
@@ -216,6 +246,43 @@ class PdsApiService
     protected function buildUrl(string $endpoint): string
     {
         return rtrim($this->baseUrl, '/') . '/' . ltrim($endpoint, '/');
+    }
+
+    /**
+     * Collect debug info for frontend debug panel.
+     */
+    protected function collectDebug(string $method, string $url, array $requestData, ?Response $response, float $startTime, ?string $error = null): void
+    {
+        if (!$this->debugEnabled) {
+            return;
+        }
+
+        $entry = [
+            'method' => $method,
+            'url' => $url,
+            'request_body' => $requestData,
+            'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+        ];
+
+        if ($response) {
+            $entry['status'] = $response->status();
+            $body = $response->json();
+            // Truncate large response data arrays for debug display
+            if (isset($body['data']) && is_array($body['data']) && count($body['data']) > 5) {
+                $entry['response_body'] = array_merge($body, [
+                    'data' => array_slice($body['data'], 0, 5),
+                    '_truncated' => count($body['data']) . ' total items, showing first 5',
+                ]);
+            } else {
+                $entry['response_body'] = $body;
+            }
+        } else {
+            $entry['status'] = null;
+            $entry['error'] = $error;
+            $entry['response_body'] = null;
+        }
+
+        $this->debugLog[] = $entry;
     }
 
     /**
