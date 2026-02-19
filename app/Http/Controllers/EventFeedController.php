@@ -435,7 +435,7 @@ class EventFeedController extends Controller
 
         foreach ($countries as $country) {
             $xml .= '      <country:data>' . PHP_EOL;
-            $xml .= '        <country:name>' . $this->escapeXml($country->getName('de')) . '</country:name>' . PHP_EOL;
+            $xml .= '        <country:name_de>' . $this->escapeXml($country->getName('de')) . '</country:name_de>' . PHP_EOL;
             $xml .= '        <country:name_en>' . $this->escapeXml($country->getName('en')) . '</country:name_en>' . PHP_EOL;
             $xml .= '        <country:iso_code>' . $this->escapeXml($country->iso_code ?? '') . '</country:iso_code>' . PHP_EOL;
             $xml .= '        <country:iso3_code>' . $this->escapeXml($country->iso3_code ?? '') . '</country:iso3_code>' . PHP_EOL;
