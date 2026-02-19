@@ -900,6 +900,15 @@
                     <i class="fa-regular fa-suitcase-rolling mr-2"></i>
                     Reisen
                 </button>
+                <template x-if="isDebugUser">
+                    <button @click="activeTab = 'debug'"
+                            class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                            :class="activeTab === 'debug' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fa-regular fa-bug mr-2"></i>
+                        Debug
+                        <span x-show="debugLogs.length > 0" class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-orange-100 bg-orange-500 rounded-full" x-text="debugLogs.length"></span>
+                    </button>
+                </template>
                 <!-- Selected country indicator -->
                 <template x-if="selectedCountry && (activeTab === 'list' || activeTab === 'tiles' || activeTab === 'calendar')">
                     <div class="ml-auto flex items-center gap-2 text-sm text-gray-600">
@@ -1768,6 +1777,77 @@
                         </template>
                     </div>
                 </template>
+            </div>
+
+            <!-- Debug Tab (Länder) -->
+            <div x-show="activeTab === 'debug' && isDebugUser" x-cloak class="list-view flex-1 flex flex-col min-h-0">
+                <div class="flex-1 overflow-y-auto p-4 bg-gray-950">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-gray-300">
+                            <i class="fa-regular fa-bug mr-2 text-orange-400"></i>
+                            API Debug Log
+                            <span class="ml-2 text-xs text-gray-500" x-text="debugLogs.length + ' Einträge'"></span>
+                        </h3>
+                        <button @click="clearDebugLogs()" x-show="debugLogs.length > 0"
+                                class="px-3 py-1 text-xs font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded transition-colors">
+                            <i class="fa-regular fa-trash-can mr-1"></i>
+                            Alle löschen
+                        </button>
+                    </div>
+
+                    <!-- Empty state -->
+                    <template x-if="debugLogs.length === 0">
+                        <div class="text-center py-12">
+                            <i class="fa-regular fa-bug text-4xl text-gray-700 mb-3"></i>
+                            <p class="text-gray-500 text-sm">Noch keine API-Requests aufgezeichnet.</p>
+                            <p class="text-gray-600 text-xs mt-1">Laden Sie Daten oder wählen Sie ein Land aus.</p>
+                        </div>
+                    </template>
+
+                    <!-- Log entries -->
+                    <div class="space-y-3">
+                        <template x-for="log in debugLogs" :key="log.id">
+                            <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+                                <!-- Log header -->
+                                <div class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-800/50 transition-colors"
+                                     @click="log.expanded = !log.expanded">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="text-xs text-gray-500 font-mono whitespace-nowrap" x-text="log.timestamp"></span>
+                                        <span class="px-2 py-0.5 text-xs font-semibold rounded bg-blue-900/50 text-blue-300 whitespace-nowrap" x-text="log.endpoint"></span>
+                                        <span class="text-xs text-gray-500 truncate" x-text="JSON.stringify(log.params)"></span>
+                                    </div>
+                                    <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+                                        <span class="text-xs font-mono whitespace-nowrap"
+                                              :class="log.duration_ms > 1000 ? 'text-red-400' : log.duration_ms > 500 ? 'text-yellow-400' : 'text-green-400'"
+                                              x-text="log.duration_ms + 'ms'"></span>
+                                        <template x-if="log.server_duration_ms">
+                                            <span class="text-xs font-mono text-gray-500 whitespace-nowrap" x-text="'(Server: ' + log.server_duration_ms + 'ms)'"></span>
+                                        </template>
+                                        <i class="fa-regular fa-chevron-down text-gray-500 text-xs transition-transform"
+                                           :class="log.expanded ? 'rotate-180' : ''"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Expandable content -->
+                                <div x-show="log.expanded" x-collapse>
+                                    <div class="border-t border-gray-800">
+                                        <!-- Request params -->
+                                        <div class="px-4 py-3 border-b border-gray-800">
+                                            <div class="text-xs font-semibold text-gray-400 mb-2">Request-Parameter</div>
+                                            <pre class="text-xs font-mono text-green-400 bg-gray-950 rounded p-3 overflow-x-auto whitespace-pre-wrap" x-text="JSON.stringify(log.params, null, 2)"></pre>
+                                        </div>
+                                        <!-- Response -->
+                                        <div class="px-4 py-3">
+                                            <div class="text-xs font-semibold text-gray-400 mb-2">Response</div>
+                                            <pre class="text-xs font-mono text-green-400 bg-gray-950 rounded p-3 overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto" x-text="JSON.stringify(log.response, null, 2)"></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -2822,6 +2902,8 @@
             },
             filterOpen: false,
             showTripFilters: false,
+            isDebugUser: {{ isset($isDebugUser) && $isDebugUser ? 'true' : 'false' }},
+            debugLogs: [],
             showCountrySidebar: false,
             sidebarTab: 'reisen',
             activeTab: 'tiles',
@@ -3148,6 +3230,7 @@
             async loadData() {
                 this.loading = true;
                 this.error = null;
+                const fetchStart = performance.now();
 
                 try {
                     const params = new URLSearchParams();
@@ -3165,7 +3248,8 @@
                         params.append('days', this.filters.days);
                     }
 
-                    const response = await fetch(`{{ route('risk-overview.data') }}?${params.toString()}`, {
+                    const endpoint = `{{ route('risk-overview.data') }}?${params.toString()}`;
+                    const response = await fetch(endpoint, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -3177,6 +3261,7 @@
                     }
 
                     const result = await response.json();
+                    this.logDebug('getData', Object.fromEntries(params), result, fetchStart);
 
                     if (result.success) {
                         this.countries = result.data.countries;
@@ -3203,6 +3288,7 @@
 
             async loadTrips() {
                 this.loadingTrips = true;
+                const fetchStart = performance.now();
 
                 try {
                     const params = new URLSearchParams();
@@ -3219,7 +3305,8 @@
                         params.append('days', this.filters.days);
                     }
 
-                    const response = await fetch(`{{ route('risk-overview.trips') }}?${params.toString()}`, {
+                    const endpoint = `{{ route('risk-overview.trips') }}?${params.toString()}`;
+                    const response = await fetch(endpoint, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -3231,6 +3318,7 @@
                     }
 
                     const result = await response.json();
+                    this.logDebug('getTrips', Object.fromEntries(params), result, fetchStart);
 
                     if (result.success) {
                         this.trips = result.data.trips;
@@ -3301,6 +3389,7 @@
                 this.selectedCountry = country;
                 this.loadingCountryDetails = true;
                 this.countryDetails = null;
+                const fetchStart = performance.now();
 
                 // Only show sidebar in map view
                 if (this.activeTab === 'map') {
@@ -3324,7 +3413,8 @@
                         params.append('days', this.filters.days);
                     }
 
-                    const response = await fetch(`{{ url('/risk-overview/country') }}/${country.country.code}?${params.toString()}`, {
+                    const endpoint = `{{ url('/risk-overview/country') }}/${country.country.code}?${params.toString()}`;
+                    const response = await fetch(endpoint, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -3336,6 +3426,7 @@
                     }
 
                     const result = await response.json();
+                    this.logDebug('getCountryDetails(' + country.country.code + ')', Object.fromEntries(params), result, fetchStart);
 
                     if (result.success) {
                         this.countryDetails = result.data;
@@ -3409,6 +3500,24 @@
                     dateFrom: '',
                     dateTo: '',
                 };
+            },
+
+            logDebug(endpoint, params, result, fetchStartTime) {
+                if (!this.isDebugUser) return;
+                this.debugLogs.unshift({
+                    id: Date.now() + Math.random(),
+                    timestamp: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }),
+                    endpoint: endpoint,
+                    params: params,
+                    response: result,
+                    duration_ms: Math.round(performance.now() - fetchStartTime),
+                    server_duration_ms: result?.debug?.duration_ms || null,
+                    expanded: false,
+                });
+            },
+
+            clearDebugLogs() {
+                this.debugLogs = [];
             },
 
             formatDate(dateStr) {

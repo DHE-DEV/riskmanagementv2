@@ -28,19 +28,15 @@ https://[domain]/api/v1/gtm
 
 ## Rate Limit
 
-API-Anfragen unterliegen einer Ratenbegrenzung. Bei Überschreitung erhalten Sie einen `429`-Response. Prüfen Sie den `Retry-After`-Header für die Wartezeit in Sekunden.
+Standardmäßig sind **60 Requests pro Minute** erlaubt. Bei Überschreitung erhalten Sie einen `429 Too Many Requests`-Response. Prüfen Sie den `Retry-After`-Header für die Wartezeit in Sekunden.
 
 ---
 
 ## Pagination
 
-Listen-Endpoints unterstützen Pagination über die Query-Parameter `page` und `per_page`. Pagination-Metadaten sind im `meta`-Objekt jeder Antwort enthalten.
+Der Events-Endpoint liefert alle aktuell aktiven Events, paginiert über die Query-Parameter `page` und `per_page` (Standard: 25, Maximum: **100** pro Seite). Pagination-Metadaten sind im `meta`-Objekt jeder Antwort enthalten.
 
----
-
-## Event-Limit
-
-Der Events-Endpoint liefert maximal **100 aktuell aktive Events**. Es werden nur Events zurückgegeben, die freigegeben (`approved`), aktiv und nicht archiviert sind, deren Startdatum in der Vergangenheit liegt und deren Enddatum entweder `null` (andauernd) oder in der Zukunft liegt.
+Es werden nur Events zurückgegeben, die freigegeben (`approved`), aktiv und nicht archiviert sind, deren Startdatum in der Vergangenheit liegt und deren Enddatum entweder `null` (andauernd) oder in der Zukunft liegt.
 
 ---
 

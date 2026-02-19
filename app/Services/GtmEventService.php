@@ -34,7 +34,6 @@ class GtmEventService
                     'apiClient',
                 ])
                 ->orderBy('start_date', 'desc')
-                ->limit(100)
                 ->get();
         });
     }
