@@ -1832,14 +1832,31 @@
                                 <!-- Expandable content -->
                                 <div x-show="log.expanded" x-collapse>
                                     <div class="border-t border-gray-800">
-                                        <!-- Request params -->
+                                        <!-- Request -->
                                         <div class="px-4 py-3 border-b border-gray-800">
-                                            <div class="text-xs font-semibold text-gray-400 mb-2">Request-Parameter</div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="text-xs font-semibold text-gray-400">Request</div>
+                                                <button @click.stop="navigator.clipboard.writeText(JSON.stringify({ url: log.fullUrl, params: log.params }, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
+                                                        class="flex items-center gap-1 text-xs text-gray-500 hover:text-green-400 transition-colors">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                    <span>Kopieren</span>
+                                                </button>
+                                            </div>
+                                            <template x-if="log.fullUrl">
+                                                <pre class="text-xs font-mono text-yellow-300 bg-gray-950 rounded p-3 mb-2 overflow-x-auto whitespace-pre-wrap break-all" x-text="log.fullUrl"></pre>
+                                            </template>
                                             <pre class="text-xs font-mono text-green-400 bg-gray-950 rounded p-3 overflow-x-auto whitespace-pre-wrap" x-text="JSON.stringify(log.params, null, 2)"></pre>
                                         </div>
                                         <!-- Response -->
                                         <div class="px-4 py-3">
-                                            <div class="text-xs font-semibold text-gray-400 mb-2">Response</div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="text-xs font-semibold text-gray-400">Response</div>
+                                                <button @click.stop="navigator.clipboard.writeText(JSON.stringify(log.response, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
+                                                        class="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-400 transition-colors">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                    <span>Kopieren</span>
+                                                </button>
+                                            </div>
                                             <pre class="text-xs font-mono text-green-400 bg-gray-950 rounded p-3 overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto" x-text="JSON.stringify(log.response, null, 2)"></pre>
                                         </div>
                                     </div>
@@ -3261,7 +3278,7 @@
                     }
 
                     const result = await response.json();
-                    this.logDebug('getData', Object.fromEntries(params), result, fetchStart);
+                    this.logDebug('getData', Object.fromEntries(params), result, fetchStart, endpoint);
 
                     if (result.success) {
                         this.countries = result.data.countries;
@@ -3318,7 +3335,7 @@
                     }
 
                     const result = await response.json();
-                    this.logDebug('getTrips', Object.fromEntries(params), result, fetchStart);
+                    this.logDebug('getTrips', Object.fromEntries(params), result, fetchStart, endpoint);
 
                     if (result.success) {
                         this.trips = result.data.trips;
@@ -3426,7 +3443,7 @@
                     }
 
                     const result = await response.json();
-                    this.logDebug('getCountryDetails(' + country.country.code + ')', Object.fromEntries(params), result, fetchStart);
+                    this.logDebug('getCountryDetails(' + country.country.code + ')', Object.fromEntries(params), result, fetchStart, endpoint);
 
                     if (result.success) {
                         this.countryDetails = result.data;
@@ -3502,18 +3519,23 @@
                 };
             },
 
-            logDebug(endpoint, params, result, fetchStartTime) {
+            logDebug(endpoint, params, result, fetchStartTime, fullUrl) {
                 if (!this.isDebugUser) return;
-                this.debugLogs.unshift({
+                const entry = {
                     id: Date.now() + Math.random(),
                     timestamp: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }),
                     endpoint: endpoint,
+                    fullUrl: fullUrl || null,
                     params: params,
                     response: result,
                     duration_ms: Math.round(performance.now() - fetchStartTime),
                     server_duration_ms: result?.debug?.duration_ms || null,
                     expanded: false,
-                });
+                };
+                this.debugLogs.unshift(entry);
+                if (window.debugPanel) {
+                    window.debugPanel.log(endpoint, { url: fullUrl, params: params }, result, entry.duration_ms, entry.server_duration_ms);
+                }
             },
 
             clearDebugLogs() {

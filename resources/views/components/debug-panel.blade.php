@@ -20,6 +20,12 @@
         if (ms < 300) return 'text-green-400';
         if (ms < 1000) return 'text-yellow-400';
         return 'text-red-400';
+    },
+    copyText(el, text) {
+        navigator.clipboard.writeText(text);
+        const span = el.querySelector('span');
+        span.textContent = 'Kopiert!';
+        setTimeout(() => span.textContent = 'Kopieren', 1500);
     }
 }" x-init="window.debugPanel = { log: (e, p, r, d, s) => $data.log(e, p, r, d, s) }"
    style="position: fixed; bottom: 16px; right: 16px; z-index: 99999;"
@@ -84,13 +90,23 @@
                     {{-- Expanded details --}}
                     <div x-show="entry.expanded" x-cloak class="border-t border-gray-800 px-3 py-2 space-y-2">
                         <div>
-                            <div class="text-gray-400 font-semibold mb-1">Request</div>
-                            <pre class="bg-gray-950 border border-gray-800 rounded p-2 overflow-x-auto text-green-300 max-h-40 overflow-y-auto" x-text="JSON.stringify(entry.params, null, 2)"></pre>
+                            <div class="flex items-center justify-between mb-1">
+                                <div class="text-gray-400 font-semibold">Request</div>
+                                <button @click.stop="copyText($el, JSON.stringify(entry.params, null, 2))"
+                                        class="flex items-center gap-1 text-gray-500 hover:text-green-400 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    <span>Kopieren</span>
+                                </button>
+                            </div>
+                            <template x-if="entry.params?.url">
+                                <div class="bg-gray-950 border border-gray-800 rounded p-2 mb-1 overflow-x-auto text-yellow-300 font-mono break-all" x-text="entry.params.url"></div>
+                            </template>
+                            <pre class="bg-gray-950 border border-gray-800 rounded p-2 overflow-x-auto text-green-300 max-h-40 overflow-y-auto" x-text="JSON.stringify(entry.params?.params || entry.params, null, 2)"></pre>
                         </div>
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <div class="text-gray-400 font-semibold">Response</div>
-                                <button @click.stop="navigator.clipboard.writeText(JSON.stringify(entry.response, null, 2)); $el.querySelector('span').textContent = 'Kopiert!'; setTimeout(() => $el.querySelector('span').textContent = 'Kopieren', 1500)"
+                                <button @click.stop="copyText($el, JSON.stringify(entry.response, null, 2))"
                                         class="flex items-center gap-1 text-gray-500 hover:text-blue-400 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                     <span>Kopieren</span>
