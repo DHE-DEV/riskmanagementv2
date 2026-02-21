@@ -254,7 +254,7 @@
         <x-public-navigation :active="$active" />
 
         <!-- Sidebar -->
-        <div class="sidebar" :class="{ 'sidebar-expanded': showTripFilters && sidebarTab === 'reisen' }">
+        <div class="sidebar" :class="{ 'sidebar-expanded': (showTripFilters && sidebarTab === 'reisen') || (showCountryFilters && sidebarTab === 'laender') }">
             <div class="sidebar-inner">
             <!-- Main Sidebar Content -->
             <div class="sidebar-main">
@@ -266,7 +266,7 @@
 
                 <!-- Sidebar Tabs -->
                 <div class="flex border-b border-gray-200 mb-4">
-                    <button @click="sidebarTab = 'reisen'; if (!tripsLoaded) loadTrips();"
+                    <button @click="sidebarTab = 'reisen'; showCountryFilters = false; if (!tripsLoaded) loadTrips();"
                             class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
                             :class="sidebarTab === 'reisen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
                         <i class="fa-regular fa-suitcase-rolling mr-1"></i>
@@ -425,142 +425,38 @@
                 <!-- ==================== Tab: Länder ==================== -->
                 <div x-show="sidebarTab === 'laender'">
 
-                <!-- Filter Section -->
-                <div class="bg-white rounded-lg border border-gray-200 mb-4">
-                    <button @click="filterOpen = !filterOpen"
-                            class="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors rounded-lg">
-                        <h3 class="text-sm font-semibold text-gray-900 flex items-center">
+                <!-- Filter Toggle Button -->
+                    <button @click="showCountryFilters = !showCountryFilters"
+                            class="w-full mb-3 px-3 py-2 text-xs rounded-lg border transition-colors flex items-center gap-2"
+                            :class="showCountryFilters ? 'bg-white border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                        <span class="flex items-center shrink-0">
                             <i class="fa-regular fa-filter mr-2"></i>
                             Filter
-                        </h3>
-                        <i class="fa-regular fa-chevron-down text-gray-500 transition-transform duration-200"
-                           :class="{ 'rotate-180': filterOpen }"></i>
+                        </span>
+                        <span class="flex-1 flex flex-wrap gap-1 justify-end">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                  :class="filters.customDateRange ? 'bg-blue-100 text-blue-700' : (filters.days !== 30 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
+                                  x-text="filters.customDateRange ? (formatDate(filters.dateFrom) + (filters.dateTo ? ' – ' + formatDate(filters.dateTo) : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
+                            <template x-if="filters.priority !== null">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                      :class="{
+                                          'bg-red-100 text-red-700': filters.priority === 'high',
+                                          'bg-orange-100 text-orange-700': filters.priority === 'medium',
+                                          'bg-yellow-100 text-yellow-700': filters.priority === 'low',
+                                          'bg-blue-100 text-blue-700': filters.priority === 'info'
+                                      }"
+                                      x-text="filters.priority === 'high' ? 'Hoch' : filters.priority === 'medium' ? 'Mittel' : filters.priority === 'low' ? 'Niedrig' : 'Info'"></span>
+                            </template>
+                            <template x-if="filters.onlyWithTravelers">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">Nur mit Reisen</span>
+                            </template>
+                            <template x-if="filters.country">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700" x-text="filters.country"></span>
+                            </template>
+                        </span>
+                        <i class="fa-regular fa-chevron-right shrink-0 transition-transform duration-200"
+                           :class="{ 'rotate-180': showCountryFilters }"></i>
                     </button>
-
-                    <div x-show="filterOpen" x-collapse class="px-4 pb-4">
-                        <!-- Priority Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Risikostufe</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button @click="filters.priority = null; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                        :class="filters.priority === null ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    Alle
-                                </button>
-                                <button @click="filters.priority = 'high'; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                        :class="filters.priority === 'high' ? 'bg-red-50 border-red-500 text-red-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                    Hoch
-                                </button>
-                                <button @click="filters.priority = 'medium'; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                        :class="filters.priority === 'medium' ? 'bg-orange-50 border-orange-500 text-orange-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                    Mittel
-                                </button>
-                                <button @click="filters.priority = 'low'; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                        :class="filters.priority === 'low' ? 'bg-green-50 border-green-500 text-green-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                    Niedrig
-                                </button>
-                                <button @click="filters.priority = 'info'; loadData()"
-                                        class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2 flex items-center justify-center gap-1"
-                                        :class="filters.priority === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    Information
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Country Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Land</label>
-                            <div class="relative">
-                                <select x-model="filters.country"
-                                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                    <option value="">Alle Lander</option>
-                                    <template x-for="country in countries" :key="country.country.code">
-                                        <option :value="country.country.code" x-text="country.country.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Days Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Zeitraum (Reisende)</label>
-                            <div class="grid grid-cols-4 gap-2 mb-2">
-                                <button @click="filters.days = 0; filters.customDateRange = false; loadData()"
-                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                        :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold"><i class="fa-regular fa-calendar-day"></i></span>
-                                    <span>Heute</span>
-                                </button>
-                                <button @click="filters.days = 7; filters.customDateRange = false; loadData()"
-                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                        :class="filters.days === 7 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">7</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 14; filters.customDateRange = false; loadData()"
-                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                        :class="filters.days === 14 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">14</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 30; filters.customDateRange = false; loadData()"
-                                        class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                        :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">30</span>
-                                    <span>Tage</span>
-                                </button>
-                            </div>
-                            <!-- Custom date range toggle -->
-                            <button @click="filters.customDateRange = !filters.customDateRange"
-                                    class="w-full px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                <i class="fa-regular fa-calendar-range mr-1"></i>
-                                Eigener Zeitraum
-                            </button>
-                            <!-- Custom date inputs -->
-                            <div x-show="filters.customDateRange" x-collapse class="mt-2 space-y-2">
-                                <div>
-                                    <label class="text-xs text-gray-500 block mb-1">Von</label>
-                                    <input type="date"
-                                           x-model="filters.dateFrom"
-                                           @change="loadData()"
-                                           class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500 block mb-1">Bis</label>
-                                    <input type="date"
-                                           x-model="filters.dateTo"
-                                           @change="loadData()"
-                                           class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Only with travelers filter -->
-                        <div class="mb-4">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox"
-                                       x-model="filters.onlyWithTravelers"
-                                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="text-xs font-medium text-gray-700">Nur mit betroffenen Reisen</span>
-                            </label>
-                        </div>
-
-                        <!-- Reset Filters -->
-                        <button @click="resetFilters(); loadData()"
-                                class="w-full px-3 py-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors">
-                            <i class="fa-regular fa-rotate-left mr-1"></i>
-                            Filter zurucksetzen
-                        </button>
-                    </div>
-                </div>
 
                 <!-- Summary Stats -->
                 <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
@@ -859,6 +755,147 @@
                                 Nur Reisen anzeigen, die von Ereignissen betroffen sind.
                             </div>
                         </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Country Filter Panel (right side, shown when toggled on Länder tab) -->
+            <div class="trip-filter-panel" x-show="showCountryFilters && sidebarTab === 'laender'" x-cloak>
+                <h3 class="text-sm font-semibold text-gray-900 flex items-center mb-3">
+                    <i class="fa-regular fa-filter mr-2"></i>
+                    Filter
+                </h3>
+
+                <!-- Reset Filters -->
+                <button @click="resetFilters(); loadData()"
+                        class="w-full mb-4 px-3 py-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors">
+                    <i class="fa-regular fa-rotate-left mr-1"></i>
+                    Filter zurücksetzen
+                </button>
+
+                <!-- Priority Filter -->
+                <div class="mb-4">
+                    <label class="text-xs font-medium text-gray-700 mb-2 block">Risikostufe</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="filters.priority = null; loadData()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors"
+                                :class="filters.priority === null ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            Alle
+                        </button>
+                        <button @click="filters.priority = 'high'; loadData()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                                :class="filters.priority === 'high' ? 'bg-red-50 border-red-500 text-red-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            Hoch
+                        </button>
+                        <button @click="filters.priority = 'medium'; loadData()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                                :class="filters.priority === 'medium' ? 'bg-orange-50 border-orange-500 text-orange-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                            Mittel
+                        </button>
+                        <button @click="filters.priority = 'low'; loadData()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                                :class="filters.priority === 'low' ? 'bg-green-50 border-green-500 text-green-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            Niedrig
+                        </button>
+                        <button @click="filters.priority = 'info'; loadData()"
+                                class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2 flex items-center justify-center gap-1"
+                                :class="filters.priority === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Information
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Country Filter -->
+                <div class="mb-4">
+                    <label class="text-xs font-medium text-gray-700 mb-2 block">Land</label>
+                    <div class="relative">
+                        <select x-model="filters.country"
+                                class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            <option value="">Alle Länder</option>
+                            <template x-for="country in countries" :key="country.country.code">
+                                <option :value="country.country.code" x-text="country.country.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Days Filter -->
+                <div class="mb-4">
+                    <label class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                        Zeitraum (Reisende)
+                        <span x-data="{ showTooltip: false }" class="relative inline-flex">
+                            <button type="button" @click.stop="showTooltip = !showTooltip" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fa-regular fa-circle-info text-xs"></i>
+                            </button>
+                            <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
+                                 class="absolute left-0 top-full mt-1 z-[9999] w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden.
+                            </div>
+                        </span>
+                    </label>
+                    <div class="grid grid-cols-4 gap-2 mb-2">
+                        <button @click="filters.days = 0; filters.customDateRange = false; loadData()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold"><i class="fa-regular fa-calendar-day"></i></span>
+                            <span>Heute</span>
+                        </button>
+                        <button @click="filters.days = 7; filters.customDateRange = false; loadData()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 7 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold">7</span>
+                            <span>Tage</span>
+                        </button>
+                        <button @click="filters.days = 14; filters.customDateRange = false; loadData()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 14 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold">14</span>
+                            <span>Tage</span>
+                        </button>
+                        <button @click="filters.days = 30; filters.customDateRange = false; loadData()"
+                                class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
+                                :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span class="text-sm font-bold">30</span>
+                            <span>Tage</span>
+                        </button>
+                    </div>
+                    <!-- Custom date range toggle -->
+                    <button @click="filters.customDateRange = !filters.customDateRange"
+                            class="w-full px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
+                            :class="filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                        <i class="fa-regular fa-calendar-range mr-1"></i>
+                        Eigener Zeitraum
+                    </button>
+                    <!-- Custom date inputs -->
+                    <div x-show="filters.customDateRange" x-collapse class="mt-2 space-y-2">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Von</label>
+                            <input type="date"
+                                   x-model="filters.dateFrom"
+                                   @change="loadData()"
+                                   class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Bis</label>
+                            <input type="date"
+                                   x-model="filters.dateTo"
+                                   @change="loadData()"
+                                   class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Only with travelers filter -->
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox"
+                               x-model="filters.onlyWithTravelers"
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="text-xs font-medium text-gray-700">Nur mit betroffenen Reisen</span>
                     </label>
                 </div>
             </div>
@@ -2970,6 +3007,7 @@
             },
             filterOpen: false,
             showTripFilters: false,
+            showCountryFilters: false,
             isDebugUser: {{ isset($isDebugUser) && $isDebugUser ? 'true' : 'false' }},
             debugLogs: [],
             showCountrySidebar: false,
@@ -3255,6 +3293,13 @@
 
                     // Watch for trip filter panel toggle to invalidate map size
                     this.$watch('showTripFilters', () => {
+                        setTimeout(() => {
+                            if (this.map) this.map.invalidateSize();
+                        }, 350);
+                    });
+
+                    // Watch for country filter panel toggle to invalidate map size
+                    this.$watch('showCountryFilters', () => {
                         setTimeout(() => {
                             if (this.map) this.map.invalidateSize();
                         }, 350);
