@@ -49,261 +49,7 @@ $version = '1.0.0';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
     @endif
 
-    <style>
-        /* Alpine.js cloak */
-        [x-cloak] {
-            display: none !important;
-        }
-
-        /* Basis-Layout */
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        /* Header - feststehend */
-        .header {
-            flex-shrink: 0;
-            height: 64px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            z-index: 10000;
-        }
-
-        /* Footer - feststehend */
-        .footer {
-            flex-shrink: 0;
-            height: 32px;
-            background: white;
-            color: black;
-            z-index: 9999;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        /* Hauptbereich - dynamisch */
-        .main-content {
-            flex: 1;
-            display: flex;
-            min-height: 0;
-        }
-
-        /* Navigation - feste Breite */
-        .navigation {
-            flex-shrink: 0;
-            width: 64px;
-            background: black;
-        }
-
-        /* Sidebar - feste Breite */
-        .sidebar {
-            flex-shrink: 0;
-            width: 304px;
-            background: #f9fafb;
-            overflow: hidden;
-            height: 100%;
-            position: relative;
-            border-right: 1px solid #e5e7eb;
-            transition: width 0.3s ease-in-out;
-        }
-
-        .sidebar.sidebar-expanded {
-            width: 608px;
-        }
-
-        .sidebar-inner {
-            display: flex;
-            flex-direction: row;
-            height: 100%;
-        }
-
-        .sidebar-main {
-            width: 304px;
-            flex-shrink: 0;
-            overflow-y: auto;
-        }
-
-        .trip-filter-panel {
-            width: 304px;
-            flex-shrink: 0;
-            border-left: 1px solid #e5e7eb;
-            overflow-y: auto;
-            padding: 16px;
-            background: #f9fafb;
-        }
-
-        /* Map Container - nimmt restlichen Platz ein */
-        .map-container {
-            flex: 1;
-            position: relative;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        #risk-map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-        }
-
-        /* Content Container with Tabs */
-        .content-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-        }
-
-        .tab-navigation {
-            flex-shrink: 0;
-        }
-
-        /* List View */
-        .list-view {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-            background: #f9fafb;
-        }
-
-        /* Country Details Sidebar */
-        .country-sidebar {
-            position: fixed;
-            top: 64px;
-            bottom: 32px;
-            right: -450px;
-            width: 450px;
-            background: white;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-            transition: right 0.3s ease-in-out;
-            z-index: 100000;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .country-sidebar.open {
-            right: 0;
-        }
-
-        .country-sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f8fafc;
-        }
-
-        .country-sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        /* Loading Animation */
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Custom Leaflet Marker */
-        .event-marker {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            font-weight: bold;
-            font-size: 12px;
-            color: white;
-        }
-
-        .event-marker-high {
-            background-color: #ef4444;
-        }
-
-        .event-marker-medium {
-            background-color: #f97316;
-        }
-
-        .event-marker-low {
-            background-color: #eab308;
-        }
-
-        .event-marker-info {
-            background-color: #3b82f6;
-        }
-
-        /* Prose styling for event descriptions */
-        .prose p {
-            margin-bottom: 0.75rem;
-        }
-
-        .prose p:last-child {
-            margin-bottom: 0;
-        }
-
-        .prose ul,
-        .prose ol {
-            margin: 0.75rem 0;
-            padding-left: 1.5rem;
-        }
-
-        .prose li {
-            margin-bottom: 0.25rem;
-        }
-
-        .prose a {
-            color: #2563eb;
-            text-decoration: underline;
-        }
-
-        .prose a:hover {
-            color: #1d4ed8;
-        }
-
-        .prose strong {
-            font-weight: 600;
-        }
-
-        .prose h1,
-        .prose h2,
-        .prose h3,
-        .prose h4 {
-            font-weight: 600;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .prose blockquote {
-            border-left: 3px solid #e5e7eb;
-            padding-left: 1rem;
-            margin: 0.75rem 0;
-            font-style: italic;
-            color: #6b7280;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/risk-overview.css') }}?v={{ $version }}" />
 </head>
 
 <body>
@@ -362,14 +108,8 @@ $version = '1.0.0';
                                             :class="filters.customDateRange ? 'bg-blue-100 text-blue-700' : (filters.days !== 30 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
                                             x-text="filters.customDateRange ? (formatDate(filters.dateFrom) + (filters.dateTo ? ' – ' + formatDate(filters.dateTo) : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
                                         <template x-if="filters.priority !== null">
-                                            <span
-                                                class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
-                                                :class="{
-                                          'bg-red-100 text-red-700': filters.priority === 'high',
-                                          'bg-orange-100 text-orange-700': filters.priority === 'medium',
-                                          'bg-yellow-100 text-yellow-700': filters.priority === 'low',
-                                          'bg-blue-100 text-blue-700': filters.priority === 'info'
-                                      }" x-text="filters.priority === 'high' ? 'Hoch' : filters.priority === 'medium' ? 'Mittel' : filters.priority === 'low' ? 'Niedrig' : 'Info'"></span>
+                                            <x-risk-overview.priority-badge priority="filters.priority" low-color="yellow"
+                                                class="px-1.5 py-0.5 rounded-full text-[10px]" />
                                         </template>
                                         <template x-if="filters.onlyWithEvents">
                                             <span
@@ -383,20 +123,13 @@ $version = '1.0.0';
 
                                 <!-- Loading -->
                                 <template x-if="loadingTrips">
-                                    <div class="flex items-center justify-center py-8">
-                                        <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                                    </div>
+                                    <x-risk-overview.loading-spinner />
                                 </template>
 
                                 <!-- No trips -->
                                 <template x-if="!loadingTrips && filteredTrips.length === 0">
-                                    <div
-                                        class="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300 text-center">
-                                        <i class="fa-regular fa-suitcase text-4xl text-gray-400 mb-3"></i>
-                                        <h3 class="font-semibold text-gray-700">Keine Reisen</h3>
-                                        <p class="text-sm text-gray-500 mt-1">Im ausgewählten Zeitraum sind keine Reisen
-                                            vorhanden.</p>
-                                    </div>
+                                    <x-risk-overview.empty-state icon="fa-regular fa-suitcase" title="Keine Reisen"
+                                        message="Im ausgewählten Zeitraum sind keine Reisen vorhanden." />
                                 </template>
 
                                 <!-- Trips list -->
@@ -523,14 +256,8 @@ $version = '1.0.0';
                                             :class="filters.customDateRange ? 'bg-blue-100 text-blue-700' : (filters.days !== 30 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
                                             x-text="filters.customDateRange ? (formatDate(filters.dateFrom) + (filters.dateTo ? ' – ' + formatDate(filters.dateTo) : '')) : (filters.days === -1 ? 'Alle' : filters.days === 0 ? 'Heute' : filters.days + ' Tage')"></span>
                                         <template x-if="filters.priority !== null">
-                                            <span
-                                                class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
-                                                :class="{
-                                          'bg-red-100 text-red-700': filters.priority === 'high',
-                                          'bg-orange-100 text-orange-700': filters.priority === 'medium',
-                                          'bg-yellow-100 text-yellow-700': filters.priority === 'low',
-                                          'bg-blue-100 text-blue-700': filters.priority === 'info'
-                                      }" x-text="filters.priority === 'high' ? 'Hoch' : filters.priority === 'medium' ? 'Mittel' : filters.priority === 'low' ? 'Niedrig' : 'Info'"></span>
+                                            <x-risk-overview.priority-badge priority="filters.priority" low-color="yellow"
+                                                class="px-1.5 py-0.5 rounded-full text-[10px]" />
                                         </template>
                                         <template x-if="filters.onlyWithTravelers">
                                             <span
@@ -575,9 +302,7 @@ $version = '1.0.0';
 
                                 <!-- Loading State -->
                                 <template x-if="loading">
-                                    <div class="flex items-center justify-center py-8">
-                                        <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                                    </div>
+                                    <x-risk-overview.loading-spinner />
                                 </template>
 
                                 <!-- Error State -->
@@ -599,8 +324,7 @@ $version = '1.0.0';
 
                                 <!-- Empty State -->
                                 <template x-if="!loading && !error && filteredCountries.length === 0">
-                                    <div
-                                        class="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300 text-center">
+                                    <x-risk-overview.empty-state>
                                         <template x-if="filters.onlyWithTravelers && countries.length > 0">
                                             <div>
                                                 <i
@@ -621,7 +345,7 @@ $version = '1.0.0';
                                                 </p>
                                             </div>
                                         </template>
-                                    </div>
+                                    </x-risk-overview.empty-state>
                                 </template>
 
                                 <!-- Countries List -->
@@ -634,12 +358,8 @@ $version = '1.0.0';
                                                 @click="selectCountry(country)">
                                                 <div class="flex items-start space-x-2">
                                                     <!-- Priority Dot -->
-                                                    <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" :class="{
-                                             'bg-red-500': country.highest_priority === 'high',
-                                             'bg-orange-500': country.highest_priority === 'medium',
-                                             'bg-green-500': country.highest_priority === 'low',
-                                             'bg-blue-500': country.highest_priority === 'info'
-                                         }"></div>
+                                                    <x-risk-overview.priority-badge variant="dot" priority="country.highest_priority"
+                                                        class="w-2 h-2 mt-1.5 flex-shrink-0" />
                                                     <div class="flex-1 min-w-0">
                                                         <!-- Country Name & Code -->
                                                         <div class="flex items-start justify-between gap-2">
@@ -727,130 +447,11 @@ $version = '1.0.0';
                         </button>
 
                         <!-- Priority Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Risikostufe</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button @click="filters.priority = null; applyFilters()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                    :class="filters.priority === null ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    Alle
-                                </button>
-                                <button @click="filters.priority = 'high'; applyFilters()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'high' ? 'bg-red-50 border-red-500 text-red-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                    Hoch
-                                </button>
-                                <button @click="filters.priority = 'medium'; applyFilters()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'medium' ? 'bg-orange-50 border-orange-500 text-orange-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                    Mittel
-                                </button>
-                                <button @click="filters.priority = 'low'; applyFilters()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'low' ? 'bg-green-50 border-green-500 text-green-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                    Niedrig
-                                </button>
-                                <button @click="filters.priority = 'info'; applyFilters()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2 flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    Information
-                                </button>
-                            </div>
-                        </div>
+                        <x-risk-overview.priority-filter-buttons callback="applyFilters()" />
 
                         <!-- Days Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                Zeitraum
-                                <span x-data="{ showTooltip: false }" class="relative inline-flex">
-                                    <button type="button" @click.stop="showTooltip = !showTooltip"
-                                        class="text-gray-400 hover:text-gray-600 transition-colors">
-                                        <i class="fa-regular fa-circle-info text-xs"></i>
-                                    </button>
-                                    <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
-                                        class="absolute left-0 top-full mt-1 z-[9999] w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
-                                        Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der
-                                        Reisen, die bis zu diesem Zeitraum stattfinden.
-                                    </div>
-                                </span>
-                            </label>
-                            <div class="grid grid-cols-4 gap-2 mb-1">
-                                <button @click="filters.days = 0; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold"><i class="fa-regular fa-calendar-day"></i></span>
-                                    <span>Heute</span>
-                                </button>
-                                <button @click="filters.days = 7; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 7 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">7</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 14; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 14 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">14</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 30; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">30</span>
-                                    <span>Tage</span>
-                                </button>
-                            </div>
-                            <div class="grid grid-cols-4 gap-2 mb-2">
-                                <button @click="filters.days = 90; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 90 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">90</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 180; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 180 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">180</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 360; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 360 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">360</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = -1; filters.customDateRange = false; applyFilters()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === -1 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold"><i class="fa-regular fa-infinity"></i></span>
-                                    <span>Alle</span>
-                                </button>
-                            </div>
-                            <!-- Custom date range toggle -->
-                            <button @click="filters.customDateRange = !filters.customDateRange"
-                                class="w-full px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                :class="filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                <i class="fa-regular fa-calendar-range mr-1"></i>
-                                Eigener Zeitraum
-                            </button>
-                            <!-- Custom date inputs -->
-                            <div x-show="filters.customDateRange" x-collapse class="mt-2 space-y-2">
-                                <div>
-                                    <label class="text-xs text-gray-500 block mb-1">Von</label>
-                                    <input type="date" x-model="filters.dateFrom" @change="applyFilters()"
-                                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500 block mb-1">Bis</label>
-                                    <input type="date" x-model="filters.dateTo" @change="applyFilters()"
-                                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                            </div>
-                        </div>
+                        <x-risk-overview.day-range-buttons callback="applyFilters()"
+                            tooltip-text="Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden." />
 
                         <!-- Only with events filter -->
                         <div class="mb-4">
@@ -887,40 +488,7 @@ $version = '1.0.0';
                         </button>
 
                         <!-- Priority Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Risikostufe</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button @click="filters.priority = null; loadData()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors"
-                                    :class="filters.priority === null ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    Alle
-                                </button>
-                                <button @click="filters.priority = 'high'; loadData()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'high' ? 'bg-red-50 border-red-500 text-red-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                    Hoch
-                                </button>
-                                <button @click="filters.priority = 'medium'; loadData()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'medium' ? 'bg-orange-50 border-orange-500 text-orange-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                    Mittel
-                                </button>
-                                <button @click="filters.priority = 'low'; loadData()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'low' ? 'bg-green-50 border-green-500 text-green-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                    Niedrig
-                                </button>
-                                <button @click="filters.priority = 'info'; loadData()"
-                                    class="px-3 py-2 text-xs rounded-lg border transition-colors col-span-2 flex items-center justify-center gap-1"
-                                    :class="filters.priority === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    Information
-                                </button>
-                            </div>
-                        </div>
+                        <x-risk-overview.priority-filter-buttons callback="loadData()" />
 
                         <!-- Country Filter -->
                         <div class="mb-4">
@@ -937,68 +505,9 @@ $version = '1.0.0';
                         </div>
 
                         <!-- Days Filter -->
-                        <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                Zeitraum (Reisende)
-                                <span x-data="{ showTooltip: false }" class="relative inline-flex">
-                                    <button type="button" @click.stop="showTooltip = !showTooltip"
-                                        class="text-gray-400 hover:text-gray-600 transition-colors">
-                                        <i class="fa-regular fa-circle-info text-xs"></i>
-                                    </button>
-                                    <div x-show="showTooltip" x-cloak @click.outside="showTooltip = false"
-                                        class="absolute left-0 top-full mt-1 z-[9999] w-56 p-2 text-[11px] text-gray-600 bg-white border border-gray-200 rounded-lg shadow-lg">
-                                        Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der
-                                        Reisen, die bis zu diesem Zeitraum stattfinden.
-                                    </div>
-                                </span>
-                            </label>
-                            <div class="grid grid-cols-4 gap-2 mb-2">
-                                <button @click="filters.days = 0; filters.customDateRange = false; loadData()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 0 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold"><i class="fa-regular fa-calendar-day"></i></span>
-                                    <span>Heute</span>
-                                </button>
-                                <button @click="filters.days = 7; filters.customDateRange = false; loadData()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 7 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">7</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 14; filters.customDateRange = false; loadData()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 14 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">14</span>
-                                    <span>Tage</span>
-                                </button>
-                                <button @click="filters.days = 30; filters.customDateRange = false; loadData()"
-                                    class="px-2 py-2 text-xs rounded-lg border transition-colors flex flex-col items-center"
-                                    :class="filters.days === 30 && !filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                    <span class="text-sm font-bold">30</span>
-                                    <span>Tage</span>
-                                </button>
-                            </div>
-                            <!-- Custom date range toggle -->
-                            <button @click="filters.customDateRange = !filters.customDateRange"
-                                class="w-full px-3 py-2 text-xs rounded-lg border transition-colors flex items-center justify-center gap-1"
-                                :class="filters.customDateRange ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
-                                <i class="fa-regular fa-calendar-range mr-1"></i>
-                                Eigener Zeitraum
-                            </button>
-                            <!-- Custom date inputs -->
-                            <div x-show="filters.customDateRange" x-collapse class="mt-2 space-y-2">
-                                <div>
-                                    <label class="text-xs text-gray-500 block mb-1">Von</label>
-                                    <input type="date" x-model="filters.dateFrom" @change="loadData()"
-                                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500 block mb-1">Bis</label>
-                                    <input type="date" x-model="filters.dateTo" @change="loadData()"
-                                        class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                            </div>
-                        </div>
+                        <x-risk-overview.day-range-buttons callback="loadData()" label="Zeitraum (Reisende)"
+                            :show-extended-range="false"
+                            tooltip-text="Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden." />
 
                         <!-- Only with travelers filter -->
                         <div class="mb-4">
@@ -1075,15 +584,9 @@ $version = '1.0.0';
                 <div x-show="activeTab === 'tiles'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
                     <!-- No country selected -->
                     <template x-if="!selectedCountry">
-                        <div class="flex-1 flex items-center justify-center bg-gray-50">
-                            <div class="text-center">
-                                <i class="fa-regular fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
-                                <h3 class="font-semibold text-gray-700">Land auswählen</h3>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    Wählen Sie ein Land in der linken Sidebar aus, um Details anzuzeigen.
-                                </p>
-                            </div>
-                        </div>
+                        <x-risk-overview.empty-state variant="centered" icon="fa-regular fa-hand-pointer"
+                            title="Land auswählen"
+                            message="Wählen Sie ein Land in der linken Sidebar aus, um Details anzuzeigen." />
                     </template>
 
                     <!-- Country selected - Split view -->
@@ -1091,9 +594,7 @@ $version = '1.0.0';
                         <div class="flex-1 flex flex-col min-h-0">
                             <!-- Loading -->
                             <template x-if="loadingCountryDetails">
-                                <div class="flex-1 flex items-center justify-center">
-                                    <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                                </div>
+                                <x-risk-overview.loading-spinner class="flex-1" />
                             </template>
 
                             <!-- Content - 50/50 Split -->
@@ -1102,24 +603,10 @@ $version = '1.0.0';
                                     <!-- Top: Events (50%) -->
                                     <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
                                         :class="maximizedSection === 'events' ? 'flex-1' : maximizedSection === 'travelers' ? 'flex-none h-[52px]' : 'flex-1'">
-                                        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                                            <h3
-                                                class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                                <span class="flex items-center">
-                                                    <i
-                                                        class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
-                                                    Ereignisse
-                                                    <span class="ml-2 text-gray-500 font-normal"
-                                                        x-text="'(' + countryDetails.events.length + ')'"></span>
-                                                </span>
-                                                <button @click="toggleMaximize('events')"
-                                                    class="p-1.5 hover:bg-gray-200 rounded transition-colors"
-                                                    :title="maximizedSection === 'events' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                                    <i class="fa-regular text-xs transition-all"
-                                                        :class="maximizedSection === 'events' ? 'fa-compress' : 'fa-expand'"></i>
-                                                </button>
-                                            </h3>
-                                        </div>
+                                        <x-risk-overview.section-header
+                                            icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
+                                            title="Ereignisse" count-expression="countryDetails.events.length"
+                                            maximize-section="events" />
                                         <div class="flex-1 overflow-y-auto p-4">
                                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
@@ -1133,16 +620,7 @@ $version = '1.0.0';
                                                         <div class="flex items-start justify-between mb-2">
                                                             <h4 class="text-xs font-medium text-gray-800"
                                                                 x-text="event.title"></h4>
-                                                            <span
-                                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                                                :class="{
-                                                                  'bg-red-100 text-red-700': event.priority === 'high',
-                                                                  'bg-orange-100 text-orange-700': event.priority === 'medium',
-                                                                  'bg-green-100 text-green-700': event.priority === 'low',
-                                                                  'bg-blue-100 text-blue-700': event.priority === 'info'
-                                                              }"
-                                                                x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Information'"></span>
-                                                        </div>
+                                                            <x-risk-overview.priority-badge priority="event.priority" />
                                                         <p class="text-xs text-gray-600 line-clamp-3"
                                                             x-text="event.description"></p>
                                                         <div
@@ -1170,23 +648,11 @@ $version = '1.0.0';
                                     <!-- Bottom: Travelers (50%) -->
                                     <div class="min-h-0 overflow-hidden flex flex-col transition-all"
                                         :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
-                                        <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
-                                            <h3
-                                                class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                                <span class="flex items-center">
-                                                    <i class="fa-regular fa-users mr-2 text-blue-500"></i>
-                                                    Betroffene Reisen
-                                                    <span class="ml-2 text-gray-500 font-normal"
-                                                        x-text="'(' + countryDetails.travelers.length + ')'"></span>
-                                                </span>
-                                                <button @click="toggleMaximize('travelers')"
-                                                    class="p-1.5 hover:bg-blue-200 rounded transition-colors"
-                                                    :title="maximizedSection === 'travelers' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                                    <i class="fa-regular text-xs transition-all"
-                                                        :class="maximizedSection === 'travelers' ? 'fa-compress' : 'fa-expand'"></i>
-                                                </button>
-                                            </h3>
-                                        </div>
+                                        <x-risk-overview.section-header
+                                            icon="fa-regular fa-users" icon-color="text-blue-500"
+                                            title="Betroffene Reisen" count-expression="countryDetails.travelers.length"
+                                            maximize-section="travelers"
+                                            bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
                                         <div class="flex-1 overflow-y-auto p-4">
                                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 <template x-for="traveler in countryDetails.travelers"
@@ -1247,15 +713,9 @@ $version = '1.0.0';
                 <div x-show="activeTab === 'calendar'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
                     <!-- No country selected -->
                     <template x-if="!selectedCountry">
-                        <div class="flex-1 flex items-center justify-center bg-gray-50">
-                            <div class="text-center">
-                                <i class="fa-regular fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
-                                <h3 class="font-semibold text-gray-700">Land auswählen</h3>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    Wählen Sie ein Land in der linken Sidebar aus, um den Kalender anzuzeigen.
-                                </p>
-                            </div>
-                        </div>
+                        <x-risk-overview.empty-state variant="centered" icon="fa-regular fa-hand-pointer"
+                            title="Land auswählen"
+                            message="Wählen Sie ein Land in der linken Sidebar aus, um den Kalender anzuzeigen." />
                     </template>
 
                     <!-- Country selected - Calendar view -->
@@ -1263,9 +723,7 @@ $version = '1.0.0';
                         <div class="flex-1 flex flex-col min-h-0">
                             <!-- Loading -->
                             <template x-if="loadingCountryDetails">
-                                <div class="flex-1 flex items-center justify-center">
-                                    <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                                </div>
+                                <x-risk-overview.loading-spinner class="flex-1" />
                             </template>
 
                             <!-- Calendar Content -->
@@ -1568,22 +1026,14 @@ $version = '1.0.0';
                 <div x-show="activeTab === 'trips'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
                     <!-- Loading -->
                     <template x-if="loadingTrips">
-                        <div class="flex-1 flex items-center justify-center">
-                            <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                        </div>
+                        <x-risk-overview.loading-spinner class="flex-1" />
                     </template>
 
                     <!-- No trips -->
                     <template x-if="!loadingTrips && trips.length === 0">
-                        <div class="flex-1 flex items-center justify-center bg-gray-50">
-                            <div class="text-center">
-                                <i class="fa-regular fa-suitcase text-4xl text-gray-400 mb-3"></i>
-                                <h3 class="font-semibold text-gray-700">Keine Reisen gefunden</h3>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    Im ausgewählten Zeitraum sind keine Reisen vorhanden.
-                                </p>
-                            </div>
-                        </div>
+                        <x-risk-overview.empty-state variant="centered" icon="fa-regular fa-suitcase"
+                            title="Keine Reisen gefunden"
+                            message="Im ausgewählten Zeitraum sind keine Reisen vorhanden." />
                     </template>
 
                     <!-- Trips list -->
@@ -1697,15 +1147,8 @@ $version = '1.0.0';
                                                                             x-text="'• ' + (event.event_type || '')"></span>
                                                                     </div>
                                                                 </div>
-                                                                <span
-                                                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ml-2"
-                                                                    :class="{
-                                                                      'bg-red-100 text-red-700': event.priority === 'high',
-                                                                      'bg-orange-100 text-orange-700': event.priority === 'medium',
-                                                                      'bg-yellow-100 text-yellow-700': event.priority === 'low',
-                                                                      'bg-blue-100 text-blue-700': event.priority === 'info'
-                                                                  }"
-                                                                    x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Info'"></span>
+                                                                <x-risk-overview.priority-badge priority="event.priority" low-color="yellow"
+                                                                    class="px-1.5 flex-shrink-0 ml-2" />
                                                             </div>
                                                         </div>
                                                     </template>
@@ -1749,9 +1192,7 @@ $version = '1.0.0';
                         <div class="country-sidebar-content">
                             <!-- Loading -->
                             <template x-if="loadingCountryDetails">
-                                <div class="flex items-center justify-center py-8">
-                                    <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                                </div>
+                                <x-risk-overview.loading-spinner />
                             </template>
 
                             <!-- Content -->
@@ -1862,15 +1303,9 @@ $version = '1.0.0';
                 <div x-show="activeTab === 'list'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
                     <!-- No country selected -->
                     <template x-if="!selectedCountry">
-                        <div class="flex-1 flex items-center justify-center bg-gray-50">
-                            <div class="text-center">
-                                <i class="fa-regular fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
-                                <h3 class="font-semibold text-gray-700">Land auswählen</h3>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    Wählen Sie ein Land in der linken Sidebar aus, um Details anzuzeigen.
-                                </p>
-                            </div>
-                        </div>
+                        <x-risk-overview.empty-state variant="centered" icon="fa-regular fa-hand-pointer"
+                            title="Land auswählen"
+                            message="Wählen Sie ein Land in der linken Sidebar aus, um Details anzuzeigen." />
                     </template>
 
                     <!-- Country selected - Split view -->
@@ -1878,9 +1313,7 @@ $version = '1.0.0';
                         <div class="flex-1 flex flex-col min-h-0">
                             <!-- Loading -->
                             <template x-if="loadingCountryDetails">
-                                <div class="flex-1 flex items-center justify-center">
-                                    <i class="fa-regular fa-spinner-third fa-spin text-3xl text-blue-500"></i>
-                                </div>
+                                <x-risk-overview.loading-spinner class="flex-1" />
                             </template>
 
                             <!-- Content - 50/50 Split -->
@@ -1889,24 +1322,10 @@ $version = '1.0.0';
                                     <!-- Top: Events (50%) -->
                                     <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
                                         :class="maximizedSection === 'events' ? 'flex-1' : maximizedSection === 'travelers' ? 'flex-none h-[52px]' : 'flex-1'">
-                                        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                                            <h3
-                                                class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                                <span class="flex items-center">
-                                                    <i
-                                                        class="fa-regular fa-triangle-exclamation mr-2 text-orange-500"></i>
-                                                    Ereignisse
-                                                    <span class="ml-2 text-gray-500 font-normal"
-                                                        x-text="'(' + countryDetails.events.length + ')'"></span>
-                                                </span>
-                                                <button @click="toggleMaximize('events')"
-                                                    class="p-1.5 hover:bg-gray-200 rounded transition-colors"
-                                                    :title="maximizedSection === 'events' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                                    <i class="fa-regular text-xs transition-all"
-                                                        :class="maximizedSection === 'events' ? 'fa-compress' : 'fa-expand'"></i>
-                                                </button>
-                                            </h3>
-                                        </div>
+                                        <x-risk-overview.section-header
+                                            icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
+                                            title="Ereignisse" count-expression="countryDetails.events.length"
+                                            maximize-section="events" />
                                         <div class="flex-1 overflow-y-auto">
                                             <div class="divide-y divide-gray-200">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
@@ -1924,15 +1343,8 @@ $version = '1.0.0';
                                                                 x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')">
                                                             </p>
                                                         </div>
-                                                        <span
-                                                            class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                                            :class="{
-                                                              'bg-red-100 text-red-700': event.priority === 'high',
-                                                              'bg-orange-100 text-orange-700': event.priority === 'medium',
-                                                              'bg-green-100 text-green-700': event.priority === 'low',
-                                                              'bg-blue-100 text-blue-700': event.priority === 'info'
-                                                          }"
-                                                            x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Information'"></span>
+                                                        <x-risk-overview.priority-badge priority="event.priority"
+                                                            class="flex-shrink-0" />
                                                     </div>
                                                 </template>
                                             </div>
@@ -1949,23 +1361,11 @@ $version = '1.0.0';
                                     <!-- Bottom: Travelers (50%) -->
                                     <div class="min-h-0 overflow-hidden flex flex-col transition-all"
                                         :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
-                                        <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
-                                            <h3
-                                                class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                                <span class="flex items-center">
-                                                    <i class="fa-regular fa-users mr-2 text-blue-500"></i>
-                                                    Betroffene Reisen
-                                                    <span class="ml-2 text-gray-500 font-normal"
-                                                        x-text="'(' + countryDetails.travelers.length + ')'"></span>
-                                                </span>
-                                                <button @click="toggleMaximize('travelers')"
-                                                    class="p-1.5 hover:bg-blue-200 rounded transition-colors"
-                                                    :title="maximizedSection === 'travelers' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                                    <i class="fa-regular text-xs transition-all"
-                                                        :class="maximizedSection === 'travelers' ? 'fa-compress' : 'fa-expand'"></i>
-                                                </button>
-                                            </h3>
-                                        </div>
+                                        <x-risk-overview.section-header
+                                            icon="fa-regular fa-users" icon-color="text-blue-500"
+                                            title="Betroffene Reisen" count-expression="countryDetails.travelers.length"
+                                            maximize-section="travelers"
+                                            bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
                                         <div class="flex-1 overflow-y-auto">
                                             <div class="divide-y divide-gray-200">
                                                 <template x-for="traveler in countryDetails.travelers"
@@ -2237,15 +1637,9 @@ $version = '1.0.0';
 
                 <!-- No trip selected -->
                 <template x-if="!selectedTrip">
-                    <div class="flex-1 flex items-center justify-center bg-gray-50">
-                        <div class="text-center">
-                            <i class="fa-regular fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
-                            <h3 class="font-semibold text-gray-700">Reise auswählen</h3>
-                            <p class="text-sm text-gray-500 mt-1">
-                                Wählen Sie eine Reise in der linken Sidebar aus, um Details anzuzeigen.
-                            </p>
-                        </div>
-                    </div>
+                    <x-risk-overview.empty-state variant="centered" icon="fa-regular fa-hand-pointer"
+                        title="Reise auswählen"
+                        message="Wählen Sie eine Reise in der linken Sidebar aus, um Details anzuzeigen." />
                 </template>
 
                 <!-- Trip selected -->
@@ -2257,22 +1651,13 @@ $version = '1.0.0';
                             <!-- Top: Reisedetails -->
                             <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
                                 :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px]' : 'flex-1'">
-                                <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
-                                    <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                        <span class="flex items-center gap-2">
-                                            <i class="fa-regular fa-suitcase-rolling mr-1 text-blue-500"></i>
-                                            Reisedetails
-                                            <span class="text-xs font-normal text-gray-500 italic"
-                                                x-text="selectedTrip.folder_name"></span>
-                                        </span>
-                                        <button @click="toggleTripMaximize('tripDetails')"
-                                            class="p-1.5 hover:bg-blue-200 rounded transition-colors"
-                                            :title="tripMaximizedSection === 'tripDetails' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                            <i class="fa-regular text-xs transition-all"
-                                                :class="tripMaximizedSection === 'tripDetails' ? 'fa-compress' : 'fa-expand'"></i>
-                                        </button>
-                                    </h3>
-                                </div>
+                                <x-risk-overview.section-header
+                                    icon="fa-regular fa-suitcase-rolling" icon-color="text-blue-500"
+                                    title="Reisedetails" maximize-section="tripDetails"
+                                    maximize-var="tripMaximizedSection" toggle-method="toggleTripMaximize"
+                                    bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200">
+                                    <span class="text-xs font-normal text-gray-500 italic" x-text="selectedTrip.folder_name"></span>
+                                </x-risk-overview.section-header>
                                 <div class="flex-1 overflow-y-auto p-4">
                                     <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
                                         <!-- Info Grid -->
@@ -2394,40 +1779,30 @@ $version = '1.0.0';
                             <!-- Bottom: Ereignisse -->
                             <div class="min-h-0 overflow-hidden flex flex-col transition-all"
                                 :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px]' : 'flex-1'">
-                                <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                                    <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                        <span class="flex items-center gap-2">
-                                            <i class="fa-regular fa-triangle-exclamation mr-1 text-orange-500"></i>
-                                            Ereignisse
-                                            <span class="text-gray-500 font-normal"
-                                                x-text="'(' + filteredTripEvents.length + ')'"></span>
-                                            <template x-if="selectedTripCountry">
-                                                <span
-                                                    class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
-                                                    :class="{
-                                                    'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
-                                                    'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
-                                                    'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
-                                                    'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
-                                                    'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
-                                                }">
-                                                    <span
-                                                        x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
-                                                    <button @click="selectedTripCountry = null"
-                                                        class="hover:opacity-70">
-                                                        <i class="fa-regular fa-xmark text-[10px]"></i>
-                                                    </button>
-                                                </span>
-                                            </template>
+                                <x-risk-overview.section-header
+                                    icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
+                                    title="Ereignisse" count-expression="filteredTripEvents.length"
+                                    maximize-section="tripEvents"
+                                    maximize-var="tripMaximizedSection" toggle-method="toggleTripMaximize">
+                                    <template x-if="selectedTripCountry">
+                                        <span
+                                            class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+                                            :class="{
+                                            'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
+                                            'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
+                                            'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
+                                            'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
+                                            'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
+                                        }">
+                                            <span
+                                                x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
+                                            <button @click="selectedTripCountry = null"
+                                                class="hover:opacity-70">
+                                                <i class="fa-regular fa-xmark text-[10px]"></i>
+                                            </button>
                                         </span>
-                                        <button @click="toggleTripMaximize('tripEvents')"
-                                            class="p-1.5 hover:bg-gray-200 rounded transition-colors"
-                                            :title="tripMaximizedSection === 'tripEvents' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                            <i class="fa-regular text-xs transition-all"
-                                                :class="tripMaximizedSection === 'tripEvents' ? 'fa-compress' : 'fa-expand'"></i>
-                                        </button>
-                                    </h3>
-                                </div>
+                                    </template>
+                                </x-risk-overview.section-header>
                                 <div class="flex-1 overflow-y-auto p-4">
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <template x-for="event in filteredTripEvents" :key="event.id">
@@ -2441,15 +1816,8 @@ $version = '1.0.0';
                                                 <div class="flex items-start justify-between mb-2">
                                                     <h4 class="text-xs font-medium text-gray-800" x-text="event.title">
                                                     </h4>
-                                                    <span
-                                                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ml-2"
-                                                        :class="{
-                                                          'bg-red-100 text-red-700': event.priority === 'high',
-                                                          'bg-orange-100 text-orange-700': event.priority === 'medium',
-                                                          'bg-green-100 text-green-700': event.priority === 'low',
-                                                          'bg-blue-100 text-blue-700': event.priority === 'info'
-                                                      }"
-                                                        x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Information'"></span>
+                                                    <x-risk-overview.priority-badge priority="event.priority"
+                                                        class="flex-shrink-0 ml-2" />
                                                 </div>
                                                 <p class="text-xs text-gray-600 line-clamp-3"
                                                     x-text="event.description"></p>
@@ -2485,22 +1853,13 @@ $version = '1.0.0';
                             <!-- Top: Reisedetails -->
                             <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
                                 :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px]' : 'flex-1'">
-                                <div class="px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
-                                    <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                        <span class="flex items-center gap-2">
-                                            <i class="fa-regular fa-suitcase-rolling mr-1 text-blue-500"></i>
-                                            Reisedetails
-                                            <span class="text-xs font-normal text-gray-500 italic"
-                                                x-text="selectedTrip.folder_name"></span>
-                                        </span>
-                                        <button @click="toggleTripMaximize('tripDetails')"
-                                            class="p-1.5 hover:bg-blue-200 rounded transition-colors"
-                                            :title="tripMaximizedSection === 'tripDetails' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                            <i class="fa-regular text-xs transition-all"
-                                                :class="tripMaximizedSection === 'tripDetails' ? 'fa-compress' : 'fa-expand'"></i>
-                                        </button>
-                                    </h3>
-                                </div>
+                                <x-risk-overview.section-header
+                                    icon="fa-regular fa-suitcase-rolling" icon-color="text-blue-500"
+                                    title="Reisedetails" maximize-section="tripDetails"
+                                    maximize-var="tripMaximizedSection" toggle-method="toggleTripMaximize"
+                                    bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200">
+                                    <span class="text-xs font-normal text-gray-500 italic" x-text="selectedTrip.folder_name"></span>
+                                </x-risk-overview.section-header>
                                 <div class="flex-1 overflow-y-auto">
                                     <div class="divide-y divide-gray-200">
                                         <!-- Trip info row -->
@@ -2615,40 +1974,30 @@ $version = '1.0.0';
                             <!-- Bottom: Ereignisse -->
                             <div class="min-h-0 overflow-hidden flex flex-col transition-all"
                                 :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px]' : 'flex-1'">
-                                <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                                    <h3 class="text-sm font-semibold text-gray-900 flex items-center justify-between">
-                                        <span class="flex items-center gap-2">
-                                            <i class="fa-regular fa-triangle-exclamation mr-1 text-orange-500"></i>
-                                            Ereignisse
-                                            <span class="text-gray-500 font-normal"
-                                                x-text="'(' + filteredTripEvents.length + ')'"></span>
-                                            <template x-if="selectedTripCountry">
-                                                <span
-                                                    class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
-                                                    :class="{
-                                                    'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
-                                                    'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
-                                                    'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
-                                                    'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
-                                                    'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
-                                                }">
-                                                    <span
-                                                        x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
-                                                    <button @click="selectedTripCountry = null"
-                                                        class="hover:opacity-70">
-                                                        <i class="fa-regular fa-xmark text-[10px]"></i>
-                                                    </button>
-                                                </span>
-                                            </template>
+                                <x-risk-overview.section-header
+                                    icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
+                                    title="Ereignisse" count-expression="filteredTripEvents.length"
+                                    maximize-section="tripEvents"
+                                    maximize-var="tripMaximizedSection" toggle-method="toggleTripMaximize">
+                                    <template x-if="selectedTripCountry">
+                                        <span
+                                            class="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+                                            :class="{
+                                            'bg-red-100 text-red-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'high',
+                                            'bg-orange-100 text-orange-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'medium',
+                                            'bg-green-100 text-green-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'low',
+                                            'bg-blue-100 text-blue-700': getTripCountryPriority(selectedTrip, selectedTripCountry) === 'info',
+                                            'bg-gray-100 text-gray-600': !getTripCountryPriority(selectedTrip, selectedTripCountry)
+                                        }">
+                                            <span
+                                                x-text="selectedTrip.destinations?.find(d => d.code === selectedTripCountry)?.name || selectedTripCountry"></span>
+                                            <button @click="selectedTripCountry = null"
+                                                class="hover:opacity-70">
+                                                <i class="fa-regular fa-xmark text-[10px]"></i>
+                                            </button>
                                         </span>
-                                        <button @click="toggleTripMaximize('tripEvents')"
-                                            class="p-1.5 hover:bg-gray-200 rounded transition-colors"
-                                            :title="tripMaximizedSection === 'tripEvents' ? 'Ansicht wiederherstellen' : 'Maximieren'">
-                                            <i class="fa-regular text-xs transition-all"
-                                                :class="tripMaximizedSection === 'tripEvents' ? 'fa-compress' : 'fa-expand'"></i>
-                                        </button>
-                                    </h3>
-                                </div>
+                                    </template>
+                                </x-risk-overview.section-header>
                                 <div class="flex-1 overflow-y-auto">
                                     <div class="divide-y divide-gray-200">
                                         <template x-for="event in filteredTripEvents" :key="event.id">
@@ -2674,15 +2023,8 @@ $version = '1.0.0';
                                                         </template>
                                                     </div>
                                                 </div>
-                                                <span
-                                                    class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                                    :class="{
-                                                      'bg-red-100 text-red-700': event.priority === 'high',
-                                                      'bg-orange-100 text-orange-700': event.priority === 'medium',
-                                                      'bg-green-100 text-green-700': event.priority === 'low',
-                                                      'bg-blue-100 text-blue-700': event.priority === 'info'
-                                                  }"
-                                                    x-text="event.priority === 'high' ? 'Hoch' : event.priority === 'medium' ? 'Mittel' : event.priority === 'low' ? 'Niedrig' : 'Information'"></span>
+                                                <x-risk-overview.priority-badge priority="event.priority"
+                                                    class="flex-shrink-0" />
                                             </div>
                                         </template>
                                     </div>
@@ -2939,14 +2281,7 @@ $version = '1.0.0';
                             <h3 id="modal-title" class="text-lg font-semibold text-gray-900"
                                 x-text="selectedEvent?.title"></h3>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                    :class="{
-                                      'bg-red-100 text-red-800': selectedEvent?.priority === 'high',
-                                      'bg-orange-100 text-orange-800': selectedEvent?.priority === 'medium',
-                                      'bg-green-100 text-green-800': selectedEvent?.priority === 'low',
-                                      'bg-blue-100 text-blue-800': selectedEvent?.priority === 'info'
-                                  }"
-                                    x-text="selectedEvent?.priority === 'high' ? 'Hoch' : selectedEvent?.priority === 'medium' ? 'Mittel' : selectedEvent?.priority === 'low' ? 'Niedrig' : 'Information'"></span>
+                                <x-risk-overview.priority-badge priority="selectedEvent?.priority" class="rounded-full px-2.5" />
                                 <span class="text-sm text-gray-500" x-text="selectedEvent?.event_type"></span>
                             </div>
                         </div>
@@ -3300,733 +2635,17 @@ $version = '1.0.0';
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        function riskOverviewApp() {
-            return {
-                countries: [],
-                summary: {
-                    total_countries: 0,
-                    total_events: 0,
-                    total_affected_travelers: 0,
-                },
-                selectedCountry: null,
-                countryDetails: null,
-                selectedEvent: null,
-                showEventModal: false,
-                selectedTraveler: null,
-                showTravelerModal: false,
-                loading: false,
-                loadingCountryDetails: false,
-                error: null,
-                map: null,
-                markers: [],
-                filters: {
-                    priority: null,
-                    days: 30,
-                    onlyWithTravelers: false,
-                    onlyWithEvents: true,
-                    country: '',
-                    customDateRange: false,
-                    dateFrom: '',
-                    dateTo: '',
-                },
-                filterOpen: false,
-                showTripFilters: false,
-                showCountryFilters: false,
-                isDebugUser: {{ isset($isDebugUser) && $isDebugUser ? 'true' : 'false' }
-        },
-        debugLogs: [],
-            showCountrySidebar: false,
-                sidebarTab: 'reisen',
-                    activeTab: 'tiles',
-                        maximizedSection: null, // null, 'events', or 'travelers'
-                            selectedTrip: null,
-                                selectedTripCountry: null,
-                                    tripActiveTab: 'tiles',
-                                        tripMaximizedSection: null, // null, 'tripEvents', or 'tripDetails'
-                                            trips: [],
-                                                tripsSummary: { total_trips: 0, trips_with_events: 0, total_events_across_trips: 0 },
-        loadingTrips: false,
-            tripsLoaded: false,
-
-                // Labels
-                labelInput: '',
-                    labelSuggestions: [],
-                        labelLoading: false,
-                            showLabelSuggestions: false,
-                                labelDebounceTimer: null,
-
-                                    toggleMaximize(section) {
-            if (this.maximizedSection === section) {
-                this.maximizedSection = null;
-            } else {
-                this.maximizedSection = section;
+        window.__riskOverviewConfig = {
+            isDebugUser: {{ isset($isDebugUser) && $isDebugUser ? 'true' : 'false' }},
+            routes: {
+                labelsSearch: '{{ route("risk-overview.labels.search") }}',
+                data: '{{ route("risk-overview.data") }}',
+                trips: '{{ route("risk-overview.trips") }}',
+                country: '{{ url("/risk-overview/country") }}',
             }
-        },
-
-        toggleTripMaximize(section) {
-            if (this.tripMaximizedSection === section) {
-                this.tripMaximizedSection = null;
-            } else {
-                this.tripMaximizedSection = section;
-            }
-        },
-
-        selectTrip(trip, countryCode = null) {
-            this.selectedTrip = trip;
-            this.selectedTripCountry = countryCode;
-            this.tripMaximizedSection = null;
-            this.labelInput = '';
-            this.labelSuggestions = [];
-            this.showLabelSuggestions = false;
-        },
-
-        searchLabels() {
-            clearTimeout(this.labelDebounceTimer);
-            if (this.labelInput.trim().length === 0) {
-                this.labelSuggestions = [];
-                this.showLabelSuggestions = false;
-                return;
-            }
-            this.labelDebounceTimer = setTimeout(async () => {
-                this.labelLoading = true;
-                try {
-                    const resp = await fetch(`{{ route('risk-overview.labels.search') }}?q=${encodeURIComponent(this.labelInput.trim())}`);
-                    const data = await resp.json();
-                    // Filter out already attached labels
-                    const existingIds = (this.selectedTrip.labels || []).map(l => l.id);
-                    this.labelSuggestions = data.filter(l => !existingIds.includes(l.id));
-                    this.showLabelSuggestions = true;
-                } catch (e) {
-                    console.error('Label search error', e);
-                } finally {
-                    this.labelLoading = false;
-                }
-            }, 250);
-        },
-
-            async attachLabel(labelId, labelName) {
-            if (!this.selectedTrip?.folder_id || this.selectedTrip.source === 'api') return;
-            try {
-                const body = labelId ? { label_id: labelId } : { name: labelName };
-                const resp = await fetch(`/risk-overview/folder/${this.selectedTrip.folder_id}/labels`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                    body: JSON.stringify(body),
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    this.selectedTrip.labels = data.labels;
-                    // Also update in trips array
-                    const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
-                    if (idx !== -1) this.trips[idx].labels = data.labels;
-                }
-            } catch (e) {
-                console.error('Attach label error', e);
-            }
-            this.labelInput = '';
-            this.labelSuggestions = [];
-            this.showLabelSuggestions = false;
-        },
-
-            async detachLabel(labelId) {
-            if (!this.selectedTrip?.folder_id || this.selectedTrip.source === 'api') return;
-            try {
-                const resp = await fetch(`/risk-overview/folder/${this.selectedTrip.folder_id}/labels/${labelId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    this.selectedTrip.labels = data.labels;
-                    const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
-                    if (idx !== -1) this.trips[idx].labels = data.labels;
-                }
-            } catch (e) {
-                console.error('Detach label error', e);
-            }
-        },
-
-        addLabelFromInput() {
-            const name = this.labelInput.trim();
-            if (!name) return;
-            // Check if there's an exact match in suggestions
-            const match = this.labelSuggestions.find(l => l.name.toLowerCase() === name.toLowerCase());
-            if (match) {
-                this.attachLabel(match.id, null);
-            } else {
-                this.attachLabel(null, name);
-            }
-        },
-
-        getTripCountryPriority(trip, countryCode) {
-            if (!trip.events || trip.events.length === 0) return null;
-            const priorityOrder = { high: 0, medium: 1, low: 2, info: 3 };
-            let highest = null;
-            trip.events.forEach(e => {
-                if (e.matched_countries && e.matched_countries.some(mc => mc.code === countryCode)) {
-                    if (highest === null || priorityOrder[e.priority] < priorityOrder[highest]) {
-                        highest = e.priority;
-                    }
-                }
-            });
-            return highest;
-        },
-
-            get filteredTripEvents() {
-            if (!this.selectedTrip?.events) return [];
-            if (!this.selectedTripCountry) return this.selectedTrip.events;
-            return this.selectedTrip.events.filter(e =>
-                e.matched_countries && e.matched_countries.some(mc => mc.code === this.selectedTripCountry)
-            );
-        },
-
-            get filteredTrips() {
-            let result = this.trips;
-            if (this.filters.priority) {
-                result = result.filter(t => t.events && t.events.some(e => e.priority === this.filters.priority));
-            }
-            if (this.filters.onlyWithEvents) {
-                result = result.filter(t => t.total_events > 0);
-            }
-
-            // Filter by travel date overlap (skip for "Alle" = -1)
-            if (this.filters.days !== -1) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                let rangeStart, rangeEnd;
-
-                if (this.filters.customDateRange && this.filters.dateFrom) {
-                    rangeStart = new Date(this.filters.dateFrom);
-                    rangeStart.setHours(0, 0, 0, 0);
-                    rangeEnd = this.filters.dateTo ? new Date(this.filters.dateTo) : new Date(rangeStart);
-                    rangeEnd.setHours(0, 0, 0, 0);
-                } else {
-                    rangeStart = new Date(today);
-                    rangeEnd = new Date(today);
-                    if (this.filters.days > 0) {
-                        rangeEnd.setDate(rangeEnd.getDate() + this.filters.days);
-                    }
-                }
-
-                result = result.filter(t => {
-                    const tripStart = new Date(t.start_date);
-                    tripStart.setHours(0, 0, 0, 0);
-                    const tripEnd = new Date(t.end_date);
-                    tripEnd.setHours(0, 0, 0, 0);
-                    return tripStart <= rangeEnd && tripEnd >= rangeStart;
-                });
-            }
-
-            return result;
-        },
-
-            get filteredTripsSummary() {
-            const filtered = this.filteredTrips;
-            let tripsWithEvents = 0;
-            let totalEvents = 0;
-            filtered.forEach(t => {
-                if (t.total_events > 0) tripsWithEvents++;
-                totalEvents += t.total_events;
-            });
-            return {
-                total_trips: this.trips.length,
-                trips_with_events: tripsWithEvents,
-                total_events_across_trips: totalEvents,
-            };
-        },
-
-            async applyFilters() {
-            if (this.sidebarTab === 'reisen') {
-                // Reisen-Tab: only reload trips, mark countries as stale
-                this.countriesStale = true;
-                await this.loadTrips();
-            } else {
-                // Länder-Tab: only reload countries, mark trips as stale
-                this.tripsLoaded = false;
-                await this.loadData();
-            }
-        },
-
-            get filteredCountries() {
-            let result = this.countries;
-
-            // Filter by country
-            if (this.filters.country) {
-                result = result.filter(c => c.country.code === this.filters.country);
-            }
-
-            // Filter by travelers
-            if (this.filters.onlyWithTravelers) {
-                result = result.filter(c => c.affected_travelers > 0);
-            }
-
-            return result;
-        },
-
-            get filteredSummary() {
-            const filtered = this.filteredCountries;
-            let totalEvents = 0;
-            let totalAffectedTravelers = 0;
-            filtered.forEach(c => {
-                totalEvents += c.total_events;
-                totalAffectedTravelers += c.affected_travelers;
-            });
-            return {
-                total_countries: filtered.length,
-                total_events: totalEvents,
-                total_affected_travelers: totalAffectedTravelers,
-            };
-        },
-
-        init() {
-            this.$nextTick(() => {
-                this.initMap();
-                this.loadData();
-                this.loadTrips();
-
-                // Lazy-load: reload stale data when switching sidebar tabs
-                this.$watch('sidebarTab', (newTab) => {
-                    if (newTab === 'laender' && this.countriesStale) {
-                        this.loadData();
-                    } else if (newTab === 'reisen' && !this.tripsLoaded) {
-                        this.loadTrips();
-                    }
-                });
-
-                // ESC key to close modals
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') {
-                        if (this.showTravelerModal) {
-                            this.closeTravelerModal();
-                        } else if (this.showEventModal) {
-                            this.closeEventModal();
-                        }
-                    }
-                });
-
-                // Watch for client-side filter changes to update map and auto-select first result
-                this.$watch('filters.onlyWithTravelers', () => {
-                    this.updateMapMarkers();
-                    this.reselectCountryIfNeeded();
-                });
-
-                this.$watch('filters.country', () => {
-                    this.updateMapMarkers();
-                    this.reselectCountryIfNeeded();
-                });
-
-                // Watch for tab changes to invalidate map size
-                this.$watch('activeTab', (newTab) => {
-                    if (newTab === 'map' && this.map) {
-                        setTimeout(() => {
-                            this.map.invalidateSize();
-                        }, 100);
-                    }
-                    // Close sidebar when switching to list view
-                    if (newTab === 'list') {
-                        this.showCountrySidebar = false;
-                    }
-                });
-
-                // Watch for trip filter panel toggle to invalidate map size
-                this.$watch('showTripFilters', () => {
-                    setTimeout(() => {
-                        if (this.map) this.map.invalidateSize();
-                    }, 350);
-                });
-
-                // Watch for country filter panel toggle to invalidate map size
-                this.$watch('showCountryFilters', () => {
-                    setTimeout(() => {
-                        if (this.map) this.map.invalidateSize();
-                    }, 350);
-                });
-            });
-        },
-
-        initMap() {
-            this.map = L.map('risk-map', {
-                center: [30.0, 10.0],
-                zoom: 3,
-                zoomControl: true,
-                worldCopyJump: false,
-                maxBounds: [[-90, -180], [90, 180]],
-                minZoom: 2
-            });
-
-            L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(this.map);
-
-            // Window Resize
-            let resizeTimeout;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
-                    if (this.map) {
-                        this.map.invalidateSize();
-                    }
-                }, 250);
-            });
-
-            setTimeout(() => {
-                if (this.map) {
-                    this.map.invalidateSize();
-                }
-            }, 100);
-        },
-
-            async loadData() {
-            this.loading = true;
-            this.error = null;
-            const fetchStart = performance.now();
-
-            try {
-                const params = new URLSearchParams();
-                if (this.filters.priority) {
-                    params.append('priority', this.filters.priority);
-                }
-
-                // Use custom date range or days
-                if (this.filters.customDateRange && this.filters.dateFrom) {
-                    params.append('date_from', this.filters.dateFrom);
-                    if (this.filters.dateTo) {
-                        params.append('date_to', this.filters.dateTo);
-                    }
-                } else {
-                    params.append('days', this.filters.days);
-                }
-
-                const endpoint = `{{ route('risk-overview.data') }}?${params.toString()}`;
-                const response = await fetch(endpoint, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Fehler beim Laden der Daten');
-                }
-
-                const result = await response.json();
-                this.logDebug('getData', Object.fromEntries(params), result, fetchStart, endpoint);
-
-                if (result.success) {
-                    this.countries = result.data.countries;
-                    this.summary = result.data.summary;
-                    this.updateMapMarkers();
-
-                    // Mark trips data as stale so it reloads on next tab visit
-                    this.tripsLoaded = false;
-
-                    // Re-select country if one was already selected (e.g. after filter change)
-                    this.reselectCountryIfNeeded();
-                } else {
-                    throw new Error(result.message || 'Unbekannter Fehler');
-                }
-            } catch (e) {
-                this.error = e.message;
-            } finally {
-                this.loading = false;
-            }
-        },
-
-            async loadTrips() {
-            this.loadingTrips = true;
-            const fetchStart = performance.now();
-
-            try {
-                const params = new URLSearchParams();
-                if (this.filters.priority) {
-                    params.append('priority', this.filters.priority);
-                }
-
-                if (this.filters.customDateRange && this.filters.dateFrom) {
-                    params.append('date_from', this.filters.dateFrom);
-                    if (this.filters.dateTo) {
-                        params.append('date_to', this.filters.dateTo);
-                    }
-                } else {
-                    params.append('days', this.filters.days);
-                }
-
-                const endpoint = `{{ route('risk-overview.trips') }}?${params.toString()}`;
-                const response = await fetch(endpoint, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Fehler beim Laden der Reisen');
-                }
-
-                const result = await response.json();
-                this.logDebug('getTrips', Object.fromEntries(params), result, fetchStart, endpoint);
-
-                if (result.success) {
-                    this.trips = result.data.trips;
-                    this.tripsSummary = result.data.summary;
-                    this.tripsLoaded = true;
-                }
-            } catch (e) {
-                console.error('Error loading trips:', e);
-            } finally {
-                this.loadingTrips = false;
-            }
-        },
-
-        updateMapMarkers() {
-            // Clear existing markers
-            this.markers.forEach(marker => this.map.removeLayer(marker));
-            this.markers = [];
-
-            // Add markers for each country (use filtered list)
-            this.filteredCountries.forEach(country => {
-                if (country.country.lat && country.country.lng) {
-                    const markerColor = this.getPriorityColor(country.highest_priority);
-                    const markerSize = Math.min(30, 20 + country.total_events * 2);
-
-                    const icon = L.divIcon({
-                        className: 'event-marker event-marker-' + country.highest_priority,
-                        html: `<span>${country.total_events}</span>`,
-                        iconSize: [markerSize, markerSize],
-                        iconAnchor: [markerSize / 2, markerSize / 2],
-                    });
-
-                    const marker = L.marker([country.country.lat, country.country.lng], { icon })
-                        .addTo(this.map)
-                        .on('click', () => this.selectCountry(country));
-
-                    // Tooltip
-                    marker.bindTooltip(`
-                            <strong>${country.country.name}</strong><br>
-                            ${country.total_events} Ereignis${country.total_events !== 1 ? 'se' : ''}<br>
-                            ${country.affected_travelers} ${country.affected_travelers === 1 ? 'Reise' : 'Reisen'}
-                        `, {
-                        direction: 'top',
-                        offset: [0, -markerSize / 2]
-                    });
-
-                    this.markers.push(marker);
-                }
-            });
-
-            // Fit bounds if we have markers
-            if (this.markers.length > 0) {
-                const group = L.featureGroup(this.markers);
-                this.map.fitBounds(group.getBounds().pad(0.1));
-            }
-        },
-
-        getPriorityColor(priority) {
-            const colors = {
-                high: '#ef4444',
-                medium: '#f97316',
-                low: '#eab308',
-                info: '#3b82f6',
-            };
-            return colors[priority] || colors.info;
-        },
-
-            async selectCountry(country) {
-            this.selectedCountry = country;
-            this.loadingCountryDetails = true;
-            this.countryDetails = null;
-            const fetchStart = performance.now();
-
-            // Only show sidebar in map view
-            if (this.activeTab === 'map') {
-                this.showCountrySidebar = true;
-                // Center map on country
-                if (country.country.lat && country.country.lng) {
-                    this.map.setView([country.country.lat, country.country.lng], 5);
-                }
-            }
-
-            try {
-                const params = new URLSearchParams();
-
-                // Use custom date range or days
-                if (this.filters.customDateRange && this.filters.dateFrom) {
-                    params.append('date_from', this.filters.dateFrom);
-                    if (this.filters.dateTo) {
-                        params.append('date_to', this.filters.dateTo);
-                    }
-                } else {
-                    params.append('days', this.filters.days);
-                }
-
-                const endpoint = `{{ url('/risk-overview/country') }}/${country.country.code}?${params.toString()}`;
-                const response = await fetch(endpoint, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Fehler beim Laden der Details');
-                }
-
-                const result = await response.json();
-                this.logDebug('getCountryDetails(' + country.country.code + ')', Object.fromEntries(params), result, fetchStart, endpoint);
-
-                if (result.success) {
-                    this.countryDetails = result.data;
-                }
-            } catch (e) {
-                console.error('Error loading country details:', e);
-            } finally {
-                this.loadingCountryDetails = false;
-            }
-        },
-
-        closeCountrySidebar() {
-            this.showCountrySidebar = false;
-            this.selectedCountry = null;
-            this.countryDetails = null;
-        },
-
-        openEventModal(event) {
-            this.selectedEvent = event;
-            this.showEventModal = true;
-            document.body.style.overflow = 'hidden';
-        },
-
-        closeEventModal() {
-            this.showEventModal = false;
-            this.selectedEvent = null;
-            document.body.style.overflow = '';
-        },
-
-        openTravelerModal(traveler) {
-            this.selectedTraveler = traveler;
-            this.showTravelerModal = true;
-            document.body.style.overflow = 'hidden';
-        },
-
-        closeTravelerModal() {
-            this.showTravelerModal = false;
-            this.selectedTraveler = null;
-            document.body.style.overflow = '';
-        },
-
-        reselectCountryIfNeeded() {
-            // Only re-select if a country was already selected by the user
-            if (!this.selectedCountry) {
-                return;
-            }
-
-            // Check if the currently selected country is still in the filtered list
-            const stillVisible = this.filteredCountries.find(
-                c => c.country.code === this.selectedCountry.country.code
-            );
-
-            if (stillVisible) {
-                // Refresh details with updated data
-                this.selectCountry(stillVisible);
-            } else {
-                // Selected country no longer in filtered results, clear selection
-                this.selectedCountry = null;
-                this.countryDetails = null;
-            }
-        },
-
-        resetFilters() {
-            this.filters = {
-                priority: null,
-                days: 30,
-                onlyWithTravelers: false,
-                onlyWithEvents: false,
-                country: '',
-                customDateRange: false,
-                dateFrom: '',
-                dateTo: '',
-            };
-        },
-
-        logDebug(endpoint, params, result, fetchStartTime, fullUrl) {
-            if (!this.isDebugUser) return;
-            const pdsApiCalls = result?.debug?.pds_api_calls || [];
-            const entry = {
-                id: Date.now() + Math.random(),
-                timestamp: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }),
-                endpoint: endpoint,
-                fullUrl: fullUrl || null,
-                params: params,
-                response: result,
-                duration_ms: Math.round(performance.now() - fetchStartTime),
-                server_duration_ms: result?.debug?.duration_ms || null,
-                pds_api_calls: pdsApiCalls,
-                expanded: false,
-            };
-            this.debugLogs.unshift(entry);
-            if (window.debugPanel) {
-                window.debugPanel.log(endpoint, { url: fullUrl, params: params }, result, entry.duration_ms, entry.server_duration_ms, pdsApiCalls);
-            }
-        },
-
-        clearDebugLogs() {
-            this.debugLogs = [];
-        },
-
-        formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('de-DE', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-            });
-        },
-
-        formatDateRange(start, end) {
-            const startStr = this.formatDate(start);
-            const endStr = this.formatDate(end);
-            if (startStr === endStr) return startStr;
-            return `${startStr} - ${endStr}`;
-        },
-
-        getTripProgress(startDate, endDate) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-
-            const end = new Date(endDate);
-            end.setHours(0, 0, 0, 0);
-
-            // Trip hasn't started yet
-            if (today < start) {
-                return { started: false, progress: 0, status: 'upcoming' };
-            }
-
-            // Trip has ended
-            if (today > end) {
-                return { started: true, progress: 100, status: 'completed' };
-            }
-
-            // Trip is in progress
-            const totalDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
-            const elapsedDays = Math.ceil((today - start) / (1000 * 60 * 60 * 24)) + 1;
-            const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
-
-            return { started: true, progress, status: 'active' };
-        },
         };
-    }
-
     </script>
+    <script src="{{ asset('js/risk-overview.js') }}?v={{ $version }}"></script>
 
     <x-debug-panel :isDebugUser="$isDebugUser ?? false" />
 </body>
