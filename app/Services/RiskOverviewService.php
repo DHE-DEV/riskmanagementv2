@@ -69,7 +69,7 @@ class RiskOverviewService
                 'request_body' => $apiRequestBody,
             ]);
 
-            $response = $this->pdsApiService->post($customer, '/travel-details?with=cruise-info', $apiRequestBody);
+            $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
 
             if (! $response || ! $response->successful()) {
                 Log::warning('RiskOverviewService: Failed to fetch API travelers', [
@@ -800,7 +800,7 @@ class RiskOverviewService
                 'end_date' => ['>=' => $startDate],
             ];
 
-            $response = $this->pdsApiService->post($customer, '/travel-details?with=cruise-info', $apiRequestBody);
+            $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
 
             if (! $response || ! $response->successful()) {
                 return [];
