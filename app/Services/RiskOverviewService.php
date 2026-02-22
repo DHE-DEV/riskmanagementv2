@@ -93,7 +93,18 @@ class RiskOverviewService
             $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
                 $codes = $t['destinations'] ?? [];
                 $nationalities = $t['nationalities'] ?? [];
-                return array_merge($codes, $nationalities);
+                // Include cruise port_call country codes
+                $cruiseCodes = [];
+                if (! empty($t['cruise_compass']) && isset($t['cruise']['port_calls']) && is_array($t['cruise']['port_calls'])) {
+                    foreach ($t['cruise']['port_calls'] as $pc) {
+                        $code = $pc['port']['country']['code'] ?? null;
+                        if ($code) {
+                            $cruiseCodes[] = strtoupper($code);
+                        }
+                    }
+                }
+
+                return array_merge($codes, $nationalities, $cruiseCodes);
             })->unique()->values()->toArray();
 
             $countryNames = Country::whereIn('iso_code', $allIsoCodes)
@@ -107,8 +118,18 @@ class RiskOverviewService
             foreach ($apiTravelers as $traveler) {
                 $countryCodes = $this->extractCountryCodesFromApiTraveler($traveler);
 
-                // Resolve destination codes to names
-                $destinations = collect($traveler['destinations'] ?? [])
+                // Resolve destination codes to names (fallback to cruise port_call countries)
+                $destinationCodes = $traveler['destinations'] ?? [];
+                if (empty($destinationCodes) && ! empty($traveler['cruise_compass']) && isset($traveler['cruise']['port_calls']) && is_array($traveler['cruise']['port_calls'])) {
+                    foreach ($traveler['cruise']['port_calls'] as $pc) {
+                        $code = $pc['port']['country']['code'] ?? null;
+                        if ($code) {
+                            $destinationCodes[] = strtoupper($code);
+                        }
+                    }
+                    $destinationCodes = array_unique($destinationCodes);
+                }
+                $destinations = collect($destinationCodes)
                     ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
                     ->values()->toArray();
 
@@ -181,6 +202,16 @@ class RiskOverviewService
             foreach ($traveler['destinations_list'] as $dest) {
                 if (isset($dest['code'])) {
                     $countryCodes[] = strtoupper($dest['code']);
+                }
+            }
+        }
+
+        // From cruise port_calls (cruise trips have empty destinations)
+        if (! empty($traveler['cruise_compass']) && isset($traveler['cruise']['port_calls']) && is_array($traveler['cruise']['port_calls'])) {
+            foreach ($traveler['cruise']['port_calls'] as $portCall) {
+                $code = $portCall['port']['country']['code'] ?? null;
+                if ($code) {
+                    $countryCodes[] = strtoupper($code);
                 }
             }
         }
@@ -813,8 +844,18 @@ class RiskOverviewService
             $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
                 $codes = $t['destinations'] ?? [];
                 $nationalities = $t['nationalities'] ?? [];
+                // Include cruise port_call country codes
+                $cruiseCodes = [];
+                if (! empty($t['cruise_compass']) && isset($t['cruise']['port_calls']) && is_array($t['cruise']['port_calls'])) {
+                    foreach ($t['cruise']['port_calls'] as $pc) {
+                        $code = $pc['port']['country']['code'] ?? null;
+                        if ($code) {
+                            $cruiseCodes[] = strtoupper($code);
+                        }
+                    }
+                }
 
-                return array_merge($codes, $nationalities);
+                return array_merge($codes, $nationalities, $cruiseCodes);
             })->unique()->values()->toArray();
 
             $countryNames = Country::whereIn('iso_code', $allIsoCodes)
@@ -829,7 +870,18 @@ class RiskOverviewService
                 $tripId = $traveler['tid'] ?? $traveler['id'] ?? uniqid();
                 $countryCodes = $this->extractCountryCodesFromApiTraveler($traveler);
 
-                $destinations = collect($traveler['destinations'] ?? [])
+                // Resolve destination codes to names (fallback to cruise port_call countries)
+                $destinationCodes = $traveler['destinations'] ?? [];
+                if (empty($destinationCodes) && ! empty($traveler['cruise_compass']) && isset($traveler['cruise']['port_calls']) && is_array($traveler['cruise']['port_calls'])) {
+                    foreach ($traveler['cruise']['port_calls'] as $pc) {
+                        $code = $pc['port']['country']['code'] ?? null;
+                        if ($code) {
+                            $destinationCodes[] = strtoupper($code);
+                        }
+                    }
+                    $destinationCodes = array_unique($destinationCodes);
+                }
+                $destinations = collect($destinationCodes)
                     ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
                     ->values()->toArray();
 
