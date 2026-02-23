@@ -224,14 +224,20 @@ class RiskOverviewService
      * Get aggregated risk data grouped by country.
      * Returns countries with active events and affected travelers count.
      */
-    public function getAggregatedRiskData(int $customerId, ?string $priorityFilter = null, int $daysAhead = 30): array
+    public function getAggregatedRiskData(int $customerId, ?string $priorityFilter = null, int $daysAhead = 30, ?int $labelId = null): array
     {
-        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$daysAhead}";
+        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$daysAhead}_{$labelId}";
         $cacheDuration = config('feed.cache_duration', 300); // 5 minutes default
 
-        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $daysAhead) {
+        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $daysAhead, $labelId) {
             // Get all active events
             $events = $this->gtmEventService->getActiveEvents($priorityFilter);
+
+            // Filter events by label if specified
+            if ($labelId) {
+                $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+                $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
+            }
 
             // Group events by country
             $countriesData = $this->groupEventsByCountry($events);
@@ -252,14 +258,20 @@ class RiskOverviewService
     /**
      * Get aggregated risk data grouped by country with custom date range.
      */
-    public function getAggregatedRiskDataByDateRange(int $customerId, string $dateFrom, ?string $dateTo = null, ?string $priorityFilter = null): array
+    public function getAggregatedRiskDataByDateRange(int $customerId, string $dateFrom, ?string $dateTo = null, ?string $priorityFilter = null, ?int $labelId = null): array
     {
-        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$dateFrom}_{$dateTo}";
+        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$dateFrom}_{$dateTo}_{$labelId}";
         $cacheDuration = config('feed.cache_duration', 300);
 
-        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $dateFrom, $dateTo) {
+        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $dateFrom, $dateTo, $labelId) {
             // Get all active events
             $events = $this->gtmEventService->getActiveEvents($priorityFilter);
+
+            // Filter events by label if specified
+            if ($labelId) {
+                $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+                $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
+            }
 
             // Group events by country
             $countriesData = $this->groupEventsByCountry($events);
@@ -578,10 +590,16 @@ class RiskOverviewService
     /**
      * Get detailed risk information for a specific country.
      */
-    public function getCountryRiskDetails(int $customerId, string $countryCode, int $daysAhead = 30): array
+    public function getCountryRiskDetails(int $customerId, string $countryCode, int $daysAhead = 30, ?int $labelId = null): array
     {
         // Get events for this country
         $events = $this->gtmEventService->getActiveEvents(null, $countryCode);
+
+        // Filter events by label if specified
+        if ($labelId) {
+            $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+            $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
+        }
 
         // Get travelers in this country
         $travelers = $this->getTravelersInCountry($customerId, $countryCode, $daysAhead);
@@ -620,10 +638,16 @@ class RiskOverviewService
     /**
      * Get detailed risk information for a specific country with custom date range.
      */
-    public function getCountryRiskDetailsByDateRange(int $customerId, string $countryCode, string $dateFrom, ?string $dateTo = null): array
+    public function getCountryRiskDetailsByDateRange(int $customerId, string $countryCode, string $dateFrom, ?string $dateTo = null, ?int $labelId = null): array
     {
         // Get events for this country
         $events = $this->gtmEventService->getActiveEvents(null, $countryCode);
+
+        // Filter events by label if specified
+        if ($labelId) {
+            $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+            $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
+        }
 
         // Get travelers in this country
         $travelers = $this->getTravelersInCountryByDateRange($customerId, $countryCode, $dateFrom, $dateTo);

@@ -116,6 +116,13 @@ $version = '1.0.0';
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-700">Nur
                                                 betroffen</span>
                                         </template>
+                                        <template x-if="filters.label">
+                                            <span
+                                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">
+                                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
+                                                <span x-text="availableLabels.find(l => l.id == filters.label)?.name || 'Label'"></span>
+                                            </span>
+                                        </template>
                                     </span>
                                     <i class="fa-regular fa-chevron-right shrink-0 transition-transform duration-200"
                                         :class="{ 'rotate-180': showTripFilters }"></i>
@@ -268,6 +275,13 @@ $version = '1.0.0';
                                             <span
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700"
                                                 x-text="filters.country"></span>
+                                        </template>
+                                        <template x-if="filters.label">
+                                            <span
+                                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">
+                                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
+                                                <span x-text="availableLabels.find(l => l.id == filters.label)?.name || 'Label'"></span>
+                                            </span>
                                         </template>
                                     </span>
                                     <i class="fa-regular fa-chevron-right shrink-0 transition-transform duration-200"
@@ -453,6 +467,24 @@ $version = '1.0.0';
                         <x-risk-overview.day-range-buttons callback="applyFilters()"
                             tooltip-text="Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden." />
 
+                        <!-- Label Filter -->
+                        <div class="mb-4" x-show="availableLabels.length > 0">
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Label</label>
+                            <div class="relative">
+                                <select x-model="filters.label"
+                                    class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                    <option :value="null">Alle Labels</option>
+                                    <template x-for="label in availableLabels" :key="label.id">
+                                        <option :value="label.id" x-text="label.name"></option>
+                                    </template>
+                                </select>
+                                <template x-if="filters.label">
+                                    <span class="absolute right-8 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full"
+                                        :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
+                                </template>
+                            </div>
+                        </div>
+
                         <!-- Only with events filter -->
                         <div class="mb-4">
                             <label class="flex items-center gap-2 cursor-pointer">
@@ -501,6 +533,24 @@ $version = '1.0.0';
                                         <option :value="country.country.code" x-text="country.country.name"></option>
                                     </template>
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- Label Filter -->
+                        <div class="mb-4" x-show="availableLabels.length > 0">
+                            <label class="text-xs font-medium text-gray-700 mb-2 block">Label</label>
+                            <div class="relative">
+                                <select x-model="filters.label"
+                                    class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                    <option :value="null">Alle Labels</option>
+                                    <template x-for="label in availableLabels" :key="label.id">
+                                        <option :value="label.id" x-text="label.name"></option>
+                                    </template>
+                                </select>
+                                <template x-if="filters.label">
+                                    <span class="absolute right-8 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full"
+                                        :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
+                                </template>
                             </div>
                         </div>
 

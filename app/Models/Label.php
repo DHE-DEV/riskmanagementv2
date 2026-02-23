@@ -131,6 +131,21 @@ class Label extends BaseCustomerModel
         return $result;
     }
 
+    /**
+     * Get event IDs that have a specific label for a customer.
+     */
+    public static function eventIdsForLabel(int $customerId, int $labelId): array
+    {
+        return \Illuminate\Support\Facades\DB::table('custom_event_label')
+            ->join('labels', 'labels.id', '=', 'custom_event_label.label_id')
+            ->where('labels.customer_id', $customerId)
+            ->where('custom_event_label.label_id', $labelId)
+            ->pluck('custom_event_label.custom_event_id')
+            ->unique()
+            ->values()
+            ->toArray();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

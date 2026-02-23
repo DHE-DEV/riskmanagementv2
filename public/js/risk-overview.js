@@ -26,7 +26,9 @@ function riskOverviewApp() {
             customDateRange: false,
             dateFrom: '',
             dateTo: '',
+            label: null,
         },
+        availableLabels: [],
         filterOpen: false,
         showTripFilters: false,
         showCountryFilters: false,
@@ -87,7 +89,19 @@ function riskOverviewApp() {
             } else {
                 params.append('days', this.filters.days);
             }
+            if (this.filters.label) {
+                params.append('label', this.filters.label);
+            }
             return params;
+        },
+
+        async loadAvailableLabels() {
+            try {
+                const resp = await fetch(`${window.__riskOverviewConfig.routes.labelsSearch}?q=`);
+                this.availableLabels = await resp.json();
+            } catch (e) {
+                console.error('Error loading available labels', e);
+            }
         },
 
         toggleMaximize(section) {
@@ -325,6 +339,10 @@ function riskOverviewApp() {
             if (this.filters.onlyWithEvents) {
                 result = result.filter(t => t.total_events > 0);
             }
+            if (this.filters.label) {
+                const labelId = parseInt(this.filters.label);
+                result = result.filter(t => t.labels && t.labels.some(l => l.id === labelId));
+            }
 
             // Filter by travel date overlap (skip for "Alle" = -1)
             if (this.filters.days !== -1) {
@@ -423,6 +441,7 @@ function riskOverviewApp() {
                 this.initMap();
                 this.loadData();
                 this.loadTrips();
+                this.loadAvailableLabels();
 
                 // Lazy-load: reload stale data when switching sidebar tabs
                 this.$watch('sidebarTab', (newTab) => {
@@ -453,6 +472,14 @@ function riskOverviewApp() {
                 this.$watch('filters.country', () => {
                     this.updateMapMarkers();
                     this.reselectCountryIfNeeded();
+                });
+
+                this.$watch('filters.label', () => {
+                    if (this.sidebarTab === 'laender') {
+                        this.loadData();
+                    } else {
+                        this.countriesStale = true;
+                    }
                 });
 
                 // Watch for tab changes to invalidate map size
@@ -718,6 +745,7 @@ function riskOverviewApp() {
                 customDateRange: false,
                 dateFrom: '',
                 dateTo: '',
+                label: null,
             };
         },
 

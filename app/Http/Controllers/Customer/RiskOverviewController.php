@@ -75,6 +75,8 @@ class RiskOverviewController extends Controller
             $priorityFilter = null;
         }
 
+        $labelId = $request->input('label') ? (int) $request->input('label') : null;
+
         // Check for custom date range
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
@@ -85,7 +87,8 @@ class RiskOverviewController extends Controller
                 $customer->id,
                 $dateFrom,
                 $dateTo,
-                $priorityFilter
+                $priorityFilter,
+                $labelId
             );
 
             $response = [
@@ -95,6 +98,7 @@ class RiskOverviewController extends Controller
                     'priority' => $priorityFilter,
                     'date_from' => $dateFrom,
                     'date_to' => $dateTo,
+                    'label' => $labelId,
                 ],
             ];
 
@@ -120,7 +124,8 @@ class RiskOverviewController extends Controller
         $data = $this->riskOverviewService->getAggregatedRiskData(
             $customer->id,
             $priorityFilter,
-            $daysAhead
+            $daysAhead,
+            $labelId
         );
 
         $response = [
@@ -249,6 +254,8 @@ class RiskOverviewController extends Controller
             $this->riskOverviewService->enablePdsDebug();
         }
 
+        $labelId = $request->input('label') ? (int) $request->input('label') : null;
+
         // Check for custom date range
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
@@ -258,7 +265,8 @@ class RiskOverviewController extends Controller
                 $customer->id,
                 $countryCode,
                 $dateFrom,
-                $dateTo
+                $dateTo,
+                $labelId
             );
 
             $response = [
@@ -288,7 +296,8 @@ class RiskOverviewController extends Controller
         $data = $this->riskOverviewService->getCountryRiskDetails(
             $customer->id,
             $countryCode,
-            $daysAhead
+            $daysAhead,
+            $labelId
         );
 
         $response = [
