@@ -47,12 +47,19 @@ function riskOverviewApp() {
         countriesStale: false,
         filterDebounceTimer: null,
 
-        // Labels
+        // Labels (trips)
         labelInput: '',
         labelSuggestions: [],
         labelLoading: false,
         showLabelSuggestions: false,
         labelDebounceTimer: null,
+
+        // Labels (events)
+        eventLabelInput: '',
+        eventLabelSuggestions: [],
+        eventLabelLoading: false,
+        showEventLabelSuggestions: false,
+        eventLabelDebounceTimer: null,
 
         async fetchApi(endpoint, options = {}) {
             const headers = {
@@ -133,17 +140,25 @@ function riskOverviewApp() {
         },
 
         async attachLabel(labelId, labelName) {
-            if (!this.selectedTrip?.folder_id || this.selectedTrip.source === 'api') return;
+            if (!this.selectedTrip) return;
             try {
                 const body = labelId ? { label_id: labelId } : { name: labelName };
-                const data = await this.fetchApi(`/risk-overview/folder/${this.selectedTrip.folder_id}/labels`, {
+                let url;
+                if (this.selectedTrip.source === 'api') {
+                    const pdsTid = this.selectedTrip.pds_tid || this.selectedTrip.trip_id;
+                    if (!pdsTid) return;
+                    url = `/risk-overview/pds-trip/${encodeURIComponent(pdsTid)}/labels`;
+                } else {
+                    if (!this.selectedTrip.folder_id) return;
+                    url = `/risk-overview/folder/${this.selectedTrip.folder_id}/labels`;
+                }
+                const data = await this.fetchApi(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
                 });
                 if (data.success) {
                     this.selectedTrip.labels = data.labels;
-                    // Also update in trips array
                     const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
                     if (idx !== -1) this.trips[idx].labels = data.labels;
                 }
@@ -156,9 +171,18 @@ function riskOverviewApp() {
         },
 
         async detachLabel(labelId) {
-            if (!this.selectedTrip?.folder_id || this.selectedTrip.source === 'api') return;
+            if (!this.selectedTrip) return;
             try {
-                const data = await this.fetchApi(`/risk-overview/folder/${this.selectedTrip.folder_id}/labels/${labelId}`, {
+                let url;
+                if (this.selectedTrip.source === 'api') {
+                    const pdsTid = this.selectedTrip.pds_tid || this.selectedTrip.trip_id;
+                    if (!pdsTid) return;
+                    url = `/risk-overview/pds-trip/${encodeURIComponent(pdsTid)}/labels/${labelId}`;
+                } else {
+                    if (!this.selectedTrip.folder_id) return;
+                    url = `/risk-overview/folder/${this.selectedTrip.folder_id}/labels/${labelId}`;
+                }
+                const data = await this.fetchApi(url, {
                     method: 'DELETE',
                 });
                 if (data.success) {
@@ -180,6 +204,94 @@ function riskOverviewApp() {
                 this.attachLabel(match.id, null);
             } else {
                 this.attachLabel(null, name);
+            }
+        },
+
+        searchEventLabels() {
+            clearTimeout(this.eventLabelDebounceTimer);
+            if (this.eventLabelInput.trim().length === 0) {
+                this.eventLabelSuggestions = [];
+                this.showEventLabelSuggestions = false;
+                return;
+            }
+            this.eventLabelDebounceTimer = setTimeout(async () => {
+                this.eventLabelLoading = true;
+                try {
+                    const resp = await fetch(`${window.__riskOverviewConfig.routes.labelsSearch}?q=${encodeURIComponent(this.eventLabelInput.trim())}`);
+                    const data = await resp.json();
+                    const existingIds = (this.selectedEvent?.labels || []).map(l => l.id);
+                    this.eventLabelSuggestions = data.filter(l => !existingIds.includes(l.id));
+                    this.showEventLabelSuggestions = true;
+                } catch (e) {
+                    console.error('Event label search error', e);
+                } finally {
+                    this.eventLabelLoading = false;
+                }
+            }, 250);
+        },
+
+        async attachEventLabel(labelId, labelName) {
+            if (!this.selectedEvent) return;
+            try {
+                const body = labelId ? { label_id: labelId } : { name: labelName };
+                const url = `/risk-overview/event/${this.selectedEvent.id}/labels`;
+                const data = await this.fetchApi(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                if (data.success) {
+                    this.selectedEvent.labels = data.labels;
+                    // Update labels in trips data and country details
+                    this.updateEventLabelsEverywhere(this.selectedEvent.id, data.labels);
+                }
+            } catch (e) {
+                console.error('Attach event label error', e);
+            }
+            this.eventLabelInput = '';
+            this.eventLabelSuggestions = [];
+            this.showEventLabelSuggestions = false;
+        },
+
+        async detachEventLabel(labelId) {
+            if (!this.selectedEvent) return;
+            try {
+                const url = `/risk-overview/event/${this.selectedEvent.id}/labels/${labelId}`;
+                const data = await this.fetchApi(url, { method: 'DELETE' });
+                if (data.success) {
+                    this.selectedEvent.labels = data.labels;
+                    this.updateEventLabelsEverywhere(this.selectedEvent.id, data.labels);
+                }
+            } catch (e) {
+                console.error('Detach event label error', e);
+            }
+        },
+
+        addEventLabelFromInput() {
+            const name = this.eventLabelInput.trim();
+            if (!name) return;
+            const match = this.eventLabelSuggestions.find(l => l.name.toLowerCase() === name.toLowerCase());
+            if (match) {
+                this.attachEventLabel(match.id, null);
+            } else {
+                this.attachEventLabel(null, name);
+            }
+        },
+
+        updateEventLabelsEverywhere(eventId, labels) {
+            // Update in trips
+            this.trips.forEach(trip => {
+                if (trip.events) {
+                    trip.events.forEach(ev => {
+                        if (ev.id === eventId) ev.labels = labels;
+                    });
+                }
+            });
+            // Update in country details
+            if (this.countryDetails?.events) {
+                this.countryDetails.events.forEach(ev => {
+                    if (ev.id === eventId) ev.labels = labels;
+                });
             }
         },
 
@@ -551,6 +663,9 @@ function riskOverviewApp() {
         openEventModal(event) {
             this.selectedEvent = event;
             this.showEventModal = true;
+            this.eventLabelInput = '';
+            this.eventLabelSuggestions = [];
+            this.showEventLabelSuggestions = false;
             document.body.style.overflow = 'hidden';
         },
 

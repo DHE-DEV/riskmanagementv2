@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Services\CustomerFeatureService;
@@ -402,6 +403,181 @@ class RiskOverviewController extends Controller
         $folder->labels()->detach($labelId);
 
         $labels = $folder->labels()->get(['labels.id', 'name', 'color', 'icon']);
+
+        return response()->json([
+            'success' => true,
+            'labels' => $labels,
+        ]);
+    }
+
+    /**
+     * Attach a label to a PDS API trip (create label if new).
+     */
+    public function attachPdsTripLabel(Request $request, string $pdsTid): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $labelName = trim($request->input('name', ''));
+        $labelId = $request->input('label_id');
+
+        if ($labelId) {
+            $label = Label::where('customer_id', $customer->id)->where('id', $labelId)->first();
+        } else {
+            if (empty($labelName)) {
+                return response()->json(['success' => false, 'message' => 'Label-Name erforderlich'], 422);
+            }
+
+            $label = Label::where('customer_id', $customer->id)
+                ->where('name', $labelName)
+                ->first();
+
+            if (! $label) {
+                $label = Label::create([
+                    'customer_id' => $customer->id,
+                    'name' => $labelName,
+                ]);
+            }
+        }
+
+        if (! $label) {
+            return response()->json(['success' => false, 'message' => 'Label nicht gefunden'], 404);
+        }
+
+        \Illuminate\Support\Facades\DB::table('pds_trip_label')->updateOrInsert(
+            [
+                'customer_id' => $customer->id,
+                'pds_tid' => $pdsTid,
+                'label_id' => $label->id,
+            ],
+            [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        $labels = Label::forPdsTrip($customer->id, $pdsTid)
+            ->map(fn ($l) => ['id' => $l->id, 'name' => $l->name, 'color' => $l->color, 'icon' => $l->icon]);
+
+        return response()->json([
+            'success' => true,
+            'labels' => $labels->values(),
+        ]);
+    }
+
+    /**
+     * Detach a label from a PDS API trip.
+     */
+    public function detachPdsTripLabel(string $pdsTid, string $labelId): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        \Illuminate\Support\Facades\DB::table('pds_trip_label')
+            ->where('customer_id', $customer->id)
+            ->where('pds_tid', $pdsTid)
+            ->where('label_id', $labelId)
+            ->delete();
+
+        $labels = Label::forPdsTrip($customer->id, $pdsTid)
+            ->map(fn ($l) => ['id' => $l->id, 'name' => $l->name, 'color' => $l->color, 'icon' => $l->icon]);
+
+        return response()->json([
+            'success' => true,
+            'labels' => $labels->values(),
+        ]);
+    }
+
+    /**
+     * Attach a label to a custom event (create label if new).
+     */
+    public function attachEventLabel(Request $request, int $eventId): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $event = CustomEvent::find($eventId);
+
+        if (! $event) {
+            return response()->json(['success' => false, 'message' => 'Ereignis nicht gefunden'], 404);
+        }
+
+        $labelName = trim($request->input('name', ''));
+        $labelId = $request->input('label_id');
+
+        if ($labelId) {
+            $label = Label::where('customer_id', $customer->id)->where('id', $labelId)->first();
+        } else {
+            if (empty($labelName)) {
+                return response()->json(['success' => false, 'message' => 'Label-Name erforderlich'], 422);
+            }
+
+            $label = Label::where('customer_id', $customer->id)
+                ->where('name', $labelName)
+                ->first();
+
+            if (! $label) {
+                $label = Label::create([
+                    'customer_id' => $customer->id,
+                    'name' => $labelName,
+                ]);
+            }
+        }
+
+        if (! $label) {
+            return response()->json(['success' => false, 'message' => 'Label nicht gefunden'], 404);
+        }
+
+        $event->labels()->syncWithoutDetaching([$label->id]);
+
+        // Return only this customer's labels for the event
+        $labels = $event->labels()
+            ->where('labels.customer_id', $customer->id)
+            ->get(['labels.id', 'name', 'color', 'icon']);
+
+        return response()->json([
+            'success' => true,
+            'labels' => $labels,
+        ]);
+    }
+
+    /**
+     * Detach a label from a custom event.
+     */
+    public function detachEventLabel(int $eventId, string $labelId): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $event = CustomEvent::find($eventId);
+
+        if (! $event) {
+            return response()->json(['success' => false, 'message' => 'Ereignis nicht gefunden'], 404);
+        }
+
+        // Only detach if the label belongs to this customer
+        $label = Label::where('customer_id', $customer->id)->where('id', $labelId)->first();
+
+        if ($label) {
+            $event->labels()->detach($label->id);
+        }
+
+        // Return only this customer's labels for the event
+        $labels = $event->labels()
+            ->where('labels.customer_id', $customer->id)
+            ->get(['labels.id', 'name', 'color', 'icon']);
 
         return response()->json([
             'success' => true,

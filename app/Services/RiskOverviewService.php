@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
+use App\Models\Label;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -549,7 +550,7 @@ class RiskOverviewService
     /**
      * Format a single event into an array for API responses.
      */
-    protected function formatEvent(CustomEvent $event): array
+    protected function formatEvent(CustomEvent $event, array $labels = []): array
     {
         return [
             'id' => $event->id,
@@ -568,6 +569,7 @@ class RiskOverviewService
             'radius_km' => $event->radius_km ?? null,
             'data_source' => $event->data_source,
             'tags' => $event->tags,
+            'labels' => $labels,
             'created_at' => $event->created_at?->format('Y-m-d'),
             'updated_at' => $event->updated_at?->format('Y-m-d'),
         ];
@@ -584,8 +586,12 @@ class RiskOverviewService
         // Get travelers in this country
         $travelers = $this->getTravelersInCountry($customerId, $countryCode, $daysAhead);
 
+        // Batch-load labels for events
+        $eventIds = $events->pluck('id')->toArray();
+        $labelsByEvent = Label::forCustomEvents($customerId, $eventIds);
+
         // Format events
-        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event))->values()->toArray();
+        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event, $labelsByEvent[$event->id] ?? []))->values()->toArray();
 
         // Get country info
         $country = Country::where('iso_code', $countryCode)
@@ -622,8 +628,12 @@ class RiskOverviewService
         // Get travelers in this country
         $travelers = $this->getTravelersInCountryByDateRange($customerId, $countryCode, $dateFrom, $dateTo);
 
+        // Batch-load labels for events
+        $eventIds = $events->pluck('id')->toArray();
+        $labelsByEvent = Label::forCustomEvents($customerId, $eventIds);
+
         // Format events
-        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event))->values()->toArray();
+        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event, $labelsByEvent[$event->id] ?? []))->values()->toArray();
 
         // Get country info
         $country = Country::where('iso_code', $countryCode)
@@ -891,6 +901,7 @@ class RiskOverviewService
 
                 $tripsByTripId[$tripId] = [
                     'trip_id' => $tripId,
+                    'pds_tid' => $tripId,
                     'folder_id' => 'api-'.$tripId,
                     'folder_name' => $traveler['trip_name'] ?? 'Unbenannte Reise',
                     'start_date' => $traveler['start_date'] ?? null,
@@ -902,6 +913,19 @@ class RiskOverviewService
                     'source' => 'api',
                     'source_label' => 'PDS API',
                 ];
+            }
+
+            // Load labels for API trips
+            if (!empty($tripsByTripId)) {
+                $customer = $customer ?? null;
+                if ($customer) {
+                    $pdsTids = array_keys($tripsByTripId);
+                    $labelsByTid = \App\Models\Label::forPdsTrips($customer->id, $pdsTids);
+                    foreach ($tripsByTripId as $tid => &$trip) {
+                        $trip['labels'] = $labelsByTid[$tid] ?? [];
+                    }
+                    unset($trip);
+                }
             }
 
             return $tripsByTripId;
@@ -956,7 +980,11 @@ class RiskOverviewService
         // 1. Get all active events
         $events = $this->gtmEventService->getActiveEvents($priorityFilter);
 
-        // 2. Index events by country code
+        // 2. Batch-load labels for events
+        $eventIds = $events->pluck('id')->toArray();
+        $labelsByEvent = Label::forCustomEvents($customerId, $eventIds);
+
+        // 3. Index events by country code
         $eventsByCountry = [];
         foreach ($events as $event) {
             $eventCountries = [];
@@ -980,7 +1008,7 @@ class RiskOverviewService
                 }
             }
 
-            $formatted = $this->formatEvent($event);
+            $formatted = $this->formatEvent($event, $labelsByEvent[$event->id] ?? []);
 
             foreach ($eventCountries as $country) {
                 $code = $country->iso_code;
@@ -1007,7 +1035,7 @@ class RiskOverviewService
             }
         }
 
-        // 3. Collect all trips (local folders + API)
+        // 4. Collect all trips (local folders + API)
         $trips = [];
 
         // Local folders
@@ -1079,6 +1107,7 @@ class RiskOverviewService
                     : [],
                 'source' => 'local',
                 'source_label' => 'Lokal importiert',
+                'pds_tid' => null,
             ];
         }
 
@@ -1097,7 +1126,7 @@ class RiskOverviewService
             }
         }
 
-        // 4. Match events to trips (by country AND date overlap)
+        // 5. Match events to trips (by country AND date overlap)
         $tripsWithEvents = [];
         $totalEventsAcrossTrips = 0;
         $tripsWithEventsCount = 0;
@@ -1183,7 +1212,7 @@ class RiskOverviewService
             }
         }
 
-        // 5. Sort: highest priority first, then event count, trips without events last
+        // 6. Sort: highest priority first, then event count, trips without events last
         usort($tripsWithEvents, function ($a, $b) {
             $priorityOrder = ['high' => 4, 'medium' => 3, 'low' => 2, 'info' => 1];
             $aPriority = $priorityOrder[$a['highest_priority']] ?? 0;

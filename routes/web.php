@@ -349,6 +349,22 @@ Route::delete('/risk-overview/folder/{folderId}/labels/{labelId}', [\App\Http\Co
     ->middleware('auth:customer')
     ->name('risk-overview.folder.labels.detach');
 
+Route::post('/risk-overview/pds-trip/{pdsTid}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachPdsTripLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.pds-trip.labels.attach');
+
+Route::delete('/risk-overview/pds-trip/{pdsTid}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachPdsTripLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.pds-trip.labels.detach');
+
+Route::post('/risk-overview/event/{eventId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachEventLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.event.labels.attach');
+
+Route::delete('/risk-overview/event/{eventId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachEventLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.event.labels.detach');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

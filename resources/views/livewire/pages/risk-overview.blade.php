@@ -1725,7 +1725,7 @@ $version = '1.0.0';
                                         </div>
 
                                         <!-- Labels -->
-                                        <div class="mt-4" x-show="selectedTrip.source !== 'api'">
+                                        <div class="mt-4">
                                             <p class="text-xs font-medium text-gray-700 mb-2">Labels</p>
                                             <div class="flex flex-wrap gap-1.5 mb-2">
                                                 <template x-for="label in (selectedTrip.labels || [])" :key="label.id">
@@ -1918,7 +1918,7 @@ $version = '1.0.0';
                                             </div>
 
                                             <!-- Labels -->
-                                            <div class="mt-3" x-show="selectedTrip.source !== 'api'">
+                                            <div class="mt-3">
                                                 <p class="text-[10px] font-medium text-gray-500 mb-1">Labels</p>
                                                 <div class="flex flex-wrap gap-1 mb-1.5">
                                                     <template x-for="label in (selectedTrip.labels || [])"
@@ -2377,6 +2377,55 @@ $version = '1.0.0';
                                 </div>
                             </div>
                         </template>
+
+                        <!-- Labels -->
+                        <div class="mb-6">
+                            <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Labels</h4>
+                            <div class="flex flex-wrap gap-1.5 mb-2">
+                                <template x-for="label in (selectedEvent?.labels || [])" :key="label.id">
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white"
+                                        :style="'background-color: ' + (label.color || '#6b7280')">
+                                        <i class="fa-regular text-[10px]" :class="label.icon" x-show="label.icon"></i>
+                                        <span x-text="label.name"></span>
+                                        <button @click.stop="detachEventLabel(label.id)"
+                                            class="ml-0.5 hover:opacity-70">
+                                            <i class="fa-regular fa-xmark text-[10px]"></i>
+                                        </button>
+                                    </span>
+                                </template>
+                            </div>
+                            <div class="relative">
+                                <input type="text" x-model="eventLabelInput" @input="searchEventLabels()"
+                                    @keydown.enter.prevent="addEventLabelFromInput()"
+                                    @focus="if (eventLabelInput.trim().length > 0) showEventLabelSuggestions = true"
+                                    @click.away="showEventLabelSuggestions = false"
+                                    placeholder="Label hinzufügen..."
+                                    class="w-full text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                <div x-show="showEventLabelSuggestions && (eventLabelSuggestions.length > 0 || eventLabelInput.trim().length > 0)"
+                                    x-cloak
+                                    class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                    <template x-for="suggestion in eventLabelSuggestions"
+                                        :key="suggestion.id">
+                                        <button @click="attachEventLabel(suggestion.id, null)"
+                                            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full flex-shrink-0"
+                                                :style="'background-color: ' + (suggestion.color || '#6b7280')"></span>
+                                            <span x-text="suggestion.name"></span>
+                                        </button>
+                                    </template>
+                                    <template
+                                        x-if="eventLabelInput.trim().length > 0 && !eventLabelSuggestions.some(s => s.name.toLowerCase() === eventLabelInput.trim().toLowerCase())">
+                                        <button @click="addEventLabelFromInput()"
+                                            class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100 text-blue-600">
+                                            <i class="fa-regular fa-plus text-[10px]"></i>
+                                            <span>"<span x-text="eventLabelInput.trim()"></span>"
+                                                erstellen</span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Modal Footer -->
