@@ -394,6 +394,13 @@ class VisumPointService
             $errors = [];
 
             foreach ($visaTypeIds as $typeId) {
+                // API may return nested arrays - extract string ID
+                if (is_array($typeId)) {
+                    $typeId = $typeId['VisaTypeID'] ?? $typeId['ID'] ?? reset($typeId);
+                }
+                if (!is_string($typeId) || empty($typeId)) {
+                    continue;
+                }
                 $detailsResult = $this->getVisaTypeDetails($typeId, $format);
 
                 if ($detailsResult['success']) {
@@ -416,6 +423,13 @@ class VisumPointService
                         $reqIds = $reqResult['data']['VisaRequirementIDs'] ?? [];
 
                         foreach ($reqIds as $reqId) {
+                            // API may return nested arrays - extract string ID
+                            if (is_array($reqId)) {
+                                $reqId = $reqId['VisaRequirementID'] ?? $reqId['ID'] ?? reset($reqId);
+                            }
+                            if (!is_string($reqId) || empty($reqId)) {
+                                continue;
+                            }
                             $reqDetails = $this->getVisaRequirementDetails($reqId, $format);
                             if ($reqDetails['success']) {
                                 $visaTypeData['requirements'][] = [
