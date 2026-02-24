@@ -8,9 +8,7 @@
             <div class="flex w-full max-w-md flex-col gap-6">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-md">
-                        <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
-                    </span>
+                    <img src="/logo.png" alt="Passolution" class="h-12 w-auto" />
                     <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
                 </a>
 
@@ -20,9 +18,9 @@
                         <div class="px-8 py-8 sm:px-10">
                             <!-- Header -->
                             <div class="flex w-full flex-col text-center mb-8">
-                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Create new password</h1>
+                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Neues Passwort erstellen</h1>
                                 <p class="text-sm text-stone-600 dark:text-stone-400">
-                                    Enter your new password below
+                                    Geben Sie Ihr neues Passwort ein
                                 </p>
                             </div>
 
@@ -34,7 +32,7 @@
                                 <!-- Email -->
                                 <div>
                                     <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                        Email address
+                                        E-Mail-Adresse
                                     </label>
                                     <input
                                         id="email"
@@ -55,7 +53,7 @@
                                 <!-- Password -->
                                 <div>
                                     <label for="password" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                        New password
+                                        Neues Passwort
                                     </label>
                                     <input
                                         id="password"
@@ -63,7 +61,7 @@
                                         name="password"
                                         required
                                         autocomplete="new-password"
-                                        placeholder="Create a strong password"
+                                        placeholder="Sicheres Passwort erstellen"
                                         class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                     >
                                     @error('password')
@@ -74,7 +72,7 @@
                                 <!-- Password Confirmation -->
                                 <div>
                                     <label for="password_confirmation" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                        Confirm new password
+                                        Neues Passwort bestätigen
                                     </label>
                                     <input
                                         id="password_confirmation"
@@ -82,7 +80,7 @@
                                         name="password_confirmation"
                                         required
                                         autocomplete="new-password"
-                                        placeholder="Confirm your password"
+                                        placeholder="Passwort bestätigen"
                                         class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                     >
                                     @error('password_confirmation')
@@ -95,7 +93,7 @@
                                     type="submit"
                                     class="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950"
                                 >
-                                    Reset password
+                                    Passwort zurücksetzen
                                 </button>
                             </form>
 
@@ -105,7 +103,7 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                                     </svg>
-                                    Back to login
+                                    Zurück zum Login
                                 </a>
                             </div>
                         </div>

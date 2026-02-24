@@ -8,9 +8,7 @@
             <div class="flex w-full max-w-md flex-col gap-6">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-md">
-                        <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
-                    </span>
+                    <img src="/logo.png" alt="Passolution" class="h-12 w-auto" />
                     <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
                 </a>
 
@@ -20,9 +18,9 @@
                         <div class="px-8 py-8 sm:px-10">
                             <!-- Header -->
                             <div class="flex w-full flex-col text-center mb-8">
-                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Reset password</h1>
+                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Passwort zurücksetzen</h1>
                                 <p class="text-sm text-stone-600 dark:text-stone-400">
-                                    Enter your email address and we'll send you a link to reset your password
+                                    Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts
                                 </p>
                             </div>
 
@@ -40,7 +38,7 @@
                                 <!-- Email -->
                                 <div>
                                     <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                        Email address
+                                        E-Mail-Adresse
                                     </label>
                                     <input
                                         id="email"
@@ -63,7 +61,7 @@
                                     type="submit"
                                     class="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950"
                                 >
-                                    Send reset link
+                                    Link zum Zurücksetzen senden
                                 </button>
                             </form>
 
@@ -73,7 +71,7 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                                     </svg>
-                                    Back to login
+                                    Zurück zum Login
                                 </a>
                             </div>
                         </div>
@@ -81,9 +79,9 @@
 
                     <!-- Help Text -->
                     <div class="text-center text-sm text-stone-600 dark:text-stone-400">
-                        Don't have an account?
+                        Noch kein Konto?
                         <a href="{{ route('customer.register') }}" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                            Create account
+                            Konto erstellen
                         </a>
                     </div>
                 </div>
