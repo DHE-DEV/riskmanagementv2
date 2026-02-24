@@ -67,7 +67,10 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::resetPasswordView(function ($request) {
-            return view('customer.auth.reset-password', ['request' => $request]);
+            return view('customer.auth.reset-password', [
+                'token' => $request->route('token'),
+                'email' => $request->query('email'),
+            ]);
         });
 
         Fortify::verifyEmailView(function () {
