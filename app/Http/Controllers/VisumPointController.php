@@ -125,7 +125,7 @@ class VisumPointController extends Controller
      */
     protected function getCountries(): array
     {
-        return [
+        $countries = [
             'AF' => 'Afghanistan',
             'AL' => 'Albanien',
             'DZ' => 'Algerien',
@@ -323,5 +323,9 @@ class VisumPointController extends Controller
             'ZM' => 'Sambia',
             'ZW' => 'Simbabwe',
         ];
+
+        asort($countries);
+
+        return $countries;
     }
 }
