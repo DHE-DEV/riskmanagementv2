@@ -715,7 +715,16 @@
                         });
 
                         const data = await response.json();
-                        window.debugPanel?.log('/visumpoint/check', this.formData, data, performance.now() - fetchStart, data?.debug?.duration_ms);
+                        const visumpointCalls = (data.debugLog || []).map(entry => ({
+                            method: 'POST',
+                            url: entry.request?.url || 'VisumPoint API',
+                            status: entry.error ? 'ERR' : 200,
+                            duration_ms: null,
+                            request_body: entry.request?.bodyMasked || entry.request?.body,
+                            response_body: entry.response,
+                            error: entry.error
+                        }));
+                        window.debugPanel?.log('/visumpoint/check', this.formData, data, performance.now() - fetchStart, data?.debug?.duration_ms, visumpointCalls);
 
                         // Always capture debug log
                         if (data.debugLog) {

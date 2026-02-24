@@ -122,7 +122,7 @@
                         <template x-if="entry.pds_api_calls && entry.pds_api_calls.length > 0">
                             <div class="border-t border-gray-800 pt-2">
                                 <div class="text-purple-400 font-semibold mb-1.5">
-                                    PDS API <span class="text-gray-500 font-normal" x-text="'(' + entry.pds_api_calls.length + ' Calls)'"></span>
+                                    External API <span class="text-gray-500 font-normal" x-text="'(' + entry.pds_api_calls.length + ' Calls)'"></span>
                                 </div>
                                 <template x-for="(pds, pdsIdx) in entry.pds_api_calls" :key="pdsIdx">
                                     <div class="mb-2 bg-gray-950 border border-purple-900/40 rounded p-2">
