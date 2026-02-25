@@ -1,3 +1,5 @@
+@props(['hideLogin' => false])
+
 <header class="header">
     <div class="flex items-center justify-between h-full px-4">
         <!-- Logo -->
@@ -103,6 +105,7 @@
             @endauth
 
             @guest('customer')
+                @unless($hideLogin)
                 <!-- Login & Register Buttons -->
                 @if(config('app.customer_login_enabled', true))
                     <a
@@ -120,6 +123,7 @@
                         <i class="fas fa-user-plus mr-2"></i>Registrieren
                     </a>
                 @endif
+                @endunless
             @endguest
         </div>
     </div>

@@ -548,20 +548,6 @@
                         <span>Abmelden</span>
                     </button>
                 </form>
-            @else
-                @if(config('app.customer_login_enabled', true))
-                <a href="{{ route('customer.login') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
-                    <i class="fa-regular fa-sign-in w-6 text-center"></i>
-                    <span>Anmelden</span>
-                </a>
-                @endif
-
-                @if(config('app.customer_registration_enabled', true))
-                <a href="{{ route('customer.register') }}" class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100">
-                    <i class="fa-regular fa-user-plus w-6 text-center"></i>
-                    <span>Registrieren</span>
-                </a>
-                @endif
             @endauth
         </nav>
 
@@ -593,7 +579,7 @@
 
     <div class="app-container">
         <!-- Header -->
-        <x-public-header />
+        <x-public-header :hide-login="true" />
 
         <!-- Main Content -->
         <div class="main-content">
