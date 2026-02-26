@@ -242,8 +242,11 @@ class RiskOverviewService
             // Group events by country
             $countriesData = $this->groupEventsByCountry($events);
 
+            // Index event dates by country for overlap checking
+            $eventDatesByCountry = $this->indexEventDatesByCountry($events);
+
             // Get traveler counts for each country
-            $countriesData = $this->enrichWithTravelerCounts($countriesData, $customerId, $daysAhead);
+            $countriesData = $this->enrichWithTravelerCounts($countriesData, $customerId, $daysAhead, $eventDatesByCountry);
 
             // Calculate summary
             $summary = $this->calculateSummary($countriesData);
@@ -276,8 +279,11 @@ class RiskOverviewService
             // Group events by country
             $countriesData = $this->groupEventsByCountry($events);
 
+            // Index event dates by country for overlap checking
+            $eventDatesByCountry = $this->indexEventDatesByCountry($events);
+
             // Get traveler counts for each country with date range
-            $countriesData = $this->enrichWithTravelerCountsByDateRange($countriesData, $customerId, $dateFrom, $dateTo);
+            $countriesData = $this->enrichWithTravelerCountsByDateRange($countriesData, $customerId, $dateFrom, $dateTo, $eventDatesByCountry);
 
             // Calculate summary
             $summary = $this->calculateSummary($countriesData);
@@ -375,9 +381,89 @@ class RiskOverviewService
     }
 
     /**
+     * Index event dates by country code for overlap checking with trip dates.
+     */
+    protected function indexEventDatesByCountry(Collection $events): array
+    {
+        $eventsByCountry = [];
+
+        foreach ($events as $event) {
+            $eventCountries = [];
+
+            if ($event->country_id && $event->country) {
+                $eventCountries[] = $event->country;
+            }
+
+            if ($event->countries->isNotEmpty()) {
+                foreach ($event->countries as $country) {
+                    $alreadyAdded = false;
+                    foreach ($eventCountries as $ec) {
+                        if ($ec->id === $country->id) {
+                            $alreadyAdded = true;
+                            break;
+                        }
+                    }
+                    if (! $alreadyAdded) {
+                        $eventCountries[] = $country;
+                    }
+                }
+            }
+
+            foreach ($eventCountries as $country) {
+                $code = $country->iso_code;
+                if (! isset($eventsByCountry[$code])) {
+                    $eventsByCountry[$code] = [];
+                }
+                $eventsByCountry[$code][] = [
+                    'start_date' => $event->start_date,
+                    'end_date' => $event->end_date,
+                ];
+            }
+        }
+
+        return $eventsByCountry;
+    }
+
+    /**
+     * Check if any event in the list overlaps with the given trip date range.
+     */
+    protected function hasOverlappingEvent(array $countryEvents, ?\Carbon\Carbon $tripStart, ?\Carbon\Carbon $tripEnd): bool
+    {
+        // If trip has no dates, consider it as always overlapping
+        if (! $tripStart || ! $tripEnd) {
+            return true;
+        }
+
+        foreach ($countryEvents as $event) {
+            $eventStart = $event['start_date'];
+            $eventEnd = $event['end_date'];
+
+            // Events without dates are always included (ongoing/permanent events)
+            if (! $eventStart && ! $eventEnd) {
+                return true;
+            }
+
+            // If event has a start date that is after the trip ends, skip
+            if ($eventStart && $eventStart->gt($tripEnd)) {
+                continue;
+            }
+
+            // If event has an end date that is before the trip starts, skip
+            if ($eventEnd && $eventEnd->lt($tripStart)) {
+                continue;
+            }
+
+            // Overlap found
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Enrich country data with traveler counts from customer's folders and API.
      */
-    protected function enrichWithTravelerCounts(Collection $countriesData, int $customerId, int $daysAhead): Collection
+    protected function enrichWithTravelerCounts(Collection $countriesData, int $customerId, int $daysAhead, array $eventDatesByCountry = []): Collection
     {
         $today = now()->startOfDay();
         $endDate = $daysAhead === -1 ? null : $today->copy()->addDays($daysAhead);
@@ -410,12 +496,19 @@ class RiskOverviewService
         $data = $countriesData->all();
 
         // Count trips (folders) per country based on hotel/flight destinations
+        // Only count trips whose dates overlap with at least one event in that country
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
             foreach ($countryCodes as $countryCode) {
                 if (isset($data[$countryCode])) {
-                    $data[$countryCode]['affected_travelers'] += 1;
+                    if (empty($eventDatesByCountry) || $this->hasOverlappingEvent(
+                        $eventDatesByCountry[$countryCode] ?? [],
+                        $folder->travel_start_date,
+                        $folder->travel_end_date
+                    )) {
+                        $data[$countryCode]['affected_travelers'] += 1;
+                    }
                 }
             }
         }
@@ -431,7 +524,15 @@ class RiskOverviewService
 
             foreach ($apiTravelersByCountry as $countryCode => $travelers) {
                 if (isset($data[$countryCode])) {
-                    $data[$countryCode]['affected_travelers'] += count($travelers);
+                    foreach ($travelers as $traveler) {
+                        if (empty($eventDatesByCountry) || $this->hasOverlappingEvent(
+                            $eventDatesByCountry[$countryCode] ?? [],
+                            isset($traveler['start_date']) ? \Carbon\Carbon::parse($traveler['start_date'])->startOfDay() : null,
+                            isset($traveler['end_date']) ? \Carbon\Carbon::parse($traveler['end_date'])->endOfDay() : null
+                        )) {
+                            $data[$countryCode]['affected_travelers'] += 1;
+                        }
+                    }
                 }
             }
         }
@@ -442,7 +543,7 @@ class RiskOverviewService
     /**
      * Enrich country data with traveler counts using custom date range.
      */
-    protected function enrichWithTravelerCountsByDateRange(Collection $countriesData, int $customerId, string $dateFrom, ?string $dateTo = null): Collection
+    protected function enrichWithTravelerCountsByDateRange(Collection $countriesData, int $customerId, string $dateFrom, ?string $dateTo = null, array $eventDatesByCountry = []): Collection
     {
         $startDate = \Carbon\Carbon::parse($dateFrom)->startOfDay();
         $endDate = $dateTo ? \Carbon\Carbon::parse($dateTo)->endOfDay() : $startDate->copy()->addDays(30)->endOfDay();
@@ -464,12 +565,19 @@ class RiskOverviewService
         $data = $countriesData->all();
 
         // Count trips (folders) per country based on hotel/flight destinations
+        // Only count trips whose dates overlap with at least one event in that country
         foreach ($folders as $folder) {
             $countryCodes = $this->extractCountryCodesFromFolder($folder);
 
             foreach ($countryCodes as $countryCode) {
                 if (isset($data[$countryCode])) {
-                    $data[$countryCode]['affected_travelers'] += 1;
+                    if (empty($eventDatesByCountry) || $this->hasOverlappingEvent(
+                        $eventDatesByCountry[$countryCode] ?? [],
+                        $folder->travel_start_date,
+                        $folder->travel_end_date
+                    )) {
+                        $data[$countryCode]['affected_travelers'] += 1;
+                    }
                 }
             }
         }
@@ -485,7 +593,15 @@ class RiskOverviewService
 
             foreach ($apiTravelersByCountry as $countryCode => $travelers) {
                 if (isset($data[$countryCode])) {
-                    $data[$countryCode]['affected_travelers'] += count($travelers);
+                    foreach ($travelers as $traveler) {
+                        if (empty($eventDatesByCountry) || $this->hasOverlappingEvent(
+                            $eventDatesByCountry[$countryCode] ?? [],
+                            isset($traveler['start_date']) ? \Carbon\Carbon::parse($traveler['start_date'])->startOfDay() : null,
+                            isset($traveler['end_date']) ? \Carbon\Carbon::parse($traveler['end_date'])->endOfDay() : null
+                        )) {
+                            $data[$countryCode]['affected_travelers'] += 1;
+                        }
+                    }
                 }
             }
         }
