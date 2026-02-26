@@ -600,12 +600,14 @@ $version = '1.1.0';
                         <i class="fa-regular fa-map mr-2"></i>
                         Karte
                     </button>
+                    @if(($customer->email ?? '') === 'daniel.henninger@passolution.de')
                     <button @click="activeTab = 'trips'; if (!tripsLoaded) loadTrips();"
                         class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
                         :class="activeTab === 'trips' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
                         <i class="fa-regular fa-suitcase-rolling mr-2"></i>
                         Reisen
                     </button>
+                    @endif
                     <template x-if="isDebugUser">
                         <button @click="activeTab = 'debug'"
                             class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
@@ -1105,6 +1107,7 @@ $version = '1.1.0';
                 </div>
 
                 <!-- Trips View -->
+                @if(($customer->email ?? '') === 'daniel.henninger@passolution.de')
                 <div x-show="activeTab === 'trips'" x-cloak class="list-view flex-1 flex flex-col min-h-0">
                     <!-- Loading -->
                     <template x-if="loadingTrips">
@@ -1251,6 +1254,7 @@ $version = '1.1.0';
                         </div>
                     </template>
                 </div>
+                @endif
 
                 <!-- Map View -->
                 <div x-show="activeTab === 'map'" class="map-container flex-1 relative">
