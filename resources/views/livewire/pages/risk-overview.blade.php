@@ -671,6 +671,7 @@ $version = '1.0.0';
                                                             <h4 class="text-xs font-medium text-gray-800"
                                                                 x-text="event.title"></h4>
                                                             <x-risk-overview.priority-badge priority="event.priority" />
+                                                        </div>
                                                         <p class="text-xs text-gray-600 line-clamp-3"
                                                             x-text="event.description"></p>
                                                         <div
