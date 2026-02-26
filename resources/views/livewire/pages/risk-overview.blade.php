@@ -647,18 +647,18 @@ $version = '1.0.0';
                                 <x-risk-overview.loading-spinner class="flex-1" />
                             </template>
 
-                            <!-- Content - 50/50 Split -->
+                            <!-- Content - 50/50 Split (scrollable on small screens) -->
                             <template x-if="!loadingCountryDetails && countryDetails">
-                                <div class="flex-1 flex flex-col min-h-0">
-                                    <!-- Top: Events (50%) -->
-                                    <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
-                                        :class="maximizedSection === 'events' ? 'flex-1' : maximizedSection === 'travelers' ? 'flex-none h-[52px]' : 'flex-1'">
+                                <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
+                                    <!-- Top: Events -->
+                                    <div class="min-h-[250px] border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                                        :class="maximizedSection === 'events' ? 'flex-1' : maximizedSection === 'travelers' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                             title="Ereignisse" count-expression="countryDetails.events.length"
                                             maximize-section="events" />
                                         <div class="flex-1 overflow-y-auto p-4">
-                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
                                                     <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
                                                         @click="openEventModal(event)" :class="{
@@ -696,16 +696,16 @@ $version = '1.0.0';
                                         </div>
                                     </div>
 
-                                    <!-- Bottom: Travelers (50%) -->
-                                    <div class="min-h-0 overflow-hidden flex flex-col transition-all"
-                                        :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
+                                    <!-- Bottom: Travelers -->
+                                    <div class="min-h-[250px] overflow-hidden flex flex-col transition-all"
+                                        :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-users" icon-color="text-blue-500"
                                             title="Betroffene Reisen" count-expression="countryDetails.travelers.length"
                                             maximize-section="travelers"
                                             bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
                                         <div class="flex-1 overflow-y-auto p-4">
-                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                                                 <template x-for="traveler in countryDetails.travelers"
                                                     :key="traveler.folder_id">
                                                     <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
