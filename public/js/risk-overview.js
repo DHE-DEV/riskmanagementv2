@@ -48,6 +48,7 @@ function riskOverviewApp() {
         tripsLoaded: false,
         countriesStale: false,
         filterDebounceTimer: null,
+        selectedCountryEventId: null,
 
         // Labels (trips)
         labelInput: '',
@@ -652,6 +653,7 @@ function riskOverviewApp() {
 
         async selectCountry(country) {
             this.selectedCountry = country;
+            this.selectedCountryEventId = null;
             this.loadingCountryDetails = true;
             this.countryDetails = null;
             const fetchStart = performance.now();
@@ -685,6 +687,37 @@ function riskOverviewApp() {
             this.showCountrySidebar = false;
             this.selectedCountry = null;
             this.countryDetails = null;
+        },
+
+        filterTravelersByEvent(event) {
+            this.selectedCountryEventId = event.id;
+        },
+
+        clearCountryEventFilter() {
+            this.selectedCountryEventId = null;
+        },
+
+        getFilteredCountryTravelers() {
+            if (!this.countryDetails?.travelers) return [];
+            if (!this.selectedCountryEventId) return this.countryDetails.travelers;
+            const event = this.countryDetails.events?.find(e => e.id === this.selectedCountryEventId);
+            if (!event) return this.countryDetails.travelers;
+            const eventStart = new Date(event.start_date);
+            eventStart.setHours(0, 0, 0, 0);
+            const eventEnd = event.end_date ? new Date(event.end_date) : new Date(eventStart);
+            eventEnd.setHours(0, 0, 0, 0);
+            return this.countryDetails.travelers.filter(t => {
+                const tripStart = new Date(t.start_date);
+                tripStart.setHours(0, 0, 0, 0);
+                const tripEnd = new Date(t.end_date);
+                tripEnd.setHours(0, 0, 0, 0);
+                return tripStart <= eventEnd && tripEnd >= eventStart;
+            });
+        },
+
+        getSelectedCountryEvent() {
+            if (!this.selectedCountryEventId || !this.countryDetails?.events) return null;
+            return this.countryDetails.events.find(e => e.id === this.selectedCountryEventId) || null;
         },
 
         openEventModal(event) {
