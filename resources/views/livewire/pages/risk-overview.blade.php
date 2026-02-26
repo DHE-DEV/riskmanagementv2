@@ -1,6 +1,6 @@
 @php
 $active = 'risk-overview';
-$version = '1.0.0';
+$version = '1.1.0';
 @endphp
 <!DOCTYPE html>
 <html lang="de">
