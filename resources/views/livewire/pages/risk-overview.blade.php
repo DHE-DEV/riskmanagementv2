@@ -1698,10 +1698,10 @@ $version = '1.0.0';
                     <div class="flex-1 flex flex-col min-h-0">
 
                         <!-- ===== Tiles View ===== -->
-                        <div x-show="tripActiveTab === 'tiles'" class="flex-1 flex flex-col min-h-0">
+                        <div x-show="tripActiveTab === 'tiles'" class="flex-1 flex flex-col min-h-0 overflow-y-auto">
                             <!-- Top: Reisedetails -->
-                            <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
-                                :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="min-h-[250px] border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                                :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                 <x-risk-overview.section-header
                                     icon="fa-regular fa-suitcase-rolling" icon-color="text-blue-500"
                                     title="Reisedetails" maximize-section="tripDetails"
@@ -1828,8 +1828,8 @@ $version = '1.0.0';
                             </div>
 
                             <!-- Bottom: Ereignisse -->
-                            <div class="min-h-0 overflow-hidden flex flex-col transition-all"
-                                :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="min-h-[250px] overflow-hidden flex flex-col transition-all"
+                                :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                 <x-risk-overview.section-header
                                     icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                     title="Ereignisse" count-expression="filteredTripEvents.length"
@@ -1855,7 +1855,7 @@ $version = '1.0.0';
                                     </template>
                                 </x-risk-overview.section-header>
                                 <div class="flex-1 overflow-y-auto p-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                                         <template x-for="event in filteredTripEvents" :key="event.id">
                                             <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
                                                 @click="openEventModal(event)" :class="{
@@ -1900,10 +1900,10 @@ $version = '1.0.0';
                         </div>
 
                         <!-- ===== List View ===== -->
-                        <div x-show="tripActiveTab === 'list'" x-cloak class="flex-1 flex flex-col min-h-0">
+                        <div x-show="tripActiveTab === 'list'" x-cloak class="flex-1 flex flex-col min-h-0 overflow-y-auto">
                             <!-- Top: Reisedetails -->
-                            <div class="min-h-0 border-b border-gray-200 overflow-hidden flex flex-col transition-all"
-                                :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="min-h-[250px] border-b border-gray-200 overflow-hidden flex flex-col transition-all"
+                                :class="tripMaximizedSection === 'tripDetails' ? 'flex-1' : tripMaximizedSection === 'tripEvents' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                 <x-risk-overview.section-header
                                     icon="fa-regular fa-suitcase-rolling" icon-color="text-blue-500"
                                     title="Reisedetails" maximize-section="tripDetails"
@@ -2023,8 +2023,8 @@ $version = '1.0.0';
                             </div>
 
                             <!-- Bottom: Ereignisse -->
-                            <div class="min-h-0 overflow-hidden flex flex-col transition-all"
-                                :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px]' : 'flex-1'">
+                            <div class="min-h-[250px] overflow-hidden flex flex-col transition-all"
+                                :class="tripMaximizedSection === 'tripEvents' ? 'flex-1' : tripMaximizedSection === 'tripDetails' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                 <x-risk-overview.section-header
                                     icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                     title="Ereignisse" count-expression="filteredTripEvents.length"
