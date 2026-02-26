@@ -697,7 +697,7 @@ function riskOverviewApp() {
             this.selectedCountryEventId = null;
         },
 
-        getFilteredCountryTravelers() {
+        get filteredCountryTravelers() {
             if (!this.countryDetails?.travelers) return [];
             if (!this.selectedCountryEventId) return this.countryDetails.travelers;
             const event = this.countryDetails.events?.find(e => e.id === this.selectedCountryEventId);
@@ -715,7 +715,7 @@ function riskOverviewApp() {
             });
         },
 
-        getSelectedCountryEvent() {
+        get selectedCountryEvent() {
             if (!this.selectedCountryEventId || !this.countryDetails?.events) return null;
             return this.countryDetails.events.find(e => e.id === this.selectedCountryEventId) || null;
         },

@@ -718,16 +718,16 @@ $version = '1.0.0';
                                         :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px] min-h-0' : 'flex-1'">
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-users" icon-color="text-blue-500"
-                                            title="Betroffene Reisen" count-expression="getFilteredCountryTravelers().length"
+                                            title="Betroffene Reisen" count-expression="filteredCountryTravelers.length"
                                             maximize-section="travelers"
                                             bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
                                         <div class="flex-1 overflow-y-auto p-4">
                                             <!-- Filter indicator bar -->
-                                            <template x-if="selectedCountryEventId && getSelectedCountryEvent()">
+                                            <template x-if="selectedCountryEventId && selectedCountryEvent">
                                                 <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
                                                     <div class="flex items-center gap-2 text-xs text-amber-800 min-w-0">
                                                         <i class="fa-regular fa-filter flex-shrink-0"></i>
-                                                        <span class="truncate">Gefiltert nach: <strong x-text="getSelectedCountryEvent().title"></strong></span>
+                                                        <span class="truncate">Gefiltert nach: <strong x-text="selectedCountryEvent.title"></strong></span>
                                                     </div>
                                                     <button @click="clearCountryEventFilter()"
                                                         class="flex-shrink-0 ml-2 text-xs text-amber-700 hover:text-amber-900 font-medium flex items-center gap-1">
@@ -737,7 +737,7 @@ $version = '1.0.0';
                                                 </div>
                                             </template>
                                             <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                                                <template x-for="traveler in getFilteredCountryTravelers()"
+                                                <template x-for="traveler in filteredCountryTravelers"
                                                     :key="traveler.folder_id">
                                                     <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
                                                         @click="openTravelerModal(traveler)">
@@ -777,7 +777,7 @@ $version = '1.0.0';
                                                     </div>
                                                 </template>
                                             </div>
-                                            <template x-if="getFilteredCountryTravelers().length === 0">
+                                            <template x-if="filteredCountryTravelers.length === 0">
                                                 <div class="text-center py-8 text-gray-500">
                                                     <i class="fa-regular fa-suitcase text-3xl text-gray-400 mb-2"></i>
                                                     <p x-text="selectedCountryEventId ? 'Keine Reisen im Zeitraum dieses Ereignisses' : 'Keine Reisenden in diesem Land im ausgewählten Zeitraum'"></p>
@@ -1342,14 +1342,14 @@ $version = '1.0.0';
                                         <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                                             <i class="fa-regular fa-users mr-2 text-blue-500"></i>
                                             Betroffene Reisende
-                                            <span class="ml-1 text-gray-500 font-normal" x-text="'(' + getFilteredCountryTravelers().length + ')'"></span>
+                                            <span class="ml-1 text-gray-500 font-normal" x-text="'(' + filteredCountryTravelers.length + ')'"></span>
                                         </h4>
                                         <!-- Filter indicator bar -->
-                                        <template x-if="selectedCountryEventId && getSelectedCountryEvent()">
+                                        <template x-if="selectedCountryEventId && selectedCountryEvent">
                                             <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
                                                 <div class="flex items-center gap-2 text-xs text-amber-800 min-w-0">
                                                     <i class="fa-regular fa-filter flex-shrink-0"></i>
-                                                    <span class="truncate">Gefiltert nach: <strong x-text="getSelectedCountryEvent().title"></strong></span>
+                                                    <span class="truncate">Gefiltert nach: <strong x-text="selectedCountryEvent.title"></strong></span>
                                                 </div>
                                                 <button @click="clearCountryEventFilter()"
                                                     class="flex-shrink-0 ml-2 text-xs text-amber-700 hover:text-amber-900 font-medium flex items-center gap-1">
@@ -1359,7 +1359,7 @@ $version = '1.0.0';
                                             </div>
                                         </template>
                                         <div class="space-y-3">
-                                            <template x-for="traveler in getFilteredCountryTravelers()"
+                                            <template x-for="traveler in filteredCountryTravelers"
                                                 :key="traveler.folder_id">
                                                 <div class="p-3 rounded-lg cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
                                                     :class="traveler.source === 'api' ? 'bg-purple-50' : 'bg-blue-50'"
@@ -1401,7 +1401,7 @@ $version = '1.0.0';
                                                     </div>
                                                 </div>
                                             </template>
-                                            <template x-if="getFilteredCountryTravelers().length === 0">
+                                            <template x-if="filteredCountryTravelers.length === 0">
                                                 <p class="text-sm text-gray-500 text-center py-4"
                                                     x-text="selectedCountryEventId ? 'Keine Reisen im Zeitraum dieses Ereignisses' : 'Keine Reisenden in diesem Land'"></p>
                                             </template>
@@ -1492,16 +1492,16 @@ $version = '1.0.0';
                                         :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-users" icon-color="text-blue-500"
-                                            title="Betroffene Reisen" count-expression="getFilteredCountryTravelers().length"
+                                            title="Betroffene Reisen" count-expression="filteredCountryTravelers.length"
                                             maximize-section="travelers"
                                             bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
                                         <div class="flex-1 overflow-y-auto">
                                             <!-- Filter indicator bar -->
-                                            <template x-if="selectedCountryEventId && getSelectedCountryEvent()">
+                                            <template x-if="selectedCountryEventId && selectedCountryEvent">
                                                 <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mx-4 mt-3">
                                                     <div class="flex items-center gap-2 text-xs text-amber-800 min-w-0">
                                                         <i class="fa-regular fa-filter flex-shrink-0"></i>
-                                                        <span class="truncate">Gefiltert nach: <strong x-text="getSelectedCountryEvent().title"></strong></span>
+                                                        <span class="truncate">Gefiltert nach: <strong x-text="selectedCountryEvent.title"></strong></span>
                                                     </div>
                                                     <button @click="clearCountryEventFilter()"
                                                         class="flex-shrink-0 ml-2 text-xs text-amber-700 hover:text-amber-900 font-medium flex items-center gap-1">
@@ -1511,7 +1511,7 @@ $version = '1.0.0';
                                                 </div>
                                             </template>
                                             <div class="divide-y divide-gray-200">
-                                                <template x-for="traveler in getFilteredCountryTravelers()"
+                                                <template x-for="traveler in filteredCountryTravelers"
                                                     :key="traveler.folder_id">
                                                     <div class="px-4 py-3 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                                                         :class="traveler.source === 'api' ? 'border-l-4 border-l-purple-400' : ''"
@@ -1560,7 +1560,7 @@ $version = '1.0.0';
                                                     </div>
                                                 </template>
                                             </div>
-                                            <template x-if="getFilteredCountryTravelers().length === 0">
+                                            <template x-if="filteredCountryTravelers.length === 0">
                                                 <div class="text-center py-8 text-gray-500">
                                                     <i class="fa-regular fa-suitcase text-3xl text-gray-400 mb-2"></i>
                                                     <p x-text="selectedCountryEventId ? 'Keine Reisen im Zeitraum dieses Ereignisses' : 'Keine Reisenden in diesem Land im ausgewählten Zeitraum'"></p>
