@@ -660,17 +660,26 @@ $version = '1.0.0';
                                         <div class="flex-1 overflow-y-auto p-4">
                                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
-                                                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
-                                                        @click="openEventModal(event)" :class="{
+                                                    <div class="p-4 rounded-lg border shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-all"
+                                                        @click="toggleCountryEvent(event)" :class="{
                                                          'border-l-red-500': event.priority === 'high',
                                                          'border-l-orange-500': event.priority === 'medium',
                                                          'border-l-green-500': event.priority === 'low',
-                                                         'border-l-blue-500': event.priority === 'info'
+                                                         'border-l-blue-500': event.priority === 'info',
+                                                         'bg-blue-50 ring-2 ring-blue-400 border-blue-300': selectedCountryEventId === event.id,
+                                                         'bg-white border-gray-200': selectedCountryEventId !== event.id,
                                                      }">
                                                         <div class="flex items-start justify-between mb-2">
                                                             <h4 class="text-xs font-medium text-gray-800"
                                                                 x-text="event.title"></h4>
-                                                            <x-risk-overview.priority-badge priority="event.priority" />
+                                                            <div class="flex items-center gap-1">
+                                                                <button @click.stop="openEventModal(event)"
+                                                                    class="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                                                    title="Details anzeigen">
+                                                                    <i class="fa-regular fa-circle-info text-sm"></i>
+                                                                </button>
+                                                                <x-risk-overview.priority-badge priority="event.priority" />
+                                                            </div>
                                                         <p class="text-xs text-gray-600 line-clamp-3"
                                                             x-text="event.description"></p>
                                                         <div
@@ -700,12 +709,20 @@ $version = '1.0.0';
                                         :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-users" icon-color="text-blue-500"
-                                            title="Betroffene Reisen" count-expression="countryDetails.travelers.length"
+                                            title="Betroffene Reisen" count-expression="filteredCountryTravelers.length"
                                             maximize-section="travelers"
-                                            bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
+                                            bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200">
+                                            <template x-if="selectedCountryEventId">
+                                                <button @click="selectedCountryEventId = null"
+                                                    class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors">
+                                                    <i class="fa-regular fa-filter-circle-xmark mr-1"></i>
+                                                    Filter aufheben
+                                                </button>
+                                            </template>
+                                        </x-risk-overview.section-header>
                                         <div class="flex-1 overflow-y-auto p-4">
                                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                <template x-for="traveler in countryDetails.travelers"
+                                                <template x-for="traveler in filteredCountryTravelers"
                                                     :key="traveler.folder_id">
                                                     <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
                                                         @click="openTravelerModal(traveler)">
@@ -745,10 +762,10 @@ $version = '1.0.0';
                                                     </div>
                                                 </template>
                                             </div>
-                                            <template x-if="countryDetails.travelers.length === 0">
+                                            <template x-if="filteredCountryTravelers.length === 0">
                                                 <div class="text-center py-8 text-gray-500">
                                                     <i class="fa-regular fa-suitcase text-3xl text-gray-400 mb-2"></i>
-                                                    <p>Keine Reisenden in diesem Land im ausgewählten Zeitraum</p>
+                                                    <p x-text="selectedCountryEventId ? 'Keine Reisen für dieses Ereignis im ausgewählten Zeitraum' : 'Keine Reisenden in diesem Land im ausgewählten Zeitraum'"></p>
                                                 </div>
                                             </template>
                                         </div>
@@ -1256,15 +1273,24 @@ $version = '1.0.0';
                                         </h4>
                                         <div class="space-y-3">
                                             <template x-for="event in countryDetails.events" :key="event.id">
-                                                <div class="bg-gray-50 p-3 rounded-lg border-l-4 cursor-pointer hover:bg-gray-100 transition-colors"
-                                                    @click="openEventModal(event)" :class="{
+                                                <div class="p-3 rounded-lg border-l-4 cursor-pointer transition-all"
+                                                    @click="toggleCountryEvent(event)" :class="{
                                                      'border-red-500': event.priority === 'high',
                                                      'border-orange-500': event.priority === 'medium',
                                                      'border-green-500': event.priority === 'low',
-                                                     'border-blue-500': event.priority === 'info'
+                                                     'border-blue-500': event.priority === 'info',
+                                                     'bg-blue-100 ring-2 ring-blue-400': selectedCountryEventId === event.id,
+                                                     'bg-gray-50 hover:bg-gray-100': selectedCountryEventId !== event.id,
                                                  }">
-                                                    <h5 class="text-xs font-medium text-gray-800" x-text="event.title">
-                                                    </h5>
+                                                    <div class="flex items-center justify-between">
+                                                        <h5 class="text-xs font-medium text-gray-800 flex-1" x-text="event.title">
+                                                        </h5>
+                                                        <button @click.stop="openEventModal(event)"
+                                                            class="ml-2 p-1 text-gray-400 hover:text-blue-600 transition-colors flex-shrink-0"
+                                                            title="Details anzeigen">
+                                                            <i class="fa-regular fa-circle-info text-sm"></i>
+                                                        </button>
+                                                    </div>
                                                     <p class="text-xs text-gray-600 mt-1 line-clamp-2"
                                                         x-text="event.description"></p>
                                                     <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
@@ -1272,13 +1298,6 @@ $version = '1.0.0';
                                                         <span
                                                             x-text="formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')"></span>
                                                     </div>
-                                                    <template x-if="event.source_url">
-                                                        <a :href="event.source_url" target="_blank"
-                                                            class="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 hover:text-blue-800">
-                                                            <i class="fa-regular fa-external-link"></i>
-                                                            Quelle
-                                                        </a>
-                                                    </template>
                                                 </div>
                                             </template>
                                             <template x-if="countryDetails.events.length === 0">
@@ -1293,9 +1312,18 @@ $version = '1.0.0';
                                         <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                                             <i class="fa-regular fa-users mr-2 text-blue-500"></i>
                                             Betroffene Reisende
+                                            <span class="ml-1 text-gray-500 font-normal"
+                                                x-text="'(' + filteredCountryTravelers.length + ')'"></span>
+                                            <template x-if="selectedCountryEventId">
+                                                <button @click="selectedCountryEventId = null"
+                                                    class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors">
+                                                    <i class="fa-regular fa-filter-circle-xmark mr-1"></i>
+                                                    Filter aufheben
+                                                </button>
+                                            </template>
                                         </h4>
                                         <div class="space-y-3">
-                                            <template x-for="traveler in countryDetails.travelers"
+                                            <template x-for="traveler in filteredCountryTravelers"
                                                 :key="traveler.folder_id">
                                                 <div class="p-3 rounded-lg cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
                                                     :class="traveler.source === 'api' ? 'bg-purple-50' : 'bg-blue-50'"
@@ -1337,9 +1365,9 @@ $version = '1.0.0';
                                                     </div>
                                                 </div>
                                             </template>
-                                            <template x-if="countryDetails.travelers.length === 0">
-                                                <p class="text-sm text-gray-500 text-center py-4">Keine Reisenden in
-                                                    diesem Land</p>
+                                            <template x-if="filteredCountryTravelers.length === 0">
+                                                <p class="text-sm text-gray-500 text-center py-4"
+                                                    x-text="selectedCountryEventId ? 'Keine Reisen für dieses Ereignis' : 'Keine Reisenden in diesem Land'"></p>
                                             </template>
                                         </div>
                                     </div>
@@ -1379,12 +1407,14 @@ $version = '1.0.0';
                                         <div class="flex-1 overflow-y-auto">
                                             <div class="divide-y divide-gray-200">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
-                                                    <div class="px-4 py-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-4 border-l-4"
-                                                        @click="openEventModal(event)" :class="{
+                                                    <div class="px-4 py-3 cursor-pointer transition-all flex items-center gap-4 border-l-4"
+                                                        @click="toggleCountryEvent(event)" :class="{
                                                          'border-l-red-500': event.priority === 'high',
                                                          'border-l-orange-500': event.priority === 'medium',
                                                          'border-l-green-500': event.priority === 'low',
-                                                         'border-l-blue-500': event.priority === 'info'
+                                                         'border-l-blue-500': event.priority === 'info',
+                                                         'bg-blue-50 ring-1 ring-inset ring-blue-400': selectedCountryEventId === event.id,
+                                                         'bg-white hover:bg-gray-50': selectedCountryEventId !== event.id,
                                                      }">
                                                         <div class="flex-1 min-w-0">
                                                             <h4 class="text-xs font-medium text-gray-800 truncate"
@@ -1393,6 +1423,11 @@ $version = '1.0.0';
                                                                 x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')">
                                                             </p>
                                                         </div>
+                                                        <button @click.stop="openEventModal(event)"
+                                                            class="p-1 text-gray-400 hover:text-blue-600 transition-colors flex-shrink-0"
+                                                            title="Details anzeigen">
+                                                            <i class="fa-regular fa-circle-info text-sm"></i>
+                                                        </button>
                                                         <x-risk-overview.priority-badge priority="event.priority"
                                                             class="flex-shrink-0" />
                                                     </div>
@@ -1413,12 +1448,20 @@ $version = '1.0.0';
                                         :class="maximizedSection === 'travelers' ? 'flex-1' : maximizedSection === 'events' ? 'flex-none h-[52px]' : 'flex-1'">
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-users" icon-color="text-blue-500"
-                                            title="Betroffene Reisen" count-expression="countryDetails.travelers.length"
+                                            title="Betroffene Reisen" count-expression="filteredCountryTravelers.length"
                                             maximize-section="travelers"
-                                            bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200" />
+                                            bg-color="bg-blue-50" border-color="border-blue-200" hover-color="hover:bg-blue-200">
+                                            <template x-if="selectedCountryEventId">
+                                                <button @click="selectedCountryEventId = null"
+                                                    class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors">
+                                                    <i class="fa-regular fa-filter-circle-xmark mr-1"></i>
+                                                    Filter aufheben
+                                                </button>
+                                            </template>
+                                        </x-risk-overview.section-header>
                                         <div class="flex-1 overflow-y-auto">
                                             <div class="divide-y divide-gray-200">
-                                                <template x-for="traveler in countryDetails.travelers"
+                                                <template x-for="traveler in filteredCountryTravelers"
                                                     :key="traveler.folder_id">
                                                     <div class="px-4 py-3 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                                                         :class="traveler.source === 'api' ? 'border-l-4 border-l-purple-400' : ''"
@@ -1467,10 +1510,10 @@ $version = '1.0.0';
                                                     </div>
                                                 </template>
                                             </div>
-                                            <template x-if="countryDetails.travelers.length === 0">
+                                            <template x-if="filteredCountryTravelers.length === 0">
                                                 <div class="text-center py-8 text-gray-500">
                                                     <i class="fa-regular fa-suitcase text-3xl text-gray-400 mb-2"></i>
-                                                    <p>Keine Reisenden in diesem Land im ausgewahlten Zeitraum</p>
+                                                    <p x-text="selectedCountryEventId ? 'Keine Reisen für dieses Ereignis im ausgewählten Zeitraum' : 'Keine Reisenden in diesem Land im ausgewählten Zeitraum'"></p>
                                                 </div>
                                             </template>
                                         </div>
