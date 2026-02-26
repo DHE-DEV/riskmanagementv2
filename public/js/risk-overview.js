@@ -38,7 +38,6 @@ function riskOverviewApp() {
         sidebarTab: 'reisen',
         activeTab: 'tiles',
         maximizedSection: null,
-        selectedCountryEventId: null,
         selectedTrip: null,
         selectedTripCountry: null,
         tripActiveTab: 'tiles',
@@ -422,44 +421,6 @@ function riskOverviewApp() {
             return result;
         },
 
-        toggleCountryEvent(event) {
-            if (this.selectedCountryEventId === event.id) {
-                this.selectedCountryEventId = null;
-            } else {
-                this.selectedCountryEventId = event.id;
-            }
-        },
-
-        get filteredCountryTravelers() {
-            if (!this.countryDetails?.travelers) return [];
-            if (!this.selectedCountryEventId) return this.countryDetails.travelers;
-
-            const event = this.countryDetails.events.find(e => e.id === this.selectedCountryEventId);
-            if (!event) return this.countryDetails.travelers;
-
-            return this.countryDetails.travelers.filter(t => {
-                if (!t.start_date || !t.end_date) return true;
-
-                const tStart = new Date(t.start_date);
-                tStart.setHours(0, 0, 0, 0);
-                const tEnd = new Date(t.end_date);
-                tEnd.setHours(23, 59, 59, 999);
-
-                // Event without dates = ongoing/permanent, always overlaps
-                if (!event.start_date && !event.end_date) return true;
-
-                const eStart = event.start_date ? new Date(event.start_date) : null;
-                if (eStart) eStart.setHours(0, 0, 0, 0);
-                const eEnd = event.end_date ? new Date(event.end_date) : null;
-                if (eEnd) eEnd.setHours(23, 59, 59, 999);
-
-                if (eStart && eStart > tEnd) return false;
-                if (eEnd && eEnd < tStart) return false;
-
-                return true;
-            });
-        },
-
         get filteredSummary() {
             const filtered = this.filteredCountries;
             let totalEvents = 0;
@@ -691,7 +652,6 @@ function riskOverviewApp() {
 
         async selectCountry(country) {
             this.selectedCountry = country;
-            this.selectedCountryEventId = null;
             this.loadingCountryDetails = true;
             this.countryDetails = null;
             const fetchStart = performance.now();
