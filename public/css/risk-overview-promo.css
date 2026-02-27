@@ -1,0 +1,59 @@
+/* Alpine.js cloak */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Basis-Layout (gleich wie risk-overview.css) */
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Header - feststehend */
+.header {
+    flex-shrink: 0;
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+}
+
+/* Footer - feststehend */
+.footer {
+    flex-shrink: 0;
+    height: 32px;
+    background: white;
+    color: black;
+    z-index: 9999;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Hauptbereich - dynamisch */
+.main-content {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+/* Navigation - feste Breite */
+.navigation {
+    flex-shrink: 0;
+    width: 64px;
+    background: black;
+}
+
+/* Promo Content - scrollbar, nimmt restlichen Platz ein */
+.promo-content {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}

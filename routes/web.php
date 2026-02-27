@@ -322,7 +322,6 @@ Route::delete('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer
 
 // Risiko-Ubersicht - Lander mit Events und betroffene Reisende
 Route::get('/risk-overview', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'index'])
-    ->middleware('auth:customer')
     ->name('risk-overview');
 
 Route::get('/risk-overview/data', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getData'])

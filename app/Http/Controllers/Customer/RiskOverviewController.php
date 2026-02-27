@@ -29,13 +29,13 @@ class RiskOverviewController extends Controller
     public function index()
     {
         $customer = auth('customer')->user();
+        $isLoggedIn = (bool) $customer;
 
-        if (! $customer) {
-            return redirect()->route('customer.login');
-        }
-
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(404);
+        // Show promo page if not logged in or feature not enabled
+        if (! $customer || ! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
+            return view('livewire.pages.risk-overview-promo', [
+                'isLoggedIn' => $isLoggedIn,
+            ]);
         }
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
