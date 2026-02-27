@@ -3,6 +3,18 @@
     display: none !important;
 }
 
+/* Theme Variables */
+:root {
+    --promo-bg: hsl(220, 13%, 10%);
+    --promo-bg-card: hsl(220, 13%, 13%);
+    --promo-bg-secondary: hsl(220, 13%, 18%);
+    --promo-border: hsl(220, 13%, 20%);
+    --promo-text: hsl(0, 0%, 98%);
+    --promo-text-muted: hsl(220, 10%, 60%);
+    --promo-primary: hsl(210, 100%, 55%);
+    --promo-primary-light: hsl(210, 100%, 65%);
+}
+
 /* Basis-Layout (gleich wie risk-overview.css) */
 body {
     margin: 0;
@@ -56,4 +68,63 @@ body {
     flex: 1;
     overflow-y: auto;
     scroll-behavior: smooth;
+    background: var(--promo-bg);
+    font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Animations */
+@keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseSlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+.animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-fade-up-delay-1 {
+    animation: fadeUp 0.6s ease-out 0.1s forwards;
+    opacity: 0;
+}
+
+.animate-fade-up-delay-2 {
+    animation: fadeUp 0.6s ease-out 0.2s forwards;
+    opacity: 0;
+}
+
+.animate-fade-up-delay-3 {
+    animation: fadeUp 0.6s ease-out 0.3s forwards;
+    opacity: 0;
+}
+
+.animate-fade-up-delay-4 {
+    animation: fadeUp 0.6s ease-out 0.4s forwards;
+    opacity: 0;
+}
+
+.animate-pulse-slow {
+    animation: pulseSlow 4s ease-in-out infinite;
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Glow blobs */
+.glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
 }
