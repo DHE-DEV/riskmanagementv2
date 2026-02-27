@@ -579,7 +579,7 @@
 
     <div class="app-container">
         <!-- Header -->
-        <x-public-header :hide-login="true" />
+        <x-public-header />
 
         <!-- Main Content -->
         <div class="main-content">

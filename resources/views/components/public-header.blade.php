@@ -1,4 +1,4 @@
-@props(['hideLogin' => false])
+@props([])
 
 <header class="header">
     <div class="flex items-center justify-between h-full px-4">
@@ -105,25 +105,25 @@
             @endauth
 
             @guest('customer')
-                @unless($hideLogin)
                 <!-- Login & Register Buttons -->
-                @if(config('app.customer_login_enabled', true))
-                    <a
-                        href="{{ route('customer.login') }}"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                    >
-                        <i class="fas fa-sign-in-alt mr-2"></i>Anmelden
-                    </a>
-                @endif
+                <a
+                    href="{{ route('customer.login') }}"
+                    class="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                    style="background-color: #CEE741; color: #002742;"
+                    onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'"
+                >
+                    <i class="fas fa-sign-in-alt mr-2"></i>Anmelden
+                </a>
                 @if(config('app.customer_registration_enabled', true))
                     <a
                         href="{{ route('customer.register') }}"
-                        class="px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1px solid #CEE741; color: #CEE741; background: transparent;"
+                        onmouseover="this.style.backgroundColor='rgba(206,231,65,0.1)'" onmouseout="this.style.backgroundColor='transparent'"
                     >
                         <i class="fas fa-user-plus mr-2"></i>Registrieren
                     </a>
                 @endif
-                @endunless
             @endguest
         </div>
     </div>
