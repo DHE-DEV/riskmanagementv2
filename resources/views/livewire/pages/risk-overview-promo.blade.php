@@ -210,7 +210,7 @@ $version = '1.1.0';
                                 </ul>
                             </div>
                             <!-- Screenshot -->
-                            <div class="rounded-2xl overflow-hidden shadow-2xl" style="border: 1px solid hsl(220, 13%, 20%);">
+                            <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid hsl(220, 13%, 20%);">
                                 <img src="{{ asset('images/travelalert/GTM-TA-01.png') }}" alt="TravelAlert Reisen-Monitoring" class="w-full h-auto" loading="lazy">
                             </div>
                         </div>
@@ -218,7 +218,7 @@ $version = '1.1.0';
                         <!-- Länder-Ansicht -->
                         <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
                             <!-- Screenshot (links) -->
-                            <div class="rounded-2xl overflow-hidden shadow-2xl order-2 md:order-1" style="border: 1px solid hsl(220, 13%, 20%);">
+                            <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid hsl(220, 13%, 20%);">
                                 <img src="{{ asset('images/travelalert/GMT-TA-02.png') }}" alt="TravelAlert Länder-Ansicht" class="w-full h-auto" loading="lazy">
                             </div>
                             <div class="order-1 md:order-2">
@@ -274,8 +274,44 @@ $version = '1.1.0';
                                 </ul>
                             </div>
                             <!-- Screenshot -->
-                            <div class="rounded-2xl overflow-hidden shadow-2xl" style="border: 1px solid hsl(220, 13%, 20%);">
+                            <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid hsl(220, 13%, 20%);">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter & Labels" class="w-full h-auto" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Kalenderansicht -->
+                <section class="py-20 px-6" style="background: hsl(220, 13%, 10%); border-top: 1px solid hsl(220, 13%, 17%);">
+                    <div class="max-w-5xl mx-auto">
+                        <div class="grid md:grid-cols-2 gap-12 items-center">
+                            <!-- Screenshot (links) -->
+                            <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid hsl(220, 13%, 20%);">
                                 <img src="{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}" alt="TravelAlert Kalenderansicht" class="w-full h-auto" loading="lazy">
+                            </div>
+                            <div class="order-1 md:order-2">
+                                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2);">
+                                    <i class="fa-regular fa-calendar-days text-amber-400 text-sm"></i>
+                                    <span class="text-xs font-medium text-amber-400">Kalenderansicht</span>
+                                </div>
+                                <h3 class="text-2xl md:text-3xl font-bold mb-4" style="color: hsl(0, 0%, 98%); font-family: Archivo, sans-serif;">Alle Ereignisse im Kalender auf einen Blick</h3>
+                                <p class="leading-relaxed mb-6" style="color: hsl(220, 10%, 60%);">
+                                    Die praktische Kalenderansicht zeigt Ihnen tagesgenau, welche sicherheitsrelevanten Ereignisse Ihre Reisen betreffen. So erkennen Sie auf einen Blick kritische Zeiträume und können Reisen frühzeitig umplanen.
+                                </p>
+                                <ul class="space-y-3">
+                                    <li class="flex items-start gap-3">
+                                        <i class="fa-regular fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                                        <span style="color: hsl(220, 10%, 70%);">Tagesgenaue Darstellung aller Events</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <i class="fa-regular fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                                        <span style="color: hsl(220, 10%, 70%);">Farbcodierung nach Prioritätsstufe</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <i class="fa-regular fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                                        <span style="color: hsl(220, 10%, 70%);">Schnellnavigation zu Reisestart und aktuellem Tag</span>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -803,6 +839,32 @@ $version = '1.1.0';
                 }
             };
         }
+        </script>
+
+        <!-- Image Lightbox -->
+        <div id="promo-lightbox" style="display:none; position:fixed; inset:0; z-index:30000; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); cursor:zoom-out; align-items:center; justify-content:center;"
+             onclick="this.style.display='none'">
+            <img id="promo-lightbox-img" src="" alt="" style="max-width:92vw; max-height:92vh; border-radius:12px; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+            <button onclick="document.getElementById('promo-lightbox').style.display='none'" style="position:absolute; top:20px; right:20px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.15); border:none; color:white; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                <i class="fa-regular fa-xmark"></i>
+            </button>
+        </div>
+        <script>
+        document.querySelectorAll('.promo-lightbox-trigger').forEach(function(el) {
+            el.addEventListener('click', function() {
+                var img = el.querySelector('img');
+                if (img) {
+                    var lb = document.getElementById('promo-lightbox');
+                    document.getElementById('promo-lightbox-img').src = img.src;
+                    document.getElementById('promo-lightbox-img').alt = img.alt;
+                    lb.style.display = 'flex';
+                }
+            });
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') document.getElementById('promo-lightbox').style.display = 'none';
+        });
         </script>
 
         <!-- Footer -->
