@@ -90,7 +90,7 @@ $version = '1.1.0';
 
                         <!-- CTA Buttons -->
                         <div class="animate-fade-up-delay-3 flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                            <button @click="document.dispatchEvent(new CustomEvent('open-order-modal'))"
+                            <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
                                class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
                                style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
                                onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
@@ -450,7 +450,7 @@ $version = '1.1.0';
                                 Schützen Sie Ihre Reisenden mit Echtzeit-Sicherheitsinformationen und automatischem Reise-Monitoring.
                             </p>
                             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <button @click="document.dispatchEvent(new CustomEvent('open-order-modal'))"
+                                <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
                                    class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
                                    style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
                                    onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
