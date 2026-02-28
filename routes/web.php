@@ -324,6 +324,9 @@ Route::delete('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer
 Route::get('/risk-overview', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'index'])
     ->name('risk-overview');
 
+Route::post('/risk-overview/order', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'submitOrder'])
+    ->name('risk-overview.order');
+
 Route::get('/risk-overview/data', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getData'])
     ->middleware('auth:customer')
     ->name('risk-overview.data');

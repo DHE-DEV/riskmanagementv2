@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TravelAlertOrderMail;
 use App\Models\CustomEvent;
+use App\Models\TravelAlertOrder;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Services\CustomerFeatureService;
 use App\Services\RiskOverviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class RiskOverviewController extends Controller
 {
@@ -44,6 +48,44 @@ class RiskOverviewController extends Controller
             'customer' => $customer,
             'isDebugUser' => $isDebugUser,
         ]);
+    }
+
+    /**
+     * Handle TravelAlert order form submission.
+     */
+    public function submitOrder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'company' => 'required|string|max:255',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:50',
+            'street' => 'required|string|max:255',
+            'postal_code' => 'required|string|max:20',
+            'city' => 'required|string|max:255',
+            'country' => 'required|string|max:255',
+            'existing_billing' => 'required|in:ja,nein',
+            'remarks' => 'nullable|string|max:2000',
+        ]);
+
+        try {
+            TravelAlertOrder::create($validated);
+
+            $recipient = config('mail.order_recipient', 'info@passolution.de');
+
+            Mail::to($recipient)
+                ->bcc('info@passolution.de')
+                ->send(new TravelAlertOrderMail($validated));
+
+            Log::info('TravelAlert order submitted', ['company' => $validated['company'], 'email' => $validated['email']]);
+
+            return response()->json(['success' => true, 'message' => 'Bestellung erfolgreich eingereicht.']);
+        } catch (\Exception $e) {
+            Log::error('TravelAlert order failed: '.$e->getMessage(), ['data' => $validated]);
+
+            return response()->json(['success' => false, 'message' => 'Fehler beim Senden. Bitte versuchen Sie es erneut.'], 500);
+        }
     }
 
     /**

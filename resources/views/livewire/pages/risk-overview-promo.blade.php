@@ -23,6 +23,7 @@ $version = '1.1.0';
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Font Awesome -->
     @php($faKit = config('services.fontawesome.kit'))
@@ -89,6 +90,15 @@ $version = '1.1.0';
 
                         <!-- CTA Buttons -->
                         <div class="animate-fade-up-delay-3 flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                            <button @click="document.dispatchEvent(new CustomEvent('open-order-modal'))"
+                               class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
+                               style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
+                               onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
+                               onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                            >
+                                <i class="fa-regular fa-cart-shopping mr-2"></i>
+                                Jetzt bestellen
+                            </button>
                             @if($isLoggedIn)
                                 <a href="{{ route('customer.dashboard') }}"
                                    class="inline-flex items-center px-8 py-3.5 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50">
@@ -440,6 +450,15 @@ $version = '1.1.0';
                                 Schützen Sie Ihre Reisenden mit Echtzeit-Sicherheitsinformationen und automatischem Reise-Monitoring.
                             </p>
                             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <button @click="document.dispatchEvent(new CustomEvent('open-order-modal'))"
+                                   class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
+                                   style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
+                                   onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
+                                   onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                                >
+                                    <i class="fa-regular fa-cart-shopping mr-2"></i>
+                                    Jetzt bestellen
+                                </button>
                                 @if($isLoggedIn)
                                     <a href="{{ route('customer.dashboard') }}"
                                        class="inline-flex items-center px-8 py-3.5 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50">
@@ -465,6 +484,381 @@ $version = '1.1.0';
 
             </div>
         </div>
+
+        <!-- Order Modal -->
+        <div x-data="orderForm()" x-cloak>
+            <!-- Backdrop -->
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-[20000]" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);"
+                 @click.self="open = false">
+
+                <!-- Modal -->
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-8 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-8 scale-95"
+                     class="relative mx-auto mt-[3vh] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
+                     style="background: hsl(220, 13%, 13%); border: 1px solid hsl(220, 13%, 22%); max-height: 94vh;"
+                     @keydown.escape.window="open = false">
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-6 py-4" style="background: hsl(220, 13%, 10%); border-bottom: 1px solid hsl(220, 13%, 20%);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(206, 231, 65, 0.15);">
+                                <i class="fa-regular fa-cart-shopping" style="color: #CEE741;"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold" style="color: hsl(0, 0%, 98%); font-family: Archivo, sans-serif;">TravelAlert bestellen</h2>
+                                <p class="text-xs" style="color: hsl(220, 10%, 50%);">Füllen Sie das Formular aus - wir melden uns umgehend.</p>
+                            </div>
+                        </div>
+                        <button @click="open = false" class="p-2 rounded-lg transition-colors" style="color: hsl(220, 10%, 50%);" onmouseover="this.style.background='hsl(220, 13%, 20%)'" onmouseout="this.style.background='transparent'">
+                            <i class="fa-regular fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Success State -->
+                    <div x-show="submitted" class="px-6 py-16 text-center">
+                        <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background: rgba(16, 185, 129, 0.15);">
+                            <i class="fa-regular fa-check text-4xl text-emerald-400"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3" style="color: hsl(0, 0%, 98%); font-family: Archivo, sans-serif;">Bestellung eingegangen!</h3>
+                        <p class="mb-8 max-w-md mx-auto" style="color: hsl(220, 10%, 60%);">
+                            Vielen Dank für Ihre Bestellung. Wir werden uns in Kürze bei Ihnen melden, um die Details zu besprechen.
+                        </p>
+                        <button @click="open = false" class="inline-flex items-center px-6 py-2.5 font-semibold rounded-xl transition-all"
+                                style="background: #CEE741; color: #002742;">
+                            Schließen
+                        </button>
+                    </div>
+
+                    <!-- Form -->
+                    <form x-show="!submitted" @submit.prevent="submit" class="overflow-y-auto" style="max-height: calc(94vh - 73px);">
+                        <div class="px-6 py-5 space-y-5">
+
+                            <!-- Firmendaten -->
+                            <div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fa-regular fa-building text-sm text-blue-400"></i>
+                                    <span class="text-sm font-semibold" style="color: hsl(220, 10%, 70%);">Firmendaten</span>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <!-- Firmenname -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                            Firmenname <span class="text-red-400">*</span>
+                                        </label>
+                                        <input type="text" x-model="form.company" required
+                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                               style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                               onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                               placeholder="Musterfirma GmbH">
+                                        <p x-show="errors.company" x-text="errors.company" class="text-red-400 text-xs mt-1"></p>
+                                    </div>
+
+                                    <!-- Ansprechpartner -->
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">Vorname</label>
+                                            <input type="text" x-model="form.first_name"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   placeholder="Max">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">Nachname</label>
+                                            <input type="text" x-model="form.last_name"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   placeholder="Mustermann">
+                                        </div>
+                                    </div>
+
+                                    <!-- E-Mail & Telefon -->
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                                E-Mail <span class="text-red-400">*</span>
+                                            </label>
+                                            <input type="email" x-model="form.email" required
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   placeholder="max@musterfirma.de">
+                                            <p x-show="errors.email" x-text="errors.email" class="text-red-400 text-xs mt-1"></p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                                Telefon <span class="text-red-400">*</span>
+                                            </label>
+                                            <input type="tel" x-model="form.phone" required
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   placeholder="+49 123 456 789">
+                                            <p x-show="errors.phone" x-text="errors.phone" class="text-red-400 text-xs mt-1"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div style="border-top: 1px solid hsl(220, 13%, 20%);"></div>
+
+                            <!-- Adresse -->
+                            <div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fa-regular fa-location-dot text-sm text-emerald-400"></i>
+                                    <span class="text-sm font-semibold" style="color: hsl(220, 10%, 70%);">Adresse</span>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <!-- Straße -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                            Straße & Hausnr. <span class="text-red-400">*</span>
+                                        </label>
+                                        <input type="text" x-model="form.street" required
+                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                               style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                               onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                               placeholder="Musterstraße 1">
+                                        <p x-show="errors.street" x-text="errors.street" class="text-red-400 text-xs mt-1"></p>
+                                    </div>
+
+                                    <!-- PLZ & Stadt -->
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                                PLZ <span class="text-red-400">*</span>
+                                            </label>
+                                            <input type="text" x-model="form.postal_code" required
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   placeholder="12345">
+                                            <p x-show="errors.postal_code" x-text="errors.postal_code" class="text-red-400 text-xs mt-1"></p>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                                Stadt <span class="text-red-400">*</span>
+                                            </label>
+                                            <input type="text" x-model="form.city" required
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   placeholder="Musterstadt">
+                                            <p x-show="errors.city" x-text="errors.city" class="text-red-400 text-xs mt-1"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Land -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
+                                            Land <span class="text-red-400">*</span>
+                                        </label>
+                                        <select x-model="form.country" required
+                                                class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all appearance-none"
+                                                style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%); background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%239ca3af%22 d=%22M2 4l4 4 4-4%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;"
+                                                onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'">
+                                            <option value="" disabled>Land auswählen...</option>
+                                            <option value="Deutschland">Deutschland</option>
+                                            <option value="Österreich">Österreich</option>
+                                            <option value="Schweiz">Schweiz</option>
+                                            <option value="" disabled>────────────</option>
+                                            <option value="Belgien">Belgien</option>
+                                            <option value="Dänemark">Dänemark</option>
+                                            <option value="Finnland">Finnland</option>
+                                            <option value="Frankreich">Frankreich</option>
+                                            <option value="Griechenland">Griechenland</option>
+                                            <option value="Irland">Irland</option>
+                                            <option value="Italien">Italien</option>
+                                            <option value="Liechtenstein">Liechtenstein</option>
+                                            <option value="Luxemburg">Luxemburg</option>
+                                            <option value="Niederlande">Niederlande</option>
+                                            <option value="Norwegen">Norwegen</option>
+                                            <option value="Polen">Polen</option>
+                                            <option value="Portugal">Portugal</option>
+                                            <option value="Schweden">Schweden</option>
+                                            <option value="Spanien">Spanien</option>
+                                            <option value="Tschechien">Tschechien</option>
+                                            <option value="Ungarn">Ungarn</option>
+                                            <option value="Vereinigtes Königreich">Vereinigtes Königreich</option>
+                                            <option value="" disabled>────────────</option>
+                                            <option value="Andere">Andere</option>
+                                        </select>
+                                        <p x-show="errors.country" x-text="errors.country" class="text-red-400 text-xs mt-1"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div style="border-top: 1px solid hsl(220, 13%, 20%);"></div>
+
+                            <!-- Abrechnung -->
+                            <div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fa-regular fa-file-invoice text-sm text-violet-400"></i>
+                                    <span class="text-sm font-semibold" style="color: hsl(220, 10%, 70%);">Abrechnung</span>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2" style="color: hsl(0, 0%, 90%);">
+                                        Bestehendes Abrechnungsverfahren nutzen? <span class="text-red-400">*</span>
+                                    </label>
+                                    <div class="flex gap-4">
+                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all"
+                                               :style="form.existing_billing === 'ja' ? 'background: rgba(206, 231, 65, 0.12); border: 1px solid rgba(206, 231, 65, 0.4);' : 'background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%);'">
+                                            <input type="radio" x-model="form.existing_billing" value="ja" class="sr-only">
+                                            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
+                                                 :style="form.existing_billing === 'ja' ? 'border-color: #CEE741;' : 'border-color: hsl(220, 13%, 35%);'">
+                                                <div x-show="form.existing_billing === 'ja'" class="w-2 h-2 rounded-full" style="background: #CEE741;"></div>
+                                            </div>
+                                            <span class="text-sm" style="color: hsl(0, 0%, 90%);">Ja</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all"
+                                               :style="form.existing_billing === 'nein' ? 'background: rgba(206, 231, 65, 0.12); border: 1px solid rgba(206, 231, 65, 0.4);' : 'background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%);'">
+                                            <input type="radio" x-model="form.existing_billing" value="nein" class="sr-only">
+                                            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
+                                                 :style="form.existing_billing === 'nein' ? 'border-color: #CEE741;' : 'border-color: hsl(220, 13%, 35%);'">
+                                                <div x-show="form.existing_billing === 'nein'" class="w-2 h-2 rounded-full" style="background: #CEE741;"></div>
+                                            </div>
+                                            <span class="text-sm" style="color: hsl(0, 0%, 90%);">Nein</span>
+                                        </label>
+                                    </div>
+                                    <p x-show="errors.existing_billing" x-text="errors.existing_billing" class="text-red-400 text-xs mt-1"></p>
+                                </div>
+                            </div>
+
+                            <!-- Bemerkung -->
+                            <div>
+                                <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">Bemerkung</label>
+                                <textarea x-model="form.remarks" rows="3"
+                                          class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all resize-none"
+                                          style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
+                                          onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                          placeholder="Optionale Anmerkungen zu Ihrer Bestellung..."></textarea>
+                            </div>
+
+                            <!-- Error Message -->
+                            <div x-show="errorMessage" class="p-3 rounded-xl text-sm" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171;">
+                                <i class="fa-regular fa-circle-exclamation mr-1"></i>
+                                <span x-text="errorMessage"></span>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-6 py-4 flex items-center justify-end gap-3" style="background: hsl(220, 13%, 10%); border-top: 1px solid hsl(220, 13%, 20%);">
+                            <button type="button" @click="open = false"
+                                    class="px-5 py-2.5 text-sm font-medium rounded-xl transition-all"
+                                    style="color: hsl(220, 10%, 60%); border: 1px solid hsl(220, 13%, 25%);"
+                                    onmouseover="this.style.background='hsl(220, 13%, 18%)'" onmouseout="this.style.background='transparent'">
+                                Abbrechen
+                            </button>
+                            <button type="submit" :disabled="loading"
+                                    class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
+                                    style="background: #CEE741; color: #002742;">
+                                <i x-show="!loading" class="fa-regular fa-paper-plane mr-2"></i>
+                                <i x-show="loading" class="fa-regular fa-spinner-third fa-spin mr-2"></i>
+                                <span x-text="loading ? 'Wird gesendet...' : 'Bestellung absenden'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function orderForm() {
+            return {
+                open: false,
+                loading: false,
+                submitted: false,
+                errorMessage: '',
+                errors: {},
+                form: {
+                    company: '',
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    street: '',
+                    postal_code: '',
+                    city: '',
+                    country: 'Deutschland',
+                    existing_billing: '',
+                    remarks: ''
+                },
+
+                init() {
+                    document.addEventListener('open-order-modal', () => {
+                        this.open = true;
+                        this.submitted = false;
+                        this.errorMessage = '';
+                        this.errors = {};
+                    });
+                },
+
+                async submit() {
+                    this.errors = {};
+                    this.errorMessage = '';
+
+                    // Client-side validation
+                    if (!this.form.company.trim()) this.errors.company = 'Firmenname ist erforderlich.';
+                    if (!this.form.email.trim()) this.errors.email = 'E-Mail ist erforderlich.';
+                    if (!this.form.phone.trim()) this.errors.phone = 'Telefon ist erforderlich.';
+                    if (!this.form.street.trim()) this.errors.street = 'Straße ist erforderlich.';
+                    if (!this.form.postal_code.trim()) this.errors.postal_code = 'PLZ ist erforderlich.';
+                    if (!this.form.city.trim()) this.errors.city = 'Stadt ist erforderlich.';
+                    if (!this.form.country) this.errors.country = 'Land ist erforderlich.';
+                    if (!this.form.existing_billing) this.errors.existing_billing = 'Bitte wählen Sie eine Option.';
+
+                    if (Object.keys(this.errors).length > 0) return;
+
+                    this.loading = true;
+
+                    try {
+                        const response = await fetch('{{ route("risk-overview.order") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(this.form)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            this.submitted = true;
+                            // Reset form
+                            this.form = {
+                                company: '', first_name: '', last_name: '', email: '', phone: '',
+                                street: '', postal_code: '', city: '', country: 'Deutschland',
+                                existing_billing: '', remarks: ''
+                            };
+                        } else if (response.status === 422 && data.errors) {
+                            // Validation errors from server
+                            for (const [key, messages] of Object.entries(data.errors)) {
+                                this.errors[key] = messages[0];
+                            }
+                        } else {
+                            this.errorMessage = data.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+                        }
+                    } catch (e) {
+                        this.errorMessage = 'Verbindungsfehler. Bitte prüfen Sie Ihre Internetverbindung.';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            };
+        }
+        </script>
 
         <!-- Footer -->
         <x-public-footer />
