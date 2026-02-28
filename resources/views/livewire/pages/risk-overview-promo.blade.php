@@ -112,11 +112,6 @@ $version = '1.1.0';
                                     Jetzt anmelden
                                 </a>
                             @endif
-                            <a href="https://global-travel-monitor.eu" target="_blank" rel="noopener noreferrer"
-                               class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl border transition-all" style="background: hsl(220, 13%, 18%); border-color: hsl(220, 13%, 25%); color: hsl(0, 0%, 90%);">
-                                <i class="fa-regular fa-arrow-up-right-from-square mr-2"></i>
-                                Plattform ansehen
-                            </a>
                         </div>
 
                         <!-- Stats row -->
