@@ -37,9 +37,10 @@ class RiskOverviewController extends Controller
 
         // Show promo page if not logged in or feature not enabled
         if (! $customer || ! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            return view('livewire.pages.risk-overview-promo', [
-                'isLoggedIn' => $isLoggedIn,
-            ]);
+            return response()
+                ->view('livewire.pages.risk-overview-promo', ['isLoggedIn' => $isLoggedIn])
+                ->header('Cache-Control', 'public, max-age=3600, s-maxage=86400')
+                ->header('Vary', 'Cookie');
         }
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));

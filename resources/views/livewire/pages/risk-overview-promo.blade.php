@@ -9,7 +9,28 @@ $version = '1.2.0';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>TravelAlert - Global Travel Monitor</title>
+    <title>TravelAlert – Reisesicherheit & Travel Risk Management | Global Travel Monitor</title>
+    <meta name="description" content="TravelAlert: Echtzeit-Reisewarnungen, automatisches Reise-Monitoring und Risikoanalysen für Geschäftsreisen. 24/7 Sicherheitsmonitoring in über 200 Ländern. Jetzt kostenlos testen.">
+    <meta name="keywords" content="TravelAlert, Reisesicherheit, Travel Risk Management, Reisewarnungen, Geschäftsreise Sicherheit, Duty of Care, Reiserisiko Monitoring, Passolution">
+    <meta name="author" content="Passolution GmbH">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://global-travel-monitor.eu/travel-alert">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:title" content="TravelAlert – Echtzeit-Reisesicherheit für Unternehmen">
+    <meta property="og:description" content="Automatisches Reise-Monitoring, Echtzeit-Warnungen und länderweise Risikoanalysen. TravelAlert schützt Ihre Geschäftsreisenden in über 200 Ländern.">
+    <meta property="og:url" content="https://global-travel-monitor.eu/travel-alert">
+    <meta property="og:image" content="{{ asset('images/travelalert/GTM-TA-01.png') }}">
+    <meta property="og:image:alt" content="TravelAlert Dashboard – Reisesicherheits-Monitoring von Passolution">
+    <meta property="og:locale" content="de_DE">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TravelAlert – Echtzeit-Reisesicherheit für Unternehmen">
+    <meta name="twitter:description" content="Automatisches Reise-Monitoring und Echtzeit-Warnungen für Geschäftsreisende. Jetzt kostenlos testen.">
+    <meta name="twitter:image" content="{{ asset('images/travelalert/GTM-TA-01.png') }}">
 
     <!-- Archivo Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,6 +43,12 @@ $version = '1.2.0';
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="preload" href="{{ asset('css/risk-overview-promo.css') }}?v={{ $version }}" as="style">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -48,6 +75,98 @@ $version = '1.2.0';
     @endif
 
     <link rel="stylesheet" href="{{ asset('css/risk-overview-promo.css') }}?v={{ $version }}" />
+
+    <!-- JSON-LD: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "TravelAlert",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Echtzeit-Reisesicherheits-Monitoring für Unternehmen. Automatische Zuordnung von Sicherheitsereignissen zu Geschäftsreisen in über 200 Ländern.",
+        "url": "https://global-travel-monitor.eu/travel-alert",
+        "offers": [
+            {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "EUR",
+                "description": "Kostenlos bis 30.06.2026",
+                "validThrough": "2026-06-30"
+            },
+            {
+                "@type": "Offer",
+                "price": "5.00",
+                "priceCurrency": "EUR",
+                "description": "Ab 01.07.2026 – Monatliches Entgelt für Reisebüros mit Kooperation/Kette",
+                "priceValidUntil": "2027-12-31"
+            }
+        ],
+        "featureList": [
+            "Interaktive Weltkarte mit Sicherheitsereignissen",
+            "Automatisches Reise-Event-Matching",
+            "Echtzeit-Warnungen und Benachrichtigungen",
+            "Länderweise Risikoanalysen",
+            "Kalenderansicht aller Ereignisse",
+            "Filter nach Priorität, Zeitraum und Labels",
+            "24/7 Sicherheitsmonitoring in über 200 Ländern",
+            "Individuelle Labels für Reisen und Events"
+        ],
+        "screenshot": [
+            "{{ asset('images/travelalert/GTM-TA-01.png') }}",
+            "{{ asset('images/travelalert/GMT-TA-02.png') }}",
+            "{{ asset('images/travelalert/GTM-TA-Filter.png') }}",
+            "{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}"
+        ],
+        "author": {
+            "@type": "Organization",
+            "name": "Passolution GmbH",
+            "url": "https://www.passolution.de"
+        }
+    }
+    </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Wie funktioniert TravelAlert?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "TravelAlert funktioniert in drei Schritten: 1. Reisen anlegen – Hinterlegen Sie Ihre Geschäftsreisen mit Reisezielen und Zeiträumen oder importieren Sie diese automatisch. 2. Automatische Analyse – TravelAlert analysiert kontinuierlich sicherheitsrelevante Ereignisse und ordnet diese Ihren Reisen zu. 3. Sofortige Warnung – Bei relevanten Ereignissen werden Sie sofort informiert, mit konkreten Handlungsempfehlungen."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Für wen ist TravelAlert geeignet?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "TravelAlert richtet sich an Travel Manager, die Geschäftsreisen im Blick behalten und ihre Fürsorgepflicht erfüllen möchten, an Sicherheitsbeauftragte, die fundierte Risikoeinschätzungen auf Basis aktueller Daten benötigen, sowie an die Geschäftsführung für strategische Entscheidungen und Compliance im Bereich Reisesicherheit."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Was kostet TravelAlert?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "TravelAlert ist bis zum 30.06.2026 kostenlos. Ab dem 01.07.2026 beträgt das monatliche Entgelt für Reisebüros 7,00 EUR (ohne Kooperation/Kette) bzw. 5,00 EUR (mit Kooperation/Kette). Für Reiseveranstalter und OTAs gelten individuelle Konditionen."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Welche Länder werden von TravelAlert abgedeckt?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "TravelAlert überwacht Sicherheitsereignisse in über 200 Ländern weltweit, rund um die Uhr (24/7). Die Abdeckung umfasst politische Unruhen, Terrorwarnungen, Naturkatastrophen und weitere sicherheitsrelevante Ereignisse."
+                }
+            }
+        ]
+    }
+    </script>
 </head>
 
 <body>
@@ -61,10 +180,10 @@ $version = '1.2.0';
             <x-public-navigation :active="$active" />
 
             <!-- Promo Content -->
-            <div class="promo-content">
+            <main class="promo-content">
 
                 <!-- 1. Hero-Bereich -->
-                <section class="relative min-h-[520px] flex items-center justify-center overflow-hidden" style="background: #021a2b;">
+                <section id="hero" class="relative min-h-[520px] flex items-center justify-center overflow-hidden" style="background: #021a2b;">
                     <!-- Glow blobs -->
                     <div class="glow-blob animate-pulse-slow" style="top: 15%; left: 20%; width: 450px; height: 450px; background: rgba(206, 231, 65, 0.12);"></div>
                     <div class="glow-blob animate-pulse-slow" style="top: 25%; left: 30%; width: 256px; height: 256px; background: rgba(206, 231, 65, 0.18); filter: blur(80px);"></div>
@@ -95,6 +214,7 @@ $version = '1.2.0';
                                style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
                                onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
                                onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                               aria-label="TravelAlert jetzt bestellen – Bestellformular öffnen"
                             >
                                 <i class="fa-regular fa-cart-shopping mr-2"></i>
                                 Jetzt bestellen
@@ -104,7 +224,8 @@ $version = '1.2.0';
                                    class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
                                    style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
                                    onmouseover="this.style.background='#a8e2f5'; this.style.boxShadow='0 10px 30px -5px rgba(145, 218, 242, 0.5)'"
-                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'">
+                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'"
+                                   aria-label="TravelAlert im Dashboard freischalten">
                                     <i class="fa-regular fa-unlock mr-2"></i>
                                     Jetzt freischalten
                                 </a>
@@ -113,7 +234,8 @@ $version = '1.2.0';
                                    class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
                                    style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
                                    onmouseover="this.style.background='#a8e2f5'; this.style.boxShadow='0 10px 30px -5px rgba(145, 218, 242, 0.5)'"
-                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'">
+                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'"
+                                   aria-label="Anmelden um TravelAlert zu nutzen">
                                     <i class="fa-regular fa-right-to-bracket mr-2"></i>
                                     Jetzt anmelden
                                 </a>
@@ -139,7 +261,7 @@ $version = '1.2.0';
                 </section>
 
                 <!-- 2. Feature-Grid (4 Spalten) -->
-                <section class="py-20 px-6" style="background: #021a2b;">
+                <section id="features" class="py-20 px-6" style="background: #021a2b;">
                     <div class="max-w-5xl mx-auto">
                         <div class="text-center mb-12">
                             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border mb-4" style="background: rgba(206, 231, 65, 0.15); border-color: rgba(206, 231, 65, 0.25);">
@@ -188,7 +310,7 @@ $version = '1.2.0';
                 </section>
 
                 <!-- 3. Feature-Showcase: Reisen-Monitoring -->
-                <section class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
+                <section id="reisen-monitoring" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
                             <div>
@@ -217,7 +339,7 @@ $version = '1.2.0';
                             </div>
                             <!-- Screenshot -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-01.png') }}" alt="TravelAlert Reisen-Monitoring" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-01.png') }}" alt="TravelAlert Dashboard – automatisches Reise-Monitoring mit Echtzeit-Sicherheitsereignissen und Reisezuordnung" class="w-full h-auto" loading="lazy">
                             </div>
                         </div>
 
@@ -225,7 +347,7 @@ $version = '1.2.0';
                         <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
                             <!-- Screenshot (links) -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GMT-TA-02.png') }}" alt="TravelAlert Länder-Ansicht" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GMT-TA-02.png') }}" alt="TravelAlert Länder-Risikoanalyse – detaillierte Sicherheitsbewertung pro Land mit Travel Risk Management Übersicht" class="w-full h-auto" loading="lazy">
                             </div>
                             <div class="order-1 md:order-2">
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(145, 218, 242, 0.1); border-color: rgba(145, 218, 242, 0.2);">
@@ -281,19 +403,19 @@ $version = '1.2.0';
                             </div>
                             <!-- Screenshot -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter & Labels" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter und Labels – Priorisierung von Reisewarnungen nach Zeitraum, Priorität und benutzerdefinierten Labels" class="w-full h-auto" loading="lazy">
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Kalenderansicht -->
-                <section class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
+                <section id="kalenderansicht" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="grid md:grid-cols-2 gap-12 items-center">
                             <!-- Screenshot (links) -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}" alt="TravelAlert Kalenderansicht" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}" alt="TravelAlert Kalenderansicht – tagesgenaue Übersicht aller Sicherheitsereignisse mit Farbcodierung nach Priorität" class="w-full h-auto" loading="lazy">
                             </div>
                             <div class="order-1 md:order-2">
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(145, 218, 242, 0.1); border-color: rgba(145, 218, 242, 0.2);">
@@ -324,7 +446,7 @@ $version = '1.2.0';
                 </section>
 
                 <!-- 4. So funktioniert's -->
-                <section class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
+                <section id="so-funktionierts" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="text-center mb-12">
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">So funktioniert's</h2>
@@ -363,7 +485,7 @@ $version = '1.2.0';
                 </section>
 
                 <!-- 5. Zielgruppen -->
-                <section class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
+                <section id="zielgruppen" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="text-center mb-12">
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Für wen ist Travel<span class="text-[#cee741]">Alert</span>?</h2>
@@ -402,7 +524,7 @@ $version = '1.2.0';
                 </section>
 
                 <!-- 6. CTA-Abschluss -->
-                <section class="relative py-20 px-6 overflow-hidden" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
+                <section id="bestellen" class="relative py-20 px-6 overflow-hidden" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <!-- Glow -->
                     <div class="glow-blob" style="top: 30%; left: 35%; width: 400px; height: 400px; background: rgba(206, 231, 65, 0.1);"></div>
 
@@ -421,6 +543,7 @@ $version = '1.2.0';
                                    style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
                                    onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
                                    onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                                   aria-label="TravelAlert jetzt bestellen – Bestellformular öffnen"
                                 >
                                     <i class="fa-regular fa-cart-shopping mr-2"></i>
                                     Jetzt bestellen
@@ -430,7 +553,8 @@ $version = '1.2.0';
                                        class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
                                    style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
                                    onmouseover="this.style.background='#a8e2f5'; this.style.boxShadow='0 10px 30px -5px rgba(145, 218, 242, 0.5)'"
-                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'">
+                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'"
+                                   aria-label="TravelAlert im Dashboard freischalten">
                                         <i class="fa-regular fa-unlock mr-2"></i>
                                         Jetzt freischalten
                                     </a>
@@ -439,7 +563,8 @@ $version = '1.2.0';
                                        class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
                                    style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
                                    onmouseover="this.style.background='#a8e2f5'; this.style.boxShadow='0 10px 30px -5px rgba(145, 218, 242, 0.5)'"
-                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'">
+                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'"
+                                   aria-label="Anmelden um TravelAlert zu nutzen">
                                         <i class="fa-regular fa-right-to-bracket mr-2"></i>
                                         Jetzt anmelden
                                     </a>
@@ -449,7 +574,7 @@ $version = '1.2.0';
                     </div>
                 </section>
 
-            </div>
+            </main>
         </div>
 
         <!-- Order Modal -->
