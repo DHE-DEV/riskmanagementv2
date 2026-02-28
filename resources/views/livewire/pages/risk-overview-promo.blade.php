@@ -79,8 +79,8 @@ $version = '1.2.0';
     <!-- JSON-LD: SoftwareApplication -->
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
+        "@@context": "https://schema.org",
+        "@@type": "SoftwareApplication",
         "name": "TravelAlert",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
@@ -88,14 +88,14 @@ $version = '1.2.0';
         "url": "https://global-travel-monitor.eu/travel-alert",
         "offers": [
             {
-                "@type": "Offer",
+                "@@type": "Offer",
                 "price": "0",
                 "priceCurrency": "EUR",
                 "description": "Kostenlos bis 30.06.2026",
                 "validThrough": "2026-06-30"
             },
             {
-                "@type": "Offer",
+                "@@type": "Offer",
                 "price": "5.00",
                 "priceCurrency": "EUR",
                 "description": "Ab 01.07.2026 – Monatliches Entgelt für Reisebüros mit Kooperation/Kette",
@@ -119,7 +119,7 @@ $version = '1.2.0';
             "{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}"
         ],
         "author": {
-            "@type": "Organization",
+            "@@type": "Organization",
             "name": "Passolution GmbH",
             "url": "https://www.passolution.de"
         }
@@ -129,38 +129,38 @@ $version = '1.2.0';
     <!-- JSON-LD: FAQPage -->
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
+        "@@context": "https://schema.org",
+        "@@type": "FAQPage",
         "mainEntity": [
             {
-                "@type": "Question",
+                "@@type": "Question",
                 "name": "Wie funktioniert TravelAlert?",
                 "acceptedAnswer": {
-                    "@type": "Answer",
+                    "@@type": "Answer",
                     "text": "TravelAlert funktioniert in drei Schritten: 1. Reisen anlegen – Hinterlegen Sie Ihre Geschäftsreisen mit Reisezielen und Zeiträumen oder importieren Sie diese automatisch. 2. Automatische Analyse – TravelAlert analysiert kontinuierlich sicherheitsrelevante Ereignisse und ordnet diese Ihren Reisen zu. 3. Sofortige Warnung – Bei relevanten Ereignissen werden Sie sofort informiert, mit konkreten Handlungsempfehlungen."
                 }
             },
             {
-                "@type": "Question",
+                "@@type": "Question",
                 "name": "Für wen ist TravelAlert geeignet?",
                 "acceptedAnswer": {
-                    "@type": "Answer",
+                    "@@type": "Answer",
                     "text": "TravelAlert richtet sich an Travel Manager, die Geschäftsreisen im Blick behalten und ihre Fürsorgepflicht erfüllen möchten, an Sicherheitsbeauftragte, die fundierte Risikoeinschätzungen auf Basis aktueller Daten benötigen, sowie an die Geschäftsführung für strategische Entscheidungen und Compliance im Bereich Reisesicherheit."
                 }
             },
             {
-                "@type": "Question",
+                "@@type": "Question",
                 "name": "Was kostet TravelAlert?",
                 "acceptedAnswer": {
-                    "@type": "Answer",
+                    "@@type": "Answer",
                     "text": "TravelAlert ist bis zum 30.06.2026 kostenlos. Ab dem 01.07.2026 beträgt das monatliche Entgelt für Reisebüros 7,00 EUR (ohne Kooperation/Kette) bzw. 5,00 EUR (mit Kooperation/Kette). Für Reiseveranstalter und OTAs gelten individuelle Konditionen."
                 }
             },
             {
-                "@type": "Question",
+                "@@type": "Question",
                 "name": "Welche Länder werden von TravelAlert abgedeckt?",
                 "acceptedAnswer": {
-                    "@type": "Answer",
+                    "@@type": "Answer",
                     "text": "TravelAlert überwacht Sicherheitsereignisse in über 200 Ländern weltweit, rund um die Uhr (24/7). Die Abdeckung umfasst politische Unruhen, Terrorwarnungen, Naturkatastrophen und weitere sicherheitsrelevante Ereignisse."
                 }
             }
