@@ -58,7 +58,7 @@ class TravelAlertOrdersTable
                     ->label('Test läuft ab')
                     ->date('d.m.Y')
                     ->sortable()
-                    ->default('-')
+                    ->placeholder('-')
                     ->color(fn ($record) => $record->trial_expires_at?->isPast() ? 'danger' : null),
             ])
             ->recordActions([
