@@ -1,5 +1,5 @@
 @php
-$active = 'risk-overview';
+$active = 'travel-alert';
 $version = '1.2.0';
 @endphp
 <!DOCTYPE html>
@@ -145,7 +145,7 @@ $version = '1.2.0';
                             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border mb-4" style="background: rgba(206, 231, 65, 0.15); border-color: rgba(206, 231, 65, 0.25);">
                                 <span class="text-sm font-medium text-[#cee741]">Features</span>
                             </div>
-                            <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Was TravelAlert für Sie leistet</h2>
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Was Travel<span class="text-[#cee741]">Alert</span> für Sie leistet</h2>
                             <p class="max-w-2xl mx-auto" style="color: #91daf2;">
                                 Der Global Travel Monitor vereint alle relevanten Informationen für sicheres Reisen auf einer Plattform.
                             </p>
@@ -198,7 +198,7 @@ $version = '1.2.0';
                                 </div>
                                 <h3 class="text-2xl md:text-3xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Automatische Zuordnung von Events zu Reisen</h3>
                                 <p class="leading-relaxed mb-6" style="color: #91daf2;">
-                                    Hinterlegen Sie Ihre Geschäftsreisen und lassen Sie diese automatisch überwachen. TravelAlert ordnet sicherheitsrelevante Ereignisse automatisch Ihren aktiven Reisen zu.
+                                    Hinterlegen Sie Ihre Geschäftsreisen und lassen Sie diese automatisch überwachen. Travel<span class="text-[#cee741]">Alert</span> ordnet sicherheitsrelevante Ereignisse automatisch Ihren aktiven Reisen zu.
                                 </p>
                                 <ul class="space-y-3">
                                     <li class="flex items-start gap-3">
@@ -346,7 +346,7 @@ $version = '1.2.0';
                                 </div>
                                 <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Automatische Analyse</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    TravelAlert analysiert kontinuierlich sicherheitsrelevante Ereignisse und ordnet diese Ihren Reisen zu.
+                                    Travel<span class="text-[#cee741]">Alert</span> analysiert kontinuierlich sicherheitsrelevante Ereignisse und ordnet diese Ihren Reisen zu.
                                 </p>
                             </div>
                             <div class="p-6 rounded-2xl hover:border-[#cee741]/30 transition-all duration-300 group" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
@@ -366,7 +366,7 @@ $version = '1.2.0';
                 <section class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="text-center mb-12">
-                            <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Für wen ist TravelAlert?</h2>
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Für wen ist Travel<span class="text-[#cee741]">Alert</span>?</h2>
                             <p style="color: #91daf2;" class="max-w-2xl mx-auto">Maßgeschneidert für Unternehmen, die Verantwortung für Reisende tragen</p>
                         </div>
                         <div class="grid md:grid-cols-3 gap-6">
@@ -411,7 +411,7 @@ $version = '1.2.0';
                             <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6" style="background: rgba(206, 231, 65, 0.1);">
                                 <i class="fa-regular fa-shield-exclamation text-3xl text-[#cee741]"></i>
                             </div>
-                            <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Starten Sie jetzt mit TravelAlert</h2>
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Starten Sie jetzt mit Travel<span class="text-[#cee741]">Alert</span></h2>
                             <p class="mb-8" style="color: #91daf2;">
                                 Schützen Sie Ihre Reisenden mit Echtzeit-Sicherheitsinformationen und automatischem Reise-Monitoring.
                             </p>
@@ -444,11 +444,6 @@ $version = '1.2.0';
                                         Jetzt anmelden
                                     </a>
                                 @endif
-                                <a href="https://global-travel-monitor.eu" target="_blank" rel="noopener noreferrer"
-                                   class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl border transition-all" style="background: #065272; border-color: rgba(145, 218, 242, 0.2); color: #e0e0e0;">
-                                    <i class="fa-regular fa-arrow-up-right-from-square mr-2"></i>
-                                    Plattform ansehen
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -481,7 +476,7 @@ $version = '1.2.0';
                                 <i class="fa-regular fa-cart-shopping" style="color: #CEE741;"></i>
                             </div>
                             <div>
-                                <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">TravelAlert bestellen</h2>
+                                <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">Travel<span class="text-[#cee741]">Alert</span> bestellen</h2>
                                 <p class="text-xs" style="color: rgba(255,255,255,0.6);">Füllen Sie das Formular aus - wir melden uns umgehend.</p>
                             </div>
                         </div>
@@ -516,7 +511,7 @@ $version = '1.2.0';
                                     <span class="text-sm font-semibold" style="color: #002742;">Preis</span>
                                 </div>
                                 <p class="text-sm text-gray-700 mb-3">
-                                    Die Zusatzleistung TravelAlert wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
+                                    Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
                                     <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
                                 </p>
                                 <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>

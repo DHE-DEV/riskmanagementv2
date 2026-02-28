@@ -3061,7 +3061,7 @@
                         params.append('days', this.filters.days);
                     }
 
-                    const response = await fetch(`{{ url('/embed/risk-overview/country') }}/${country.country.code}?${params.toString()}`, {
+                    const response = await fetch(`{{ url('/embed/travel-alert/country') }}/${country.country.code}?${params.toString()}`, {
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

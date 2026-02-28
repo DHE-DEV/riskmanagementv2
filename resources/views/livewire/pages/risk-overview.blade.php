@@ -1,5 +1,5 @@
 @php
-$active = 'risk-overview';
+$active = 'travel-alert';
 $version = '1.1.0';
 @endphp
 <!DOCTYPE html>
@@ -2837,7 +2837,7 @@ $version = '1.1.0';
                 labelsSearch: '{{ route("risk-overview.labels.search") }}',
                 data: '{{ route("risk-overview.data") }}',
                 trips: '{{ route("risk-overview.trips") }}',
-                country: '{{ url("/risk-overview/country") }}',
+                country: '{{ url("/travel-alert/country") }}',
             }
         };
     </script>

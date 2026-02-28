@@ -127,7 +127,7 @@ Route::prefix('embed')->name('embed.')->middleware(['allow.embedding', 'validate
 |   <iframe src="https://global-travel-monitor.eu/embed/risk-overview" width="100%" height="800"></iframe>
 |
 */
-Route::prefix('embed/risk-overview')->name('embed.risk-overview')->middleware(['allow.embedding'])->group(function () {
+Route::prefix('embed/travel-alert')->name('embed.risk-overview')->middleware(['allow.embedding'])->group(function () {
     Route::get('/', [EmbedRiskOverviewController::class, 'index']);
     Route::post('/login', [EmbedRiskOverviewController::class, 'login'])->name('.login');
 
@@ -321,49 +321,49 @@ Route::delete('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer
     ->name('my-travelers.folder.delete');
 
 // Risiko-Ubersicht - Lander mit Events und betroffene Reisende
-Route::get('/risk-overview', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'index'])
+Route::get('/travel-alert', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'index'])
     ->name('risk-overview');
 
-Route::post('/risk-overview/order', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'submitOrder'])
+Route::post('/travel-alert/order', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'submitOrder'])
     ->name('risk-overview.order');
 
-Route::get('/risk-overview/data', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getData'])
+Route::get('/travel-alert/data', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getData'])
     ->middleware('auth:customer')
     ->name('risk-overview.data');
 
-Route::get('/risk-overview/country/{countryCode}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getCountryDetails'])
+Route::get('/travel-alert/country/{countryCode}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getCountryDetails'])
     ->middleware('auth:customer')
     ->name('risk-overview.country');
 
-Route::get('/risk-overview/trips', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getTrips'])
+Route::get('/travel-alert/trips', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getTrips'])
     ->middleware('auth:customer')
     ->name('risk-overview.trips');
 
-Route::get('/risk-overview/labels/search', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'searchLabels'])
+Route::get('/travel-alert/labels/search', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'searchLabels'])
     ->middleware('auth:customer')
     ->name('risk-overview.labels.search');
 
-Route::post('/risk-overview/folder/{folderId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachLabel'])
+Route::post('/travel-alert/folder/{folderId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.folder.labels.attach');
 
-Route::delete('/risk-overview/folder/{folderId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachLabel'])
+Route::delete('/travel-alert/folder/{folderId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.folder.labels.detach');
 
-Route::post('/risk-overview/pds-trip/{pdsTid}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachPdsTripLabel'])
+Route::post('/travel-alert/pds-trip/{pdsTid}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachPdsTripLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.pds-trip.labels.attach');
 
-Route::delete('/risk-overview/pds-trip/{pdsTid}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachPdsTripLabel'])
+Route::delete('/travel-alert/pds-trip/{pdsTid}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachPdsTripLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.pds-trip.labels.detach');
 
-Route::post('/risk-overview/event/{eventId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachEventLabel'])
+Route::post('/travel-alert/event/{eventId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachEventLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.event.labels.attach');
 
-Route::delete('/risk-overview/event/{eventId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachEventLabel'])
+Route::delete('/travel-alert/event/{eventId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachEventLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.event.labels.detach');
 

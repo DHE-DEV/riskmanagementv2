@@ -162,10 +162,10 @@ function riskOverviewApp() {
                 if (this.selectedTrip.source === 'api') {
                     const pdsTid = this.selectedTrip.pds_tid || this.selectedTrip.trip_id;
                     if (!pdsTid) return;
-                    url = `/risk-overview/pds-trip/${encodeURIComponent(pdsTid)}/labels`;
+                    url = `/travel-alert/pds-trip/${encodeURIComponent(pdsTid)}/labels`;
                 } else {
                     if (!this.selectedTrip.folder_id) return;
-                    url = `/risk-overview/folder/${this.selectedTrip.folder_id}/labels`;
+                    url = `/travel-alert/folder/${this.selectedTrip.folder_id}/labels`;
                 }
                 const data = await this.fetchApi(url, {
                     method: 'POST',
@@ -192,10 +192,10 @@ function riskOverviewApp() {
                 if (this.selectedTrip.source === 'api') {
                     const pdsTid = this.selectedTrip.pds_tid || this.selectedTrip.trip_id;
                     if (!pdsTid) return;
-                    url = `/risk-overview/pds-trip/${encodeURIComponent(pdsTid)}/labels/${labelId}`;
+                    url = `/travel-alert/pds-trip/${encodeURIComponent(pdsTid)}/labels/${labelId}`;
                 } else {
                     if (!this.selectedTrip.folder_id) return;
-                    url = `/risk-overview/folder/${this.selectedTrip.folder_id}/labels/${labelId}`;
+                    url = `/travel-alert/folder/${this.selectedTrip.folder_id}/labels/${labelId}`;
                 }
                 const data = await this.fetchApi(url, {
                     method: 'DELETE',
@@ -249,7 +249,7 @@ function riskOverviewApp() {
             if (!this.selectedEvent) return;
             try {
                 const body = labelId ? { label_id: labelId } : { name: labelName };
-                const url = `/risk-overview/event/${this.selectedEvent.id}/labels`;
+                const url = `/travel-alert/event/${this.selectedEvent.id}/labels`;
                 const data = await this.fetchApi(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -271,7 +271,7 @@ function riskOverviewApp() {
         async detachEventLabel(labelId) {
             if (!this.selectedEvent) return;
             try {
-                const url = `/risk-overview/event/${this.selectedEvent.id}/labels/${labelId}`;
+                const url = `/travel-alert/event/${this.selectedEvent.id}/labels/${labelId}`;
                 const data = await this.fetchApi(url, { method: 'DELETE' });
                 if (data.success) {
                     this.selectedEvent.labels = data.labels;
