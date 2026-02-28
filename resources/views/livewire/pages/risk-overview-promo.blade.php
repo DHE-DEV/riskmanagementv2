@@ -209,70 +209,17 @@ $version = '1.1.0';
                                     </li>
                                 </ul>
                             </div>
-                            <!-- Mockup Card -->
-                            <div class="rounded-2xl p-6" style="background: hsl(220, 13%, 13%); border: 1px solid hsl(220, 13%, 20%);">
-                                <div class="space-y-3">
-                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15);">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium" style="color: hsl(0, 0%, 95%);">Sicherheitswarnung - Istanbul</p>
-                                            <p class="text-xs" style="color: hsl(220, 10%, 50%);">Betrifft: Geschäftsreise Türkei (12.03 - 15.03)</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.15);">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium" style="color: hsl(0, 0%, 95%);">Streik Flughafen - London</p>
-                                            <p class="text-xs" style="color: hsl(220, 10%, 50%);">Betrifft: Kundenbesuch UK (20.03 - 22.03)</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.15);">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium" style="color: hsl(0, 0%, 95%);">Reisehinweis aktualisiert - Japan</p>
-                                            <p class="text-xs" style="color: hsl(220, 10%, 50%);">Betrifft: Messe Tokio (05.04 - 10.04)</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <!-- Screenshot -->
+                            <div class="rounded-2xl overflow-hidden shadow-2xl" style="border: 1px solid hsl(220, 13%, 20%);">
+                                <img src="{{ asset('images/travelalert/GTM-TA-01.png') }}" alt="TravelAlert Reisen-Monitoring" class="w-full h-auto" loading="lazy">
                             </div>
                         </div>
 
                         <!-- Länder-Ansicht -->
                         <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
-                            <!-- Mockup Card (links) -->
-                            <div class="rounded-2xl p-6 order-2 md:order-1" style="background: hsl(220, 13%, 13%); border: 1px solid hsl(220, 13%, 20%);">
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between p-3 rounded-lg" style="border: 1px solid hsl(220, 13%, 20%);">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xl">🇹🇷</span>
-                                            <div>
-                                                <p class="text-sm font-medium" style="color: hsl(0, 0%, 95%);">Türkei</p>
-                                                <p class="text-xs" style="color: hsl(220, 10%, 50%);">3 aktive Ereignisse</p>
-                                            </div>
-                                        </div>
-                                        <span class="px-2.5 py-1 text-xs font-medium rounded-full" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">Hoch</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-3 rounded-lg" style="border: 1px solid hsl(220, 13%, 20%);">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xl">🇬🇧</span>
-                                            <div>
-                                                <p class="text-sm font-medium" style="color: hsl(0, 0%, 95%);">Vereinigtes Königreich</p>
-                                                <p class="text-xs" style="color: hsl(220, 10%, 50%);">1 aktives Ereignis</p>
-                                            </div>
-                                        </div>
-                                        <span class="px-2.5 py-1 text-xs font-medium rounded-full" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Mittel</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-3 rounded-lg" style="border: 1px solid hsl(220, 13%, 20%);">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xl">🇯🇵</span>
-                                            <div>
-                                                <p class="text-sm font-medium" style="color: hsl(0, 0%, 95%);">Japan</p>
-                                                <p class="text-xs" style="color: hsl(220, 10%, 50%);">1 aktives Ereignis</p>
-                                            </div>
-                                        </div>
-                                        <span class="px-2.5 py-1 text-xs font-medium rounded-full" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">Info</span>
-                                    </div>
-                                </div>
+                            <!-- Screenshot (links) -->
+                            <div class="rounded-2xl overflow-hidden shadow-2xl order-2 md:order-1" style="border: 1px solid hsl(220, 13%, 20%);">
+                                <img src="{{ asset('images/travelalert/GMT-TA-02.png') }}" alt="TravelAlert Länder-Ansicht" class="w-full h-auto" loading="lazy">
                             </div>
                             <div class="order-1 md:order-2">
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2);">
@@ -326,27 +273,9 @@ $version = '1.1.0';
                                     </li>
                                 </ul>
                             </div>
-                            <!-- Mockup Card -->
-                            <div class="rounded-2xl p-6" style="background: hsl(220, 13%, 13%); border: 1px solid hsl(220, 13%, 20%);">
-                                <p class="text-xs font-medium mb-3" style="color: hsl(220, 10%, 50%);">Priorität</p>
-                                <div class="flex flex-wrap gap-2 mb-5">
-                                    <span class="px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">Kritisch</span>
-                                    <span class="px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Hoch</span>
-                                    <span class="px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(234, 179, 8, 0.15); color: #facc15;">Mittel</span>
-                                    <span class="px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">Info</span>
-                                </div>
-                                <p class="text-xs font-medium mb-3" style="color: hsl(220, 10%, 50%);">Labels</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
-                                        <i class="fa-regular fa-tag text-[10px]"></i> VIP-Reisen
-                                    </span>
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
-                                        <i class="fa-regular fa-tag text-[10px]"></i> EMEA
-                                    </span>
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8;">
-                                        <i class="fa-regular fa-tag text-[10px]"></i> Vorstand
-                                    </span>
-                                </div>
+                            <!-- Screenshot -->
+                            <div class="rounded-2xl overflow-hidden shadow-2xl" style="border: 1px solid hsl(220, 13%, 20%);">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}" alt="TravelAlert Kalenderansicht" class="w-full h-auto" loading="lazy">
                             </div>
                         </div>
                     </div>
