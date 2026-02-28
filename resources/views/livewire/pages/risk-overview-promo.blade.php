@@ -486,44 +486,44 @@ $version = '1.1.0';
             <div x-show="open"
                  x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                  x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 z-[20000]" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);"
+                 class="fixed inset-0 z-[20000]" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
                  @click.self="open = false">
 
                 <!-- Modal -->
                 <div x-show="open"
                      x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-8 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                      x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-8 scale-95"
-                     class="relative mx-auto mt-[3vh] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
-                     style="background: hsl(220, 13%, 13%); border: 1px solid hsl(220, 13%, 22%); max-height: 94vh;"
+                     class="relative mx-auto mt-[3vh] w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+                     style="max-height: 94vh;"
                      @keydown.escape.window="open = false">
 
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-6 py-4" style="background: hsl(220, 13%, 10%); border-bottom: 1px solid hsl(220, 13%, 20%);">
+                    <div class="flex items-center justify-between px-6 py-4" style="background: #002742;">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(206, 231, 65, 0.15);">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(206, 231, 65, 0.2);">
                                 <i class="fa-regular fa-cart-shopping" style="color: #CEE741;"></i>
                             </div>
                             <div>
-                                <h2 class="text-lg font-bold" style="color: hsl(0, 0%, 98%); font-family: Archivo, sans-serif;">TravelAlert bestellen</h2>
-                                <p class="text-xs" style="color: hsl(220, 10%, 50%);">Füllen Sie das Formular aus - wir melden uns umgehend.</p>
+                                <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">TravelAlert bestellen</h2>
+                                <p class="text-xs" style="color: rgba(255,255,255,0.6);">Füllen Sie das Formular aus - wir melden uns umgehend.</p>
                             </div>
                         </div>
-                        <button @click="open = false" class="p-2 rounded-lg transition-colors" style="color: hsl(220, 10%, 50%);" onmouseover="this.style.background='hsl(220, 13%, 20%)'" onmouseout="this.style.background='transparent'">
+                        <button @click="open = false" class="p-2 rounded-lg transition-colors text-white/60 hover:text-white hover:bg-white/10">
                             <i class="fa-regular fa-xmark text-lg"></i>
                         </button>
                     </div>
 
                     <!-- Success State -->
                     <div x-show="submitted" class="px-6 py-16 text-center">
-                        <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background: rgba(16, 185, 129, 0.15);">
-                            <i class="fa-regular fa-check text-4xl text-emerald-400"></i>
+                        <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-emerald-50">
+                            <i class="fa-regular fa-check text-4xl text-emerald-500"></i>
                         </div>
-                        <h3 class="text-2xl font-bold mb-3" style="color: hsl(0, 0%, 98%); font-family: Archivo, sans-serif;">Bestellung eingegangen!</h3>
-                        <p class="mb-8 max-w-md mx-auto" style="color: hsl(220, 10%, 60%);">
+                        <h3 class="text-2xl font-bold mb-3 text-gray-900" style="font-family: Archivo, sans-serif;">Bestellung eingegangen!</h3>
+                        <p class="mb-8 max-w-md mx-auto text-gray-500">
                             Vielen Dank für Ihre Bestellung. Wir werden uns in Kürze bei Ihnen melden, um die Details zu besprechen.
                         </p>
                         <button @click="open = false" class="inline-flex items-center px-6 py-2.5 font-semibold rounded-xl transition-all"
-                                style="background: #CEE741; color: #002742;">
+                                style="background: #002742; color: white;">
                             Schließen
                         </button>
                     </div>
@@ -532,43 +532,66 @@ $version = '1.1.0';
                     <form x-show="!submitted" @submit.prevent="submit" class="overflow-y-auto" style="max-height: calc(94vh - 73px);">
                         <div class="px-6 py-5 space-y-5">
 
+                            <!-- Preisinformationen -->
+                            <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
+                                    <span class="text-sm font-semibold" style="color: #002742;">Preis</span>
+                                </div>
+                                <p class="text-sm text-gray-700 mb-3">
+                                    Die Zusatzleistung TravelAlert wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
+                                    <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
+                                </p>
+                                <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
+                                <div class="space-y-2 ml-1">
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-800">Für Reisebüros:</p>
+                                        <ul class="text-sm text-gray-600 ml-4 list-disc">
+                                            <li>Monatliches Entgelt <strong>7,00 EUR</strong> ohne Kooperation/Kette</li>
+                                            <li>Monatliches Entgelt <strong>5,00 EUR</strong> mit Kooperation/Kette</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-800">Für Reiseveranstalter, OTA, o.Ä.:</p>
+                                        <p class="text-sm text-gray-600 ml-4">
+                                            Als Veranstalter, OTA, o.Ä. fallen andere Kosten an. Bitte melden Sie sich dafür an
+                                            <a href="mailto:vertrieb@passolution.de" class="text-blue-600 underline">vertrieb@passolution.de</a>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Firmendaten -->
                             <div>
                                 <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-building text-sm text-blue-400"></i>
-                                    <span class="text-sm font-semibold" style="color: hsl(220, 10%, 70%);">Firmendaten</span>
+                                    <i class="fa-regular fa-building text-sm text-blue-600"></i>
+                                    <span class="text-sm font-semibold text-gray-700">Firmendaten</span>
                                 </div>
 
                                 <div class="space-y-3">
                                     <!-- Firmenname -->
                                     <div>
-                                        <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                            Firmenname <span class="text-red-400">*</span>
+                                        <label class="block text-sm font-medium mb-1 text-gray-700">
+                                            Firmenname <span class="text-red-500">*</span>
                                         </label>
                                         <input type="text" x-model="form.company" required
-                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                               style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                               onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                placeholder="Musterfirma GmbH">
-                                        <p x-show="errors.company" x-text="errors.company" class="text-red-400 text-xs mt-1"></p>
+                                        <p x-show="errors.company" x-text="errors.company" class="text-red-500 text-xs mt-1"></p>
                                     </div>
 
                                     <!-- Ansprechpartner -->
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">Vorname</label>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">Vorname</label>
                                             <input type="text" x-model="form.first_name"
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                    placeholder="Max">
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">Nachname</label>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">Nachname</label>
                                             <input type="text" x-model="form.last_name"
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                    placeholder="Mustermann">
                                         </div>
                                     </div>
@@ -576,90 +599,79 @@ $version = '1.1.0';
                                     <!-- E-Mail & Telefon -->
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                                E-Mail <span class="text-red-400">*</span>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                E-Mail <span class="text-red-500">*</span>
                                             </label>
                                             <input type="email" x-model="form.email" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                    placeholder="max@musterfirma.de">
-                                            <p x-show="errors.email" x-text="errors.email" class="text-red-400 text-xs mt-1"></p>
+                                            <p x-show="errors.email" x-text="errors.email" class="text-red-500 text-xs mt-1"></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                                Telefon <span class="text-red-400">*</span>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                Telefon <span class="text-red-500">*</span>
                                             </label>
                                             <input type="tel" x-model="form.phone" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                    placeholder="+49 123 456 789">
-                                            <p x-show="errors.phone" x-text="errors.phone" class="text-red-400 text-xs mt-1"></p>
+                                            <p x-show="errors.phone" x-text="errors.phone" class="text-red-500 text-xs mt-1"></p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Divider -->
-                            <div style="border-top: 1px solid hsl(220, 13%, 20%);"></div>
+                            <div class="border-t border-gray-200"></div>
 
                             <!-- Adresse -->
                             <div>
                                 <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-location-dot text-sm text-emerald-400"></i>
-                                    <span class="text-sm font-semibold" style="color: hsl(220, 10%, 70%);">Adresse</span>
+                                    <i class="fa-regular fa-location-dot text-sm text-emerald-600"></i>
+                                    <span class="text-sm font-semibold text-gray-700">Adresse</span>
                                 </div>
 
                                 <div class="space-y-3">
                                     <!-- Straße -->
                                     <div>
-                                        <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                            Straße & Hausnr. <span class="text-red-400">*</span>
+                                        <label class="block text-sm font-medium mb-1 text-gray-700">
+                                            Straße & Hausnr. <span class="text-red-500">*</span>
                                         </label>
                                         <input type="text" x-model="form.street" required
-                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                               style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                               onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                placeholder="Musterstraße 1">
-                                        <p x-show="errors.street" x-text="errors.street" class="text-red-400 text-xs mt-1"></p>
+                                        <p x-show="errors.street" x-text="errors.street" class="text-red-500 text-xs mt-1"></p>
                                     </div>
 
                                     <!-- PLZ & Stadt -->
                                     <div class="grid grid-cols-3 gap-3">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                                PLZ <span class="text-red-400">*</span>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                PLZ <span class="text-red-500">*</span>
                                             </label>
                                             <input type="text" x-model="form.postal_code" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                    placeholder="12345">
-                                            <p x-show="errors.postal_code" x-text="errors.postal_code" class="text-red-400 text-xs mt-1"></p>
+                                            <p x-show="errors.postal_code" x-text="errors.postal_code" class="text-red-500 text-xs mt-1"></p>
                                         </div>
                                         <div class="col-span-2">
-                                            <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                                Stadt <span class="text-red-400">*</span>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                Stadt <span class="text-red-500">*</span>
                                             </label>
                                             <input type="text" x-model="form.city" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                                                   style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                                   onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                                    placeholder="Musterstadt">
-                                            <p x-show="errors.city" x-text="errors.city" class="text-red-400 text-xs mt-1"></p>
+                                            <p x-show="errors.city" x-text="errors.city" class="text-red-500 text-xs mt-1"></p>
                                         </div>
                                     </div>
 
                                     <!-- Land -->
                                     <div>
-                                        <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">
-                                            Land <span class="text-red-400">*</span>
+                                        <label class="block text-sm font-medium mb-1 text-gray-700">
+                                            Land <span class="text-red-500">*</span>
                                         </label>
                                         <select x-model="form.country" required
-                                                class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all appearance-none"
-                                                style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%); background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%239ca3af%22 d=%22M2 4l4 4 4-4%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;"
-                                                onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'">
+                                                class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all appearance-none border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%236b7280%22 d=%22M2 4l4 4 4-4%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;">
                                             <option value="" disabled>Land auswählen...</option>
                                             <option value="Deutschland">Deutschland</option>
                                             <option value="Österreich">Österreich</option>
@@ -686,77 +698,86 @@ $version = '1.1.0';
                                             <option value="" disabled>────────────</option>
                                             <option value="Andere">Andere</option>
                                         </select>
-                                        <p x-show="errors.country" x-text="errors.country" class="text-red-400 text-xs mt-1"></p>
+                                        <p x-show="errors.country" x-text="errors.country" class="text-red-500 text-xs mt-1"></p>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Divider -->
-                            <div style="border-top: 1px solid hsl(220, 13%, 20%);"></div>
+                            <div class="border-t border-gray-200"></div>
 
                             <!-- Abrechnung -->
                             <div>
                                 <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-file-invoice text-sm text-violet-400"></i>
-                                    <span class="text-sm font-semibold" style="color: hsl(220, 10%, 70%);">Abrechnung</span>
+                                    <i class="fa-regular fa-file-invoice text-sm text-violet-600"></i>
+                                    <span class="text-sm font-semibold text-gray-700">Abrechnung</span>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium mb-2" style="color: hsl(0, 0%, 90%);">
-                                        Bestehendes Abrechnungsverfahren nutzen? <span class="text-red-400">*</span>
+                                    <label class="block text-sm font-medium mb-2 text-gray-700">
+                                        Bestehendes Abrechnungsverfahren nutzen? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex gap-4">
-                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all"
-                                               :style="form.existing_billing === 'ja' ? 'background: rgba(206, 231, 65, 0.12); border: 1px solid rgba(206, 231, 65, 0.4);' : 'background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%);'">
+                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all border"
+                                               :class="form.existing_billing === 'ja' ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200'">
                                             <input type="radio" x-model="form.existing_billing" value="ja" class="sr-only">
                                             <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
-                                                 :style="form.existing_billing === 'ja' ? 'border-color: #CEE741;' : 'border-color: hsl(220, 13%, 35%);'">
-                                                <div x-show="form.existing_billing === 'ja'" class="w-2 h-2 rounded-full" style="background: #CEE741;"></div>
+                                                 :class="form.existing_billing === 'ja' ? 'border-blue-500' : 'border-gray-300'">
+                                                <div x-show="form.existing_billing === 'ja'" class="w-2 h-2 rounded-full bg-blue-500"></div>
                                             </div>
-                                            <span class="text-sm" style="color: hsl(0, 0%, 90%);">Ja</span>
+                                            <span class="text-sm text-gray-700">Ja</span>
                                         </label>
-                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all"
-                                               :style="form.existing_billing === 'nein' ? 'background: rgba(206, 231, 65, 0.12); border: 1px solid rgba(206, 231, 65, 0.4);' : 'background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%);'">
+                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all border"
+                                               :class="form.existing_billing === 'nein' ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200'">
                                             <input type="radio" x-model="form.existing_billing" value="nein" class="sr-only">
                                             <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
-                                                 :style="form.existing_billing === 'nein' ? 'border-color: #CEE741;' : 'border-color: hsl(220, 13%, 35%);'">
-                                                <div x-show="form.existing_billing === 'nein'" class="w-2 h-2 rounded-full" style="background: #CEE741;"></div>
+                                                 :class="form.existing_billing === 'nein' ? 'border-blue-500' : 'border-gray-300'">
+                                                <div x-show="form.existing_billing === 'nein'" class="w-2 h-2 rounded-full bg-blue-500"></div>
                                             </div>
-                                            <span class="text-sm" style="color: hsl(0, 0%, 90%);">Nein</span>
+                                            <span class="text-sm text-gray-700">Nein</span>
                                         </label>
                                     </div>
-                                    <p x-show="errors.existing_billing" x-text="errors.existing_billing" class="text-red-400 text-xs mt-1"></p>
+                                    <p x-show="errors.existing_billing" x-text="errors.existing_billing" class="text-red-500 text-xs mt-1"></p>
                                 </div>
                             </div>
 
                             <!-- Bemerkung -->
                             <div>
-                                <label class="block text-sm font-medium mb-1" style="color: hsl(0, 0%, 90%);">Bemerkung</label>
+                                <label class="block text-sm font-medium mb-1 text-gray-700">Bemerkung</label>
                                 <textarea x-model="form.remarks" rows="3"
-                                          class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all resize-none"
-                                          style="background: hsl(220, 13%, 18%); border: 1px solid hsl(220, 13%, 25%); color: hsl(0, 0%, 95%);"
-                                          onfocus="this.style.borderColor='#CEE741'" onblur="this.style.borderColor='hsl(220, 13%, 25%)'"
+                                          class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all resize-none border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                                           placeholder="Optionale Anmerkungen zu Ihrer Bestellung..."></textarea>
                             </div>
 
+                            <!-- Wichtige Informationen -->
+                            <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                                <div class="flex items-start gap-2">
+                                    <i class="fa-regular fa-circle-info text-sm text-amber-600 mt-0.5 flex-shrink-0"></i>
+                                    <div>
+                                        <span class="text-sm font-semibold text-amber-800">Wichtige Informationen</span>
+                                        <p class="text-xs text-amber-700 mt-1">
+                                            Es gelten die AGBs der Passolution GmbH und die Bedingungen aus dem vorab geschlossenen Vertrag. Mündliche Absprachen finden keine Anwendung.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Error Message -->
-                            <div x-show="errorMessage" class="p-3 rounded-xl text-sm" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171;">
+                            <div x-show="errorMessage" class="p-3 rounded-xl text-sm bg-red-50 border border-red-200 text-red-600">
                                 <i class="fa-regular fa-circle-exclamation mr-1"></i>
                                 <span x-text="errorMessage"></span>
                             </div>
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-6 py-4 flex items-center justify-end gap-3" style="background: hsl(220, 13%, 10%); border-top: 1px solid hsl(220, 13%, 20%);">
+                        <div class="px-6 py-4 flex items-center justify-end gap-3 bg-gray-50 border-t border-gray-200">
                             <button type="button" @click="open = false"
-                                    class="px-5 py-2.5 text-sm font-medium rounded-xl transition-all"
-                                    style="color: hsl(220, 10%, 60%); border: 1px solid hsl(220, 13%, 25%);"
-                                    onmouseover="this.style.background='hsl(220, 13%, 18%)'" onmouseout="this.style.background='transparent'">
+                                    class="px-5 py-2.5 text-sm font-medium rounded-xl transition-all text-gray-500 border border-gray-300 hover:bg-gray-100">
                                 Abbrechen
                             </button>
                             <button type="submit" :disabled="loading"
-                                    class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
-                                    style="background: #CEE741; color: #002742;">
+                                    class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 text-white"
+                                    style="background: #002742;">
                                 <i x-show="!loading" class="fa-regular fa-paper-plane mr-2"></i>
                                 <i x-show="loading" class="fa-regular fa-spinner-third fa-spin mr-2"></i>
                                 <span x-text="loading ? 'Wird gesendet...' : 'Bestellung absenden'"></span>
