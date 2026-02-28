@@ -76,7 +76,7 @@ class RiskOverviewController extends Controller
             $recipient = config('mail.order_recipient', 'info@passolution.de');
 
             Mail::to($recipient)
-                ->bcc('info@passolution.de')
+                ->bcc(['info@passolution.de', 'info@dhe.de'])
                 ->send(new TravelAlertOrderMail($validated));
 
             Log::info('TravelAlert order submitted', ['company' => $validated['company'], 'email' => $validated['email']]);
