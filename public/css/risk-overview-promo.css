@@ -3,16 +3,16 @@
     display: none !important;
 }
 
-/* Theme Variables */
+/* Theme Variables – Passolution Brand Colors */
 :root {
-    --promo-bg: hsl(220, 13%, 10%);
-    --promo-bg-card: hsl(220, 13%, 13%);
-    --promo-bg-secondary: hsl(220, 13%, 18%);
-    --promo-border: hsl(220, 13%, 20%);
-    --promo-text: hsl(0, 0%, 98%);
-    --promo-text-muted: hsl(220, 10%, 60%);
-    --promo-primary: hsl(210, 100%, 55%);
-    --promo-primary-light: hsl(210, 100%, 65%);
+    --promo-bg: #021a2b;
+    --promo-bg-card: #043451;
+    --promo-bg-secondary: #065272;
+    --promo-border: rgba(145, 218, 242, 0.15);
+    --promo-text: #ffffff;
+    --promo-text-muted: #91daf2;
+    --promo-primary: #cee741;
+    --promo-primary-light: #dbed6a;
 }
 
 /* Basis-Layout (gleich wie risk-overview.css) */
