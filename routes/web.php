@@ -320,6 +320,9 @@ Route::delete('/my-travelers/folder/{folderId}', [\App\Http\Controllers\Customer
     ->middleware('auth:customer')
     ->name('my-travelers.folder.delete');
 
+// Redirect alte URL auf neue URL
+Route::redirect('/risk-overview', '/travel-alert', 301);
+
 // Risiko-Ubersicht - Lander mit Events und betroffene Reisende
 Route::get('/travel-alert', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'index'])
     ->name('risk-overview');
