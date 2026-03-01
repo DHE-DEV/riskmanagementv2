@@ -10,26 +10,33 @@ $version = '1.2.0';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>TravelAlert – Reisesicherheit & Travel Risk Management | Global Travel Monitor</title>
-    <meta name="description" content="TravelAlert: Echtzeit-Reisewarnungen, automatisches Reise-Monitoring und Risikoanalysen für Geschäftsreisen. 24/7 Sicherheitsmonitoring in über 200 Ländern. Jetzt kostenlos testen.">
+    <meta name="description" content="TravelAlert: Reisewarnungen per E-Mail, automatisches Reise-Monitoring und Risikoanalysen für Reisen. 24/7 Sicherheitsmonitoring in über 200 Ländern. Jetzt kostenlos testen.">
     <meta name="keywords" content="TravelAlert, Reisesicherheit, Travel Risk Management, Reisewarnungen, Geschäftsreise Sicherheit, Duty of Care, Reiserisiko Monitoring, Passolution">
     <meta name="author" content="Passolution GmbH">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://global-travel-monitor.eu/travel-alert">
 
+    <!-- Language Alternates -->
+    <link rel="alternate" hreflang="de" href="https://global-travel-monitor.eu/travel-alert">
+    <link rel="alternate" hreflang="x-default" href="https://global-travel-monitor.eu/travel-alert">
+
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Global Travel Monitor">
-    <meta property="og:title" content="TravelAlert – Echtzeit-Reisesicherheit für Unternehmen">
-    <meta property="og:description" content="Automatisches Reise-Monitoring, Echtzeit-Warnungen und länderweise Risikoanalysen. TravelAlert schützt Ihre Geschäftsreisenden in über 200 Ländern.">
+    <meta property="og:title" content="TravelAlert – Reisesicherheit für Unternehmen">
+    <meta property="og:description" content="Automatisches Reise-Monitoring, E-Mail-Warnungen und länderweise Risikoanalysen. TravelAlert schützt Ihre Reisenden in über 200 Ländern.">
     <meta property="og:url" content="https://global-travel-monitor.eu/travel-alert">
     <meta property="og:image" content="{{ asset('images/travelalert/GTM-TA-01.png') }}">
+    <meta property="og:image:width" content="1758">
+    <meta property="og:image:height" content="878">
+    <meta property="og:image:type" content="image/png">
     <meta property="og:image:alt" content="TravelAlert Dashboard – Reisesicherheits-Monitoring von Passolution">
     <meta property="og:locale" content="de_DE">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="TravelAlert – Echtzeit-Reisesicherheit für Unternehmen">
-    <meta name="twitter:description" content="Automatisches Reise-Monitoring und Echtzeit-Warnungen für Geschäftsreisende. Jetzt kostenlos testen.">
+    <meta name="twitter:title" content="TravelAlert – Reisesicherheit für Unternehmen">
+    <meta name="twitter:description" content="Automatisches Reise-Monitoring und E-Mail-Warnungen für Reisende. Jetzt kostenlos testen.">
     <meta name="twitter:image" content="{{ asset('images/travelalert/GTM-TA-01.png') }}">
 
     <!-- Archivo Font -->
@@ -84,7 +91,7 @@ $version = '1.2.0';
         "name": "TravelAlert",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "description": "Echtzeit-Reisesicherheits-Monitoring für Unternehmen. Automatische Zuordnung von Sicherheitsereignissen zu Geschäftsreisen in über 200 Ländern.",
+        "description": "Reisesicherheits-Monitoring für Unternehmen. Automatische Zuordnung von Sicherheitsereignissen zu Reisen in über 200 Ländern.",
         "url": "https://global-travel-monitor.eu/travel-alert",
         "offers": [
             {
@@ -105,7 +112,7 @@ $version = '1.2.0';
         "featureList": [
             "Interaktive Weltkarte mit Sicherheitsereignissen",
             "Automatisches Reise-Event-Matching",
-            "Echtzeit-Warnungen und Benachrichtigungen",
+            "E-Mail-Warnungen und Benachrichtigungen",
             "Länderweise Risikoanalysen",
             "Kalenderansicht aller Ereignisse",
             "Filter nach Priorität, Zeitraum und Labels",
@@ -114,7 +121,7 @@ $version = '1.2.0';
         ],
         "screenshot": [
             "{{ asset('images/travelalert/GTM-TA-01.png') }}",
-            "{{ asset('images/travelalert/GMT-TA-02.png') }}",
+            "{{ asset('images/travelalert/GTM-TA-02.png') }}",
             "{{ asset('images/travelalert/GTM-TA-Filter.png') }}",
             "{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}"
         ],
@@ -123,6 +130,28 @@ $version = '1.2.0';
             "name": "Passolution GmbH",
             "url": "https://www.passolution.de"
         }
+    }
+    </script>
+
+    <!-- JSON-LD: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://global-travel-monitor.eu/"
+            },
+            {
+                "@@type": "ListItem",
+                "position": 2,
+                "name": "TravelAlert",
+                "item": "https://global-travel-monitor.eu/travel-alert"
+            }
+        ]
     }
     </script>
 
@@ -137,7 +166,7 @@ $version = '1.2.0';
                 "name": "Wie funktioniert TravelAlert?",
                 "acceptedAnswer": {
                     "@@type": "Answer",
-                    "text": "TravelAlert funktioniert in drei Schritten: 1. Reisen anlegen – Hinterlegen Sie Ihre Geschäftsreisen mit Reisezielen und Zeiträumen oder importieren Sie diese automatisch. 2. Automatische Analyse – TravelAlert analysiert kontinuierlich sicherheitsrelevante Ereignisse und ordnet diese Ihren Reisen zu. 3. Sofortige Warnung – Bei relevanten Ereignissen werden Sie sofort informiert, mit konkreten Handlungsempfehlungen."
+                    "text": "TravelAlert funktioniert in drei Schritten: 1. Reisen anlegen – Hinterlegen Sie Ihre Reisen mit Reisezielen und Zeiträumen oder importieren Sie diese automatisch. 2. Automatische Analyse – TravelAlert analysiert kontinuierlich sicherheitsrelevante Ereignisse und ordnet diese Ihren Reisen zu. 3. Warnung per E-Mail – Bei relevanten Ereignissen werden Sie per E-Mail informiert, mit konkreten Handlungsempfehlungen."
                 }
             },
             {
@@ -145,7 +174,7 @@ $version = '1.2.0';
                 "name": "Für wen ist TravelAlert geeignet?",
                 "acceptedAnswer": {
                     "@@type": "Answer",
-                    "text": "TravelAlert richtet sich an Travel Manager, die Geschäftsreisen im Blick behalten und ihre Fürsorgepflicht erfüllen möchten, an Sicherheitsbeauftragte, die fundierte Risikoeinschätzungen auf Basis aktueller Daten benötigen, sowie an die Geschäftsführung für strategische Entscheidungen und Compliance im Bereich Reisesicherheit."
+                    "text": "TravelAlert richtet sich an Travel Manager, die Reisen im Blick behalten und ihre Fürsorgepflicht erfüllen möchten, an Sicherheitsbeauftragte, die fundierte Risikoeinschätzungen auf Basis aktueller Daten benötigen, sowie an die Geschäftsführung für strategische Entscheidungen und Compliance im Bereich Reisesicherheit."
                 }
             },
             {
@@ -193,7 +222,7 @@ $version = '1.2.0';
                         <!-- Badge -->
                         <div class="animate-fade-up inline-flex items-center gap-2 px-4 py-2 rounded-full border mb-8" style="background: #065272; border-color: rgba(145, 218, 242, 0.2);">
                             <i class="fa-regular fa-shield-exclamation text-[#cee741]"></i>
-                            <span class="text-sm font-medium text-[#cee741]">Reisesicherheit in Echtzeit</span>
+                            <span class="text-sm font-medium text-[#cee741]">Reisesicherheit per E-Mail</span>
                         </div>
 
                         <!-- Headline -->
@@ -204,7 +233,7 @@ $version = '1.2.0';
                         <!-- Subtext -->
                         <p class="animate-fade-up-delay-2 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed" style="color: #91daf2;">
                             Ihre Reisen. Unsere Warnungen. Ihr Schutz.<br>
-                            Behalten Sie weltweite Sicherheitsereignisse im Blick und schützen Sie Ihre Reisenden mit Echtzeit-Monitoring.
+                            Behalten Sie weltweite Sicherheitsereignisse im Blick und schützen Sie Ihre Reisenden mit automatischem Monitoring und E-Mail-Warnungen.
                         </p>
 
                         <!-- CTA Buttons -->
@@ -250,7 +279,7 @@ $version = '1.2.0';
                             </div>
                             <div class="flex items-center gap-2 px-5 py-3 rounded-xl shadow-sm" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <i class="fa-regular fa-bolt text-[#cee741]"></i>
-                                <span class="text-sm font-medium" style="color: #ffffff;">Echtzeit-Warnungen</span>
+                                <span class="text-sm font-medium" style="color: #ffffff;">E-Mail-Warnungen</span>
                             </div>
                             <div class="flex items-center gap-2 px-5 py-3 rounded-xl shadow-sm" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <i class="fa-regular fa-clock text-[#cee741]"></i>
@@ -286,7 +315,7 @@ $version = '1.2.0';
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
                                     <i class="fa-regular fa-bell text-xl text-[#cee741]"></i>
                                 </div>
-                                <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Echtzeit-Warnungen</h3>
+                                <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">E-Mail-Warnungen</h3>
                                 <p class="text-sm text-center" style="color: #91daf2;">Aktuelle Sicherheitshinweise und Reisewarnungen</p>
                             </div>
                             <!-- Reisehinweise -->
@@ -320,7 +349,7 @@ $version = '1.2.0';
                                 </div>
                                 <h3 class="text-2xl md:text-3xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Automatische Zuordnung von Events zu Reisen</h3>
                                 <p class="leading-relaxed mb-6" style="color: #91daf2;">
-                                    Hinterlegen Sie Ihre Geschäftsreisen und lassen Sie diese automatisch überwachen. Travel<span class="text-[#cee741]">Alert</span> ordnet sicherheitsrelevante Ereignisse automatisch Ihren aktiven Reisen zu.
+                                    Hinterlegen Sie Ihre Reisen und lassen Sie diese automatisch überwachen. Travel<span class="text-[#cee741]">Alert</span> ordnet sicherheitsrelevante Ereignisse automatisch Ihren aktiven Reisen zu.
                                 </p>
                                 <ul class="space-y-3">
                                     <li class="flex items-start gap-3">
@@ -329,7 +358,7 @@ $version = '1.2.0';
                                     </li>
                                     <li class="flex items-start gap-3">
                                         <i class="fa-regular fa-check text-[#cee741] mt-0.5 flex-shrink-0"></i>
-                                        <span style="color: #b8e6f7;">Sofortige Benachrichtigungen</span>
+                                        <span style="color: #b8e6f7;">E-Mail-Benachrichtigungen</span>
                                     </li>
                                     <li class="flex items-start gap-3">
                                         <i class="fa-regular fa-check text-[#cee741] mt-0.5 flex-shrink-0"></i>
@@ -339,7 +368,7 @@ $version = '1.2.0';
                             </div>
                             <!-- Screenshot -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-01.png') }}" alt="TravelAlert Dashboard – automatisches Reise-Monitoring mit Echtzeit-Sicherheitsereignissen und Reisezuordnung" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-01.png') }}" alt="TravelAlert Dashboard – automatisches Reise-Monitoring mit Echtzeit-Sicherheitsereignissen und Reisezuordnung" class="w-full h-auto" width="1758" height="878" loading="lazy">
                             </div>
                         </div>
 
@@ -347,7 +376,7 @@ $version = '1.2.0';
                         <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
                             <!-- Screenshot (links) -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GMT-TA-02.png') }}" alt="TravelAlert Länder-Risikoanalyse – detaillierte Sicherheitsbewertung pro Land mit Travel Risk Management Übersicht" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-02.png') }}" alt="TravelAlert Länder-Risikoanalyse – detaillierte Sicherheitsbewertung pro Land mit Travel Risk Management Übersicht" class="w-full h-auto" width="1757" height="882" loading="lazy">
                             </div>
                             <div class="order-1 md:order-2">
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(145, 218, 242, 0.1); border-color: rgba(145, 218, 242, 0.2);">
@@ -403,7 +432,7 @@ $version = '1.2.0';
                             </div>
                             <!-- Screenshot -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter und Labels – Priorisierung von Reisewarnungen nach Zeitraum, Priorität und benutzerdefinierten Labels" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter und Labels – Priorisierung von Reisewarnungen nach Zeitraum, Priorität und benutzerdefinierten Labels" class="w-full h-auto" width="1755" height="881" loading="lazy">
                             </div>
                         </div>
                     </div>
@@ -415,7 +444,7 @@ $version = '1.2.0';
                         <div class="grid md:grid-cols-2 gap-12 items-center">
                             <!-- Screenshot (links) -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}" alt="TravelAlert Kalenderansicht – tagesgenaue Übersicht aller Sicherheitsereignisse mit Farbcodierung nach Priorität" class="w-full h-auto" loading="lazy">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Kalenderansicht.png') }}" alt="TravelAlert Kalenderansicht – tagesgenaue Übersicht aller Sicherheitsereignisse mit Farbcodierung nach Priorität" class="w-full h-auto" width="1385" height="685" loading="lazy">
                             </div>
                             <div class="order-1 md:order-2">
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(145, 218, 242, 0.1); border-color: rgba(145, 218, 242, 0.2);">
@@ -459,7 +488,7 @@ $version = '1.2.0';
                                 </div>
                                 <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Reisen anlegen</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    Hinterlegen Sie Ihre Geschäftsreisen mit Reisezielen und Zeiträumen - oder importieren Sie diese automatisch.
+                                    Hinterlegen Sie Ihre Reisen mit Reisezielen und Zeiträumen - oder importieren Sie diese automatisch.
                                 </p>
                             </div>
                             <div class="p-6 rounded-2xl hover:border-[#cee741]/30 transition-all duration-300 group" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
@@ -475,9 +504,9 @@ $version = '1.2.0';
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style="background: rgba(206, 231, 65, 0.1);">
                                     <span class="text-[#cee741] font-bold text-lg">3</span>
                                 </div>
-                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Sofortige Warnung</h3>
+                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Warnung per E-Mail</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    Bei relevanten Ereignissen werden Sie sofort informiert - mit konkreten Handlungsempfehlungen.
+                                    Bei relevanten Ereignissen werden Sie per E-Mail informiert - mit konkreten Handlungsempfehlungen.
                                 </p>
                             </div>
                         </div>
@@ -498,7 +527,7 @@ $version = '1.2.0';
                                 </div>
                                 <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Travel Manager</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    Behalten Sie alle Geschäftsreisen im Blick und erfüllen Sie Ihre Fürsorgepflicht gegenüber reisenden Mitarbeitern.
+                                    Behalten Sie alle Reisen im Blick und erfüllen Sie Ihre Fürsorgepflicht gegenüber Reisenden.
                                 </p>
                             </div>
                             <div class="p-6 rounded-2xl hover:border-[#cee741]/30 transition-all duration-300 hover:shadow-lg group" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
@@ -535,7 +564,7 @@ $version = '1.2.0';
                             </div>
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Starten Sie jetzt mit Travel<span class="text-[#cee741]">Alert</span></h2>
                             <p class="mb-8" style="color: #91daf2;">
-                                Schützen Sie Ihre Reisenden mit Echtzeit-Sicherheitsinformationen und automatischem Reise-Monitoring.
+                                Schützen Sie Ihre Reisenden mit Sicherheitsinformationen per E-Mail und automatischem Reise-Monitoring.
                             </p>
                             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
