@@ -1427,6 +1427,48 @@
                 <div class="mt-6">
                     <livewire:customer.travelers-auto-refresh-settings />
                 </div>
+
+                {{-- Notification Settings Widget --}}
+                @if(auth('customer')->user()->isFeatureEnabled('navigation_risk_overview_enabled'))
+                <div class="mt-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6" x-data="notificationWidget()" x-init="loadStats()">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-bell mr-2"></i>
+                                Benachrichtigungen
+                            </h3>
+                            <a href="{{ route('customer.notification-settings.index') }}"
+                               class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                <i class="fas fa-cog mr-1"></i>
+                                Einstellungen
+                            </a>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                <div class="text-xl font-bold" :class="stats.notifications_enabled ? 'text-green-600' : 'text-gray-400'">
+                                    <i class="fas" :class="stats.notifications_enabled ? 'fa-check' : 'fa-times'"></i>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">Status</div>
+                            </div>
+                            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                <div class="text-xl font-bold text-blue-600" x-text="stats.active_rules_count ?? 0"></div>
+                                <div class="text-xs text-gray-500 mt-1">Regeln</div>
+                            </div>
+                            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                <div class="text-xl font-bold text-purple-600" x-text="stats.templates_count ?? 0"></div>
+                                <div class="text-xs text-gray-500 mt-1">Vorlagen</div>
+                            </div>
+                        </div>
+
+                        <div x-show="!stats.notifications_enabled" class="text-sm text-gray-500 text-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Benachrichtigungen sind deaktiviert.
+                            <a href="{{ route('customer.notification-settings.index') }}" class="text-blue-600 hover:underline">Aktivieren</a>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -1684,6 +1726,32 @@ function apiTokenManager() {
             } catch (error) {
                 console.error('Error copying to clipboard:', error);
                 alert('Fehler beim Kopieren in die Zwischenablage');
+            }
+        }
+    };
+}
+
+function notificationWidget() {
+    return {
+        stats: {
+            notifications_enabled: false,
+            rules_count: 0,
+            active_rules_count: 0,
+            templates_count: 0,
+        },
+        async loadStats() {
+            try {
+                const response = await fetch('{{ route('customer.notification-settings.stats') }}', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    }
+                });
+                if (response.ok) {
+                    this.stats = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading notification stats:', error);
             }
         }
     };

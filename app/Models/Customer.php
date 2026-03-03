@@ -71,6 +71,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // GTM API settings
         'gtm_api_enabled',
         'gtm_api_rate_limit',
+        // Notification settings
+        'notifications_enabled',
     ];
 
     protected $hidden = [
@@ -97,6 +99,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // GTM API
         'gtm_api_enabled' => 'boolean',
         'gtm_api_rate_limit' => 'integer',
+        // Notifications
+        'notifications_enabled' => 'boolean',
     ];
 
     /**
@@ -236,6 +240,16 @@ class Customer extends Authenticatable implements MustVerifyEmail
     public function labels(): HasMany
     {
         return $this->hasMany(Label::class);
+    }
+
+    public function notificationRules(): HasMany
+    {
+        return $this->hasMany(NotificationRule::class);
+    }
+
+    public function notificationTemplates(): HasMany
+    {
+        return $this->hasMany(NotificationTemplate::class);
     }
 
     /**

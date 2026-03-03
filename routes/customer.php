@@ -92,6 +92,22 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/status', [\App\Http\Controllers\Customer\ApiTokenController::class, 'status'])->name('status');
         });
 
+        // Notification Settings routes (Benachrichtigungs-Abonnement)
+        Route::prefix('notification-settings')->name('notification-settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'index'])->name('index');
+            Route::post('/toggle', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'toggleNotifications'])->name('toggle');
+            Route::get('/stats', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'stats'])->name('stats');
+
+            // Rules
+            Route::get('/rules/create', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'createRule'])->name('rules.create');
+            Route::get('/rules/{id}/edit', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'editRule'])->name('rules.edit');
+
+            // Templates
+            Route::get('/templates', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'templateIndex'])->name('templates.index');
+            Route::get('/templates/create', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'createTemplate'])->name('templates.create');
+            Route::get('/templates/{id}/edit', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'editTemplate'])->name('templates.edit');
+        });
+
         // Notification routes
         Route::prefix('notifications')->name('notifications.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])->name('index');
