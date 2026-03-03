@@ -117,10 +117,6 @@
                                                 <i class="fas fa-envelope text-purple-500 mr-1"></i>
                                                 {{ $rule->recipients->count() }} Empfänger
                                             </span>
-                                            <span>
-                                                <i class="fas fa-code-branch text-orange-500 mr-1"></i>
-                                                Logik: {{ $rule->logic_operator === 'and' ? 'UND' : 'ODER' }}
-                                            </span>
                                         </div>
                                     </div>
 

@@ -31,25 +31,6 @@
                 Bedingungen
             </h3>
 
-            {{-- Logic Operator --}}
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Verknüpfung der Bedingungen</label>
-                <div class="flex gap-4">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" wire:model="logicOperator" value="and"
-                               class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span class="text-sm font-medium text-gray-700">UND</span>
-                        <span class="text-xs text-gray-500">(alle Bedingungen müssen zutreffen)</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" wire:model="logicOperator" value="or"
-                               class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span class="text-sm font-medium text-gray-700">ODER</span>
-                        <span class="text-xs text-gray-500">(mindestens eine Bedingung muss zutreffen)</span>
-                    </label>
-                </div>
-            </div>
-
             {{-- Risk Levels --}}
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Risikostufen</label>

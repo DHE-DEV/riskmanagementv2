@@ -15,7 +15,7 @@ class NotificationRule extends Model
         'customer_id',
         'name',
         'is_active',
-        'logic_operator',
+
         'risk_levels',
         'categories',
         'country_ids',
@@ -43,11 +43,6 @@ class NotificationRule extends Model
         'entry' => 'Einreisebestimmungen',
         'health' => 'Gesundheit',
         'general' => 'Allgemein',
-    ];
-
-    public const LOGIC_OPERATORS = [
-        'and' => 'UND',
-        'or' => 'ODER',
     ];
 
     public function customer(): BelongsTo

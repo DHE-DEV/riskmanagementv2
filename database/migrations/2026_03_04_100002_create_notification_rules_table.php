@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
             $table->string('name');
             $table->boolean('is_active')->default(true);
-            $table->enum('logic_operator', ['and', 'or'])->default('and');
             $table->json('risk_levels')->nullable();
             $table->json('categories')->nullable();
             $table->json('country_ids')->nullable();

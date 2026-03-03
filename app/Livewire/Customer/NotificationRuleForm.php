@@ -13,7 +13,6 @@ class NotificationRuleForm extends Component
 
     public string $name = '';
     public bool $isActive = true;
-    public string $logicOperator = 'and';
     public array $riskLevels = [];
     public array $categories = [];
     public array $selectedCountries = [];
@@ -34,7 +33,6 @@ class NotificationRuleForm extends Component
 
             $this->name = $rule->name;
             $this->isActive = $rule->is_active;
-            $this->logicOperator = $rule->logic_operator;
             $this->riskLevels = $rule->risk_levels ?? [];
             $this->categories = $rule->categories ?? [];
             $this->notificationTemplateId = $rule->notification_template_id;
@@ -117,7 +115,6 @@ class NotificationRuleForm extends Component
     {
         $this->validate([
             'name' => 'required|string|max:255',
-            'logicOperator' => 'required|in:and,or',
             'riskLevels' => 'array',
             'riskLevels.*' => 'in:' . implode(',', array_keys(NotificationRule::RISK_LEVELS)),
             'categories' => 'array',
@@ -139,7 +136,6 @@ class NotificationRuleForm extends Component
             'customer_id' => $customer->id,
             'name' => $this->name,
             'is_active' => $this->isActive,
-            'logic_operator' => $this->logicOperator,
             'risk_levels' => ! empty($this->riskLevels) ? $this->riskLevels : null,
             'categories' => ! empty($this->categories) ? $this->categories : null,
             'country_ids' => ! empty($this->selectedCountries)
