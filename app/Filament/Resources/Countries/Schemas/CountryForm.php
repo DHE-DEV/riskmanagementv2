@@ -24,6 +24,7 @@ class CountryForm
                 Grid::make(2)
                     ->columns(2)
                     ->schema([
+
                         // Linke Spalte
                         Grid::make(1)
                             ->schema([
@@ -172,6 +173,11 @@ class CountryForm
                             ])
                             ->columnSpan(1),
                     ]),
+
+                Section::make('Risikoprofil')
+                    ->icon('heroicon-o-shield-exclamation')
+                    ->collapsed()
+                    ->schema(CountryRiskProfileForm::schema()),
             ]);
     }
 

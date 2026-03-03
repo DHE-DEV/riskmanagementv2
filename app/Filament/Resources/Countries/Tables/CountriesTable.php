@@ -15,6 +15,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Continent;
+use App\Models\Country;
 
 class CountriesTable
 {
@@ -67,6 +68,19 @@ class CountriesTable
                     ->sortable(query: function ($query, string $direction): Builder {
                         return $query->join('continents', 'countries.continent_id', '=', 'continents.id')
                                     ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(continents.name_translations, '$.de')) {$direction}");
+                    }),
+                TextColumn::make('risk_level')
+                    ->label('Risiko')
+                    ->getStateUsing(fn ($record) => $record->overall_risk_level)
+                    ->formatStateUsing(fn ($state) => Country::getRiskLevelLabel($state))
+                    ->badge()
+                    ->color(fn ($state) => Country::getRiskLevelColor($state))
+                    ->sortable(query: function ($query, string $direction): Builder {
+                        return $query->orderByRaw("GREATEST(
+                            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(risk_profile, '$.security.overall_risk_level')), 0),
+                            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(risk_profile, '$.health.health_risk_level')), 0),
+                            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(risk_profile, '$.natural_hazards.natural_hazard_level')), 0)
+                        ) {$direction}");
                     }),
                 TextColumn::make('currency_code')
                     ->label('Währungscode')
@@ -127,7 +141,28 @@ class CountriesTable
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->name_translations['de'] ?? $record->name_translations['en'] ?? $record->code)
                     ->searchable()
                     ->preload(),
-                    
+
+                SelectFilter::make('risk_level')
+                    ->label('Risikostufe')
+                    ->options([
+                        1 => 'Sehr niedrig',
+                        2 => 'Niedrig',
+                        3 => 'Mittel',
+                        4 => 'Hoch',
+                        5 => 'Sehr hoch',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+                        if ($value === null) {
+                            return $query;
+                        }
+                        return $query->whereRaw("GREATEST(
+                            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(risk_profile, '$.security.overall_risk_level')), 0),
+                            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(risk_profile, '$.health.health_risk_level')), 0),
+                            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(risk_profile, '$.natural_hazards.natural_hazard_level')), 0)
+                        ) = ?", [$value]);
+                    }),
+
                 TrashedFilter::make(),
             ])
             ->recordActions([

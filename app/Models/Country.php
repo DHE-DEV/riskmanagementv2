@@ -27,6 +27,7 @@ class Country extends Model
         'risk_factors',
         'travel_advisories',
         'climate_zones',
+        'risk_profile',
         'population',
         'area_km2',
         'lat',
@@ -42,6 +43,7 @@ class Country extends Model
         'risk_factors' => 'array',
         'travel_advisories' => 'array',
         'climate_zones' => 'array',
+        'risk_profile' => 'array',
         'population' => 'integer',
         'area_km2' => 'decimal:2',
         'lat' => 'decimal:6',
@@ -140,5 +142,61 @@ class Country extends Model
     public function scopeByContinent($query, $continentId)
     {
         return $query->where('continent_id', $continentId);
+    }
+
+    /**
+     * Get the overall risk level (max of security, health, natural hazards).
+     */
+    public function getOverallRiskLevelAttribute(): ?int
+    {
+        $profile = $this->risk_profile;
+        if (! $profile) {
+            return null;
+        }
+
+        $levels = array_filter([
+            $profile['security']['overall_risk_level'] ?? null,
+            $profile['health']['health_risk_level'] ?? null,
+            $profile['natural_hazards']['natural_hazard_level'] ?? null,
+        ]);
+
+        return $levels ? (int) max($levels) : null;
+    }
+
+    /**
+     * Check if the country has a risk profile.
+     */
+    public function getHasRiskProfileAttribute(): bool
+    {
+        return ! empty($this->risk_profile);
+    }
+
+    /**
+     * Get the label for a risk level.
+     */
+    public static function getRiskLevelLabel(?int $level): string
+    {
+        return match ($level) {
+            1 => 'Sehr niedrig',
+            2 => 'Niedrig',
+            3 => 'Mittel',
+            4 => 'Hoch',
+            5 => 'Sehr hoch',
+            default => 'Nicht bewertet',
+        };
+    }
+
+    /**
+     * Get the Filament color for a risk level.
+     */
+    public static function getRiskLevelColor(?int $level): string
+    {
+        return match ($level) {
+            1 => 'success',
+            2 => 'info',
+            3 => 'warning',
+            4, 5 => 'danger',
+            default => 'gray',
+        };
     }
 }
