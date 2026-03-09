@@ -409,7 +409,11 @@ $version = '1.2.0';
 -->
                         <!-- Filter & Labels -->
                         <div class="grid md:grid-cols-2 gap-12 items-center">
-                            <div>
+                            <!-- Screenshot (links) -->
+                            <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid rgba(145, 218, 242, 0.15);">
+                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter und Labels – Priorisierung von Reisewarnungen nach Zeitraum, Priorität und benutzerdefinierten Labels" class="w-full h-auto" width="1755" height="881" loading="lazy">
+                            </div>
+                            <div class="order-1 md:order-2">
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-4" style="background: rgba(206, 231, 65, 0.1); border-color: rgba(206, 231, 65, 0.2);">
                                     <i class="fa-regular fa-tags text-[#cee741] text-sm"></i>
                                     <span class="text-xs font-medium text-[#cee741]">Filter & Labels</span>
@@ -432,10 +436,6 @@ $version = '1.2.0';
                                         <span style="color: #b8e6f7;">Labels für Reisen, Trips und Events</span>
                                     </li>
                                 </ul>
-                            </div>
-                            <!-- Screenshot -->
-                            <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger" style="border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <img src="{{ asset('images/travelalert/GTM-TA-Filter.png') }}" alt="TravelAlert Filter und Labels – Priorisierung von Reisewarnungen nach Zeitraum, Priorität und benutzerdefinierten Labels" class="w-full h-auto" width="1755" height="881" loading="lazy">
                             </div>
                         </div>
                     </div>
