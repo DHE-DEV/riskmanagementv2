@@ -302,7 +302,7 @@ $version = '1.2.0';
                                 Behalten Sie relevante Ereignisse weltweit im Blick und erkennen Sie sofort, ob Reisen Ihrer Kunden betroffen sein könnten. Travel Alert hilft Ihnen.
                             </p>
                         </div>
-                        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <!-- Interaktive Karte -->
                             <div class="p-6 rounded-2xl backdrop-blur-sm" style="background: rgba(6, 82, 114, 0.5); border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
