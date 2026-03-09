@@ -306,7 +306,7 @@ $version = '1.2.0';
                             <!-- Interaktive Karte -->
                             <div class="p-6 rounded-2xl backdrop-blur-sm" style="background: rgba(6, 82, 114, 0.5); border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
-                                    <i class="fa-regular fa-map text-xl text-[#cee741]"></i>
+                                    <i class="fa-regular fa-suitcase text-xl text-[#cee741]"></i>
                                 </div>
                                 <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Übersicht betroffener Reisen</h3>
                                 <p class="text-sm text-center" style="color: #91daf2;">Sehen Sie auf einen Blick, welche Reisen von aktuellen Ereignissen betroffen sein könnten und behalten Sie ihre Buchungen jederzeit im Blick. </p>
@@ -323,7 +323,7 @@ $version = '1.2.0';
                             <!-- Reisehinweise -->
                             <div class="p-6 rounded-2xl backdrop-blur-sm" style="background: rgba(6, 82, 114, 0.5); border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
-                                    <i class="fa-regular fa-shield-exclamation text-xl text-[#cee741]"></i>
+                                    <i class="fa-regular fa-newspaper text-xl text-[#cee741]"></i>
                                 </div>
                                 <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Globale Reiseereignisse</h3>
                                 <p class="text-sm text-center" style="color: #91daf2;">Ereignisse zu Umwelt, Sicherheit, Einreisebestimmungen, Reiseverkehr und Gesundheit helfen Ihnen, mögliche Auswirkungen auf Reisen schnell zu erkennen.</p>
