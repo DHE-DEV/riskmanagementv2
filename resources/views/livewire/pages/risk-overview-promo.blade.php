@@ -275,15 +275,15 @@ $version = '1.2.0';
                         <!-- Stats row -->
                         <div class="animate-fade-up-delay-4 flex flex-wrap justify-center gap-6 lg:gap-10">
                             <div class="flex items-center gap-2 px-5 py-3 rounded-xl shadow-sm" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <i class="fa-regular fa-globe text-[#cee741]"></i>
+                                <i class="fa-regular fa-earth-europe text-[#cee741]"></i>
                                 <span class="text-sm font-medium" style="color: #ffffff;">200+ Länder</span>
                             </div>
                             <div class="flex items-center gap-2 px-5 py-3 rounded-xl shadow-sm" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <i class="fa-regular fa-bolt text-[#cee741]"></i>
+                                <i class="fa-regular fa-bell text-[#cee741]"></i>
                                 <span class="text-sm font-medium" style="color: #ffffff;">Globale Ereignisübersicht</span>
                             </div>
                             <div class="flex items-center gap-2 px-5 py-3 rounded-xl shadow-sm" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
-                                <i class="fa-regular fa-clock text-[#cee741]"></i>
+                                <i class="fa-regular fa-suitcase-rolling text-[#cee741]"></i>
                                 <span class="text-sm font-medium" style="color: #ffffff;">Betroffene Reisen erkennen</span>
                             </div>
                         </div>
