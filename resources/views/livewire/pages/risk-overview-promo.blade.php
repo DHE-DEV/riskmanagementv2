@@ -220,10 +220,11 @@ $version = '1.2.0';
 
                     <div class="max-w-5xl mx-auto px-6 py-20 text-center relative z-10">
                         <!-- Badge -->
+                         <!--
                         <div class="animate-fade-up inline-flex items-center gap-2 px-4 py-2 rounded-full border mb-8" style="background: #065272; border-color: rgba(145, 218, 242, 0.2);">
                             <i class="fa-regular fa-shield-exclamation text-[#cee741]"></i>
                             <span class="text-sm font-medium text-[#cee741]">Reisesicherheit per E-Mail</span>
-                        </div>
+                        </div>-->
 
                         <!-- Headline -->
                         <h1 class="animate-fade-up-delay-1 text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6" style="font-family: Archivo, sans-serif;">
@@ -232,8 +233,8 @@ $version = '1.2.0';
 
                         <!-- Subtext -->
                         <p class="animate-fade-up-delay-2 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed" style="color: #91daf2;">
-                            Ihre Reisen. Unsere Warnungen. Ihr Schutz.<br>
-                            Behalten Sie weltweite Sicherheitsereignisse im Blick und schützen Sie Ihre Reisenden mit automatischem Monitoring und E-Mail-Warnungen.
+                            Ihre Reisen im Blick - weltweit. <br>
+                            Behalten Sie relevante Ereignisse weltweit im Blick und erkennen Sie sofort, ob Ihre Reisenden betroffen sein könnten. Travel Alert analysiert aktuelle Ereignisse und zeigt Ihnen, welche Reisen potenziell betroffen sind, damit Sie schnell reagieren können.
                         </p>
 
                         <!-- CTA Buttons -->
@@ -298,7 +299,7 @@ $version = '1.2.0';
                             </div>
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Was Travel<span class="text-[#cee741]">Alert</span> für Sie leistet</h2>
                             <p class="max-w-2xl mx-auto" style="color: #91daf2;">
-                                Der Global Travel Monitor vereint alle relevanten Informationen für sicheres Reisen auf einer Plattform.
+                                Behalten Sie relevante Ereignisse weltweit im Blick und erkennen Sie sofort, ob Reisen Ihrer Kunden betroffen sein könnten. Travel Alert hilft Ihnen.
                             </p>
                         </div>
                         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -307,24 +308,25 @@ $version = '1.2.0';
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
                                     <i class="fa-regular fa-map text-xl text-[#cee741]"></i>
                                 </div>
-                                <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Interaktive Karte</h3>
-                                <p class="text-sm text-center" style="color: #91daf2;">Alle Events auf einer übersichtlichen Karte visualisiert</p>
+                                <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Übersicht betroffener Reisen</h3>
+                                <p class="text-sm text-center" style="color: #91daf2;">Sehen Sie auf einen Blick, welche Reisen von aktuellen Ereignissen betroffen sein könnten und behalten Sie ihre Buchungen jederzeit im Blick. </p>
                             </div>
                             <!-- Echtzeit-Warnungen -->
+                             <!--
                             <div class="p-6 rounded-2xl backdrop-blur-sm" style="background: rgba(6, 82, 114, 0.5); border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
                                     <i class="fa-regular fa-bell text-xl text-[#cee741]"></i>
                                 </div>
                                 <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">E-Mail-Warnungen</h3>
-                                <p class="text-sm text-center" style="color: #91daf2;">Aktuelle Sicherheitshinweise und Reisewarnungen</p>
-                            </div>
+                                <p class="text-sm text-center" style="color: #91daf2;">Lassen Sie sich automatisch informieren, sobald ein Ereignis Reisen Ihrer Kunden betreffen könnten</p>
+                            </div>-->
                             <!-- Reisehinweise -->
                             <div class="p-6 rounded-2xl backdrop-blur-sm" style="background: rgba(6, 82, 114, 0.5); border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto" style="background: rgba(206, 231, 65, 0.15);">
                                     <i class="fa-regular fa-shield-exclamation text-xl text-[#cee741]"></i>
                                 </div>
-                                <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Sicherheitswarnungen</h3>
-                                <p class="text-sm text-center" style="color: #91daf2;">Politische Unruhen, Terrorwarnungen und Sicherheitshinweise</p>
+                                <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Globale Reiseereignisse</h3>
+                                <p class="text-sm text-center" style="color: #91daf2;">Ereignisse zu Umwelt, Sicherheit, Einreisebestimmungen, Reiseverkehr und Gesundheit helfen Ihnen, mögliche Auswirkungen auf Reisen schnell zu erkennen.</p>
                             </div>
                             <!-- Echtzeit-Updates -->
                             <div class="p-6 rounded-2xl backdrop-blur-sm" style="background: rgba(6, 82, 114, 0.5); border: 1px solid rgba(145, 218, 242, 0.15);">
@@ -332,7 +334,7 @@ $version = '1.2.0';
                                     <i class="fa-regular fa-globe text-xl text-[#cee741]"></i>
                                 </div>
                                 <h3 class="font-semibold mb-2 text-center" style="color: #ffffff;">Weltweite Abdeckung</h3>
-                                <p class="text-sm text-center" style="color: #91daf2;">Ereignisse aus allen Ländern und Regionen der Welt</p>
+                                <p class="text-sm text-center" style="color: #91daf2;">Greifen Sie auf Ereignisse auf über 200 Ländern zu und behalten Sie globale Entwicklungen im Blick.</p>
                             </div>
                         </div>
                     </div>
@@ -356,10 +358,11 @@ $version = '1.2.0';
                                         <i class="fa-regular fa-check text-[#cee741] mt-0.5 flex-shrink-0"></i>
                                         <span style="color: #b8e6f7;">Automatisches Reise-Event-Matching</span>
                                     </li>
+                                    <!--
                                     <li class="flex items-start gap-3">
                                         <i class="fa-regular fa-check text-[#cee741] mt-0.5 flex-shrink-0"></i>
                                         <span style="color: #b8e6f7;">E-Mail-Benachrichtigungen</span>
-                                    </li>
+                                    </li>-->
                                     <li class="flex items-start gap-3">
                                         <i class="fa-regular fa-check text-[#cee741] mt-0.5 flex-shrink-0"></i>
                                         <span style="color: #b8e6f7;">Priorisierte Darstellung nach Relevanz</span>
@@ -373,8 +376,8 @@ $version = '1.2.0';
                         </div>
 
                         <!-- Länder-Ansicht -->
+                         <!--
                         <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
-                            <!-- Screenshot (links) -->
                             <div class="rounded-2xl overflow-hidden shadow-2xl cursor-pointer promo-lightbox-trigger order-2 md:order-1" style="border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <img src="{{ asset('images/travelalert/GTM-TA-02.png') }}" alt="TravelAlert Länder-Risikoanalyse – detaillierte Sicherheitsbewertung pro Land mit Travel Risk Management Übersicht" class="w-full h-auto" width="1757" height="882" loading="lazy">
                             </div>
@@ -403,7 +406,7 @@ $version = '1.2.0';
                                 </ul>
                             </div>
                         </div>
-
+-->
                         <!-- Filter & Labels -->
                         <div class="grid md:grid-cols-2 gap-12 items-center">
                             <div>
@@ -475,7 +478,7 @@ $version = '1.2.0';
                 </section>
 
                 <!-- 4. So funktioniert's -->
-                <section id="so-funktionierts" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
+                <!--<section id="so-funktionierts" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="text-center mb-12">
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">So funktioniert's</h2>
@@ -511,41 +514,41 @@ $version = '1.2.0';
                             </div>
                         </div>
                     </div>
-                </section>
+                </section>-->
 
                 <!-- 5. Zielgruppen -->
                 <section id="zielgruppen" class="py-20 px-6" style="background: #021a2b; border-top: 1px solid rgba(145, 218, 242, 0.1);">
                     <div class="max-w-5xl mx-auto">
                         <div class="text-center mb-12">
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Für wen ist Travel<span class="text-[#cee741]">Alert</span>?</h2>
-                            <p style="color: #91daf2;" class="max-w-2xl mx-auto">Maßgeschneidert für Unternehmen, die Verantwortung für Reisende tragen</p>
+                            <p style="color: #91daf2;" class="max-w-2xl mx-auto">Entwickelt für Unternehmen in der Touristik, die Reisende betreuen und schnell erkennen müssen, wenn Ereignisse Reisen beeinflussen können.</p>
                         </div>
                         <div class="grid md:grid-cols-3 gap-6">
                             <div class="p-6 rounded-2xl hover:border-[#cee741]/30 transition-all duration-300 hover:shadow-lg group" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform" style="background: rgba(206, 231, 65, 0.1);">
                                     <i class="fa-regular fa-user-tie text-xl text-[#cee741]"></i>
                                 </div>
-                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Travel Manager</h3>
+                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Reisebüros & Reiseberater</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    Behalten Sie alle Reisen im Blick und erfüllen Sie Ihre Fürsorgepflicht gegenüber Reisenden.
+                                    Behalten Sie die Reisen Ihrer Kunden im Blick und erkennen Sie schnell, wenn Ereignisse Auswirkungen auf gebuchte Reisen haben könnten.
                                 </p>
                             </div>
                             <div class="p-6 rounded-2xl hover:border-[#cee741]/30 transition-all duration-300 hover:shadow-lg group" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform" style="background: rgba(145, 218, 242, 0.1);">
                                     <i class="fa-regular fa-shield-halved text-xl text-[#91daf2]"></i>
                                 </div>
-                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Sicherheitsbeauftragte</h3>
+                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Reiseveranstalter</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    Erhalten Sie fundierte Risikoeinschätzungen und treffen Sie Entscheidungen auf Basis aktueller Daten.
+                                    Überblick über mögliche Auswirkungen globaler Ereignisse auf Ihre gebuchten Reisen, damit Sie frühzeitig reagieren können.
                                 </p>
                             </div>
                             <div class="p-6 rounded-2xl hover:border-[#cee741]/30 transition-all duration-300 hover:shadow-lg group" style="background: #043451; border: 1px solid rgba(145, 218, 242, 0.15);">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform" style="background: rgba(145, 218, 242, 0.1);">
                                     <i class="fa-regular fa-building-columns text-xl text-[#91daf2]"></i>
                                 </div>
-                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Geschäftsführung</h3>
+                                <h3 class="text-lg font-semibold mb-2" style="color: #ffffff;">Technologie- & Softwarepartner</h3>
                                 <p class="text-sm" style="color: #91daf2;">
-                                    Überblick über alle Reiserisiken auf einen Blick - für strategische Entscheidungen und Compliance.
+                                    Integrieren Sie Travel Alert über unsere API in Ihre eigenen Systeme und bieten Sie Ihren Kunden zusätzliche Mehrwerte rund um Reiseereignisse. 
                                 </p>
                             </div>
                         </div>
@@ -562,10 +565,11 @@ $version = '1.2.0';
                             <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6" style="background: rgba(206, 231, 65, 0.1);">
                                 <i class="fa-regular fa-shield-exclamation text-3xl text-[#cee741]"></i>
                             </div>
+                            <!--
                             <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: #ffffff; font-family: Archivo, sans-serif;">Starten Sie jetzt mit Travel<span class="text-[#cee741]">Alert</span></h2>
                             <p class="mb-8" style="color: #91daf2;">
                                 Schützen Sie Ihre Reisenden mit Sicherheitsinformationen per E-Mail und automatischem Reise-Monitoring.
-                            </p>
+                            </p>-->
                             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
                                    class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
