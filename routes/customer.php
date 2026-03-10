@@ -97,6 +97,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'index'])->name('index');
             Route::post('/toggle', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'toggleNotifications'])->name('toggle');
             Route::get('/stats', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'stats'])->name('stats');
+            Route::get('/history', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'history'])->name('history');
 
             // Rules
             Route::get('/rules/create', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'createRule'])->name('rules.create');

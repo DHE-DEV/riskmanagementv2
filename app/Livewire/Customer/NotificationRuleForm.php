@@ -2,14 +2,17 @@
 
 namespace App\Livewire\Customer;
 
+use App\Mail\RiskEventMail;
 use App\Models\Country;
 use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 class NotificationRuleForm extends Component
 {
     public ?int $ruleId = null;
+    public ?string $testMailStatus = null;
 
     public string $name = '';
     public bool $isActive = true;
@@ -168,6 +171,47 @@ class NotificationRuleForm extends Component
         );
 
         $this->redirect(route('customer.notification-settings.index'));
+    }
+
+    public function sendTestMail(): void
+    {
+        if (! $this->ruleId) {
+            return;
+        }
+
+        $customer = auth('customer')->user();
+        $rule = $customer->notificationRules()->with(['template', 'recipients'])->findOrFail($this->ruleId);
+
+        $template = $rule->template ?? NotificationTemplate::where('is_system', true)->first();
+
+        if (! $template) {
+            $this->testMailStatus = 'error:Keine E-Mail-Vorlage gefunden.';
+            return;
+        }
+
+        $placeholders = [
+            '{event_title}' => 'Test-Ereignis',
+            '{country_name}' => 'Deutschland',
+            '{risk_level}' => 'Hoch',
+            '{category}' => 'Allgemein',
+            '{description}' => 'Dies ist eine Test-Benachrichtigung um den E-Mail-Versand zu prüfen.',
+            '{event_date}' => now()->format('d.m.Y'),
+            '{unsubscribe_url}' => '#',
+        ];
+
+        $toRecipient = $rule->recipients->where('recipient_type', 'to')->first();
+
+        if (! $toRecipient) {
+            $this->testMailStatus = 'error:Kein TO-Empfänger konfiguriert.';
+            return;
+        }
+
+        try {
+            Mail::to($toRecipient->email)->send(new RiskEventMail($template, $placeholders, $rule));
+            $this->testMailStatus = 'success:Test-Mail wurde erfolgreich gesendet.';
+        } catch (\Throwable $e) {
+            $this->testMailStatus = 'error:Fehler beim Senden: ' . $e->getMessage();
+        }
     }
 
     public function deleteRule(): void

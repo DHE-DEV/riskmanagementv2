@@ -427,5 +427,11 @@ Route::prefix('plugin')->name('plugin.')->group(function () {
     });
 });
 
+// Notification Unsubscribe (no auth required)
+Route::get('/notifications/unsubscribe/{token}', [\App\Http\Controllers\NotificationUnsubscribeController::class, 'show'])
+    ->name('notifications.unsubscribe');
+Route::post('/notifications/unsubscribe/{token}', [\App\Http\Controllers\NotificationUnsubscribeController::class, 'unsubscribe'])
+    ->name('notifications.unsubscribe.process');
+
 require __DIR__.'/auth.php';
 require __DIR__.'/customer-auth.php';

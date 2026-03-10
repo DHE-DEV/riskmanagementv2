@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\NotificationLog;
 use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
 use App\Services\CustomerFeatureService;
@@ -38,6 +39,22 @@ class NotificationSettingsController extends Controller
             'customTemplateCount',
             'systemTemplateCount',
         ));
+    }
+
+    public function history()
+    {
+        $customer = auth('customer')->user();
+
+        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
+            abort(403);
+        }
+
+        $logs = NotificationLog::where('customer_id', $customer->id)
+            ->with('notificationRule')
+            ->orderBy('created_at', 'desc')
+            ->paginate(25);
+
+        return view('customer.notification-settings.history', compact('logs'));
     }
 
     public function toggleNotifications(Request $request)

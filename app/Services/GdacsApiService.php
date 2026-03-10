@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Jobs\SendRiskEventNotifications;
 use App\Models\DisasterEvent;
 use App\Models\Country;
 use Carbon\Carbon;
@@ -395,7 +396,7 @@ class GdacsApiService
                     $savedCount++;
                 } else {
                     // Erstelle neues Event
-                    DisasterEvent::create([
+                    $newEvent = DisasterEvent::create([
                         'title' => $eventData['title'],
                         'description' => $eventData['description'],
                         'event_type' => $eventData['event_type'],
@@ -413,6 +414,10 @@ class GdacsApiService
                         'country_id' => $this->findCountryId($eventData['country']),
                         'raw_data' => json_encode($eventData['raw_data'])
                     ]);
+
+                    // Benachrichtigungen für neues GDACS Event versenden
+                    SendRiskEventNotifications::dispatch($newEvent);
+
                     $savedCount++;
                 }
             } catch (\Exception $e) {

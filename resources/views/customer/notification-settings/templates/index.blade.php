@@ -29,6 +29,17 @@
                 </div>
             @endif
 
+            {{-- Anleitung --}}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-1">Wozu dienen E-Mail-Vorlagen?</p>
+                        <p>Vorlagen bestimmen das Aussehen Ihrer Benachrichtigungs-E-Mails. Die <strong>Standard-Vorlage</strong> (System) wird automatisch verwendet, wenn Sie keine eigene Vorlage erstellen. Sie können eigene Vorlagen erstellen und diese in Ihren Regeln zuweisen, um z.B. verschiedene Abteilungen mit unterschiedlich gestalteten E-Mails zu informieren.</p>
+                    </div>
+                </div>
+            </div>
+
             {{-- Actions --}}
             <div class="flex justify-end mb-4">
                 <a href="{{ route('customer.notification-settings.templates.create') }}"

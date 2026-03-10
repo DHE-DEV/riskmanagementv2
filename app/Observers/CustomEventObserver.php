@@ -2,12 +2,39 @@
 
 namespace App\Observers;
 
+use App\Jobs\SendRiskEventNotifications;
 use App\Models\CustomEvent;
 use App\Models\EventType;
 use Illuminate\Support\Facades\Cache;
 
 class CustomEventObserver
 {
+    /**
+     * Handle the CustomEvent "created" event.
+     * Dispatch notification if the event is already approved and active.
+     */
+    public function created(CustomEvent $customEvent): void
+    {
+        if ($customEvent->is_active && $customEvent->review_status === 'approved') {
+            SendRiskEventNotifications::dispatch($customEvent);
+        }
+    }
+
+    /**
+     * Handle the CustomEvent "updated" event.
+     * Dispatch notification when an event gets approved.
+     */
+    public function updated(CustomEvent $customEvent): void
+    {
+        if (
+            $customEvent->isDirty('review_status')
+            && $customEvent->review_status === 'approved'
+            && $customEvent->is_active
+        ) {
+            SendRiskEventNotifications::dispatch($customEvent);
+        }
+    }
+
     /**
      * Handle the CustomEvent "saved" event.
      * Update marker_icon from eventTypes after saving.

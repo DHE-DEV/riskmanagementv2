@@ -1,5 +1,27 @@
 <div>
     <form wire:submit="save" class="space-y-6">
+        {{-- Anleitung --}}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-5" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-question-circle text-blue-600"></i>
+                    <span class="font-semibold text-blue-900">Anleitung: E-Mail-Vorlage gestalten</span>
+                </div>
+                <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" class="text-blue-400"></i>
+            </button>
+            <div x-show="open" x-collapse class="mt-4 text-sm text-blue-800 space-y-2">
+                <p><i class="fas fa-info-circle mr-1"></i> Mit eigenen Vorlagen können Sie das Aussehen und den Inhalt Ihrer Benachrichtigungs-E-Mails anpassen.</p>
+                <ul class="list-disc list-inside space-y-1 ml-1">
+                    <li><strong>Vorlagenname:</strong> Vergeben Sie einen eindeutigen Namen (z.B. "Sicherheitswarnung intern").</li>
+                    <li><strong>Betreff:</strong> Verwenden Sie Platzhalter wie <code class="bg-blue-100 px-1 rounded">{event_title}</code> oder <code class="bg-blue-100 px-1 rounded">{country_name}</code> - diese werden beim Versand automatisch durch die echten Daten ersetzt.</li>
+                    <li><strong>Inhalt:</strong> Gestalten Sie den E-Mail-Text mit HTML. Auch hier können Sie alle Platzhalter verwenden.</li>
+                </ul>
+                <div class="mt-2 p-3 bg-blue-100 rounded-lg">
+                    <p><i class="fas fa-lightbulb mr-1"></i> <strong>Tipp:</strong> Die Vorschau unten zeigt Ihnen in Echtzeit, wie Ihre E-Mail aussehen wird. Nach dem Speichern können Sie mit "Test-Mail senden" eine Beispiel-E-Mail an Ihre eigene Adresse schicken.</p>
+                </div>
+            </div>
+        </div>
+
         {{-- Template Details --}}
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -70,9 +92,22 @@
             </div>
         @endif
 
+        {{-- Test Mail Status --}}
+        @if($testMailStatus)
+            @php
+                $statusParts = explode(':', $testMailStatus, 2);
+                $statusType = $statusParts[0];
+                $statusMessage = $statusParts[1] ?? '';
+            @endphp
+            <div class="p-4 rounded-lg {{ $statusType === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' }}">
+                <i class="fas {{ $statusType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle' }} mr-2"></i>
+                {{ $statusMessage }}
+            </div>
+        @endif
+
         {{-- Actions --}}
         <div class="flex items-center justify-between">
-            <div>
+            <div class="flex gap-3">
                 @if($templateId)
                     <button type="button" wire:click="deleteTemplate"
                             wire:confirm="Möchten Sie diese Vorlage wirklich löschen?"
@@ -83,6 +118,20 @@
                 @endif
             </div>
             <div class="flex gap-3">
+                @if($templateId)
+                    <button type="button" wire:click="sendTestMail"
+                            class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                            wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="sendTestMail">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Test-Mail senden
+                        </span>
+                        <span wire:loading wire:target="sendTestMail">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            Sende...
+                        </span>
+                    </button>
+                @endif
                 <a href="{{ route('customer.notification-settings.templates.index') }}"
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                     Abbrechen

@@ -22,6 +22,53 @@
                 </div>
             </div>
 
+            {{-- Anleitung --}}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-6" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-left">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-question-circle text-blue-600"></i>
+                        <span class="font-semibold text-blue-900">So funktionieren die Benachrichtigungen</span>
+                    </div>
+                    <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" class="text-blue-400"></i>
+                </button>
+                <div x-show="open" x-collapse class="mt-4 space-y-3 text-sm text-blue-800">
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                        <div>
+                            <p class="font-medium">Benachrichtigungen aktivieren</p>
+                            <p class="text-blue-700 mt-0.5">Schalten Sie zuerst den Schalter unter "Globale Einstellungen" auf aktiv. Ohne diese Einstellung werden keine E-Mails versendet.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                        <div>
+                            <p class="font-medium">Regel erstellen</p>
+                            <p class="text-blue-700 mt-0.5">Legen Sie eine Regel an und bestimmen Sie, bei welchen Ereignissen Sie informiert werden möchten: Wählen Sie Risikostufen (z.B. nur "Hoch"), Kategorien (z.B. "Sicherheit") und Länder. Wenn Sie nichts auswählen, werden Sie über alle Ereignisse informiert.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                        <div>
+                            <p class="font-medium">Empfänger festlegen</p>
+                            <p class="text-blue-700 mt-0.5">Geben Sie die E-Mail-Adressen an, die benachrichtigt werden sollen. Sie können mehrere Empfänger als TO (Direktempfänger), CC (Kopie) oder BCC (Blindkopie) hinzufügen.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                        <div>
+                            <p class="font-medium">Fertig!</p>
+                            <p class="text-blue-700 mt-0.5">Sobald ein passendes Ereignis eintritt, erhalten Sie automatisch eine E-Mail. Im Versandprotokoll können Sie alle versendeten Benachrichtigungen einsehen.</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 bg-blue-100 rounded-lg">
+                        <p class="text-blue-800">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>Tipp:</strong> Sie können mehrere Regeln mit unterschiedlichen Filtern und Empfängern erstellen. So erhalten z.B. verschiedene Abteilungen nur die für sie relevanten Warnungen.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             @if(session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6">
                     <i class="fas fa-check-circle mr-2"></i>
@@ -132,6 +179,26 @@
                         @endforeach
                     </div>
                 @endif
+            </div>
+
+            {{-- Versandprotokoll --}}
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-history mr-2"></i>
+                            Versandprotokoll
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">
+                            Übersicht aller versendeten Benachrichtigungen
+                        </p>
+                    </div>
+                    <a href="{{ route('customer.notification-settings.history') }}"
+                       class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-list mr-1"></i>
+                        Versandprotokoll anzeigen
+                    </a>
+                </div>
             </div>
 
             {{-- Templates Section --}}

@@ -1,5 +1,28 @@
 <div>
     <form wire:submit="save" class="space-y-6">
+        {{-- Anleitung --}}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-5" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-question-circle text-blue-600"></i>
+                    <span class="font-semibold text-blue-900">Anleitung: Benachrichtigungsregel einrichten</span>
+                </div>
+                <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" class="text-blue-400"></i>
+            </button>
+            <div x-show="open" x-collapse class="mt-4 text-sm text-blue-800 space-y-2">
+                <p><i class="fas fa-info-circle mr-1"></i> Mit einer Regel legen Sie fest, wann und an wen Benachrichtigungen versendet werden.</p>
+                <ul class="list-disc list-inside space-y-1 ml-1">
+                    <li><strong>Regelname:</strong> Geben Sie einen aussagekräftigen Namen ein (z.B. "Sicherheitswarnungen Europa").</li>
+                    <li><strong>Bedingungen:</strong> Wählen Sie aus, bei welchen Ereignissen Sie informiert werden möchten. Lassen Sie ein Feld leer, um bei <em>allen</em> Ereignissen dieses Typs benachrichtigt zu werden.</li>
+                    <li><strong>Empfänger:</strong> Tragen Sie mindestens eine E-Mail-Adresse ein. TO = Hauptempfänger, CC = Kopie (sichtbar), BCC = Blindkopie (unsichtbar für andere).</li>
+                    <li><strong>Vorlage:</strong> Wählen Sie optional eine eigene E-Mail-Vorlage, oder nutzen Sie die Standard-Vorlage.</li>
+                </ul>
+                <div class="mt-2 p-3 bg-blue-100 rounded-lg">
+                    <p><i class="fas fa-lightbulb mr-1"></i> <strong>Tipp:</strong> Nutzen Sie den Button "Test-Mail senden" (nach dem Speichern verfügbar), um die Regel mit einer Beispiel-E-Mail zu testen.</p>
+                </div>
+            </div>
+        </div>
+
         {{-- Name & Active Toggle --}}
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div class="space-y-4">
@@ -30,6 +53,7 @@
                 <i class="fas fa-filter mr-2"></i>
                 Bedingungen
             </h3>
+            <p class="text-sm text-gray-500 mb-4">Bestimmen Sie, bei welchen Ereignissen diese Regel greifen soll. Wenn Sie keine Auswahl treffen, gilt die Regel für alle Ereignisse.</p>
 
             {{-- Risk Levels --}}
             <div class="mb-6">
@@ -114,6 +138,8 @@
                 </button>
             </div>
 
+            <p class="text-sm text-gray-500 mb-2">TO = Hauptempfänger, CC = Kopie (für andere sichtbar), BCC = Blindkopie (für andere nicht sichtbar).</p>
+
             <div class="space-y-3">
                 @foreach($recipients as $index => $recipient)
                     <div class="flex gap-2 items-start" wire:key="recipient-{{ $index }}">
@@ -159,9 +185,22 @@
             </select>
         </div>
 
+        {{-- Test Mail Status --}}
+        @if($testMailStatus)
+            @php
+                $statusParts = explode(':', $testMailStatus, 2);
+                $statusType = $statusParts[0];
+                $statusMessage = $statusParts[1] ?? '';
+            @endphp
+            <div class="p-4 rounded-lg {{ $statusType === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' }}">
+                <i class="fas {{ $statusType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle' }} mr-2"></i>
+                {{ $statusMessage }}
+            </div>
+        @endif
+
         {{-- Actions --}}
         <div class="flex items-center justify-between">
-            <div>
+            <div class="flex gap-3">
                 @if($ruleId)
                     <button type="button" wire:click="deleteRule"
                             wire:confirm="Möchten Sie diese Regel wirklich löschen?"
@@ -172,6 +211,20 @@
                 @endif
             </div>
             <div class="flex gap-3">
+                @if($ruleId)
+                    <button type="button" wire:click="sendTestMail"
+                            class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                            wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="sendTestMail">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Test-Mail senden
+                        </span>
+                        <span wire:loading wire:target="sendTestMail">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            Sende...
+                        </span>
+                    </button>
+                @endif
                 <a href="{{ route('customer.notification-settings.index') }}"
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                     Abbrechen

@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Customer;
 
+use App\Mail\RiskEventMail;
+use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 class NotificationTemplateForm extends Component
 {
     public ?int $templateId = null;
+    public ?string $testMailStatus = null;
 
     public string $name = '';
     public string $subject = '';
@@ -66,6 +70,37 @@ class NotificationTemplateForm extends Component
         );
 
         $this->redirect(route('customer.notification-settings.templates.index'));
+    }
+
+    public function sendTestMail(): void
+    {
+        if (! $this->templateId) {
+            return;
+        }
+
+        $customer = auth('customer')->user();
+        $template = NotificationTemplate::forCustomer($customer->id)->findOrFail($this->templateId);
+
+        $placeholders = [
+            '{event_title}' => 'Test-Ereignis',
+            '{country_name}' => 'Deutschland',
+            '{risk_level}' => 'Hoch',
+            '{category}' => 'Allgemein',
+            '{description}' => 'Dies ist eine Test-Benachrichtigung um den E-Mail-Versand zu prüfen.',
+            '{event_date}' => now()->format('d.m.Y'),
+            '{unsubscribe_url}' => '#',
+        ];
+
+        // Create a temporary rule with an empty recipients collection for the Mailable
+        $tempRule = new NotificationRule();
+        $tempRule->setRelation('recipients', collect());
+
+        try {
+            Mail::to($customer->email)->send(new RiskEventMail($template, $placeholders, $tempRule));
+            $this->testMailStatus = 'success:Test-Mail wurde erfolgreich an ' . $customer->email . ' gesendet.';
+        } catch (\Throwable $e) {
+            $this->testMailStatus = 'error:Fehler beim Senden: ' . $e->getMessage();
+        }
     }
 
     public function deleteTemplate(): void
