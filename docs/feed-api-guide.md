@@ -302,4 +302,4 @@ GET /feed/countries/schengen.xml
 
 ## Support
 
-Bei Fragen zur Feed API wenden Sie sich an Ihren Ansprechpartner bei Passolution.
+Bei Fragen zur Feed API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.

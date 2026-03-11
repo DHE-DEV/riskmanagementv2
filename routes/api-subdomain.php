@@ -22,12 +22,13 @@ Route::get('/', fn () => view('api.landing'))->withoutMiddleware('api')->name('s
 
 Route::get('/v1', function () {
     return response()->json([
-        'name' => 'Passolution API',
+        'name' => 'Global Travel Monitor API',
         'version' => 'v1',
         'documentation' => '/',
         'endpoints' => [
             'Event API' => '/v1/events',
             'GTM API' => '/v1/gtm/events',
+            'Folder Import API' => '/customer/folders',
             'Referenzdaten' => ['/v1/event-types', '/v1/countries'],
         ],
         'authentication' => 'Bearer Token via Authorization header',
@@ -72,6 +73,8 @@ Route::fallback(function () {
     ], 404);
 })->name('sub.fallback');
 
+use App\Http\Controllers\Api\FolderApiController;
+use App\Http\Controllers\Api\FolderImportController;
 use App\Http\Controllers\Api\V1\EventApiController;
 use App\Http\Controllers\Api\V1\EventReferenceController;
 use App\Http\Controllers\Api\V1\GtmApiController;
@@ -106,6 +109,27 @@ Route::prefix('v1')->middleware([
 ])->group(function () {
     Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('sub.v1.api-client.event-types');
     Route::get('/countries', [EventReferenceController::class, 'countries'])->name('sub.v1.api-client.countries');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Folder Management API Routes (Customer-Protected)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('customer/folders')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/', [FolderApiController::class, 'index'])->name('sub.customer.folders.index');
+    Route::get('/{id}', [FolderApiController::class, 'show'])->name('sub.customer.folders.show');
+
+    Route::get('/map-locations', [FolderApiController::class, 'getMapLocations'])->name('sub.customer.folders.map-locations');
+
+    Route::post('/near-point', [FolderApiController::class, 'getTravelersNearPoint'])->name('sub.customer.folders.near-point');
+    Route::post('/in-country', [FolderApiController::class, 'getTravelersInCountry'])->name('sub.customer.folders.in-country');
+    Route::post('/affected-folders', [FolderApiController::class, 'getAffectedFolders'])->name('sub.customer.folders.affected');
+    Route::get('/statistics', [FolderApiController::class, 'getTravelerStatistics'])->name('sub.customer.folders.statistics');
+
+    Route::post('/import', [FolderImportController::class, 'import'])->name('sub.customer.folders.import');
+    Route::get('/imports', [FolderImportController::class, 'listImports'])->name('sub.customer.folders.imports.list');
+    Route::get('/imports/{logId}/status', [FolderImportController::class, 'getImportStatus'])->name('sub.customer.folders.imports.status');
 });
 
 /*

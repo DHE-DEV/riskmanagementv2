@@ -304,16 +304,16 @@
 </head>
 <body>
     <div class="header">
-        <h1>Global Travel Monitor (GTM)</h1>
+        <h1>Global Travel Monitor (GTM) - REST API</h1>
         <p>Dokumentation REST API</p>
-        <div class="base-url">https://api.global-travel-monitor.de/v1</div>
+        <div class="base-url">{{ request()->getSchemeAndHttpHost() }}/v1</div>
     </div>
 
     <div class="container">
         <div class="auth-box">
             <h2>Authentifizierung</h2>
             <code>Authorization: Bearer {API_TOKEN}</code>
-            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution.</p>
+            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.</p>
         </div>
 
         <div class="apis">
@@ -364,9 +364,9 @@
                 <h3>Folder Import API</h3>
                 <p class="description">Import von Reisedaten mit Hotels, Flügen, Kreuzfahrten und Mietwagen. Queue-basierte Verarbeitung.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/api/customer/folders/import</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/api/customer/folders</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/api/customer/folders/{id}</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/customer/folders/import</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/customer/folders</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/customer/folders/{id}</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="/docs/folder-import-api-openapi.yaml" class="btn btn-primary">
@@ -382,9 +382,9 @@
                 <h3>Feed API</h3>
                 <p class="description">RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events. Keine Authentifizierung erforderlich.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/feed/events</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/feed/countries</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/feed/events/meta.json</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/events</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/events/meta.json</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="/docs/feed-api-openapi.yaml" class="btn btn-primary">
@@ -404,7 +404,7 @@
             <h3>Übersicht</h3>
             <p>Die Event API ermöglicht es externen Partnern, Events auf dem Risk Management Dashboard abzurufen sowie — bei entsprechender Freischaltung — eigene Events zu erstellen und zu verwalten.</p>
             <blockquote>
-                <p><strong>Wichtig:</strong> Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Passolution. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen <code>403 Forbidden</code> Response.</p>
+                <p><strong>Wichtig:</strong> Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Global Travel Monitor. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen <code>403 Forbidden</code> Response.</p>
             </blockquote>
 
             <hr>
@@ -412,7 +412,7 @@
             <h3>Authentifizierung</h3>
             <p>Alle API-Aufrufe erfordern einen <strong>Bearer-Token</strong> im HTTP-Header:</p>
             <pre><code>Authorization: Bearer {API_TOKEN}</code></pre>
-            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution. Er ist 1 Jahr gültig.</p>
+            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor. Er ist 1 Jahr gültig.</p>
 
             <hr>
 
@@ -561,14 +561,14 @@
 }</code></pre>
 
             <blockquote>
-                <p><strong>Hinweis:</strong> Wenn für Ihren Account die Auto-Freigabe nicht aktiviert ist, lautet der <code>review_status</code> <code>pending_review</code> und <code>is_active</code> ist <code>false</code>. Das Event wird erst nach manueller Freigabe durch Passolution auf dem Dashboard sichtbar.</p>
+                <p><strong>Hinweis:</strong> Wenn für Ihren Account die Auto-Freigabe nicht aktiviert ist, lautet der <code>review_status</code> <code>pending_review</code> und <code>is_active</code> ist <code>false</code>. Das Event wird erst nach manueller Freigabe durch das Global-Travel-Monitor-Team auf dem Dashboard sichtbar.</p>
             </blockquote>
 
             <hr>
 
             <h4>Eigene Events auflisten</h4>
             <pre><code>GET /v1/events</code></pre>
-            <p>Standardmäßig werden nur <strong>eigene Events</strong> zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter <code>scope</code> können Sie zusätzlich <strong>Passolution-Events</strong> und <strong>Events von Partner-Gruppen</strong> abrufen.</p>
+            <p>Standardmäßig werden nur <strong>eigene Events</strong> zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter <code>scope</code> können Sie zusätzlich <strong>Global-Travel-Monitor-Events</strong> und <strong>Events von Partner-Gruppen</strong> abrufen.</p>
             <p>Der <code>scope</code>-Parameter unterstützt <strong>kommagetrennte Werte</strong>, um mehrere Quellen gleichzeitig abzufragen.</p>
 
             <p><strong>Query-Parameter:</strong></p>
@@ -593,29 +593,29 @@
                     </thead>
                     <tbody>
                         <tr><td><code>own</code></td><td>Nur Ihre eigenen Events (Standard)</td></tr>
-                        <tr><td><code>passolution</code></td><td>Nur von Passolution bereitgestellte Events (aktiv und freigegeben)</td></tr>
-                        <tr><td><code>all</code></td><td>Ihre eigenen Events + Passolution-Events zusammen</td></tr>
-                        <tr><td><code>{gruppen-slug}</code></td><td>Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert). Wenn die Gruppe <code>include_passolution_events</code> aktiviert hat, werden zusätzlich Passolution-Events mitgeliefert.</td></tr>
+                        <tr><td><code>passolution</code></td><td>Nur von Global Travel Monitor bereitgestellte Events (aktiv und freigegeben)</td></tr>
+                        <tr><td><code>all</code></td><td>Ihre eigenen Events + Global-Travel-Monitor-Events zusammen</td></tr>
+                        <tr><td><code>{gruppen-slug}</code></td><td>Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert). Wenn die Gruppe <code>include_passolution_events</code> aktiviert hat, werden zusätzlich Global-Travel-Monitor-Events mitgeliefert.</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <blockquote><p><strong>Hinweis:</strong> Partner-Events (über Gruppen) und Passolution-Events werden nur angezeigt, wenn sie aktiv, freigegeben und nicht archiviert sind.</p></blockquote>
+            <blockquote><p><strong>Hinweis:</strong> Partner-Events (über Gruppen) und Global-Travel-Monitor-Events werden nur angezeigt, wenn sie aktiv, freigegeben und nicht archiviert sind.</p></blockquote>
 
             <p><strong>Beispiele:</strong></p>
             <pre><code># Eigene Events (Standard)
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?per_page=10&amp;page=1"
 
-# Nur Passolution-Events
+# Nur Global-Travel-Monitor-Events
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?scope=passolution"
 
-# Alle Events (eigene + Passolution)
+# Alle Events (eigene + Global Travel Monitor)
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?scope=all"
 
-# Eigene + Passolution (kommagetrennt, entspricht scope=all)
+# Eigene + Global Travel Monitor (kommagetrennt, entspricht scope=all)
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?scope=own,passolution"
 
@@ -706,7 +706,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <p>Je nach Konfiguration Ihres Accounts gibt es zwei Modi:</p>
             <ol>
                 <li><strong>Auto-Freigabe aktiviert:</strong> Events werden sofort veröffentlicht (<code>review_status: approved</code>, <code>is_active: true</code>)</li>
-                <li><strong>Auto-Freigabe deaktiviert:</strong> Events werden zur Prüfung eingereicht (<code>review_status: pending_review</code>, <code>is_active: false</code>) und erst nach Freigabe durch das Passolution-Team sichtbar</li>
+                <li><strong>Auto-Freigabe deaktiviert:</strong> Events werden zur Prüfung eingereicht (<code>review_status: pending_review</code>, <code>is_active: false</code>) und erst nach Freigabe durch das Global-Travel-Monitor-Team sichtbar</li>
             </ol>
 
             <hr>
@@ -717,7 +717,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Support</h3>
-            <p>Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.</p>
+            <p>Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.</p>
         </div>
 
         {{-- ========================================== --}}
@@ -1314,7 +1314,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Support</h3>
-            <p>Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.</p>
+            <p>Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.</p>
         </div>
 
         {{-- ========================================== --}}
@@ -1607,7 +1607,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Support</h3>
-            <p>Bei Fragen zur Feed API wenden Sie sich an Ihren Ansprechpartner bei Passolution.</p>
+            <p>Bei Fragen zur Feed API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.</p>
         </div>
     </div>
 

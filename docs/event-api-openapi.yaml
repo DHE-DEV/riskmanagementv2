@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
-  title: Passolution Event API
+  title: Global Travel Monitor Event API
   description: |
     REST API für externe Partner zur Erstellung und Verwaltung von Events
     auf dem Risk Management Dashboard.
   version: 1.0.0
   contact:
-    name: Passolution Support
+    name: Global Travel Monitor Support
 
 servers:
   - url: https://api.global-travel-monitor.de/v1
@@ -29,7 +29,7 @@ paths:
       description: |
         Gibt eine paginierte Liste von Events zurück. Standardmäßig werden nur eigene Events
         (über Ihren API-Token erstellt) zurückgegeben. Mit dem Parameter `scope` können zusätzlich
-        von Passolution bereitgestellte Events abgerufen werden.
+        von Global Travel Monitor bereitgestellte Events abgerufen werden.
       parameters:
         - name: scope
           in: query
@@ -39,8 +39,8 @@ paths:
           description: |
             Kommagetrennte Liste von Scope-Werten. Mögliche Werte:
             - `own` (Standard) – nur über Ihren API-Token erstellte Events
-            - `passolution` – nur von Passolution bereitgestellte Events (aktiv, freigegeben, nicht archiviert)
-            - `all` – eigene Events + Passolution-Events zusammen
+            - `passolution` – nur von Global Travel Monitor bereitgestellte Events (aktiv, freigegeben, nicht archiviert)
+            - `all` – eigene Events + Global-Travel-Monitor-Events zusammen
             - `{gruppen-slug}` – Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert)
 
             Beispiele: `own`, `own,passolution`, `own,meine-partner-gruppe`

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Passolution Folder Import API
+  title: Global Travel Monitor Folder Import API
   description: |
     REST API für den Import von Reisedaten (Folders) mit Hotels, Flügen,
     Kreuzfahrten und Mietwagen. Der Import läuft queue-basiert im Hintergrund
@@ -8,11 +8,13 @@ info:
     Timeline-Generierung und Geocoding.
   version: 1.0.0
   contact:
-    name: Passolution Support
+    name: Global Travel Monitor Support
 
 servers:
+  - url: https://api.global-travel-monitor.de
+    description: Produktionsserver (empfohlen)
   - url: https://global-travel-monitor.eu/api
-    description: Produktionsserver
+    description: Produktionsserver (alternativ)
 
 security:
   - BearerAuth: []

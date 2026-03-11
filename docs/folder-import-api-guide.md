@@ -39,8 +39,10 @@ POST /customer/api-tokens/generate
 ## Base-URL
 
 ```
-https://global-travel-monitor.eu/api
+https://api.global-travel-monitor.de
 ```
+
+Alternativ ist die API auch unter `https://global-travel-monitor.eu/api` erreichbar. Wir empfehlen die Verwendung der API-Subdomain für neue Integrationen.
 
 ---
 
@@ -303,7 +305,7 @@ Importiert einen kompletten Folder mit allen zugehörigen Daten. Der Import wird
 ### Minimaler Import (nur Hotel)
 
 ```bash
-curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
+curl -X POST https://api.global-travel-monitor.de/customer/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -345,7 +347,7 @@ curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
 ### Vollständiger Import (Hotel + Flug)
 
 ```bash
-curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
+curl -X POST https://api.global-travel-monitor.de/customer/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -458,7 +460,7 @@ GET /customer/folders/imports/{log_id}/status
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"
+  "https://api.global-travel-monitor.de/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"
 ```
 
 **Response (200 OK):**
@@ -507,7 +509,7 @@ GET /customer/folders/imports
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/customer/folders/imports?per_page=10"
+  "https://api.global-travel-monitor.de/customer/folders/imports?per_page=10"
 ```
 
 ---
@@ -548,4 +550,4 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ## Support
 
-Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.
+Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.
