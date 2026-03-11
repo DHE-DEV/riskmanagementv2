@@ -282,6 +282,18 @@ class AirlineForm
                                                             ->placeholder('z.B. 23')
                                                             ->columnSpanFull(),
                                                     ]),
+
+                                                Textarea::make('baggage_rules.hand_baggage_notes')
+                                                    ->label('Allgemeine Hinweise')
+                                                    ->rows(3)
+                                                    ->placeholder('Weitere Informationen zum Handgepäck')
+                                                    ->columnSpanFull(),
+
+                                                TextInput::make('baggage_rules.hand_baggage_info_url')
+                                                    ->label('Info-URL')
+                                                    ->url()
+                                                    ->placeholder('https://...')
+                                                    ->columnSpanFull(),
                                             ]),
                                     ])
                                     ->collapsible()
