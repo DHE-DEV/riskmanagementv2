@@ -364,9 +364,9 @@
                 <h3>Folder Import API</h3>
                 <p class="description">Import von Reisedaten mit Hotels, Flügen, Kreuzfahrten und Mietwagen. Queue-basierte Verarbeitung.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/customer/folders/import</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/customer/folders</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/customer/folders/{id}</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/folders/import</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/folders</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/folders/{id}</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="/docs/folder-import-api-openapi.yaml" class="btn btn-primary">
@@ -754,7 +754,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Folder importieren</h3>
-            <pre><code>POST /v1/customer/folders/import</code></pre>
+            <pre><code>POST /v1/folders/import</code></pre>
             <p>Importiert einen kompletten Folder mit allen zugehörigen Daten. Der Import wird in eine Queue eingereiht und im Hintergrund verarbeitet. Die Response enthält eine <code>log_id</code> zum Status-Tracking.</p>
 
             <h4>Request-Struktur</h4>
@@ -1077,7 +1077,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <h3>Beispiele</h3>
 
             <h4>Minimaler Import (nur Hotel)</h4>
-            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/customer/folders/import \
+            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1116,7 +1116,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   }'</code></pre>
 
             <h4>Vollständiger Import (Hotel + Flug)</h4>
-            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/customer/folders/import \
+            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1216,10 +1216,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <h3>Import-Status abfragen</h3>
 
             <h4>Status eines einzelnen Imports</h4>
-            <pre><code>GET /v1/customer/folders/imports/{log_id}/status</code></pre>
+            <pre><code>GET /v1/folders/imports/{log_id}/status</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -1255,7 +1255,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h4>Liste aller Imports</h4>
-            <pre><code>GET /v1/customer/folders/imports</code></pre>
+            <pre><code>GET /v1/folders/imports</code></pre>
 
             <p><strong>Query-Parameter:</strong></p>
             <div class="table-responsive">
@@ -1271,7 +1271,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/customer/folders/imports?per_page=10"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/folders/imports?per_page=10"</code></pre>
 
             <hr>
 

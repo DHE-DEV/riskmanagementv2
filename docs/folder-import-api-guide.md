@@ -49,7 +49,7 @@ Alternativ ist die API auch unter `https://global-travel-monitor.eu/api` erreich
 ## Folder importieren
 
 ```
-POST /v1/customer/folders/import
+POST /v1/folders/import
 ```
 
 Importiert einen kompletten Folder mit allen zugehörigen Daten. Der Import wird in eine Queue eingereiht und im Hintergrund verarbeitet. Die Response enthält eine `log_id` zum Status-Tracking.
@@ -305,7 +305,7 @@ Importiert einen kompletten Folder mit allen zugehörigen Daten. Der Import wird
 ### Minimaler Import (nur Hotel)
 
 ```bash
-curl -X POST https://api.global-travel-monitor.de/v1/customer/folders/import \
+curl -X POST https://api.global-travel-monitor.de/v1/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -347,7 +347,7 @@ curl -X POST https://api.global-travel-monitor.de/v1/customer/folders/import \
 ### Vollständiger Import (Hotel + Flug)
 
 ```bash
-curl -X POST https://api.global-travel-monitor.de/v1/customer/folders/import \
+curl -X POST https://api.global-travel-monitor.de/v1/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -453,14 +453,14 @@ curl -X POST https://api.global-travel-monitor.de/v1/customer/folders/import \
 ### Status eines einzelnen Imports
 
 ```
-GET /v1/customer/folders/imports/{log_id}/status
+GET /v1/folders/imports/{log_id}/status
 ```
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"
+  "https://api.global-travel-monitor.de/v1/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"
 ```
 
 **Response (200 OK):**
@@ -496,7 +496,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Liste aller Imports
 
 ```
-GET /v1/customer/folders/imports
+GET /v1/folders/imports
 ```
 
 **Query-Parameter:**
@@ -509,7 +509,7 @@ GET /v1/customer/folders/imports
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/customer/folders/imports?per_page=10"
+  "https://api.global-travel-monitor.de/v1/folders/imports?per_page=10"
 ```
 
 ---

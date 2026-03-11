@@ -189,7 +189,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 | Protected by customer authentication.
 |
 */
-Route::prefix('v1/customer/folders')->middleware(['auth:sanctum'])->group(function () {
+Route::prefix('v1/folders')->middleware(['auth:sanctum'])->group(function () {
     // Folder CRUD
     Route::get('/', [\App\Http\Controllers\Api\FolderApiController::class, 'index'])->name('customer.folders.index');
     Route::get('/{id}', [\App\Http\Controllers\Api\FolderApiController::class, 'show'])->name('customer.folders.show');
