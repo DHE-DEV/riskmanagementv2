@@ -306,7 +306,7 @@
     <div class="header">
         <h1>Global Travel Monitor (GTM) - REST API</h1>
         <p>Dokumentation REST API</p>
-        <div class="base-url">{{ request()->getSchemeAndHttpHost() }}/v1</div>
+        <div class="base-url">{{ request()->getSchemeAndHttpHost() }}</div>
     </div>
 
     <div class="container">
@@ -417,7 +417,7 @@
             <hr>
 
             <h3>Base-URL</h3>
-            <pre><code>https://api.global-travel-monitor.de/v1</code></pre>
+            <pre><code>{{ request()->getSchemeAndHttpHost() }}/v1</code></pre>
 
             <hr>
 
@@ -433,7 +433,7 @@
             <pre><code>GET /v1/event-types</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/event-types</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/event-types</code></pre>
             <p><strong>Response:</strong></p>
             <pre><code>{
   "success": true,
@@ -457,7 +457,7 @@
             <pre><code>GET /v1/countries</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/countries</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/countries</code></pre>
             <p><strong>Response:</strong></p>
             <pre><code>{
   "success": true,
@@ -507,7 +507,7 @@
             </div>
 
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl -X POST https://api.global-travel-monitor.de/v1/events \
+            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/events \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -605,27 +605,27 @@
             <p><strong>Beispiele:</strong></p>
             <pre><code># Eigene Events (Standard)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?per_page=10&amp;page=1"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?per_page=10&amp;page=1"
 
 # Nur Global-Travel-Monitor-Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=passolution"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=passolution"
 
 # Alle Events (eigene + Global Travel Monitor)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=all"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=all"
 
 # Eigene + Global Travel Monitor (kommagetrennt, entspricht scope=all)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=own,passolution"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=own,passolution"
 
 # Events einer Partner-Gruppe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=meine-partner-gruppe"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=meine-partner-gruppe"
 
 # Eigene Events + Partner-Gruppe kombiniert
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=own,meine-partner-gruppe"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=own,meine-partner-gruppe"</code></pre>
 
             <hr>
 
@@ -633,7 +633,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>GET /v1/events/{uuid}</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890</code></pre>
 
             <hr>
 
@@ -642,7 +642,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>PUT /v1/events/{uuid}</code></pre>
             <p>Es müssen nur die zu ändernden Felder gesendet werden.</p>
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl -X PUT https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+            <pre><code>curl -X PUT {{ request()->getSchemeAndHttpHost() }}/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -662,7 +662,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <blockquote><p>Erfordert Freischaltung der Event-Erstellung für Ihren Account.</p></blockquote>
             <pre><code>DELETE /v1/events/{uuid}</code></pre>
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl -X DELETE https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+            <pre><code>curl -X DELETE {{ request()->getSchemeAndHttpHost() }}/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}"</code></pre>
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -749,7 +749,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Base-URL</h3>
-            <pre><code>https://global-travel-monitor.eu/api</code></pre>
+            <pre><code>{{ request()->getSchemeAndHttpHost() }}</code></pre>
 
             <hr>
 
@@ -1077,7 +1077,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <h3>Beispiele</h3>
 
             <h4>Minimaler Import (nur Hotel)</h4>
-            <pre><code>curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
+            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/customer/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1116,7 +1116,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   }'</code></pre>
 
             <h4>Vollständiger Import (Hotel + Flug)</h4>
-            <pre><code>curl -X POST https://global-travel-monitor.eu/api/customer/folders/import \
+            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/customer/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1219,7 +1219,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>GET /customer/folders/imports/{log_id}/status</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/customer/folders/imports/019bef38-f2bc-73fc-bdbc-228ff5a8421e/status"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -1271,7 +1271,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "https://global-travel-monitor.eu/api/customer/folders/imports?per_page=10"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/customer/folders/imports?per_page=10"</code></pre>
 
             <hr>
 
