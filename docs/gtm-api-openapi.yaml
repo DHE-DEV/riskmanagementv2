@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
-  title: Passolution GTM API
+  title: Global Travel Monitor GTM API
   description: |
     Global Travel Monitor (GTM) API – Read-only Zugriff auf globale
     Sicherheits- und Reiserisiko-Events sowie Länder-Übersichten.
   version: 1.0.0
   contact:
-    name: Passolution Support
+    name: Global Travel Monitor Support
 
 servers:
   - url: https://api.global-travel-monitor.de/v1/gtm
@@ -30,7 +30,7 @@ paths:
       summary: Events auflisten
       description: |
         Gibt eine paginierte Liste aller aktuell aktiven Events zurück.
-        Dies umfasst sowohl von Passolution gepflegte Events als auch Events
+        Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events
         von API-Partnern. Es werden nur Events zurückgegeben, die freigegeben
         (approved), aktiv und nicht archiviert sind, deren Startdatum in der
         Vergangenheit liegt und deren Enddatum entweder null (andauernd) oder

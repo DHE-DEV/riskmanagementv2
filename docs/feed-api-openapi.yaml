@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Passolution Feed API
+  title: Global Travel Monitor Feed API
   description: |
     Öffentliche RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events
     sowie Länderinformationen. Keine Authentifizierung erforderlich.
@@ -9,7 +9,7 @@ info:
     Bei neuen oder geänderten Events wird der Cache automatisch invalidiert.
   version: 1.0.0
   contact:
-    name: Passolution Support
+    name: Global Travel Monitor Support
 
 servers:
   - url: https://global-travel-monitor.eu/feed

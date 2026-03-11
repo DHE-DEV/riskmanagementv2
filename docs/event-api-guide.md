@@ -4,7 +4,7 @@
 
 Die Event API ermöglicht es externen Partnern, Events auf dem Risk Management Dashboard abzurufen sowie — bei entsprechender Freischaltung — eigene Events zu erstellen und zu verwalten.
 
-> **Wichtig:** Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Passolution. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen `403 Forbidden` Response.
+> **Wichtig:** Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Global Travel Monitor. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen `403 Forbidden` Response.
 
 ---
 
@@ -16,7 +16,7 @@ Alle API-Aufrufe erfordern einen **Bearer-Token** im HTTP-Header:
 Authorization: Bearer {API_TOKEN}
 ```
 
-Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution. Er ist 1 Jahr gültig.
+Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor. Er ist 1 Jahr gültig.
 
 ---
 
@@ -43,7 +43,7 @@ Bevor Sie Events erstellen, fragen Sie die gültigen Event-Typen und Ländercode
 ### Event-Typen abrufen
 
 ```
-GET /api/v1/event-types
+GET /v1/event-types
 ```
 
 **Beispiel:**
@@ -78,7 +78,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Länder abrufen
 
 ```
-GET /api/v1/countries
+GET /v1/countries
 ```
 
 **Beispiel:**
@@ -119,7 +119,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 > Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
-POST /api/v1/events
+POST /v1/events
 ```
 
 **Request-Body (JSON):**
@@ -198,17 +198,17 @@ curl -X POST https://api.global-travel-monitor.de/v1/events \
 }
 ```
 
-> **Hinweis:** Wenn für Ihren Account die Auto-Freigabe nicht aktiviert ist, lautet der `review_status` `pending_review` und `is_active` ist `false`. Das Event wird erst nach manueller Freigabe durch Passolution auf dem Dashboard sichtbar.
+> **Hinweis:** Wenn für Ihren Account die Auto-Freigabe nicht aktiviert ist, lautet der `review_status` `pending_review` und `is_active` ist `false`. Das Event wird erst nach manueller Freigabe durch das Global-Travel-Monitor-Team auf dem Dashboard sichtbar.
 
 ---
 
 ### Eigene Events auflisten
 
 ```
-GET /api/v1/events
+GET /v1/events
 ```
 
-Standardmäßig werden nur **eigene Events** zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter `scope` können Sie zusätzlich **Passolution-Events** und **Events von Partner-Gruppen** abrufen.
+Standardmäßig werden nur **eigene Events** zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter `scope` können Sie zusätzlich **Global-Travel-Monitor-Events** und **Events von Partner-Gruppen** abrufen.
 
 Der `scope`-Parameter unterstützt **kommagetrennte Werte**, um mehrere Quellen gleichzeitig abzufragen.
 
@@ -225,11 +225,11 @@ Der `scope`-Parameter unterstützt **kommagetrennte Werte**, um mehrere Quellen 
 | Wert | Beschreibung |
 |------|--------------|
 | `own` | Nur Ihre eigenen Events (Standard) |
-| `passolution` | Nur von Passolution bereitgestellte Events (aktiv und freigegeben) |
-| `all` | Ihre eigenen Events + Passolution-Events zusammen |
-| `{gruppen-slug}` | Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert). Wenn die Gruppe `include_passolution_events` aktiviert hat, werden zusätzlich Passolution-Events mitgeliefert. |
+| `passolution` | Nur von Global Travel Monitor bereitgestellte Events (aktiv und freigegeben) |
+| `all` | Ihre eigenen Events + Global-Travel-Monitor-Events zusammen |
+| `{gruppen-slug}` | Events der API-Kunden in der angegebenen Event-Gruppe (aktiv, freigegeben, nicht archiviert). Wenn die Gruppe `include_passolution_events` aktiviert hat, werden zusätzlich Global-Travel-Monitor-Events mitgeliefert. |
 
-> **Hinweis:** Partner-Events (über Gruppen) und Passolution-Events werden nur angezeigt, wenn sie aktiv, freigegeben und nicht archiviert sind.
+> **Hinweis:** Partner-Events (über Gruppen) und Global-Travel-Monitor-Events werden nur angezeigt, wenn sie aktiv, freigegeben und nicht archiviert sind.
 
 **Beispiele:**
 
@@ -238,15 +238,15 @@ Der `scope`-Parameter unterstützt **kommagetrennte Werte**, um mehrere Quellen 
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?per_page=10&page=1"
 
-# Nur Passolution-Events
+# Nur Global-Travel-Monitor-Events
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?scope=passolution"
 
-# Alle Events (eigene + Passolution)
+# Alle Events (eigene + Global Travel Monitor)
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?scope=all"
 
-# Eigene + Passolution (kommagetrennt, entspricht scope=all)
+# Eigene + Global Travel Monitor (kommagetrennt, entspricht scope=all)
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?scope=own,passolution"
 
@@ -264,7 +264,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Einzelnes Event anzeigen
 
 ```
-GET /api/v1/events/{uuid}
+GET /v1/events/{uuid}
 ```
 
 **Beispiel:**
@@ -281,7 +281,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 > Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
-PUT /api/v1/events/{uuid}
+PUT /v1/events/{uuid}
 ```
 
 Es müssen nur die zu ändernden Felder gesendet werden.
@@ -315,7 +315,7 @@ curl -X PUT https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-ab
 > Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
-DELETE /api/v1/events/{uuid}
+DELETE /v1/events/{uuid}
 ```
 
 **Beispiel:**
@@ -368,7 +368,7 @@ curl -X DELETE https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890
 Je nach Konfiguration Ihres Accounts gibt es zwei Modi:
 
 1. **Auto-Freigabe aktiviert:** Events werden sofort veröffentlicht (`review_status: approved`, `is_active: true`)
-2. **Auto-Freigabe deaktiviert:** Events werden zur Prüfung eingereicht (`review_status: pending_review`, `is_active: false`) und erst nach Freigabe durch das Passolution-Team sichtbar
+2. **Auto-Freigabe deaktiviert:** Events werden zur Prüfung eingereicht (`review_status: pending_review`, `is_active: false`) und erst nach Freigabe durch das Global-Travel-Monitor-Team sichtbar
 
 ---
 
@@ -380,4 +380,4 @@ Wenn ein Firmenlogo in Ihrem API-Account hinterlegt ist, wird dieses als Quellen
 
 ## Support
 
-Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.
+Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.

@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Die GTM API bietet **read-only** Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Passolution gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.
+Die GTM API bietet **read-only** Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.
 
 Die API ermöglicht die Abfrage aktueller Events gefiltert nach Priorität, Land, Event-Typ und Region sowie Länder-Übersichten mit Anzahl aktiver Events.
 
@@ -16,7 +16,7 @@ Alle API-Aufrufe erfordern einen **Bearer-Token** im HTTP-Header:
 Authorization: Bearer {API_TOKEN}
 ```
 
-Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution.
+Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.
 
 ---
 
@@ -364,4 +364,4 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ## Support
 
-Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.
+Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.
