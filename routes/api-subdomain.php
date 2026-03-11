@@ -28,7 +28,7 @@ Route::get('/v1', function () {
         'endpoints' => [
             'Event API' => '/v1/events',
             'GTM API' => '/v1/gtm/events',
-            'Folder Import API' => '/customer/folders',
+            'Folder Import API' => '/v1/customer/folders',
             'Referenzdaten' => ['/v1/event-types', '/v1/countries'],
         ],
         'authentication' => 'Bearer Token via Authorization header',
@@ -116,7 +116,7 @@ Route::prefix('v1')->middleware([
 | Folder Management API Routes (Customer-Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('customer/folders')->middleware(['auth:sanctum'])->group(function () {
+Route::prefix('v1/customer/folders')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/', [FolderApiController::class, 'index'])->name('sub.customer.folders.index');
     Route::get('/{id}', [FolderApiController::class, 'show'])->name('sub.customer.folders.show');
 

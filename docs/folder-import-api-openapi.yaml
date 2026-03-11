@@ -24,7 +24,7 @@ tags:
     description: Folder-Import und Status-Abfragen
 
 paths:
-  /customer/folders/import:
+  /v1/customer/folders/import:
     post:
       tags: [Import]
       summary: Folder importieren
@@ -100,7 +100,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /customer/folders/imports/{logId}/status:
+  /v1/customer/folders/imports/{logId}/status:
     parameters:
       - name: logId
         in: path
@@ -130,7 +130,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /customer/folders/imports:
+  /v1/customer/folders/imports:
     get:
       tags: [Import]
       summary: Liste aller Imports
