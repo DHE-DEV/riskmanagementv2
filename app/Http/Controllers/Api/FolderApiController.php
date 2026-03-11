@@ -15,7 +15,6 @@ class FolderApiController extends Controller
 
     public function __construct(FolderProximityService $proximityService)
     {
-        $this->middleware('auth:customer');
         $this->proximityService = $proximityService;
     }
 
