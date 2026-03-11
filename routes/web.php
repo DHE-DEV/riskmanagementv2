@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     // API subdomain → API description page
-    if (str_starts_with(request()->getHost(), 'api.')) {
+    if (request()->getHost() === config('app.api_domain')) {
         return view('livewire.pages.api-description');
     }
 
