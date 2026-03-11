@@ -178,7 +178,7 @@
                 Base URL
             </h3>
             <div class="code-block">
-                <code>https://api.global-travel-monitor.de/v1</code>
+                <code>https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1</code>
             </div>
             <p class="text-sm text-gray-500 mt-3">
                 Alle Endpunkte sind relativ zu dieser Base URL angegeben. Antworten werden im JSON-Format zurückgegeben.
@@ -258,7 +258,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://api.global-travel-monitor.de/v1/gtm/events?priority=high&per_page=10" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/gtm/events?priority=high&per_page=10" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
@@ -308,7 +308,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://api.global-travel-monitor.de/v1/gtm/events/1234" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/gtm/events/1234" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
@@ -331,7 +331,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://api.global-travel-monitor.de/v1/gtm/countries" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/gtm/countries" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
@@ -428,7 +428,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X POST "https://api.global-travel-monitor.de/v1/events" \
+                            <code>curl -X POST "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/events" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -520,7 +520,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://api.global-travel-monitor.de/v1/event-types" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/event-types" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
@@ -543,7 +543,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://api.global-travel-monitor.de/v1/countries" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/countries" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>

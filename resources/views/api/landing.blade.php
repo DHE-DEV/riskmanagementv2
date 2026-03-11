@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passolution API</title>
+    <title>Global Travel Monitor (GTM) - REST API</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -193,9 +193,9 @@
 </head>
 <body>
     <div class="header">
-        <h1>Passolution API</h1>
+        <h1>Global Travel Monitor (GTM) - REST API</h1>
         <p>REST APIs für das Risk Management Dashboard</p>
-        <div class="base-url">https://api.global-travel-monitor.de/v1</div>
+        <div class="base-url">{{ request()->getSchemeAndHttpHost() }}/v1</div>
     </div>
 
     <div class="container">
@@ -260,9 +260,9 @@
                 <h3>Folder Import API</h3>
                 <p class="description">Import von Reisedaten mit Hotels, Flügen, Kreuzfahrten und Mietwagen. Queue-basierte Verarbeitung.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/api/customer/folders/import</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/api/customer/folders</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/api/customer/folders/{id}</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/customer/folders/import</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/customer/folders</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/customer/folders/{id}</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="/docs/folder-import-api-openapi.yaml" class="btn btn-primary">
@@ -282,9 +282,9 @@
                 <h3>Feed API</h3>
                 <p class="description">RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events. Keine Authentifizierung erforderlich.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/feed/events</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/feed/countries</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/feed/events/meta.json</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/events</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/events/meta.json</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="/docs/feed-api-openapi.yaml" class="btn btn-primary">
