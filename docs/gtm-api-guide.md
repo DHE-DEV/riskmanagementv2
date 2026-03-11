@@ -1,8 +1,8 @@
-# Global Travel Monitor (GTM) API – Kundenanleitung
+# Global Travel Monitor Events API – Kundenanleitung
 
 ## Übersicht
 
-Die GTM API bietet **read-only** Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.
+Die Events API bietet **read-only** Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.
 
 Die API ermöglicht die Abfrage aktueller Events gefiltert nach Priorität, Land, Event-Typ und Region sowie Länder-Übersichten mit Anzahl aktiver Events.
 
@@ -23,10 +23,10 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.
 ## Base-URL
 
 ```
-https://api.global-travel-monitor.de/v1/gtm
+https://api.global-travel-monitor.de/v1
 ```
 
-Alternativ ist die API auch unter `https://global-travel-monitor.eu/api/v1/gtm` erreichbar. Wir empfehlen die Verwendung der API-Subdomain für neue Integrationen.
+Alternativ ist die API auch unter `https://global-travel-monitor.eu/api/v1` erreichbar. Wir empfehlen die Verwendung der API-Subdomain für neue Integrationen.
 
 ---
 
@@ -61,11 +61,11 @@ Mit dem `source`-Filter können Sie gezielt Events einer bestimmten Herkunft abf
 ```bash
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/gtm/events?source=manual"
+  "https://api.global-travel-monitor.de/v1/events?source=manual"
 
 # Nur Events von einem bestimmten Partner (nach Name)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/gtm/events?source=Partner%20XY%20GmbH"
+  "https://api.global-travel-monitor.de/v1/events?source=Partner%20XY%20GmbH"
 ```
 
 ---
@@ -94,7 +94,7 @@ GET /events
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/gtm/events?priority=high&country=TR&source=manual&per_page=10"
+  "https://api.global-travel-monitor.de/v1/events?priority=high&country=TR&source=manual&per_page=10"
 ```
 
 **Response (200 OK):**
@@ -176,7 +176,7 @@ GET /events/{uuid}
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/gtm/events/550e8400-e29b-41d4-a716-446655440000"
+  "https://api.global-travel-monitor.de/v1/events/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200 OK):**
@@ -254,7 +254,7 @@ Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, z
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/gtm/countries"
+  "https://api.global-travel-monitor.de/v1/countries"
 ```
 
 **Response (200 OK):**

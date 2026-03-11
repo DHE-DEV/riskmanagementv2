@@ -317,40 +317,40 @@
         </div>
 
         <div class="apis">
-            {{-- Event API --}}
+            {{-- Events API (Read-Only) --}}
             <div class="api-card">
-                <span class="badge badge-auth">Bearer Token (API-Partner)</span>
-                <h3>Event API</h3>
-                <p class="description">Für API-Partner: Eigene Sicherheits-Events erstellen, aktualisieren und löschen. Jeder Partner verwaltet nur seine eigenen Events. Benötigt einen API-Client-Token.</p>
+                <span class="badge badge-auth">Bearer Token (Kunde)</span>
+                <h3>Events API</h3>
+                <p class="description">Für Kunden: Read-only Zugriff auf alle aktiven Events aller Anbieter. Mit dem <code>source</code>-Filter können Events nach Herkunft gefiltert werden (z.B. nur Events von einem bestimmten Partner). Benötigt einen Kunden-Token.</p>
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
-                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
-                    <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
-                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-types</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
                 </ul>
                 <div class="downloads">
-                    <a href="/docs/event-api-openapi.yaml" class="btn btn-primary">
+                    <a href="/docs/gtm-api-openapi.yaml" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                         OpenAPI Spec
                     </a>
                 </div>
             </div>
 
-            {{-- GTM API --}}
+            {{-- Custom Event API (Partner) --}}
             <div class="api-card">
-                <span class="badge badge-auth">Bearer Token (Kunde)</span>
-                <h3>GTM API</h3>
-                <p class="description">Für Kunden: Read-only Zugriff auf alle aktiven Events aller Anbieter. Mit dem <code>source</code>-Filter können Events nach Herkunft gefiltert werden (z.B. nur Events von einem bestimmten Partner). Benötigt einen Kunden-Token mit GTM-Berechtigung.</p>
+                <span class="badge badge-auth">Bearer Token (API-Partner)</span>
+                <h3>Custom Event API</h3>
+                <p class="description">Für API-Partner: Eigene Sicherheits-Events erstellen, aktualisieren und löschen. Jeder Partner verwaltet nur seine eigenen Events. Benötigt einen API-Client-Token.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/gtm/events</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/gtm/events/{id}</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/gtm/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/events</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/custom/events</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
+                    <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
+                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/event-types</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/countries</span></li>
                 </ul>
                 <div class="downloads">
-                    <a href="/docs/gtm-api-openapi.yaml" class="btn btn-primary">
+                    <a href="/docs/event-api-openapi.yaml" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                         OpenAPI Spec
                     </a>
@@ -395,13 +395,13 @@
         </div>
 
         {{-- ========================================== --}}
-        {{-- Event API Guide --}}
+        {{-- Custom Event API Guide --}}
         {{-- ========================================== --}}
         <div class="doc-section" id="event-api-guide">
-            <h2>Event API – Anleitung</h2>
+            <h2>Custom Event API – Anleitung</h2>
 
             <h3>Übersicht</h3>
-            <p>Die Event API ermöglicht es externen Partnern, Events auf dem Risk Management Dashboard abzurufen sowie — bei entsprechender Freischaltung — eigene Events zu erstellen und zu verwalten.</p>
+            <p>Die Custom Event API ermöglicht es API-Partnern, eigene Sicherheits-Events zu erstellen, zu aktualisieren und zu löschen. Jeder Partner verwaltet ausschließlich seine eigenen Events.</p>
             <blockquote>
                 <p><strong>Wichtig:</strong> Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Global Travel Monitor. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen <code>403 Forbidden</code> Response.</p>
             </blockquote>
@@ -429,10 +429,10 @@
             <p>Bevor Sie Events erstellen, fragen Sie die gültigen Event-Typen und Ländercodes ab.</p>
 
             <h4>Event-Typen abrufen</h4>
-            <pre><code>GET /v1/event-types</code></pre>
+            <pre><code>GET /v1/custom/event-types</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  {{ request()->getSchemeAndHttpHost() }}/v1/event-types</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/custom/event-types</code></pre>
             <p><strong>Response:</strong></p>
             <pre><code>{
   "success": true,
@@ -453,10 +453,10 @@
 }</code></pre>
 
             <h4>Länder abrufen</h4>
-            <pre><code>GET /v1/countries</code></pre>
+            <pre><code>GET /v1/custom/countries</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  {{ request()->getSchemeAndHttpHost() }}/v1/countries</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/custom/countries</code></pre>
             <p><strong>Response:</strong></p>
             <pre><code>{
   "success": true,
@@ -482,7 +482,7 @@
 
             <h4>Event erstellen</h4>
             <blockquote><p>Erfordert Freischaltung der Event-Erstellung für Ihren Account.</p></blockquote>
-            <pre><code>POST /v1/events</code></pre>
+            <pre><code>POST /v1/custom/events</code></pre>
             <p><strong>Request-Body (JSON):</strong></p>
             <div class="table-responsive">
                 <table>
@@ -506,7 +506,7 @@
             </div>
 
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/events \
+            <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/custom/events \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -566,7 +566,7 @@
             <hr>
 
             <h4>Eigene Events auflisten</h4>
-            <pre><code>GET /v1/events</code></pre>
+            <pre><code>GET /v1/custom/events</code></pre>
             <p>Standardmäßig werden nur <strong>eigene Events</strong> zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter <code>scope</code> können Sie zusätzlich <strong>Global-Travel-Monitor-Events</strong> und <strong>Events von Partner-Gruppen</strong> abrufen.</p>
             <p>Der <code>scope</code>-Parameter unterstützt <strong>kommagetrennte Werte</strong>, um mehrere Quellen gleichzeitig abzufragen.</p>
 
@@ -604,44 +604,44 @@
             <p><strong>Beispiele:</strong></p>
             <pre><code># Eigene Events (Standard)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?per_page=10&amp;page=1"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?per_page=10&amp;page=1"
 
 # Nur Global-Travel-Monitor-Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=passolution"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?scope=passolution"
 
 # Alle Events (eigene + Global Travel Monitor)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=all"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?scope=all"
 
 # Eigene + Global Travel Monitor (kommagetrennt, entspricht scope=all)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=own,passolution"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?scope=own,passolution"
 
 # Events einer Partner-Gruppe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=meine-partner-gruppe"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?scope=meine-partner-gruppe"
 
 # Eigene Events + Partner-Gruppe kombiniert
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?scope=own,meine-partner-gruppe"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?scope=own,meine-partner-gruppe"</code></pre>
 
             <hr>
 
             <h4>Einzelnes Event anzeigen</h4>
-            <pre><code>GET /v1/events/{uuid}</code></pre>
+            <pre><code>GET /v1/custom/events/{uuid}</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  {{ request()->getSchemeAndHttpHost() }}/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890</code></pre>
 
             <hr>
 
             <h4>Event aktualisieren</h4>
             <blockquote><p>Erfordert Freischaltung der Event-Erstellung für Ihren Account.</p></blockquote>
-            <pre><code>PUT /v1/events/{uuid}</code></pre>
+            <pre><code>PUT /v1/custom/events/{uuid}</code></pre>
             <p>Es müssen nur die zu ändernden Felder gesendet werden.</p>
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl -X PUT {{ request()->getSchemeAndHttpHost() }}/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+            <pre><code>curl -X PUT {{ request()->getSchemeAndHttpHost() }}/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -659,9 +659,9 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <h4>Event löschen</h4>
             <blockquote><p>Erfordert Freischaltung der Event-Erstellung für Ihren Account.</p></blockquote>
-            <pre><code>DELETE /v1/events/{uuid}</code></pre>
+            <pre><code>DELETE /v1/custom/events/{uuid}</code></pre>
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl -X DELETE {{ request()->getSchemeAndHttpHost() }}/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+            <pre><code>curl -X DELETE {{ request()->getSchemeAndHttpHost() }}/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}"</code></pre>
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{

@@ -26,10 +26,11 @@ Route::get('/v1', function () {
         'version' => 'v1',
         'documentation' => '/',
         'endpoints' => [
-            'Event API' => '/v1/events',
-            'GTM API' => '/v1/gtm/events',
+            'Events (alle)' => '/v1/events',
+            'Custom Events (Partner)' => '/v1/custom/events',
             'Folder Import API' => '/v1/folders',
-            'Referenzdaten' => ['/v1/event-types', '/v1/countries'],
+            'Länder' => '/v1/countries',
+            'Referenzdaten (Partner)' => ['/v1/custom/event-types', '/v1/custom/countries'],
         ],
         'authentication' => 'Bearer Token via Authorization header',
     ]);
@@ -86,29 +87,45 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Event API Routes
+| Events API Routes (Customer-Protected, Read-Only)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/events')->middleware([
+Route::prefix('v1')->middleware([
+    'auth:sanctum',
+    GtmApiAuthenticate::class,
+    GtmApiRequestLogger::class,
+    'throttle:gtm-api',
+])->group(function () {
+    Route::get('/events', [GtmApiController::class, 'index'])->name('sub.v1.events.index');
+    Route::get('/events/{id}', [GtmApiController::class, 'show'])->name('sub.v1.events.show');
+    Route::get('/countries', [GtmApiController::class, 'countries'])->name('sub.v1.countries');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Custom Event API Routes (API-Client-Protected)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/custom/events')->middleware([
     'auth:sanctum',
     ApiClientAuthenticate::class,
     ApiClientRequestLogger::class,
     'throttle:api-client',
 ])->group(function () {
-    Route::get('/', [EventApiController::class, 'index'])->name('sub.v1.events.index');
-    Route::post('/', [EventApiController::class, 'store'])->name('sub.v1.events.store');
-    Route::get('/{uuid}', [EventApiController::class, 'show'])->name('sub.v1.events.show');
-    Route::put('/{uuid}', [EventApiController::class, 'update'])->name('sub.v1.events.update');
-    Route::delete('/{uuid}', [EventApiController::class, 'destroy'])->name('sub.v1.events.destroy');
+    Route::get('/', [EventApiController::class, 'index'])->name('sub.v1.custom.events.index');
+    Route::post('/', [EventApiController::class, 'store'])->name('sub.v1.custom.events.store');
+    Route::get('/{uuid}', [EventApiController::class, 'show'])->name('sub.v1.custom.events.show');
+    Route::put('/{uuid}', [EventApiController::class, 'update'])->name('sub.v1.custom.events.update');
+    Route::delete('/{uuid}', [EventApiController::class, 'destroy'])->name('sub.v1.custom.events.destroy');
 });
 
-// Event API Reference Data
-Route::prefix('v1')->middleware([
+// Custom Event API Reference Data
+Route::prefix('v1/custom')->middleware([
     'auth:sanctum',
     ApiClientAuthenticate::class,
 ])->group(function () {
-    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('sub.v1.api-client.event-types');
-    Route::get('/countries', [EventReferenceController::class, 'countries'])->name('sub.v1.api-client.countries');
+    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('sub.v1.custom.event-types');
+    Route::get('/countries', [EventReferenceController::class, 'countries'])->name('sub.v1.custom.countries');
 });
 
 /*
@@ -132,18 +149,3 @@ Route::prefix('v1/folders')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/imports/{logId}/status', [FolderImportController::class, 'getImportStatus'])->name('sub.customer.folders.imports.status');
 });
 
-/*
-|--------------------------------------------------------------------------
-| GTM API Routes
-|--------------------------------------------------------------------------
-*/
-Route::prefix('v1/gtm')->middleware([
-    'auth:sanctum',
-    GtmApiAuthenticate::class,
-    GtmApiRequestLogger::class,
-    'throttle:gtm-api',
-])->group(function () {
-    Route::get('/events', [GtmApiController::class, 'index'])->name('sub.v1.gtm.events.index');
-    Route::get('/events/{id}', [GtmApiController::class, 'show'])->name('sub.v1.gtm.events.show');
-    Route::get('/countries', [GtmApiController::class, 'countries'])->name('sub.v1.gtm.countries');
-});

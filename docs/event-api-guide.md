@@ -1,8 +1,8 @@
-# Event API – Kundenanleitung
+# Custom Event API – Partneranleitung
 
 ## Übersicht
 
-Die Event API ermöglicht es externen Partnern, Events auf dem Risk Management Dashboard abzurufen sowie — bei entsprechender Freischaltung — eigene Events zu erstellen und zu verwalten.
+Die Custom Event API ermöglicht es API-Partnern, eigene Sicherheits-Events auf dem Risk Management Dashboard zu erstellen, zu aktualisieren und zu löschen. Jeder Partner verwaltet ausschließlich seine eigenen Events.
 
 > **Wichtig:** Das Erstellen, Aktualisieren und Löschen von Events erfordert eine separate Freischaltung Ihres Accounts durch Global Travel Monitor. Ohne diese Freischaltung können Sie die API nur zum Lesen von Events nutzen. Bei einem Versuch ohne Freischaltung erhalten Sie einen `403 Forbidden` Response.
 
@@ -23,7 +23,7 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor. Er i
 ## Base-URL
 
 ```
-https://api.global-travel-monitor.de/v1
+https://api.global-travel-monitor.de/v1/custom
 ```
 
 ---
@@ -41,14 +41,14 @@ Bevor Sie Events erstellen, fragen Sie die gültigen Event-Typen und Ländercode
 ### Event-Typen abrufen
 
 ```
-GET /v1/event-types
+GET /v1/custom/event-types
 ```
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/event-types
+  https://api.global-travel-monitor.de/v1/custom/event-types
 ```
 
 **Response:**
@@ -76,14 +76,14 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Länder abrufen
 
 ```
-GET /v1/countries
+GET /v1/custom/countries
 ```
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/countries
+  https://api.global-travel-monitor.de/v1/custom/countries
 ```
 
 **Response:**
@@ -117,7 +117,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 > Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
-POST /v1/events
+POST /v1/custom/events
 ```
 
 **Request-Body (JSON):**
@@ -139,7 +139,7 @@ POST /v1/events
 **Beispiel:**
 
 ```bash
-curl -X POST https://api.global-travel-monitor.de/v1/events \
+curl -X POST https://api.global-travel-monitor.de/v1/custom/events \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -203,7 +203,7 @@ curl -X POST https://api.global-travel-monitor.de/v1/events \
 ### Eigene Events auflisten
 
 ```
-GET /v1/events
+GET /v1/custom/events
 ```
 
 Standardmäßig werden nur **eigene Events** zurückgegeben — also Events, die über Ihren API-Token erstellt wurden. Mit dem Parameter `scope` können Sie zusätzlich **Global-Travel-Monitor-Events** und **Events von Partner-Gruppen** abrufen.
@@ -234,27 +234,27 @@ Der `scope`-Parameter unterstützt **kommagetrennte Werte**, um mehrere Quellen 
 ```bash
 # Eigene Events (Standard)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?per_page=10&page=1"
+  "https://api.global-travel-monitor.de/v1/custom/events?per_page=10&page=1"
 
 # Nur Global-Travel-Monitor-Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=passolution"
+  "https://api.global-travel-monitor.de/v1/custom/events?scope=passolution"
 
 # Alle Events (eigene + Global Travel Monitor)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=all"
+  "https://api.global-travel-monitor.de/v1/custom/events?scope=all"
 
 # Eigene + Global Travel Monitor (kommagetrennt, entspricht scope=all)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=own,passolution"
+  "https://api.global-travel-monitor.de/v1/custom/events?scope=own,passolution"
 
 # Events einer Partner-Gruppe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=meine-partner-gruppe"
+  "https://api.global-travel-monitor.de/v1/custom/events?scope=meine-partner-gruppe"
 
 # Eigene Events + Partner-Gruppe kombiniert
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?scope=own,meine-partner-gruppe"
+  "https://api.global-travel-monitor.de/v1/custom/events?scope=own,meine-partner-gruppe"
 ```
 
 ---
@@ -262,14 +262,14 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Einzelnes Event anzeigen
 
 ```
-GET /v1/events/{uuid}
+GET /v1/custom/events/{uuid}
 ```
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  https://api.global-travel-monitor.de/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
@@ -279,7 +279,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 > Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
-PUT /v1/events/{uuid}
+PUT /v1/custom/events/{uuid}
 ```
 
 Es müssen nur die zu ändernden Felder gesendet werden.
@@ -287,7 +287,7 @@ Es müssen nur die zu ändernden Felder gesendet werden.
 **Beispiel:**
 
 ```bash
-curl -X PUT https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl -X PUT https://api.global-travel-monitor.de/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -313,13 +313,13 @@ curl -X PUT https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-ab
 > Erfordert Freischaltung der Event-Erstellung für Ihren Account.
 
 ```
-DELETE /v1/events/{uuid}
+DELETE /v1/custom/events/{uuid}
 ```
 
 **Beispiel:**
 
 ```bash
-curl -X DELETE https://api.global-travel-monitor.de/v1/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+curl -X DELETE https://api.global-travel-monitor.de/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}"
 ```
 

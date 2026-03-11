@@ -234,44 +234,54 @@ Route::prefix('plugin')->group(function () {
 | Protected by Sanctum token authentication with gtm:read ability.
 |
 */
-Route::prefix('v1/gtm')->middleware([
+/*
+|--------------------------------------------------------------------------
+| Events API Routes (Customer-Protected, Read-Only)
+|--------------------------------------------------------------------------
+|
+| Read-only access to all active events from all providers.
+| Supports filtering by priority, country, event_type, region, and source.
+| Protected by Sanctum token authentication with GTM API permissions.
+|
+*/
+Route::prefix('v1')->middleware([
     'auth:sanctum',
     \App\Http\Middleware\GtmApiAuthenticate::class,
     \App\Http\Middleware\GtmApiRequestLogger::class,
     'throttle:gtm-api',
 ])->group(function () {
-    Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.gtm.events.index');
-    Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.gtm.events.show');
-    Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.gtm.countries');
+    Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.events.index');
+    Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.events.show');
+    Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.countries');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Event API Routes (API-Client-Protected)
+| Custom Event API Routes (API-Client-Protected)
 |--------------------------------------------------------------------------
 |
-| REST API for external API clients to create and manage events.
+| REST API for external API partners to create and manage their own events.
 | Protected by Sanctum token authentication with API client validation.
 |
 */
-Route::prefix('v1/events')->middleware([
+Route::prefix('v1/custom/events')->middleware([
     'auth:sanctum',
     ApiClientAuthenticate::class,
     ApiClientRequestLogger::class,
     'throttle:api-client',
 ])->group(function () {
-    Route::get('/', [EventApiController::class, 'index'])->name('v1.events.index');
-    Route::post('/', [EventApiController::class, 'store'])->name('v1.events.store');
-    Route::get('/{uuid}', [EventApiController::class, 'show'])->name('v1.events.show');
-    Route::put('/{uuid}', [EventApiController::class, 'update'])->name('v1.events.update');
-    Route::delete('/{uuid}', [EventApiController::class, 'destroy'])->name('v1.events.destroy');
+    Route::get('/', [EventApiController::class, 'index'])->name('v1.custom.events.index');
+    Route::post('/', [EventApiController::class, 'store'])->name('v1.custom.events.store');
+    Route::get('/{uuid}', [EventApiController::class, 'show'])->name('v1.custom.events.show');
+    Route::put('/{uuid}', [EventApiController::class, 'update'])->name('v1.custom.events.update');
+    Route::delete('/{uuid}', [EventApiController::class, 'destroy'])->name('v1.custom.events.destroy');
 });
 
-// Event API Reference Data (API-Client-Protected, read-only)
-Route::prefix('v1')->middleware([
+// Custom Event API Reference Data (API-Client-Protected, read-only)
+Route::prefix('v1/custom')->middleware([
     'auth:sanctum',
     ApiClientAuthenticate::class,
 ])->group(function () {
-    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('v1.api-client.event-types');
-    Route::get('/countries', [EventReferenceController::class, 'countries'])->name('v1.api-client.countries');
+    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('v1.custom.event-types');
+    Route::get('/countries', [EventReferenceController::class, 'countries'])->name('v1.custom.countries');
 });

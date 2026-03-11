@@ -1,15 +1,15 @@
 openapi: 3.0.3
 info:
-  title: Global Travel Monitor Event API
+  title: Global Travel Monitor Custom Event API
   description: |
-    REST API für externe Partner zur Erstellung und Verwaltung von Events
+    REST API für API-Partner zur Erstellung und Verwaltung eigener Events
     auf dem Risk Management Dashboard.
   version: 1.0.0
   contact:
     name: Global Travel Monitor Support
 
 servers:
-  - url: https://api.global-travel-monitor.de/v1
+  - url: https://api.global-travel-monitor.de/v1/custom
     description: Produktionsserver
 
 security:
