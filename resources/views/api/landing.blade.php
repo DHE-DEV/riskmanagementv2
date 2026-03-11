@@ -339,7 +339,7 @@
                 </div>
             </div>
 
-            {{-- GTM API - ausgeblendet
+            {{-- GTM API --}}
             <div class="api-card">
                 <span class="badge badge-auth">Bearer Token</span>
                 <h3>GTM API</h3>
@@ -356,7 +356,6 @@
                     </a>
                 </div>
             </div>
-            -->
 
             {{-- Folder Import API --}}
             <div class="api-card">
