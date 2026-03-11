@@ -59,6 +59,12 @@ class GtmEventResource extends JsonResource
                     'continent' => $this->country->continent?->getName('en'),
                 ] : null
             ),
+            'source' => [
+                'type' => $this->data_source ?? 'manual',
+                'name' => $this->whenLoaded('apiClient', fn() =>
+                    $this->apiClient?->company_name ?? $this->apiClient?->name
+                ),
+            ],
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

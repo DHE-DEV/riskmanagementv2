@@ -46,6 +46,7 @@ class GtmEventService
         ?string $countryCode = null,
         ?string $eventTypeCode = null,
         ?int $regionId = null,
+        ?string $source = null,
     ): Collection {
         $events = $this->getBaseEvents();
 
@@ -81,6 +82,22 @@ class GtmEventService
             } else {
                 $events = collect();
             }
+        }
+
+        if ($source !== null) {
+            $events = $events->filter(function (CustomEvent $event) use ($source) {
+                // Filter by data_source value or by API client name/slug
+                if ($event->data_source === $source) {
+                    return true;
+                }
+
+                if ($event->apiClient) {
+                    return strcasecmp($event->apiClient->name, $source) === 0
+                        || strcasecmp($event->apiClient->company_name ?? '', $source) === 0;
+                }
+
+                return false;
+            });
         }
 
         if ($regionId !== null) {

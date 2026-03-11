@@ -57,6 +57,12 @@ paths:
           schema:
             type: integer
           description: Filter nach Region-ID (numerische ID)
+        - name: source
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+          description: "Filter nach Event-Herkunft – Name des Anbieters (z.B. manual, API-Client-Name)"
         - name: per_page
           in: query
           schema:
@@ -231,6 +237,8 @@ components:
           description: Primäres Land
           allOf:
             - $ref: '#/components/schemas/EventCountry'
+        source:
+          $ref: '#/components/schemas/EventSource'
         created_at:
           type: string
           format: date-time
@@ -329,6 +337,20 @@ components:
         active_events_count:
           type: integer
           example: 3
+
+    EventSource:
+      type: object
+      description: Herkunft des Events
+      properties:
+        type:
+          type: string
+          description: "Quelle: manual, api_client, passolution_infosystem, etc."
+          example: api_client
+        name:
+          type: string
+          nullable: true
+          description: Name des API-Partners (bei API-Client-Events)
+          example: Partner XY GmbH
 
     PaginationMeta:
       type: object

@@ -319,9 +319,9 @@
         <div class="apis">
             {{-- Event API --}}
             <div class="api-card">
-                <span class="badge badge-auth">Bearer Token</span>
+                <span class="badge badge-auth">Bearer Token (API-Partner)</span>
                 <h3>Event API</h3>
-                <p class="description">Events abrufen, erstellen und verwalten. Unterstützt Multi-Scope-Abfragen und Event-Gruppen.</p>
+                <p class="description">Für API-Partner: Eigene Sicherheits-Events erstellen, aktualisieren und löschen. Jeder Partner verwaltet nur seine eigenen Events. Benötigt einen API-Client-Token.</p>
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/events</span></li>
@@ -341,9 +341,9 @@
 
             {{-- GTM API --}}
             <div class="api-card">
-                <span class="badge badge-auth">Bearer Token</span>
+                <span class="badge badge-auth">Bearer Token (Kunde)</span>
                 <h3>GTM API</h3>
-                <p class="description">Read-only Zugriff auf alle aktiven Sicherheits- und Reiserisiko-Events sowie Länder-Übersichten.</p>
+                <p class="description">Für Kunden: Read-only Zugriff auf alle aktiven Events aller Anbieter. Mit dem <code>source</code>-Filter können Events nach Herkunft gefiltert werden (z.B. nur Events von einem bestimmten Partner). Benötigt einen Kunden-Token mit GTM-Berechtigung.</p>
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/gtm/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/gtm/events/{id}</span></li>

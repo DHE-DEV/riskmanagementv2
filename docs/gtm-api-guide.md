@@ -44,6 +44,32 @@ Es werden nur Events zurückgegeben, die freigegeben (`approved`), aktiv und nic
 
 ---
 
+## Herkunft der Events (Source)
+
+Jedes Event enthält ein `source`-Objekt, das die Herkunft anzeigt:
+
+| `source.type` | Bedeutung |
+|----------------|-----------|
+| `manual` | Manuell von Global Travel Monitor erstellt |
+| `api_client` | Von einem API-Partner über die Event API eingestellt |
+| `passolution_infosystem` | Automatisch aus dem Passolution Infosystem importiert |
+
+Bei Events vom Typ `api_client` enthält `source.name` den Namen des Partners (z.B. "Partner XY GmbH").
+
+Mit dem `source`-Filter können Sie gezielt Events einer bestimmten Herkunft abfragen:
+
+```bash
+# Nur manuell erstellte Events
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/gtm/events?source=manual"
+
+# Nur Events von einem bestimmten Partner (nach Name)
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/gtm/events?source=Partner%20XY%20GmbH"
+```
+
+---
+
 ## Events
 
 ### Events auflisten
@@ -60,6 +86,7 @@ GET /events
 | `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
 | `event_type` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
+| `source` | string | Nein | Filter nach Event-Herkunft – Name des Anbieters (z.B. `manual`, API-Client-Name) |
 | `per_page` | integer | Nein | Einträge pro Seite (Standard: 25, Maximum: 100) |
 | `page` | integer | Nein | Seitennummer (Standard: 1) |
 
@@ -67,7 +94,7 @@ GET /events
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/gtm/events?priority=high&country=TR&region=3&per_page=10"
+  "https://api.global-travel-monitor.de/v1/gtm/events?priority=high&country=TR&source=manual&per_page=10"
 ```
 
 **Response (200 OK):**
@@ -119,6 +146,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
         "name_de": "Tuerkei",
         "name_en": "Turkey",
         "continent": "Asia"
+      },
+      "source": {
+        "type": "api_client",
+        "name": "Partner XY GmbH"
       },
       "created_at": "2025-03-15T09:00:00Z",
       "updated_at": "2025-03-15T10:15:00Z"
@@ -196,6 +227,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "name_de": "Tuerkei",
       "name_en": "Turkey",
       "continent": "Asia"
+    },
+    "source": {
+      "type": "api_client",
+      "name": "Partner XY GmbH"
     },
     "created_at": "2025-03-15T09:00:00Z",
     "updated_at": "2025-03-15T10:15:00Z"
@@ -279,6 +314,9 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `category` | object / null | Kategorie des Events |
 | `countries` | array | Liste betroffener Länder |
 | `country` | object / null | Primäres Land |
+| `source` | object | Herkunft des Events |
+| `source.type` | string | Quelle: `manual`, `api_client`, `passolution_infosystem`, etc. |
+| `source.name` | string / null | Name des API-Partners (bei API-Client-Events) |
 | `created_at` | datetime | Erstellungszeitpunkt |
 | `updated_at` | datetime | Letzter Änderungszeitpunkt |
 
