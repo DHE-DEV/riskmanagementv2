@@ -50,8 +50,8 @@ curl https://global-travel-monitor.eu/feed/events/meta.json
   ],
   "event_categories": [
     {
-      "code": "earthquake",
-      "name": "Erdbeben",
+      "code": "environment",
+      "name": "Umweltereignisse",
       "description": "...",
       "icon": "fa-house-crack",
       "color": "#FF0000"

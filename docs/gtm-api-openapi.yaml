@@ -52,7 +52,7 @@ paths:
           schema:
             type: string
             maxLength: 50
-          description: "Filter nach Event-Typ-Code (z.B. natural_disaster)"
+          description: "Filter nach Event-Typ-Code (z.B. security)"
         - name: region
           in: query
           schema:
@@ -336,10 +336,10 @@ components:
       properties:
         code:
           type: string
-          example: natural_disaster
+          example: security
         name:
           type: string
-          example: Natural Disaster
+          example: Sicherheit
 
     Region:
       type: object

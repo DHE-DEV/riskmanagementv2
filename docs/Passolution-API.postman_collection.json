@@ -76,7 +76,7 @@
 								},
 								{
 									"key": "event_category",
-									"value": "natural_disaster",
+									"value": "security",
 									"description": "Event-Typ-Code",
 									"disabled": true
 								},

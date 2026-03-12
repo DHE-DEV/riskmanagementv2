@@ -246,10 +246,10 @@ components:
       properties:
         code:
           type: string
-          example: earthquake
+          example: environment
         name:
           type: string
-          example: Erdbeben
+          example: Umweltereignisse
         description:
           type: string
           nullable: true
