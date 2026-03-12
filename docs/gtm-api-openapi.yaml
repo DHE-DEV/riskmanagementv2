@@ -35,12 +35,12 @@ paths:
         die freigegeben (approved), aktiv und nicht archiviert sind. Mit start_date
         und end_date kann der Zeitraum eingegrenzt werden.
       parameters:
-        - name: priority
+        - name: riskLevel
           in: query
           schema:
             type: string
             enum: [high, medium, low, info]
-          description: Filter nach Priorität
+          description: Filter nach Risikostufe
         - name: country
           in: query
           schema:
@@ -289,7 +289,7 @@ components:
           type: string
           nullable: true
           example: A 6.2 magnitude earthquake struck southeastern Turkey.
-        priority:
+        riskLevel:
           type: string
           enum: [high, medium, low, info]
           example: high
@@ -528,7 +528,7 @@ components:
             items:
               type: string
           example:
-            priority: ["The selected priority is invalid."]
+            riskLevel: ["The selected riskLevel is invalid."]
             per_page: ["The per page field must be between 1 and 100."]
 
   responses:

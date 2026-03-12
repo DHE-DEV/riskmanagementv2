@@ -18,7 +18,7 @@ class EventApiResource extends JsonResource
             'id' => $this->uuid,
             'title' => $this->title,
             'description' => $this->popup_content ? strip_tags($this->popup_content) : null,
-            'priority' => $this->priority,
+            'riskLevel' => $this->priority,
             'start_date' => $this->start_date?->toIso8601String(),
             'end_date' => $this->end_date?->toIso8601String(),
             'latitude' => $firstCoords['latitude'],

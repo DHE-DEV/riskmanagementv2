@@ -445,7 +445,7 @@
                         <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>priority</code></td><td>string</td><td>Nein</td><td>Filter nach Priorität: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>riskLevel</code></td><td>string</td><td>Nein</td><td>Filter nach Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                         <tr><td><code>country</code></td><td>string</td><td>Nein</td><td>Filter nach Ländercode – ISO alpha-2 (z.B. <code>DE</code>) oder alpha-3 (z.B. <code>DEU</code>)</td></tr>
                         <tr><td><code>event_type</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Typ-Code (z.B. <code>natural_disaster</code>)</td></tr>
                         <tr><td><code>region</code></td><td>integer</td><td>Nein</td><td>Filter nach Region-ID (numerische ID)</td></tr>
@@ -463,9 +463,9 @@
 curl -H "Authorization: Bearer {TOKEN}" \
   "{{ request()->getSchemeAndHttpHost() }}/v1/events?per_page=25&amp;page=1"
 
-# Nur Events mit hoher Priorität
+# Nur Events mit hoher Risikostufe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?priority=high"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?riskLevel=high"
 
 # Events für ein bestimmtes Land
 curl -H "Authorization: Bearer {TOKEN}" \
@@ -485,7 +485,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?priority=high&amp;country=TR&amp;source=manual&amp;per_page=10"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?riskLevel=high&amp;country=TR&amp;source=manual&amp;per_page=10"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -495,7 +495,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "title": "Earthquake in Turkey",
       "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
-      "priority": "high",
+      "riskLevel": "high",
       "start_date": "2025-03-15T08:30:00+00:00",
       "end_date": null,
       "latitude": 37.7749,
@@ -548,7 +548,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "title": "Earthquake in Turkey",
     "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
-    "priority": "high",
+    "riskLevel": "high",
     "start_date": "2025-03-15T08:30:00+00:00",
     "end_date": null,
     "latitude": 37.7749,
@@ -754,7 +754,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><td><code>id</code></td><td>string (UUID)</td><td>Eindeutige ID des Events</td></tr>
                         <tr><td><code>title</code></td><td>string</td><td>Kurzer Titel des Events</td></tr>
                         <tr><td><code>description</code></td><td>string / null</td><td>Detaillierte Beschreibung</td></tr>
-                        <tr><td><code>priority</code></td><td>string</td><td>Priorität: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>riskLevel</code></td><td>string</td><td>Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                         <tr><td><code>start_date</code></td><td>datetime / null</td><td>Startdatum (ISO 8601)</td></tr>
                         <tr><td><code>end_date</code></td><td>datetime / null</td><td>Enddatum (null = andauernd)</td></tr>
                         <tr><td><code>latitude</code></td><td>number / null</td><td>Breitengrad</td></tr>
@@ -944,7 +944,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     <tbody>
                         <tr><td><code>title</code></td><td>string</td><td>Ja</td><td>Titel des Events (max. 255 Zeichen)</td></tr>
                         <tr><td><code>description</code></td><td>string</td><td>Nein</td><td>Beschreibung (max. 10.000 Zeichen, HTML erlaubt: p, br, strong, em, ul, ol, li, a)</td></tr>
-                        <tr><td><code>priority</code></td><td>string</td><td>Nein</td><td>Priorität: <code>info</code>, <code>low</code>, <code>medium</code> (Standard), <code>high</code></td></tr>
+                        <tr><td><code>riskLevel</code></td><td>string</td><td>Nein</td><td>Risikostufe: <code>info</code>, <code>low</code>, <code>medium</code> (Standard), <code>high</code></td></tr>
                         <tr><td><code>start_date</code></td><td>datetime</td><td>Ja</td><td>Startdatum (ISO 8601, z.B. <code>2026-02-11T08:00:00Z</code>)</td></tr>
                         <tr><td><code>end_date</code></td><td>datetime</td><td>Nein</td><td>Enddatum (muss gleich oder nach start_date liegen)</td></tr>
                         <tr><td><code>event_type_codes</code></td><td>array</td><td>Ja</td><td>Event-Typ-Codes (mindestens 1, aus <code>/event-types</code>)</td></tr>
@@ -964,7 +964,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   -d '{
     "title": "Überschwemmung Bangkok",
     "description": "&lt;p&gt;Schwere Überschwemmungen im Großraum Bangkok.&lt;/p&gt;",
-    "priority": "high",
+    "riskLevel": "high",
     "start_date": "2026-02-11T08:00:00Z",
     "end_date": "2026-02-18T08:00:00Z",
     "event_type_codes": ["flood"],
@@ -983,7 +983,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "title": "Überschwemmung Bangkok",
     "description": "Schwere Überschwemmungen im Großraum Bangkok.",
-    "priority": "high",
+    "riskLevel": "high",
     "start_date": "2026-02-11T08:00:00+00:00",
     "end_date": "2026-02-18T08:00:00+00:00",
     "latitude": 13.7563,
@@ -1098,7 +1098,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Überschwemmung Bangkok - Entwarnung",
-    "priority": "low"
+    "riskLevel": "low"
   }'</code></pre>
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -1792,14 +1792,14 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <h3>Metadaten</h3>
 
-            <h4>Verfügbare Priorities und Event-Typen</h4>
+            <h4>Verfügbare Risikostufen und Event-Typen</h4>
             <pre><code>GET /feed/events/meta.json</code></pre>
-            <p>Gibt die gültigen Werte für Priority-Filter und Event-Typ-Filter als JSON zurück.</p>
+            <p>Gibt die gültigen Werte für Risikostufe-Filter und Event-Typ-Filter als JSON zurück.</p>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl https://global-travel-monitor.eu/feed/events/meta.json</code></pre>
             <p><strong>Response:</strong></p>
             <pre><code>{
-  "priorities": [
+  "riskLevels": [
     { "code": "high", "name_de": "Hoch", "name_en": "High" },
     { "code": "medium", "name_de": "Mittel", "name_en": "Medium" },
     { "code": "low", "name_de": "Niedrig", "name_en": "Low" },
@@ -1838,20 +1838,20 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <hr>
 
-            <h4>Events nach Priorität</h4>
-            <pre><code>GET /feed/events/priority/{priority}.xml</code></pre>
+            <h4>Events nach Risikostufe</h4>
+            <pre><code>GET /feed/events/riskLevel/{riskLevel}.xml</code></pre>
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr><th>Parameter</th><th>Gültige Werte</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>priority</code></td><td><code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>riskLevel</code></td><td><code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                     </tbody>
                 </table>
             </div>
             <p><strong>Beispiel:</strong></p>
-            <pre><code>curl https://global-travel-monitor.eu/feed/events/priority/high.xml</code></pre>
+            <pre><code>curl https://global-travel-monitor.eu/feed/events/riskLevel/high.xml</code></pre>
 
             <hr>
 
@@ -1919,10 +1919,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><td><code>&lt;title&gt;</code></td><td>Titel des Events</td></tr>
                         <tr><td><code>&lt;link&gt;</code></td><td>URL zur Event-Detailseite</td></tr>
                         <tr><td><code>&lt;guid&gt;</code></td><td>Permanenter Link (identisch mit <code>&lt;link&gt;</code>)</td></tr>
-                        <tr><td><code>&lt;description&gt;</code></td><td>Kurzübersicht: Typ, Zeitraum, Priorität, Länder</td></tr>
+                        <tr><td><code>&lt;description&gt;</code></td><td>Kurzübersicht: Typ, Zeitraum, Risikostufe, Länder</td></tr>
                         <tr><td><code>&lt;content:encoded&gt;</code></td><td>Vollständige Beschreibung</td></tr>
                         <tr><td><code>&lt;pubDate&gt;</code></td><td>Erstellungsdatum (RFC 2822)</td></tr>
-                        <tr><td><code>&lt;category&gt;</code></td><td>Priorität und Event-Typen</td></tr>
+                        <tr><td><code>&lt;category&gt;</code></td><td>Risikostufe und Event-Typen</td></tr>
                         <tr><td><code>&lt;dc:creator&gt;</code></td><td>Ersteller (falls vorhanden)</td></tr>
                         <tr><td><code>&lt;source&gt;</code></td><td>Quellenangabe mit URL</td></tr>
                         <tr><td><code>&lt;enclosure&gt;</code></td><td>Länderbild (JPEG, falls vorhanden)</td></tr>
@@ -1934,7 +1934,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>&lt;article:data&gt;
   &lt;article:start_date&gt;Mon, 11 Feb 2026 08:00:00 +0000&lt;/article:start_date&gt;
   &lt;article:end_date&gt;Tue, 18 Feb 2026 08:00:00 +0000&lt;/article:end_date&gt;
-  &lt;article:priority&gt;high&lt;/article:priority&gt;
+  &lt;article:riskLevel&gt;high&lt;/article:riskLevel&gt;
   &lt;article:event_type code="earthquake"&gt;Erdbeben&lt;/article:event_type&gt;
 &lt;/article:data&gt;</code></pre>
 
@@ -1946,7 +1946,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     <tbody>
                         <tr><td><code>article:start_date</code></td><td>Startdatum des Events</td></tr>
                         <tr><td><code>article:end_date</code></td><td>Enddatum des Events</td></tr>
-                        <tr><td><code>article:priority</code></td><td>Prioritätsstufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>article:riskLevel</code></td><td>Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                         <tr><td><code>article:event_type</code></td><td>Event-Typ mit <code>code</code>-Attribut und Name als Inhalt (mehrere möglich)</td></tr>
                     </tbody>
                 </table>
@@ -2040,10 +2040,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><th>Endpunkt</th><th>Format</th><th>Beschreibung</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>/feed/events/meta.json</code></td><td>JSON</td><td>Verfügbare Priorities und Event-Typen</td></tr>
+                        <tr><td><code>/feed/events/meta.json</code></td><td>JSON</td><td>Verfügbare Risikostufen und Event-Typen</td></tr>
                         <tr><td><code>/feed/events/all.xml</code></td><td>RSS 2.0</td><td>Alle aktiven Events</td></tr>
                         <tr><td><code>/feed/events/all.atom</code></td><td>Atom 1.0</td><td>Alle aktiven Events</td></tr>
-                        <tr><td><code>/feed/events/priority/{priority}.xml</code></td><td>RSS 2.0</td><td>Events nach Priorität</td></tr>
+                        <tr><td><code>/feed/events/riskLevel/{riskLevel}.xml</code></td><td>RSS 2.0</td><td>Events nach Risikostufe</td></tr>
                         <tr><td><code>/feed/events/countries/{code}.xml</code></td><td>RSS 2.0</td><td>Events nach Land</td></tr>
                         <tr><td><code>/feed/events/types/{type}.xml</code></td><td>RSS 2.0</td><td>Events nach Event-Typ</td></tr>
                         <tr><td><code>/feed/events/regions/{region}.xml</code></td><td>RSS 2.0</td><td>Events nach Region</td></tr>

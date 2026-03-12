@@ -4,7 +4,7 @@
 
 Die Events API bietet **read-only** Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.
 
-Die API ermöglicht die Abfrage aktueller Events gefiltert nach Priorität, Land, Event-Typ und Region sowie Länder-Übersichten mit Anzahl aktiver Events.
+Die API ermöglicht die Abfrage aktueller Events gefiltert nach Risikostufe, Land, Event-Typ und Region sowie Länder-Übersichten mit Anzahl aktiver Events.
 
 ---
 
@@ -82,7 +82,7 @@ GET /v1/events
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
-| `priority` | string | Nein | Filter nach Priorität: `high`, `medium`, `low`, `info` |
+| `riskLevel` | string | Nein | Filter nach Risikostufe: `high`, `medium`, `low`, `info` |
 | `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
 | `event_type` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
@@ -99,9 +99,9 @@ GET /v1/events
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?per_page=25&page=1"
 
-# Nur Events mit hoher Priorität
+# Nur Events mit hoher Risikostufe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?priority=high"
+  "https://api.global-travel-monitor.de/v1/events?riskLevel=high"
 
 # Events für ein bestimmtes Land
 curl -H "Authorization: Bearer {TOKEN}" \
@@ -121,7 +121,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?priority=high&country=TR&source=manual&per_page=10"
+  "https://api.global-travel-monitor.de/v1/events?riskLevel=high&country=TR&source=manual&per_page=10"
 ```
 
 **Response (200 OK):**
@@ -134,7 +134,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "title": "Earthquake in Turkey",
       "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
-      "priority": "high",
+      "riskLevel": "high",
       "start_date": "2025-03-15T08:30:00Z",
       "end_date": null,
       "latitude": 37.7749,
@@ -197,7 +197,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "title": "Earthquake in Turkey",
     "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
-    "priority": "high",
+    "riskLevel": "high",
     "start_date": "2025-03-15T08:30:00Z",
     "end_date": null,
     "latitude": 37.7749,
@@ -421,7 +421,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `id` | string (UUID) | Eindeutige ID des Events |
 | `title` | string | Kurzer Titel des Events |
 | `description` | string / null | Detaillierte Beschreibung |
-| `priority` | string | Priorität: `high`, `medium`, `low`, `info` |
+| `riskLevel` | string | Risikostufe: `high`, `medium`, `low`, `info` |
 | `start_date` | datetime / null | Startdatum (ISO 8601) |
 | `end_date` | datetime / null | Enddatum (null = andauernd) |
 | `latitude` | number / null | Breitengrad |
@@ -498,7 +498,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "success": false,
   "message": "The given data was invalid.",
   "errors": {
-    "priority": ["The selected priority is invalid."],
+    "riskLevel": ["The selected riskLevel is invalid."],
     "per_page": ["The per page field must be between 1 and 100."]
   }
 }

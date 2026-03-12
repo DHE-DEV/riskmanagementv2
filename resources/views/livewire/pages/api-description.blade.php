@@ -207,7 +207,7 @@
                     </div>
                     <div class="p-4">
                         <p class="text-sm text-gray-600 mb-3">
-                            Gibt eine paginierte Liste aller aktiven Events zurück. Unterstützt Filter nach Priorität, Kontinent, Eventtyp und Volltextsuche.
+                            Gibt eine paginierte Liste aller aktiven Events zurück. Unterstützt Filter nach Risikostufe, Kontinent, Eventtyp und Volltextsuche.
                         </p>
                         <h4 class="text-xs font-semibold text-gray-500 uppercase mb-2">Query-Parameter</h4>
                         <div class="overflow-x-auto">
@@ -231,9 +231,9 @@
                                         <td class="py-1.5 px-2">Ergebnisse pro Seite (Standard: 15)</td>
                                     </tr>
                                     <tr class="border-b border-gray-50">
-                                        <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">priority</code></td>
+                                        <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">riskLevel</code></td>
                                         <td class="py-1.5 px-2">string</td>
-                                        <td class="py-1.5 px-2">Filter nach Priorität (high, medium, low, info)</td>
+                                        <td class="py-1.5 px-2">Filter nach Risikostufe (high, medium, low, info)</td>
                                     </tr>
                                     <tr class="border-b border-gray-50">
                                         <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">continent</code></td>
@@ -258,7 +258,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/events?priority=high&per_page=10" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/events?riskLevel=high&per_page=10" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
@@ -273,7 +273,7 @@
       "id": 1234,
       "title": "Erdbeben in der Türkei",
       "description": "Ein Erdbeben der Stärke 5.2 ...",
-      "priority": "high",
+      "riskLevel": "high",
       "event_type": "Umweltereignisse",
       "countries": ["TR"],
       "starts_at": "2025-01-15T08:00:00Z",
@@ -435,7 +435,7 @@
   -d '{
     "title": "Streik am Flughafen Frankfurt",
     "description": "Warnstreik des Bodenpersonals ...",
-    "priority": "medium",
+    "riskLevel": "medium",
     "event_type_id": 9,
     "country_codes": ["DE"],
     "starts_at": "2025-03-01T06:00:00Z",

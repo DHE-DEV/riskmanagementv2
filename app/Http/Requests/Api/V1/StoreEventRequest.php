@@ -16,7 +16,7 @@ class StoreEventRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
-            'priority' => ['nullable', 'string', 'in:info,low,medium,high'],
+            'riskLevel' => ['nullable', 'string', 'in:info,low,medium,high'],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'event_type_codes' => ['required', 'array', 'min:1'],
