@@ -22,6 +22,10 @@ class GtmEventService
             return CustomEvent::active()
                 ->notArchived()
                 ->approved()
+                ->where(function ($query) {
+                    $query->whereNull('end_date')
+                        ->orWhere('end_date', '>=', now()->startOfDay());
+                })
                 ->with([
                     'country.continent', 'country.capital',
                     'countries.continent', 'countries.capital',
