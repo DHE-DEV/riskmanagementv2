@@ -1,0 +1,2080 @@
+{
+	"info": {
+		"_postman_id": "passolution-api-collection",
+		"name": "Passolution API",
+		"description": "Vollständige API-Collection für das Passolution Risk Management System.\n\nEnthält:\n- Events API (v1) – Read-only Zugriff auf alle Events\n- Custom Event API (v1) – CRUD für Partner-Events\n- Folder API (v1) – Folder-Management & Import\n- Feed API – Öffentliche RSS/Atom Feeds\n- Interne APIs – GDACS, Custom Events, Geolocation, etc.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{api_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://global-travel-monitor.eu",
+			"description": "Haupt-Domain"
+		},
+		{
+			"key": "api_base_url",
+			"value": "https://api.global-travel-monitor.de",
+			"description": "API-Subdomain"
+		},
+		{
+			"key": "api_token",
+			"value": "",
+			"description": "Bearer Token für authentifizierte Endpoints"
+		},
+		{
+			"key": "event_uuid",
+			"value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+			"description": "UUID eines Events für Show/Update/Delete"
+		},
+		{
+			"key": "import_log_id",
+			"value": "",
+			"description": "Log-ID eines Folder-Imports"
+		}
+	],
+	"item": [
+		{
+			"name": "Events API (v1) – Read-Only",
+			"description": "Read-only Zugriff auf alle aktiven Events aller Anbieter.\nAuthentifizierung: Bearer Token (GTM-Berechtigung)\nRate Limit: gtm-api Throttle\n\nVerfügbar auf beiden Domains:\n- api.global-travel-monitor.de/v1/events\n- global-travel-monitor.eu/api/v1/events",
+			"item": [
+				{
+					"name": "Events auflisten",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/events?per_page=25&page=1",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "events"],
+							"query": [
+								{
+									"key": "priority",
+									"value": "high",
+									"description": "high | medium | low | info",
+									"disabled": true
+								},
+								{
+									"key": "country",
+									"value": "DE",
+									"description": "ISO alpha-2 oder alpha-3",
+									"disabled": true
+								},
+								{
+									"key": "event_type",
+									"value": "natural_disaster",
+									"description": "Event-Typ-Code",
+									"disabled": true
+								},
+								{
+									"key": "region",
+									"value": "1",
+									"description": "Region-ID (numerisch)",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "25",
+									"description": "1-100"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Paginierte Liste aller aktuell aktiven Events (freigegeben, aktiv, nicht archiviert)."
+					}
+				},
+				{
+					"name": "Event anzeigen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/events/{{event_uuid}}",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "events", "{{event_uuid}}"]
+						},
+						"description": "Einzelnes Event anhand der UUID."
+					}
+				},
+				{
+					"name": "Länder mit aktiven Events",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/countries",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "countries"]
+						},
+						"description": "Alle Länder mit mindestens einem aktiven Event, inkl. Anzahl. Sortiert nach Anzahl absteigend."
+					}
+				}
+			]
+		},
+		{
+			"name": "Custom Event API (v1) – Partner",
+			"description": "REST API für externe Partner zur Erstellung und Verwaltung eigener Events.\nAuthentifizierung: Bearer Token (API-Client)\nRate Limit: api-client Throttle\n\nVerfügbar auf beiden Domains:\n- api.global-travel-monitor.de/v1/custom/events\n- global-travel-monitor.eu/api/v1/custom/events",
+			"item": [
+				{
+					"name": "Eigene Events auflisten",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/events?scope=own&per_page=25&page=1",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "events"],
+							"query": [
+								{
+									"key": "scope",
+									"value": "own",
+									"description": "own | passolution | all | {gruppen-slug}"
+								},
+								{
+									"key": "per_page",
+									"value": "25",
+									"description": "1-100"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Gibt eine paginierte Liste von Events zurück. Standardmäßig nur eigene Events."
+					}
+				},
+				{
+					"name": "Event erstellen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"title\": \"Überschwemmung Bangkok\",\n\t\"description\": \"<p>Schwere Überschwemmungen im Großraum Bangkok.</p>\",\n\t\"priority\": \"high\",\n\t\"start_date\": \"2026-02-11T08:00:00Z\",\n\t\"end_date\": \"2026-02-18T08:00:00Z\",\n\t\"event_type_codes\": [\"flood\"],\n\t\"country_codes\": [\"TH\"],\n\t\"latitude\": 13.7563,\n\t\"longitude\": 100.5018,\n\t\"tags\": [\"flooding\", \"bangkok\"],\n\t\"external_id\": \"EXT-2026-001\"\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/events",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "events"]
+						},
+						"description": "Erstellt ein neues Event. Pflichtfelder: title, start_date, event_type_codes, country_codes."
+					}
+				},
+				{
+					"name": "Event anzeigen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/events/{{event_uuid}}",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "events", "{{event_uuid}}"]
+						},
+						"description": "Zeigt ein einzelnes Event anhand der UUID."
+					}
+				},
+				{
+					"name": "Event aktualisieren",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"title\": \"Überschwemmung Bangkok - Entwarnung\",\n\t\"priority\": \"low\"\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/events/{{event_uuid}}",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "events", "{{event_uuid}}"]
+						},
+						"description": "Aktualisiert ein bestehendes Event. Nur die zu ändernden Felder müssen gesendet werden."
+					}
+				},
+				{
+					"name": "Event löschen",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/events/{{event_uuid}}",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "events", "{{event_uuid}}"]
+						},
+						"description": "Soft-Delete – das Event wird als gelöscht markiert."
+					}
+				},
+				{
+					"name": "Event-Typen (Referenzdaten)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/event-types",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "event-types"]
+						},
+						"description": "Liste aller aktiven Event-Typen mit Codes, Namen, Farben und Icons."
+					}
+				},
+				{
+					"name": "Länder (Referenzdaten)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/custom/countries",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "custom", "countries"]
+						},
+						"description": "Liste aller Länder mit ISO-Codes."
+					}
+				}
+			]
+		},
+		{
+			"name": "Folder API (v1)",
+			"description": "Folder-Management, Proximity-Abfragen und Import für Reisebüros.\nAuthentifizierung: Bearer Token (Sanctum)\n\nVerfügbar auf beiden Domains:\n- api.global-travel-monitor.de/v1/folders\n- global-travel-monitor.eu/api/v1/folders",
+			"item": [
+				{
+					"name": "Folders auflisten",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders"]
+						}
+					}
+				},
+				{
+					"name": "Folder anzeigen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/:id",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Karten-Standorte",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/map-locations",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "map-locations"]
+						}
+					}
+				},
+				{
+					"name": "Reisenden-Statistiken",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/statistics",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "statistics"]
+						}
+					}
+				},
+				{
+					"name": "Reisende in der Nähe eines Punkts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"latitude\": 48.1351,\n\t\"longitude\": 11.5820,\n\t\"radius_km\": 50\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/near-point",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "near-point"]
+						}
+					}
+				},
+				{
+					"name": "Reisende in einem Land",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"country_code\": \"ES\"\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/in-country",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "in-country"]
+						}
+					}
+				},
+				{
+					"name": "Betroffene Folders",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/affected-folders",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "affected-folders"]
+						}
+					}
+				},
+				{
+					"name": "Folder importieren",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"source\": \"api\",\n\t\"provider\": \"TUI Reisebüro München\",\n\t\"data\": {\n\t\t\"folder\": {\n\t\t\t\"folder_name\": \"Mallorca Sommerurlaub 2026\",\n\t\t\t\"travel_start_date\": \"2026-07-15\",\n\t\t\t\"travel_end_date\": \"2026-07-29\",\n\t\t\t\"primary_destination\": \"Palma, Spanien\",\n\t\t\t\"travel_type\": \"leisure\",\n\t\t\t\"status\": \"confirmed\"\n\t\t},\n\t\t\"customer\": {\n\t\t\t\"salutation\": \"mrs\",\n\t\t\t\"first_name\": \"Anna\",\n\t\t\t\"last_name\": \"Müller\",\n\t\t\t\"email\": \"anna.mueller@example.com\"\n\t\t},\n\t\t\"participants\": [\n\t\t\t{\n\t\t\t\t\"first_name\": \"Anna\",\n\t\t\t\t\"last_name\": \"Müller\",\n\t\t\t\t\"is_main_contact\": true,\n\t\t\t\t\"participant_type\": \"adult\"\n\t\t\t}\n\t\t],\n\t\t\"itineraries\": [\n\t\t\t{\n\t\t\t\t\"itinerary_name\": \"Hauptreise\",\n\t\t\t\t\"hotels\": [\n\t\t\t\t\t{\n\t\t\t\t\t\t\"hotel_name\": \"Hotel Paraíso del Mar\",\n\t\t\t\t\t\t\"city\": \"Palma\",\n\t\t\t\t\t\t\"country_code\": \"ES\",\n\t\t\t\t\t\t\"check_in_date\": \"2026-07-15\",\n\t\t\t\t\t\t\"check_out_date\": \"2026-07-29\"\n\t\t\t\t\t}\n\t\t\t\t],\n\t\t\t\t\"flights\": [\n\t\t\t\t\t{\n\t\t\t\t\t\t\"booking_reference\": \"LH-PMI-001\",\n\t\t\t\t\t\t\"service_type\": \"outbound\",\n\t\t\t\t\t\t\"segments\": [\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"departure_airport_code\": \"MUC\",\n\t\t\t\t\t\t\t\t\"departure_time\": \"2026-07-15 10:00:00\",\n\t\t\t\t\t\t\t\t\"arrival_airport_code\": \"PMI\",\n\t\t\t\t\t\t\t\t\"arrival_time\": \"2026-07-15 12:15:00\",\n\t\t\t\t\t\t\t\t\"airline_code\": \"LH\",\n\t\t\t\t\t\t\t\t\"flight_number\": \"1802\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t}\n\t\t]\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/import",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "import"]
+						},
+						"description": "Importiert einen kompletten Folder mit allen Reisedaten. Import wird in Queue eingereiht. Response enthält log_id zum Tracking."
+					}
+				},
+				{
+					"name": "Alle Imports auflisten",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/imports?per_page=15",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "imports"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15",
+									"description": "1-100"
+								}
+							]
+						},
+						"description": "Paginierte Liste aller Imports des authentifizierten Kunden."
+					}
+				},
+				{
+					"name": "Import-Status abfragen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/folders/imports/{{import_log_id}}/status",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "folders", "imports", "{{import_log_id}}", "status"]
+						},
+						"description": "Status eines einzelnen Imports anhand der Log-ID."
+					}
+				}
+			]
+		},
+		{
+			"name": "Trip API (v1)",
+			"description": "Trip-Management und Proximity-Abfragen.\nAuthentifizierung: Bearer Token (Sanctum)",
+			"item": [
+				{
+					"name": "Trips auflisten",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/trips",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "trips"]
+						}
+					}
+				},
+				{
+					"name": "Trip erstellen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/trips",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "trips"]
+						}
+					}
+				},
+				{
+					"name": "Trip anzeigen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/trips/:trip",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "trips", ":trip"],
+							"variable": [
+								{
+									"key": "trip",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Trip löschen",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/trips/:trip",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "trips", ":trip"],
+							"variable": [
+								{
+									"key": "trip",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Trip Zusammenfassung",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/trips/:trip/summary",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "trips", ":trip", "summary"],
+							"variable": [
+								{
+									"key": "trip",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Trip Share-Link generieren",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/trips/:trip/share-link",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "trips", ":trip", "share-link"],
+							"variable": [
+								{
+									"key": "trip",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Direct Share-Link erstellen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/td-share-links",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "td-share-links"]
+						},
+						"description": "Direkte Share-Link-Generierung ohne Datenbank-Speicherung."
+					}
+				},
+				{
+					"name": "Proximity: Near Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/proximity/near-event",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "proximity", "near-event"]
+						}
+					}
+				},
+				{
+					"name": "Proximity: At Location",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"latitude\": 48.1351,\n\t\"longitude\": 11.5820,\n\t\"radius_km\": 50\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/proximity/at-location",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "proximity", "at-location"]
+						}
+					}
+				},
+				{
+					"name": "Proximity: Affected by Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/proximity/affected-by-event/:event",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "proximity", "affected-by-event", ":event"],
+							"variable": [
+								{
+									"key": "event",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Proximity: Trips in Country",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"country_code\": \"TH\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/proximity/trips-in-country",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "proximity", "trips-in-country"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Share Links API (v1)",
+			"description": "Share-Link Verwaltung (öffentlich, ohne Auth).",
+			"item": [
+				{
+					"name": "Share-Links auflisten",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/share-links",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "share-links"]
+						}
+					}
+				},
+				{
+					"name": "Share-Link erstellen",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/share-links",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "share-links"]
+						}
+					}
+				},
+				{
+					"name": "Share-Link anzeigen",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/share-links/:token",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "share-links", ":token"],
+							"variable": [
+								{
+									"key": "token",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Share-Link löschen",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/share-links/:token",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "share-links", ":token"],
+							"variable": [
+								{
+									"key": "token",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Feed API (öffentlich)",
+			"description": "Öffentliche RSS/Atom-Feeds für Events und Länderinformationen.\nKeine Authentifizierung erforderlich.",
+			"item": [
+				{
+					"name": "Feed Metadaten (JSON)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/feed/events/meta.json",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "meta.json"]
+						},
+						"description": "Verfügbare Priorities und Event-Typen als JSON."
+					}
+				},
+				{
+					"name": "Alle Events (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/events/all.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "all.xml"]
+						},
+						"description": "Alle aktiven Events als RSS 2.0 Feed (max. 100)."
+					}
+				},
+				{
+					"name": "Alle Events (Atom)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/events/all.atom",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "all.atom"]
+						},
+						"description": "Alle aktiven Events als Atom 1.0 Feed."
+					}
+				},
+				{
+					"name": "Events nach Priorität (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/events/priority/high.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "priority", "high.xml"]
+						},
+						"description": "Events gefiltert nach Priorität: high, medium, low, info"
+					}
+				},
+				{
+					"name": "Events nach Land (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/events/countries/de.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "countries", "de.xml"]
+						},
+						"description": "Events für ein Land (ISO alpha-2 oder alpha-3, case-insensitive)."
+					}
+				},
+				{
+					"name": "Events nach Event-Typ (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/events/types/earthquake.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "types", "earthquake.xml"]
+						},
+						"description": "Events gefiltert nach Event-Typ-Code."
+					}
+				},
+				{
+					"name": "Events nach Region (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/events/regions/1.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "events", "regions", "1.xml"]
+						},
+						"description": "Events gefiltert nach Region-ID."
+					}
+				},
+				{
+					"name": "Alle Länder (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/countries/names/all.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "countries", "names", "all.xml"]
+						},
+						"description": "Verzeichnis aller Länder mit Details."
+					}
+				},
+				{
+					"name": "Länder nach Kontinent (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/countries/continent/EU.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "countries", "continent", "EU.xml"]
+						},
+						"description": "Länder nach Kontinent: EU, AS, AF, NA, SA, OC, AN"
+					}
+				},
+				{
+					"name": "EU-Mitgliedsstaaten (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/countries/eu.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "countries", "eu.xml"]
+						}
+					}
+				},
+				{
+					"name": "Schengen-Staaten (RSS)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/feed/countries/schengen.xml",
+							"host": ["{{base_url}}"],
+							"path": ["feed", "countries", "schengen.xml"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Plugin API",
+			"description": "Widget-Handshake für Lizenzvalidierung.\nRate Limit: 60/min pro IP.",
+			"item": [
+				{
+					"name": "Handshake",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/plugin/handshake",
+							"host": ["{{base_url}}"],
+							"path": ["api", "plugin", "handshake"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Interne APIs (ohne Auth)",
+			"description": "Interne Dashboard-APIs. Keine Authentifizierung erforderlich (sofern nicht anders angegeben).",
+			"item": [
+				{
+					"name": "GDACS",
+					"item": [
+						{
+							"name": "Events abrufen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/fetch-events",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "fetch-events"]
+								}
+							}
+						},
+						{
+							"name": "Dashboard Events",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/dashboard-events",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "dashboard-events"]
+								}
+							}
+						},
+						{
+							"name": "Statistiken",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/statistics",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "statistics"]
+								}
+							}
+						},
+						{
+							"name": "Cache leeren",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/clear-cache",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "clear-cache"]
+								}
+							}
+						},
+						{
+							"name": "APIs testen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/test-apis",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "test-apis"]
+								}
+							}
+						},
+						{
+							"name": "Event Details",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/event-details",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "event-details"]
+								}
+							}
+						},
+						{
+							"name": "Wetter für Events",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/gdacs/weather-for-events",
+									"host": ["{{base_url}}"],
+									"path": ["api", "gdacs", "weather-for-events"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Custom Events",
+					"item": [
+						{
+							"name": "Dashboard Events",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/dashboard-events",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", "dashboard-events"]
+								}
+							}
+						},
+						{
+							"name": "Map Events",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/map-events",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", "map-events"]
+								}
+							}
+						},
+						{
+							"name": "Statistiken",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/statistics",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", "statistics"]
+								}
+							}
+						},
+						{
+							"name": "Event-Typen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/event-types",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", "event-types"]
+								}
+							}
+						},
+						{
+							"name": "Klick tracken",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/track-click",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", "track-click"]
+								}
+							}
+						},
+						{
+							"name": "Klick-Statistiken",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/:eventId/click-statistics",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", ":eventId", "click-statistics"],
+									"variable": [
+										{
+											"key": "eventId",
+											"value": ""
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Einzelnes Event",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/custom-events/:eventId",
+									"host": ["{{base_url}}"],
+									"path": ["api", "custom-events", ":eventId"],
+									"variable": [
+										{
+											"key": "eventId",
+											"value": ""
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Geolocation",
+					"item": [
+						{
+							"name": "Standort finden",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/geolocation/find-location",
+									"host": ["{{base_url}}"],
+									"path": ["api", "geolocation", "find-location"]
+								}
+							}
+						},
+						{
+							"name": "Nächste Stadt",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/geolocation/nearest-city",
+									"host": ["{{base_url}}"],
+									"path": ["api", "geolocation", "nearest-city"]
+								}
+							}
+						},
+						{
+							"name": "Städte im Radius",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/geolocation/cities-in-radius",
+									"host": ["{{base_url}}"],
+									"path": ["api", "geolocation", "cities-in-radius"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Airports & Länder",
+					"item": [
+						{
+							"name": "Airports suchen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/airports/search?q=munich",
+									"host": ["{{base_url}}"],
+									"path": ["api", "airports", "search"],
+									"query": [
+										{
+											"key": "q",
+											"value": "munich"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Airport-Länder",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/airports/countries",
+									"host": ["{{base_url}}"],
+									"path": ["api", "airports", "countries"]
+								}
+							}
+						},
+						{
+							"name": "Airport-Kontinente",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/airports/continents",
+									"host": ["{{base_url}}"],
+									"path": ["api", "airports", "continents"]
+								}
+							}
+						},
+						{
+							"name": "Länder suchen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/countries/search?q=deutsch",
+									"host": ["{{base_url}}"],
+									"path": ["api", "countries", "search"],
+									"query": [
+										{
+											"key": "q",
+											"value": "deutsch"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Länder-Mappings",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/countries/mappings",
+									"host": ["{{base_url}}"],
+									"path": ["api", "countries", "mappings"]
+								}
+							}
+						},
+						{
+							"name": "Land per Koordinaten lokalisieren",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/countries/locate",
+									"host": ["{{base_url}}"],
+									"path": ["api", "countries", "locate"]
+								}
+							}
+						},
+						{
+							"name": "Kontinente",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/continents",
+									"host": ["{{base_url}}"],
+									"path": ["api", "continents"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Entry Conditions",
+					"item": [
+						{
+							"name": "Länder",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/entry-conditions/countries",
+									"host": ["{{base_url}}"],
+									"path": ["api", "entry-conditions", "countries"]
+								}
+							}
+						},
+						{
+							"name": "Alle Koordinaten",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/entry-conditions/all-coordinates",
+									"host": ["{{base_url}}"],
+									"path": ["api", "entry-conditions", "all-coordinates"]
+								}
+							}
+						},
+						{
+							"name": "Suche",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/entry-conditions/search",
+									"host": ["{{base_url}}"],
+									"path": ["api", "entry-conditions", "search"]
+								}
+							}
+						},
+						{
+							"name": "Inhalt abrufen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/entry-conditions/content",
+									"host": ["{{base_url}}"],
+									"path": ["api", "entry-conditions", "content"]
+								}
+							}
+						},
+						{
+							"name": "Details",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/entry-conditions/details",
+									"host": ["{{base_url}}"],
+									"path": ["api", "entry-conditions", "details"]
+								}
+							}
+						},
+						{
+							"name": "PDF",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/entry-conditions/pdf",
+									"host": ["{{base_url}}"],
+									"path": ["api", "entry-conditions", "pdf"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Booking Locations",
+					"item": [
+						{
+							"name": "Alle Standorte",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/booking-locations",
+									"host": ["{{base_url}}"],
+									"path": ["api", "booking-locations"]
+								}
+							}
+						},
+						{
+							"name": "Standort suchen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/booking-locations/search",
+									"host": ["{{base_url}}"],
+									"path": ["api", "booking-locations", "search"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Cruise Search",
+					"item": [
+						{
+							"name": "Kreuzfahrtlinien",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/cruise-search/cruise-lines",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cruise-search", "cruise-lines"]
+								}
+							}
+						},
+						{
+							"name": "Schiffe",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/cruise-search/ships",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cruise-search", "ships"]
+								}
+							}
+						},
+						{
+							"name": "Routen",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/cruise-search/routes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cruise-search", "routes"]
+								}
+							}
+						},
+						{
+							"name": "Kreuzfahrt-Termine",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/cruise-search/cruise-dates",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cruise-search", "cruise-dates"]
+								}
+							}
+						},
+						{
+							"name": "Suche",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/cruise-search/search",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cruise-search", "search"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Sonstiges",
+					"item": [
+						{
+							"name": "Social Links",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/social-links",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links"]
+								}
+							}
+						},
+						{
+							"name": "Countries GeoJSON",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/countries-geojson",
+									"host": ["{{base_url}}"],
+									"path": ["api", "countries-geojson"]
+								},
+								"description": "GeoJSON-Datei aller Länder (24h gecacht)."
+							}
+						},
+						{
+							"name": "Aktueller Benutzer (Sanctum)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/user",
+									"host": ["{{base_url}}"],
+									"path": ["api", "user"]
+								},
+								"description": "Gibt den aktuell authentifizierten Benutzer zurück (auth:sanctum)."
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "API Subdomain Info",
+			"description": "Informationsendpunkte auf der API-Subdomain.",
+			"item": [
+				{
+					"name": "API Landing Page",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{api_base_url}}/",
+							"host": ["{{api_base_url}}"],
+							"path": [""]
+						},
+						"description": "HTML Landing Page der API-Subdomain."
+					}
+				},
+				{
+					"name": "API v1 Info",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1"]
+						},
+						"description": "JSON-Übersicht der verfügbaren v1 Endpoints."
+					}
+				}
+			]
+		}
+	]
+}

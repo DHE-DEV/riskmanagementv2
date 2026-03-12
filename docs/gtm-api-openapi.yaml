@@ -218,25 +218,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EventType'
-        event_type:
-          nullable: true
-          description: Primärer Event-Typ
-          allOf:
-            - $ref: '#/components/schemas/EventType'
-        category:
-          nullable: true
-          description: Kategorie des Events
-          allOf:
-            - $ref: '#/components/schemas/Category'
         countries:
           type: array
           items:
             $ref: '#/components/schemas/EventCountry'
-        country:
-          nullable: true
-          description: Primäres Land
-          allOf:
-            - $ref: '#/components/schemas/EventCountry'
         source:
           $ref: '#/components/schemas/EventSource'
         created_at:
@@ -261,19 +246,6 @@ components:
         icon:
           type: string
           example: earthquake
-
-    Category:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 2
-        name:
-          type: string
-          example: Naturkatastrophe
-        color:
-          type: string
-          example: "#e74c3c"
 
     EventCountry:
       type: object

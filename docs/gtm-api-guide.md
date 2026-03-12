@@ -120,17 +120,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
           "icon": "earthquake"
         }
       ],
-      "event_type": {
-        "code": "natural_disaster",
-        "name": "Natural Disaster",
-        "color": "#e74c3c",
-        "icon": "earthquake"
-      },
-      "category": {
-        "id": 2,
-        "name": "Naturkatastrophe",
-        "color": "#e74c3c"
-      },
       "countries": [
         {
           "iso_code": "TR",
@@ -140,13 +129,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
           "continent": "Asia"
         }
       ],
-      "country": {
-        "iso_code": "TR",
-        "iso3_code": "TUR",
-        "name_de": "Tuerkei",
-        "name_en": "Turkey",
-        "continent": "Asia"
-      },
       "source": {
         "type": "api_client",
         "name": "Partner XY GmbH"
@@ -201,17 +183,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
         "icon": "earthquake"
       }
     ],
-    "event_type": {
-      "code": "natural_disaster",
-      "name": "Natural Disaster",
-      "color": "#e74c3c",
-      "icon": "earthquake"
-    },
-    "category": {
-      "id": 2,
-      "name": "Naturkatastrophe",
-      "color": "#e74c3c"
-    },
     "countries": [
       {
         "iso_code": "TR",
@@ -221,13 +192,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
         "continent": "Asia"
       }
     ],
-    "country": {
-      "iso_code": "TR",
-      "iso3_code": "TUR",
-      "name_de": "Tuerkei",
-      "name_en": "Turkey",
-      "continent": "Asia"
-    },
     "source": {
       "type": "api_client",
       "name": "Partner XY GmbH"
@@ -310,10 +274,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `latitude` | number / null | Breitengrad |
 | `longitude` | number / null | Längengrad |
 | `event_types` | array | Liste der zugewiesenen Event-Typen |
-| `event_type` | object / null | Primärer Event-Typ |
-| `category` | object / null | Kategorie des Events |
 | `countries` | array | Liste betroffener Länder |
-| `country` | object / null | Primäres Land |
 | `source` | object | Herkunft des Events |
 | `source.type` | string | Quelle: `manual`, `api_client`, `passolution_infosystem`, etc. |
 | `source.name` | string / null | Name des API-Partners (bei API-Client-Events) |
@@ -328,14 +289,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `name` | string | Anzeigename |
 | `color` | string | Hex-Farbcode für UI |
 | `icon` | string | Icon-Bezeichnung |
-
-### Kategorie
-
-| Feld | Typ | Beschreibung |
-|------|-----|--------------|
-| `id` | integer | ID der Kategorie |
-| `name` | string | Name der Kategorie |
-| `color` | string | Hex-Farbcode |
 
 ### Land (Event-Kontext)
 

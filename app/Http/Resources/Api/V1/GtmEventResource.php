@@ -26,21 +26,6 @@ class GtmEventResource extends JsonResource
                     'icon' => $t->icon,
                 ])
             ),
-            'event_type' => $this->whenLoaded('eventType', fn() =>
-                $this->eventType ? [
-                    'code' => $this->eventType->code,
-                    'name' => $this->eventType->name,
-                    'color' => $this->eventType->color,
-                    'icon' => $this->eventType->icon,
-                ] : null
-            ),
-            'category' => $this->whenLoaded('eventCategory', fn() =>
-                $this->eventCategory ? [
-                    'id' => $this->eventCategory->id,
-                    'name' => $this->eventCategory->name,
-                    'color' => $this->eventCategory->color,
-                ] : null
-            ),
             'countries' => $this->whenLoaded('countries', fn() =>
                 $this->countries->map(fn($c) => [
                     'iso_code' => $c->iso_code,
@@ -49,15 +34,6 @@ class GtmEventResource extends JsonResource
                     'name_en' => $c->getName('en'),
                     'continent' => $c->continent?->getName('en'),
                 ])
-            ),
-            'country' => $this->whenLoaded('country', fn() =>
-                $this->country ? [
-                    'iso_code' => $this->country->iso_code,
-                    'iso3_code' => $this->country->iso3_code,
-                    'name_de' => $this->country->getName('de'),
-                    'name_en' => $this->country->getName('en'),
-                    'continent' => $this->country->continent?->getName('en'),
-                ] : null
             ),
             'source' => [
                 'type' => $this->data_source ?? 'manual',
