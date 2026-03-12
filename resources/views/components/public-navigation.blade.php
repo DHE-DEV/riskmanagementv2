@@ -76,6 +76,13 @@
         </a>
         @endif
 
+        <!-- Meine Ereignisse -->
+        @if($featureService->isFeatureEnabled('navigation_customer_events_enabled', $customer) && auth('customer')->check())
+        <a href="{{ route('customer.events') }}" class="p-3 {{ $active === 'customer-events' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Meine Ereignisse">
+            <i class="fa-regular fa-calendar-alt text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
         <!-- TravelAlert -->
         <a href="{{ route('risk-overview') }}" class="p-3 {{ $active === 'travel-alert' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="TravelAlert">
             <i class="fa-regular fa-shield-exclamation text-2xl" aria-hidden="true"></i>

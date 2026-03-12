@@ -48,6 +48,7 @@ class CustomEvent extends Model implements Feedable
         'review_status',
         'reviewed_at',
         'reviewed_by',
+        'customer_id',
     ];
 
     protected $casts = [
@@ -149,6 +150,14 @@ class CustomEvent extends Model implements Feedable
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Customer relation.
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     /**
@@ -320,6 +329,22 @@ class CustomEvent extends Model implements Feedable
     {
         return $this->belongsToMany(Label::class, 'custom_event_label')
             ->withTimestamps();
+    }
+
+    /**
+     * Scope: exclude customer-owned events (only global/admin events).
+     */
+    public function scopeGlobal($query)
+    {
+        return $query->whereNull('customer_id');
+    }
+
+    /**
+     * Scope: only events belonging to a specific customer.
+     */
+    public function scopeForCustomer($query, int $customerId)
+    {
+        return $query->where('customer_id', $customerId);
     }
 
     /**
@@ -546,6 +571,7 @@ class CustomEvent extends Model implements Feedable
     {
         return static::active()
             ->notArchived()
+            ->global()
             ->with(['country', 'eventTypes', 'creator'])
             ->orderBy('updated_at', 'desc')
             ->get();
@@ -558,6 +584,7 @@ class CustomEvent extends Model implements Feedable
     {
         return static::active()
             ->notArchived()
+            ->global()
             ->whereIn('priority', ['high'])
             ->with(['country', 'eventTypes', 'creator'])
             ->orderBy('updated_at', 'desc')

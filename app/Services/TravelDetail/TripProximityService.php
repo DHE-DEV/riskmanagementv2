@@ -192,6 +192,7 @@ class TripProximityService
         foreach ($trip->tripLocations as $location) {
             // Find nearby custom events
             $customEvents = CustomEvent::query()
+                ->global()
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->where('is_active', true)

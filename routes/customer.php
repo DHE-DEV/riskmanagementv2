@@ -85,6 +85,11 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::post('/{branch}/cancel-deletion', [\App\Http\Controllers\Customer\BranchController::class, 'cancelScheduledDeletion'])->name('cancel-deletion');
         });
 
+        // Customer Events (eigene Ereignisse)
+        Route::get('/events', function () {
+            return view('customer.events.index');
+        })->name('events');
+
         // API Token routes
         Route::prefix('api-tokens')->name('api-tokens.')->group(function () {
             Route::post('/generate', [\App\Http\Controllers\Customer\ApiTokenController::class, 'generate'])->name('generate');

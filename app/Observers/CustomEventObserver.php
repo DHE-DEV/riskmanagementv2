@@ -15,6 +15,11 @@ class CustomEventObserver
      */
     public function created(CustomEvent $customEvent): void
     {
+        // Don't send global notifications for customer-owned events
+        if ($customEvent->customer_id) {
+            return;
+        }
+
         if ($customEvent->is_active && $customEvent->review_status === 'approved') {
             SendRiskEventNotifications::dispatch($customEvent);
         }
@@ -26,6 +31,11 @@ class CustomEventObserver
      */
     public function updated(CustomEvent $customEvent): void
     {
+        // Don't send global notifications for customer-owned events
+        if ($customEvent->customer_id) {
+            return;
+        }
+
         if (
             $customEvent->isDirty('review_status')
             && $customEvent->review_status === 'approved'

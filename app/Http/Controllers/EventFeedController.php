@@ -271,6 +271,7 @@ class EventFeedController extends Controller
     {
         return CustomEvent::active()
             ->notArchived()
+            ->global()
             ->where('start_date', '<=', now()) // Nur Events die bereits gestartet sind
             ->with([
                 'country.continent',

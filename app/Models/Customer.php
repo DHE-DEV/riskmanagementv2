@@ -252,6 +252,11 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(NotificationTemplate::class);
     }
 
+    public function customEvents(): HasMany
+    {
+        return $this->hasMany(CustomEvent::class);
+    }
+
     /**
      * Check if a specific feature is enabled for this customer.
      * Uses customer-specific overrides or falls back to .env defaults.

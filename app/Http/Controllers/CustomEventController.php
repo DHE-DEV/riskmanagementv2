@@ -22,6 +22,7 @@ class CustomEventController extends Controller
 
             $events = CustomEvent::visible()
                 ->approved()
+                ->global()
                 ->where('archived', false)
                 ->where('priority', '!=', 'critical')
                 ->where(function ($query) {
@@ -134,6 +135,7 @@ class CustomEventController extends Controller
 
             $events = CustomEvent::visible()
                 ->approved()
+                ->global()
                 ->where('archived', false)
                 ->where('priority', '!=', 'critical')
                 ->where(function ($query) {
@@ -231,7 +233,7 @@ class CustomEventController extends Controller
     {
         try {
             // Query for events with active event types or no event type
-            $activeEventTypeQuery = CustomEvent::where(function ($query) {
+            $activeEventTypeQuery = CustomEvent::global()->where(function ($query) {
                 $query->whereHas('eventType', function ($subQuery) {
                     $subQuery->where('is_active', true);
                 })
@@ -241,7 +243,7 @@ class CustomEventController extends Controller
             $stats = [
                 'total_events' => $activeEventTypeQuery->count(),
                 'active_events' => (clone $activeEventTypeQuery)->where('is_active', true)->count(),
-                'events_by_type' => CustomEvent::selectRaw('event_type, count(*) as count')
+                'events_by_type' => CustomEvent::global()->selectRaw('event_type, count(*) as count')
                     ->where(function ($query) {
                         $query->whereHas('eventType', function ($subQuery) {
                             $subQuery->where('is_active', true);
@@ -251,7 +253,7 @@ class CustomEventController extends Controller
                     ->groupBy('event_type')
                     ->pluck('count', 'event_type')
                     ->toArray(),
-                'events_by_priority' => CustomEvent::selectRaw('priority, count(*) as count')
+                'events_by_priority' => CustomEvent::global()->selectRaw('priority, count(*) as count')
                     ->where(function ($query) {
                         $query->whereHas('eventType', function ($subQuery) {
                             $subQuery->where('is_active', true);
@@ -261,7 +263,7 @@ class CustomEventController extends Controller
                     ->groupBy('priority')
                     ->pluck('count', 'priority')
                     ->toArray(),
-                'events_by_severity' => CustomEvent::selectRaw('severity, count(*) as count')
+                'events_by_severity' => CustomEvent::global()->selectRaw('severity, count(*) as count')
                     ->where(function ($query) {
                         $query->whereHas('eventType', function ($subQuery) {
                             $subQuery->where('is_active', true);
@@ -271,7 +273,7 @@ class CustomEventController extends Controller
                     ->groupBy('severity')
                     ->pluck('count', 'severity')
                     ->toArray(),
-                'recent_events' => CustomEvent::where(function ($query) {
+                'recent_events' => CustomEvent::global()->where(function ($query) {
                         $query->whereHas('eventType', function ($subQuery) {
                             $subQuery->where('is_active', true);
                         })
