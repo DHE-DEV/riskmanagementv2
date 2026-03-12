@@ -561,7 +561,7 @@
             </div>
             <div class="flex justify-between">
                 <span>© 2025 Passolution GmbH</span>
-                <span>Version 1.0.3</span>
+                <span>Version 1.0.4</span>
             </div>
         </div>
     </div>
