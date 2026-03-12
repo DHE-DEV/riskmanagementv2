@@ -21,7 +21,7 @@ class GtmApiController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'riskLevel' => 'nullable|string|in:high,medium,low,info',
+            'risk_level' => 'nullable|string|in:high,medium,low,info',
             'country' => 'nullable|string|max:3',
             'event_category' => 'nullable|string|max:50',
             'region' => 'nullable|integer',
@@ -35,7 +35,7 @@ class GtmApiController extends Controller
         $perPage = $request->integer('per_page', 25);
 
         $events = $this->eventService->getActiveEvents(
-            priority: $request->input('riskLevel'),
+            priority: $request->input('risk_level'),
             countryCode: $request->input('country'),
             eventTypeCode: $request->input('event_category'),
             regionId: $request->integer('region') ?: null,

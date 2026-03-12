@@ -231,7 +231,7 @@
                                         <td class="py-1.5 px-2">Ergebnisse pro Seite (Standard: 15)</td>
                                     </tr>
                                     <tr class="border-b border-gray-50">
-                                        <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">riskLevel</code></td>
+                                        <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">risk_level</code></td>
                                         <td class="py-1.5 px-2">string</td>
                                         <td class="py-1.5 px-2">Filter nach Risikostufe (high, medium, low, info)</td>
                                     </tr>
@@ -258,7 +258,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/events?riskLevel=high&per_page=10" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/events?risk_level=high&per_page=10" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
@@ -273,7 +273,7 @@
       "id": 1234,
       "title": "Erdbeben in der Türkei",
       "description": "Ein Erdbeben der Stärke 5.2 ...",
-      "riskLevel": "high",
+      "risk_level": "high",
       "event_type": "Umweltereignisse",
       "countries": ["TR"],
       "starts_at": "2025-01-15T08:00:00Z",
@@ -435,7 +435,7 @@
   -d '{
     "title": "Streik am Flughafen Frankfurt",
     "description": "Warnstreik des Bodenpersonals ...",
-    "riskLevel": "medium",
+    "risk_level": "medium",
     "event_type_id": 9,
     "country_codes": ["DE"],
     "starts_at": "2025-03-01T06:00:00Z",

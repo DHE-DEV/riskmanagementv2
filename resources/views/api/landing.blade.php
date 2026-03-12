@@ -445,7 +445,7 @@
                         <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>riskLevel</code></td><td>string</td><td>Nein</td><td>Filter nach Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>risk_level</code></td><td>string</td><td>Nein</td><td>Filter nach Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                         <tr><td><code>country</code></td><td>string</td><td>Nein</td><td>Filter nach Ländercode – ISO alpha-2 (z.B. <code>DE</code>) oder alpha-3 (z.B. <code>DEU</code>)</td></tr>
                         <tr><td><code>event_category</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Typ-Code (z.B. <code>natural_disaster</code>)</td></tr>
                         <tr><td><code>region</code></td><td>integer</td><td>Nein</td><td>Filter nach Region-ID (numerische ID)</td></tr>
@@ -465,7 +465,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Nur Events mit hoher Risikostufe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?riskLevel=high"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?risk_level=high"
 
 # Events für ein bestimmtes Land
 curl -H "Authorization: Bearer {TOKEN}" \
@@ -485,7 +485,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?riskLevel=high&amp;country=TR&amp;source=manual&amp;per_page=10"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?risk_level=high&amp;country=TR&amp;source=manual&amp;per_page=10"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -495,7 +495,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "title": "Earthquake in Turkey",
       "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
-      "riskLevel": "high",
+      "risk_level": "high",
       "start_date": "2025-03-15T08:30:00+00:00",
       "end_date": null,
       "latitude": 37.7749,
@@ -548,7 +548,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "title": "Earthquake in Turkey",
     "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
-    "riskLevel": "high",
+    "risk_level": "high",
     "start_date": "2025-03-15T08:30:00+00:00",
     "end_date": null,
     "latitude": 37.7749,
@@ -754,7 +754,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><td><code>id</code></td><td>string (UUID)</td><td>Eindeutige ID des Events</td></tr>
                         <tr><td><code>title</code></td><td>string</td><td>Kurzer Titel des Events</td></tr>
                         <tr><td><code>description</code></td><td>string / null</td><td>Detaillierte Beschreibung</td></tr>
-                        <tr><td><code>riskLevel</code></td><td>string</td><td>Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>risk_level</code></td><td>string</td><td>Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                         <tr><td><code>start_date</code></td><td>datetime / null</td><td>Startdatum (ISO 8601)</td></tr>
                         <tr><td><code>end_date</code></td><td>datetime / null</td><td>Enddatum (null = andauernd)</td></tr>
                         <tr><td><code>latitude</code></td><td>number / null</td><td>Breitengrad</td></tr>
@@ -944,7 +944,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     <tbody>
                         <tr><td><code>title</code></td><td>string</td><td>Ja</td><td>Titel des Events (max. 255 Zeichen)</td></tr>
                         <tr><td><code>description</code></td><td>string</td><td>Nein</td><td>Beschreibung (max. 10.000 Zeichen, HTML erlaubt: p, br, strong, em, ul, ol, li, a)</td></tr>
-                        <tr><td><code>riskLevel</code></td><td>string</td><td>Nein</td><td>Risikostufe: <code>info</code>, <code>low</code>, <code>medium</code> (Standard), <code>high</code></td></tr>
+                        <tr><td><code>risk_level</code></td><td>string</td><td>Nein</td><td>Risikostufe: <code>info</code>, <code>low</code>, <code>medium</code> (Standard), <code>high</code></td></tr>
                         <tr><td><code>start_date</code></td><td>datetime</td><td>Ja</td><td>Startdatum (ISO 8601, z.B. <code>2026-02-11T08:00:00Z</code>)</td></tr>
                         <tr><td><code>end_date</code></td><td>datetime</td><td>Nein</td><td>Enddatum (muss gleich oder nach start_date liegen)</td></tr>
                         <tr><td><code>event_category_codes</code></td><td>array</td><td>Ja</td><td>Event-Typ-Codes (mindestens 1, aus <code>/event-categories</code>)</td></tr>
@@ -964,7 +964,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   -d '{
     "title": "Überschwemmung Bangkok",
     "description": "&lt;p&gt;Schwere Überschwemmungen im Großraum Bangkok.&lt;/p&gt;",
-    "riskLevel": "high",
+    "risk_level": "high",
     "start_date": "2026-02-11T08:00:00Z",
     "end_date": "2026-02-18T08:00:00Z",
     "event_category_codes": ["flood"],
@@ -983,7 +983,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "title": "Überschwemmung Bangkok",
     "description": "Schwere Überschwemmungen im Großraum Bangkok.",
-    "riskLevel": "high",
+    "risk_level": "high",
     "start_date": "2026-02-11T08:00:00+00:00",
     "end_date": "2026-02-18T08:00:00+00:00",
     "latitude": 13.7563,
@@ -1098,7 +1098,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Überschwemmung Bangkok - Entwarnung",
-    "riskLevel": "low"
+    "risk_level": "low"
   }'</code></pre>
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{

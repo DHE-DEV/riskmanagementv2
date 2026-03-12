@@ -63,7 +63,7 @@
 							"path": ["v1", "events"],
 							"query": [
 								{
-									"key": "riskLevel",
+									"key": "risk_level",
 									"value": "high",
 									"description": "high | medium | low | info",
 									"disabled": true
@@ -260,7 +260,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"title\": \"Überschwemmung Bangkok\",\n\t\"description\": \"<p>Schwere Überschwemmungen im Großraum Bangkok.</p>\",\n\t\"riskLevel\": \"high\",\n\t\"start_date\": \"2026-02-11T08:00:00Z\",\n\t\"end_date\": \"2026-02-18T08:00:00Z\",\n\t\"event_category_codes\": [\"flood\"],\n\t\"country_codes\": [\"TH\"],\n\t\"latitude\": 13.7563,\n\t\"longitude\": 100.5018,\n\t\"tags\": [\"flooding\", \"bangkok\"],\n\t\"external_id\": \"EXT-2026-001\"\n}"
+							"raw": "{\n\t\"title\": \"Überschwemmung Bangkok\",\n\t\"description\": \"<p>Schwere Überschwemmungen im Großraum Bangkok.</p>\",\n\t\"risk_level\": \"high\",\n\t\"start_date\": \"2026-02-11T08:00:00Z\",\n\t\"end_date\": \"2026-02-18T08:00:00Z\",\n\t\"event_category_codes\": [\"flood\"],\n\t\"country_codes\": [\"TH\"],\n\t\"latitude\": 13.7563,\n\t\"longitude\": 100.5018,\n\t\"tags\": [\"flooding\", \"bangkok\"],\n\t\"external_id\": \"EXT-2026-001\"\n}"
 						},
 						"url": {
 							"raw": "{{api_base_url}}/v1/custom/events",
@@ -304,7 +304,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"title\": \"Überschwemmung Bangkok - Entwarnung\",\n\t\"riskLevel\": \"low\"\n}"
+							"raw": "{\n\t\"title\": \"Überschwemmung Bangkok - Entwarnung\",\n\t\"risk_level\": \"low\"\n}"
 						},
 						"url": {
 							"raw": "{{api_base_url}}/v1/custom/events/{{event_uuid}}",

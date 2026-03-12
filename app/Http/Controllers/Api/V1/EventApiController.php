@@ -147,7 +147,7 @@ class EventApiController extends Controller
             'uuid' => Str::uuid(),
             'title' => $validated['title'],
             'description' => $description,
-            'priority' => $validated['riskLevel'] ?? 'medium',
+            'priority' => $validated['risk_level'] ?? 'medium',
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'] ?? null,
             'latitude' => $validated['latitude'] ?? null,
@@ -244,8 +244,8 @@ class EventApiController extends Controller
                 ? strip_tags($validated['description'], '<p><br><strong><em><ul><ol><li><a>')
                 : null;
         }
-        if (isset($validated['riskLevel'])) {
-            $updateData['priority'] = $validated['riskLevel'];
+        if (isset($validated['risk_level'])) {
+            $updateData['priority'] = $validated['risk_level'];
         }
         if (isset($validated['start_date'])) {
             $updateData['start_date'] = $validated['start_date'];

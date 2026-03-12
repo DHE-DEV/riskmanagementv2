@@ -100,7 +100,7 @@ paths:
             example:
               title: Überschwemmung Bangkok
               description: "<p>Schwere Überschwemmungen im Großraum Bangkok.</p>"
-              riskLevel: high
+              risk_level: high
               start_date: "2026-02-11T08:00:00Z"
               end_date: "2026-02-18T08:00:00Z"
               event_category_codes: ["flood"]
@@ -181,7 +181,7 @@ paths:
               $ref: '#/components/schemas/UpdateEventRequest'
             example:
               title: "Überschwemmung Bangkok - Entwarnung"
-              riskLevel: low
+              risk_level: low
       responses:
         '200':
           description: Event erfolgreich aktualisiert
@@ -307,7 +307,7 @@ components:
           type: string
           nullable: true
           example: Schwere Überschwemmungen im Großraum Bangkok.
-        riskLevel:
+        risk_level:
           type: string
           enum: [info, low, medium, high]
           example: high
@@ -380,7 +380,7 @@ components:
           maxLength: 10000
           nullable: true
           description: "Beschreibung (erlaubte HTML-Tags: p, br, strong, em, ul, ol, li, a)"
-        riskLevel:
+        risk_level:
           type: string
           enum: [info, low, medium, high]
           default: medium
@@ -447,7 +447,7 @@ components:
           type: string
           maxLength: 10000
           nullable: true
-        riskLevel:
+        risk_level:
           type: string
           enum: [info, low, medium, high]
         start_date:

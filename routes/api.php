@@ -240,7 +240,7 @@ Route::prefix('plugin')->group(function () {
 |--------------------------------------------------------------------------
 |
 | Read-only access to all active events from all providers.
-| Supports filtering by riskLevel, country, event_category, region, and source.
+| Supports filtering by risk_level, country, event_category, region, and source.
 | Protected by Sanctum token authentication with GTM API permissions.
 |
 */

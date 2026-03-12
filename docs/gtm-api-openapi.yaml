@@ -35,7 +35,7 @@ paths:
         die freigegeben (approved), aktiv und nicht archiviert sind. Mit start_date
         und end_date kann der Zeitraum eingegrenzt werden.
       parameters:
-        - name: riskLevel
+        - name: risk_level
           in: query
           schema:
             type: string
@@ -289,7 +289,7 @@ components:
           type: string
           nullable: true
           example: A 6.2 magnitude earthquake struck southeastern Turkey.
-        riskLevel:
+        risk_level:
           type: string
           enum: [high, medium, low, info]
           example: high
@@ -528,7 +528,7 @@ components:
             items:
               type: string
           example:
-            riskLevel: ["The selected riskLevel is invalid."]
+            risk_level: ["The selected risk_level is invalid."]
             per_page: ["The per page field must be between 1 and 100."]
 
   responses:

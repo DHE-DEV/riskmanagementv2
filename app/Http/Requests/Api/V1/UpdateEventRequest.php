@@ -16,7 +16,7 @@ class UpdateEventRequest extends FormRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
-            'riskLevel' => ['nullable', 'string', 'in:info,low,medium,high'],
+            'risk_level' => ['nullable', 'string', 'in:info,low,medium,high'],
             'start_date' => ['sometimes', 'required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'event_category_codes' => ['sometimes', 'required', 'array', 'min:1'],

@@ -126,7 +126,7 @@ POST /v1/custom/events
 |------|-----|---------|--------------|
 | `title` | string | Ja | Titel des Events (max. 255 Zeichen) |
 | `description` | string | Nein | Beschreibung (max. 10.000 Zeichen, HTML erlaubt: p, br, strong, em, ul, ol, li, a) |
-| `riskLevel` | string | Nein | Risikostufe: `info`, `low`, `medium` (Standard), `high` |
+| `risk_level` | string | Nein | Risikostufe: `info`, `low`, `medium` (Standard), `high` |
 | `start_date` | datetime | Ja | Startdatum (ISO 8601, z.B. `2026-02-11T08:00:00Z`) |
 | `end_date` | datetime | Nein | Enddatum (muss gleich oder nach start_date liegen) |
 | `event_category_codes` | array | Ja | Event-Typ-Codes (mindestens 1, aus `/event-categories`) |
@@ -145,7 +145,7 @@ curl -X POST https://api.global-travel-monitor.de/v1/custom/events \
   -d '{
     "title": "Überschwemmung Bangkok",
     "description": "<p>Schwere Überschwemmungen im Großraum Bangkok.</p>",
-    "riskLevel": "high",
+    "risk_level": "high",
     "start_date": "2026-02-11T08:00:00Z",
     "end_date": "2026-02-18T08:00:00Z",
     "event_category_codes": ["flood"],
@@ -167,7 +167,7 @@ curl -X POST https://api.global-travel-monitor.de/v1/custom/events \
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "title": "Überschwemmung Bangkok",
     "description": "Schwere Überschwemmungen im Großraum Bangkok.",
-    "riskLevel": "high",
+    "risk_level": "high",
     "start_date": "2026-02-11T08:00:00+00:00",
     "end_date": "2026-02-18T08:00:00+00:00",
     "latitude": 13.7563,
@@ -292,7 +292,7 @@ curl -X PUT https://api.global-travel-monitor.de/v1/custom/events/a1b2c3d4-e5f6-
   -H "Content-Type: application/json" \
   -d '{
     "title": "Überschwemmung Bangkok - Entwarnung",
-    "riskLevel": "low"
+    "risk_level": "low"
   }'
 ```
 
