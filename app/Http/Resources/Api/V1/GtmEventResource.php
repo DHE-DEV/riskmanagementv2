@@ -9,6 +9,10 @@ class GtmEventResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $firstCountry = $this->relationLoaded('countries') ? $this->countries->first() : null;
+        $latitude = $this->latitude ? (float) $this->latitude : $this->resolveCountryCoordinate($firstCountry, 'lat');
+        $longitude = $this->longitude ? (float) $this->longitude : $this->resolveCountryCoordinate($firstCountry, 'lng');
+
         return [
             'id' => $this->uuid,
             'title' => $this->title,
@@ -16,8 +20,8 @@ class GtmEventResource extends JsonResource
             'priority' => $this->priority,
             'start_date' => $this->start_date?->toIso8601String(),
             'end_date' => $this->end_date?->toIso8601String(),
-            'latitude' => $this->latitude ? (float) $this->latitude : null,
-            'longitude' => $this->longitude ? (float) $this->longitude : null,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
             'event_types' => $this->whenLoaded('eventTypes', fn() =>
                 $this->eventTypes->map(fn($t) => [
                     'code' => $t->code,
@@ -33,6 +37,8 @@ class GtmEventResource extends JsonResource
                     'name_de' => $c->getName('de'),
                     'name_en' => $c->getName('en'),
                     'continent' => $c->continent?->getName('en'),
+                    'latitude' => $this->resolveCountryCoordinate($c, 'lat'),
+                    'longitude' => $this->resolveCountryCoordinate($c, 'lng'),
                 ])
             ),
             'source' => [
@@ -44,5 +50,23 @@ class GtmEventResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Resolve coordinate from pivot (custom) or country default.
+     */
+    private function resolveCountryCoordinate($country, string $field): ?float
+    {
+        if (!$country) {
+            return null;
+        }
+
+        // Prefer custom pivot coordinates
+        if ($country->pivot && !$country->pivot->use_default_coordinates && $country->pivot->$field) {
+            return (float) $country->pivot->$field;
+        }
+
+        // Fall back to country default
+        return $country->$field ? (float) $country->$field : null;
     }
 }
