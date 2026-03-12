@@ -408,7 +408,7 @@
             <h2>Events API – Anleitung (Read-Only)</h2>
 
             <h3>Übersicht</h3>
-            <p>Die Events API bietet <strong>read-only</strong> Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.</p>
+            <p>Die Events API bietet <strong>read-only</strong> Zugriff auf alle Sicherheits- und Reiserisiko-Events – sowohl aktuelle als auch zukünftige. Dies umfasst von Global Travel Monitor gepflegte Events sowie Events von API-Partnern. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt. Mit den Parametern <code>start_date</code> und <code>end_date</code> kann der Zeitraum eingegrenzt werden.</p>
 
             <hr>
 
@@ -430,13 +430,13 @@
             <hr>
 
             <h3>Pagination</h3>
-            <p>Der Events-Endpoint liefert alle aktuell aktiven Events, paginiert über die Query-Parameter <code>page</code> und <code>per_page</code> (Standard: 25, Maximum: <strong>100</strong> pro Seite). Pagination-Metadaten sind im <code>meta</code>-Objekt jeder Antwort enthalten.</p>
+            <p>Der Events-Endpoint liefert alle aktiven Events (einschließlich zukünftiger), paginiert über die Query-Parameter <code>page</code> und <code>per_page</code> (Standard: 25, Maximum: <strong>100</strong> pro Seite). Pagination-Metadaten sind im <code>meta</code>-Objekt jeder Antwort enthalten.</p>
 
             <hr>
 
             <h3>Events auflisten</h3>
             <pre><code>GET /v1/events</code></pre>
-            <p>Gibt eine paginierte Liste aller aktuell aktiven Events zurück.</p>
+            <p>Gibt eine paginierte Liste aller aktiven Events zurück (einschließlich zukünftiger Events).</p>
 
             <p><strong>Query-Parameter:</strong></p>
             <div class="table-responsive">
@@ -450,6 +450,8 @@
                         <tr><td><code>event_type</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Typ-Code (z.B. <code>natural_disaster</code>)</td></tr>
                         <tr><td><code>region</code></td><td>integer</td><td>Nein</td><td>Filter nach Region-ID (numerische ID)</td></tr>
                         <tr><td><code>source</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Herkunft (z.B. <code>manual</code>, <code>passolution_infosystem</code> oder Name des API-Partners)</td></tr>
+                        <tr><td><code>start_date</code></td><td>date</td><td>Nein</td><td>Nur Events ab diesem Datum (z.B. <code>2026-03-01</code>)</td></tr>
+                        <tr><td><code>end_date</code></td><td>date</td><td>Nein</td><td>Nur Events bis zu diesem Datum (z.B. <code>2026-04-30</code>)</td></tr>
                         <tr><td><code>per_page</code></td><td>integer</td><td>Nein</td><td>Einträge pro Seite (Standard: 25, Maximum: 100)</td></tr>
                         <tr><td><code>page</code></td><td>integer</td><td>Nein</td><td>Seitennummer (Standard: 1)</td></tr>
                     </tbody>
@@ -476,6 +478,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
   "{{ request()->getSchemeAndHttpHost() }}/v1/events?source=manual"
+
+# Events in einem Zeitraum
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?start_date=2026-03-01&amp;end_date=2026-03-31"
 
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
