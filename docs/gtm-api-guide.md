@@ -75,7 +75,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Events auflisten
 
 ```
-GET /events
+GET /v1/events
 ```
 
 **Query-Parameter:**
@@ -86,13 +86,34 @@ GET /events
 | `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
 | `event_type` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
-| `source` | string | Nein | Filter nach Event-Herkunft – Name des Anbieters (z.B. `manual`, API-Client-Name) |
+| `source` | string | Nein | Filter nach Event-Herkunft (z.B. `manual`, `passolution_infosystem` oder Name des API-Partners) |
 | `per_page` | integer | Nein | Einträge pro Seite (Standard: 25, Maximum: 100) |
 | `page` | integer | Nein | Seitennummer (Standard: 1) |
 
-**Beispiel:**
+**Beispiele:**
 
 ```bash
+# Alle aktiven Events (paginiert)
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events?per_page=25&page=1"
+
+# Nur Events mit hoher Priorität
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events?priority=high"
+
+# Events für ein bestimmtes Land
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events?country=TR"
+
+# Events eines bestimmten Typs
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events?event_type=natural_disaster"
+
+# Nur manuell erstellte Events
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events?source=manual"
+
+# Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?priority=high&country=TR&source=manual&per_page=10"
 ```
@@ -126,7 +147,9 @@ curl -H "Authorization: Bearer {TOKEN}" \
           "iso3_code": "TUR",
           "name_de": "Tuerkei",
           "name_en": "Turkey",
-          "continent": "Asia"
+          "continent": "Asia",
+          "latitude": 37.7749,
+          "longitude": 35.3214
         }
       ],
       "source": {
@@ -151,7 +174,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Einzelnes Event anzeigen
 
 ```
-GET /events/{uuid}
+GET /v1/events/{uuid}
 ```
 
 **Beispiel:**
@@ -189,7 +212,9 @@ curl -H "Authorization: Bearer {TOKEN}" \
         "iso3_code": "TUR",
         "name_de": "Tuerkei",
         "name_en": "Turkey",
-        "continent": "Asia"
+        "continent": "Asia",
+        "latitude": 37.7749,
+        "longitude": 35.3214
       }
     ],
     "source": {
@@ -209,7 +234,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Länder mit aktiven Events auflisten
 
 ```
-GET /countries
+GET /v1/countries
 ```
 
 Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, zusammen mit der Anzahl aktiver Events. Sortiert nach Anzahl (absteigend). Nicht paginiert.
@@ -299,6 +324,8 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `name_de` | string | Ländername (deutsch) |
 | `name_en` | string | Ländername (englisch) |
 | `continent` | string | Kontinent |
+| `latitude` | number / null | Breitengrad (Event-Standort im Land) |
+| `longitude` | number / null | Längengrad (Event-Standort im Land) |
 
 ### Land (Countries-Endpoint)
 

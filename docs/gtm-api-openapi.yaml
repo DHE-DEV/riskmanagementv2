@@ -266,6 +266,18 @@ components:
           type: string
           nullable: true
           example: Asia
+        latitude:
+          type: number
+          format: float
+          nullable: true
+          description: Breitengrad (Event-Standort im Land)
+          example: 37.7749
+        longitude:
+          type: number
+          format: float
+          nullable: true
+          description: Längengrad (Event-Standort im Land)
+          example: 35.3214
 
     CountryWithEvents:
       type: object
