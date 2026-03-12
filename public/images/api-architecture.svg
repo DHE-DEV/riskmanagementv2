@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="720" fill="#f8fafc" rx="12"/>
+
+  <!-- Title -->
+  <text x="500" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">API-Architektur – Event-Datenfluss</text>
+  <text x="500" y="58" text-anchor="middle" font-size="13" fill="#64748b">Wie Events von verschiedenen Quellen zu Kunden gelangen</text>
+
+  <!-- ============================================================ -->
+  <!-- LEFT SIDE: Event Sources (Providers) -->
+  <!-- ============================================================ -->
+
+  <!-- Section Label -->
+  <text x="175" y="95" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8" letter-spacing="1.5">EVENT-QUELLEN</text>
+
+  <!-- GTM Team Box -->
+  <rect x="50" y="115" width="250" height="80" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="50" y="115" width="250" height="6" rx="3" fill="#0f172a"/>
+  <circle cx="80" cy="152" r="16" fill="#f1f5f9"/>
+  <text x="80" y="157" text-anchor="middle" font-size="16">🛡️</text>
+  <text x="105" y="148" font-size="14" font-weight="600" fill="#0f172a">Global Travel Monitor</text>
+  <text x="105" y="166" font-size="11" fill="#64748b">Manuell erstellte Events</text>
+  <text x="105" y="181" font-size="10" fill="#94a3b8">data_source: manual</text>
+
+  <!-- Partner A Box -->
+  <rect x="50" y="215" width="250" height="80" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="50" y="215" width="250" height="6" rx="3" fill="#2563eb"/>
+  <circle cx="80" cy="252" r="16" fill="#eff6ff"/>
+  <text x="80" y="257" text-anchor="middle" font-size="16">🏢</text>
+  <text x="105" y="248" font-size="14" font-weight="600" fill="#0f172a">API-Partner A</text>
+  <text x="105" y="266" font-size="11" fill="#64748b">z.B. Sicherheitsdienstleister</text>
+  <text x="105" y="281" font-size="10" fill="#94a3b8">data_source: api_client</text>
+
+  <!-- Partner B Box -->
+  <rect x="50" y="315" width="250" height="80" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="50" y="315" width="250" height="6" rx="3" fill="#7c3aed"/>
+  <circle cx="80" cy="352" r="16" fill="#f5f3ff"/>
+  <text x="80" y="357" text-anchor="middle" font-size="16">🏢</text>
+  <text x="105" y="348" font-size="14" font-weight="600" fill="#0f172a">API-Partner B</text>
+  <text x="105" y="366" font-size="11" fill="#64748b">z.B. Reiseversicherung</text>
+  <text x="105" y="381" font-size="10" fill="#94a3b8">data_source: api_client</text>
+
+  <!-- Infosystem Box -->
+  <rect x="50" y="415" width="250" height="80" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="50" y="415" width="250" height="6" rx="3" fill="#ea580c"/>
+  <circle cx="80" cy="452" r="16" fill="#fff7ed"/>
+  <text x="80" y="457" text-anchor="middle" font-size="16">⚙️</text>
+  <text x="105" y="448" font-size="14" font-weight="600" fill="#0f172a">Infosystem Import</text>
+  <text x="105" y="466" font-size="11" fill="#64748b">Automatischer Datenimport</text>
+  <text x="105" y="481" font-size="10" fill="#94a3b8">data_source: passolution_infosystem</text>
+
+  <!-- ============================================================ -->
+  <!-- CENTER: Event Pool / Database -->
+  <!-- ============================================================ -->
+
+  <!-- Central Event Pool -->
+  <rect x="380" y="180" width="240" height="240" rx="16" fill="#fff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="380" y="180" width="240" height="40" rx="16" fill="#0f172a"/>
+  <rect x="380" y="200" width="240" height="20" fill="#0f172a"/>
+  <text x="500" y="206" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">Alle Events (Datenbank)</text>
+
+  <!-- Events inside the pool -->
+  <rect x="400" y="235" width="200" height="28" rx="6" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <circle cx="416" cy="249" r="6" fill="#0f172a"/>
+  <text x="428" y="253" font-size="11" fill="#15803d">GTM-Events (manuell)</text>
+
+  <rect x="400" y="273" width="200" height="28" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
+  <circle cx="416" cy="287" r="6" fill="#2563eb"/>
+  <text x="428" y="291" font-size="11" fill="#1d4ed8">Partner A Events</text>
+
+  <rect x="400" y="311" width="200" height="28" rx="6" fill="#f5f3ff" stroke="#ddd6fe"/>
+  <circle cx="416" cy="325" r="6" fill="#7c3aed"/>
+  <text x="428" y="329" font-size="11" fill="#6d28d9">Partner B Events</text>
+
+  <rect x="400" y="349" width="200" height="28" rx="6" fill="#fff7ed" stroke="#fed7aa"/>
+  <circle cx="416" cy="363" r="6" fill="#ea580c"/>
+  <text x="428" y="367" font-size="11" fill="#c2410c">Infosystem-Events</text>
+
+  <text x="500" y="404" text-anchor="middle" font-size="10" fill="#94a3b8">Nur freigegebene, aktive Events</text>
+
+  <!-- ============================================================ -->
+  <!-- Arrows from sources to pool -->
+  <!-- ============================================================ -->
+
+  <!-- GTM → Pool -->
+  <line x1="300" y1="155" x2="378" y2="230" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="6,3"/>
+
+  <!-- Partner A → Pool -->
+  <line x1="300" y1="255" x2="378" y2="280" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="6,3"/>
+
+  <!-- Partner B → Pool -->
+  <line x1="300" y1="355" x2="378" y2="320" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="6,3"/>
+
+  <!-- Infosystem → Pool -->
+  <line x1="300" y1="455" x2="378" y2="365" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="6,3"/>
+
+  <!-- ============================================================ -->
+  <!-- RIGHT SIDE: API Endpoints -->
+  <!-- ============================================================ -->
+
+  <!-- Section Label -->
+  <text x="825" y="95" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8" letter-spacing="1.5">API-ENDPUNKTE</text>
+
+  <!-- Events API (Read-Only, All Events) -->
+  <rect x="700" y="115" width="250" height="120" rx="10" fill="#fff" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="700" y="115" width="250" height="6" rx="3" fill="#16a34a"/>
+  <text x="825" y="143" text-anchor="middle" font-size="14" font-weight="700" fill="#15803d">Events API</text>
+  <text x="825" y="160" text-anchor="middle" font-size="11" fill="#64748b">GET /v1/events</text>
+  <text x="825" y="175" text-anchor="middle" font-size="11" fill="#64748b">GET /v1/events/{uuid}</text>
+  <text x="825" y="190" text-anchor="middle" font-size="11" fill="#64748b">GET /v1/countries</text>
+
+  <rect x="715" y="200" width="220" height="22" rx="4" fill="#f0fdf4"/>
+  <text x="825" y="215" text-anchor="middle" font-size="10" font-weight="600" fill="#16a34a">🔒 Kunden-Token · Read-Only</text>
+
+  <!-- Arrow Pool → Events API -->
+  <line x1="620" y1="250" x2="698" y2="180" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="645" y="200" font-size="10" fill="#16a34a" font-weight="600" transform="rotate(-25, 645, 200)">alle Events</text>
+
+  <!-- Custom Event API (Partner CRUD) -->
+  <rect x="700" y="265" width="250" height="150" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="700" y="265" width="250" height="6" rx="3" fill="#2563eb"/>
+  <text x="825" y="293" text-anchor="middle" font-size="14" font-weight="700" fill="#1d4ed8">Custom Event API</text>
+  <text x="825" y="312" text-anchor="middle" font-size="11" fill="#64748b">GET /v1/custom/events</text>
+  <text x="825" y="327" text-anchor="middle" font-size="11" fill="#64748b">POST /v1/custom/events</text>
+  <text x="825" y="342" text-anchor="middle" font-size="11" fill="#64748b">PUT /v1/custom/events/{uuid}</text>
+  <text x="825" y="357" text-anchor="middle" font-size="11" fill="#64748b">DELETE /v1/custom/events/{uuid}</text>
+
+  <rect x="715" y="368" width="220" height="22" rx="4" fill="#eff6ff"/>
+  <text x="825" y="383" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">🔒 API-Partner-Token · CRUD</text>
+
+  <rect x="715" y="395" width="220" height="14" rx="3" fill="#fef3c7"/>
+  <text x="825" y="405" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">⚠ Nur eigene Events sichtbar</text>
+
+  <!-- Arrow Pool → Custom API (bidirectional) -->
+  <line x1="620" y1="320" x2="698" y2="330" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text x="640" y="312" font-size="10" fill="#2563eb" font-weight="600">nur eigene</text>
+
+  <!-- ============================================================ -->
+  <!-- BOTTOM: Customers -->
+  <!-- ============================================================ -->
+
+  <!-- Section Label -->
+  <text x="500" y="480" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8" letter-spacing="1.5">KUNDEN (LESER)</text>
+
+  <!-- Customer 1 -->
+  <rect x="100" y="500" width="230" height="90" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="100" y="500" width="230" height="6" rx="3" fill="#16a34a"/>
+  <circle cx="130" cy="542" r="16" fill="#f0fdf4"/>
+  <text x="130" y="547" text-anchor="middle" font-size="16">👤</text>
+  <text x="155" y="535" font-size="13" font-weight="600" fill="#0f172a">Kunde: Reisebüro X</text>
+  <text x="155" y="552" font-size="11" fill="#64748b">Sieht alle Events aller Quellen</text>
+  <text x="155" y="569" font-size="10" fill="#16a34a" font-weight="500">?source=… zum Filtern</text>
+
+  <!-- Customer 2 -->
+  <rect x="385" y="500" width="230" height="90" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="385" y="500" width="230" height="6" rx="3" fill="#16a34a"/>
+  <circle cx="415" cy="542" r="16" fill="#f0fdf4"/>
+  <text x="415" y="547" text-anchor="middle" font-size="16">👤</text>
+  <text x="440" y="535" font-size="13" font-weight="600" fill="#0f172a">Kunde: Versicherer Y</text>
+  <text x="440" y="552" font-size="11" fill="#64748b">Sieht alle Events aller Quellen</text>
+  <text x="440" y="569" font-size="10" fill="#16a34a" font-weight="500">?source=… zum Filtern</text>
+
+  <!-- Customer 3 -->
+  <rect x="670" y="500" width="230" height="90" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="670" y="500" width="230" height="6" rx="3" fill="#16a34a"/>
+  <circle cx="700" cy="542" r="16" fill="#f0fdf4"/>
+  <text x="700" y="547" text-anchor="middle" font-size="16">👤</text>
+  <text x="725" y="535" font-size="13" font-weight="600" fill="#0f172a">Kunde: Konzern Z</text>
+  <text x="725" y="552" font-size="11" fill="#64748b">Sieht alle Events aller Quellen</text>
+  <text x="725" y="569" font-size="10" fill="#16a34a" font-weight="500">?source=… zum Filtern</text>
+
+  <!-- Arrows from Events API to Customers -->
+  <path d="M 825 237 Q 825 460, 215 498" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)" stroke-dasharray="5,3"/>
+  <path d="M 825 237 Q 825 460, 500 498" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)" stroke-dasharray="5,3"/>
+  <path d="M 825 237 Q 825 460, 785 498" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)" stroke-dasharray="5,3"/>
+
+  <!-- ============================================================ -->
+  <!-- BOTTOM: Key Insight Boxes -->
+  <!-- ============================================================ -->
+
+  <!-- Key Insight 1 -->
+  <rect x="50" y="620" width="280" height="56" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="190" y="644" text-anchor="middle" font-size="11" font-weight="600" fill="#15803d">✅ Events API: Kunden sehen ALLE</text>
+  <text x="190" y="662" text-anchor="middle" font-size="10" fill="#15803d">Events aller Anbieter (read-only)</text>
+
+  <!-- Key Insight 2 -->
+  <rect x="360" y="620" width="280" height="56" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="500" y="644" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8">🔒 Custom API: Partner sehen NUR</text>
+  <text x="500" y="662" text-anchor="middle" font-size="10" fill="#1d4ed8">ihre eigenen Events (CRUD)</text>
+
+  <!-- Key Insight 3 -->
+  <rect x="670" y="620" width="280" height="56" rx="8" fill="#fef3c7" stroke="#fde68a"/>
+  <text x="810" y="644" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">🔍 source-Filter: Kunden können</text>
+  <text x="810" y="662" text-anchor="middle" font-size="10" fill="#92400e">nach Anbieter filtern (?source=…)</text>
+
+  <!-- ============================================================ -->
+  <!-- Legend: Arrow between Partner A and Custom API -->
+  <!-- ============================================================ -->
+
+  <!-- Dashed line from Partner A back to Custom API to show "only own" -->
+  <path d="M 275 225 Q 340 130, 700 290" stroke="#2563eb" stroke-width="1.2" fill="none" stroke-dasharray="4,3" opacity="0.5"/>
+
+  <!-- Dashed line from Partner B back to Custom API to show "only own" -->
+  <path d="M 275 325 Q 400 440, 700 360" stroke="#7c3aed" stroke-width="1.2" fill="none" stroke-dasharray="4,3" opacity="0.5"/>
+</svg>
