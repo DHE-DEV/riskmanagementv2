@@ -29,12 +29,11 @@ paths:
       tags: [Events]
       summary: Events auflisten
       description: |
-        Gibt eine paginierte Liste aller aktuell aktiven Events zurück.
-        Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events
-        von API-Partnern. Es werden nur Events zurückgegeben, die freigegeben
-        (approved), aktiv und nicht archiviert sind, deren Startdatum in der
-        Vergangenheit liegt und deren Enddatum entweder null (andauernd) oder
-        in der Zukunft liegt.
+        Gibt eine paginierte Liste aller aktiven Events zurück (einschließlich
+        zukünftiger Events). Dies umfasst sowohl von Global Travel Monitor gepflegte
+        Events als auch Events von API-Partnern. Es werden nur Events zurückgegeben,
+        die freigegeben (approved), aktiv und nicht archiviert sind. Mit start_date
+        und end_date kann der Zeitraum eingegrenzt werden.
       parameters:
         - name: priority
           in: query
@@ -65,6 +64,18 @@ paths:
             type: string
             maxLength: 100
           description: "Filter nach Event-Herkunft – Name des Anbieters (z.B. manual, API-Client-Name)"
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Nur Events ab diesem Datum (z.B. 2026-03-01)"
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Nur Events bis zu diesem Datum (z.B. 2026-04-30)"
         - name: per_page
           in: query
           schema:

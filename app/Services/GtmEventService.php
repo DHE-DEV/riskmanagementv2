@@ -18,15 +18,10 @@ class GtmEventService
     {
         $cacheDuration = config('feed.cache_duration', 3600);
 
-        return Cache::remember('gtm_active_events', $cacheDuration, function () {
+        return Cache::remember('gtm_all_events', $cacheDuration, function () {
             return CustomEvent::active()
                 ->notArchived()
                 ->approved()
-                ->where('start_date', '<=', now())
-                ->where(function ($query) {
-                    $query->whereNull('end_date')
-                          ->orWhere('end_date', '>=', now());
-                })
                 ->with([
                     'country.continent', 'country.capital',
                     'countries.continent', 'countries.capital',
@@ -47,8 +42,24 @@ class GtmEventService
         ?string $eventTypeCode = null,
         ?int $regionId = null,
         ?string $source = null,
+        ?string $startDate = null,
+        ?string $endDate = null,
     ): Collection {
         $events = $this->getBaseEvents();
+
+        if ($startDate !== null) {
+            $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+            $events = $events->filter(fn (CustomEvent $event) =>
+                $event->start_date === null || $event->start_date >= $start
+            );
+        }
+
+        if ($endDate !== null) {
+            $end = \Carbon\Carbon::parse($endDate)->endOfDay();
+            $events = $events->filter(fn (CustomEvent $event) =>
+                $event->start_date !== null && $event->start_date <= $end
+            );
+        }
 
         if ($priority !== null) {
             $events = $events->where('priority', $priority);

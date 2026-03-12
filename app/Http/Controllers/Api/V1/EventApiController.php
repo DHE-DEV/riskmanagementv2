@@ -168,7 +168,7 @@ class EventApiController extends Controller
         $event->countries()->sync($countries->pluck('id'));
 
         // Invalidate cache
-        Cache::forget('gtm_active_events');
+        Cache::forget('gtm_all_events');
 
         $event->load(['eventTypes', 'countries']);
 
@@ -296,7 +296,7 @@ class EventApiController extends Controller
         }
 
         // Invalidate cache
-        Cache::forget('gtm_active_events');
+        Cache::forget('gtm_all_events');
 
         $event->load(['eventTypes', 'countries']);
 
@@ -335,7 +335,7 @@ class EventApiController extends Controller
         $event->delete();
 
         // Invalidate cache
-        Cache::forget('gtm_active_events');
+        Cache::forget('gtm_all_events');
 
         return response()->json([
             'success' => true,

@@ -26,6 +26,8 @@ class GtmApiController extends Controller
             'event_type' => 'nullable|string|max:50',
             'region' => 'nullable|integer',
             'source' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'per_page' => 'nullable|integer|min:1|max:100',
             'page' => 'nullable|integer|min:1',
         ]);
@@ -38,6 +40,8 @@ class GtmApiController extends Controller
             eventTypeCode: $request->input('event_type'),
             regionId: $request->integer('region') ?: null,
             source: $request->input('source'),
+            startDate: $request->input('start_date'),
+            endDate: $request->input('end_date'),
         );
 
         // Manual pagination on collection

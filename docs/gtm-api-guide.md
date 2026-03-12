@@ -38,9 +38,9 @@ Standardmäßig sind **60 Requests pro Minute** erlaubt. Bei Überschreitung erh
 
 ## Pagination
 
-Der Events-Endpoint liefert alle aktuell aktiven Events, paginiert über die Query-Parameter `page` und `per_page` (Standard: 25, Maximum: **100** pro Seite). Pagination-Metadaten sind im `meta`-Objekt jeder Antwort enthalten.
+Der Events-Endpoint liefert alle aktiven Events (einschließlich zukünftiger Events), paginiert über die Query-Parameter `page` und `per_page` (Standard: 25, Maximum: **100** pro Seite). Pagination-Metadaten sind im `meta`-Objekt jeder Antwort enthalten.
 
-Es werden nur Events zurückgegeben, die freigegeben (`approved`), aktiv und nicht archiviert sind, deren Startdatum in der Vergangenheit liegt und deren Enddatum entweder `null` (andauernd) oder in der Zukunft liegt.
+Es werden nur Events zurückgegeben, die freigegeben (`approved`), aktiv und nicht archiviert sind. Mit den Parametern `start_date` und `end_date` kann der Zeitraum eingegrenzt werden.
 
 ---
 
@@ -87,6 +87,8 @@ GET /v1/events
 | `event_type` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
 | `source` | string | Nein | Filter nach Event-Herkunft (z.B. `manual`, `passolution_infosystem` oder Name des API-Partners) |
+| `start_date` | date | Nein | Nur Events ab diesem Datum (z.B. `2026-03-01`) |
+| `end_date` | date | Nein | Nur Events bis zu diesem Datum (z.B. `2026-04-30`) |
 | `per_page` | integer | Nein | Einträge pro Seite (Standard: 25, Maximum: 100) |
 | `page` | integer | Nein | Seitennummer (Standard: 1) |
 
@@ -112,6 +114,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://api.global-travel-monitor.de/v1/events?source=manual"
+
+# Events in einem Zeitraum
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events?start_date=2026-03-01&end_date=2026-03-31"
 
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \

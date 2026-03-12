@@ -81,7 +81,7 @@ class CustomEventObserver
     private function clearFeedCaches(): void
     {
         // GTM API cache
-        Cache::forget('gtm_active_events');
+        Cache::forget('gtm_all_events');
 
         // Static feed keys
         Cache::forget('feed:all_events:rss');
