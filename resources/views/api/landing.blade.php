@@ -326,7 +326,7 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-types</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-categories</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/regions</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/continents</span></li>
                 </ul>
@@ -353,7 +353,7 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
                     <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
                     <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/event-types</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/event-categories</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/countries</span></li>
                 </ul>
                 <div class="downloads">
@@ -447,7 +447,7 @@
                     <tbody>
                         <tr><td><code>riskLevel</code></td><td>string</td><td>Nein</td><td>Filter nach Risikostufe: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
                         <tr><td><code>country</code></td><td>string</td><td>Nein</td><td>Filter nach Ländercode – ISO alpha-2 (z.B. <code>DE</code>) oder alpha-3 (z.B. <code>DEU</code>)</td></tr>
-                        <tr><td><code>event_type</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Typ-Code (z.B. <code>natural_disaster</code>)</td></tr>
+                        <tr><td><code>event_category</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Typ-Code (z.B. <code>natural_disaster</code>)</td></tr>
                         <tr><td><code>region</code></td><td>integer</td><td>Nein</td><td>Filter nach Region-ID (numerische ID)</td></tr>
                         <tr><td><code>source</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Herkunft (z.B. <code>manual</code>, <code>passolution_infosystem</code> oder Name des API-Partners)</td></tr>
                         <tr><td><code>start_date</code></td><td>date</td><td>Nein</td><td>Nur Events ab diesem Datum (z.B. <code>2026-03-01</code>)</td></tr>
@@ -473,7 +473,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Events eines bestimmten Typs
 curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/events?event_type=natural_disaster"
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?event_category=natural_disaster"
 
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
@@ -625,12 +625,12 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Event-Typen</h3>
-            <pre><code>GET /v1/event-types</code></pre>
-            <p>Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den <code>event_type</code>-Filter zu ermitteln.</p>
+            <pre><code>GET /v1/event-categories</code></pre>
+            <p>Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den <code>event_category</code>-Filter zu ermitteln.</p>
 
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/event-types"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/event-categories"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -881,10 +881,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <p>Bevor Sie Events erstellen, fragen Sie die gültigen Event-Typen und Ländercodes ab.</p>
 
             <h4>Event-Typen abrufen</h4>
-            <pre><code>GET /v1/custom/event-types</code></pre>
+            <pre><code>GET /v1/custom/event-categories</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  {{ request()->getSchemeAndHttpHost() }}/v1/custom/event-types</code></pre>
+  {{ request()->getSchemeAndHttpHost() }}/v1/custom/event-categories</code></pre>
             <p><strong>Response:</strong></p>
             <pre><code>{
   "success": true,
@@ -947,7 +947,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><td><code>riskLevel</code></td><td>string</td><td>Nein</td><td>Risikostufe: <code>info</code>, <code>low</code>, <code>medium</code> (Standard), <code>high</code></td></tr>
                         <tr><td><code>start_date</code></td><td>datetime</td><td>Ja</td><td>Startdatum (ISO 8601, z.B. <code>2026-02-11T08:00:00Z</code>)</td></tr>
                         <tr><td><code>end_date</code></td><td>datetime</td><td>Nein</td><td>Enddatum (muss gleich oder nach start_date liegen)</td></tr>
-                        <tr><td><code>event_type_codes</code></td><td>array</td><td>Ja</td><td>Event-Typ-Codes (mindestens 1, aus <code>/event-types</code>)</td></tr>
+                        <tr><td><code>event_category_codes</code></td><td>array</td><td>Ja</td><td>Event-Typ-Codes (mindestens 1, aus <code>/event-categories</code>)</td></tr>
                         <tr><td><code>country_codes</code></td><td>array</td><td>Ja</td><td>ISO-2-Ländercodes (mindestens 1, z.B. <code>["DE", "AT"]</code>)</td></tr>
                         <tr><td><code>latitude</code></td><td>number</td><td>Nein</td><td>Breitengrad (-90 bis 90)</td></tr>
                         <tr><td><code>longitude</code></td><td>number</td><td>Nein</td><td>Längengrad (-180 bis 180)</td></tr>
@@ -967,7 +967,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "riskLevel": "high",
     "start_date": "2026-02-11T08:00:00Z",
     "end_date": "2026-02-18T08:00:00Z",
-    "event_type_codes": ["flood"],
+    "event_category_codes": ["flood"],
     "country_codes": ["TH"],
     "latitude": 13.7563,
     "longitude": 100.5018,
@@ -1147,7 +1147,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "message": "The title field is required.",
   "errors": {
     "title": ["The title field is required."],
-    "event_type_codes": ["At least one event type code is required."]
+    "event_category_codes": ["At least one event type code is required."]
   }
 }</code></pre>
 

@@ -103,7 +103,7 @@ paths:
               riskLevel: high
               start_date: "2026-02-11T08:00:00Z"
               end_date: "2026-02-18T08:00:00Z"
-              event_type_codes: ["flood"]
+              event_category_codes: ["flood"]
               country_codes: ["TH"]
               latitude: 13.7563
               longitude: 100.5018
@@ -234,7 +234,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /event-types:
+  /event-categories:
     get:
       tags: [Referenzdaten]
       summary: Verfügbare Event-Typen
@@ -253,7 +253,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/EventType'
+                      $ref: '#/components/schemas/EventCategory'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -351,7 +351,7 @@ components:
         event_categories:
           type: array
           items:
-            $ref: '#/components/schemas/EventType'
+            $ref: '#/components/schemas/EventCategory'
         countries:
           type: array
           items:
@@ -368,7 +368,7 @@ components:
       required:
         - title
         - start_date
-        - event_type_codes
+        - event_category_codes
         - country_codes
       properties:
         title:
@@ -394,12 +394,12 @@ components:
           format: date-time
           nullable: true
           description: Enddatum (muss gleich oder nach start_date liegen)
-        event_type_codes:
+        event_category_codes:
           type: array
           minItems: 1
           items:
             type: string
-          description: "Event-Typ-Codes (aus GET /event-types)"
+          description: "Event-Typ-Codes (aus GET /event-categories)"
           example: ["flood"]
         country_codes:
           type: array
@@ -457,7 +457,7 @@ components:
           type: string
           format: date-time
           nullable: true
-        event_type_codes:
+        event_category_codes:
           type: array
           minItems: 1
           items:
@@ -492,7 +492,7 @@ components:
           maxLength: 255
           nullable: true
 
-    EventType:
+    EventCategory:
       type: object
       properties:
         code:
@@ -590,7 +590,7 @@ components:
               type: string
           example:
             title: ["The title field is required."]
-            event_type_codes: ["At least one event type code is required."]
+            event_category_codes: ["At least one event type code is required."]
 
   responses:
     Unauthenticated:

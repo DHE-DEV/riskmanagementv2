@@ -23,7 +23,7 @@ class GtmApiController extends Controller
         $request->validate([
             'riskLevel' => 'nullable|string|in:high,medium,low,info',
             'country' => 'nullable|string|max:3',
-            'event_type' => 'nullable|string|max:50',
+            'event_category' => 'nullable|string|max:50',
             'region' => 'nullable|integer',
             'source' => 'nullable|string|max:100',
             'start_date' => 'nullable|date',
@@ -37,7 +37,7 @@ class GtmApiController extends Controller
         $events = $this->eventService->getActiveEvents(
             priority: $request->input('riskLevel'),
             countryCode: $request->input('country'),
-            eventTypeCode: $request->input('event_type'),
+            eventTypeCode: $request->input('event_category'),
             regionId: $request->integer('region') ?: null,
             source: $request->input('source'),
             startDate: $request->input('start_date'),
@@ -90,7 +90,7 @@ class GtmApiController extends Controller
         ]);
     }
 
-    public function eventTypes(): JsonResponse
+    public function eventCategories(): JsonResponse
     {
         $eventTypes = EventType::where('is_active', true)
             ->orderBy('sort_order')

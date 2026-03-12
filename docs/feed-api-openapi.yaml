@@ -225,7 +225,7 @@ components:
         event_categories:
           type: array
           items:
-            $ref: '#/components/schemas/EventType'
+            $ref: '#/components/schemas/EventCategory'
 
     Priority:
       type: object
@@ -241,7 +241,7 @@ components:
           type: string
           example: High
 
-    EventType:
+    EventCategory:
       type: object
       properties:
         code:

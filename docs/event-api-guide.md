@@ -41,14 +41,14 @@ Bevor Sie Events erstellen, fragen Sie die gültigen Event-Typen und Ländercode
 ### Event-Typen abrufen
 
 ```
-GET /v1/custom/event-types
+GET /v1/custom/event-categories
 ```
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  https://api.global-travel-monitor.de/v1/custom/event-types
+  https://api.global-travel-monitor.de/v1/custom/event-categories
 ```
 
 **Response:**
@@ -129,7 +129,7 @@ POST /v1/custom/events
 | `riskLevel` | string | Nein | Risikostufe: `info`, `low`, `medium` (Standard), `high` |
 | `start_date` | datetime | Ja | Startdatum (ISO 8601, z.B. `2026-02-11T08:00:00Z`) |
 | `end_date` | datetime | Nein | Enddatum (muss gleich oder nach start_date liegen) |
-| `event_type_codes` | array | Ja | Event-Typ-Codes (mindestens 1, aus `/event-types`) |
+| `event_category_codes` | array | Ja | Event-Typ-Codes (mindestens 1, aus `/event-categories`) |
 | `country_codes` | array | Ja | ISO-2-Ländercodes (mindestens 1, z.B. `["DE", "AT"]`) |
 | `latitude` | number | Nein | Breitengrad (-90 bis 90) |
 | `longitude` | number | Nein | Längengrad (-180 bis 180) |
@@ -148,7 +148,7 @@ curl -X POST https://api.global-travel-monitor.de/v1/custom/events \
     "riskLevel": "high",
     "start_date": "2026-02-11T08:00:00Z",
     "end_date": "2026-02-18T08:00:00Z",
-    "event_type_codes": ["flood"],
+    "event_category_codes": ["flood"],
     "country_codes": ["TH"],
     "latitude": 13.7563,
     "longitude": 100.5018,
@@ -354,7 +354,7 @@ curl -X DELETE https://api.global-travel-monitor.de/v1/custom/events/a1b2c3d4-e5
   "message": "The title field is required.",
   "errors": {
     "title": ["The title field is required."],
-    "event_type_codes": ["At least one event type code is required."]
+    "event_category_codes": ["At least one event type code is required."]
   }
 }
 ```

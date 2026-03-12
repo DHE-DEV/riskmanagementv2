@@ -118,7 +118,7 @@ class EventApiController extends Controller
             : null;
 
         // Resolve event types
-        $eventTypes = EventType::whereIn('code', $validated['event_type_codes'])
+        $eventTypes = EventType::whereIn('code', $validated['event_category_codes'])
             ->where('is_active', true)
             ->get();
 
@@ -271,8 +271,8 @@ class EventApiController extends Controller
         }
 
         // Update event types if provided
-        if (isset($validated['event_type_codes'])) {
-            $eventTypes = EventType::whereIn('code', $validated['event_type_codes'])
+        if (isset($validated['event_category_codes'])) {
+            $eventTypes = EventType::whereIn('code', $validated['event_category_codes'])
                 ->where('is_active', true)
                 ->get();
 

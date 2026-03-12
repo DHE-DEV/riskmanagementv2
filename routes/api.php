@@ -240,7 +240,7 @@ Route::prefix('plugin')->group(function () {
 |--------------------------------------------------------------------------
 |
 | Read-only access to all active events from all providers.
-| Supports filtering by priority, country, event_type, region, and source.
+| Supports filtering by riskLevel, country, event_category, region, and source.
 | Protected by Sanctum token authentication with GTM API permissions.
 |
 */
@@ -253,7 +253,7 @@ Route::prefix('v1')->middleware([
     Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.events.index');
     Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.events.show');
     Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.countries');
-    Route::get('/event-types', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'eventTypes'])->name('v1.event-types');
+    Route::get('/event-categories', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'eventCategories'])->name('v1.event-categories');
     Route::get('/regions', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'regions'])->name('v1.regions');
     Route::get('/continents', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'continents'])->name('v1.continents');
 });
@@ -285,6 +285,6 @@ Route::prefix('v1/custom')->middleware([
     'auth:sanctum',
     ApiClientAuthenticate::class,
 ])->group(function () {
-    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('v1.custom.event-types');
+    Route::get('/event-categories', [EventReferenceController::class, 'eventCategories'])->name('v1.custom.event-categories');
     Route::get('/countries', [EventReferenceController::class, 'countries'])->name('v1.custom.countries');
 });

@@ -84,7 +84,7 @@ GET /v1/events
 |-----------|-----|---------|--------------|
 | `riskLevel` | string | Nein | Filter nach Risikostufe: `high`, `medium`, `low`, `info` |
 | `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
-| `event_type` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
+| `event_category` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
 | `source` | string | Nein | Filter nach Event-Herkunft (z.B. `manual`, `passolution_infosystem` oder Name des API-Partners) |
 | `start_date` | date | Nein | Nur Events ab diesem Datum (z.B. `2026-03-01`) |
@@ -109,7 +109,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Events eines bestimmten Typs
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?event_type=natural_disaster"
+  "https://api.global-travel-monitor.de/v1/events?event_category=natural_disaster"
 
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
@@ -291,16 +291,16 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Event-Typen
 
 ```
-GET /v1/event-types
+GET /v1/event-categories
 ```
 
-Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den `event_type`-Filter zu ermitteln.
+Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den `event_category`-Filter zu ermitteln.
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/event-types"
+  "https://api.global-travel-monitor.de/v1/event-categories"
 ```
 
 **Response (200 OK):**

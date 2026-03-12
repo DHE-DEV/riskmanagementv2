@@ -30,10 +30,10 @@ Route::get('/v1', function () {
             'Custom Events (Partner)' => '/v1/custom/events',
             'Folder Import API' => '/v1/folders',
             'Länder' => '/v1/countries',
-            'Event-Typen' => '/v1/event-types',
+            'Event-Kategorien' => '/v1/event-categories',
             'Regionen' => '/v1/regions',
             'Kontinente' => '/v1/continents',
-            'Referenzdaten (Partner)' => ['/v1/custom/event-types', '/v1/custom/countries'],
+            'Referenzdaten (Partner)' => ['/v1/custom/event-categories', '/v1/custom/countries'],
         ],
         'authentication' => 'Bearer Token via Authorization header',
     ]);
@@ -102,7 +102,7 @@ Route::prefix('v1')->middleware([
     Route::get('/events', [GtmApiController::class, 'index'])->name('sub.v1.events.index');
     Route::get('/events/{id}', [GtmApiController::class, 'show'])->name('sub.v1.events.show');
     Route::get('/countries', [GtmApiController::class, 'countries'])->name('sub.v1.countries');
-    Route::get('/event-types', [GtmApiController::class, 'eventTypes'])->name('sub.v1.event-types');
+    Route::get('/event-categories', [GtmApiController::class, 'eventCategories'])->name('sub.v1.event-categories');
     Route::get('/regions', [GtmApiController::class, 'regions'])->name('sub.v1.regions');
     Route::get('/continents', [GtmApiController::class, 'continents'])->name('sub.v1.continents');
 });
@@ -130,7 +130,7 @@ Route::prefix('v1/custom')->middleware([
     'auth:sanctum',
     ApiClientAuthenticate::class,
 ])->group(function () {
-    Route::get('/event-types', [EventReferenceController::class, 'eventTypes'])->name('sub.v1.custom.event-types');
+    Route::get('/event-categories', [EventReferenceController::class, 'eventCategories'])->name('sub.v1.custom.event-categories');
     Route::get('/countries', [EventReferenceController::class, 'countries'])->name('sub.v1.custom.countries');
 });
 

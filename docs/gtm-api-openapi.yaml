@@ -47,7 +47,7 @@ paths:
             type: string
             maxLength: 3
           description: "Filter nach Ländercode – ISO alpha-2 (z.B. DE) oder alpha-3 (z.B. DEU)"
-        - name: event_type
+        - name: event_category
           in: query
           schema:
             type: string
@@ -179,13 +179,13 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
-  /event-types:
+  /event-categories:
     get:
       tags: [Referenzdaten]
       summary: Verfügbare Event-Typen auflisten
       description: |
         Gibt eine Liste aller aktiven Event-Typen zurück.
-        Nützlich um die gültigen Werte für den event_type-Filter zu ermitteln.
+        Nützlich um die gültigen Werte für den event_category-Filter zu ermitteln.
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -200,7 +200,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/EventType'
+                      $ref: '#/components/schemas/EventCategory'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -317,7 +317,7 @@ components:
         event_categories:
           type: array
           items:
-            $ref: '#/components/schemas/EventType'
+            $ref: '#/components/schemas/EventCategory'
         countries:
           type: array
           items:
@@ -331,7 +331,7 @@ components:
           type: string
           format: date-time
 
-    EventType:
+    EventCategory:
       type: object
       properties:
         code:

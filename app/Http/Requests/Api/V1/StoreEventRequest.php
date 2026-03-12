@@ -19,7 +19,7 @@ class StoreEventRequest extends FormRequest
             'riskLevel' => ['nullable', 'string', 'in:info,low,medium,high'],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'event_type_codes' => ['required', 'array', 'min:1'],
+            'event_category_codes' => ['required', 'array', 'min:1'],
             'event_type_codes.*' => ['string', 'exists:event_types,code'],
             'country_codes' => ['required', 'array', 'min:1'],
             'country_codes.*' => ['string', 'size:2'],

@@ -241,7 +241,7 @@
                                         <td class="py-1.5 px-2">Filter nach Kontinent (EU, AS, AF, NA, SA, OC)</td>
                                     </tr>
                                     <tr class="border-b border-gray-50">
-                                        <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">event_type</code></td>
+                                        <td class="py-1.5 px-2"><code class="text-xs bg-gray-100 px-1 rounded">event_category</code></td>
                                         <td class="py-1.5 px-2">integer</td>
                                         <td class="py-1.5 px-2">Filter nach Eventtyp-ID</td>
                                     </tr>
@@ -504,11 +504,11 @@
                     Endpunkte für Stammdaten, die für die Event-Erstellung und -Filterung benötigt werden. Erfordern API-Client-Authentifizierung.
                 </p>
 
-                <!-- GET /event-types -->
+                <!-- GET /event-categories -->
                 <div class="border border-gray-200 rounded-xl mb-6 overflow-hidden">
                     <div class="bg-gray-50 px-4 py-3 flex items-center gap-3 border-b border-gray-200">
                         <span class="method-badge method-get">GET</span>
-                        <code class="text-sm font-semibold text-gray-800">/event-types</code>
+                        <code class="text-sm font-semibold text-gray-800">/event-categories</code>
                         <span class="text-sm text-gray-500 ml-auto">Verfügbare Eventtypen</span>
                     </div>
                     <div class="p-4">
@@ -520,7 +520,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/event-types" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/event-categories" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>

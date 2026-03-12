@@ -10,9 +10,9 @@ use Illuminate\Http\JsonResponse;
 class EventReferenceController extends Controller
 {
     /**
-     * List available event types.
+     * List available event categories.
      */
-    public function eventTypes(): JsonResponse
+    public function eventCategories(): JsonResponse
     {
         $eventTypes = EventType::where('is_active', true)
             ->orderBy('sort_order')
