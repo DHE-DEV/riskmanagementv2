@@ -12,7 +12,7 @@ class EventApiResource extends JsonResource
         return [
             'id' => $this->uuid,
             'title' => $this->title,
-            'description' => $this->description ? strip_tags($this->description) : null,
+            'description' => $this->popup_content ? strip_tags($this->popup_content) : null,
             'priority' => $this->priority,
             'start_date' => $this->start_date?->toIso8601String(),
             'end_date' => $this->end_date?->toIso8601String(),
