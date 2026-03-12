@@ -135,15 +135,15 @@
 							}
 						],
 						"url": {
-							"raw": "{{api_base_url}}/v1/countries",
+							"raw": "{{api_base_url}}/v1/events/countries",
 							"host": ["{{api_base_url}}"],
-							"path": ["v1", "countries"]
+							"path": ["v1", "events", "countries"]
 						},
 						"description": "Alle Länder mit mindestens einem aktiven Event, inkl. Anzahl. Sortiert nach Anzahl absteigend."
 					}
 				},
 				{
-					"name": "Event-Typen",
+					"name": "Kontinente (Basisdaten)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -153,15 +153,41 @@
 							}
 						],
 						"url": {
-							"raw": "{{api_base_url}}/v1/event-categories",
+							"raw": "{{api_base_url}}/v1/continents",
 							"host": ["{{api_base_url}}"],
-							"path": ["v1", "event-categories"]
+							"path": ["v1", "continents"]
 						},
-						"description": "Alle verfügbaren Event-Typen mit Code, Name, Farbe und Icon."
+						"description": "Alle Kontinente mit Code, Namen (de/en) und Koordinaten."
 					}
 				},
 				{
-					"name": "Regionen",
+					"name": "Länder (Basisdaten)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/countries",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "countries"],
+							"query": [
+								{
+									"key": "continent",
+									"value": "EU",
+									"description": "Filter nach Kontinent-Code (z.B. EU, AS, AF)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Alle Länder mit ISO-Codes, Kontinent, Koordinaten und EU/Schengen-Status. Optional nach Kontinent filterbar."
+					}
+				},
+				{
+					"name": "Regionen (Basisdaten)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -187,7 +213,7 @@
 					}
 				},
 				{
-					"name": "Kontinente",
+					"name": "Event-Kategorien (Basisdaten)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -197,11 +223,11 @@
 							}
 						],
 						"url": {
-							"raw": "{{api_base_url}}/v1/continents",
+							"raw": "{{api_base_url}}/v1/event-categories",
 							"host": ["{{api_base_url}}"],
-							"path": ["v1", "continents"]
+							"path": ["v1", "event-categories"]
 						},
-						"description": "Alle Kontinente mit Code, Namen (de/en) und Koordinaten."
+						"description": "Alle verfügbaren Event-Kategorien mit Code und Name."
 					}
 				}
 			]
@@ -333,7 +359,7 @@
 					}
 				},
 				{
-					"name": "Event-Typen (Referenzdaten)",
+					"name": "Event-Kategorien (Referenzdaten)",
 					"request": {
 						"method": "GET",
 						"header": [

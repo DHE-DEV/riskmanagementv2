@@ -27,12 +27,15 @@ Route::get('/v1', function () {
         'documentation' => '/',
         'endpoints' => [
             'Events (alle)' => '/v1/events',
+            'Länder mit aktiven Events' => '/v1/events/countries',
             'Custom Events (Partner)' => '/v1/custom/events',
             'Folder Import API' => '/v1/folders',
-            'Länder' => '/v1/countries',
-            'Event-Kategorien' => '/v1/event-categories',
-            'Regionen' => '/v1/regions',
-            'Kontinente' => '/v1/continents',
+            'Basisdaten' => [
+                'Kontinente' => '/v1/continents',
+                'Länder' => '/v1/countries',
+                'Regionen' => '/v1/regions',
+                'Event-Kategorien' => '/v1/event-categories',
+            ],
             'Referenzdaten (Partner)' => ['/v1/custom/event-categories', '/v1/custom/countries'],
         ],
         'authentication' => 'Bearer Token via Authorization header',
@@ -99,12 +102,16 @@ Route::prefix('v1')->middleware([
     GtmApiRequestLogger::class,
     'throttle:gtm-api',
 ])->group(function () {
+    // Events
     Route::get('/events', [GtmApiController::class, 'index'])->name('sub.v1.events.index');
+    Route::get('/events/countries', [GtmApiController::class, 'countriesWithEvents'])->name('sub.v1.events.countries');
     Route::get('/events/{id}', [GtmApiController::class, 'show'])->name('sub.v1.events.show');
-    Route::get('/countries', [GtmApiController::class, 'countries'])->name('sub.v1.countries');
-    Route::get('/event-categories', [GtmApiController::class, 'eventCategories'])->name('sub.v1.event-categories');
-    Route::get('/regions', [GtmApiController::class, 'regions'])->name('sub.v1.regions');
-    Route::get('/continents', [GtmApiController::class, 'continents'])->name('sub.v1.continents');
+
+    // Basisdaten
+    Route::get('/continents', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'continents'])->name('sub.v1.continents');
+    Route::get('/countries', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'countries'])->name('sub.v1.countries');
+    Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('sub.v1.regions');
+    Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('sub.v1.event-categories');
 });
 
 /*

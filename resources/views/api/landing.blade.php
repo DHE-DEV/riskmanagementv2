@@ -325,10 +325,11 @@
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-categories</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/regions</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/countries</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/continents</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/regions</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-categories</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="#events-api-guide" class="btn btn-primary">
@@ -582,12 +583,12 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Länder mit aktiven Events</h3>
-            <pre><code>GET /v1/countries</code></pre>
+            <pre><code>GET /v1/events/countries</code></pre>
             <p>Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, zusammen mit der Anzahl aktiver Events. Sortiert nach Anzahl (absteigend). Nicht paginiert.</p>
 
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/countries"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events/countries"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
@@ -624,32 +625,83 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <hr>
 
-            <h3>Event-Typen</h3>
-            <pre><code>GET /v1/event-categories</code></pre>
-            <p>Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den <code>event_category</code>-Filter zu ermitteln.</p>
+            <h3>Basisdaten</h3>
+            <p>Die folgenden Endpoints liefern Referenz- und Basisdaten für Kontinente, Länder, Regionen und Event-Kategorien.</p>
+
+            <h4>Kontinente</h4>
+            <pre><code>GET /v1/continents</code></pre>
+            <p>Gibt eine Liste aller Kontinente zurück.</p>
 
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/event-categories"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/continents"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
   "success": true,
   "data": [
     {
-      "code": "natural_disaster",
-      "name": "Natural Disaster"
+      "code": "EU",
+      "name_de": "Europa",
+      "name_en": "Europe",
+      "lat": 54.526,
+      "lng": 15.2551
     },
     {
-      "code": "political_unrest",
-      "name": "Political Unrest"
+      "code": "AS",
+      "name_de": "Asien",
+      "name_en": "Asia",
+      "lat": 34.0479,
+      "lng": 100.6197
     }
   ]
 }</code></pre>
 
-            <hr>
+            <h4>Länder</h4>
+            <pre><code>GET /v1/countries</code></pre>
+            <p>Gibt eine Liste aller Länder zurück. Optional nach Kontinent filterbar.</p>
 
-            <h3>Regionen</h3>
+            <p><strong>Query-Parameter:</strong></p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>continent</code></td><td>string</td><td>Nein</td><td>Filter nach Kontinent-Code (z.B. <code>EU</code>, <code>AS</code>, <code>AF</code>)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><strong>Beispiele:</strong></p>
+            <pre><code># Alle Länder
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/countries"
+
+# Nur europäische Länder
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/countries?continent=EU"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "iso_code": "DE",
+      "iso3_code": "DEU",
+      "name_de": "Deutschland",
+      "name_en": "Germany",
+      "continent": "Europe",
+      "continent_de": "Europa",
+      "lat": 51.1657,
+      "lng": 10.4515,
+      "is_eu_member": true,
+      "is_schengen_member": true
+    }
+  ]
+}</code></pre>
+
+            <h4>Regionen</h4>
             <pre><code>GET /v1/regions</code></pre>
             <p>Gibt eine Liste aller Regionen zurück. Nützlich um die gültigen Werte für den <code>region</code>-Filter zu ermitteln.</p>
 
@@ -691,33 +743,42 @@ curl -H "Authorization: Bearer {TOKEN}" \
   ]
 }</code></pre>
 
-            <hr>
+            <h4>Event-Kategorien</h4>
+            <pre><code>GET /v1/event-categories</code></pre>
+            <p>Gibt eine Liste aller verfügbaren Event-Kategorien zurück. Nützlich um die gültigen Werte für den <code>event_category</code>-Filter zu ermitteln.</p>
 
-            <h3>Kontinente</h3>
-            <pre><code>GET /v1/continents</code></pre>
-            <p>Gibt eine Liste aller Kontinente zurück.</p>
+            <p><strong>Verfügbare Kategorien:</strong></p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Code</th><th>Bezeichnung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>environment</code></td><td>Umweltereignisse</td></tr>
+                        <tr><td><code>traffic</code></td><td>Reiseverkehr</td></tr>
+                        <tr><td><code>security</code></td><td>Sicherheit</td></tr>
+                        <tr><td><code>entry</code></td><td>Einreisebestimmungen</td></tr>
+                        <tr><td><code>general</code></td><td>Allgemein</td></tr>
+                        <tr><td><code>health</code></td><td>Gesundheit</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/continents"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/event-categories"</code></pre>
 
             <p><strong>Response (200 OK):</strong></p>
             <pre><code>{
   "success": true,
   "data": [
     {
-      "code": "EU",
-      "name_de": "Europa",
-      "name_en": "Europe",
-      "lat": 54.526,
-      "lng": 15.2551
+      "code": "environment",
+      "name": "Umweltereignisse"
     },
     {
-      "code": "AS",
-      "name_de": "Asien",
-      "name_en": "Asia",
-      "lat": 34.0479,
-      "lng": 100.6197
+      "code": "security",
+      "name": "Sicherheit"
     }
   ]
 }</code></pre>

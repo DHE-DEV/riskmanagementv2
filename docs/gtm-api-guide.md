@@ -231,12 +231,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ---
 
-## Länder
-
-### Länder mit aktiven Events auflisten
+## Länder mit aktiven Events
 
 ```
-GET /v1/countries
+GET /v1/events/countries
 ```
 
 Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, zusammen mit der Anzahl aktiver Events. Sortiert nach Anzahl (absteigend). Nicht paginiert.
@@ -245,7 +243,7 @@ Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, z
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/countries"
+  "https://api.global-travel-monitor.de/v1/events/countries"
 ```
 
 **Response (200 OK):**
@@ -286,7 +284,146 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ---
 
-## Referenzdaten
+## Basisdaten
+
+### Kontinente
+
+```
+GET /v1/continents
+```
+
+Gibt eine Liste aller Kontinente zurück.
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/continents"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "code": "EU",
+      "name_de": "Europa",
+      "name_en": "Europe",
+      "lat": 54.526,
+      "lng": 15.2551
+    },
+    {
+      "code": "AS",
+      "name_de": "Asien",
+      "name_en": "Asia",
+      "lat": 34.0479,
+      "lng": 100.6197
+    }
+  ]
+}
+```
+
+---
+
+### Länder
+
+```
+GET /v1/countries
+```
+
+Gibt eine Liste aller Länder zurück. Optional nach Kontinent filterbar.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `continent` | string | Nein | Filter nach Kontinent-Code (z.B. `EU`, `AS`) |
+
+**Beispiele:**
+
+```bash
+# Alle Länder
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/countries"
+
+# Nur europäische Länder
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/countries?continent=EU"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "iso_code": "DE",
+      "iso3_code": "DEU",
+      "name_de": "Deutschland",
+      "name_en": "Germany",
+      "continent": "Europe",
+      "continent_de": "Europa",
+      "lat": 51.1657,
+      "lng": 10.4515,
+      "is_eu_member": true,
+      "is_schengen_member": true
+    }
+  ]
+}
+```
+
+---
+
+### Regionen
+
+```
+GET /v1/regions
+```
+
+Gibt eine Liste aller Regionen zurück. Optional nach Land filterbar. Nützlich um die gültigen Werte für den `region`-Filter zu ermitteln.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
+
+**Beispiele:**
+
+```bash
+# Alle Regionen
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/regions"
+
+# Nur Regionen in Deutschland
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/regions?country=DE"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 42,
+      "name_de": "Bayern",
+      "name_en": "Bavaria",
+      "code": "BY",
+      "country_iso_code": "DE",
+      "country_name_de": "Deutschland",
+      "lat": 48.7904,
+      "lng": 11.4979
+    }
+  ]
+}
+```
+
+---
 
 ### Event-Kategorien
 
@@ -329,95 +466,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
     {
       "code": "security",
       "name": "Sicherheit"
-    }
-  ]
-}
-```
-
----
-
-### Regionen
-
-```
-GET /v1/regions
-```
-
-Gibt eine Liste aller Regionen zurück. Nützlich um die gültigen Werte für den `region`-Filter zu ermitteln. Optional nach Land filterbar.
-
-**Query-Parameter:**
-
-| Parameter | Typ | Pflicht | Beschreibung |
-|-----------|-----|---------|--------------|
-| `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
-
-**Beispiele:**
-
-```bash
-# Alle Regionen
-curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/regions"
-
-# Nur Regionen in Deutschland
-curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/regions?country=DE"
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 42,
-      "name_de": "Bayern",
-      "name_en": "Bavaria",
-      "code": "BY",
-      "country_iso_code": "DE",
-      "country_name_de": "Deutschland",
-      "lat": 48.7904,
-      "lng": 11.4979
-    }
-  ]
-}
-```
-
----
-
-### Kontinente
-
-```
-GET /v1/continents
-```
-
-Gibt eine Liste aller Kontinente zurück.
-
-**Beispiel:**
-
-```bash
-curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/continents"
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "code": "EU",
-      "name_de": "Europa",
-      "name_en": "Europe",
-      "lat": 54.526,
-      "lng": 15.2551
-    },
-    {
-      "code": "AS",
-      "name_de": "Asien",
-      "name_en": "Asia",
-      "lat": 34.0479,
-      "lng": 100.6197
     }
   ]
 }

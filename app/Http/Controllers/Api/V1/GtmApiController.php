@@ -5,9 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\GtmCountryResource;
 use App\Http\Resources\Api\V1\GtmEventResource;
-use App\Models\Continent;
-use App\Models\EventType;
-use App\Models\Region;
 use App\Services\GtmEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,77 +77,13 @@ class GtmApiController extends Controller
         ]);
     }
 
-    public function countries(): JsonResponse
+    public function countriesWithEvents(): JsonResponse
     {
         $countries = $this->eventService->getCountriesWithEventCounts();
 
         return response()->json([
             'success' => true,
             'data' => GtmCountryResource::collection($countries),
-        ]);
-    }
-
-    public function eventCategories(): JsonResponse
-    {
-        $eventTypes = EventType::where('is_active', true)
-            ->orderBy('sort_order')
-            ->get()
-            ->map(fn ($type) => [
-                'code' => $type->code,
-                'name' => $type->name,
-            ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $eventTypes,
-        ]);
-    }
-
-    public function regions(Request $request): JsonResponse
-    {
-        $request->validate([
-            'country' => 'nullable|string|max:3',
-        ]);
-
-        $query = Region::with('country')->orderBy('country_id');
-
-        if ($request->filled('country')) {
-            $code = $request->input('country');
-            $query->whereHas('country', fn ($q) => $q->where('iso_code', $code)->orWhere('iso3_code', $code));
-        }
-
-        $regions = $query->get()->map(fn ($region) => [
-            'id' => $region->id,
-            'name_de' => $region->getName('de'),
-            'name_en' => $region->getName('en'),
-            'code' => $region->code,
-            'country_iso_code' => $region->country?->iso_code,
-            'country_name_de' => $region->country?->getName('de'),
-            'lat' => $region->lat ? (float) $region->lat : null,
-            'lng' => $region->lng ? (float) $region->lng : null,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $regions,
-        ]);
-    }
-
-    public function continents(): JsonResponse
-    {
-        $continents = Continent::ordered()
-            ->get()
-            ->map(fn ($continent) => [
-                'code' => $continent->code,
-                'name_de' => $continent->getName('de'),
-                'name_en' => $continent->getName('en'),
-                'lat' => $continent->lat ? (float) $continent->lat : null,
-                'lng' => $continent->lng ? (float) $continent->lng : null,
-            ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $continents,
         ]);
     }
 }

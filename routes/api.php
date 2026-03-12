@@ -250,12 +250,16 @@ Route::prefix('v1')->middleware([
     \App\Http\Middleware\GtmApiRequestLogger::class,
     'throttle:gtm-api',
 ])->group(function () {
+    // Events
     Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.events.index');
+    Route::get('/events/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countriesWithEvents'])->name('v1.events.countries');
     Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.events.show');
-    Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.countries');
-    Route::get('/event-categories', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'eventCategories'])->name('v1.event-categories');
-    Route::get('/regions', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'regions'])->name('v1.regions');
-    Route::get('/continents', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'continents'])->name('v1.continents');
+
+    // Basisdaten
+    Route::get('/continents', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'continents'])->name('v1.continents');
+    Route::get('/countries', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'countries'])->name('v1.countries');
+    Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('v1.regions');
+    Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('v1.event-categories');
 });
 
 /*

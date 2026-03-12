@@ -18,10 +18,8 @@ security:
 tags:
   - name: Events
     description: Aktive Events abfragen
-  - name: Länder
-    description: Länder mit aktiven Events
-  - name: Referenzdaten
-    description: Event-Typen, Regionen und Kontinente
+  - name: Basisdaten
+    description: Kontinente, Länder, Regionen und Event-Kategorien
 
 paths:
   /events:
@@ -149,9 +147,9 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /countries:
+  /events/countries:
     get:
-      tags: [Länder]
+      tags: [Events]
       summary: Länder mit aktiven Events auflisten
       description: |
         Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben,
@@ -179,13 +177,11 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
-  /event-categories:
+  /continents:
     get:
-      tags: [Referenzdaten]
-      summary: Verfügbare Event-Typen auflisten
-      description: |
-        Gibt eine Liste aller aktiven Event-Typen zurück.
-        Nützlich um die gültigen Werte für den event_category-Filter zu ermitteln.
+      tags: [Basisdaten]
+      summary: Kontinente auflisten
+      description: Gibt eine Liste aller Kontinente zurück.
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -200,7 +196,40 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/EventCategory'
+                      $ref: '#/components/schemas/ContinentItem'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /countries:
+    get:
+      tags: [Basisdaten]
+      summary: Alle Länder auflisten
+      description: |
+        Gibt eine Liste aller Länder zurück. Optional nach Kontinent filterbar.
+      parameters:
+        - name: continent
+          in: query
+          schema:
+            type: string
+            maxLength: 2
+          description: "Filter nach Kontinent-Code (z.B. EU, AS, AF)"
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Country'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -208,11 +237,10 @@ paths:
 
   /regions:
     get:
-      tags: [Referenzdaten]
+      tags: [Basisdaten]
       summary: Regionen auflisten
       description: |
         Gibt eine Liste aller Regionen zurück.
-        Nützlich um die gültigen Werte für den region-Filter zu ermitteln.
         Optional nach Land filterbar.
       parameters:
         - name: country
@@ -241,11 +269,13 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
-  /continents:
+  /event-categories:
     get:
-      tags: [Referenzdaten]
-      summary: Kontinente auflisten
-      description: Gibt eine Liste aller Kontinente zurück.
+      tags: [Basisdaten]
+      summary: Verfügbare Event-Typen auflisten
+      description: |
+        Gibt eine Liste aller aktiven Event-Typen zurück.
+        Nützlich um die gültigen Werte für den event_category-Filter zu ermitteln.
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -260,7 +290,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ContinentItem'
+                      $ref: '#/components/schemas/EventCategory'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -429,6 +459,46 @@ components:
           nullable: true
           description: Längengrad (Event-Standort im Land)
           example: 35.3214
+
+    Country:
+      type: object
+      properties:
+        iso_code:
+          type: string
+          example: DE
+        iso3_code:
+          type: string
+          example: DEU
+        name_de:
+          type: string
+          example: Deutschland
+        name_en:
+          type: string
+          example: Germany
+        continent:
+          type: string
+          nullable: true
+          example: Europe
+        continent_de:
+          type: string
+          nullable: true
+          example: Europa
+        lat:
+          type: number
+          format: float
+          nullable: true
+          example: 51.1657
+        lng:
+          type: number
+          format: float
+          nullable: true
+          example: 10.4515
+        is_eu_member:
+          type: boolean
+          example: true
+        is_schengen_member:
+          type: boolean
+          example: true
 
     CountryWithEvents:
       type: object

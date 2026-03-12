@@ -315,11 +315,11 @@
                     </div>
                 </div>
 
-                <!-- GET /gtm/countries -->
+                <!-- GET /events/countries -->
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
                     <div class="bg-gray-50 px-4 py-3 flex items-center gap-3 border-b border-gray-200">
                         <span class="method-badge method-get">GET</span>
-                        <code class="text-sm font-semibold text-gray-800">/gtm/countries</code>
+                        <code class="text-sm font-semibold text-gray-800">/events/countries</code>
                         <span class="text-sm text-gray-500 ml-auto">Länder mit Event-Anzahl</span>
                     </div>
                     <div class="p-4">
@@ -331,7 +331,7 @@
                             <button class="copy-btn" onclick="copyCode(this)">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/countries" \
+                            <code>curl -X GET "https://{{ config('app.api_domain', 'api.global-travel-monitor.de') }}/v1/events/countries" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Accept: application/json"</code>
                         </div>
