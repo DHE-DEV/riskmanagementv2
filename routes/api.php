@@ -253,6 +253,9 @@ Route::prefix('v1')->middleware([
     Route::get('/events', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'index'])->name('v1.events.index');
     Route::get('/events/{id}', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'show'])->name('v1.events.show');
     Route::get('/countries', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'countries'])->name('v1.countries');
+    Route::get('/event-types', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'eventTypes'])->name('v1.event-types');
+    Route::get('/regions', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'regions'])->name('v1.regions');
+    Route::get('/continents', [\App\Http\Controllers\Api\V1\GtmApiController::class, 'continents'])->name('v1.continents');
 });
 
 /*

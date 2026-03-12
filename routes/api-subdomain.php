@@ -30,6 +30,9 @@ Route::get('/v1', function () {
             'Custom Events (Partner)' => '/v1/custom/events',
             'Folder Import API' => '/v1/folders',
             'Länder' => '/v1/countries',
+            'Event-Typen' => '/v1/event-types',
+            'Regionen' => '/v1/regions',
+            'Kontinente' => '/v1/continents',
             'Referenzdaten (Partner)' => ['/v1/custom/event-types', '/v1/custom/countries'],
         ],
         'authentication' => 'Bearer Token via Authorization header',
@@ -99,6 +102,9 @@ Route::prefix('v1')->middleware([
     Route::get('/events', [GtmApiController::class, 'index'])->name('sub.v1.events.index');
     Route::get('/events/{id}', [GtmApiController::class, 'show'])->name('sub.v1.events.show');
     Route::get('/countries', [GtmApiController::class, 'countries'])->name('sub.v1.countries');
+    Route::get('/event-types', [GtmApiController::class, 'eventTypes'])->name('sub.v1.event-types');
+    Route::get('/regions', [GtmApiController::class, 'regions'])->name('sub.v1.regions');
+    Route::get('/continents', [GtmApiController::class, 'continents'])->name('sub.v1.continents');
 });
 
 /*

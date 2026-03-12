@@ -20,6 +20,8 @@ tags:
     description: Aktive Events abfragen
   - name: Länder
     description: Länder mit aktiven Events
+  - name: Referenzdaten
+    description: Event-Typen, Regionen und Kontinente
 
 paths:
   /events:
@@ -166,6 +168,93 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  /event-types:
+    get:
+      tags: [Referenzdaten]
+      summary: Verfügbare Event-Typen auflisten
+      description: |
+        Gibt eine Liste aller aktiven Event-Typen zurück.
+        Nützlich um die gültigen Werte für den event_type-Filter zu ermitteln.
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventType'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /regions:
+    get:
+      tags: [Referenzdaten]
+      summary: Regionen auflisten
+      description: |
+        Gibt eine Liste aller Regionen zurück.
+        Nützlich um die gültigen Werte für den region-Filter zu ermitteln.
+        Optional nach Land filterbar.
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+            maxLength: 3
+          description: "Filter nach Ländercode – ISO alpha-2 (z.B. DE) oder alpha-3 (z.B. DEU)"
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Region'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /continents:
+    get:
+      tags: [Referenzdaten]
+      summary: Kontinente auflisten
+      description: Gibt eine Liste aller Kontinente zurück.
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContinentItem'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -246,6 +335,63 @@ components:
         icon:
           type: string
           example: earthquake
+
+    Region:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        name_de:
+          type: string
+          example: Bayern
+        name_en:
+          type: string
+          example: Bavaria
+        code:
+          type: string
+          example: BY
+        country_iso_code:
+          type: string
+          nullable: true
+          example: DE
+        country_name_de:
+          type: string
+          nullable: true
+          example: Deutschland
+        lat:
+          type: number
+          format: float
+          nullable: true
+          example: 48.7904
+        lng:
+          type: number
+          format: float
+          nullable: true
+          example: 11.4979
+
+    ContinentItem:
+      type: object
+      properties:
+        code:
+          type: string
+          example: EU
+        name_de:
+          type: string
+          example: Europa
+        name_en:
+          type: string
+          example: Europe
+        lat:
+          type: number
+          format: float
+          nullable: true
+          example: 54.526
+        lng:
+          type: number
+          format: float
+          nullable: true
+          example: 15.2551
 
     EventCountry:
       type: object

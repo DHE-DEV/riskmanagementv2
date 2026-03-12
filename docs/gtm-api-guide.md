@@ -284,6 +284,136 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ---
 
+## Referenzdaten
+
+### Event-Typen
+
+```
+GET /v1/event-types
+```
+
+Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den `event_type`-Filter zu ermitteln.
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/event-types"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "code": "natural_disaster",
+      "name": "Natural Disaster",
+      "color": "#e74c3c",
+      "icon": "earthquake"
+    },
+    {
+      "code": "political_unrest",
+      "name": "Political Unrest",
+      "color": "#e67e22",
+      "icon": "fist-raised"
+    }
+  ]
+}
+```
+
+---
+
+### Regionen
+
+```
+GET /v1/regions
+```
+
+Gibt eine Liste aller Regionen zurück. Nützlich um die gültigen Werte für den `region`-Filter zu ermitteln. Optional nach Land filterbar.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
+
+**Beispiele:**
+
+```bash
+# Alle Regionen
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/regions"
+
+# Nur Regionen in Deutschland
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/regions?country=DE"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 42,
+      "name_de": "Bayern",
+      "name_en": "Bavaria",
+      "code": "BY",
+      "country_iso_code": "DE",
+      "country_name_de": "Deutschland",
+      "lat": 48.7904,
+      "lng": 11.4979
+    }
+  ]
+}
+```
+
+---
+
+### Kontinente
+
+```
+GET /v1/continents
+```
+
+Gibt eine Liste aller Kontinente zurück.
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/continents"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "code": "EU",
+      "name_de": "Europa",
+      "name_en": "Europe",
+      "lat": 54.526,
+      "lng": 15.2551
+    },
+    {
+      "code": "AS",
+      "name_de": "Asien",
+      "name_en": "Asia",
+      "lat": 34.0479,
+      "lng": 100.6197
+    }
+  ]
+}
+```
+
+---
+
 ## Datenmodelle
 
 ### Event

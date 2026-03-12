@@ -326,6 +326,9 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-types</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/regions</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/continents</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="#events-api-guide" class="btn btn-primary">
@@ -613,6 +616,110 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "is_eu_member": true,
       "is_schengen_member": true,
       "active_events_count": 3
+    }
+  ]
+}</code></pre>
+
+            <hr>
+
+            <h3>Event-Typen</h3>
+            <pre><code>GET /v1/event-types</code></pre>
+            <p>Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den <code>event_type</code>-Filter zu ermitteln.</p>
+
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/event-types"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "code": "natural_disaster",
+      "name": "Natural Disaster",
+      "color": "#e74c3c",
+      "icon": "earthquake"
+    },
+    {
+      "code": "political_unrest",
+      "name": "Political Unrest",
+      "color": "#e67e22",
+      "icon": "fist-raised"
+    }
+  ]
+}</code></pre>
+
+            <hr>
+
+            <h3>Regionen</h3>
+            <pre><code>GET /v1/regions</code></pre>
+            <p>Gibt eine Liste aller Regionen zurück. Nützlich um die gültigen Werte für den <code>region</code>-Filter zu ermitteln.</p>
+
+            <p><strong>Query-Parameter:</strong></p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>country</code></td><td>string</td><td>Nein</td><td>Filter nach Ländercode – ISO alpha-2 (z.B. <code>DE</code>) oder alpha-3 (z.B. <code>DEU</code>)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><strong>Beispiele:</strong></p>
+            <pre><code># Alle Regionen
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/regions"
+
+# Nur Regionen in Deutschland
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/regions?country=DE"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "id": 42,
+      "name_de": "Bayern",
+      "name_en": "Bavaria",
+      "code": "BY",
+      "country_iso_code": "DE",
+      "country_name_de": "Deutschland",
+      "lat": 48.7904,
+      "lng": 11.4979
+    }
+  ]
+}</code></pre>
+
+            <hr>
+
+            <h3>Kontinente</h3>
+            <pre><code>GET /v1/continents</code></pre>
+            <p>Gibt eine Liste aller Kontinente zurück.</p>
+
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/continents"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "code": "EU",
+      "name_de": "Europa",
+      "name_en": "Europe",
+      "lat": 54.526,
+      "lng": 15.2551
+    },
+    {
+      "code": "AS",
+      "name_de": "Asien",
+      "name_en": "Asia",
+      "lat": 34.0479,
+      "lng": 100.6197
     }
   ]
 }</code></pre>

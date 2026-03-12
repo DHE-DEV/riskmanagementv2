@@ -135,6 +135,68 @@
 						},
 						"description": "Alle Länder mit mindestens einem aktiven Event, inkl. Anzahl. Sortiert nach Anzahl absteigend."
 					}
+				},
+				{
+					"name": "Event-Typen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/event-types",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "event-types"]
+						},
+						"description": "Alle verfügbaren Event-Typen mit Code, Name, Farbe und Icon."
+					}
+				},
+				{
+					"name": "Regionen",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/regions",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "regions"],
+							"query": [
+								{
+									"key": "country",
+									"value": "DE",
+									"description": "ISO alpha-2 oder alpha-3 Ländercode",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Alle Regionen, optional nach Land filterbar."
+					}
+				},
+				{
+					"name": "Kontinente",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/v1/continents",
+							"host": ["{{api_base_url}}"],
+							"path": ["v1", "continents"]
+						},
+						"description": "Alle Kontinente mit Code, Namen (de/en) und Koordinaten."
+					}
 				}
 			]
 		},
