@@ -328,7 +328,11 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
                 </ul>
                 <div class="downloads">
-                    <a href="/docs/gtm-api-openapi.yaml" class="btn btn-primary">
+                    <a href="#events-api-guide" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        Anleitung
+                    </a>
+                    <a href="/docs/gtm-api-openapi.yaml" class="btn btn-outline">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                         OpenAPI Spec
                     </a>
@@ -392,6 +396,351 @@
                     </a>
                 </div>
             </div>
+        </div>
+
+        {{-- ========================================== --}}
+        {{-- Events API (Read-Only) Guide --}}
+        {{-- ========================================== --}}
+        <div class="doc-section" id="events-api-guide">
+            <h2>Events API – Anleitung (Read-Only)</h2>
+
+            <h3>Übersicht</h3>
+            <p>Die Events API bietet <strong>read-only</strong> Zugriff auf alle aktuell aktiven Sicherheits- und Reiserisiko-Events. Dies umfasst sowohl von Global Travel Monitor gepflegte Events als auch Events, die von API-Partnern eingestellt wurden. Es werden nur freigegebene, aktive und nicht archivierte Events angezeigt.</p>
+
+            <hr>
+
+            <h3>Authentifizierung</h3>
+            <p>Alle API-Aufrufe erfordern einen <strong>Bearer-Token</strong> im HTTP-Header:</p>
+            <pre><code>Authorization: Bearer {API_TOKEN}</code></pre>
+            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.</p>
+
+            <hr>
+
+            <h3>Base-URL</h3>
+            <pre><code>{{ request()->getSchemeAndHttpHost() }}/v1</code></pre>
+
+            <hr>
+
+            <h3>Rate Limit</h3>
+            <p>Standardmäßig sind <strong>60 Requests pro Minute</strong> erlaubt. Bei Überschreitung erhalten Sie einen <code>429 Too Many Requests</code> Response. Prüfen Sie den <code>Retry-After</code>-Header für die Wartezeit in Sekunden.</p>
+
+            <hr>
+
+            <h3>Pagination</h3>
+            <p>Der Events-Endpoint liefert alle aktuell aktiven Events, paginiert über die Query-Parameter <code>page</code> und <code>per_page</code> (Standard: 25, Maximum: <strong>100</strong> pro Seite). Pagination-Metadaten sind im <code>meta</code>-Objekt jeder Antwort enthalten.</p>
+
+            <hr>
+
+            <h3>Events auflisten</h3>
+            <pre><code>GET /v1/events</code></pre>
+            <p>Gibt eine paginierte Liste aller aktuell aktiven Events zurück.</p>
+
+            <p><strong>Query-Parameter:</strong></p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>priority</code></td><td>string</td><td>Nein</td><td>Filter nach Priorität: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>country</code></td><td>string</td><td>Nein</td><td>Filter nach Ländercode – ISO alpha-2 (z.B. <code>DE</code>) oder alpha-3 (z.B. <code>DEU</code>)</td></tr>
+                        <tr><td><code>event_type</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Typ-Code (z.B. <code>natural_disaster</code>)</td></tr>
+                        <tr><td><code>region</code></td><td>integer</td><td>Nein</td><td>Filter nach Region-ID (numerische ID)</td></tr>
+                        <tr><td><code>source</code></td><td>string</td><td>Nein</td><td>Filter nach Event-Herkunft (z.B. <code>manual</code>, <code>passolution_infosystem</code> oder Name des API-Partners)</td></tr>
+                        <tr><td><code>per_page</code></td><td>integer</td><td>Nein</td><td>Einträge pro Seite (Standard: 25, Maximum: 100)</td></tr>
+                        <tr><td><code>page</code></td><td>integer</td><td>Nein</td><td>Seitennummer (Standard: 1)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><strong>Beispiele:</strong></p>
+            <pre><code># Alle aktiven Events (paginiert)
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?per_page=25&amp;page=1"
+
+# Nur Events mit hoher Priorität
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?priority=high"
+
+# Events für ein bestimmtes Land
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?country=TR"
+
+# Events eines bestimmten Typs
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?event_type=natural_disaster"
+
+# Nur manuell erstellte Events
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?source=manual"
+
+# Filter kombinieren
+curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events?priority=high&amp;country=TR&amp;source=manual&amp;per_page=10"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "title": "Earthquake in Turkey",
+      "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
+      "priority": "high",
+      "start_date": "2025-03-15T08:30:00+00:00",
+      "end_date": null,
+      "latitude": 37.7749,
+      "longitude": 35.3214,
+      "event_types": [
+        {
+          "code": "natural_disaster",
+          "name": "Natural Disaster",
+          "color": "#e74c3c",
+          "icon": "earthquake"
+        }
+      ],
+      "countries": [
+        {
+          "iso_code": "TR",
+          "iso3_code": "TUR",
+          "name_de": "Tuerkei",
+          "name_en": "Turkey",
+          "continent": "Asia",
+          "latitude": 37.7749,
+          "longitude": 35.3214
+        }
+      ],
+      "source": {
+        "type": "api_client",
+        "name": "Partner XY GmbH"
+      },
+      "created_at": "2025-03-15T09:00:00+00:00",
+      "updated_at": "2025-03-15T10:15:00+00:00"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 25,
+    "total": 142,
+    "last_page": 6
+  }
+}</code></pre>
+
+            <hr>
+
+            <h3>Einzelnes Event anzeigen</h3>
+            <pre><code>GET /v1/events/{uuid}</code></pre>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events/550e8400-e29b-41d4-a716-446655440000"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "Earthquake in Turkey",
+    "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
+    "priority": "high",
+    "start_date": "2025-03-15T08:30:00+00:00",
+    "end_date": null,
+    "latitude": 37.7749,
+    "longitude": 35.3214,
+    "event_types": [
+      {
+        "code": "natural_disaster",
+        "name": "Natural Disaster",
+        "color": "#e74c3c",
+        "icon": "earthquake"
+      }
+    ],
+    "countries": [
+      {
+        "iso_code": "TR",
+        "iso3_code": "TUR",
+        "name_de": "Tuerkei",
+        "name_en": "Turkey",
+        "continent": "Asia",
+        "latitude": 37.7749,
+        "longitude": 35.3214
+      }
+    ],
+    "source": {
+      "type": "api_client",
+      "name": "Partner XY GmbH"
+    },
+    "created_at": "2025-03-15T09:00:00+00:00",
+    "updated_at": "2025-03-15T10:15:00+00:00"
+  }
+}</code></pre>
+
+            <hr>
+
+            <h3>Länder mit aktiven Events</h3>
+            <pre><code>GET /v1/countries</code></pre>
+            <p>Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, zusammen mit der Anzahl aktiver Events. Sortiert nach Anzahl (absteigend). Nicht paginiert.</p>
+
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/countries"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "iso_code": "TR",
+      "iso3_code": "TUR",
+      "name_de": "Tuerkei",
+      "name_en": "Turkey",
+      "continent": "Asia",
+      "continent_de": "Asien",
+      "lat": 38.9637,
+      "lng": 35.2433,
+      "is_eu_member": false,
+      "is_schengen_member": false,
+      "active_events_count": 7
+    },
+    {
+      "iso_code": "DE",
+      "iso3_code": "DEU",
+      "name_de": "Deutschland",
+      "name_en": "Germany",
+      "continent": "Europe",
+      "continent_de": "Europa",
+      "lat": 51.1657,
+      "lng": 10.4515,
+      "is_eu_member": true,
+      "is_schengen_member": true,
+      "active_events_count": 3
+    }
+  ]
+}</code></pre>
+
+            <hr>
+
+            <h3>Herkunft der Events (Source)</h3>
+            <p>Jedes Event enthält ein <code>source</code>-Objekt, das die Herkunft anzeigt:</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th><code>source.type</code></th><th>Bedeutung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>manual</code></td><td>Manuell von Global Travel Monitor erstellt</td></tr>
+                        <tr><td><code>api_client</code></td><td>Von einem API-Partner über die Event API eingestellt</td></tr>
+                        <tr><td><code>passolution_infosystem</code></td><td>Automatisch aus dem Passolution Infosystem importiert</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>Bei Events vom Typ <code>api_client</code> enthält <code>source.name</code> den Namen des Partners.</p>
+
+            <hr>
+
+            <h3>Datenmodelle</h3>
+
+            <h4>Event</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>id</code></td><td>string (UUID)</td><td>Eindeutige ID des Events</td></tr>
+                        <tr><td><code>title</code></td><td>string</td><td>Kurzer Titel des Events</td></tr>
+                        <tr><td><code>description</code></td><td>string / null</td><td>Detaillierte Beschreibung</td></tr>
+                        <tr><td><code>priority</code></td><td>string</td><td>Priorität: <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+                        <tr><td><code>start_date</code></td><td>datetime / null</td><td>Startdatum (ISO 8601)</td></tr>
+                        <tr><td><code>end_date</code></td><td>datetime / null</td><td>Enddatum (null = andauernd)</td></tr>
+                        <tr><td><code>latitude</code></td><td>number / null</td><td>Breitengrad</td></tr>
+                        <tr><td><code>longitude</code></td><td>number / null</td><td>Längengrad</td></tr>
+                        <tr><td><code>event_types</code></td><td>array</td><td>Liste der zugewiesenen Event-Typen</td></tr>
+                        <tr><td><code>countries</code></td><td>array</td><td>Liste betroffener Länder</td></tr>
+                        <tr><td><code>source</code></td><td>object</td><td>Herkunft des Events</td></tr>
+                        <tr><td><code>created_at</code></td><td>datetime</td><td>Erstellungszeitpunkt</td></tr>
+                        <tr><td><code>updated_at</code></td><td>datetime</td><td>Letzter Änderungszeitpunkt</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Event-Typ</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>code</code></td><td>string</td><td>Maschinenlesbarer Code (z.B. <code>natural_disaster</code>)</td></tr>
+                        <tr><td><code>name</code></td><td>string</td><td>Anzeigename</td></tr>
+                        <tr><td><code>color</code></td><td>string</td><td>Hex-Farbcode für UI</td></tr>
+                        <tr><td><code>icon</code></td><td>string</td><td>Icon-Bezeichnung</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Land (Event-Kontext)</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>iso_code</code></td><td>string</td><td>ISO 3166-1 alpha-2 Code (z.B. <code>DE</code>)</td></tr>
+                        <tr><td><code>iso3_code</code></td><td>string</td><td>ISO 3166-1 alpha-3 Code (z.B. <code>DEU</code>)</td></tr>
+                        <tr><td><code>name_de</code></td><td>string</td><td>Ländername (deutsch)</td></tr>
+                        <tr><td><code>name_en</code></td><td>string</td><td>Ländername (englisch)</td></tr>
+                        <tr><td><code>continent</code></td><td>string</td><td>Kontinent</td></tr>
+                        <tr><td><code>latitude</code></td><td>number / null</td><td>Breitengrad (Event-Standort im Land)</td></tr>
+                        <tr><td><code>longitude</code></td><td>number / null</td><td>Längengrad (Event-Standort im Land)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Land (Countries-Endpoint)</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>iso_code</code></td><td>string</td><td>ISO 3166-1 alpha-2 Code</td></tr>
+                        <tr><td><code>iso3_code</code></td><td>string</td><td>ISO 3166-1 alpha-3 Code</td></tr>
+                        <tr><td><code>name_de</code></td><td>string</td><td>Ländername (deutsch)</td></tr>
+                        <tr><td><code>name_en</code></td><td>string</td><td>Ländername (englisch)</td></tr>
+                        <tr><td><code>continent</code></td><td>string / null</td><td>Kontinent (englisch)</td></tr>
+                        <tr><td><code>continent_de</code></td><td>string / null</td><td>Kontinent (deutsch)</td></tr>
+                        <tr><td><code>lat</code></td><td>number / null</td><td>Breitengrad (Zentroid)</td></tr>
+                        <tr><td><code>lng</code></td><td>number / null</td><td>Längengrad (Zentroid)</td></tr>
+                        <tr><td><code>is_eu_member</code></td><td>boolean</td><td>EU-Mitglied</td></tr>
+                        <tr><td><code>is_schengen_member</code></td><td>boolean</td><td>Schengen-Mitglied</td></tr>
+                        <tr><td><code>active_events_count</code></td><td>integer</td><td>Anzahl aktiver Events</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <hr>
+
+            <h3>Fehlercodes</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>HTTP-Code</th><th>Bedeutung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>200</code></td><td>Erfolgreich</td></tr>
+                        <tr><td><code>401</code></td><td>Nicht authentifiziert (Token fehlt oder ungültig)</td></tr>
+                        <tr><td><code>403</code></td><td>Zugriff verweigert</td></tr>
+                        <tr><td><code>404</code></td><td>Ressource nicht gefunden</td></tr>
+                        <tr><td><code>422</code></td><td>Validierungsfehler (ungültige Filter-Parameter)</td></tr>
+                        <tr><td><code>429</code></td><td>Rate Limit überschritten</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <hr>
+
+            <h3>Support</h3>
+            <p>Bei Fragen zur Events API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.</p>
         </div>
 
         {{-- ========================================== --}}
