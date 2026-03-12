@@ -142,9 +142,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "event_types": [
         {
           "code": "natural_disaster",
-          "name": "Natural Disaster",
-          "color": "#e74c3c",
-          "icon": "earthquake"
+          "name": "Natural Disaster"
         }
       ],
       "countries": [
@@ -207,9 +205,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "event_types": [
       {
         "code": "natural_disaster",
-        "name": "Natural Disaster",
-        "color": "#e74c3c",
-        "icon": "earthquake"
+        "name": "Natural Disaster"
       }
     ],
     "countries": [
@@ -315,15 +311,11 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "data": [
     {
       "code": "natural_disaster",
-      "name": "Natural Disaster",
-      "color": "#e74c3c",
-      "icon": "earthquake"
+      "name": "Natural Disaster"
     },
     {
       "code": "political_unrest",
-      "name": "Political Unrest",
-      "color": "#e67e22",
-      "icon": "fist-raised"
+      "name": "Political Unrest"
     }
   ]
 }
@@ -448,8 +440,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
 |------|-----|--------------|
 | `code` | string | Maschinenlesbarer Code (z.B. `natural_disaster`) |
 | `name` | string | Anzeigename |
-| `color` | string | Hex-Farbcode für UI |
-| `icon` | string | Icon-Bezeichnung |
 
 ### Land (Event-Kontext)
 

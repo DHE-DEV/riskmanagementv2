@@ -27,8 +27,6 @@ class GtmEventResource extends JsonResource
                 $this->eventTypes->map(fn($t) => [
                     'code' => $t->code,
                     'name' => $t->name,
-                    'color' => $t->color,
-                    'icon' => $t->icon,
                 ])
             ),
             'countries' => $this->whenLoaded('countries', fn() =>

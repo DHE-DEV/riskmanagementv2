@@ -340,12 +340,6 @@ components:
         name:
           type: string
           example: Natural Disaster
-        color:
-          type: string
-          example: "#e74c3c"
-        icon:
-          type: string
-          example: earthquake
 
     Region:
       type: object

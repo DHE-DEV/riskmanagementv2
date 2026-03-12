@@ -98,8 +98,6 @@ class GtmApiController extends Controller
             ->map(fn ($type) => [
                 'code' => $type->code,
                 'name' => $type->name,
-                'color' => $type->color,
-                'icon' => $type->icon,
             ]);
 
         return response()->json([

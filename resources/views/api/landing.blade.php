@@ -503,9 +503,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "event_types": [
         {
           "code": "natural_disaster",
-          "name": "Natural Disaster",
-          "color": "#e74c3c",
-          "icon": "earthquake"
+          "name": "Natural Disaster"
         }
       ],
       "countries": [
@@ -558,9 +556,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "event_types": [
       {
         "code": "natural_disaster",
-        "name": "Natural Disaster",
-        "color": "#e74c3c",
-        "icon": "earthquake"
+        "name": "Natural Disaster"
       }
     ],
     "countries": [
@@ -642,15 +638,11 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "data": [
     {
       "code": "natural_disaster",
-      "name": "Natural Disaster",
-      "color": "#e74c3c",
-      "icon": "earthquake"
+      "name": "Natural Disaster"
     },
     {
       "code": "political_unrest",
-      "name": "Political Unrest",
-      "color": "#e67e22",
-      "icon": "fist-raised"
+      "name": "Political Unrest"
     }
   ]
 }</code></pre>
@@ -785,8 +777,6 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     <tbody>
                         <tr><td><code>code</code></td><td>string</td><td>Maschinenlesbarer Code (z.B. <code>natural_disaster</code>)</td></tr>
                         <tr><td><code>name</code></td><td>string</td><td>Anzeigename</td></tr>
-                        <tr><td><code>color</code></td><td>string</td><td>Hex-Farbcode für UI</td></tr>
-                        <tr><td><code>icon</code></td><td>string</td><td>Icon-Bezeichnung</td></tr>
                     </tbody>
                 </table>
             </div>
