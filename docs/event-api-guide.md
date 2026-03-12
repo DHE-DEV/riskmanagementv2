@@ -175,7 +175,7 @@ curl -X POST https://api.global-travel-monitor.de/v1/custom/events \
     "review_status": "approved",
     "is_active": true,
     "tags": ["flooding", "bangkok"],
-    "event_types": [
+    "event_categories": [
       {
         "code": "flood",
         "name": "Überschwemmung",

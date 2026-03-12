@@ -222,7 +222,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Priority'
-        event_types:
+        event_categories:
           type: array
           items:
             $ref: '#/components/schemas/EventType'

@@ -26,7 +26,7 @@ class EventApiResource extends JsonResource
             'review_status' => $this->review_status,
             'is_active' => $this->is_active,
             'tags' => $this->tags,
-            'event_types' => $this->whenLoaded('eventTypes', fn () =>
+            'event_categories' => $this->whenLoaded('eventTypes', fn () =>
                 $this->eventTypes->map(fn ($t) => [
                     'code' => $t->code,
                     'name' => $t->name,

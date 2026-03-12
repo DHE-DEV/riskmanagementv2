@@ -23,7 +23,7 @@ class GtmEventResource extends JsonResource
             'end_date' => $this->end_date?->toIso8601String(),
             'latitude' => $firstCoords['latitude'],
             'longitude' => $firstCoords['longitude'],
-            'event_types' => $this->whenLoaded('eventTypes', fn() =>
+            'event_categories' => $this->whenLoaded('eventTypes', fn() =>
                 $this->eventTypes->map(fn($t) => [
                     'code' => $t->code,
                     'name' => $t->name,

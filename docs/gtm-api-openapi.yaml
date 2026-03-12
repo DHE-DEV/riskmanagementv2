@@ -314,7 +314,7 @@ components:
           format: float
           nullable: true
           example: 35.3214
-        event_types:
+        event_categories:
           type: array
           items:
             $ref: '#/components/schemas/EventType'

@@ -348,7 +348,7 @@ components:
           items:
             type: string
           example: ["flooding", "bangkok"]
-        event_types:
+        event_categories:
           type: array
           items:
             $ref: '#/components/schemas/EventType'

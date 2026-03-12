@@ -500,7 +500,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "end_date": null,
       "latitude": 37.7749,
       "longitude": 35.3214,
-      "event_types": [
+      "event_categories": [
         {
           "code": "natural_disaster",
           "name": "Natural Disaster"
@@ -553,7 +553,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "end_date": null,
     "latitude": 37.7749,
     "longitude": 35.3214,
-    "event_types": [
+    "event_categories": [
       {
         "code": "natural_disaster",
         "name": "Natural Disaster"
@@ -759,7 +759,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><td><code>end_date</code></td><td>datetime / null</td><td>Enddatum (null = andauernd)</td></tr>
                         <tr><td><code>latitude</code></td><td>number / null</td><td>Breitengrad</td></tr>
                         <tr><td><code>longitude</code></td><td>number / null</td><td>Längengrad</td></tr>
-                        <tr><td><code>event_types</code></td><td>array</td><td>Liste der zugewiesenen Event-Typen</td></tr>
+                        <tr><td><code>event_categories</code></td><td>array</td><td>Liste der zugewiesenen Event-Typen</td></tr>
                         <tr><td><code>countries</code></td><td>array</td><td>Liste betroffener Länder</td></tr>
                         <tr><td><code>source</code></td><td>object</td><td>Herkunft des Events</td></tr>
                         <tr><td><code>created_at</code></td><td>datetime</td><td>Erstellungszeitpunkt</td></tr>
@@ -991,7 +991,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "review_status": "approved",
     "is_active": true,
     "tags": ["flooding", "bangkok"],
-    "event_types": [
+    "event_categories": [
       {
         "code": "flood",
         "name": "Überschwemmung",
@@ -1805,7 +1805,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     { "code": "low", "name_de": "Niedrig", "name_en": "Low" },
     { "code": "info", "name_de": "Information", "name_en": "Info" }
   ],
-  "event_types": [
+  "event_categories": [
     {
       "code": "earthquake",
       "name": "Erdbeben",

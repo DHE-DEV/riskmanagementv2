@@ -48,7 +48,7 @@ curl https://global-travel-monitor.eu/feed/events/meta.json
     { "code": "low", "name_de": "Niedrig", "name_en": "Low" },
     { "code": "info", "name_de": "Information", "name_en": "Info" }
   ],
-  "event_types": [
+  "event_categories": [
     {
       "code": "earthquake",
       "name": "Erdbeben",

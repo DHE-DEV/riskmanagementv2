@@ -139,7 +139,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "end_date": null,
       "latitude": 37.7749,
       "longitude": 35.3214,
-      "event_types": [
+      "event_categories": [
         {
           "code": "natural_disaster",
           "name": "Natural Disaster"
@@ -202,7 +202,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "end_date": null,
     "latitude": 37.7749,
     "longitude": 35.3214,
-    "event_types": [
+    "event_categories": [
       {
         "code": "natural_disaster",
         "name": "Natural Disaster"
@@ -426,7 +426,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `end_date` | datetime / null | Enddatum (null = andauernd) |
 | `latitude` | number / null | Breitengrad |
 | `longitude` | number / null | Längengrad |
-| `event_types` | array | Liste der zugewiesenen Event-Typen |
+| `event_categories` | array | Liste der zugewiesenen Event-Typen |
 | `countries` | array | Liste betroffener Länder |
 | `source` | object | Herkunft des Events |
 | `source.type` | string | Quelle: `manual`, `api_client`, `passolution_infosystem`, etc. |
