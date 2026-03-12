@@ -87,6 +87,12 @@
 									"disabled": true
 								},
 								{
+									"key": "source",
+									"value": "manual",
+									"description": "Event-Herkunft: manual | api_client | passolution_infosystem | Partner-Name",
+									"disabled": true
+								},
+								{
 									"key": "per_page",
 									"value": "25",
 									"description": "1-100"
