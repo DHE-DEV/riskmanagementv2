@@ -84,7 +84,7 @@ GET /v1/events
 |-----------|-----|---------|--------------|
 | `risk_level` | string | Nein | Filter nach Risikostufe: `high`, `medium`, `low`, `info` |
 | `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
-| `event_category` | string | Nein | Filter nach Event-Typ-Code (z.B. `natural_disaster`) |
+| `event_category` | string | Nein | Filter nach Event-Kategorie-Code (z.B. `earthquake`, siehe Tabelle unten) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
 | `source` | string | Nein | Filter nach Event-Herkunft (z.B. `manual`, `passolution_infosystem` oder Name des API-Partners) |
 | `start_date` | date | Nein | Nur Events ab diesem Datum (z.B. `2026-03-01`) |
@@ -288,13 +288,28 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ## Referenzdaten
 
-### Event-Typen
+### Event-Kategorien
 
 ```
 GET /v1/event-categories
 ```
 
-Gibt eine Liste aller verfügbaren Event-Typen zurück. Nützlich um die gültigen Werte für den `event_category`-Filter zu ermitteln.
+Gibt eine Liste aller verfügbaren Event-Kategorien zurück. Nützlich um die gültigen Werte für den `event_category`-Filter zu ermitteln.
+
+**Aktuell verfügbare Kategorien:**
+
+| Code | Name |
+|------|------|
+| `earthquake` | Erdbeben |
+| `hurricane` | Hurrikan |
+| `flood` | Überschwemmung |
+| `wildfire` | Waldbrand |
+| `volcano` | Vulkan |
+| `drought` | Dürre |
+| `exercise` | Übung |
+| `other` | Sonstiges |
+
+> **Hinweis:** Diese Liste kann sich ändern. Nutzen Sie den Endpoint `GET /v1/event-categories`, um stets die aktuellen Kategorien abzurufen.
 
 **Beispiel:**
 
@@ -310,12 +325,12 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "success": true,
   "data": [
     {
-      "code": "natural_disaster",
-      "name": "Natural Disaster"
+      "code": "earthquake",
+      "name": "Erdbeben"
     },
     {
-      "code": "political_unrest",
-      "name": "Political Unrest"
+      "code": "flood",
+      "name": "Überschwemmung"
     }
   ]
 }

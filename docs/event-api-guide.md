@@ -36,13 +36,28 @@ Standardmäßig sind **60 Requests pro Minute** erlaubt. Bei Überschreitung erh
 
 ## Referenzdaten
 
-Bevor Sie Events erstellen, fragen Sie die gültigen Event-Typen und Ländercodes ab.
+Bevor Sie Events erstellen, fragen Sie die gültigen Event-Kategorien und Ländercodes ab.
 
-### Event-Typen abrufen
+### Event-Kategorien abrufen
 
 ```
 GET /v1/custom/event-categories
 ```
+
+**Aktuell verfügbare Kategorien:**
+
+| Code | Name |
+|------|------|
+| `earthquake` | Erdbeben |
+| `hurricane` | Hurrikan |
+| `flood` | Überschwemmung |
+| `wildfire` | Waldbrand |
+| `volcano` | Vulkan |
+| `drought` | Dürre |
+| `exercise` | Übung |
+| `other` | Sonstiges |
+
+> **Hinweis:** Diese Liste kann sich ändern. Nutzen Sie den Endpoint `GET /v1/custom/event-categories`, um stets die aktuellen Kategorien abzurufen.
 
 **Beispiel:**
 
@@ -129,7 +144,7 @@ POST /v1/custom/events
 | `risk_level` | string | Nein | Risikostufe: `info`, `low`, `medium` (Standard), `high` |
 | `start_date` | datetime | Ja | Startdatum (ISO 8601, z.B. `2026-02-11T08:00:00Z`) |
 | `end_date` | datetime | Nein | Enddatum (muss gleich oder nach start_date liegen) |
-| `event_category_codes` | array | Ja | Event-Typ-Codes (mindestens 1, aus `/event-categories`) |
+| `event_category_codes` | array | Ja | Event-Kategorie-Codes (mindestens 1, z.B. `["earthquake", "flood"]`, siehe Tabelle oben) |
 | `country_codes` | array | Ja | ISO-2-Ländercodes (mindestens 1, z.B. `["DE", "AT"]`) |
 | `latitude` | number | Nein | Breitengrad (-90 bis 90) |
 | `longitude` | number | Nein | Längengrad (-180 bis 180) |
