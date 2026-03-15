@@ -257,7 +257,8 @@
                     </form>
                 </div>
 
-                {{-- Passwort ändern --}}
+                {{-- Passwort ändern (nur für User mit lokalem Passwort) --}}
+                @if(!$customer->provider)
                 <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
                     <h4 class="text-sm font-semibold text-gray-900 mb-4">Passwort ändern</h4>
                     <form @submit.prevent="changePassword">
@@ -282,6 +283,7 @@
                         </div>
                     </form>
                 </div>
+                @endif
 
                 {{-- Zwei-Faktor-Authentifizierung --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="twoFactorManager()">
