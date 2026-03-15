@@ -1774,7 +1774,21 @@ function twoFactorManager() {
         password: '',
         error: '',
 
+        isOAuthUser: {{ $customer->provider ? 'true' : 'false' }},
+
         async confirmPassword() {
+            if (this.isOAuthUser) {
+                // OAuth-User: Passwort-Bestätigung mit leerem Passwort (Server lässt durch)
+                try {
+                    const res = await fetch('/customer/user/confirm-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ password: '' })
+                    });
+                    return res.ok || res.status === 201;
+                } catch (e) { return false; }
+            }
+
             const pw = prompt('Bitte geben Sie Ihr Passwort ein, um fortzufahren:');
             if (!pw) return false;
             try {
