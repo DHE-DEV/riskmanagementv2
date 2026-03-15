@@ -98,7 +98,7 @@
         /* Sidebar - feste Breite */
         .sidebar {
             flex-shrink: 0;
-            width: 320px;
+            width: 304px;
             background: #f9fafb;
             overflow-y: auto;
             height: 100%;
@@ -172,32 +172,32 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="p-4">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">
+                <h2 class="text-sm font-bold text-gray-900 mb-3">
                     <i class="fa-regular fa-building mr-2"></i>
                     Filialen & Standorte
                 </h2>
 
-                <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
-                    <p class="text-sm text-gray-600">
+                <div class="bg-white p-3 rounded-lg border border-gray-200 mb-3">
+                    <p class="text-xs text-gray-600">
                         Hier können Sie Ihre Filialen und Standorte verwalten.
                     </p>
                 </div>
 
-                <div class="space-y-3">
-                    <button class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                <div class="space-y-2">
+                    <button class="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-xs">
                         <i class="fa-regular fa-plus"></i>
                         Neue Filiale hinzufügen
                     </button>
                 </div>
 
-                <div class="mt-6">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-3">Ihre Filialen</h3>
+                <div class="mt-4">
+                    <h3 class="text-xs font-semibold text-gray-900 mb-2">Ihre Filialen</h3>
                     <div class="space-y-2">
                         <div class="bg-white p-3 rounded-lg border border-gray-200">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
-                                    <h4 class="font-semibold text-gray-900 text-sm">Hauptsitz</h4>
-                                    <p class="text-xs text-gray-600 mt-1">
+                                    <h4 class="font-semibold text-gray-900 text-xs">Hauptsitz</h4>
+                                    <p class="text-[11px] text-gray-600 mt-1">
                                         @if($customer->company_street)
                                             {{ $customer->company_street }} {{ $customer->company_house_number }}<br>
                                             {{ $customer->company_postal_code }} {{ $customer->company_city }}
@@ -212,10 +212,10 @@
                             </div>
                         </div>
 
-                        <div class="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300 text-center">
-                            <i class="fa-regular fa-building text-3xl text-gray-400 mb-2"></i>
-                            <p class="text-sm text-gray-500">Keine weiteren Filialen</p>
-                            <p class="text-xs text-gray-400 mt-1">Fügen Sie Ihre ersten Standorte hinzu</p>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-dashed border-gray-300 text-center">
+                            <i class="fa-regular fa-building text-2xl text-gray-400 mb-1"></i>
+                            <p class="text-xs text-gray-500">Keine weiteren Filialen</p>
+                            <p class="text-[11px] text-gray-400 mt-1">Fügen Sie Ihre ersten Standorte hinzu</p>
                         </div>
                     </div>
                 </div>

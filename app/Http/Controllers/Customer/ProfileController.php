@@ -4,9 +4,94 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
+    public function updatePersonal(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:customers,email,' . auth('customer')->id(),
+            'phone' => 'nullable|string|max:50',
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->update($request->only(['name', 'email', 'phone']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Persönliche Daten erfolgreich aktualisiert'
+        ]);
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $customer = auth('customer')->user();
+
+        // Delete old avatar
+        if ($customer->avatar && Storage::disk('public')->exists($customer->avatar)) {
+            Storage::disk('public')->delete($customer->avatar);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $customer->avatar = $path;
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'avatar_url' => Storage::disk('public')->url($path),
+            'message' => 'Profilbild erfolgreich hochgeladen',
+        ]);
+    }
+
+    public function deleteAvatar()
+    {
+        $customer = auth('customer')->user();
+
+        if ($customer->avatar && Storage::disk('public')->exists($customer->avatar)) {
+            Storage::disk('public')->delete($customer->avatar);
+        }
+
+        $customer->avatar = null;
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profilbild entfernt',
+        ]);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $customer = auth('customer')->user();
+
+        if (!Hash::check($request->current_password, $customer->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Das aktuelle Passwort ist nicht korrekt.',
+            ], 422);
+        }
+
+        $customer->password = Hash::make($request->password);
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Passwort erfolgreich geändert',
+        ]);
+    }
+
     public function updateCustomerType(Request $request)
     {
         $request->validate([
@@ -28,7 +113,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'business_types' => 'array',
-            'business_types.*' => 'in:travel_agency,organizer,online_provider,mobile_travel_consultant,software_provider,other'
+            'business_types.*' => 'in:travel_agency,organizer,online_provider,mobile_travel_consultant,cooperation,software_provider,other'
         ]);
 
         $customer = auth('customer')->user();
@@ -40,6 +125,7 @@ class ProfileController extends Controller
             'organizer' => 'Veranstalter',
             'online_provider' => 'Online Anbieter',
             'mobile_travel_consultant' => 'Mobiler Reiseberater',
+            'cooperation' => 'Kooperation',
             'software_provider' => 'Softwareanbieter',
             'other' => 'Sonstiges',
         ];

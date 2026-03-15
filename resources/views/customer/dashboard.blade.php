@@ -3,53 +3,77 @@
 @section('title', 'Customer Dashboard - Global Travel Monitor')
 
 @php
-    $active = 'dashboard';
+    $active = 'customer-dashboard';
 @endphp
 
 @section('content')
     <!-- Sidebar -->
-    @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
-    <div class="sidebar" x-data="branchManager()">
+    <div class="sidebar" @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active) x-data="branchManager()" @endif>
         <div class="p-4">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">
-                <i class="fa-regular fa-building mr-2"></i>
-                Filialen & Standorte
+            <h2 class="text-sm font-bold text-gray-900 mb-3">
+                <i class="fa-regular fa-gauge-high mr-2"></i>
+                Dashboard
             </h2>
 
-            <div class="bg-white p-4 rounded-lg border border-gray-200 mb-4">
-                <p class="text-sm text-gray-600">
-                    Hier können Sie Ihre Filialen und Standorte verwalten.
-                </p>
-            </div>
-
-            <div class="space-y-3">
-                <button @click="openModal" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                    <i class="fa-regular fa-plus"></i>
-                    Neue Filiale hinzufügen
-                </button>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button @click="importBranches" class="px-3 py-1 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm">
-                        <i class="fa-regular fa-file-import"></i>
-                        Importieren
-                    </button>
-                    <button @click="exportBranches" class="px-3 py-1 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm">
-                        <i class="fa-regular fa-file-export"></i>
-                        Exportieren
-                    </button>
-                </div>
-            </div>
-
-            <div class="mt-6">
-                <h3 class="text-sm font-semibold text-gray-900 mb-3">
-                    Ihre Filialen <span id="branches-count" class="text-gray-500">(0)</span>
+            @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
+            {{-- Filialen-Verwaltung --}}
+            <div class="border-t border-gray-200 pt-3 mt-3">
+                <h3 class="text-xs font-bold text-gray-900 mb-2">
+                    <i class="fa-regular fa-building mr-1"></i>
+                    Filialen & Standorte
                 </h3>
-                <div class="space-y-2" id="branches-list">
-                    <!-- Branches werden hier dynamisch geladen -->
+
+                <div class="bg-white p-3 rounded-lg border border-gray-200 mb-3">
+                    <p class="text-xs text-gray-600">
+                        Hier können Sie Ihre Filialen und Standorte verwalten.
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <button @click="openModal" class="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-xs">
+                        <i class="fa-regular fa-plus"></i>
+                        Neue Filiale hinzufügen
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="importBranches" class="px-2.5 py-1.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 text-xs">
+                            <i class="fa-regular fa-file-import"></i>
+                            Importieren
+                        </button>
+                        <button @click="exportBranches" class="px-2.5 py-1.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 text-xs">
+                            <i class="fa-regular fa-file-export"></i>
+                            Exportieren
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h3 class="text-xs font-semibold text-gray-900 mb-2">
+                        Ihre Filialen <span id="branches-count" class="text-gray-500">(0)</span>
+                    </h3>
+                    <div class="space-y-2" id="branches-list">
+                        <!-- Branches werden hier dynamisch geladen -->
+                    </div>
                 </div>
             </div>
+            @else
+            {{-- Übersicht wenn keine Filialen aktiv --}}
+            <div class="space-y-2">
+                <a href="{{ route('risk-overview') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fa-regular fa-shield-exclamation text-gray-500 w-4 text-center"></i>
+                    TravelAlert
+                </a>
+                @if(config('app.feature_customer_events', false))
+                <a href="{{ route('customer.events') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fa-regular fa-calendar-alt text-gray-500 w-4 text-center"></i>
+                    Meine Ereignisse
+                </a>
+                @endif
+            </div>
+            @endif
         </div>
 
+        @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
         <!-- Modal für neue Filiale -->
         <div x-show="showModal" x-cloak class="modal-overlay fixed inset-0 overflow-y-auto" style="display: none;">
             <div class="flex items-center justify-center min-h-screen px-4">
@@ -127,9 +151,10 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
-    @endif
 
+    <div class="dashboard-content">
     <div class="p-8">
         <div class="max-w-7xl mx-auto">
             <!-- Karte für Filialen -->
@@ -1472,6 +1497,7 @@
             </div>
         </div>
     </div>
+    </div>
 @endsection
 
 @push('styles')
@@ -1480,22 +1506,24 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <style>
     [x-cloak] { display: none !important; }
+    .main-content {
+        display: flex !important;
+        overflow: hidden !important;
+        overflow-y: hidden !important;
+    }
     .sidebar {
-        position: fixed;
-        left: 64px;
-        top: 64px;
-        bottom: 56px;
-        width: 320px;
+        flex-shrink: 0;
+        width: 304px;
         background: #f9fafb;
         border-right: 1px solid #e5e7eb;
         overflow-y: auto;
-        z-index: 50;
+        height: 100%;
     }
-    @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
-    .main-content > .p-8 {
-        margin-left: 320px;
+    .dashboard-content {
+        flex: 1;
+        overflow-y: auto;
+        height: 100%;
     }
-    @endif
     #branches-map {
         height: 400px;
         border-radius: 8px;

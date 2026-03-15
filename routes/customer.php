@@ -38,6 +38,18 @@ Route::prefix('customer')->name('customer.')->group(function () {
             return view('customer.dashboard');
         })->name('dashboard');
 
+        Route::post('/profile/update-personal', [\App\Http\Controllers\Customer\ProfileController::class, 'updatePersonal'])
+            ->name('profile.update-personal');
+
+        Route::post('/profile/avatar', [\App\Http\Controllers\Customer\ProfileController::class, 'uploadAvatar'])
+            ->name('profile.upload-avatar');
+
+        Route::delete('/profile/avatar', [\App\Http\Controllers\Customer\ProfileController::class, 'deleteAvatar'])
+            ->name('profile.delete-avatar');
+
+        Route::post('/profile/update-password', [\App\Http\Controllers\Customer\ProfileController::class, 'updatePassword'])
+            ->name('profile.update-password');
+
         Route::post('/profile/customer-type', [\App\Http\Controllers\Customer\ProfileController::class, 'updateCustomerType'])
             ->name('profile.update-customer-type');
 
@@ -87,8 +99,75 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         // Customer Events (eigene Ereignisse)
         Route::get('/events', function () {
-            return view('customer.events.index');
+            $hasEvents = \App\Models\CustomEvent::where('customer_id', auth('customer')->id())->exists();
+            return view('customer.events.index', compact('hasEvents'));
         })->name('events');
+
+        // Phone Numbers (Rufnummern)
+        Route::prefix('phone-numbers')->name('phone-numbers.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\PhoneNumberController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\PhoneNumberController::class, 'store'])->name('store');
+            Route::put('/{phoneNumber}', [\App\Http\Controllers\Customer\PhoneNumberController::class, 'update'])->name('update');
+            Route::delete('/{phoneNumber}', [\App\Http\Controllers\Customer\PhoneNumberController::class, 'destroy'])->name('destroy');
+            Route::post('/reorder', [\App\Http\Controllers\Customer\PhoneNumberController::class, 'reorder'])->name('reorder');
+        });
+
+        // Email Addresses (E-Mail Adressen)
+        Route::prefix('email-addresses')->name('email-addresses.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\EmailAddressController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\EmailAddressController::class, 'store'])->name('store');
+            Route::put('/{emailAddress}', [\App\Http\Controllers\Customer\EmailAddressController::class, 'update'])->name('update');
+            Route::delete('/{emailAddress}', [\App\Http\Controllers\Customer\EmailAddressController::class, 'destroy'])->name('destroy');
+            Route::post('/reorder', [\App\Http\Controllers\Customer\EmailAddressController::class, 'reorder'])->name('reorder');
+        });
+
+        // Websites (Web)
+        Route::prefix('websites')->name('websites.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\WebsiteController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\WebsiteController::class, 'store'])->name('store');
+            Route::put('/{website}', [\App\Http\Controllers\Customer\WebsiteController::class, 'update'])->name('update');
+            Route::delete('/{website}', [\App\Http\Controllers\Customer\WebsiteController::class, 'destroy'])->name('destroy');
+            Route::post('/reorder', [\App\Http\Controllers\Customer\WebsiteController::class, 'reorder'])->name('reorder');
+        });
+
+        // Branch Contacts (Kontakte pro Adresse)
+        Route::prefix('branch-contacts')->name('branch-contacts.')->group(function () {
+            Route::post('/', [\App\Http\Controllers\Customer\BranchContactController::class, 'store'])->name('store');
+            Route::put('/{branchContact}', [\App\Http\Controllers\Customer\BranchContactController::class, 'update'])->name('update');
+            Route::delete('/{branchContact}', [\App\Http\Controllers\Customer\BranchContactController::class, 'destroy'])->name('destroy');
+        });
+
+        // Org Nodes (Organisationsstruktur)
+        Route::prefix('org-nodes')->name('org-nodes.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\OrgNodeController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\OrgNodeController::class, 'store'])->name('store');
+            Route::put('/{orgNode}', [\App\Http\Controllers\Customer\OrgNodeController::class, 'update'])->name('update');
+            Route::delete('/{orgNode}', [\App\Http\Controllers\Customer\OrgNodeController::class, 'destroy'])->name('destroy');
+            Route::post('/reorder', [\App\Http\Controllers\Customer\OrgNodeController::class, 'reorder'])->name('reorder');
+            Route::post('/{orgNode}/move', [\App\Http\Controllers\Customer\OrgNodeController::class, 'move'])->name('move');
+        });
+
+        // Departments (Abteilungen)
+        Route::prefix('departments')->name('departments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\DepartmentController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\DepartmentController::class, 'store'])->name('store');
+            Route::put('/{department}', [\App\Http\Controllers\Customer\DepartmentController::class, 'update'])->name('update');
+            Route::delete('/{department}', [\App\Http\Controllers\Customer\DepartmentController::class, 'destroy'])->name('destroy');
+            Route::post('/reorder', [\App\Http\Controllers\Customer\DepartmentController::class, 'reorder'])->name('reorder');
+        });
+
+        // Employees (Benutzer)
+        Route::prefix('employees')->name('employees.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\EmployeeController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\EmployeeController::class, 'store'])->name('store');
+            Route::put('/{employee}', [\App\Http\Controllers\Customer\EmployeeController::class, 'update'])->name('update');
+            Route::delete('/{employee}', [\App\Http\Controllers\Customer\EmployeeController::class, 'destroy'])->name('destroy');
+        });
+
+        // Customer Settings
+        Route::get('/settings', function () {
+            return view('customer.settings.index');
+        })->name('settings');
 
         // API Token routes
         Route::prefix('api-tokens')->name('api-tokens.')->group(function () {

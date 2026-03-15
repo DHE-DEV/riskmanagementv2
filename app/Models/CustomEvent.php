@@ -49,6 +49,12 @@ class CustomEvent extends Model implements Feedable
         'reviewed_at',
         'reviewed_by',
         'customer_id',
+        'visible_community',
+        'community_start_date',
+        'community_end_date',
+        'visible_organization',
+        'organization_start_date',
+        'organization_end_date',
     ];
 
     protected $casts = [
@@ -61,6 +67,12 @@ class CustomEvent extends Model implements Feedable
         'archived_at' => 'datetime',
         'tags' => 'array',
         'reviewed_at' => 'datetime',
+        'visible_community' => 'boolean',
+        'community_start_date' => 'date',
+        'community_end_date' => 'date',
+        'visible_organization' => 'boolean',
+        'organization_start_date' => 'date',
+        'organization_end_date' => 'date',
     ];
 
     protected $attributes = [
@@ -126,6 +138,11 @@ class CustomEvent extends Model implements Feedable
     {
         return $this->belongsToMany(EventType::class, 'custom_event_event_type')
             ->withTimestamps();
+    }
+
+    public function orgNodes()
+    {
+        return $this->belongsToMany(OrgNode::class, 'custom_event_org_node')->withPivot('start_date', 'end_date');
     }
 
     /**

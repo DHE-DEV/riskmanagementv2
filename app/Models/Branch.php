@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Branch extends Model
 {
@@ -63,5 +64,30 @@ class Branch extends Model
     public function bookingLocation()
     {
         return $this->hasOne(BookingLocation::class);
+    }
+
+    public function orgNodes(): BelongsToMany
+    {
+        return $this->belongsToMany(OrgNode::class, 'branch_org_node')->withPivot('customer_number', 'contract_number', 'start_date', 'end_date');
+    }
+
+    public function phoneNumbers()
+    {
+        return $this->hasMany(PhoneNumber::class)->orderBy('sort_order');
+    }
+
+    public function emailAddresses()
+    {
+        return $this->hasMany(EmailAddress::class)->orderBy('sort_order');
+    }
+
+    public function websites()
+    {
+        return $this->hasMany(Website::class)->orderBy('sort_order');
+    }
+
+    public function contacts()
+    {
+        return $this->hasMany(BranchContact::class)->orderBy('sort_order');
     }
 }

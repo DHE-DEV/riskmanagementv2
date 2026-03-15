@@ -12,7 +12,9 @@ class BranchController extends Controller
     public function index()
     {
         $customer = auth('customer')->user();
-        $branches = $customer->branches()->orderBy('is_headquarters', 'desc')->orderBy('created_at')->get();
+        $branches = $customer->branches()
+            ->with(['orgNodes:org_nodes.id,org_nodes.name', 'phoneNumbers', 'emailAddresses', 'websites', 'contacts'])
+            ->orderBy('is_headquarters', 'desc')->orderBy('created_at')->get();
 
         return response()->json([
             'success' => true,
@@ -30,6 +32,14 @@ class BranchController extends Controller
             'postal_code' => 'required|string|max:20',
             'city' => 'required|string|max:255',
             'country' => 'required|string|max:255',
+            'org_node_ids' => 'nullable|array',
+            'org_node_ids.*' => 'exists:org_nodes,id',
+            'org_node_data' => 'nullable|array',
+            'org_node_data.*.id' => 'exists:org_nodes,id',
+            'org_node_data.*.customer_number' => 'nullable|string|max:100',
+            'org_node_data.*.contract_number' => 'nullable|string|max:100',
+            'org_node_data.*.start_date' => 'nullable|date',
+            'org_node_data.*.end_date' => 'nullable|date',
         ]);
 
         $customer = auth('customer')->user();
@@ -51,9 +61,11 @@ class BranchController extends Controller
             'is_headquarters' => false,
         ]);
 
+        $this->syncOrgNodes($branch, $validated);
+
         return response()->json([
             'success' => true,
-            'branch' => $branch,
+            'branch' => $branch->load('orgNodes:org_nodes.id,org_nodes.name'),
             'message' => 'Filiale erfolgreich hinzugefügt'
         ]);
     }
@@ -73,6 +85,14 @@ class BranchController extends Controller
             'postal_code' => 'required|string|max:20',
             'city' => 'required|string|max:255',
             'country' => 'required|string|max:255',
+            'org_node_ids' => 'nullable|array',
+            'org_node_ids.*' => 'exists:org_nodes,id',
+            'org_node_data' => 'nullable|array',
+            'org_node_data.*.id' => 'exists:org_nodes,id',
+            'org_node_data.*.customer_number' => 'nullable|string|max:100',
+            'org_node_data.*.contract_number' => 'nullable|string|max:100',
+            'org_node_data.*.start_date' => 'nullable|date',
+            'org_node_data.*.end_date' => 'nullable|date',
         ]);
 
         // Geocode the address
@@ -91,9 +111,11 @@ class BranchController extends Controller
             'longitude' => $coordinates['lon'] ?? $branch->longitude,
         ]);
 
+        $this->syncOrgNodes($branch, $validated);
+
         return response()->json([
             'success' => true,
-            'branch' => $branch,
+            'branch' => $branch->load('orgNodes:org_nodes.id,org_nodes.name'),
             'message' => 'Filiale erfolgreich aktualisiert'
         ]);
     }
@@ -319,6 +341,25 @@ class BranchController extends Controller
             'success' => true,
             'message' => 'Geplante Löschung wurde abgebrochen'
         ]);
+    }
+
+    private function syncOrgNodes($branch, $validated): void
+    {
+        $nodeData = collect($validated['org_node_data'] ?? []);
+        $nodeIds = $validated['org_node_ids'] ?? [];
+
+        $syncData = [];
+        foreach ($nodeIds as $nodeId) {
+            $extra = $nodeData->firstWhere('id', $nodeId);
+            $syncData[$nodeId] = [
+                'customer_number' => $extra['customer_number'] ?? null,
+                'contract_number' => $extra['contract_number'] ?? null,
+                'start_date' => $extra['start_date'] ?? null,
+                'end_date' => $extra['end_date'] ?? null,
+            ];
+        }
+
+        $branch->orgNodes()->sync($syncData);
     }
 
     private function geocodeAddress(string $address): array

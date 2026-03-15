@@ -57,6 +57,7 @@ class CustomerForm
                                                 'organizer' => 'Veranstalter',
                                                 'online_provider' => 'Online Anbieter',
                                                 'mobile_travel_consultant' => 'Mobiler Reiseberater',
+                                                'cooperation' => 'Kooperation',
                                                 'software_provider' => 'Softwareanbieter',
                                                 'other' => 'Sonstiges',
                                             ])
