@@ -136,17 +136,10 @@
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                     Abbrechen
                 </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="save">
-                        <i class="fas fa-save mr-2"></i>
-                        Vorlage speichern
-                    </span>
-                    <span wire:loading wire:target="save">
-                        <i class="fas fa-spinner fa-spin mr-2"></i>
-                        Speichern...
-                    </span>
+                <button type="button" wire:click="save"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>
+                    Vorlage speichern
                 </button>
             </div>
         </div>

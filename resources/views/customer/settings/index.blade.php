@@ -613,13 +613,17 @@
                                 });
                                 if (r.ok) this.loadRules();
                             } catch(e) {}
-                        }
-                    }" x-on:reload-rules.window="loadRules()">
+                        },
+                        showRuleModal: false,
+                        editRuleId: null,
+                        openCreateRule() { this.editRuleId = null; this.showRuleModal = true; Livewire.dispatch('load-rule', { id: null }); },
+                        openEditRule(id) { this.editRuleId = id; this.showRuleModal = true; Livewire.dispatch('load-rule', { id: id }); },
+                    }" x-on:reload-rules.window="loadRules()" x-on:rule-saved.window="showRuleModal = false; loadRules()" x-on:rule-deleted.window="showRuleModal = false; loadRules()">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-list-check mr-2 text-blue-500"></i>Benachrichtigungs-Regeln</h4>
-                            <a href="{{ route('customer.notification-settings.rules.create') }}" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                            <button @click="openCreateRule()" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
                                 <i class="fas fa-plus"></i> Neue Regel
-                            </a>
+                            </button>
                         </div>
 
                         <div x-show="rulesLoading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
@@ -653,9 +657,9 @@
                                             </button>
                                             <div x-show="open" @click.away="open = false" x-transition x-cloak
                                                  class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                                <a :href="'/customer/notification-settings/rules/' + rule.id + '/edit'" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                <button @click="openEditRule(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                                     <i class="fas fa-pen w-4 text-center text-blue-500"></i> Bearbeiten
-                                                </a>
+                                                </button>
                                                 <button @click="sendRuleTestMail(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                                     <i class="fas fa-paper-plane w-4 text-center text-amber-500"></i> Test-Mail versenden
                                                 </button>
@@ -668,6 +672,20 @@
                                     </div>
                                 </div>
                             </template>
+                        </div>
+
+                        {{-- Rule Modal --}}
+                        <div x-show="showRuleModal" x-cloak class="fixed z-[10000] flex items-center justify-center" style="top: 64px; bottom: 56px; left: 0; right: 0; padding: 8px;" @keydown.escape.window="if(showRuleModal) showRuleModal = false">
+                            <div class="absolute inset-0 bg-black bg-opacity-50" @click="showRuleModal = false"></div>
+                            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 flex flex-col" style="max-height: 100%;">
+                                <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                                    <h4 class="text-sm font-semibold text-gray-900" x-text="editRuleId ? 'Regel bearbeiten' : 'Neue Benachrichtigungs-Regel'"></h4>
+                                    <button @click="showRuleModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                                </div>
+                                <div class="flex-1 overflow-y-auto p-6">
+                                    @livewire('customer.notification-rule-form', [], key('settings-rule-form'))
+                                </div>
+                            </div>
                         </div>
                     </div>
 

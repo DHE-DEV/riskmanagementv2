@@ -1,5 +1,5 @@
 <div>
-    <form wire:submit="save" class="space-y-6">
+    <div class="space-y-6">
         {{-- Anleitung --}}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-5" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center justify-between w-full text-left">
@@ -9,7 +9,7 @@
                 </div>
                 <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" class="text-blue-400"></i>
             </button>
-            <div x-show="open" x-collapse class="mt-4 text-sm text-blue-800 space-y-2">
+            <div x-show="open" x-transition x-cloak class="mt-4 text-sm text-blue-800 space-y-2">
                 <p><i class="fas fa-info-circle mr-1"></i> Mit einer Regel legen Sie fest, wann und an wen Benachrichtigungen versendet werden.</p>
                 <ul class="list-disc list-inside space-y-1 ml-1">
                     <li><strong>Regelname:</strong> Geben Sie einen aussagekräftigen Namen ein (z.B. "Sicherheitswarnungen Europa").</li>
@@ -57,17 +57,21 @@
 
             {{-- Risk Levels --}}
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Risikostufen</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Risikostufe</label>
                 <div class="flex flex-wrap gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="riskLevel" wire:click="$set('riskLevels', [])" {{ empty($riskLevels) ? 'checked' : '' }}
+                               class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700">Alle</span>
+                    </label>
                     @foreach($availableRiskLevels as $value => $label)
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="riskLevels" value="{{ $value }}"
-                                   class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <input type="radio" name="riskLevel" wire:click="$set('riskLevels', ['{{ $value }}'])" {{ in_array($value, $riskLevels) ? 'checked' : '' }}
+                                   class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
                             <span class="text-sm text-gray-700">{{ $label }}</span>
                         </label>
                     @endforeach
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Leer = alle Risikostufen</p>
             </div>
 
             {{-- Categories --}}
@@ -225,23 +229,16 @@
                         </span>
                     </button>
                 @endif
-                <a href="{{ route('customer.notification-settings.index') }}"
+                <button type="button" onclick="window.dispatchEvent(new CustomEvent('rule-saved'))"
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                     Abbrechen
-                </a>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="save">
-                        <i class="fas fa-save mr-2"></i>
-                        Regel speichern
-                    </span>
-                    <span wire:loading wire:target="save">
-                        <i class="fas fa-spinner fa-spin mr-2"></i>
-                        Speichern...
-                    </span>
+                </button>
+                <button type="button" wire:click="save"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>
+                    Regel speichern
                 </button>
             </div>
         </div>
-    </form>
+    </div>
 </div>

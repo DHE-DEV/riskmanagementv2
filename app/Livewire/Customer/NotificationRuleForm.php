@@ -84,6 +84,41 @@ class NotificationRuleForm extends Component
             ->toArray();
     }
 
+    #[\Livewire\Attributes\On('load-rule')]
+    public function loadRule(?int $id = null): void
+    {
+        $this->ruleId = $id;
+        $this->testMailStatus = null;
+        $this->resetValidation();
+
+        if ($id) {
+            $customer = auth('customer')->user();
+            $rule = $customer->notificationRules()->with('recipients')->findOrFail($id);
+            $this->name = $rule->name;
+            $this->isActive = $rule->is_active;
+            $this->riskLevels = $rule->risk_levels ?? [];
+            $this->categories = $rule->categories ?? [];
+            $this->notificationTemplateId = $rule->notification_template_id;
+            if ($rule->country_ids) {
+                $countries = Country::whereIn('id', $rule->country_ids)->get();
+                $this->selectedCountries = $countries->map(fn ($c) => ['id' => $c->id, 'name' => $c->getName('de')])->toArray();
+            } else {
+                $this->selectedCountries = [];
+            }
+            $this->recipients = $rule->recipients->map(fn ($r) => ['email' => $r->email, 'type' => $r->recipient_type])->toArray();
+        } else {
+            $this->name = '';
+            $this->isActive = true;
+            $this->riskLevels = [];
+            $this->categories = [];
+            $this->selectedCountries = [];
+            $this->notificationTemplateId = null;
+            $this->recipients = [['email' => '', 'type' => 'to']];
+        }
+        $this->countrySearch = '';
+        $this->countryResults = [];
+    }
+
     public function addCountry(int $id, string $name): void
     {
         if (! collect($this->selectedCountries)->contains('id', $id)) {
@@ -165,12 +200,7 @@ class NotificationRuleForm extends Component
             }
         }
 
-        session()->flash('success', $this->ruleId
-            ? 'Regel erfolgreich aktualisiert.'
-            : 'Regel erfolgreich erstellt.'
-        );
-
-        $this->redirect(route('customer.notification-settings.index'));
+        $this->js('window.dispatchEvent(new CustomEvent("rule-saved"))');
     }
 
     public function sendTestMail(): void
@@ -224,8 +254,7 @@ class NotificationRuleForm extends Component
         $rule = $customer->notificationRules()->findOrFail($this->ruleId);
         $rule->delete();
 
-        session()->flash('success', 'Regel erfolgreich gelöscht.');
-        $this->redirect(route('customer.notification-settings.index'));
+        $this->js('window.dispatchEvent(new CustomEvent("rule-deleted"))');
     }
 
     public function render()
