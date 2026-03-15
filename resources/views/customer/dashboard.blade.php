@@ -59,10 +59,6 @@
             @else
             {{-- Übersicht wenn keine Filialen aktiv --}}
             <div class="space-y-2">
-                <a href="{{ route('risk-overview') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fa-regular fa-shield-exclamation text-gray-500 w-4 text-center"></i>
-                    TravelAlert
-                </a>
                 @if(config('app.feature_customer_events', false))
                 <a href="{{ route('customer.events') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fa-regular fa-calendar-alt text-gray-500 w-4 text-center"></i>

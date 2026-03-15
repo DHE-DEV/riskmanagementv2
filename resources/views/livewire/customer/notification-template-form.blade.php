@@ -1,5 +1,5 @@
 <div>
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit.prevent="save" class="space-y-6" x-on:submit.prevent>
         {{-- Anleitung --}}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-5" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center justify-between w-full text-left">
@@ -9,7 +9,7 @@
                 </div>
                 <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" class="text-blue-400"></i>
             </button>
-            <div x-show="open" x-collapse class="mt-4 text-sm text-blue-800 space-y-2">
+            <div x-show="open" x-transition x-cloak class="mt-4 text-sm text-blue-800 space-y-2">
                 <p><i class="fas fa-info-circle mr-1"></i> Mit eigenen Vorlagen können Sie das Aussehen und den Inhalt Ihrer Benachrichtigungs-E-Mails anpassen.</p>
                 <ul class="list-disc list-inside space-y-1 ml-1">
                     <li><strong>Vorlagenname:</strong> Vergeben Sie einen eindeutigen Namen (z.B. "Sicherheitswarnung intern").</li>
@@ -132,10 +132,10 @@
                         </span>
                     </button>
                 @endif
-                <a href="{{ route('customer.notification-settings.templates.index') }}"
+                <button type="button" onclick="window.dispatchEvent(new CustomEvent('template-saved'))"
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                     Abbrechen
-                </a>
+                </button>
                 <button type="submit"
                         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         wire:loading.attr="disabled">

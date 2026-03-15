@@ -131,6 +131,10 @@ class NotificationSettingsController extends Controller
             ->latest()
             ->get();
 
+        if (request()->wantsJson()) {
+            return response()->json(['templates' => $templates]);
+        }
+
         return view('customer.notification-settings.templates.index', compact('templates'));
     }
 
@@ -164,5 +168,149 @@ class NotificationSettingsController extends Controller
         return view('customer.notification-settings.templates.form', [
             'template' => $template,
         ]);
+    }
+
+    public function logs()
+    {
+        $customer = auth('customer')->user();
+        $logs = NotificationLog::where('customer_id', $customer->id)
+            ->with('notificationRule:id,name')
+            ->orderBy('created_at', 'desc')
+            ->paginate(25);
+
+        if (request()->wantsJson()) {
+            return response()->json($logs);
+        }
+
+        return response()->json($logs);
+    }
+
+    public function rulesJson()
+    {
+        $customer = auth('customer')->user();
+        $rules = $customer->notificationRules()
+            ->with(['recipients', 'template'])
+            ->latest()
+            ->get()
+            ->map(function ($rule) {
+                return [
+                    'id' => $rule->id,
+                    'name' => $rule->name,
+                    'is_active' => $rule->is_active,
+                    'risk_level_labels' => $rule->risk_levels ? $rule->risk_level_labels : [],
+                    'category_labels' => $rule->categories ? $rule->category_labels : [],
+                    'country_count' => $rule->country_ids ? count($rule->country_ids) : null,
+                    'recipients_count' => $rule->recipients->count(),
+                ];
+            });
+
+        return response()->json(['rules' => $rules]);
+    }
+
+    public function deleteRule(int $id)
+    {
+        $customer = auth('customer')->user();
+        $rule = $customer->notificationRules()->findOrFail($id);
+        $rule->recipients()->delete();
+        $rule->delete();
+
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('customer.settings', ['section' => 'notifications'])
+            ->with('success', 'Regel erfolgreich gelöscht.');
+    }
+
+    public function sendRuleTestMail(int $id)
+    {
+        $customer = auth('customer')->user();
+        $rule = $customer->notificationRules()->with(['template', 'recipients'])->findOrFail($id);
+
+        $template = $rule->template ?? NotificationTemplate::system()->first();
+        if (!$template) {
+            return response()->json(['success' => false, 'message' => 'Keine E-Mail-Vorlage gefunden.'], 404);
+        }
+
+        $placeholders = [
+            '{event_title}' => 'Test-Ereignis',
+            '{country_name}' => 'Deutschland',
+            '{risk_level}' => 'Hoch',
+            '{category}' => 'Allgemein',
+            '{description}' => 'Dies ist eine Test-Benachrichtigung für die Regel "' . $rule->name . '".',
+            '{event_date}' => now()->format('d.m.Y'),
+            '{unsubscribe_url}' => '#',
+        ];
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($customer->email)
+                ->send(new \App\Mail\RiskEventMail($template, $placeholders, $rule));
+
+            NotificationLog::create([
+                'customer_id' => $customer->id,
+                'notification_rule_id' => $rule->id,
+                'recipient_email' => $customer->email,
+                'subject' => str_replace(array_keys($placeholders), array_values($placeholders), $template->subject),
+                'template_name' => $template->name,
+                'rule_name' => $rule->name,
+                'is_test' => true,
+                'status' => 'sent',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Test-Mail für Regel "' . $rule->name . '" an ' . $customer->email . ' gesendet.']);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function sendTestMail(int $id)
+    {
+        $customer = auth('customer')->user();
+        $template = NotificationTemplate::forCustomer($customer->id)->findOrFail($id);
+
+        $placeholders = [
+            '{event_title}' => 'Test-Ereignis',
+            '{country_name}' => 'Deutschland',
+            '{risk_level}' => 'Hoch',
+            '{category}' => 'Allgemein',
+            '{description}' => 'Dies ist eine Test-Benachrichtigung um den E-Mail-Versand zu prüfen.',
+            '{event_date}' => now()->format('d.m.Y'),
+            '{unsubscribe_url}' => '#',
+        ];
+
+        $tempRule = new NotificationRule();
+        $tempRule->setRelation('recipients', collect());
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($customer->email)
+                ->send(new \App\Mail\RiskEventMail($template, $placeholders, $tempRule));
+
+            NotificationLog::create([
+                'customer_id' => $customer->id,
+                'recipient_email' => $customer->email,
+                'subject' => str_replace(array_keys($placeholders), array_values($placeholders), $template->subject),
+                'template_name' => $template->name,
+                'is_test' => true,
+                'status' => 'sent',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Test-Mail "' . $template->name . '" an ' . $customer->email . ' gesendet.']);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteTemplate(int $id)
+    {
+        $customer = auth('customer')->user();
+        $template = $customer->notificationTemplates()->findOrFail($id);
+        $template->delete();
+
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('customer.notification-settings.templates.index')
+            ->with('success', 'Vorlage erfolgreich gelöscht.');
     }
 }

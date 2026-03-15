@@ -181,16 +181,22 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'index'])->name('index');
             Route::post('/toggle', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'toggleNotifications'])->name('toggle');
             Route::get('/stats', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'stats'])->name('stats');
+            Route::get('/rules-json', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'rulesJson'])->name('rules.json');
             Route::get('/history', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'history'])->name('history');
 
             // Rules
             Route::get('/rules/create', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'createRule'])->name('rules.create');
             Route::get('/rules/{id}/edit', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'editRule'])->name('rules.edit');
+            Route::delete('/rules/{id}', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'deleteRule'])->name('rules.destroy');
+            Route::post('/rules/{id}/test', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'sendRuleTestMail'])->name('rules.test');
 
             // Templates
             Route::get('/templates', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'templateIndex'])->name('templates.index');
             Route::get('/templates/create', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'createTemplate'])->name('templates.create');
             Route::get('/templates/{id}/edit', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'editTemplate'])->name('templates.edit');
+            Route::delete('/templates/{id}', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'deleteTemplate'])->name('templates.destroy');
+            Route::post('/templates/{id}/test', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'sendTestMail'])->name('templates.test');
+            Route::get('/logs', [\App\Http\Controllers\Customer\NotificationSettingsController::class, 'logs'])->name('logs');
         });
 
         // Notification routes

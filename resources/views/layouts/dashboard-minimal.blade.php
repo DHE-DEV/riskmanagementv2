@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Customer Dashboard - Global Travel Monitor')</title>
 
-    <!-- Alpine.js -->
+    <!-- Alpine.js (wird von Livewire überschrieben wenn aktiv) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -101,9 +101,6 @@
 
     <!-- Footer -->
     @include('components.public-footer')
-
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     @stack('scripts')
 </body>

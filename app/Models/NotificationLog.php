@@ -15,8 +15,15 @@ class NotificationLog extends Model
         'event_type',
         'recipient_email',
         'subject',
+        'template_name',
+        'rule_name',
+        'is_test',
         'status',
         'error_message',
+    ];
+
+    protected $casts_extra = [
+        'is_test' => 'boolean',
     ];
 
     protected $casts = [

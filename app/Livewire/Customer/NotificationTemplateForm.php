@@ -35,6 +35,27 @@ class NotificationTemplateForm extends Component
         }
     }
 
+    #[\Livewire\Attributes\On('load-template')]
+    public function loadTemplate(?int $id = null): void
+    {
+        $this->templateId = $id;
+        $this->testMailStatus = null;
+
+        if ($id) {
+            $customer = auth('customer')->user();
+            $template = \App\Models\NotificationTemplate::forCustomer($customer->id)->findOrFail($id);
+            $this->name = $template->name;
+            $this->subject = $template->subject;
+            $this->bodyHtml = $template->body_html;
+        } else {
+            $this->name = '';
+            $this->subject = '';
+            $this->bodyHtml = '';
+        }
+
+        $this->resetValidation();
+    }
+
     public function save(): void
     {
         $this->validate([
@@ -64,12 +85,7 @@ class NotificationTemplateForm extends Component
             NotificationTemplate::create($data);
         }
 
-        session()->flash('success', $this->templateId
-            ? 'Vorlage erfolgreich aktualisiert.'
-            : 'Vorlage erfolgreich erstellt.'
-        );
-
-        $this->redirect(route('customer.notification-settings.templates.index'));
+        $this->js('window.dispatchEvent(new CustomEvent("template-saved"))');
     }
 
     public function sendTestMail(): void
@@ -113,8 +129,7 @@ class NotificationTemplateForm extends Component
         $template = $customer->notificationTemplates()->findOrFail($this->templateId);
         $template->delete();
 
-        session()->flash('success', 'Vorlage erfolgreich gelöscht.');
-        $this->redirect(route('customer.notification-settings.templates.index'));
+        $this->js('window.dispatchEvent(new CustomEvent("template-deleted"))');
     }
 
     public function render()
