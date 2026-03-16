@@ -35,17 +35,35 @@ class NotificationRuleService
         $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->implode(', ')
             ?: ($event->country?->getName('de') ?? '');
 
-        // Kategorie aus eventTypes ableiten (category-Feld ist oft NULL)
-        $category = $event->category;
+        // Kategorien aus eventTypes ableiten (category-Feld ist oft NULL)
+        // Mapping EventType code → NotificationRule category key
+        $codeToRuleCategory = [
+            'environment' => 'environment',
+            'travel' => 'traffic',
+            'safety' => 'security',
+            'entry' => 'entry',
+            'health' => 'health',
+            'general' => 'general',
+        ];
+
+        $categories = [];
         $categoryLabel = '';
         if ($event->eventTypes->isNotEmpty()) {
             $categoryLabel = $event->eventTypes->pluck('name')->implode(', ');
-            if (!$category) {
-                $category = $event->eventTypes->first()->code ?? null;
-            }
+            $categories = $event->eventTypes
+                ->map(fn ($et) => $codeToRuleCategory[$et->code] ?? $et->code)
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+        // Fallback auf das category-Feld des Events
+        if (empty($categories) && $event->category) {
+            $categories = [$event->category];
         }
         if (!$categoryLabel) {
-            $categoryLabel = NotificationRule::CATEGORIES[$category] ?? ($category ?? '');
+            $categoryLabel = collect($categories)
+                ->map(fn ($c) => NotificationRule::CATEGORIES[$c] ?? $c)
+                ->implode(', ');
         }
 
         $placeholders = [
@@ -60,7 +78,7 @@ class NotificationRuleService
         return $this->sendMatchingNotifications(
             event: $event,
             riskLevel: $event->priority,
-            category: $category,
+            categories: $categories,
             countryIds: $countryIds,
             placeholders: $placeholders,
             force: $force,
@@ -91,7 +109,7 @@ class NotificationRuleService
         return $this->sendMatchingNotifications(
             event: $event,
             riskLevel: $riskLevel,
-            category: 'environment',
+            categories: ['environment'],
             countryIds: $countryIds,
             placeholders: $placeholders,
             force: $force,
@@ -105,7 +123,7 @@ class NotificationRuleService
     private function sendMatchingNotifications(
         CustomEvent|DisasterEvent $event,
         string $riskLevel,
-        ?string $category,
+        array $categories,
         array $countryIds,
         array $placeholders,
         bool $force = false,
@@ -132,7 +150,7 @@ class NotificationRuleService
         }
 
         foreach ($rules as $rule) {
-            if (!$this->ruleMatches($rule, $riskLevel, $category, $countryIds)) {
+            if (!$this->ruleMatches($rule, $riskLevel, $categories, $countryIds)) {
                 continue;
             }
 
@@ -170,22 +188,23 @@ class NotificationRuleService
     private function ruleMatches(
         NotificationRule $rule,
         string $riskLevel,
-        ?string $category,
+        array $eventCategories,
         array $countryIds,
     ): bool {
-        // Risk Level Filter
+        // Risk Level Filter: leer = alle Risikostufen matchen
         if (!empty($rule->risk_levels) && !in_array($riskLevel, $rule->risk_levels)) {
             return false;
         }
 
-        // Category Filter: if rule has categories set, event must have a matching category
+        // Category Filter: leer = alle Kategorien matchen
+        // Event kann mehrere Kategorien haben, mindestens eine muss übereinstimmen
         if (!empty($rule->categories)) {
-            if (!$category || !in_array($category, $rule->categories)) {
+            if (empty($eventCategories) || empty(array_intersect($rule->categories, $eventCategories))) {
                 return false;
             }
         }
 
-        // Country Filter: if rule has countries set, event must have a matching country
+        // Country Filter: leer = alle Länder matchen
         if (!empty($rule->country_ids)) {
             if (empty($countryIds) || empty(array_intersect($rule->country_ids, $countryIds))) {
                 return false;
