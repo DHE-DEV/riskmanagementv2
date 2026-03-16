@@ -81,6 +81,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::post('/passolution/disconnect', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'disconnect'])
             ->name('passolution.disconnect');
 
+        Route::post('/passolution/store-token', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'storeManualToken'])
+            ->name('passolution.store-token');
+
         Route::post('/passolution/refresh-token', [\App\Http\Controllers\Customer\PassolutionOAuthController::class, 'refreshToken'])
             ->name('passolution.refresh-token');
 

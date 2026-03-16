@@ -1185,12 +1185,44 @@
                                         </span>
                                     </div>
                                 @else
-                                    <a href="{{ route('customer.passolution.authorize') }}"
-                                       class="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors inline-block">
-                                        Aktivieren
-                                    </a>
+                                    <span class="px-3 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded border border-gray-200">
+                                        Inaktiv
+                                    </span>
                                 @endif
                             </div>
+
+                            @if(!$hasActiveToken)
+                                <div class="pt-3 border-t border-gray-200" x-data="{ showTokenInput: false }">
+                                    <p class="text-xs text-gray-500 mb-3">Verbindung aktivieren:</p>
+                                    <div class="space-y-2">
+                                        <a href="{{ route('customer.passolution.authorize') }}"
+                                           class="w-full px-3 py-2 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                                            <i class="fa-regular fa-link"></i>
+                                            Via OAuth verbinden
+                                        </a>
+                                        <button @click="showTokenInput = !showTokenInput"
+                                                class="w-full px-3 py-2 bg-white text-gray-700 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                                            <i class="fa-regular fa-key"></i>
+                                            Token manuell eingeben
+                                        </button>
+                                    </div>
+                                    <div x-show="showTokenInput" x-cloak class="mt-3">
+                                        <form method="POST" action="{{ route('customer.passolution.store-token') }}">
+                                            @csrf
+                                            <div class="space-y-2">
+                                                <input type="text" name="passolution_token"
+                                                       placeholder="Token hier einfügen..."
+                                                       required minlength="10"
+                                                       class="w-full px-3 py-2 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                                <button type="submit"
+                                                        class="w-full px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors">
+                                                    Token speichern
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endif
 
                             @if($hasActiveToken)
                                 {{-- Token Info --}}
@@ -1202,9 +1234,13 @@
                                                 <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
                                                     via SSO (pds-homepage)
                                                 </span>
-                                            @else
+                                            @elseif($customer->passolution_refresh_token)
                                                 <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">
                                                     via OAuth
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded border border-amber-200">
+                                                    via Token
                                                 </span>
                                             @endif
                                         </div>

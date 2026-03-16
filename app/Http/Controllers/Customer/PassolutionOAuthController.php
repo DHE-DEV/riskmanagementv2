@@ -137,6 +137,27 @@ class PassolutionOAuthController extends Controller
     }
 
     /**
+     * Store a manually entered token
+     */
+    public function storeManualToken(Request $request)
+    {
+        $request->validate([
+            'passolution_token' => 'required|string|min:10',
+        ]);
+
+        $customer = auth('customer')->user();
+        $customer->update([
+            'passolution_access_token' => $request->passolution_token,
+            'passolution_token_expires_at' => now()->addYear(),
+            'passolution_refresh_token' => null,
+            'passolution_refresh_token_expires_at' => null,
+        ]);
+
+        return redirect()->route('customer.dashboard')
+            ->with('success', 'Passolution-Token erfolgreich gespeichert!');
+    }
+
+    /**
      * Refresh the access token using refresh token
      */
     public function refreshToken()
