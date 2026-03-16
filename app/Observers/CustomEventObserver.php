@@ -20,6 +20,10 @@ class CustomEventObserver
             return;
         }
 
+        // Refresh to pick up DB defaults (e.g. review_status = 'approved')
+        // since Eloquent doesn't know about column defaults after insert.
+        $customEvent->refresh();
+
         if ($customEvent->is_active && $customEvent->review_status === 'approved') {
             SendRiskEventNotifications::dispatch($customEvent);
         }

@@ -23,40 +23,54 @@ class NotificationRuleService
     /**
      * Versende Benachrichtigungen für ein neues CustomEvent.
      */
-    public function processCustomEvent(CustomEvent $event): int
+    public function processCustomEvent(CustomEvent $event, bool $force = false): int
     {
-        $event->loadMissing(['countries', 'eventType']);
+        $event->loadMissing(['countries', 'eventType', 'eventTypes']);
 
         $countryIds = $event->countries->pluck('id')->toArray();
         if (empty($countryIds) && $event->country_id) {
             $countryIds = [$event->country_id];
         }
 
-        $countryName = $event->countries->pluck('name')->implode(', ')
-            ?: ($event->country?->name ?? '');
+        $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->implode(', ')
+            ?: ($event->country?->getName('de') ?? '');
+
+        // Kategorie aus eventTypes ableiten (category-Feld ist oft NULL)
+        $category = $event->category;
+        $categoryLabel = '';
+        if ($event->eventTypes->isNotEmpty()) {
+            $categoryLabel = $event->eventTypes->pluck('name')->implode(', ');
+            if (!$category) {
+                $category = $event->eventTypes->first()->code ?? null;
+            }
+        }
+        if (!$categoryLabel) {
+            $categoryLabel = NotificationRule::CATEGORIES[$category] ?? ($category ?? '');
+        }
 
         $placeholders = [
             '{event_title}' => $event->title,
             '{country_name}' => $countryName,
             '{risk_level}' => NotificationRule::RISK_LEVELS[$event->priority] ?? $event->priority,
-            '{category}' => NotificationRule::CATEGORIES[$event->category] ?? ($event->category ?? ''),
-            '{description}' => $event->description ?? '',
+            '{category}' => $categoryLabel,
+            '{description}' => $event->description ?? $event->popup_content ?? '',
             '{event_date}' => $event->start_date?->format('d.m.Y') ?? now()->format('d.m.Y'),
         ];
 
         return $this->sendMatchingNotifications(
             event: $event,
             riskLevel: $event->priority,
-            category: $event->category,
+            category: $category,
             countryIds: $countryIds,
             placeholders: $placeholders,
+            force: $force,
         );
     }
 
     /**
      * Versende Benachrichtigungen für ein neues DisasterEvent.
      */
-    public function processDisasterEvent(DisasterEvent $event): int
+    public function processDisasterEvent(DisasterEvent $event, bool $force = false): int
     {
         $event->loadMissing(['country']);
 
@@ -80,6 +94,7 @@ class NotificationRuleService
             category: 'environment',
             countryIds: $countryIds,
             placeholders: $placeholders,
+            force: $force,
         );
     }
 
@@ -93,6 +108,7 @@ class NotificationRuleService
         ?string $category,
         array $countryIds,
         array $placeholders,
+        bool $force = false,
     ): int {
         $sentCount = 0;
         $sentEmails = []; // Recipient deduplication per event
@@ -108,13 +124,20 @@ class NotificationRuleService
         $eventId = $event->id;
         $eventType = get_class($event);
 
+        // Force: delete existing logs so unique constraint won't block re-send
+        if ($force) {
+            NotificationLog::where('event_id', $eventId)
+                ->where('event_type', $eventType)
+                ->delete();
+        }
+
         foreach ($rules as $rule) {
             if (!$this->ruleMatches($rule, $riskLevel, $category, $countryIds)) {
                 continue;
             }
 
-            // Duplicate prevention: skip if already sent for this rule + event
-            if ($this->alreadySentForEvent($rule->id, $eventId, $eventType)) {
+            // Duplicate prevention: skip if already sent for this rule + event (unless forced)
+            if (!$force && $this->alreadySentForEvent($rule->id, $eventId, $eventType)) {
                 Log::debug('Notification bereits versendet, überspringe', [
                     'rule_id' => $rule->id,
                     'event_id' => $eventId,
@@ -155,14 +178,16 @@ class NotificationRuleService
             return false;
         }
 
-        // Category Filter
-        if (!empty($rule->categories) && $category && !in_array($category, $rule->categories)) {
-            return false;
+        // Category Filter: if rule has categories set, event must have a matching category
+        if (!empty($rule->categories)) {
+            if (!$category || !in_array($category, $rule->categories)) {
+                return false;
+            }
         }
 
-        // Country Filter
-        if (!empty($rule->country_ids) && !empty($countryIds)) {
-            if (empty(array_intersect($rule->country_ids, $countryIds))) {
+        // Country Filter: if rule has countries set, event must have a matching country
+        if (!empty($rule->country_ids)) {
+            if (empty($countryIds) || empty(array_intersect($rule->country_ids, $countryIds))) {
                 return false;
             }
         }

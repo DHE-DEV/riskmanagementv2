@@ -122,6 +122,35 @@ class EditCustomEvent extends EditRecord
                 ->modalSubmitActionLabel('KI ausführen')
                 ->modalCancelActionLabel('Schließen'),
 
+            Action::make('trigger_notifications')
+                ->label('Benachrichtigungen auslösen')
+                ->icon('heroicon-o-bell-alert')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Benachrichtigungen auslösen')
+                ->modalDescription('Möchten Sie die Benachrichtigungen für dieses Event erneut auslösen? Empfänger, die bereits benachrichtigt wurden, erhalten keine doppelte E-Mail.')
+                ->modalSubmitActionLabel('Ja, Benachrichtigungen senden')
+                ->action(function () {
+                    $event = $this->record;
+
+                    if (!$event->is_active || $event->review_status !== 'approved') {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Benachrichtigung nicht möglich')
+                            ->body('Das Event muss aktiv und freigegeben sein.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    \App\Jobs\SendRiskEventNotifications::dispatch($event, force: true);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Benachrichtigungen ausgelöst')
+                        ->body('Die Benachrichtigungen werden im Hintergrund verarbeitet.')
+                        ->success()
+                        ->send();
+                }),
+
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),

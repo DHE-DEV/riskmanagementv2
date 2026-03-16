@@ -46,11 +46,122 @@
                     @error('subject') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
-                <div>
-                    <label for="bodyHtml" class="block text-sm font-medium text-gray-700">E-Mail-Inhalt (HTML)</label>
-                    <textarea wire:model="bodyHtml" id="bodyHtml" rows="12"
-                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                              placeholder="HTML-Inhalt der E-Mail..."></textarea>
+                <div x-data="{
+                    mode: 'editor',
+                    html: @entangle('bodyHtml'),
+                    init() {
+                        this.$nextTick(() => {
+                            if (this.$refs.editorContent) {
+                                this.$refs.editorContent.innerHTML = this.html || '';
+                            }
+                        });
+                        this.$watch('html', (val, oldVal) => {
+                            this.$nextTick(() => {
+                                if (this.$refs.editorContent && this.$refs.editorContent.innerHTML !== val) {
+                                    this.$refs.editorContent.innerHTML = val || '';
+                                }
+                            });
+                        });
+                    },
+                    syncFromEditor() {
+                        this.html = this.$refs.editorContent.innerHTML;
+                    },
+                    syncFromHtml() {
+                        if (this.$refs.editorContent) {
+                            this.$refs.editorContent.innerHTML = this.html || '';
+                        }
+                    },
+                    exec(cmd, val = null) {
+                        document.execCommand(cmd, false, val);
+                        this.$refs.editorContent.focus();
+                        this.syncFromEditor();
+                    },
+                    insertLink() {
+                        const url = prompt('URL eingeben:', 'https://');
+                        if (url) this.exec('createLink', url);
+                    },
+                    insertPlaceholder(placeholder) {
+                        this.$refs.editorContent.focus();
+                        document.execCommand('insertText', false, placeholder);
+                        this.syncFromEditor();
+                    },
+                }">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail-Inhalt (HTML)</label>
+
+                    {{-- Mode Toggle --}}
+                    <div class="flex items-center gap-2 mb-2">
+                        <button type="button" @click="mode = 'editor'; syncFromHtml()"
+                                :class="mode === 'editor' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                class="px-3 py-1 text-xs rounded-lg transition-colors">
+                            <i class="fas fa-pen-fancy mr-1"></i> Editor
+                        </button>
+                        <button type="button" @click="mode = 'html'"
+                                :class="mode === 'html' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                class="px-3 py-1 text-xs rounded-lg transition-colors">
+                            <i class="fas fa-code mr-1"></i> HTML
+                        </button>
+                    </div>
+
+                    {{-- Visual Editor --}}
+                    <div x-show="mode === 'editor'" x-cloak
+                         x-effect="if (mode === 'editor' && $refs.editorContent && $refs.editorContent.innerHTML !== html) { $refs.editorContent.innerHTML = html || ''; }">
+                        {{-- Toolbar --}}
+                        <div class="flex flex-wrap items-center gap-1 p-2 bg-gray-50 border border-gray-300 rounded-t-lg border-b-0">
+                            <button type="button" @click="exec('bold')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Fett"><i class="fas fa-bold fa-sm"></i></button>
+                            <button type="button" @click="exec('italic')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Kursiv"><i class="fas fa-italic fa-sm"></i></button>
+                            <button type="button" @click="exec('underline')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Unterstrichen"><i class="fas fa-underline fa-sm"></i></button>
+                            <div class="w-px h-5 bg-gray-300 mx-1"></div>
+                            <button type="button" @click="exec('formatBlock', 'h2')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700 text-xs font-bold" title="Überschrift">H2</button>
+                            <button type="button" @click="exec('formatBlock', 'h3')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700 text-xs font-bold" title="Überschrift">H3</button>
+                            <button type="button" @click="exec('formatBlock', 'p')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700 text-xs" title="Absatz">P</button>
+                            <div class="w-px h-5 bg-gray-300 mx-1"></div>
+                            <button type="button" @click="exec('insertUnorderedList')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Aufzählung"><i class="fas fa-list-ul fa-sm"></i></button>
+                            <button type="button" @click="exec('insertOrderedList')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Nummerierung"><i class="fas fa-list-ol fa-sm"></i></button>
+                            <div class="w-px h-5 bg-gray-300 mx-1"></div>
+                            <button type="button" @click="insertLink()" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Link einfügen"><i class="fas fa-link fa-sm"></i></button>
+                            <button type="button" @click="exec('unlink')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Link entfernen"><i class="fas fa-unlink fa-sm"></i></button>
+                            <button type="button" @click="exec('insertHorizontalRule')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Trennlinie"><i class="fas fa-minus fa-sm"></i></button>
+                            <div class="w-px h-5 bg-gray-300 mx-1"></div>
+                            <button type="button" @click="exec('removeFormat')" class="p-1.5 rounded hover:bg-gray-200 text-gray-700" title="Formatierung entfernen"><i class="fas fa-eraser fa-sm"></i></button>
+
+                            {{-- Placeholder Dropdown --}}
+                            <div class="relative ml-auto" x-data="{ open: false }">
+                                <button type="button" @click="open = !open" class="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 flex items-center gap-1">
+                                    <i class="fas fa-code fa-sm"></i> Platzhalter
+                                    <i class="fas fa-caret-down fa-sm"></i>
+                                </button>
+                                <div x-show="open" @click.outside="open = false" x-cloak
+                                     class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 w-56">
+                                    @foreach($placeholders as $placeholder => $description)
+                                        <button type="button"
+                                                @click="insertPlaceholder('{{ $placeholder }}'); open = false"
+                                                class="w-full text-left px-3 py-1.5 text-xs hover:bg-blue-50 flex items-center gap-2">
+                                            <code class="text-blue-700 bg-blue-50 px-1 rounded">{{ $placeholder }}</code>
+                                            <span class="text-gray-500">{{ $description }}</span>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Editable Area --}}
+                        <div x-ref="editorContent"
+                             contenteditable="true"
+                             @input="syncFromEditor()"
+                             @blur="syncFromEditor()"
+                             class="block w-full min-h-[250px] px-4 py-3 border border-gray-300 rounded-b-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 prose prose-sm max-w-none bg-white overflow-y-auto"
+                             style="max-height: 500px;"
+                        ></div>
+                    </div>
+
+                    {{-- HTML Source Editor --}}
+                    <div x-show="mode === 'html'" x-cloak>
+                        <textarea x-model="html"
+                                  rows="12"
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                  placeholder="HTML-Inhalt der E-Mail..."></textarea>
+                    </div>
+
                     @error('bodyHtml') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -85,7 +196,7 @@
                         <span class="text-sm text-gray-500">Betreff:</span>
                         <span class="text-sm font-medium">{{ $subject }}</span>
                     </div>
-                    <div class="prose prose-sm max-w-none">
+                    <div class="prose prose-sm max-w-none" style="white-space: pre-line;">
                         {!! $bodyHtml !!}
                     </div>
                 </div>
