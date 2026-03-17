@@ -1828,8 +1828,7 @@ $version = '1.1.0';
                                         </div>
 
                                         <!-- Progress Bar -->
-                                        <div class="mb-4"
-                                            x-data="{ tp: getTripProgress(selectedTrip.start_date, selectedTrip.end_date) }">
+                                        <div class="mb-4">
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-xs font-medium text-gray-700"
                                                     x-text="formatDate(selectedTrip.start_date)"></span>
@@ -1838,8 +1837,8 @@ $version = '1.1.0';
                                             </div>
                                             <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
                                                 <div class="h-full rounded-full transition-all duration-300"
-                                                    :class="tp.started ? 'bg-green-500' : 'bg-gray-300'"
-                                                    :style="'width: ' + (tp.started ? tp.progress : 100) + '%'"></div>
+                                                    :class="getTripProgress(selectedTrip.start_date, selectedTrip.end_date).started ? 'bg-green-500' : 'bg-gray-300'"
+                                                    :style="'width: ' + (getTripProgress(selectedTrip.start_date, selectedTrip.end_date).started ? getTripProgress(selectedTrip.start_date, selectedTrip.end_date).progress : 100) + '%'"></div>
                                             </div>
                                         </div>
 
@@ -2012,8 +2011,7 @@ $version = '1.1.0';
                                         <!-- Trip info row -->
                                         <div class="px-4 py-3 bg-white">
                                             <div class="flex items-center gap-4">
-                                                <div class="flex-1"
-                                                    x-data="{ tp: getTripProgress(selectedTrip.start_date, selectedTrip.end_date) }">
+                                                <div class="flex-1">
                                                     <div class="flex justify-between text-xs text-gray-600 mb-1">
                                                         <span x-text="formatDate(selectedTrip.start_date)"></span>
                                                         <span x-text="formatDate(selectedTrip.end_date)"></span>
@@ -2022,12 +2020,12 @@ $version = '1.1.0';
                                                         <div
                                                             class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                                             <div class="h-full rounded-full transition-all duration-300"
-                                                                :class="tp.started ? 'bg-green-500' : 'bg-gray-300'"
-                                                                :style="'width: ' + (tp.started ? tp.progress : 100) + '%'">
+                                                                :class="getTripProgress(selectedTrip.start_date, selectedTrip.end_date).started ? 'bg-green-500' : 'bg-gray-300'"
+                                                                :style="'width: ' + (getTripProgress(selectedTrip.start_date, selectedTrip.end_date).started ? getTripProgress(selectedTrip.start_date, selectedTrip.end_date).progress : 100) + '%'">
                                                             </div>
                                                         </div>
                                                         <span class="text-xs text-gray-500 w-auto"
-                                                            x-text="tp.status === 'upcoming' ? 'Geplant' : tp.status === 'active' ? tp.progress + '%' : 'Beendet'"></span>
+                                                            x-text="(() => { const tp = getTripProgress(selectedTrip.start_date, selectedTrip.end_date); return tp.status === 'upcoming' ? 'Geplant' : tp.status === 'active' ? tp.progress + '%' : 'Beendet'; })()"></span>
                                                     </div>
                                                 </div>
                                             </div>
