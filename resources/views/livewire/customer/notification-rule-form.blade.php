@@ -59,19 +59,15 @@
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Risikostufe</label>
                 <div class="flex flex-wrap gap-3">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="riskLevel" wire:click="$set('riskLevels', [])" {{ empty($riskLevels) ? 'checked' : '' }}
-                               class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span class="text-sm text-gray-700">Alle</span>
-                    </label>
                     @foreach($availableRiskLevels as $value => $label)
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="riskLevel" wire:click="$set('riskLevels', ['{{ $value }}'])" {{ in_array($value, $riskLevels) ? 'checked' : '' }}
-                                   class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <input type="checkbox" wire:model="riskLevels" value="{{ $value }}"
+                                   class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                             <span class="text-sm text-gray-700">{{ $label }}</span>
                         </label>
                     @endforeach
                 </div>
+                <p class="text-xs text-gray-500 mt-1">Leer = alle Risikostufen</p>
             </div>
 
             {{-- Categories --}}
