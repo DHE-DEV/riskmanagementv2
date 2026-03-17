@@ -62,6 +62,13 @@ class CustomEventForm
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
                     ->columnSpanFull(),
 
+                TextInput::make('source')
+                    ->label('Quelle')
+                    ->maxLength(255)
+                    ->placeholder('z.B. Auswärtiges Amt, BBC News, interne Meldung')
+                    ->helperText('Woher stammt die Information?')
+                    ->columnSpanFull(),
+
                 // Keep single event_type_id for backward compatibility but hide it
                 Select::make('event_type_id')
                     ->label('Event-Typ (Alt)')

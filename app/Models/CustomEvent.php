@@ -32,6 +32,7 @@ class CustomEvent extends Model implements Feedable
         'icon_color',
         'marker_size',
         'popup_content',
+        'source',
         'start_date',
         'end_date',
         'is_active',
