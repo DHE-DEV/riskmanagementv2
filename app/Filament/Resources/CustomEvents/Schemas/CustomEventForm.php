@@ -64,6 +64,7 @@ class CustomEventForm
 
                 TextInput::make('source')
                     ->label('Quelle')
+                    ->required()
                     ->maxLength(255)
                     ->placeholder('z.B. Auswärtiges Amt, BBC News, interne Meldung')
                     ->helperText('Woher stammt die Information?')
