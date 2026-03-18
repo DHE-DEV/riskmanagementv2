@@ -226,8 +226,12 @@ class AirportSearchController extends Controller
     {
         $countries = Country::query()
             ->select(['countries.id', 'countries.iso_code', 'countries.name_translations'])
-            ->join('airports', 'airports.country_id', '=', 'countries.id')
-            ->distinct()
+            ->whereExists(function ($query) {
+                $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('airports')
+                    ->whereColumn('airports.country_id', 'countries.id')
+                    ->whereNull('airports.deleted_at');
+            })
             ->orderBy('countries.iso_code')
             ->get()
             ->map(function ($country) {

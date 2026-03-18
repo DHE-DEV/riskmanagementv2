@@ -241,9 +241,15 @@
                  class="absolute bottom-4 left-4 right-4 bg-white rounded-xl shadow-2xl max-w-md z-[1000] overflow-hidden max-h-[calc(100%-2rem)] overflow-y-auto">
                 <!-- Header -->
                 <div class="p-4 pb-3">
-                    <button @click="selectedAirport = null; airportAirlines = []; airlinesOpen = false; hotelsOpen = false; loungesOpen = false; mobilityOpen = false;" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fa-regular fa-xmark text-lg"></i>
-                    </button>
+                    <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                        <button @click="toggleAllSections()"
+                                class="text-gray-400 hover:text-blue-600 transition-colors" :title="allSectionsOpen ? 'Alle zuklappen' : 'Alle aufklappen'">
+                            <i class="fa-regular text-sm" :class="allSectionsOpen ? 'fa-compress' : 'fa-expand'"></i>
+                        </button>
+                        <button @click="selectedAirport = null; airportAirlines = []; airlinesOpen = false; hotelsOpen = false; loungesOpen = false; mobilityOpen = false;" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fa-regular fa-xmark text-lg"></i>
+                        </button>
+                    </div>
                     <div class="flex items-start gap-3">
                         <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                             <i class="fa-regular fa-plane text-blue-600 text-xl"></i>
@@ -278,10 +284,6 @@
                                     <i class="fa-regular fa-shield-check text-[10px]"></i> Sicherheitskontrolle
                                 </a>
                             </div>
-                            <p class="text-xs text-gray-400 mt-2 font-mono" x-show="selectedAirport?.latitude && selectedAirport?.longitude">
-                                <span x-text="parseFloat(selectedAirport?.latitude).toFixed(4)"></span>,
-                                <span x-text="parseFloat(selectedAirport?.longitude).toFixed(4)"></span>
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -642,6 +644,7 @@ function airportsApp() {
         hotelsOpen: false,
         loungesOpen: false,
         mobilityOpen: false,
+        allSectionsOpen: false,
 
         init() {
             this.$nextTick(() => {
@@ -768,6 +771,28 @@ function airportsApp() {
 
         hasMobilityOptions() {
             return this.countMobilityOptions() > 0;
+        },
+
+        async toggleAllSections() {
+            const open = !this.allSectionsOpen;
+            this.allSectionsOpen = open;
+            this.airlinesOpen = open;
+            this.hotelsOpen = open;
+            this.loungesOpen = open;
+            this.mobilityOpen = open;
+
+            if (open && this.airportAirlines.length === 0 && this.selectedAirport) {
+                this.airlinesLoading = true;
+                try {
+                    const response = await fetch(`/api/airports/${this.selectedAirport.id}/airlines`);
+                    const data = await response.json();
+                    this.airportAirlines = data.data || [];
+                } catch (e) {
+                    console.error('Error loading airlines:', e);
+                } finally {
+                    this.airlinesLoading = false;
+                }
+            }
         },
 
         countMobilityOptions() {
