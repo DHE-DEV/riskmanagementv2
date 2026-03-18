@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Airline;
 use App\Models\Airport;
 use App\Models\AirportCode;
 use App\Models\Country;
@@ -35,6 +36,13 @@ class AirportSearchController extends Controller
             $airportTable.'.name as name',
             $airportTable.'.iata_code as iata_code',
             $airportTable.'.icao_code as icao_code',
+            $airportTable.'.type as type',
+            $airportTable.'.operates_24h as operates_24h',
+            $airportTable.'.website as website',
+            $airportTable.'.security_timeslot_url as security_timeslot_url',
+            $airportTable.'.nearby_hotels as nearby_hotels',
+            $airportTable.'.lounges as lounges',
+            $airportTable.'.mobility_options as mobility_options',
         ];
         // Unterstütze beide Varianten: latitude/longitude ODER lat/lng (je nach DB-Schema)
         if (Schema::hasColumn('airports', 'latitude') && Schema::hasColumn('airports', 'longitude')) {
@@ -149,20 +157,69 @@ class AirportSearchController extends Controller
                 ];
             }
 
+            $decodeJson = function ($value) {
+                if (is_string($value)) {
+                    return json_decode($value, true) ?? [];
+                }
+                return $value ?: [];
+            };
+
+            $typeLabels = [
+                'international' => 'Internationaler Flughafen',
+                'large_airport' => 'Großer Flughafen',
+                'medium_airport' => 'Mittlerer Flughafen',
+                'small_airport' => 'Kleiner Flughafen',
+                'heliport' => 'Hubschrauberlandeplatz',
+                'seaplane_base' => 'Wasserflugzeugbasis',
+            ];
+
             return [
                 'id' => $airport->id,
                 'name' => $airport->name,
                 'iata_code' => $airport->iata_code,
                 'icao_code' => $airport->icao_code,
+                'type' => $airport->type,
+                'type_label' => $typeLabels[$airport->type] ?? $airport->type,
+                'operates_24h' => (bool) $airport->operates_24h,
+                'website' => $airport->website,
+                'security_timeslot_url' => $airport->security_timeslot_url,
                 'latitude' => $airport->latitude ?? null,
                 'longitude' => $airport->longitude ?? null,
                 'country' => $country,
+                'nearby_hotels' => $decodeJson($airport->nearby_hotels),
+                'lounges' => $decodeJson($airport->lounges),
+                'mobility_options' => $decodeJson($airport->mobility_options),
             ];
         });
 
         return response()->json([
             'data' => $results,
         ]);
+    }
+
+    public function airlines(Airport $airport): JsonResponse
+    {
+        $airlines = $airport->airlines()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($airline) {
+                $cabinClassLabels = Airline::getCabinClassOptions();
+
+                return [
+                    'id' => $airline->id,
+                    'name' => $airline->name,
+                    'iata_code' => $airline->iata_code,
+                    'icao_code' => $airline->icao_code,
+                    'cabin_classes' => collect($airline->cabin_classes ?? [])
+                        ->map(fn ($key) => $cabinClassLabels[$key] ?? $key)
+                        ->values()
+                        ->all(),
+                    'terminal' => $airline->pivot->terminal,
+                ];
+            });
+
+        return response()->json(['data' => $airlines]);
     }
 
     public function countries(): JsonResponse

@@ -75,6 +75,7 @@ Route::get('/continents', function () {
 
 // Airports search
 Route::get('/airports/search', [AirportSearchController::class, 'search'])->name('airports.search');
+Route::get('/airports/{airport}/airlines', [AirportSearchController::class, 'airlines'])->name('airports.airlines');
 Route::get('/airports/countries', [AirportSearchController::class, 'countries'])->name('airports.countries');
 Route::get('/airports/continents', [AirportSearchController::class, 'continents'])->name('airports.continents');
 Route::get('/countries/search', [AirportSearchController::class, 'countrySearch'])->name('countries.search');
