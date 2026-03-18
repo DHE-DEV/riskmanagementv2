@@ -590,6 +590,17 @@ function riskOverviewApp() {
                     this.trips = result.data.trips;
                     this.tripsSummary = result.data.summary;
                     this.tripsLoaded = true;
+
+                    // Keep selectedTrip in sync with new data
+                    if (this.selectedTrip) {
+                        const updated = this.trips.find(t => t.folder_id === this.selectedTrip.folder_id);
+                        if (updated) {
+                            this.selectedTrip = updated;
+                        } else {
+                            this.selectedTrip = null;
+                            this.selectedTripCountry = null;
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('Error loading trips:', e);

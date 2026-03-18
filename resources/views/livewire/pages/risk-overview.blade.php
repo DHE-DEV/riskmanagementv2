@@ -1791,7 +1791,7 @@ $version = '1.1.0';
 
                 <!-- Trip selected -->
                 <template x-if="selectedTrip">
-                    <div class="flex-1 flex flex-col min-h-0">
+                    <div class="flex-1 flex flex-col min-h-0" :key="selectedTrip.folder_id">
 
                         <!-- ===== Tiles View ===== -->
                         <div x-show="tripActiveTab === 'tiles'" class="flex-1 flex flex-col min-h-0 overflow-y-auto">
@@ -2188,6 +2188,25 @@ $version = '1.1.0';
                             class="flex-1 flex flex-col min-h-0 overflow-hidden" x-data="{
                              currentMonth: new Date().getMonth(),
                              currentYear: new Date().getFullYear(),
+                             _lastTripId: null,
+                             init() {
+                                 // Auto-navigate to trip start when selectedTrip changes
+                                 this.$watch('selectedTrip', (trip) => {
+                                     if (trip?.start_date && trip.folder_id !== this._lastTripId) {
+                                         this._lastTripId = trip.folder_id;
+                                         const d = new Date(trip.start_date);
+                                         this.currentMonth = d.getMonth();
+                                         this.currentYear = d.getFullYear();
+                                     }
+                                 });
+                                 // Navigate to current trip on init
+                                 if (selectedTrip?.start_date) {
+                                     this._lastTripId = selectedTrip.folder_id;
+                                     const d = new Date(selectedTrip.start_date);
+                                     this.currentMonth = d.getMonth();
+                                     this.currentYear = d.getFullYear();
+                                 }
+                             },
                              get monthYearLabel() {
                                  const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
                                  return months[this.currentMonth] + ' ' + this.currentYear;
