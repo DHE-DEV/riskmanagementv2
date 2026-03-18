@@ -232,7 +232,6 @@ class AirportSearchController extends Controller
                     ->whereColumn('airports.country_id', 'countries.id')
                     ->whereNull('airports.deleted_at');
             })
-            ->orderBy('countries.iso_code')
             ->get()
             ->map(function ($country) {
                 return [
@@ -240,7 +239,9 @@ class AirportSearchController extends Controller
                     'code' => $country->iso_code,
                     'name' => $country->getName('de'),
                 ];
-            });
+            })
+            ->sortBy('name', SORT_LOCALE_STRING)
+            ->values();
 
         return response()->json([
             'data' => $countries,
