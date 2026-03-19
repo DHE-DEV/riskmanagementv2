@@ -13,11 +13,15 @@ class OnboardingRequest extends FormRequest
 
     public function rules(): array
     {
+        $integrationType = $this->input('integration_type', 'website');
+        $domainRequired = in_array($integrationType, ['website', 'both']) ? 'required' : 'nullable';
+
         return [
             'company_name' => ['required', 'string', 'max:255'],
             'contact_name' => ['required', 'string', 'max:255'],
+            'integration_type' => ['sometimes', 'string', 'in:website,app,both'],
             'domain' => [
-                'required',
+                $domainRequired,
                 'string',
                 'max:255',
                 'regex:/^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/',

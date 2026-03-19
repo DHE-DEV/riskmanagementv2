@@ -120,14 +120,6 @@
                     Benachrichtigungen
                 </a>
 
-                @if($customer->gtm_api_enabled)
-                <a href="{{ route('customer.settings', ['section' => 'api']) }}"
-                   class="settings-nav-item {{ $settingsSection === 'api' ? 'active' : '' }}">
-                    <i class="fas fa-code"></i>
-                    API-Zugang
-                </a>
-                @endif
-
                 @if($customer->branch_management_active)
                 <div class="settings-section-title mt-2">Organisation</div>
 
@@ -149,6 +141,26 @@
                     Benutzerverwaltung
                 </a>
                 @endif
+
+                <div class="settings-section-title mt-2">Travel Compliance Platform</div>
+
+                <a href="{{ route('customer.settings', ['section' => 'travel-requirements']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'travel-requirements' ? 'active' : '' }}">
+                    <i class="fas fa-passport"></i>
+                    Travel Requirements Service
+                </a>
+
+                <a href="{{ route('customer.settings', ['section' => 'global-travel-monitor']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'global-travel-monitor' ? 'active' : '' }}">
+                    <i class="fas fa-globe"></i>
+                    Global Travel Monitor
+                </a>
+
+                <a href="{{ route('customer.settings', ['section' => 'travel-alert']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'travel-alert' ? 'active' : '' }}">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    Travel Alert
+                </a>
             </nav>
         </div>
     </div>
@@ -802,81 +814,6 @@
                     </div>
                 </div>
 
-                </div>
-
-            @elseif($settingsSection === 'api')
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">API-Zugang</h3>
-                <p class="text-sm text-gray-500 mb-6">Verwalten Sie Ihren API-Token für den Zugriff auf die GTM-API.</p>
-
-                <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="{
-                    generatedToken: '', hasToken: false, loading: false, copied: false,
-                    async init() { await this.checkStatus(); },
-                    async checkStatus() {
-                        try {
-                            const r = await fetch('{{ route('customer.api-tokens.status') }}', { headers: { 'Accept': 'application/json' } });
-                            const d = await r.json();
-                            this.hasToken = d.has_token || false;
-                        } catch(e) {}
-                    },
-                    async generateToken() {
-                        this.loading = true;
-                        try {
-                            const r = await fetch('{{ route('customer.api-tokens.generate') }}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
-                            const d = await r.json();
-                            if (d.token) { this.generatedToken = d.token; this.hasToken = true; }
-                        } catch(e) {}
-                        this.loading = false;
-                    },
-                    async revokeToken() {
-                        if (!confirm('Möchten Sie den API-Token wirklich widerrufen?')) return;
-                        this.loading = true;
-                        try {
-                            await fetch('{{ route('customer.api-tokens.revoke') }}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
-                            this.hasToken = false; this.generatedToken = '';
-                        } catch(e) {}
-                        this.loading = false;
-                    },
-                    copyToken() {
-                        navigator.clipboard.writeText(this.generatedToken);
-                        this.copied = true;
-                        setTimeout(() => this.copied = false, 2000);
-                    }
-                }">
-                    {{-- Token anzeigen --}}
-                    <div x-show="generatedToken" x-cloak class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p class="text-sm text-green-800 font-medium mb-2"><i class="fas fa-check-circle mr-1"></i> API Token erfolgreich generiert</p>
-                        <div class="flex gap-2 items-center">
-                            <input type="text" x-model="generatedToken" readonly class="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono select-all" @click="$el.select()">
-                            <button @click="copyToken" class="px-4 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 flex items-center gap-1">
-                                <i class="fas fa-copy"></i> <span x-text="copied ? 'Kopiert!' : 'Kopieren'"></span>
-                            </button>
-                        </div>
-                        <p class="text-xs text-green-700 mt-2"><i class="fas fa-info-circle mr-1"></i>Bitte speichern Sie diesen Token sicher. Er wird nur einmal angezeigt.</p>
-                    </div>
-
-                    {{-- Kein Token --}}
-                    <div x-show="!generatedToken && !hasToken" x-cloak class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p class="text-xs text-blue-800"><i class="fas fa-info-circle mr-1"></i>Sie haben noch keinen API-Token. Generieren Sie einen Token, um auf die API zugreifen zu können.</p>
-                    </div>
-
-                    {{-- Token vorhanden --}}
-                    <div x-show="!generatedToken && hasToken" x-cloak class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-xs text-yellow-800"><i class="fas fa-shield-halved mr-1"></i>Sie haben bereits einen aktiven API-Token. Das Generieren eines neuen Tokens widerruft automatisch den alten Token.</p>
-                    </div>
-
-                    {{-- Aktionen --}}
-                    <div class="flex gap-3">
-                        <button @click="generateToken" :disabled="loading"
-                            :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
-                            class="px-4 py-2 text-white text-xs rounded-lg flex items-center gap-1">
-                            <i class="fas" :class="loading ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
-                            <span x-text="loading ? 'Wird generiert...' : (hasToken ? 'Neuen Token generieren' : 'Token generieren')"></span>
-                        </button>
-                        <button x-show="hasToken && !generatedToken" @click="revokeToken" :disabled="loading"
-                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg flex items-center gap-1">
-                            <i class="fas fa-trash"></i> Token widerrufen
-                        </button>
-                    </div>
                 </div>
 
             @elseif($settingsSection === 'master-data')
@@ -1547,6 +1484,582 @@
                 </div>
 
                 </div>
+
+            @elseif($settingsSection === 'travel-requirements')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Requirements Service</h3>
+                <p class="text-sm text-gray-500 mb-6">Verwalten Sie den Zugang zum Travel Requirements Service.</p>
+
+                @php
+                    $passolutionService = app(\App\Services\PassolutionService::class);
+                    $hasActiveToken = $customer->hasAnyActiveToken();
+                    $tokenSource = $customer->getActiveTokenSource();
+                @endphp
+
+                <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="{ showTokenInput: false }">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-passport text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Produktaktivierung</p>
+                            <p class="text-xs text-gray-500 mt-1">Aktivieren Sie den Travel Requirements Service, um auf aktuelle Einreisebestimmungen, Visaanforderungen, gesundheitliche Hinweise und umfassende Länderinformationen zuzugreifen. Die Daten können per API oder direkt über die Plattform in Ihre Prozesse integriert werden.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            @if($hasActiveToken)
+                                <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                    <i class="fas fa-check-circle mr-1.5"></i> Aktiv
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                    Inaktiv
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Verbindung aktivieren --}}
+                    @if(!$hasActiveToken)
+                        <div class="mt-4 ml-12 mr-36">
+                            <p class="text-xs text-gray-500 mb-3">Verbindung aktivieren:</p>
+                            <div class="flex gap-2">
+                                <a href="{{ route('customer.passolution.authorize') }}"
+                                   class="px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 flex items-center gap-1.5">
+                                    <i class="fas fa-link"></i> Via OAuth verbinden
+                                </a>
+                                <button @click="showTokenInput = !showTokenInput"
+                                        class="px-4 py-2 bg-white text-gray-700 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1.5">
+                                    <i class="fas fa-key"></i> Token manuell eingeben
+                                </button>
+                            </div>
+                            <div x-show="showTokenInput" x-cloak x-transition class="mt-3">
+                                <form method="POST" action="{{ route('customer.passolution.store-token') }}">
+                                    @csrf
+                                    <div class="flex gap-2">
+                                        <input type="text" name="passolution_token"
+                                               placeholder="Token hier einfügen..."
+                                               required minlength="10"
+                                               class="flex-1 px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <button type="submit"
+                                                class="px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                            Token speichern
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Verbindungsdetails --}}
+                    @if($hasActiveToken)
+                        <div class="mt-4 ml-12 mr-36 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-600">Verbindung:</span>
+                                <div class="flex items-center gap-2">
+                                    @if($tokenSource === 'sso')
+                                        <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">via SSO</span>
+                                    @elseif($customer->passolution_refresh_token)
+                                        <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">via OAuth</span>
+                                    @else
+                                        <span class="px-2 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded border border-amber-200">via Token</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if($tokenSource === 'sso' && $customer->pds_api_token_expires_at)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Gültig bis:</span>
+                                    <span class="text-xs text-gray-500">{{ $customer->pds_api_token_expires_at->format('d.m.Y H:i') }}</span>
+                                </div>
+                            @elseif($tokenSource === 'oauth' && $customer->passolution_token_expires_at)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Gültig bis:</span>
+                                    <span class="text-xs text-gray-500">{{ $customer->passolution_token_expires_at->format('d.m.Y H:i') }}</span>
+                                </div>
+                            @endif
+
+                            @if($customer->passolution_subscription_type)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Abonnement:</span>
+                                    <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                        {{ ucfirst($customer->passolution_subscription_type) }}
+                                    </span>
+                                </div>
+                            @endif
+
+                            @if($tokenSource === 'oauth')
+                                <div class="pt-2 border-t border-gray-200">
+                                    <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                                onclick="return confirm('Möchten Sie die Verbindung wirklich trennen?')"
+                                                class="px-4 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 flex items-center gap-1.5">
+                                            <i class="fas fa-trash"></i> Verbindung trennen
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+
+            @elseif($settingsSection === 'global-travel-monitor')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Global Travel Monitor</h3>
+                <p class="text-sm text-gray-500 mb-6">Plugin-Konfiguration und API-Integration für den Global Travel Monitor.</p>
+
+                @php
+                    $pluginClient = $customer->pluginClient;
+                @endphp
+
+                @if(!$pluginClient)
+                    <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="{ showOnboarding: false, onboardingLoading: false, integrationType: 'website' }">
+                        <div class="flex items-start gap-4">
+                            <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                                <i class="fas fa-puzzle-piece text-2xl text-gray-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-700">Plugin</p>
+                                <p class="text-xs text-gray-500 mt-1">Mit dem Global Travel Monitor Plugin binden Sie eine interaktive Weltkarte mit aktuellen Sicherheitsereignissen direkt in Ihre Website oder App ein. Nach der Einrichtung können Sie hier erlaubte Domains verwalten, Embed-Codes kopieren und die Nutzungsstatistik einsehen.</p>
+                            </div>
+                            <div class="w-32 flex-shrink-0 flex justify-end">
+                                <button @click="showOnboarding = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                    <i class="fas fa-arrow-right mr-2"></i> Einrichten
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Onboarding Modal --}}
+                        <div x-show="showOnboarding" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="showOnboarding = false">
+                            <div class="fixed inset-0 bg-black/50" @click="showOnboarding = false"></div>
+                            <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+                                <div class="flex items-center justify-between mb-5">
+                                    <h3 class="text-lg font-semibold text-gray-900">Plugin einrichten</h3>
+                                    <button @click="showOnboarding = false" class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-xmark text-lg"></i>
+                                    </button>
+                                </div>
+
+                                <form action="{{ route('plugin.onboarding.store') }}" method="POST" @submit="onboardingLoading = true">
+                                    @csrf
+                                    <input type="hidden" name="_redirect" value="{{ route('customer.settings', ['section' => 'global-travel-monitor']) }}">
+                                    <input type="hidden" name="integration_type" :value="integrationType">
+
+                                    <div class="space-y-5">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Firmenname</label>
+                                            <input type="text" name="company_name" value="{{ old('company_name', $customer->company ?? '') }}" required
+                                                   placeholder="Meine Firma GmbH"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                                            @error('company_name')
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Ansprechpartner</label>
+                                            <input type="text" name="contact_name" value="{{ old('contact_name', $customer->name ?? '') }}" required
+                                                   placeholder="Max Mustermann"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                                            @error('contact_name')
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        {{-- Integrationstyp --}}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Wo soll das Plugin eingebunden werden?</label>
+                                            <div class="grid grid-cols-1 gap-2">
+                                                {{-- Website --}}
+                                                <label class="relative flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all"
+                                                       :class="integrationType === 'website' || integrationType === 'both' ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                                    <input type="radio" name="_integration_choice" value="website" x-model="integrationType" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900"><i class="fas fa-globe mr-1.5 text-blue-500"></i>Website</p>
+                                                        <p class="text-xs text-gray-500 mt-0.5">Einbindung per iFrame auf Ihrer Website. Hierfür muss die Domain hinterlegt werden, damit nur autorisierte Websites das Plugin laden können.</p>
+                                                    </div>
+                                                </label>
+
+                                                {{-- App --}}
+                                                <label class="relative flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all"
+                                                       :class="integrationType === 'app' ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                                    <input type="radio" name="_integration_choice" value="app" x-model="integrationType" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900"><i class="fas fa-mobile-screen mr-1.5 text-purple-500"></i>App (Desktop / Mobile)</p>
+                                                        <p class="text-xs text-gray-500 mt-0.5">Einbindung per WebView in Ihrer nativen App (Android, iOS, Electron, etc.). Keine Domain nötig &ndash; der Zugriff wird direkt per API-Key autorisiert.</p>
+                                                    </div>
+                                                </label>
+
+                                                {{-- Beides --}}
+                                                <label class="relative flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all"
+                                                       :class="integrationType === 'both' ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                                    <input type="radio" name="_integration_choice" value="both" x-model="integrationType" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900"><i class="fas fa-layer-group mr-1.5 text-green-500"></i>Beides</p>
+                                                        <p class="text-xs text-gray-500 mt-0.5">Sie möchten das Plugin sowohl auf einer Website als auch in einer App nutzen. Domain-Validierung und App-Zugang werden aktiviert.</p>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {{-- Domain (nur bei Website oder Beides) --}}
+                                        <div x-show="integrationType === 'website' || integrationType === 'both'" x-transition>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Ihre Domain</label>
+                                            <input type="text" name="domain" value="{{ old('domain') }}"
+                                                   :required="integrationType === 'website' || integrationType === 'both'"
+                                                   placeholder="beispiel.de"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                                            <p class="mt-1 text-xs text-gray-500">Die Domain, auf der das Plugin eingebunden wird (ohne https://). Weitere Domains können Sie nach der Einrichtung hinzufügen.</p>
+                                            @error('domain')
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end gap-3 mt-6">
+                                        <button type="button" @click="showOnboarding = false"
+                                                class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                            Abbrechen
+                                        </button>
+                                        <button type="submit" :disabled="onboardingLoading"
+                                                :class="onboardingLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                                class="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-2">
+                                            <i class="fas" :class="onboardingLoading ? 'fa-spinner fa-spin' : 'fa-lock'"></i>
+                                            <span x-text="onboardingLoading ? 'Wird eingerichtet...' : 'Plugin einrichten'"></span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    @php
+                        $activeKey = $pluginClient->activeKey;
+                        $domains = $pluginClient->domains;
+                        $apiKey = $activeKey?->public_key ?? 'YOUR_API_KEY';
+                        $baseUrl = config('app.url');
+
+                        // Usage stats
+                        $thirtyDaysAgo = now()->subDays(30);
+                        $pluginStats = [
+                            'daily' => \App\Models\PluginUsageEvent::where('plugin_client_id', $pluginClient->id)
+                                ->where('created_at', '>=', $thirtyDaysAgo)
+                                ->where('event_type', 'embed_view')
+                                ->select(\DB::raw('DATE(created_at) as date'), \DB::raw('COUNT(*) as count'))
+                                ->groupBy('date')->orderBy('date')->get()->pluck('count', 'date')->toArray(),
+                            'total' => \App\Models\PluginUsageEvent::where('plugin_client_id', $pluginClient->id)
+                                ->where('created_at', '>=', $thirtyDaysAgo)->count(),
+                            'by_type' => \App\Models\PluginUsageEvent::where('plugin_client_id', $pluginClient->id)
+                                ->where('created_at', '>=', $thirtyDaysAgo)
+                                ->select('event_type', \DB::raw('COUNT(*) as count'))
+                                ->groupBy('event_type')->pluck('count', 'event_type')->toArray(),
+                            'top_domains' => \App\Models\PluginUsageEvent::where('plugin_client_id', $pluginClient->id)
+                                ->where('created_at', '>=', $thirtyDaysAgo)
+                                ->select('domain', \DB::raw('COUNT(*) as count'))
+                                ->groupBy('domain')->orderByDesc('count')->limit(5)->pluck('count', 'domain')->toArray(),
+                        ];
+                    @endphp
+
+                    {{-- Erlaubte Domains --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-1">Erlaubte Domains</h4>
+                        <p class="text-xs text-gray-500 mb-4">Ohne https:// oder http:// angeben (z.B. meine-website.de)</p>
+
+                        <ul class="divide-y divide-gray-200 mb-4">
+                            @forelse($domains as $domain)
+                                <li class="py-3 flex justify-between items-center">
+                                    <span class="text-sm text-gray-900">{{ $domain->domain }}</span>
+                                    @if($domains->count() > 1)
+                                        <form action="{{ route('plugin.remove-domain', $domain->id) }}" method="POST" class="inline"
+                                              onsubmit="return confirm('Domain wirklich entfernen?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-800 text-xs">
+                                                Entfernen
+                                            </button>
+                                        </form>
+                                    @endif
+                                </li>
+                            @empty
+                                <li class="py-3 text-gray-500 text-sm">Keine Domains konfiguriert.</li>
+                            @endforelse
+                        </ul>
+
+                        <form action="{{ route('plugin.add-domain') }}" method="POST" class="flex gap-2">
+                            @csrf
+                            <input type="text" name="domain" placeholder="neue-domain.de" required
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">
+                                Hinzufügen
+                            </button>
+                        </form>
+                        @error('domain')
+                            <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- App-Integration --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-900">App-Integration</h4>
+                                <p class="text-xs text-gray-500 mt-1">Ermöglicht die Nutzung in Desktop- und Mobile-Apps (WebView)</p>
+                            </div>
+                            <form action="{{ route('plugin.toggle-app-access') }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="px-3 py-1.5 border text-xs font-medium rounded-lg {{ $pluginClient->allow_app_access ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100' : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100' }}">
+                                    @if($pluginClient->allow_app_access)
+                                        <i class="fas fa-xmark mr-1"></i> Deaktivieren
+                                    @else
+                                        <i class="fas fa-check mr-1"></i> Aktivieren
+                                    @endif
+                                </button>
+                            </form>
+                        </div>
+
+                        @if($pluginClient->allow_app_access)
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                <p class="text-xs font-medium text-blue-900 mb-1">Integration in Ihre App</p>
+                                <p class="text-xs text-blue-700 mb-2">Laden Sie folgende URL in einem WebView:</p>
+                                <div class="p-2 bg-white rounded border border-blue-200 overflow-x-auto">
+                                    <code class="text-xs text-gray-800 font-mono break-all">{{ $baseUrl }}/embed/dashboard?key={{ $apiKey }}</code>
+                                </div>
+                                <p class="text-xs text-blue-600 mt-2">Funktioniert mit: Android WebView, iOS WKWebView, Electron, Qt WebEngine, etc.</p>
+                            </div>
+                        @else
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs text-gray-600">Aktivieren Sie den App-Zugang, um das Plugin ohne Domain-Validierung in Desktop- oder Mobile-Apps nutzen zu können.</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Einbindung --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-1">Einbindung</h4>
+                        <p class="text-xs text-gray-500 mb-4">Wählen Sie eine der drei Optionen und kopieren Sie den Code in Ihre Website.</p>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            {{-- Option 1: Ereignisliste --}}
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="bg-blue-50 px-3 py-2 border-b border-blue-100">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">Option 1</span>
+                                        <span class="text-xs font-medium text-gray-900">Ereignisliste</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">Für schmale Spalten (300-400px)</p>
+                                </div>
+                                <div class="p-3">
+                                    <div class="bg-gray-900 rounded-lg p-2 overflow-x-auto mb-2">
+                                        <pre class="text-[10px] text-green-400 font-mono whitespace-pre-wrap" id="gtm-code-events">&lt;iframe
+  src="{{ $baseUrl }}/embed/events?key={{ $apiKey }}"
+  width="400" height="600"
+  frameborder="0"&gt;
+&lt;/iframe&gt;</pre>
+                                    </div>
+                                    <button onclick="copyGtmCode('events')" class="w-full px-3 py-1.5 border border-gray-300 text-xs rounded-lg text-gray-700 bg-white hover:bg-gray-50 flex items-center justify-center gap-1">
+                                        <i class="fas fa-copy"></i> Code kopieren
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Option 2: Kartenansicht --}}
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="bg-green-50 px-3 py-2 border-b border-green-100">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">Option 2</span>
+                                        <span class="text-xs font-medium text-gray-900">Kartenansicht</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">Interaktive Weltkarte</p>
+                                </div>
+                                <div class="p-3">
+                                    <div class="bg-gray-900 rounded-lg p-2 overflow-x-auto mb-2">
+                                        <pre class="text-[10px] text-green-400 font-mono whitespace-pre-wrap" id="gtm-code-map">&lt;iframe
+  src="{{ $baseUrl }}/embed/map?key={{ $apiKey }}"
+  width="100%" height="600"
+  frameborder="0"&gt;
+&lt;/iframe&gt;</pre>
+                                    </div>
+                                    <button onclick="copyGtmCode('map')" class="w-full px-3 py-1.5 border border-gray-300 text-xs rounded-lg text-gray-700 bg-white hover:bg-gray-50 flex items-center justify-center gap-1">
+                                        <i class="fas fa-copy"></i> Code kopieren
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Option 3: Komplettansicht --}}
+                            <div class="border border-gray-200 rounded-lg overflow-hidden relative">
+                                <div class="absolute top-1.5 right-1.5 z-10">
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-500 text-white">
+                                        <i class="fas fa-thumbs-up text-[8px]"></i> Empfohlen
+                                    </span>
+                                </div>
+                                <div class="bg-purple-50 px-3 py-2 border-b border-purple-100">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">Option 3</span>
+                                        <span class="text-xs font-medium text-gray-900">Komplettansicht</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">Liste + Karte kombiniert</p>
+                                </div>
+                                <div class="p-3">
+                                    <div class="bg-gray-900 rounded-lg p-2 overflow-x-auto mb-2">
+                                        <pre class="text-[10px] text-green-400 font-mono whitespace-pre-wrap" id="gtm-code-dashboard">&lt;iframe
+  src="{{ $baseUrl }}/embed/dashboard?key={{ $apiKey }}"
+  width="100%" height="800"
+  frameborder="0"&gt;
+&lt;/iframe&gt;</pre>
+                                    </div>
+                                    <button onclick="copyGtmCode('dashboard')" class="w-full px-3 py-1.5 border border-gray-300 text-xs rounded-lg text-gray-700 bg-white hover:bg-gray-50 flex items-center justify-center gap-1">
+                                        <i class="fas fa-copy"></i> Code kopieren
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 p-2 bg-gray-50 rounded-lg">
+                            <p class="text-[10px] text-gray-500">
+                                <strong>Tipp:</strong> Weitere Parameter wie <code class="bg-gray-200 px-1 rounded">timePeriod</code>, <code class="bg-gray-200 px-1 rounded">priorities</code> oder <code class="bg-gray-200 px-1 rounded">continents</code> finden Sie in der <a href="{{ url('/doc-plugin') }}" class="text-blue-600 hover:underline" target="_blank">Dokumentation</a>.
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Nutzungsstatistik --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4">Nutzungsstatistik (letzte 30 Tage)</h4>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                            <div class="bg-blue-50 rounded-lg p-3">
+                                <p class="text-xs text-blue-600 font-medium">Gesamt-Aufrufe</p>
+                                <p class="text-xl font-bold text-blue-900">{{ number_format($pluginStats['total']) }}</p>
+                            </div>
+                            @foreach($pluginStats['by_type'] as $type => $count)
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <p class="text-xs text-gray-600 font-medium">{{ ucfirst(str_replace('_', ' ', $type)) }}</p>
+                                    <p class="text-xl font-bold text-gray-900">{{ number_format($count) }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @if(count($pluginStats['top_domains']) > 0)
+                            <h5 class="text-xs font-medium text-gray-900 mb-2">Top Domains</h5>
+                            <ul class="space-y-1 mb-4">
+                                @foreach($pluginStats['top_domains'] as $domain => $count)
+                                    <li class="flex justify-between items-center text-xs">
+                                        <span class="text-gray-700">{{ $domain }}</span>
+                                        <span class="text-gray-500">{{ number_format($count) }} Aufrufe</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        @if(count($pluginStats['daily']) > 0)
+                            <h5 class="text-xs font-medium text-gray-900 mt-4 mb-3">Tägliche Aufrufe</h5>
+                            @php
+                                $maxCount = max($pluginStats['daily']) ?: 1;
+                                $dailyData = $pluginStats['daily'];
+                            @endphp
+                            <div class="relative">
+                                <div class="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] text-gray-400">
+                                    <span>{{ number_format($maxCount) }}</span>
+                                    <span>{{ number_format($maxCount / 2) }}</span>
+                                    <span>0</span>
+                                </div>
+                                <div class="ml-10">
+                                    <div class="relative h-32 border-b border-l border-gray-200">
+                                        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                                            <div class="border-t border-gray-100 border-dashed"></div>
+                                            <div class="border-t border-gray-100 border-dashed"></div>
+                                            <div></div>
+                                        </div>
+                                        <div class="absolute inset-0 flex items-end gap-px px-1">
+                                            @foreach($dailyData as $date => $count)
+                                                @php
+                                                    $height = $maxCount > 0 ? ($count / $maxCount) * 100 : 0;
+                                                @endphp
+                                                <div class="flex-1 group relative flex flex-col items-center justify-end h-full">
+                                                    <div class="w-full bg-blue-500 hover:bg-blue-600 rounded-t transition-colors cursor-pointer"
+                                                         style="height: {{ max($height, 2) }}%; min-height: 2px;"></div>
+                                                    <div class="absolute bottom-full mb-2 hidden group-hover:block z-10">
+                                                        <div class="bg-gray-900 text-white text-[10px] rounded py-1 px-2 whitespace-nowrap">
+                                                            {{ \Carbon\Carbon::parse($date)->format('d.m.') }}: {{ number_format($count) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between mt-1 text-[10px] text-gray-400">
+                                        @php
+                                            $dates = array_keys($dailyData);
+                                            $firstDate = \Carbon\Carbon::parse(reset($dates))->format('d.m.');
+                                            $lastDate = \Carbon\Carbon::parse(end($dates))->format('d.m.');
+                                        @endphp
+                                        <span>{{ $firstDate }}</span>
+                                        <span>{{ $lastDate }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- API-Zugang (immer sichtbar, unabhängig vom Plugin-Status) --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5" x-data="apiTokenManager()">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-code text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">API-Zugang</p>
+                            <p class="text-xs text-gray-500 mt-1">Über die API können Sie Sicherheitsereignisse, Länderinformationen und Reisewarnungen programmatisch in Ihre eigenen Systeme integrieren &ndash; z.&thinsp;B. in ein Intranet, ein Travel-Management-System oder automatisierte Workflows. Zur Authentifizierung wird ein API-Token benötigt.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span x-show="hasToken" x-cloak class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-check-circle mr-1.5"></i> Aktiv
+                            </span>
+                            <button x-show="!hasToken" x-cloak @click="generateToken" :disabled="loading"
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                <i class="fas mr-1.5" :class="loading ? 'fa-spinner fa-spin' : 'fa-key'"></i>
+                                <span x-text="loading ? 'Wird generiert...' : 'Aktivieren'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Token anzeigen --}}
+                    <div x-show="generatedToken" x-cloak class="mt-4 ml-12 mr-36 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-xs text-green-800 font-medium mb-2"><i class="fas fa-check-circle mr-1"></i> API Token erfolgreich generiert</p>
+                        <div class="flex gap-2 items-center">
+                            <input type="text" x-model="generatedToken" readonly class="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-xs font-mono select-all" @click="$el.select()">
+                            <button @click="copyToken" class="px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 flex items-center gap-1">
+                                <i class="fas fa-copy"></i> <span x-text="copied ? 'Kopiert!' : 'Kopieren'"></span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-green-700 mt-2"><i class="fas fa-info-circle mr-1"></i>Bitte speichern Sie diesen Token sicher. Er wird nur einmal angezeigt.</p>
+                    </div>
+
+                    {{-- Aktionen wenn Token vorhanden --}}
+                    <div x-show="hasToken && !generatedToken" x-cloak class="mt-4 ml-12 mr-36 flex gap-3">
+                        <button @click="generateToken" :disabled="loading"
+                            :class="loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                            class="px-4 py-2 text-white text-xs rounded-lg flex items-center gap-1">
+                            <i class="fas" :class="loading ? 'fa-spinner fa-spin' : 'fa-rotate'"></i>
+                            <span x-text="loading ? 'Wird generiert...' : 'Neuen Token generieren'"></span>
+                        </button>
+                        <button @click="revokeToken" :disabled="loading"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg flex items-center gap-1">
+                            <i class="fas fa-trash"></i> Token widerrufen
+                        </button>
+                    </div>
+                </div>
+
+            @elseif($settingsSection === 'travel-alert')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Alert</h3>
+                <p class="text-sm text-gray-500 mb-6">Konfigurieren Sie Reisewarnungen und Benachrichtigungen für Ihre Reisenden.</p>
+
+                <div class="bg-white rounded-lg border border-gray-200 p-5">
+                    <div class="flex items-center gap-3 text-gray-400">
+                        <i class="fas fa-triangle-exclamation text-2xl"></i>
+                        <p class="text-sm">Dieser Bereich wird derzeit eingerichtet.</p>
+                    </div>
+                </div>
+
             @endif
 
             {{-- Success/Error Messages --}}
@@ -1561,6 +2074,61 @@
 
 @push('scripts')
 <script>
+function apiTokenManager() {
+    return {
+        generatedToken: '',
+        hasToken: false,
+        loading: false,
+        copied: false,
+        async init() {
+            try {
+                const r = await fetch('{{ route('customer.api-tokens.status') }}', { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
+                const d = await r.json();
+                if (d.success) this.hasToken = d.has_token;
+            } catch(e) {}
+        },
+        async generateToken() {
+            if (this.loading) return;
+            if (this.hasToken && !confirm('Das Generieren eines neuen Tokens widerruft automatisch den alten Token. Fortfahren?')) return;
+            this.loading = true;
+            try {
+                const r = await fetch('{{ route('customer.api-tokens.generate') }}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
+                const d = await r.json();
+                if (d.success) { this.generatedToken = d.token; this.hasToken = true; this.copied = false; }
+                else alert('Fehler: ' + (d.message || 'Unbekannter Fehler'));
+            } catch(e) { alert('Fehler beim Generieren des Tokens.'); }
+            this.loading = false;
+        },
+        async revokeToken() {
+            if (!confirm('Möchten Sie den API-Token wirklich widerrufen?')) return;
+            this.loading = true;
+            try {
+                const r = await fetch('{{ route('customer.api-tokens.revoke') }}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
+                const d = await r.json();
+                if (d.success) { this.generatedToken = ''; this.hasToken = false; alert('Token wurde erfolgreich widerrufen.'); }
+                else alert('Fehler: ' + (d.message || 'Unbekannter Fehler'));
+            } catch(e) { alert('Fehler beim Widerrufen des Tokens.'); }
+            this.loading = false;
+        },
+        async copyToken() {
+            try { await navigator.clipboard.writeText(this.generatedToken); this.copied = true; setTimeout(() => this.copied = false, 2000); }
+            catch(e) { alert('Fehler beim Kopieren.'); }
+        }
+    };
+}
+
+function copyGtmCode(type) {
+    const el = document.getElementById('gtm-code-' + type);
+    if (!el) return;
+    navigator.clipboard.writeText(el.innerText).then(() => {
+        const btn = event.target.closest('button');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Kopiert!';
+        btn.classList.add('text-green-700', 'bg-green-50');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('text-green-700', 'bg-green-50'); }, 2000);
+    });
+}
+
 function settingsManager() {
     return {
         editSection: null,
