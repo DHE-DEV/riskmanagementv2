@@ -1511,7 +1511,7 @@
                                 </span>
                             @else
                                 <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
-                                    Inaktiv
+                                    <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
                                 </span>
                             @endif
                         </div>
@@ -1621,10 +1621,16 @@
                                 <p class="text-xs text-gray-500 mt-1">Mit dem Global Travel Monitor Plugin binden Sie eine interaktive Weltkarte mit aktuellen Sicherheitsereignissen direkt in Ihre Website oder App ein. Nach der Einrichtung können Sie hier erlaubte Domains verwalten, Embed-Codes kopieren und die Nutzungsstatistik einsehen.</p>
                             </div>
                             <div class="w-32 flex-shrink-0 flex justify-end">
-                                <button @click="showOnboarding = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 whitespace-nowrap">
-                                    <i class="fas fa-arrow-right mr-2"></i> Einrichten
-                                </button>
+                                <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                    <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                                </span>
                             </div>
+                        </div>
+
+                        <div class="mt-4 ml-12 mr-36">
+                            <button @click="showOnboarding = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-arrow-right mr-2"></i> Einrichten
+                            </button>
                         </div>
 
                         {{-- Onboarding Modal --}}
