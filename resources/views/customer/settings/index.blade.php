@@ -1528,7 +1528,7 @@
                                 </a>
                                 <button @click="showTokenInput = !showTokenInput"
                                         class="px-4 py-2 bg-white text-gray-700 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1.5">
-                                    <i class="fas fa-key"></i> Token manuell eingeben
+                                    <i class="fas fa-key"></i> Produktschlüssel eingeben
                                 </button>
                             </div>
                             <div x-show="showTokenInput" x-cloak x-transition class="mt-3">
