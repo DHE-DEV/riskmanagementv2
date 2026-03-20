@@ -83,6 +83,13 @@
         </a>
         @endif
 
+        <!-- Travel Links -->
+        @if(auth('customer')->check())
+        <a href="{{ route('customer.travel-links') }}" class="p-3 {{ $active === 'customer-travel-links' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Links">
+            <i class="fa-regular fa-link text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
         <!-- TravelAlert -->
         <a href="{{ route('risk-overview') }}" class="p-3 {{ $active === 'travel-alert' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="TravelAlert">
             <i class="fa-regular fa-shield-exclamation text-2xl" aria-hidden="true"></i>

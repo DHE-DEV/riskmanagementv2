@@ -106,6 +106,8 @@ Route::prefix('customer')->name('customer.')->group(function () {
             return view('customer.events.index', compact('hasEvents'));
         })->name('events');
 
+        // Travel Links (view route defined outside prefix group)
+
         // Phone Numbers (Rufnummern)
         Route::prefix('phone-numbers')->name('phone-numbers.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Customer\PhoneNumberController::class, 'index'])->name('index');
@@ -184,6 +186,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
             ->name('travel-data.import-json');
         Route::get('/travel-data/folders', [\App\Http\Controllers\Customer\TravelDataController::class, 'folders'])
             ->name('travel-data.folders');
+        Route::post('/travel-data/sync-toggle', [\App\Http\Controllers\Customer\TravelDataController::class, 'toggleSync'])
+            ->name('travel-data.sync-toggle');
+        Route::post('/travel-data/sync-now', [\App\Http\Controllers\Customer\TravelDataController::class, 'syncNow'])
+            ->name('travel-data.sync-now');
+        Route::post('/travel-data/sync-links', [\App\Http\Controllers\Customer\TravelDataController::class, 'syncLinks'])
+            ->name('travel-data.sync-links');
+        Route::post('/travel-data/toggle-travel-links', [\App\Http\Controllers\Customer\TravelDataController::class, 'toggleTravelLinks'])
+            ->name('travel-data.toggle-travel-links');
 
         // Notification Settings routes (Benachrichtigungs-Abonnement)
         Route::prefix('notification-settings')->name('notification-settings.')->group(function () {
@@ -371,4 +381,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
         ->middleware(['auth:'.config('fortify.guard')])
         ->name('logout');
+});
+
+// Travel Links (outside /customer prefix)
+Route::middleware(['auth:customer'])->name('customer.')->group(function () {
+    Route::get('/travel-links', function () {
+        return view('customer.travel-links.index');
+    })->name('travel-links');
+    Route::get('/travel-links/api', [\App\Http\Controllers\Customer\TravelDataController::class, 'travelLinksApi'])
+        ->name('travel-links.api');
 });

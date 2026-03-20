@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
+use App\Models\TravelDetail\TdTrip;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -40,12 +41,109 @@ class RiskOverviewService
     }
 
     /**
-     * Fetch travelers from Passolution API with 1000 records.
+     * Fetch travelers from local td_trips database (synced PDS data) or fall back to API.
      * Returns travelers grouped by country code.
      *
      * @return array<string, array> Country code => travelers array
      */
     protected function fetchApiTravelers(Customer $customer, string $startDate, string $endDate): array
+    {
+        // Try local database first (much faster than API calls)
+        $localTrips = $this->fetchLocalTravelers($customer, $startDate, $endDate);
+        if (! empty($localTrips)) {
+            return $localTrips;
+        }
+
+        // Fallback to PDS API if no local data
+        return $this->fetchPdsApiTravelers($customer, $startDate, $endDate);
+    }
+
+    /**
+     * Fetch travelers from local td_trips table (synced PDS data).
+     * Returns travelers grouped by country code.
+     */
+    protected function fetchLocalTravelers(Customer $customer, string $startDate, string $endDate): array
+    {
+        $trips = TdTrip::where('customer_id', $customer->id)
+            ->where('status', 'active')
+            ->where('computed_start_at', '<=', $endDate)
+            ->where('computed_end_at', '>=', $startDate)
+            ->with('travellers')
+            ->get();
+
+        if ($trips->isEmpty()) {
+            return [];
+        }
+
+        Log::info('RiskOverviewService: Using local td_trips data', [
+            'customer_id' => $customer->id,
+            'count' => $trips->count(),
+        ]);
+
+        // Pre-load country names
+        $allIsoCodes = $trips->flatMap(fn ($t) => $t->countries_visited ?? [])
+            ->merge($trips->flatMap(fn ($t) => $t->travellers->pluck('nationality')->filter()))
+            ->unique()->values()->toArray();
+
+        $countryNames = Country::whereIn('iso_code', $allIsoCodes)
+            ->pluck('name_translations', 'iso_code')
+            ->map(fn ($translations) => $translations['de'] ?? $translations['en'] ?? null)
+            ->toArray();
+
+        $travelersByCountry = [];
+
+        foreach ($trips as $trip) {
+            $countryCodes = $trip->countries_visited ?? [];
+            $tripId = $trip->pds_tid ?? $trip->external_trip_id;
+
+            $destinations = collect($countryCodes)
+                ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                ->values()->toArray();
+
+            $nationalities = $trip->travellers->pluck('nationality')->filter()->unique()
+                ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                ->values()->toArray();
+
+            $tripName = $trip->raw_payload['trip_name']
+                ?? $trip->raw_payload['trip']['name']
+                ?? $trip->booking_reference
+                ?? 'Reise ' . $trip->external_trip_id;
+
+            $tripData = [
+                'trip_id' => $tripId,
+                'folder_id' => 'api-' . $tripId,
+                'folder_name' => $tripName,
+                'folder_number' => null,
+                'start_date' => $trip->computed_start_at?->format('Y-m-d'),
+                'end_date' => $trip->computed_end_at?->format('Y-m-d'),
+                'participant_count' => $trip->travellers->count() ?: 1,
+                'participants' => [],
+                'destinations' => $destinations,
+                'nationalities' => $nationalities,
+                'with_minors' => false,
+                'source' => 'local',
+                'source_label' => 'Lokal (synchronisiert)',
+            ];
+
+            foreach ($countryCodes as $countryCode) {
+                $cc = strtoupper($countryCode);
+                if (! isset($travelersByCountry[$cc])) {
+                    $travelersByCountry[$cc] = [];
+                }
+                $travelersByCountry[$cc][] = $tripData;
+            }
+        }
+
+        return $travelersByCountry;
+    }
+
+    /**
+     * Fetch travelers from Passolution API with 1000 records (fallback).
+     * Returns travelers grouped by country code.
+     *
+     * @return array<string, array> Country code => travelers array
+     */
+    protected function fetchPdsApiTravelers(Customer $customer, string $startDate, string $endDate): array
     {
         if (! $this->pdsApiService->hasValidToken($customer)) {
             Log::info('RiskOverviewService: Customer has no valid API token, skipping API fetch', [
@@ -65,7 +163,7 @@ class RiskOverviewService
                 'end_date' => ['>=' => $startDate],
             ];
 
-            Log::info('RiskOverviewService: Fetching API travelers', [
+            Log::info('RiskOverviewService: Fetching API travelers (no local data)', [
                 'customer_id' => $customer->id,
                 'request_body' => $apiRequestBody,
             ]);
@@ -961,11 +1059,100 @@ class RiskOverviewService
     }
 
     /**
-     * Fetch travelers from API grouped by trip ID instead of country.
+     * Fetch travelers grouped by trip ID. Uses local td_trips first, falls back to API.
      *
      * @return array<string, array> Trip ID => trip data with destinations
      */
     protected function fetchApiTravelersByTrip(Customer $customer, string $startDate, string $endDate): array
+    {
+        // Try local database first
+        $localTrips = $this->fetchLocalTravelersByTrip($customer, $startDate, $endDate);
+        if (! empty($localTrips)) {
+            return $localTrips;
+        }
+
+        // Fallback to PDS API
+        return $this->fetchPdsApiTravelersByTrip($customer, $startDate, $endDate);
+    }
+
+    /**
+     * Fetch travelers from local td_trips grouped by trip ID.
+     */
+    protected function fetchLocalTravelersByTrip(Customer $customer, string $startDate, string $endDate): array
+    {
+        $trips = TdTrip::where('customer_id', $customer->id)
+            ->where('status', 'active')
+            ->where('computed_start_at', '<=', $endDate)
+            ->where('computed_end_at', '>=', $startDate)
+            ->with('travellers')
+            ->get();
+
+        if ($trips->isEmpty()) {
+            return [];
+        }
+
+        // Pre-load country names
+        $allIsoCodes = $trips->flatMap(fn ($t) => $t->countries_visited ?? [])
+            ->merge($trips->flatMap(fn ($t) => $t->travellers->pluck('nationality')->filter()))
+            ->unique()->values()->toArray();
+
+        $countryNames = Country::whereIn('iso_code', $allIsoCodes)
+            ->pluck('name_translations', 'iso_code')
+            ->map(fn ($translations) => $translations['de'] ?? $translations['en'] ?? null)
+            ->toArray();
+
+        $tripsByTripId = [];
+
+        foreach ($trips as $trip) {
+            $tripId = $trip->pds_tid ?? $trip->external_trip_id;
+            $countryCodes = collect($trip->countries_visited ?? [])->map(fn ($c) => strtoupper($c))->toArray();
+
+            $destinations = collect($countryCodes)
+                ->map(fn ($code) => ['code' => $code, 'name' => $countryNames[$code] ?? $code])
+                ->values()->toArray();
+
+            $nationalities = $trip->travellers->pluck('nationality')->filter()->unique()
+                ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                ->values()->toArray();
+
+            $tripName = $trip->raw_payload['trip_name']
+                ?? $trip->raw_payload['trip']['name']
+                ?? $trip->booking_reference
+                ?? 'Reise ' . $trip->external_trip_id;
+
+            $tripsByTripId[$tripId] = [
+                'trip_id' => $tripId,
+                'pds_tid' => $tripId,
+                'folder_id' => 'api-' . $tripId,
+                'folder_name' => $tripName,
+                'start_date' => $trip->computed_start_at?->format('Y-m-d'),
+                'end_date' => $trip->computed_end_at?->format('Y-m-d'),
+                'participant_count' => $trip->travellers->count() ?: 1,
+                'destinations' => $destinations,
+                'destination_codes' => $countryCodes,
+                'nationalities' => $nationalities,
+                'source' => 'local',
+                'source_label' => 'Lokal (synchronisiert)',
+            ];
+        }
+
+        // Load labels
+        if (! empty($tripsByTripId)) {
+            $pdsTids = array_keys($tripsByTripId);
+            $labelsByTid = Label::forPdsTrips($customer->id, $pdsTids);
+            foreach ($tripsByTripId as $tid => &$trip) {
+                $trip['labels'] = $labelsByTid[$tid] ?? [];
+            }
+            unset($trip);
+        }
+
+        return $tripsByTripId;
+    }
+
+    /**
+     * Fetch travelers from PDS API grouped by trip ID (fallback).
+     */
+    protected function fetchPdsApiTravelersByTrip(Customer $customer, string $startDate, string $endDate): array
     {
         if (! $this->pdsApiService->hasValidToken($customer)) {
             return [];
@@ -994,7 +1181,6 @@ class RiskOverviewService
             $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
                 $codes = $t['destinations'] ?? [];
                 $nationalities = $t['nationalities'] ?? [];
-                // Include cruise port_call country codes
                 $cruiseCodes = [];
                 if (! empty($t['cruise_compass']) && isset($t['cruise']['port_calls']) && is_array($t['cruise']['port_calls'])) {
                     foreach ($t['cruise']['port_calls'] as $pc) {
@@ -1020,7 +1206,6 @@ class RiskOverviewService
                 $tripId = $traveler['tid'] ?? $traveler['id'] ?? uniqid();
                 $countryCodes = $this->extractCountryCodesFromApiTraveler($traveler);
 
-                // Resolve destination codes to names (fallback to cruise port_call countries)
                 $destinationCodes = $traveler['destinations'] ?? [];
                 if (empty($destinationCodes) && ! empty($traveler['cruise_compass']) && isset($traveler['cruise']['port_calls']) && is_array($traveler['cruise']['port_calls'])) {
                     foreach ($traveler['cruise']['port_calls'] as $pc) {
@@ -1057,15 +1242,12 @@ class RiskOverviewService
 
             // Load labels for API trips
             if (!empty($tripsByTripId)) {
-                $customer = $customer ?? null;
-                if ($customer) {
-                    $pdsTids = array_keys($tripsByTripId);
-                    $labelsByTid = \App\Models\Label::forPdsTrips($customer->id, $pdsTids);
-                    foreach ($tripsByTripId as $tid => &$trip) {
-                        $trip['labels'] = $labelsByTid[$tid] ?? [];
-                    }
-                    unset($trip);
+                $pdsTids = array_keys($tripsByTripId);
+                $labelsByTid = Label::forPdsTrips($customer->id, $pdsTids);
+                foreach ($tripsByTripId as $tid => &$trip) {
+                    $trip['labels'] = $labelsByTid[$tid] ?? [];
                 }
+                unset($trip);
             }
 
             return $tripsByTripId;

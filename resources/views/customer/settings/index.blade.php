@@ -2092,18 +2092,255 @@
 
             @elseif($settingsSection === 'travel-link')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Link</h3>
-                <p class="text-sm text-gray-500 mb-6">Einstellungen für Travel Link.</p>
+                <p class="text-sm text-gray-500 mb-6">Verwalten Sie Ihre Travel Link Dienste.</p>
 
-                <div class="bg-white rounded-lg border border-gray-200 p-5">
-                    <div class="flex items-center gap-3 text-gray-400">
-                        <i class="fas fa-link text-2xl"></i>
-                        <p class="text-sm">Dieser Bereich wird derzeit eingerichtet.</p>
+                {{-- Travel Link Wrapper --}}
+                <div x-data="travelLinkManager()">
+
+                {{-- Travel Link Aktivierung --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="hidden sm:block w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-link text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">Travel Links aktivieren</p>
+                                    <p class="text-xs text-gray-500 mt-1">Aktivieren Sie Travel Links, um Ihren Reisenden automatisch personalisierte Reiseinformationen per Link bereitzustellen.</p>
+                                </div>
+                                <div class="flex items-center gap-3 flex-shrink-0">
+                                    <button @click="toggleLinks()" :disabled="toggling"
+                                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+                                            :class="enabled ? 'bg-blue-600' : 'bg-gray-300'">
+                                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                                              :class="enabled ? 'translate-x-6' : 'translate-x-1'"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div x-show="enabled" x-cloak class="mt-3 pt-3 border-t border-gray-100">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <button @click="syncLinks()" :disabled="syncing"
+                                            class="inline-flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                                            :class="syncing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'">
+                                        <i class="fas mr-1.5" :class="syncing ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
+                                        <span x-text="syncing ? 'Wird aktualisiert...' : 'Jetzt aktualisieren'"></span>
+                                    </button>
+                                    <div class="text-xs text-gray-500">
+                                        <span x-show="lastSyncedAt">
+                                            <i class="fas fa-clock mr-1"></i> Letzte Synchronisierung: <span x-text="lastSyncedAt"></span>
+                                        </span>
+                                        <span x-show="!lastSyncedAt">
+                                            <i class="fas fa-info-circle mr-1"></i> Noch nicht synchronisiert
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {{-- Sync-Ergebnis --}}
+                                <div x-show="syncResult" x-cloak class="mt-3 p-3 rounded-lg text-xs"
+                                     :class="syncSuccess ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'">
+                                    <i class="fas mr-1" :class="syncSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                    <span x-text="syncResult"></span>
+                                    <span x-show="syncStats" class="ml-2 text-gray-500" x-text="syncStats"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div x-show="enabled" x-cloak>
+                {{-- Einreisebestimmungen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
+                            <i class="fas fa-passport text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Einreisebestimmungen</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Einreisebestimmungen</p>
+                            <p class="text-xs text-gray-500 mt-1">Aktuelle Einreisebestimmungen und Visaanforderungen für Ihre Reiseziele. Automatische Prüfung basierend auf Nationalität und Reiseland.</p>
+                        </div>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Visabestimmungen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
+                            <i class="fas fa-stamp text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Visabestimmungen</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Visabestimmungen</p>
+                            <p class="text-xs text-gray-500 mt-1">Visaanforderungen und Beantragungsinformationen für Ihre Reiseziele. Prüfung der Visapflicht basierend auf Nationalität, Reisezweck und Aufenthaltsdauer.</p>
+                        </div>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sicherheitsinformationen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
+                            <i class="fas fa-shield-halved text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Sicherheitsinformationen</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Sicherheitsinformationen</p>
+                            <p class="text-xs text-gray-500 mt-1">Aktuelle Sicherheitshinweise und Reisewarnungen für Ihre Zielländer. Risikobewertungen und Verhaltensempfehlungen.</p>
+                        </div>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Gesundheitsinformationen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
+                            <i class="fas fa-heart-pulse text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Gesundheitsinformationen</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Gesundheitsinformationen</p>
+                            <p class="text-xs text-gray-500 mt-1">Gesundheitshinweise, Impfempfehlungen und medizinische Informationen für Ihre Reiseziele. Aktuelle Hinweise zu Krankheitsrisiken vor Ort.</p>
+                        </div>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Länderinformationen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
+                            <i class="fas fa-earth-europe text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Länderinformationen</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Länderinformationen</p>
+                            <p class="text-xs text-gray-500 mt-1">Umfassende Länderinformationen mit allgemeinen Reisehinweisen, kulturellen Besonderheiten, Währung, Zeitzone und weiteren nützlichen Details für Ihre Reiseziele.</p>
+                        </div>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Klimainformationen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
+                            <i class="fas fa-cloud-sun text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Klimainformationen</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                <i class="fas fa-clock mr-1.5"></i> Bald verfügbar
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Klimainformationen</p>
+                            <p class="text-xs text-gray-500 mt-1">Wetter- und Klimadaten für Ihre Reiseziele. Durchschnittliche Temperaturen, Niederschlag und beste Reisezeiten.</p>
+                        </div>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                <i class="fas fa-clock mr-1.5"></i> Bald verfügbar
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                </div>{{-- /x-show enabled --}}
+                </div>{{-- /x-data travelLinkManager --}}
 
             @elseif($settingsSection === 'travel-data')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Data</h3>
                 <p class="text-sm text-gray-500 mb-6">Verwalten Sie Reisedaten und Datenquellen.</p>
+
+                {{-- PDS Sync Aktivierung --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-6" x-data="pdsSyncManager()">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="hidden sm:block w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-sync-alt text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">PDS Synchronisierung</p>
+                                    <p class="text-xs text-gray-500 mt-1">Reisedaten automatisch aus der Passolution API synchronisieren und lokal speichern.</p>
+                                </div>
+                                <div class="flex items-center gap-3 flex-shrink-0">
+                                    {{-- Toggle --}}
+                                    <button @click="toggle()" :disabled="toggling"
+                                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+                                            :class="enabled ? 'bg-blue-600' : 'bg-gray-300'">
+                                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                                              :class="enabled ? 'translate-x-6' : 'translate-x-1'"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Sync-Status und Aktualisieren-Button (nur wenn aktiviert) --}}
+                            <div x-show="enabled" x-cloak class="mt-3 pt-3 border-t border-gray-100">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <div class="flex-1 text-xs text-gray-500">
+                                        <span x-show="lastSyncedAt">
+                                            <i class="fas fa-clock mr-1"></i> Letzte Synchronisierung: <span x-text="lastSyncedAt"></span>
+                                        </span>
+                                        <span x-show="!lastSyncedAt">
+                                            <i class="fas fa-info-circle mr-1"></i> Noch nicht synchronisiert
+                                        </span>
+                                    </div>
+                                    <button @click="syncNow()" :disabled="syncing"
+                                            class="inline-flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                                            :class="syncing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'">
+                                        <i class="fas mr-1.5" :class="syncing ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
+                                        <span x-text="syncing ? 'Wird synchronisiert...' : 'Jetzt aktualisieren'"></span>
+                                    </button>
+                                </div>
+
+                                {{-- Sync-Ergebnis --}}
+                                <div x-show="syncResult" x-cloak class="mt-3 p-3 rounded-lg text-xs"
+                                     :class="syncSuccess ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'">
+                                    <i class="fas mr-1" :class="syncSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                    <span x-text="syncResult"></span>
+                                    <span x-show="syncStats" class="ml-2 text-gray-500" x-text="syncStats"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {{-- Reiseliste mit Tabs --}}
                 <div class="mb-6" x-data="travelDataList()">
@@ -2555,6 +2792,111 @@ function apiTokenManager() {
         async copyToken() {
             try { await navigator.clipboard.writeText(this.generatedToken); this.copied = true; setTimeout(() => this.copied = false, 2000); }
             catch(e) { alert('Fehler beim Kopieren.'); }
+        }
+    };
+}
+
+function travelLinkManager() {
+    return {
+        enabled: {{ $customer->travel_links_enabled ? 'true' : 'false' }},
+        toggling: false,
+        syncing: false,
+        lastSyncedAt: {!! $customer->pds_last_synced_at ? "'" . $customer->pds_last_synced_at->format('d.m.Y H:i') . "'" : 'null' !!},
+        syncResult: null,
+        syncSuccess: false,
+        syncStats: null,
+        async toggleLinks() {
+            this.toggling = true;
+            try {
+                const r = await fetch('{{ route('customer.travel-data.toggle-travel-links') }}', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.enabled = d.enabled;
+                    this.syncResult = null;
+                }
+            } catch (e) {}
+            this.toggling = false;
+        },
+        async syncLinks() {
+            this.syncing = true;
+            this.syncResult = null;
+            this.syncStats = null;
+            try {
+                const r = await fetch('{{ route('customer.travel-data.sync-links') }}', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const d = await r.json();
+                this.syncSuccess = d.success;
+                this.syncResult = d.message;
+                if (d.stats) {
+                    const s = d.stats;
+                    let parts = [`${s.trips_synced} Reisen`, `${s.links_created} neue Links`, `${s.links_existing} bestehend`];
+                    if (s.skipped > 0) parts.push(`${s.skipped} übersprungen (abgeschlossen/unvollständig)`);
+                    this.syncStats = `(${parts.join(', ')})`;
+                }
+                if (d.synced_at) {
+                    this.lastSyncedAt = d.synced_at;
+                }
+            } catch (e) {
+                this.syncSuccess = false;
+                this.syncResult = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
+            }
+            this.syncing = false;
+        }
+    };
+}
+
+function pdsSyncManager() {
+    return {
+        enabled: {{ $customer->pds_sync_enabled ? 'true' : 'false' }},
+        toggling: false,
+        syncing: false,
+        lastSyncedAt: {!! $customer->pds_last_synced_at ? "'" . $customer->pds_last_synced_at->format('d.m.Y H:i') . "'" : 'null' !!},
+        syncResult: null,
+        syncSuccess: false,
+        syncStats: null,
+        async toggle() {
+            this.toggling = true;
+            try {
+                const r = await fetch('{{ route('customer.travel-data.sync-toggle') }}', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.enabled = d.enabled;
+                    this.syncResult = null;
+                }
+            } catch (e) {}
+            this.toggling = false;
+        },
+        async syncNow() {
+            this.syncing = true;
+            this.syncResult = null;
+            this.syncStats = null;
+            try {
+                const r = await fetch('{{ route('customer.travel-data.sync-now') }}', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const d = await r.json();
+                this.syncSuccess = d.success;
+                this.syncResult = d.message;
+                if (d.stats) {
+                    this.syncStats = `(${d.stats.duration_ms}ms)`;
+                }
+                if (d.synced_at) {
+                    this.lastSyncedAt = d.synced_at;
+                }
+            } catch (e) {
+                this.syncSuccess = false;
+                this.syncResult = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
+            }
+            this.syncing = false;
         }
     };
 }

@@ -24,8 +24,9 @@ class PdsTripSyncService
 
     /**
      * Sync all PDS travel-details for a customer into td_trips.
+     * If $updatedSince is provided, only fetches trips updated after that date (delta sync).
      */
-    public function syncCustomer(Customer $customer): TdPdsSyncLog
+    public function syncCustomer(Customer $customer, ?Carbon $updatedSince = null): TdPdsSyncLog
     {
         $syncLog = TdPdsSyncLog::start($customer->id);
 
@@ -48,12 +49,18 @@ class PdsTripSyncService
             $page = 1;
 
             do {
-                $response = $this->pdsApi->post($customer, '/travel-details?__with=__cruise-info', [
-                    'sort_by' => 'start_date',
-                    'sort_order' => 'desc',
+                $requestBody = [
+                    'sort_by' => $updatedSince ? 'updated_at' : 'start_date',
+                    'sort_order' => $updatedSince ? 'asc' : 'desc',
                     'page' => $page,
                     'per_page' => $this->perPage,
-                ]);
+                ];
+
+                if ($updatedSince) {
+                    $requestBody['updated_at'] = ['>' => $updatedSince->format('Y-m-d')];
+                }
+
+                $response = $this->pdsApi->post($customer, '/travel-details?__with=__cruise-info', $requestBody);
 
                 if (! $response || ! $response->successful()) {
                     $syncLog->markFailed(

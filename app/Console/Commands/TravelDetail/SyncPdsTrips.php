@@ -4,6 +4,7 @@ namespace App\Console\Commands\TravelDetail;
 
 use App\Models\Customer;
 use App\Services\TravelDetail\PdsTripSyncService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class SyncPdsTrips extends Command
@@ -11,6 +12,8 @@ class SyncPdsTrips extends Command
     protected $signature = 'td:sync-pds-trips
                             {--customer= : Sync a specific customer by ID}
                             {--all : Sync all customers with valid PDS tokens}
+                            {--delta : Only fetch trips updated since last sync}
+                            {--since= : Only fetch trips updated after this date (Y-m-d)}
                             {--dry-run : Show what would be synced without making changes}';
 
     protected $description = 'Synchronize PDS travel-details into local td_trips table';
@@ -50,7 +53,13 @@ class SyncPdsTrips extends Command
             return self::SUCCESS;
         }
 
-        $log = $syncService->syncCustomer($customer);
+        $updatedSince = $this->resolveUpdatedSince($customer);
+        $syncType = $updatedSince ? "Delta-Sync (seit {$updatedSince->format('d.m.Y H:i')})" : 'Voll-Sync';
+        $this->info($syncType);
+
+        $log = $syncService->syncCustomer($customer, $updatedSince);
+
+        $customer->update(['pds_last_synced_at' => now()]);
 
         $this->table(
             ['Status', 'Abgerufen', 'Neu', 'Aktualisiert', 'Unverändert', 'API Total', 'Seiten', 'Dauer'],
@@ -91,7 +100,9 @@ class SyncPdsTrips extends Command
                 continue;
             }
 
-            $log = $syncService->syncCustomer($customer);
+            $updatedSince = $this->resolveUpdatedSince($customer);
+            $log = $syncService->syncCustomer($customer, $updatedSince);
+            $customer->update(['pds_last_synced_at' => now()]);
             $results[$log->status === 'success' ? 'success' : ($log->status === 'partial' ? 'partial' : 'failed')]++;
 
             $this->line("    {$log->status}: {$log->trips_created} neu, {$log->trips_updated} aktualisiert ({$log->duration_ms}ms)");
@@ -101,5 +112,18 @@ class SyncPdsTrips extends Command
         $this->info("Ergebnis: {$results['success']} erfolgreich, {$results['partial']} teilweise, {$results['failed']} fehlgeschlagen");
 
         return $results['failed'] === 0 ? self::SUCCESS : self::FAILURE;
+    }
+
+    protected function resolveUpdatedSince(Customer $customer): ?Carbon
+    {
+        if ($this->option('since')) {
+            return Carbon::parse($this->option('since'));
+        }
+
+        if ($this->option('delta') && $customer->pds_last_synced_at) {
+            return $customer->pds_last_synced_at;
+        }
+
+        return null;
     }
 }

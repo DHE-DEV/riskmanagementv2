@@ -71,6 +71,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // GTM API settings
         'gtm_api_enabled',
         'gtm_api_rate_limit',
+        // PDS sync & Travel Links
+        'pds_sync_enabled',
+        'pds_last_synced_at',
+        'travel_links_enabled',
         // Notification settings
         'notifications_enabled',
     ];
@@ -99,6 +103,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // GTM API
         'gtm_api_enabled' => 'boolean',
         'gtm_api_rate_limit' => 'integer',
+        // PDS sync & Travel Links
+        'pds_sync_enabled' => 'boolean',
+        'pds_last_synced_at' => 'datetime',
+        'travel_links_enabled' => 'boolean',
         // Notifications
         'notifications_enabled' => 'boolean',
     ];

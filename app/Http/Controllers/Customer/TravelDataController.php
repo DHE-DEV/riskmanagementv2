@@ -9,6 +9,10 @@ use App\Models\Folder\FolderFlightService;
 use App\Models\Folder\FolderFlightSegment;
 use App\Models\Folder\FolderHotelService;
 use App\Models\Folder\FolderParticipant;
+use App\Models\TravelDetail\TdPdsSyncLog;
+use App\Models\TravelDetail\TdTrip;
+use App\Services\TravelDetail\PdsShareLinkService;
+use App\Services\TravelDetail\PdsTripSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,6 +51,171 @@ class TravelDataController extends Controller
         $folders = $query->paginate(10);
 
         return response()->json($folders);
+    }
+
+    public function toggleSync(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $enabled = ! $customer->pds_sync_enabled;
+        $customer->update(['pds_sync_enabled' => $enabled]);
+
+        return response()->json([
+            'success' => true,
+            'enabled' => $enabled,
+            'message' => $enabled ? 'Synchronisierung aktiviert' : 'Synchronisierung deaktiviert',
+        ]);
+    }
+
+    public function syncNow(PdsTripSyncService $syncService): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer->pds_sync_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Synchronisierung ist nicht aktiviert',
+            ], 422);
+        }
+
+        // Delta-Sync: nur geänderte Trips seit letzter Synchronisierung abrufen
+        $updatedSince = $customer->pds_last_synced_at;
+        $log = $syncService->syncCustomer($customer, $updatedSince);
+
+        $customer->update(['pds_last_synced_at' => now()]);
+
+        $syncType = $updatedSince ? 'Delta-Sync' : 'Voll-Sync';
+
+        return response()->json([
+            'success' => $log->status === 'success',
+            'status' => $log->status,
+            'message' => match ($log->status) {
+                'success' => "{$syncType}: {$log->trips_created} neu, {$log->trips_updated} aktualisiert, {$log->trips_unchanged} unverändert",
+                'partial' => "Teilweise synchronisiert: {$log->error_message}",
+                default => "Fehler: {$log->error_message}",
+            },
+            'stats' => [
+                'fetched' => $log->trips_fetched,
+                'created' => $log->trips_created,
+                'updated' => $log->trips_updated,
+                'unchanged' => $log->trips_unchanged,
+                'total_api' => $log->trips_total_api,
+                'duration_ms' => $log->duration_ms,
+            ],
+            'synced_at' => now()->format('d.m.Y H:i'),
+        ]);
+    }
+
+    public function travelLinksApi(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $filter = $request->query('filter', 'all');
+
+        $today = Carbon::today();
+
+        $query = TdTrip::where('customer_id', $customer->id)
+            ->orderBy('computed_start_at', 'desc');
+
+        match ($filter) {
+            'current' => $query->where('status', 'active')
+                ->where('computed_start_at', '<=', $today)
+                ->where('computed_end_at', '>=', $today),
+            'upcoming' => $query->where('status', 'active')
+                ->where('computed_start_at', '>', $today),
+            'expired' => $query->where(function ($q) use ($today) {
+                $q->where(function ($q2) use ($today) {
+                    $q2->whereNotNull('computed_end_at')
+                        ->where('computed_end_at', '<', $today);
+                })->orWhereIn('status', ['completed', 'cancelled']);
+            }),
+            default => null,
+        };
+
+        $perPage = $request->query('per_page', 15);
+        $trips = $query->paginate($perPage);
+
+        // Add trip_name from raw_payload
+        $trips->getCollection()->transform(function ($trip) {
+            $trip->trip_name = $trip->raw_payload['trip_name']
+                ?? $trip->raw_payload['trip']['name']
+                ?? $trip->booking_reference
+                ?? null;
+
+            return $trip;
+        });
+
+        return response()->json($trips);
+    }
+
+    public function toggleTravelLinks(): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $enabled = ! $customer->travel_links_enabled;
+        $customer->update(['travel_links_enabled' => $enabled]);
+
+        return response()->json([
+            'success' => true,
+            'enabled' => $enabled,
+        ]);
+    }
+
+    public function syncLinks(PdsTripSyncService $syncService, PdsShareLinkService $shareLinkService): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        // 1. Sync trips from PDS API (delta if previously synced)
+        $updatedSince = $customer->pds_last_synced_at;
+        $syncLog = $syncService->syncCustomer($customer, $updatedSince);
+
+        if ($syncLog->status === 'failed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Synchronisierung fehlgeschlagen: ' . $syncLog->error_message,
+            ], 500);
+        }
+
+        // 2. Count all customer trips and determine eligible ones
+        $allTrips = TdTrip::where('customer_id', $customer->id)->get();
+        $eligibleTrips = $allTrips->filter(fn ($t) => $t->status === 'active' && $t->computed_start_at !== null);
+        $skippedCount = $allTrips->count() - $eligibleTrips->count();
+
+        // 3. Generate share links for eligible trips without an active link
+        $linksCreated = 0;
+        $linksExisting = 0;
+        $linksFailed = 0;
+
+        foreach ($eligibleTrips as $trip) {
+            $existingLink = $trip->pdsShareLinks()->active()->first();
+
+            if ($existingLink) {
+                $linksExisting++;
+                continue;
+            }
+
+            $shareLink = $shareLinkService->generateShareLink($trip);
+
+            if ($shareLink) {
+                $linksCreated++;
+            } else {
+                $linksFailed++;
+            }
+        }
+
+        $customer->update(['pds_last_synced_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Reisen synchronisiert, {$linksCreated} neue Links erstellt",
+            'stats' => [
+                'trips_synced' => $syncLog->trips_fetched,
+                'trips_created' => $syncLog->trips_created,
+                'trips_updated' => $syncLog->trips_updated,
+                'links_created' => $linksCreated,
+                'links_existing' => $linksExisting,
+                'links_failed' => $linksFailed,
+                'skipped' => $skippedCount,
+            ],
+            'synced_at' => now()->format('d.m.Y H:i'),
+        ]);
     }
 
     public function importJson(Request $request): JsonResponse
