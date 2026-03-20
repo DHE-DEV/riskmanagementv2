@@ -161,6 +161,30 @@
                     <i class="fas fa-triangle-exclamation"></i>
                     Travel Alert
                 </a>
+
+                <a href="{{ route('customer.settings', ['section' => 'travel-data']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'travel-data' ? 'active' : '' }}">
+                    <i class="fas fa-route"></i>
+                    Travel Data
+                </a>
+
+                <a href="{{ route('customer.settings', ['section' => 'travel-link']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'travel-link' ? 'active' : '' }}">
+                    <i class="fas fa-link"></i>
+                    Travel Link
+                </a>
+
+                <a href="{{ route('customer.settings', ['section' => 'travel-information']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'travel-information' ? 'active' : '' }}">
+                    <i class="fas fa-book-atlas"></i>
+                    Travel Information
+                </a>
+
+                <a href="{{ route('customer.settings', ['section' => 'connected-services']) }}"
+                   class="settings-nav-item {{ $settingsSection === 'connected-services' ? 'active' : '' }}">
+                    <i class="fas fa-plug"></i>
+                    Connected Services
+                </a>
             </nav>
         </div>
     </div>
@@ -2066,6 +2090,222 @@
                     </div>
                 </div>
 
+            @elseif($settingsSection === 'travel-link')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Link</h3>
+                <p class="text-sm text-gray-500 mb-6">Einstellungen für Travel Link.</p>
+
+                <div class="bg-white rounded-lg border border-gray-200 p-5">
+                    <div class="flex items-center gap-3 text-gray-400">
+                        <i class="fas fa-link text-2xl"></i>
+                        <p class="text-sm">Dieser Bereich wird derzeit eingerichtet.</p>
+                    </div>
+                </div>
+
+            @elseif($settingsSection === 'travel-data')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Data</h3>
+                <p class="text-sm text-gray-500 mb-6">Verwalten Sie Reisedaten und Datenquellen.</p>
+
+                {{-- Reise aus JSON erstellen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="travelDataImport()">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-file-import text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Reise aus JSON erstellen</p>
+                            <p class="text-xs text-gray-500 mt-1">Erstellen Sie eine neue Reise aus einem JSON-Payload. Die Reise wird automatisch in der Travel Alert Übersicht angezeigt und mit aktuellen Sicherheitsereignissen abgeglichen.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <button @click="showImport = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                <i class="fas fa-plus mr-1.5"></i> Neu aus JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Import Modal --}}
+                    <div x-show="showImport" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="showImport = false">
+                        <div class="fixed inset-0 bg-black/50" @click="showImport = false"></div>
+                        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+                            <div class="flex items-center justify-between mb-5">
+                                <h3 class="text-lg font-semibold text-gray-900">Reise aus JSON erstellen</h3>
+                                <button @click="showImport = false" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-xmark text-lg"></i>
+                                </button>
+                            </div>
+
+                            {{-- Erfolgs-/Fehlermeldung --}}
+                            <div x-show="resultMessage" x-cloak class="mb-4 p-4 rounded-lg"
+                                 :class="resultSuccess ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+                                <p class="text-xs" :class="resultSuccess ? 'text-green-800' : 'text-red-800'">
+                                    <i class="fas mr-1" :class="resultSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                    <span x-text="resultMessage"></span>
+                                </p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">JSON Payload</label>
+                                <textarea x-model="jsonPayload" rows="18"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono focus:ring-blue-500 focus:border-blue-500"
+                                          placeholder='{"provider": {"id": "...", "sent_at": "..."}, "trip": {...}}'></textarea>
+                                <p class="mt-1 text-xs text-gray-500">Das JSON muss dem Travel Detail Schema entsprechen (mit provider, trip, travellers und itinerary).</p>
+                            </div>
+
+                            <div class="flex justify-between">
+                                <button type="button" @click="loadExample()"
+                                        class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+                                    <i class="fas fa-lightbulb"></i> Beispiel
+                                </button>
+                                <div class="flex gap-3">
+                                    <button type="button" @click="showImport = false"
+                                            class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                        Abbrechen
+                                    </button>
+                                    <button @click="importTrip" :disabled="loading || !jsonPayload.trim()"
+                                            :class="loading || !jsonPayload.trim() ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                            class="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-2">
+                                        <i class="fas" :class="loading ? 'fa-spinner fa-spin' : 'fa-file-import'"></i>
+                                        <span x-text="loading ? 'Wird importiert...' : 'Importieren'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            @elseif($settingsSection === 'connected-services')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Connected Services</h3>
+                <p class="text-sm text-gray-500 mb-6">Verwalten Sie Ihre verbundenen Dienste und Integrationen.</p>
+
+                {{-- Business Visum --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-stamp text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Business Visum</p>
+                            <p class="text-xs text-gray-500 mt-1">Visum-Service für Geschäftsreisende. Beantragung, Statusverfolgung und Verwaltung von Geschäftsvisa direkt über die Plattform.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Wallet --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-wallet text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Wallet</p>
+                            <p class="text-xs text-gray-500 mt-1">Digitale Wallet-Integration für Reisedokumente, Bordkarten und Versicherungsnachweise. Alle wichtigen Dokumente immer griffbereit auf dem Smartphone.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- E-SIM --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-sim-card text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">E-SIM</p>
+                            <p class="text-xs text-gray-500 mt-1">E-SIM-Service für mobile Datenverbindungen im Ausland. Automatische Bereitstellung von Datentarifen passend zum Reiseziel ohne physische SIM-Karte.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Doctors Network --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-user-doctor text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Doctors Network</p>
+                            <p class="text-xs text-gray-500 mt-1">Zugang zu einem weltweiten Netzwerk von Ärzten und medizinischen Einrichtungen. Schnelle Hilfe vor Ort bei gesundheitlichen Notfällen auf Reisen.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            @elseif($settingsSection === 'travel-information')
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Information</h3>
+                <p class="text-sm text-gray-500 mb-6">Länder- und Flughafeninformationen für Ihre Reisenden.</p>
+
+                {{-- Länder --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-earth-americas text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Länder</p>
+                            <p class="text-xs text-gray-500 mt-1">Umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen, Sicherheitsbewertungen und allgemeinen Reiseinformationen.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Flughäfen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-plane-departure text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Flughäfen</p>
+                            <p class="text-xs text-gray-500 mt-1">Detaillierte Flughafeninformationen mit Airlines, Hotels, Lounges, Transfermöglichkeiten und weiteren Services vor Ort.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Airlines --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-plane text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Airlines</p>
+                            <p class="text-xs text-gray-500 mt-1">Informationen zu Fluggesellschaften mit Streckennetz, Gepäckbestimmungen, Kontaktdaten und weiteren servicerelevanten Details.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
             @endif
 
             {{-- Success/Error Messages --}}
@@ -2119,6 +2359,153 @@ function apiTokenManager() {
         async copyToken() {
             try { await navigator.clipboard.writeText(this.generatedToken); this.copied = true; setTimeout(() => this.copied = false, 2000); }
             catch(e) { alert('Fehler beim Kopieren.'); }
+        }
+    };
+}
+
+function travelDataImport() {
+    return {
+        showImport: false,
+        jsonPayload: '',
+        loading: false,
+        resultMessage: '',
+        resultSuccess: false,
+        loadExample() {
+            const today = new Date();
+            const dep = new Date(today);
+            dep.setDate(dep.getDate() - 2);
+            const ret = new Date(today);
+            ret.setDate(ret.getDate() + 5);
+            const checkIn = new Date(dep);
+            const checkOut = new Date(ret);
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const fmt = (d, h, m) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(h)}:${pad(m)}:00+01:00`;
+            const fmtDate = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+            const example = {
+                "schema_version": "1.1",
+                "provider": {
+                    "id": "manual-import",
+                    "name": "Manueller Import",
+                    "sent_at": new Date().toISOString()
+                },
+                "trip": {
+                    "external_trip_id": "TRIP-" + Date.now(),
+                    "booking_reference": "ABC123",
+                    "travellers": [
+                        {
+                            "external_traveller_id": "PAX-001",
+                            "type": "adult",
+                            "name": { "salutation": "Herr", "first": "Max", "last": "Mustermann" },
+                            "date_of_birth": "1985-06-15",
+                            "nationality": "DE",
+                            "contact": { "email": "max.mustermann@beispiel.de", "phone": "+49 170 1234567" },
+                            "passport": { "country": "DE" }
+                        },
+                        {
+                            "external_traveller_id": "PAX-002",
+                            "type": "adult",
+                            "name": { "salutation": "Frau", "first": "Anna", "last": "Meier" },
+                            "date_of_birth": "1990-03-22",
+                            "nationality": "CH",
+                            "contact": { "email": "anna.meier@beispiel.ch", "phone": "+41 79 1234567" },
+                            "passport": { "country": "CH" }
+                        }
+                    ],
+                    "itinerary": [
+                        {
+                            "type": "travel",
+                            "mode": "air",
+                            "leg_id": "LEG-OUT",
+                            "segments": [
+                                {
+                                    "segment_id": "SEG-OUT-1",
+                                    "departure": {
+                                        "airport": { "code": "FRA", "geocode": { "lat": 50.0379, "lng": 8.5622 } },
+                                        "time": fmt(dep, 7, 30),
+                                        "terminal": "1"
+                                    },
+                                    "arrival": {
+                                        "airport": { "code": "BCN", "geocode": { "lat": 41.2974, "lng": 2.0833 } },
+                                        "time": fmt(dep, 10, 0),
+                                        "terminal": "1"
+                                    },
+                                    "marketing_carrier": { "airline_code": "LH", "flight_number": "1124" },
+                                    "operating_carrier": { "airline_code": "LH" },
+                                    "transfer_role_hint": "none"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "stay",
+                            "stay_id": "STAY-001",
+                            "stay_type": "hotel",
+                            "location": {
+                                "name": "Hotel Arts Barcelona",
+                                "geocode": { "lat": 41.3879, "lng": 2.1942 },
+                                "country_code": "ES"
+                            },
+                            "check_in": fmt(dep, 14, 0),
+                            "check_out": fmt(ret, 11, 0)
+                        },
+                        {
+                            "type": "travel",
+                            "mode": "air",
+                            "leg_id": "LEG-RET",
+                            "segments": [
+                                {
+                                    "segment_id": "SEG-RET-1",
+                                    "departure": {
+                                        "airport": { "code": "BCN", "geocode": { "lat": 41.2974, "lng": 2.0833 } },
+                                        "time": fmt(ret, 13, 15),
+                                        "terminal": "1"
+                                    },
+                                    "arrival": {
+                                        "airport": { "code": "FRA", "geocode": { "lat": 50.0379, "lng": 8.5622 } },
+                                        "time": fmt(ret, 15, 45),
+                                        "terminal": "1"
+                                    },
+                                    "marketing_carrier": { "airline_code": "LH", "flight_number": "1125" },
+                                    "operating_carrier": { "airline_code": "LH" },
+                                    "transfer_role_hint": "none"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            this.jsonPayload = JSON.stringify(example, null, 2);
+            this.resultMessage = '';
+        },
+        async importTrip() {
+            this.loading = true;
+            this.resultMessage = '';
+            try {
+                const r = await fetch('{{ route('customer.travel-data.import-json') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ json_payload: this.jsonPayload })
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.resultSuccess = true;
+                    this.resultMessage = d.message + ' (Vorgangsnummer: ' + d.folder_number + ')';
+                    this.jsonPayload = '';
+                } else {
+                    this.resultSuccess = false;
+                    this.resultMessage = d.message || 'Unbekannter Fehler';
+                }
+            } catch (e) {
+                this.resultSuccess = false;
+                this.resultMessage = 'Fehler beim Import. Bitte versuchen Sie es erneut.';
+            }
+            this.loading = false;
         }
     };
 }
