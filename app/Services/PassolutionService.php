@@ -52,11 +52,19 @@ class PassolutionService
 
             $data = $response->json();
 
-            $customer->update([
+            $updateData = [
                 'passolution_subscription_type' => $data['type'] ?? null,
                 'passolution_features' => $data['features'] ?? [],
                 'passolution_subscription_updated_at' => now(),
-            ]);
+            ];
+
+            if (! empty($data['customer_number'])) {
+                $updateData['pds_customer_number'] = $data['customer_number'];
+            } elseif (! empty($data['id'])) {
+                $updateData['pds_customer_number'] = $data['id'];
+            }
+
+            $customer->update($updateData);
 
             return true;
 
@@ -174,8 +182,11 @@ class PassolutionService
             'subscription' => 'Abonnement',
         ];
 
-        return array_map(function($feature) use ($labels) {
-            return $labels[$feature] ?? $feature;
-        }, $features);
+        $hidden = ['embed.corona', 'content.infosystem', 'content.cruise_operator'];
+
+        return array_values(array_map(
+            fn ($feature) => $labels[$feature] ?? $feature,
+            array_filter($features, fn ($feature) => ! in_array($feature, $hidden))
+        ));
     }
 }

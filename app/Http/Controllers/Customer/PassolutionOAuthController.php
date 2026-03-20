@@ -146,12 +146,25 @@ class PassolutionOAuthController extends Controller
         ]);
 
         $customer = auth('customer')->user();
-        $customer->update([
-            'passolution_access_token' => $request->passolution_token,
+        $token = $request->passolution_token;
+
+        $updateData = [
+            'passolution_access_token' => $token,
             'passolution_token_expires_at' => now()->addYear(),
             'passolution_refresh_token' => null,
             'passolution_refresh_token_expires_at' => null,
-        ]);
+        ];
+
+        // Extract KID (sub) from JWT token payload
+        $parts = explode('.', $token);
+        if (count($parts) >= 2) {
+            $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+            if (! empty($payload['sub'])) {
+                $updateData['pds_customer_number'] = $payload['sub'];
+            }
+        }
+
+        $customer->update($updateData);
 
         return redirect()->route('customer.dashboard')
             ->with('success', 'Passolution-Token erfolgreich gespeichert!');

@@ -150,29 +150,47 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
                                 <p class="text-sm font-medium text-gray-900 truncate" x-text="trip.trip_name || trip.external_trip_id || 'Reise'"></p>
-                                <span x-show="trip.pds_tid" class="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                                    <i class="fas fa-hashtag mr-0.5"></i><span x-text="trip.pds_tid"></span>
-                                </span>
-                            </div>
-
-                            {{-- Nationalitäten & Reiseziele --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                {{-- Nationalitäten --}}
-                                <div x-show="trip.nationalities && trip.nationalities.length > 0">
-                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Nationalitäten</p>
-                                    <div class="flex flex-wrap gap-1">
-                                        <template x-for="nat in trip.nationalities" :key="nat.code">
-                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 rounded" x-text="nat.name"></span>
-                                        </template>
+                                <div class="flex items-center gap-4 flex-shrink-0">
+                                    <span x-show="trip.booking_reference" class="text-xs text-gray-500 whitespace-nowrap">
+                                        <i class="fas fa-bookmark mr-0.5"></i><span x-text="trip.booking_reference"></span>
+                                    </span>
+                                    <span x-show="trip.pds_tid" class="text-xs text-gray-400 whitespace-nowrap">
+                                        <i class="fas fa-hashtag mr-0.5"></i><span x-text="trip.pds_tid"></span>
+                                    </span>
+                                    {{-- 3-Punkte-Menü --}}
+                                    <div class="relative" x-data="{ open: false }">
+                                        <button @click="open = !open" class="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 transition-colors">
+                                            <i class="fas fa-ellipsis-vertical"></i>
+                                        </button>
+                                        <div x-show="open" x-cloak @click.away="open = false"
+                                             class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                            <button @click="open = false; $dispatch('edit-trip', { trip: trip })"
+                                                    class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                <i class="fas fa-pen w-4 text-center"></i> Bearbeiten
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
+                            {{-- Reiseziele & Nationalitäten --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 {{-- Reiseziele --}}
                                 <div x-show="trip.destinations && trip.destinations.length > 0">
                                     <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Reiseziele</p>
                                     <div class="flex flex-wrap gap-1">
                                         <template x-for="dest in trip.destinations" :key="dest.code">
                                             <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded" x-text="dest.name"></span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                {{-- Nationalitäten --}}
+                                <div x-show="trip.nationalities && trip.nationalities.length > 0">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Nationalitäten</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="nat in trip.nationalities" :key="nat.code">
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded" x-text="nat.name"></span>
                                         </template>
                                     </div>
                                 </div>
@@ -249,6 +267,113 @@
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
+            </div>
+        </div>
+        {{-- Bearbeiten-Modal --}}
+        <div x-show="editTrip" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="editTrip = null" @keydown.enter.window="if(editTrip && !editSaving && document.activeElement.tagName !== 'TEXTAREA') saveEdit()">
+            <div class="fixed inset-0 bg-black/50" @click="editTrip = null"></div>
+            <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-lg font-semibold text-gray-900">Travel Link bearbeiten</h3>
+                    <button @click="editTrip = null" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                {{-- Erfolgs-/Fehlermeldung --}}
+                <div x-show="editResult" x-cloak class="mb-4 p-3 rounded-lg text-xs"
+                     :class="editSuccess ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'">
+                    <i class="fas mr-1" :class="editSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                    <span x-text="editResult"></span>
+                </div>
+
+                <template x-if="editTrip">
+                    <div class="space-y-4">
+                        {{-- Reisename --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Reisename</label>
+                            <input type="text" x-model="editForm.trip_name"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        {{-- Datum --}}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Startdatum</label>
+                                <input type="date" x-model="editForm.start_date"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Enddatum</label>
+                                <input type="date" x-model="editForm.end_date"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        {{-- Reiseziele --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Reiseziele (ISO-Codes, kommagetrennt)</label>
+                            <input type="text" x-model="editForm.destinations_input"
+                                   placeholder="z.B. DE, ES, FR"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <p class="text-[10px] text-gray-400 mt-1">2-stellige ISO-Ländercodes, z.B. DE, AT, CH, ES</p>
+                        </div>
+
+                        {{-- Nationalitäten --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Nationalitäten (ISO-Codes, kommagetrennt)</label>
+                            <input type="text" x-model="editForm.nationalities_input"
+                                   placeholder="z.B. DE, AT"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        {{-- Referenz-ID --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Referenz-ID</label>
+                            <input type="text" x-model="editForm.reference_id"
+                                   placeholder="z.B. REF-123"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        {{-- Notiz --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Notiz</label>
+                            <textarea x-model="editForm.note" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Optionale Notiz zur Reise"></textarea>
+                        </div>
+
+                        {{-- Länderinformationen anzeigen --}}
+                        <div class="flex items-center gap-3">
+                            <button @click="editForm.show_country_info = !editForm.show_country_info"
+                                    class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                                    :class="editForm.show_country_info ? 'bg-blue-600' : 'bg-gray-300'">
+                                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+                                      :class="editForm.show_country_info ? 'translate-x-4' : 'translate-x-0.5'"></span>
+                            </button>
+                            <label class="text-xs text-gray-700">Länderinformationen anzeigen</label>
+                        </div>
+
+                        {{-- TID Info --}}
+                        <div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+                            <i class="fas fa-hashtag mr-1"></i> TID: <span x-text="editTrip.pds_tid" class="font-mono"></span>
+                        </div>
+
+                        {{-- Buttons --}}
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button @click="editTrip = null"
+                                    class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                Abbrechen
+                            </button>
+                            <button @click="saveEdit()" :disabled="editSaving"
+                                    :class="editSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                    class="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-2">
+                                <i class="fas" :class="editSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                                <span x-text="editSaving ? 'Wird gespeichert...' : 'Speichern'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -350,6 +475,11 @@ function travelLinksContent() {
         lastPage: 1,
         total: 0,
         filter: 'all',
+        editTrip: null,
+        editForm: {},
+        editSaving: false,
+        editResult: null,
+        editSuccess: false,
         init() {
             this.loadTrips();
             window.addEventListener('travel-links-filter', (e) => {
@@ -359,6 +489,9 @@ function travelLinksContent() {
             });
             window.addEventListener('travel-links-reload', () => {
                 this.loadTrips();
+            });
+            window.addEventListener('edit-trip', (e) => {
+                this.openEdit(e.detail.trip);
             });
         },
         loadPage(page) {
@@ -386,6 +519,73 @@ function travelLinksContent() {
             if (!d) return '';
             const date = new Date(d);
             return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        },
+        openEdit(trip) {
+            this.editTrip = trip;
+            this.editResult = null;
+            this.editForm = {
+                trip_name: trip.trip_name || trip.raw_payload?.trip_name || '',
+                start_date: trip.computed_start_at ? this.toLocalDate(trip.computed_start_at) : '',
+                end_date: trip.computed_end_at ? this.toLocalDate(trip.computed_end_at) : '',
+                destinations_input: (trip.countries_visited || []).join(', '),
+                nationalities_input: (trip.nationalities || []).map(n => n.code || n).join(', '),
+                reference_id: trip.booking_reference || trip.raw_payload?.reference_id || '',
+                note: trip.raw_payload?.note || '',
+                show_country_info: trip.raw_payload?.show_country_info !== false,
+            };
+        },
+        async saveEdit() {
+            if (!this.editTrip?.pds_tid) return;
+            this.editSaving = true;
+            this.editResult = null;
+            try {
+                const destinations = this.editForm.destinations_input
+                    .split(',').map(s => s.trim().toUpperCase()).filter(s => s.length === 2);
+                const nationalities = this.editForm.nationalities_input
+                    .split(',').map(s => s.trim().toUpperCase()).filter(s => s.length === 2);
+
+                const r = await fetch('{{ route("customer.travel-data.update-link") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        pds_tid: this.editTrip.pds_tid,
+                        trip_id: this.editTrip.id,
+                        trip_name: this.editForm.trip_name,
+                        start_date: this.editForm.start_date,
+                        end_date: this.editForm.end_date,
+                        destinations: destinations,
+                        nationalities: nationalities,
+                        reference_id: this.editForm.reference_id,
+                        note: this.editForm.note,
+                        show_country_info: this.editForm.show_country_info,
+                    })
+                });
+                const d = await r.json();
+                this.editSuccess = d.success;
+                this.editResult = d.message;
+                if (d.success) {
+                    setTimeout(() => {
+                        this.editTrip = null;
+                        this.loadTrips();
+                    }, 1000);
+                }
+            } catch (e) {
+                this.editSuccess = false;
+                this.editResult = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
+            }
+            this.editSaving = false;
+        },
+        toLocalDate(d) {
+            if (!d) return '';
+            const date = new Date(d);
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
         },
         copyLink(url) {
             if (navigator.clipboard && window.isSecureContext) {

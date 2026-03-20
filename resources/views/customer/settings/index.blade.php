@@ -1610,6 +1610,33 @@
                                 </div>
                             @endif
 
+                            {{-- Verbundener Account --}}
+                            @if($customer->pds_customer_number)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">KID:</span>
+                                    <span class="text-xs text-gray-500 font-mono">{{ $customer->pds_customer_number }}</span>
+                                </div>
+                            @endif
+
+
+
+                            {{-- Freigeschaltete Funktionen --}}
+                            @if(!empty($customer->passolution_features))
+                                @php
+                                    $featureLabels = app(\App\Services\PassolutionService::class)->getFeatureLabels($customer->passolution_features);
+                                @endphp
+                                <div class="pt-2 border-t border-gray-200">
+                                    <p class="text-xs font-medium text-gray-600 mb-2">Freigeschaltete Funktionen:</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($featureLabels as $label)
+                                            <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-green-50 text-green-700 rounded border border-green-200">
+                                                <i class="fas fa-check mr-1 text-[8px]"></i> {{ $label }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             @if($tokenSource === 'oauth')
                                 <div class="pt-2 border-t border-gray-200">
                                     <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">

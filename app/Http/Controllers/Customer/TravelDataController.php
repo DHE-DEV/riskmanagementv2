@@ -11,11 +11,13 @@ use App\Models\Folder\FolderHotelService;
 use App\Models\Folder\FolderParticipant;
 use App\Models\TravelDetail\TdPdsSyncLog;
 use App\Models\TravelDetail\TdTrip;
+use App\Services\PdsApiService;
 use App\Services\TravelDetail\PdsShareLinkService;
 use App\Services\TravelDetail\PdsTripSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class TravelDataController extends Controller
@@ -250,6 +252,125 @@ class TravelDataController extends Controller
                 'skipped' => $skippedCount,
             ],
             'synced_at' => now()->format('d.m.Y H:i'),
+        ]);
+    }
+
+    public function updateLink(Request $request, PdsApiService $pdsApi): JsonResponse
+    {
+        $request->validate([
+            'pds_tid' => 'required|string',
+            'trip_id' => 'required',
+            'trip_name' => 'nullable|string|max:255',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'destinations' => 'nullable|array',
+            'nationalities' => 'nullable|array',
+            'reference_id' => 'nullable|string|max:128',
+            'note' => 'nullable|string',
+            'show_country_info' => 'nullable|boolean',
+        ]);
+
+        $customer = auth('customer')->user();
+
+        // Verify trip belongs to customer
+        $trip = TdTrip::where('id', $request->input('trip_id'))
+            ->where('customer_id', $customer->id)
+            ->first();
+
+        if (! $trip) {
+            return response()->json(['success' => false, 'message' => 'Reise nicht gefunden'], 404);
+        }
+
+        // Use external_trip_id (the travel-detail ID from PDS API /travel-details listing)
+        $travelDetailId = $trip->external_trip_id;
+
+        if (! $travelDetailId) {
+            return response()->json(['success' => false, 'message' => 'Keine Travel Detail ID vorhanden.'], 422);
+        }
+
+        // 1. Build API payload (only include fields that were sent)
+        // Note: destinations are managed locally only – the PDS API does not accept
+        // destination updates via this endpoint (requires pre-stay/follow-up type)
+        $apiPayload = [];
+        foreach (['trip_name', 'start_date', 'end_date', 'nationalities', 'reference_id', 'note', 'show_country_info'] as $field) {
+            if ($request->has($field)) {
+                $apiPayload[$field] = $request->input($field);
+            }
+        }
+
+        Log::info('TravelDataController: Updating travel detail', [
+            'travel_detail_id' => $travelDetailId,
+            'endpoint' => "/travel-details/{$travelDetailId}",
+            'payload' => $apiPayload,
+        ]);
+
+        $response = $pdsApi->post($customer, "/travel-details/{$travelDetailId}", $apiPayload);
+
+        if (! $response || ! $response->successful()) {
+            $errorBody = $response?->json() ?? [];
+            $errorMessage = $errorBody['message'] ?? $errorBody['error'] ?? null;
+            if (is_array($errorMessage)) {
+                $errorMessage = json_encode($errorMessage);
+            }
+            if (! $errorMessage) {
+                $errorMessage = $response ? "Status {$response->status()}" : 'Keine Antwort';
+            }
+
+            Log::warning('TravelDataController: PDS update failed', [
+                'travel_detail_id' => $travelDetailId,
+                'status' => $response?->status(),
+                'payload' => $apiPayload,
+                'response_body' => $response?->body(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'API-Fehler: ' . $errorMessage,
+            ], 500);
+        }
+
+        // 2. Update local td_trips record
+        $updateData = [];
+
+        $rawPayload = $trip->raw_payload ?? [];
+
+        if ($request->has('trip_name')) {
+            $rawPayload['trip_name'] = $request->input('trip_name');
+        }
+
+        if ($request->has('start_date') && $request->input('start_date')) {
+            $updateData['computed_start_at'] = Carbon::parse($request->input('start_date'));
+        }
+
+        if ($request->has('end_date') && $request->input('end_date')) {
+            $updateData['computed_end_at'] = Carbon::parse($request->input('end_date'));
+        }
+
+        if ($request->has('destinations')) {
+            $updateData['countries_visited'] = $request->input('destinations');
+        }
+
+        if ($request->has('note')) {
+            $rawPayload['note'] = $request->input('note');
+        }
+
+        if ($request->has('show_country_info')) {
+            $rawPayload['show_country_info'] = $request->boolean('show_country_info');
+        }
+
+        $updateData['raw_payload'] = $rawPayload;
+
+        if ($request->has('reference_id')) {
+            $updateData['booking_reference'] = $request->input('reference_id');
+        }
+
+        if (! empty($updateData)) {
+            $trip->update($updateData);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Travel Link erfolgreich aktualisiert',
         ]);
     }
 

@@ -194,6 +194,8 @@ Route::prefix('customer')->name('customer.')->group(function () {
             ->name('travel-data.sync-links');
         Route::post('/travel-data/toggle-travel-links', [\App\Http\Controllers\Customer\TravelDataController::class, 'toggleTravelLinks'])
             ->name('travel-data.toggle-travel-links');
+        Route::post('/travel-data/update-link', [\App\Http\Controllers\Customer\TravelDataController::class, 'updateLink'])
+            ->name('travel-data.update-link');
 
         // Notification Settings routes (Benachrichtigungs-Abonnement)
         Route::prefix('notification-settings')->name('notification-settings.')->group(function () {
