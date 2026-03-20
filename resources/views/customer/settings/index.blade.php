@@ -2177,34 +2177,74 @@
                 <p class="text-sm text-gray-500 mb-6">Verwalten Sie Ihre verbundenen Dienste und Integrationen.</p>
 
                 {{-- Business Visum --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
-                    <div class="flex items-start gap-4">
-                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
                             <i class="fas fa-stamp text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Business Visum</span>
+                            @if($featureService->isFeatureEnabled('navigation_business_visa_enabled', $customer))
+                                <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                    <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                                </span>
+                            @else
+                                <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                    <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                                </span>
+                            @endif
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-700">Business Visum</p>
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Business Visum</p>
                             <p class="text-xs text-gray-500 mt-1">Visum-Service für Geschäftsreisende. Beantragung, Statusverfolgung und Verwaltung von Geschäftsvisa direkt über die Plattform.</p>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+                                <div class="sm:w-1/3">
+                                    <img src="{{ asset('storage/logos/connected_services/workflex.png') }}" alt="Business Visum" style="height: 34px; width: auto; margin-left: -7px;">
+                                </div>
+                                <div class="sm:w-2/3">
+                                    <a href="https://www.workflex.com/hr-glossary/business-travel" target="_blank" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
+                                        <i class="fas fa-external-link-alt mr-1.5"></i> Website Anbieter
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-32 flex-shrink-0 flex justify-end">
-                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
-                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
-                            </span>
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
+                            @if($featureService->isFeatureEnabled('navigation_business_visa_enabled', $customer))
+                                <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                    <i class="fas fa-circle-check mr-1.5"></i> Aktiv
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                    <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                                </span>
+                            @endif
                         </div>
                     </div>
                 </div>
 
                 {{-- Wallet --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
-                    <div class="flex items-start gap-4">
-                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
                             <i class="fas fa-wallet text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Wallet</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-700">Wallet</p>
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Wallet</p>
                             <p class="text-xs text-gray-500 mt-1">Digitale Wallet-Integration für Reisedokumente, Bordkarten und Versicherungsnachweise. Alle wichtigen Dokumente immer griffbereit auf dem Smartphone.</p>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+                                <div class="sm:w-1/3">
+                                    <img src="{{ asset('storage/logos/connected_services/eloyalty.webp') }}" alt="Wallet" style="height: 22px; width: auto;">
+                                </div>
+                                <div class="sm:w-2/3">
+                                    <a href="https://eloyalty.io/" target="_blank" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
+                                        <i class="fas fa-external-link-alt mr-1.5"></i> Website Anbieter
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-32 flex-shrink-0 flex justify-end">
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
                             <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
                                 <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
                             </span>
@@ -2213,16 +2253,30 @@
                 </div>
 
                 {{-- E-SIM --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
-                    <div class="flex items-start gap-4">
-                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
                             <i class="fas fa-sim-card text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">E-SIM</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-700">E-SIM</p>
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">E-SIM</p>
                             <p class="text-xs text-gray-500 mt-1">E-SIM-Service für mobile Datenverbindungen im Ausland. Automatische Bereitstellung von Datentarifen passend zum Reiseziel ohne physische SIM-Karte.</p>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+                                <div class="sm:w-1/3">
+                                    <img src="{{ asset('storage/logos/connected_services/bubby.svg') }}" alt="Bubby" style="height: 40px; width: auto;">
+                                </div>
+                                <div class="sm:w-2/3">
+                                    <a href="https://www.hubbyesim.com/" target="_blank" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
+                                        <i class="fas fa-external-link-alt mr-1.5"></i> Website Anbieter
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-32 flex-shrink-0 flex justify-end">
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
                             <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
                                 <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
                             </span>
@@ -2231,16 +2285,30 @@
                 </div>
 
                 {{-- Doctors Network --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-5">
-                    <div class="flex items-start gap-4">
-                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
                             <i class="fas fa-user-doctor text-2xl text-gray-400"></i>
+                            <span class="sm:hidden text-sm font-medium text-gray-700">Doctors Network</span>
+                            <span class="sm:hidden ml-auto inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                            </span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-700">Doctors Network</p>
+                            <p class="hidden sm:block text-sm font-medium text-gray-700">Doctors Network</p>
                             <p class="text-xs text-gray-500 mt-1">Zugang zu einem weltweiten Netzwerk von Ärzten und medizinischen Einrichtungen. Schnelle Hilfe vor Ort bei gesundheitlichen Notfällen auf Reisen.</p>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+                                <div class="sm:w-1/3">
+                                    <img src="{{ asset('storage/logos/connected_services/mybakup.png') }}" alt="myBakup" style="height: 50px; width: auto;">
+                                </div>
+                                <div class="sm:w-2/3">
+                                    <a href="https://www.app.mybakup.com/traveler/" target="_blank" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
+                                        <i class="fas fa-external-link-alt mr-1.5"></i> Website Anbieter
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-32 flex-shrink-0 flex justify-end">
+                        <div class="hidden sm:flex w-32 flex-shrink-0 justify-end">
                             <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
                                 <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
                             </span>
