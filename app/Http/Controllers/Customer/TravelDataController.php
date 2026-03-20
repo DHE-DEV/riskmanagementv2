@@ -131,14 +131,32 @@ class TravelDataController extends Controller
         };
 
         $perPage = $request->query('per_page', 15);
-        $trips = $query->paginate($perPage);
+        $trips = $query->with('travellers')->paginate($perPage);
 
-        // Add trip_name from raw_payload
-        $trips->getCollection()->transform(function ($trip) {
+        // Pre-load country names for all trips
+        $allCodes = $trips->getCollection()->flatMap(fn ($t) => $t->countries_visited ?? [])
+            ->merge($trips->getCollection()->flatMap(fn ($t) => $t->travellers->pluck('nationality')->filter()))
+            ->unique()->values()->toArray();
+
+        $countryNames = \App\Models\Country::whereIn('iso_code', $allCodes)
+            ->pluck('name_translations', 'iso_code')
+            ->map(fn ($tr) => $tr['de'] ?? $tr['en'] ?? null)
+            ->toArray();
+
+        // Enrich trips with resolved names
+        $trips->getCollection()->transform(function ($trip) use ($countryNames) {
             $trip->trip_name = $trip->raw_payload['trip_name']
                 ?? $trip->raw_payload['trip']['name']
                 ?? $trip->booking_reference
                 ?? null;
+
+            $trip->destinations = collect($trip->countries_visited ?? [])
+                ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                ->values();
+
+            $trip->nationalities = $trip->travellers->pluck('nationality')->filter()->unique()
+                ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                ->values();
 
             return $trip;
         });
@@ -178,21 +196,37 @@ class TravelDataController extends Controller
         $eligibleTrips = $allTrips->filter(fn ($t) => $t->status === 'active' && $t->computed_start_at !== null);
         $skippedCount = $allTrips->count() - $eligibleTrips->count();
 
-        // 3. Generate share links for eligible trips without an active link
+        // IDs of trips that were updated during sync (need link refresh)
+        $updatedTripIds = $syncLog->updated_trip_ids ?? [];
+
+        // 3. Generate or refresh share links for eligible trips
         $linksCreated = 0;
+        $linksRefreshed = 0;
         $linksExisting = 0;
         $linksFailed = 0;
 
         foreach ($eligibleTrips as $trip) {
             $existingLink = $trip->pdsShareLinks()->active()->first();
 
+            // Trip was updated during sync → refresh the link
+            if ($existingLink && in_array($trip->id, $updatedTripIds)) {
+                $refreshed = $shareLinkService->refreshShareLink($trip);
+                if ($refreshed) {
+                    $linksRefreshed++;
+                } else {
+                    $linksFailed++;
+                }
+                continue;
+            }
+
+            // Existing active link, not updated → skip
             if ($existingLink) {
                 $linksExisting++;
                 continue;
             }
 
+            // No link → create new
             $shareLink = $shareLinkService->generateShareLink($trip);
-
             if ($shareLink) {
                 $linksCreated++;
             } else {
@@ -204,12 +238,13 @@ class TravelDataController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Reisen synchronisiert, {$linksCreated} neue Links erstellt",
+            'message' => "Reisen synchronisiert, {$linksCreated} neue Links, {$linksRefreshed} aktualisiert",
             'stats' => [
                 'trips_synced' => $syncLog->trips_fetched,
                 'trips_created' => $syncLog->trips_created,
                 'trips_updated' => $syncLog->trips_updated,
                 'links_created' => $linksCreated,
+                'links_refreshed' => $linksRefreshed,
                 'links_existing' => $linksExisting,
                 'links_failed' => $linksFailed,
                 'skipped' => $skippedCount,

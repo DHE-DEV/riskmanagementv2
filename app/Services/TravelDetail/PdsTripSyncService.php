@@ -37,6 +37,8 @@ class PdsTripSyncService
             'unchanged' => 0,
             'total_api' => null,
             'pages' => 0,
+            'updated_trip_ids' => [],
+            'created_trip_ids' => [],
         ];
 
         if (! $this->pdsApi->hasValidToken($customer)) {
@@ -79,9 +81,15 @@ class PdsTripSyncService
                 $stats['pages'] = $page;
 
                 foreach ($trips as $tripData) {
-                    $result = $this->upsertTrip($customer, $tripData);
+                    [$result, $tripId] = $this->upsertTrip($customer, $tripData);
                     $stats['fetched']++;
                     $stats[$result]++;
+                    if ($tripId && $result === 'updated') {
+                        $stats['updated_trip_ids'][] = $tripId;
+                    }
+                    if ($tripId && $result === 'created') {
+                        $stats['created_trip_ids'][] = $tripId;
+                    }
                 }
 
                 $lastPage = $meta['last_page'] ?? 1;
@@ -89,6 +97,8 @@ class PdsTripSyncService
             } while ($page <= $lastPage && $page <= $this->maxPages);
 
             $syncLog->markCompleted($stats);
+            $syncLog->updated_trip_ids = $stats['updated_trip_ids'];
+            $syncLog->created_trip_ids = $stats['created_trip_ids'];
         } catch (\Exception $e) {
             Log::error('PdsTripSyncService: Sync failed', [
                 'customer_id' => $customer->id,
@@ -104,14 +114,14 @@ class PdsTripSyncService
     /**
      * Upsert a single trip from PDS API response into td_trips.
      *
-     * @return string 'created'|'updated'|'unchanged'
+     * @return array [string $result, int|null $tripId]
      */
-    protected function upsertTrip(Customer $customer, array $tripData): string
+    protected function upsertTrip(Customer $customer, array $tripData): array
     {
         $pdsTid = $tripData['tid'] ?? $tripData['id'] ?? null;
 
         if (! $pdsTid) {
-            return 'unchanged';
+            return ['unchanged', null];
         }
 
         $providerId = 'pds-api';
@@ -172,13 +182,13 @@ class PdsTripSyncService
             if ($changed) {
                 $existing->update($attributes);
 
-                return 'updated';
+                return ['updated', $existing->id];
             }
 
-            return 'unchanged';
+            return ['unchanged', $existing->id];
         }
 
-        TdTrip::create(array_merge($attributes, [
+        $newTrip = TdTrip::create(array_merge($attributes, [
             'provider_id' => $providerId,
             'external_trip_id' => $externalTripId,
         ]));
@@ -186,7 +196,7 @@ class PdsTripSyncService
         // Store traveller data if available
         $this->syncTravellers($externalTripId, $providerId, $tripData);
 
-        return 'created';
+        return ['created', $newTrip->id];
     }
 
     /**

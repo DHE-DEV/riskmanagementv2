@@ -2834,8 +2834,11 @@ function travelLinkManager() {
                 this.syncResult = d.message;
                 if (d.stats) {
                     const s = d.stats;
-                    let parts = [`${s.trips_synced} Reisen`, `${s.links_created} neue Links`, `${s.links_existing} bestehend`];
-                    if (s.skipped > 0) parts.push(`${s.skipped} übersprungen (abgeschlossen/unvollständig)`);
+                    let parts = [`${s.trips_synced} Reisen`];
+                    if (s.links_created > 0) parts.push(`${s.links_created} neue Links`);
+                    if (s.links_refreshed > 0) parts.push(`${s.links_refreshed} aktualisiert`);
+                    if (s.links_existing > 0) parts.push(`${s.links_existing} unverändert`);
+                    if (s.skipped > 0) parts.push(`${s.skipped} übersprungen`);
                     this.syncStats = `(${parts.join(', ')})`;
                 }
                 if (d.synced_at) {

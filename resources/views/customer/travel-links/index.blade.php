@@ -150,27 +150,34 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
                                 <p class="text-sm font-medium text-gray-900 truncate" x-text="trip.trip_name || trip.external_trip_id || 'Reise'"></p>
-                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0"
-                                      :class="trip.status === 'active' ? 'bg-green-50 text-green-700' : trip.status === 'completed' ? 'bg-gray-100 text-gray-600' : 'bg-red-50 text-red-600'"
-                                      x-text="trip.status === 'active' ? 'Aktiv' : trip.status === 'completed' ? 'Abgeschlossen' : 'Storniert'"></span>
+                                <span x-show="trip.pds_tid" class="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                                    <i class="fas fa-hashtag mr-0.5"></i><span x-text="trip.pds_tid"></span>
+                                </span>
                             </div>
 
-                            {{-- Meta --}}
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
-                                <span x-show="trip.computed_start_at">
-                                    <i class="fas fa-calendar mr-1"></i>
-                                    <span x-text="formatDate(trip.computed_start_at)"></span>
-                                    <span x-show="trip.computed_end_at"> – <span x-text="formatDate(trip.computed_end_at)"></span></span>
-                                </span>
-                                <span x-show="trip.countries_visited && trip.countries_visited.length > 0">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>
-                                    <span x-text="trip.countries_visited.join(', ')"></span>
-                                </span>
-                                <span x-show="trip.pds_tid" class="text-gray-400">
-                                    <i class="fas fa-hashtag mr-1"></i>
-                                    <span x-text="trip.pds_tid"></span>
-                                </span>
+                            {{-- Nationalitäten & Reiseziele --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                {{-- Nationalitäten --}}
+                                <div x-show="trip.nationalities && trip.nationalities.length > 0">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Nationalitäten</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="nat in trip.nationalities" :key="nat.code">
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 rounded" x-text="nat.name"></span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                {{-- Reiseziele --}}
+                                <div x-show="trip.destinations && trip.destinations.length > 0">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Reiseziele</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="dest in trip.destinations" :key="dest.code">
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded" x-text="dest.name"></span>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
+
 
                             {{-- Zeitstrahl --}}
                             <div x-show="trip.computed_start_at && trip.computed_end_at" class="mt-3"
@@ -301,7 +308,17 @@ function travelLinksSidebar() {
                 });
                 const d = await r.json();
                 this.syncSuccess = d.success;
-                this.syncResult = d.message;
+                if (d.stats) {
+                    const s = d.stats;
+                    let parts = [`${s.trips_synced} Reisen`];
+                    if (s.links_created > 0) parts.push(`${s.links_created} neue Links`);
+                    if (s.links_refreshed > 0) parts.push(`${s.links_refreshed} aktualisiert`);
+                    if (s.links_existing > 0) parts.push(`${s.links_existing} unverändert`);
+                    if (s.skipped > 0) parts.push(`${s.skipped} übersprungen`);
+                    this.syncResult = d.message + ' (' + parts.join(', ') + ')';
+                } else {
+                    this.syncResult = d.message;
+                }
                 if (d.synced_at) this.lastSyncedAt = d.synced_at;
                 this.loadCounts();
                 window.dispatchEvent(new CustomEvent('travel-links-reload'));
@@ -371,7 +388,18 @@ function travelLinksContent() {
             return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
         },
         copyLink(url) {
-            navigator.clipboard.writeText(url);
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
         }
     };
 }
