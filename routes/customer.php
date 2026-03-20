@@ -179,9 +179,11 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/status', [\App\Http\Controllers\Customer\ApiTokenController::class, 'status'])->name('status');
         });
 
-        // Travel Data - Trip Import
+        // Travel Data
         Route::post('/travel-data/import-json', [\App\Http\Controllers\Customer\TravelDataController::class, 'importJson'])
             ->name('travel-data.import-json');
+        Route::get('/travel-data/folders', [\App\Http\Controllers\Customer\TravelDataController::class, 'folders'])
+            ->name('travel-data.folders');
 
         // Notification Settings routes (Benachrichtigungs-Abonnement)
         Route::prefix('notification-settings')->name('notification-settings.')->group(function () {

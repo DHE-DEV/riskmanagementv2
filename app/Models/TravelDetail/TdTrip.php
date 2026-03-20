@@ -2,7 +2,9 @@
 
 namespace App\Models\TravelDetail;
 
+use App\Models\Customer;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +16,7 @@ class TdTrip extends Model
     protected $table = 'td_trips';
 
     protected $fillable = [
+        'customer_id',
         'provider_id',
         'external_trip_id',
         'provider_name',
@@ -40,6 +43,14 @@ class TdTrip extends Model
         'raw_payload' => 'array',
         'is_archived' => 'boolean',
     ];
+
+    /**
+     * Customer who owns this trip
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     /**
      * Air legs for this trip (sorted by start date)
@@ -156,6 +167,14 @@ class TdTrip extends Model
     public function scopeByProvider(Builder $query, string $providerId): Builder
     {
         return $query->where('provider_id', $providerId);
+    }
+
+    /**
+     * Scope: By customer
+     */
+    public function scopeByCustomer(Builder $query, int $customerId): Builder
+    {
+        return $query->where('customer_id', $customerId);
     }
 
     /**

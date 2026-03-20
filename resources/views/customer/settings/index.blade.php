@@ -2105,6 +2105,134 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Data</h3>
                 <p class="text-sm text-gray-500 mb-6">Verwalten Sie Reisedaten und Datenquellen.</p>
 
+                {{-- Reiseliste mit Tabs --}}
+                <div class="mb-6" x-data="travelDataList()">
+                    {{-- Tabs --}}
+                    <div class="flex border-b border-gray-200 mb-4">
+                        <button @click="switchTab('current')"
+                                :class="tab === 'current' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+                            <i class="fas fa-plane-departure mr-1.5"></i> Aktuell
+                            <span x-show="typeof counts.current === 'number'" x-text="'(' + counts.current + ')'" class="ml-1 text-xs"></span>
+                        </button>
+                        <button @click="switchTab('upcoming')"
+                                :class="tab === 'upcoming' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+                            <i class="fas fa-calendar-alt mr-1.5"></i> Zukünftig
+                            <span x-show="typeof counts.upcoming === 'number'" x-text="'(' + counts.upcoming + ')'" class="ml-1 text-xs"></span>
+                        </button>
+                        <button @click="switchTab('archive')"
+                                :class="tab === 'archive' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+                            <i class="fas fa-archive mr-1.5"></i> Archiv
+                            <span x-show="typeof counts.archive === 'number'" x-text="'(' + counts.archive + ')'" class="ml-1 text-xs"></span>
+                        </button>
+                    </div>
+
+                    {{-- Loading --}}
+                    <div x-show="loading" class="flex items-center justify-center py-12">
+                        <i class="fas fa-spinner fa-spin text-gray-400 text-xl mr-2"></i>
+                        <span class="text-sm text-gray-500">Lade Reisen...</span>
+                    </div>
+
+                    {{-- Leere Liste --}}
+                    <div x-show="!loading && folders.length === 0" x-cloak class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                        <i class="fas fa-suitcase text-3xl text-gray-300 mb-3"></i>
+                        <p class="text-sm text-gray-500">Keine Reisen in dieser Kategorie vorhanden.</p>
+                    </div>
+
+                    {{-- Reiseliste --}}
+                    <div x-show="!loading && folders.length > 0" x-cloak>
+                        <template x-for="folder in folders" :key="folder.id">
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-3 hover:border-gray-300 transition-colors">
+                                <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                                    {{-- Icon --}}
+                                    <div class="hidden sm:block w-8 flex-shrink-0 pt-0.5 text-center">
+                                        <i class="fas fa-suitcase-rolling text-xl text-gray-400"></i>
+                                    </div>
+
+                                    {{-- Content --}}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
+                                            <p class="text-sm font-medium text-gray-900 truncate" x-text="folder.folder_name || folder.folder_number"></p>
+                                            <div class="flex items-center gap-2 flex-shrink-0">
+                                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap"
+                                                      :class="statusClass(folder.status)"
+                                                      x-text="statusLabel(folder.status)"></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
+                                            {{-- Datum --}}
+                                            <span x-show="folder.travel_start_date">
+                                                <i class="fas fa-calendar mr-1"></i>
+                                                <span x-text="formatDate(folder.travel_start_date)"></span>
+                                                <span x-show="folder.travel_end_date"> – <span x-text="formatDate(folder.travel_end_date)"></span></span>
+                                            </span>
+
+                                            {{-- Ziele --}}
+                                            <span x-show="folder.destinations_visited && folder.destinations_visited.length > 0">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                                <span x-text="folder.destinations_visited ? folder.destinations_visited.join(', ') : ''"></span>
+                                            </span>
+
+                                            {{-- Teilnehmer --}}
+                                            <span x-show="folder.total_participants > 0">
+                                                <i class="fas fa-users mr-1"></i>
+                                                <span x-text="folder.total_participants"></span> Teilnehmer
+                                            </span>
+
+                                            {{-- Vorgangsnummer --}}
+                                            <span class="text-gray-400">
+                                                <i class="fas fa-hashtag mr-1"></i>
+                                                <span x-text="folder.folder_number"></span>
+                                            </span>
+                                        </div>
+
+                                        {{-- Services --}}
+                                        <div class="flex flex-wrap gap-2 mt-2" x-show="(folder.flight_services && folder.flight_services.length > 0) || (folder.hotel_services && folder.hotel_services.length > 0)">
+                                            <template x-for="fs in (folder.flight_services || [])" :key="fs.id">
+                                                <template x-for="seg in (fs.segments || [])" :key="seg.id">
+                                                    <span class="inline-flex items-center px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">
+                                                        <i class="fas fa-plane mr-1 text-[10px]"></i>
+                                                        <span x-text="(seg.departure_airport_code || '') + ' → ' + (seg.arrival_airport_code || '')"></span>
+                                                    </span>
+                                                </template>
+                                            </template>
+                                            <template x-for="hs in (folder.hotel_services || [])" :key="hs.id">
+                                                <span class="inline-flex items-center px-2 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
+                                                    <i class="fas fa-hotel mr-1 text-[10px]"></i>
+                                                    <span x-text="hs.hotel_name || hs.country_code || 'Hotel'"></span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Pagination --}}
+                        <div x-show="lastPage > 1" class="flex items-center justify-between mt-4">
+                            <p class="text-xs text-gray-500">
+                                Seite <span x-text="currentPage"></span> von <span x-text="lastPage"></span>
+                                (<span x-text="total"></span> Reisen)
+                            </p>
+                            <div class="flex gap-2">
+                                <button @click="loadPage(currentPage - 1)" :disabled="currentPage <= 1"
+                                        :class="currentPage <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'"
+                                        class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button @click="loadPage(currentPage + 1)" :disabled="currentPage >= lastPage"
+                                        :class="currentPage >= lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'"
+                                        class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Reise aus JSON erstellen --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="travelDataImport()">
                     <div class="flex items-start gap-4">
@@ -2427,6 +2555,84 @@ function apiTokenManager() {
         async copyToken() {
             try { await navigator.clipboard.writeText(this.generatedToken); this.copied = true; setTimeout(() => this.copied = false, 2000); }
             catch(e) { alert('Fehler beim Kopieren.'); }
+        }
+    };
+}
+
+function travelDataList() {
+    return {
+        tab: 'current',
+        folders: [],
+        loading: false,
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+        counts: { current: null, upcoming: null, archive: null },
+        init() {
+            this.loadFolders();
+            this.loadCounts();
+        },
+        switchTab(t) {
+            this.tab = t;
+            this.currentPage = 1;
+            this.loadFolders();
+        },
+        loadPage(page) {
+            if (page < 1 || page > this.lastPage) return;
+            this.currentPage = page;
+            this.loadFolders();
+        },
+        async loadFolders() {
+            this.loading = true;
+            try {
+                const r = await fetch(`{{ route('customer.travel-data.folders') }}?tab=${this.tab}&page=${this.currentPage}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const d = await r.json();
+                this.folders = d.data || [];
+                this.currentPage = d.current_page;
+                this.lastPage = d.last_page;
+                this.total = d.total;
+                this.counts[this.tab] = d.total;
+            } catch (e) {
+                this.folders = [];
+            }
+            this.loading = false;
+        },
+        async loadCounts() {
+            for (const t of ['current', 'upcoming', 'archive']) {
+                if (t === this.tab) continue;
+                try {
+                    const r = await fetch(`{{ route('customer.travel-data.folders') }}?tab=${t}&page=1`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const d = await r.json();
+                    this.counts[t] = d.total;
+                } catch (e) {}
+            }
+        },
+        formatDate(d) {
+            if (!d) return '';
+            const parts = d.split('-');
+            return parts[2] + '.' + parts[1] + '.' + parts[0];
+        },
+        statusClass(s) {
+            return {
+                'draft': 'bg-gray-100 text-gray-600',
+                'confirmed': 'bg-blue-50 text-blue-700',
+                'active': 'bg-green-50 text-green-700',
+                'completed': 'bg-gray-100 text-gray-600',
+                'cancelled': 'bg-red-50 text-red-600',
+            }[s] || 'bg-gray-100 text-gray-600';
+        },
+        statusLabel(s) {
+            return {
+                'draft': 'Entwurf',
+                'confirmed': 'Bestätigt',
+                'active': 'Aktiv',
+                'completed': 'Abgeschlossen',
+                'cancelled': 'Storniert',
+            }[s] || s;
         }
     };
 }

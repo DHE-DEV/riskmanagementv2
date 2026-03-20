@@ -16,6 +16,39 @@ use Illuminate\Support\Facades\DB;
 
 class TravelDataController extends Controller
 {
+    public function folders(Request $request): JsonResponse
+    {
+        $tab = $request->query('tab', 'current');
+        $today = Carbon::today();
+
+        $query = Folder::with(['participants', 'flightServices.segments', 'hotelServices'])
+            ->orderBy('travel_start_date', $tab === 'upcoming' ? 'asc' : 'desc');
+
+        match ($tab) {
+            'current' => $query->where(function ($q) use ($today) {
+                $q->where(function ($q2) use ($today) {
+                    $q2->where('travel_start_date', '<=', $today)
+                        ->where('travel_end_date', '>=', $today);
+                })->orWhere('status', 'active');
+            }),
+            'upcoming' => $query->where(function ($q) use ($today) {
+                $q->where('travel_start_date', '>', $today)
+                    ->whereIn('status', ['draft', 'confirmed']);
+            }),
+            'archive' => $query->where(function ($q) use ($today) {
+                $q->where(function ($q2) use ($today) {
+                    $q2->where('travel_end_date', '<', $today)
+                        ->whereNotIn('status', ['cancelled']);
+                })->orWhere('status', 'cancelled');
+            }),
+            default => null,
+        };
+
+        $folders = $query->paginate(10);
+
+        return response()->json($folders);
+    }
+
     public function importJson(Request $request): JsonResponse
     {
         $request->validate([
