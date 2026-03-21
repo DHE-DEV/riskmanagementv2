@@ -29,14 +29,23 @@ return new class extends Migration
         $partitions = $this->generateMonthlyPartitions();
 
         // 1. Drop SPATIAL INDEX and POINT column (not supported on partitioned tables)
-        DB::statement('DROP INDEX idx_point ON td_trip_locations');
-        DB::statement('ALTER TABLE td_trip_locations DROP COLUMN point');
+        $hasPoint = DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'td_trip_locations' AND COLUMN_NAME = 'point' AND TABLE_SCHEMA = DATABASE()");
+        if ($hasPoint[0]->cnt > 0) {
+            $hasIdx = DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_NAME = 'td_trip_locations' AND INDEX_NAME = 'idx_point' AND TABLE_SCHEMA = DATABASE()");
+            if ($hasIdx[0]->cnt > 0) {
+                DB::statement('DROP INDEX idx_point ON td_trip_locations');
+            }
+            DB::statement('ALTER TABLE td_trip_locations DROP COLUMN point');
+        }
 
         // 2. Drop FK to td_trips (MySQL does not allow FKs on partitioned tables)
         //    Referential integrity is enforced by TripArchivalService cascade logic.
-        Schema::table('td_trip_locations', function ($table) {
-            $table->dropForeign(['trip_id']);
-        });
+        $fkExists = DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = 'td_trip_locations' AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND TABLE_SCHEMA = DATABASE()");
+        if ($fkExists[0]->cnt > 0) {
+            Schema::table('td_trip_locations', function ($table) {
+                $table->dropForeign(['trip_id']);
+            });
+        }
 
         // 3. Convert created_at from TIMESTAMP to DATETIME (required for partitioning)
         DB::statement('ALTER TABLE td_trip_locations MODIFY created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP');

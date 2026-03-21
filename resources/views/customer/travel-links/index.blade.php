@@ -49,32 +49,6 @@
             Travel Links
         </h2>
 
-        {{-- Sync Status --}}
-        <div class="mb-4 p-3 bg-white rounded-lg border border-gray-200">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-gray-700">Synchronisierung</span>
-                <span class="text-xs" :class="syncEnabled ? 'text-green-600' : 'text-gray-400'" x-text="syncEnabled ? 'Aktiv' : 'Inaktiv'"></span>
-            </div>
-            <div class="text-xs text-gray-500 mb-3">
-                <span x-show="lastSyncedAt">
-                    <i class="fas fa-clock mr-1"></i> <span x-text="lastSyncedAt"></span>
-                </span>
-                <span x-show="!lastSyncedAt">
-                    <i class="fas fa-info-circle mr-1"></i> Noch nicht synchronisiert
-                </span>
-            </div>
-            <button @click="syncNow()" :disabled="syncing"
-                    class="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg transition-colors"
-                    :class="syncing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'">
-                <i class="fas mr-1.5" :class="syncing ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
-                <span x-text="syncing ? 'Synchronisiert...' : 'Jetzt synchronisieren'"></span>
-            </button>
-            <div x-show="syncResult" x-cloak class="mt-2 p-2 rounded text-xs"
-                 :class="syncSuccess ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'">
-                <span x-text="syncResult"></span>
-            </div>
-        </div>
-
         {{-- Filter --}}
         <div class="mb-3">
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Filter</p>
@@ -151,11 +125,14 @@
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
                                 <p class="text-sm font-medium text-gray-900 truncate" x-text="trip.trip_name || trip.external_trip_id || 'Reise'"></p>
                                 <div class="flex items-center gap-4 flex-shrink-0">
-                                    <span x-show="trip.booking_reference" class="text-xs text-gray-500 whitespace-nowrap">
-                                        <i class="fas fa-bookmark mr-0.5"></i><span x-text="trip.booking_reference"></span>
+                                    <span x-show="trip.cruise_compass_cruise_id" class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-500 rounded border border-gray-200 whitespace-nowrap">
+                                        <i class="fas fa-ship mr-1"></i> Cruise&nbsp;<span x-text="trip.cruise_compass_cruise_id"></span>
                                     </span>
-                                    <span x-show="trip.pds_tid" class="text-xs text-gray-400 whitespace-nowrap">
-                                        <i class="fas fa-hashtag mr-0.5"></i><span x-text="trip.pds_tid"></span>
+                                    <span x-show="trip.booking_reference" class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded border border-gray-200 whitespace-nowrap">
+                                        <i class="fas fa-bookmark mr-1"></i><span x-text="trip.booking_reference"></span>
+                                    </span>
+                                    <span x-show="trip.external_trip_id || trip.pds_tid" class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-500 rounded border border-gray-200 whitespace-nowrap font-mono">
+                                        <i class="fas fa-hashtag mr-1"></i><span x-text="trip.external_trip_id || trip.pds_tid"></span>
                                     </span>
                                     {{-- 3-Punkte-Menü --}}
                                     <div class="relative" x-data="{ open: false }">
@@ -173,6 +150,12 @@
                                 </div>
                             </div>
 
+                            {{-- Notiz --}}
+                            <div x-show="trip.note" class="mt-2">
+                                <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5"><i class="fas fa-sticky-note mr-1"></i>Notiz</p>
+                                <p class="text-xs text-gray-500" x-text="trip.note"></p>
+                            </div>
+
                             {{-- Reiseziele & Nationalitäten --}}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                                 {{-- Reiseziele --}}
@@ -186,16 +169,35 @@
                                 </div>
 
                                 {{-- Nationalitäten --}}
-                                <div x-show="trip.nationalities && trip.nationalities.length > 0">
+                                <div x-show="trip.nationalities_resolved && trip.nationalities_resolved.length > 0">
                                     <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Nationalitäten</p>
                                     <div class="flex flex-wrap gap-1">
-                                        <template x-for="nat in trip.nationalities" :key="nat.code">
+                                        <template x-for="nat in trip.nationalities_resolved" :key="nat.code">
                                             <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded" x-text="nat.name"></span>
                                         </template>
                                     </div>
                                 </div>
                             </div>
 
+                            {{-- Tour Operators & Individual Contents --}}
+                            <div x-show="(trip.tour_operators && trip.tour_operators.length > 0) || (trip.individual_contents && trip.individual_contents.length > 0)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                <div x-show="trip.tour_operators && trip.tour_operators.length > 0">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Reiseveranstalter</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="op in trip.tour_operators" :key="op">
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 rounded" x-text="op"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div x-show="trip.individual_contents && trip.individual_contents.length > 0">
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Individuelle Inhalte</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="ic in trip.individual_contents" :key="ic">
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 rounded" x-text="ic"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
 
                             {{-- Zeitstrahl --}}
                             <div x-show="trip.computed_start_at && trip.computed_end_at" class="mt-3"
@@ -229,10 +231,10 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                         <i class="fas fa-external-link-alt text-xs text-gray-400"></i>
-                                        <a :href="trip.pds_share_url + (trip.pds_share_url.includes('?') ? '&' : '?') + 'preview'" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 truncate" x-text="trip.pds_share_url"></a>
+                                        <a :href="travelDetailsUrl(trip) + '&preview'" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 truncate" x-text="travelDetailsUrl(trip)"></a>
                                     </div>
                                 </div>
-                                <button @click="copyLink(trip.pds_share_url)"
+                                <button @click="copyLink(travelDetailsUrl(trip))"
                                         class="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 whitespace-nowrap">
                                     <i class="fas fa-copy mr-1.5"></i> Kopieren
                                 </button>
@@ -242,6 +244,22 @@
                             <div x-show="!trip.pds_share_url" class="mt-3">
                                 <span class="text-xs text-gray-400">
                                     <i class="fas fa-info-circle mr-1"></i> Kein Travel Link vorhanden
+                                </span>
+                            </div>
+
+                            {{-- Metadaten: Besuche, letzte Änderung --}}
+                            <div class="flex flex-wrap items-center gap-3 mt-3 text-[11px] text-gray-400">
+                                <span x-show="trip.visits > 0">
+                                    <i class="fas fa-eye mr-0.5"></i> <span x-text="trip.visits"></span> Aufrufe
+                                </span>
+                                <span x-show="trip.last_visited_at">
+                                    <i class="fas fa-clock mr-0.5"></i> Zuletzt besucht: <span x-text="formatDateTime(trip.last_visited_at)"></span>
+                                </span>
+                                <span x-show="trip.last_important_change_at">
+                                    <i class="fas fa-pen-to-square mr-0.5"></i> Letzte wichtige Änderung: <span x-text="formatDateTime(trip.last_important_change_at)"></span>
+                                </span>
+                                <span x-show="trip.cover_media">
+                                    <i class="fas fa-image mr-0.5"></i> Cover-Bild vorhanden
                                 </span>
                             </div>
                         </div>
@@ -272,7 +290,7 @@
         {{-- Bearbeiten-Modal --}}
         <div x-show="editTrip" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="editTrip = null" @keydown.enter.window="if(editTrip && !editSaving && document.activeElement.tagName !== 'TEXTAREA') saveEdit()">
             <div class="fixed inset-0 bg-black/50" @click="editTrip = null"></div>
-            <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+            <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" style="margin-top: 10px; margin-bottom: 10px;" @click.stop>
                 <div class="flex items-center justify-between mb-5">
                     <h3 class="text-lg font-semibold text-gray-900">Travel Link bearbeiten</h3>
                     <button @click="editTrip = null" class="text-gray-400 hover:text-gray-600">
@@ -285,6 +303,16 @@
                      :class="editSuccess ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'">
                     <i class="fas mr-1" :class="editSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
                     <span x-text="editResult"></span>
+                </div>
+
+                {{-- Debug: API Request anzeigen --}}
+                <div x-show="editDebug" x-cloak class="mb-4 p-4 bg-gray-900 rounded-lg text-xs font-mono text-green-400 overflow-x-auto max-h-64 overflow-y-auto">
+                    <p class="text-gray-500 mb-2">API Request (nicht ausgeführt):</p>
+                    <p class="text-yellow-400" x-text="editDebug ? editDebug.method + ' ' + editDebug.url : ''"></p>
+                    <p class="text-gray-500 mt-2 mb-1">Headers:</p>
+                    <pre x-text="editDebug ? JSON.stringify(editDebug.headers, null, 2) : ''"></pre>
+                    <p class="text-gray-500 mt-2 mb-1">Body:</p>
+                    <pre x-text="editDebug ? JSON.stringify(editDebug.body, null, 2) : ''"></pre>
                 </div>
 
                 <template x-if="editTrip">
@@ -409,11 +437,6 @@ function getTripProgress(startDate, endDate) {
 
 function travelLinksSidebar() {
     return {
-        syncEnabled: {{ $customer->pds_sync_enabled ? 'true' : 'false' }},
-        lastSyncedAt: {!! $customer->pds_last_synced_at ? "'" . $customer->pds_last_synced_at->format('d.m.Y H:i') . "'" : 'null' !!},
-        syncing: false,
-        syncResult: null,
-        syncSuccess: false,
         filter: 'all',
         counts: { all: null, current: null, upcoming: null, expired: null },
         init() {
@@ -422,36 +445,6 @@ function travelLinksSidebar() {
         setFilter(f) {
             this.filter = f;
             window.dispatchEvent(new CustomEvent('travel-links-filter', { detail: { filter: f } }));
-        },
-        async syncNow() {
-            this.syncing = true;
-            this.syncResult = null;
-            try {
-                const r = await fetch('{{ route('customer.travel-data.sync-links') }}', {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                });
-                const d = await r.json();
-                this.syncSuccess = d.success;
-                if (d.stats) {
-                    const s = d.stats;
-                    let parts = [`${s.trips_synced} Reisen`];
-                    if (s.links_created > 0) parts.push(`${s.links_created} neue Links`);
-                    if (s.links_refreshed > 0) parts.push(`${s.links_refreshed} aktualisiert`);
-                    if (s.links_existing > 0) parts.push(`${s.links_existing} unverändert`);
-                    if (s.skipped > 0) parts.push(`${s.skipped} übersprungen`);
-                    this.syncResult = d.message + ' (' + parts.join(', ') + ')';
-                } else {
-                    this.syncResult = d.message;
-                }
-                if (d.synced_at) this.lastSyncedAt = d.synced_at;
-                this.loadCounts();
-                window.dispatchEvent(new CustomEvent('travel-links-reload'));
-            } catch (e) {
-                this.syncSuccess = false;
-                this.syncResult = 'Verbindungsfehler';
-            }
-            this.syncing = false;
         },
         async loadCounts() {
             try {
@@ -480,6 +473,7 @@ function travelLinksContent() {
         editSaving: false,
         editResult: null,
         editSuccess: false,
+        editDebug: null,
         init() {
             this.loadTrips();
             window.addEventListener('travel-links-filter', (e) => {
@@ -520,15 +514,24 @@ function travelLinksContent() {
             const date = new Date(d);
             return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
         },
+        formatDateTime(d) {
+            if (!d) return '';
+            const date = new Date(d);
+            // Timestamps without timezone info (from DB) are parsed as UTC by JS,
+            // but are actually in Europe/Berlin. Display them in Europe/Berlin timezone.
+            return date.toLocaleDateString('de-DE', { timeZone: '{{ config("app.timezone", "Europe/Berlin") }}', day: '2-digit', month: '2-digit', year: 'numeric' })
+                + ' ' + date.toLocaleTimeString('de-DE', { timeZone: '{{ config("app.timezone", "Europe/Berlin") }}', hour: '2-digit', minute: '2-digit' });
+        },
         openEdit(trip) {
             this.editTrip = trip;
             this.editResult = null;
+            this.editDebug = null;
             this.editForm = {
                 trip_name: trip.trip_name || trip.raw_payload?.trip_name || '',
                 start_date: trip.computed_start_at ? this.toLocalDate(trip.computed_start_at) : '',
                 end_date: trip.computed_end_at ? this.toLocalDate(trip.computed_end_at) : '',
                 destinations_input: (trip.countries_visited || []).join(', '),
-                nationalities_input: (trip.nationalities || []).map(n => n.code || n).join(', '),
+                nationalities_input: (trip.nationalities_resolved || trip.nationalities || []).map(n => n.code || n).join(', '),
                 reference_id: trip.booking_reference || trip.raw_payload?.reference_id || '',
                 note: trip.raw_payload?.note || '',
                 show_country_info: trip.raw_payload?.show_country_info !== false,
@@ -566,18 +569,30 @@ function travelLinksContent() {
                 });
                 const d = await r.json();
                 this.editSuccess = d.success;
-                this.editResult = d.message;
-                if (d.success) {
-                    setTimeout(() => {
-                        this.editTrip = null;
-                        this.loadTrips();
-                    }, 1000);
+                if (d.debug && d.api_request) {
+                    this.editResult = d.message;
+                    this.editDebug = d.api_request;
+                } else {
+                    this.editResult = d.message;
+                    this.editDebug = null;
+                    if (d.success) {
+                        setTimeout(() => {
+                            this.editTrip = null;
+                            this.loadTrips();
+                        }, 1000);
+                    }
                 }
             } catch (e) {
                 this.editSuccess = false;
                 this.editResult = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
             }
             this.editSaving = false;
+        },
+        travelDetailsBaseUrl: '{{ env("PASSOLUTION_TRAVEL_DETAILS_LINK", "https://travel-details.eu") }}',
+        travelDetailsUrl(trip) {
+            const tid = trip.pds_tid || trip.external_trip_id;
+            if (!tid) return trip.pds_share_url || '';
+            return this.travelDetailsBaseUrl + '/de?tid=' + tid;
         },
         toLocalDate(d) {
             if (!d) return '';

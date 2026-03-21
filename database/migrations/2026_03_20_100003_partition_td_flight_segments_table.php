@@ -27,10 +27,14 @@ return new class extends Migration
 
         // 1. Drop FKs (MySQL does not allow FKs on partitioned tables)
         //    Referential integrity is enforced by TripArchivalService cascade logic.
-        Schema::table('td_flight_segments', function ($table) {
-            $table->dropForeign(['trip_id']);
-            $table->dropForeign(['air_leg_id']);
-        });
+        $fks = DB::select("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = 'td_flight_segments' AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND TABLE_SCHEMA = DATABASE()");
+        if (count($fks) > 0) {
+            Schema::table('td_flight_segments', function ($table) use ($fks) {
+                foreach ($fks as $fk) {
+                    $table->dropForeign($fk->CONSTRAINT_NAME);
+                }
+            });
+        }
 
         // 2. Convert created_at from TIMESTAMP to DATETIME NOT NULL (required for partitioning)
         DB::statement('ALTER TABLE td_flight_segments MODIFY created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP');

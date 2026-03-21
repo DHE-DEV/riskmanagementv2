@@ -52,7 +52,7 @@ class PdsTripSyncService
 
             do {
                 $requestBody = [
-                    'sort_by' => $updatedSince ? 'updated_at' : 'start_date',
+                    'sort_by' => $updatedSince ? 'created_at' : 'start_date',
                     'sort_order' => $updatedSince ? 'asc' : 'desc',
                     'page' => $page,
                     'per_page' => $this->perPage,
@@ -143,12 +143,27 @@ class PdsTripSyncService
             'customer_id' => $customer->id,
             'provider_name' => 'Passolution PDS',
             'provider_sent_at' => now(),
-            'booking_reference' => $tripData['booking_reference'] ?? null,
+            'booking_reference' => $tripData['reference_id'] ?? $tripData['booking_reference'] ?? null,
+            'reference_id' => $tripData['reference_id'] ?? null,
+            'trip_name' => $tripData['trip_name'] ?? null,
+            'cruise_compass_cruise_id' => $tripData['cruise_compass']['cruise_id'] ?? null,
+            'is_cruise' => ! empty($tripData['cruise_compass']['cruise_id']),
             'computed_start_at' => $startDate,
             'computed_end_at' => $endDate,
             'countries_visited' => $countries,
+            'nationalities' => $tripData['nationalities'] ?? null,
+            'travel_modes' => $tripData['travel']['modes'] ?? null,
+            'with_minors' => $tripData['travel']['with_minors'] ?? false,
+            'tour_operators' => $tripData['tour_operators'] ?? null,
+            'individual_contents' => $tripData['individual_contents'] ?? null,
+            'note' => $tripData['note'] ?? null,
+            'cover_media' => $tripData['cover_media'] ?? null,
+            'visits' => $tripData['visits'] ?? 0,
+            'last_visited_at' => isset($tripData['last_visited_at']) ? Carbon::parse($tripData['last_visited_at'])->setTimezone(config('app.timezone')) : null,
+            'last_important_change_at' => isset($tripData['last_important_change_at']) ? Carbon::parse($tripData['last_important_change_at'])->setTimezone(config('app.timezone')) : null,
             'status' => $status,
             'pds_tid' => $pdsTid,
+            'pds_share_created_at' => isset($tripData['created_at']) ? Carbon::parse($tripData['created_at'])->setTimezone(config('app.timezone')) : null,
             'raw_payload' => $tripData,
         ];
 
@@ -159,11 +174,20 @@ class PdsTripSyncService
         if ($existing) {
             // Check if anything changed
             $changed = false;
-            foreach (['computed_start_at', 'computed_end_at', 'countries_visited', 'status'] as $field) {
+            $jsonFields = ['countries_visited', 'nationalities', 'travel_modes', 'tour_operators', 'individual_contents'];
+            $checkFields = [
+                'booking_reference', 'reference_id', 'trip_name', 'cruise_compass_cruise_id',
+                'computed_start_at', 'computed_end_at', 'countries_visited', 'nationalities',
+                'travel_modes', 'with_minors', 'tour_operators', 'individual_contents',
+                'note', 'cover_media', 'visits', 'last_visited_at', 'last_important_change_at',
+                'status',
+            ];
+
+            foreach ($checkFields as $field) {
                 $newVal = $attributes[$field];
                 $oldVal = $existing->$field;
 
-                if ($field === 'countries_visited') {
+                if (in_array($field, $jsonFields)) {
                     if (json_encode($newVal) !== json_encode($oldVal)) {
                         $changed = true;
                         break;

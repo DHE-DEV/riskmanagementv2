@@ -27,9 +27,14 @@ return new class extends Migration
 
         $partitions = $this->generateMonthlyPartitions();
 
-        // FKs from child tables were already dropped in earlier partition migrations
-        // (td_flight_segments, td_trip_locations) and the remaining ones (td_air_legs,
-        // td_stays, td_transfers, td_travellers, td_pds_share_links) no longer exist.
+        // Drop all remaining FKs referencing td_trips from child tables
+        $childTables = ['td_air_legs', 'td_stays', 'td_transfers', 'td_travellers', 'td_pds_share_links', 'td_flight_segments', 'td_trip_locations'];
+        foreach ($childTables as $childTable) {
+            $fks = DB::select("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND TABLE_SCHEMA = DATABASE()", [$childTable]);
+            foreach ($fks as $fk) {
+                DB::statement("ALTER TABLE `{$childTable}` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+            }
+        }
 
         // 1. Fill any NULL created_at values, then convert to DATETIME NOT NULL
         DB::statement("UPDATE td_trips SET created_at = NOW() WHERE created_at IS NULL");

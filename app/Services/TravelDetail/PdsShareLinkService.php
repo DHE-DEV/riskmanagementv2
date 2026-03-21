@@ -10,14 +10,32 @@ use Illuminate\Support\Facades\Log;
 class PdsShareLinkService
 {
     private string $apiUrl;
-    private ?string $apiKey;
+    private ?string $fallbackApiKey;
     private int $timeout;
 
     public function __construct()
     {
         $this->apiUrl = config('travel_detail.pds.api_url');
-        $this->apiKey = config('travel_detail.pds.api_key');
+        $this->fallbackApiKey = config('travel_detail.pds.api_key');
         $this->timeout = config('travel_detail.pds.timeout', 30);
+    }
+
+    /**
+     * Resolve the API token for a trip's customer.
+     * Uses the customer's own token (SSO/OAuth) if available, otherwise falls back to the global .env key.
+     */
+    private function resolveApiToken(TdTrip $trip): ?string
+    {
+        $customer = $trip->customer;
+
+        if ($customer) {
+            $token = $customer->getActiveApiToken();
+            if ($token) {
+                return $token;
+            }
+        }
+
+        return $this->fallbackApiKey;
     }
 
     /**
@@ -25,9 +43,11 @@ class PdsShareLinkService
      */
     public function generateShareLink(TdTrip $trip): ?TdPdsShareLink
     {
-        if (!$this->apiKey) {
+        $apiToken = $this->resolveApiToken($trip);
+
+        if (!$apiToken) {
             Log::channel(config('travel_detail.logging.channel'))
-                ->error('PDS API key not configured');
+                ->error('PDS API key not configured and customer has no active token');
             return null;
         }
 
@@ -36,7 +56,7 @@ class PdsShareLinkService
 
             $response = Http::timeout($this->timeout)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Authorization' => 'Bearer ' . $apiToken,
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                 ])
@@ -274,6 +294,6 @@ class PdsShareLinkService
      */
     public function isAvailable(): bool
     {
-        return !empty($this->apiKey) && !empty($this->apiUrl);
+        return !empty($this->fallbackApiKey) && !empty($this->apiUrl);
     }
 }

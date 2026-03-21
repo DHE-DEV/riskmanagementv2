@@ -2171,6 +2171,45 @@
                                     <span x-text="syncResult"></span>
                                     <span x-show="syncStats" class="ml-2 text-gray-500" x-text="syncStats"></span>
                                 </div>
+
+                                {{-- Debug: Raw API Request/Response --}}
+                                <div x-show="syncDebug" x-cloak class="mt-3 p-4 bg-gray-900 rounded-lg text-xs font-mono overflow-x-auto max-h-96 overflow-y-auto">
+                                    <p class="text-gray-500 mb-2">API Request:</p>
+                                    <p class="text-yellow-400" x-text="syncDebug?.api_request ? syncDebug.api_request.method + ' ' + syncDebug.api_request.url : ''"></p>
+                                    <p class="text-gray-500 mt-2 mb-1">Request Headers:</p>
+                                    <pre class="text-green-400" x-text="syncDebug?.api_request ? JSON.stringify(syncDebug.api_request.headers, null, 2) : ''"></pre>
+                                    <p class="text-gray-500 mt-2 mb-1">Request Body:</p>
+                                    <pre class="text-green-400" x-text="syncDebug?.api_request ? JSON.stringify(syncDebug.api_request.body, null, 2) : ''"></pre>
+                                    <p class="text-gray-500 mt-3 mb-1">Response Status: <span class="text-cyan-400" x-text="syncDebug?.api_response?.status"></span></p>
+                                    <p class="text-gray-500 mb-1">Response Body:</p>
+                                    <pre class="text-green-400" x-text="syncDebug?.api_response ? JSON.stringify(syncDebug.api_response.body, null, 2) : ''"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Alle Links lokal löschen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        <div class="hidden sm:block w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-trash-alt text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Alle Links lokal löschen</p>
+                            <p class="text-xs text-gray-500 mt-1">Entfernt alle lokal gespeicherten Travel Links und synchronisierten Reisedaten. Die Links bleiben auf der Passolution-Plattform bestehen.</p>
+                            <div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                                <button @click="deleteAllLinks()" :disabled="deleting"
+                                        class="inline-flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                                        :class="deleting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'">
+                                    <i class="fas mr-1.5" :class="deleting ? 'fa-spinner fa-spin' : 'fa-trash-alt'"></i>
+                                    <span x-text="deleting ? 'Wird gelöscht...' : 'Alle lokal löschen'"></span>
+                                </button>
+                                <div x-show="deleteResult" x-cloak class="text-xs"
+                                     :class="deleteSuccess ? 'text-green-600' : 'text-red-600'">
+                                    <i class="fas mr-1" :class="deleteSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                    <span x-text="deleteResult"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2832,6 +2871,28 @@ function travelLinkManager() {
         syncResult: null,
         syncSuccess: false,
         syncStats: null,
+        syncDebug: null,
+        deleting: false,
+        deleteResult: null,
+        deleteSuccess: false,
+        async deleteAllLinks() {
+            if (!confirm('Alle lokal gespeicherten Travel Links und Reisedaten wirklich löschen?')) return;
+            this.deleting = true;
+            this.deleteResult = null;
+            try {
+                const r = await fetch('{{ route('customer.travel-data.delete-all-links') }}', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const d = await r.json();
+                this.deleteSuccess = d.success;
+                this.deleteResult = d.message;
+            } catch (e) {
+                this.deleteSuccess = false;
+                this.deleteResult = 'Verbindungsfehler';
+            }
+            this.deleting = false;
+        },
         async toggleLinks() {
             this.toggling = true;
             try {
@@ -2851,6 +2912,7 @@ function travelLinkManager() {
             this.syncing = true;
             this.syncResult = null;
             this.syncStats = null;
+            this.syncDebug = null;
             try {
                 const r = await fetch('{{ route('customer.travel-data.sync-links') }}', {
                     method: 'POST',
@@ -2859,17 +2921,21 @@ function travelLinkManager() {
                 const d = await r.json();
                 this.syncSuccess = d.success;
                 this.syncResult = d.message;
-                if (d.stats) {
-                    const s = d.stats;
-                    let parts = [`${s.trips_synced} Reisen`];
-                    if (s.links_created > 0) parts.push(`${s.links_created} neue Links`);
-                    if (s.links_refreshed > 0) parts.push(`${s.links_refreshed} aktualisiert`);
-                    if (s.links_existing > 0) parts.push(`${s.links_existing} unverändert`);
-                    if (s.skipped > 0) parts.push(`${s.skipped} übersprungen`);
-                    this.syncStats = `(${parts.join(', ')})`;
-                }
-                if (d.synced_at) {
-                    this.lastSyncedAt = d.synced_at;
+                if (d.debug) {
+                    this.syncDebug = d;
+                } else {
+                    if (d.stats) {
+                        const s = d.stats;
+                        let parts = [`${s.trips_synced} Reisen`];
+                        if (s.trips_created > 0) parts.push(`${s.trips_created} neu`);
+                        if (s.trips_updated > 0) parts.push(`${s.trips_updated} aktualisiert`);
+                        if (s.links_created > 0) parts.push(`${s.links_created} neue Links`);
+                        if (s.links_existing > 0) parts.push(`${s.links_existing} unverändert`);
+                        this.syncStats = `(${parts.join(', ')})`;
+                    }
+                    if (d.synced_at) {
+                        this.lastSyncedAt = d.synced_at;
+                    }
                 }
             } catch (e) {
                 this.syncSuccess = false;

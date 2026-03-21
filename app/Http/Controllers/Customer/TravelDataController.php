@@ -12,7 +12,6 @@ use App\Models\Folder\FolderParticipant;
 use App\Models\TravelDetail\TdPdsSyncLog;
 use App\Models\TravelDetail\TdTrip;
 use App\Services\PdsApiService;
-use App\Services\TravelDetail\PdsShareLinkService;
 use App\Services\TravelDetail\PdsTripSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -133,11 +132,11 @@ class TravelDataController extends Controller
         };
 
         $perPage = $request->query('per_page', 15);
-        $trips = $query->with('travellers')->paginate($perPage);
+        $trips = $query->paginate($perPage);
 
         // Pre-load country names for all trips
         $allCodes = $trips->getCollection()->flatMap(fn ($t) => $t->countries_visited ?? [])
-            ->merge($trips->getCollection()->flatMap(fn ($t) => $t->travellers->pluck('nationality')->filter()))
+            ->merge($trips->getCollection()->flatMap(fn ($t) => $t->nationalities ?? []))
             ->unique()->values()->toArray();
 
         $countryNames = \App\Models\Country::whereIn('iso_code', $allCodes)
@@ -147,16 +146,11 @@ class TravelDataController extends Controller
 
         // Enrich trips with resolved names
         $trips->getCollection()->transform(function ($trip) use ($countryNames) {
-            $trip->trip_name = $trip->raw_payload['trip_name']
-                ?? $trip->raw_payload['trip']['name']
-                ?? $trip->booking_reference
-                ?? null;
-
             $trip->destinations = collect($trip->countries_visited ?? [])
                 ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
                 ->values();
 
-            $trip->nationalities = $trip->travellers->pluck('nationality')->filter()->unique()
+            $trip->nationalities_resolved = collect($trip->nationalities ?? [])
                 ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
                 ->values();
 
@@ -178,9 +172,50 @@ class TravelDataController extends Controller
         ]);
     }
 
-    public function syncLinks(PdsTripSyncService $syncService, PdsShareLinkService $shareLinkService): JsonResponse
+    public function syncLinks(PdsTripSyncService $syncService, PdsApiService $pdsApi): JsonResponse
     {
         $customer = auth('customer')->user();
+
+        // DEBUG MODE: Show raw API request/response without syncing
+        if (filter_var(env('TD_LINK_SYNC_DEBUG', false), FILTER_VALIDATE_BOOLEAN)) {
+            $updatedSince = $customer->pds_last_synced_at;
+            $baseUrl = config('services.pds_api.base_url', 'https://api.passolution.eu/api/v2');
+            $endpoint = '/travel-details?__with=__cruise-info';
+            $fullUrl = rtrim($baseUrl, '/') . $endpoint;
+
+            $requestBody = [
+                'sort_by' => $updatedSince ? 'updated_at' : 'start_date',
+                'sort_order' => $updatedSince ? 'asc' : 'desc',
+                'page' => 1,
+                'per_page' => 100,
+            ];
+
+            if ($updatedSince) {
+                $requestBody['updated_at'] = ['>' => $updatedSince->format('Y-m-d')];
+            }
+
+            $response = $pdsApi->post($customer, $endpoint, $requestBody);
+
+            return response()->json([
+                'success' => true,
+                'debug' => true,
+                'message' => 'Sync Debug-Modus: API-Call angezeigt, nicht synchronisiert',
+                'api_request' => [
+                    'method' => 'POST',
+                    'url' => $fullUrl,
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $customer->getActiveApiToken(),
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                    ],
+                    'body' => $requestBody,
+                ],
+                'api_response' => [
+                    'status' => $response?->status(),
+                    'body' => $response?->json(),
+                ],
+            ]);
+        }
 
         // 1. Sync trips from PDS API (delta if previously synced)
         $updatedSince = $customer->pds_last_synced_at;
@@ -193,46 +228,17 @@ class TravelDataController extends Controller
             ], 500);
         }
 
-        // 2. Count all customer trips and determine eligible ones
+        // 2. Build share URLs from TID for all synced trips that have a pds_tid
+        $travelDetailsBase = rtrim(env('PASSOLUTION_TRAVEL_DETAILS_LINK', 'https://travel-details.eu'), '/');
         $allTrips = TdTrip::where('customer_id', $customer->id)->get();
-        $eligibleTrips = $allTrips->filter(fn ($t) => $t->status === 'active' && $t->computed_start_at !== null);
-        $skippedCount = $allTrips->count() - $eligibleTrips->count();
+        $linksGenerated = 0;
 
-        // IDs of trips that were updated during sync (need link refresh)
-        $updatedTripIds = $syncLog->updated_trip_ids ?? [];
-
-        // 3. Generate or refresh share links for eligible trips
-        $linksCreated = 0;
-        $linksRefreshed = 0;
-        $linksExisting = 0;
-        $linksFailed = 0;
-
-        foreach ($eligibleTrips as $trip) {
-            $existingLink = $trip->pdsShareLinks()->active()->first();
-
-            // Trip was updated during sync → refresh the link
-            if ($existingLink && in_array($trip->id, $updatedTripIds)) {
-                $refreshed = $shareLinkService->refreshShareLink($trip);
-                if ($refreshed) {
-                    $linksRefreshed++;
-                } else {
-                    $linksFailed++;
-                }
-                continue;
-            }
-
-            // Existing active link, not updated → skip
-            if ($existingLink) {
-                $linksExisting++;
-                continue;
-            }
-
-            // No link → create new
-            $shareLink = $shareLinkService->generateShareLink($trip);
-            if ($shareLink) {
-                $linksCreated++;
-            } else {
-                $linksFailed++;
+        foreach ($allTrips as $trip) {
+            if ($trip->pds_tid && ! $trip->pds_share_url) {
+                $trip->update([
+                    'pds_share_url' => $travelDetailsBase . '/de?tid=' . $trip->pds_tid,
+                ]);
+                $linksGenerated++;
             }
         }
 
@@ -240,16 +246,13 @@ class TravelDataController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Reisen synchronisiert, {$linksCreated} neue Links, {$linksRefreshed} aktualisiert",
+            'message' => "Reisen synchronisiert, {$linksGenerated} neue Links",
             'stats' => [
                 'trips_synced' => $syncLog->trips_fetched,
                 'trips_created' => $syncLog->trips_created,
                 'trips_updated' => $syncLog->trips_updated,
-                'links_created' => $linksCreated,
-                'links_refreshed' => $linksRefreshed,
-                'links_existing' => $linksExisting,
-                'links_failed' => $linksFailed,
-                'skipped' => $skippedCount,
+                'links_created' => $linksGenerated,
+                'links_existing' => $allTrips->count() - $linksGenerated,
             ],
             'synced_at' => now()->format('d.m.Y H:i'),
         ]);
@@ -281,21 +284,56 @@ class TravelDataController extends Controller
             return response()->json(['success' => false, 'message' => 'Reise nicht gefunden'], 404);
         }
 
-        // Use external_trip_id (the travel-detail ID from PDS API /travel-details listing)
+        // Use external_trip_id (the original travel-detail TID from PDS API)
         $travelDetailId = $trip->external_trip_id;
 
         if (! $travelDetailId) {
             return response()->json(['success' => false, 'message' => 'Keine Travel Detail ID vorhanden.'], 422);
         }
 
-        // 1. Build API payload (only include fields that were sent)
-        // Note: destinations are managed locally only – the PDS API does not accept
-        // destination updates via this endpoint (requires pre-stay/follow-up type)
+        // 1. Build API payload (only fields the PDS API accepts)
+        // destinations are managed locally only
         $apiPayload = [];
-        foreach (['trip_name', 'start_date', 'end_date', 'nationalities', 'reference_id', 'note', 'show_country_info'] as $field) {
+        foreach (['trip_name', 'nationalities', 'reference_id', 'note', 'show_country_info'] as $field) {
             if ($request->has($field)) {
                 $apiPayload[$field] = $request->input($field);
             }
+        }
+        // Send destinations as simple array of country codes
+        if ($request->has('destinations') && is_array($request->input('destinations'))) {
+            $apiPayload['destinations'] = collect($request->input('destinations'))
+                ->map(fn ($code) => strtoupper($code))
+                ->values()
+                ->toArray();
+        }
+        // Ensure dates are always sent as Y-m-d
+        if ($request->has('start_date') && $request->input('start_date')) {
+            $apiPayload['start_date'] = Carbon::parse($request->input('start_date'))->format('Y-m-d');
+        }
+        if ($request->has('end_date') && $request->input('end_date')) {
+            $apiPayload['end_date'] = Carbon::parse($request->input('end_date'))->format('Y-m-d');
+        }
+
+        $baseUrl = config('services.pds_api.base_url', 'https://api.passolution.eu/api/v2');
+        $fullUrl = rtrim($baseUrl, '/') . "/travel-details/{$travelDetailId}";
+
+        // DEBUG MODE: Show what would be sent without executing
+        if (filter_var(env('TD_LINK_UPDATE_DEBUG', false), FILTER_VALIDATE_BOOLEAN)) {
+            return response()->json([
+                'success' => true,
+                'debug' => true,
+                'message' => 'Debug-Modus: API-Call nicht ausgeführt',
+                'api_request' => [
+                    'method' => 'POST',
+                    'url' => $fullUrl,
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . substr($customer->getActiveApiToken(), 0, 20) . '...',
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                    ],
+                    'body' => $apiPayload,
+                ],
+            ]);
         }
 
         Log::info('TravelDataController: Updating travel detail', [
@@ -308,13 +346,6 @@ class TravelDataController extends Controller
 
         if (! $response || ! $response->successful()) {
             $errorBody = $response?->json() ?? [];
-            $errorMessage = $errorBody['message'] ?? $errorBody['error'] ?? null;
-            if (is_array($errorMessage)) {
-                $errorMessage = json_encode($errorMessage);
-            }
-            if (! $errorMessage) {
-                $errorMessage = $response ? "Status {$response->status()}" : 'Keine Antwort';
-            }
 
             Log::warning('TravelDataController: PDS update failed', [
                 'travel_detail_id' => $travelDetailId,
@@ -323,18 +354,65 @@ class TravelDataController extends Controller
                 'response_body' => $response?->body(),
             ]);
 
+            // User-friendly error messages for common validation errors
+            if ($response?->status() === 422) {
+                $fieldErrors = collect($errorBody)
+                    ->except(['requestid', 'responsetime', 'message', 'errors'])
+                    ->merge($errorBody['errors'] ?? []);
+
+                $fieldLabels = [
+                    'start_date' => 'Beginn der Reise',
+                    'end_date' => 'Ende der Reise',
+                    'trip_name' => 'Reisename',
+                    'nationalities' => 'Nationalitäten',
+                    'reference_id' => 'Referenz-ID',
+                    'note' => 'Notiz',
+                ];
+
+                $messages = [];
+                foreach ($fieldErrors as $field => $errs) {
+                    $errList = is_array($errs) ? $errs : [$errs];
+                    foreach ($errList as $err) {
+                        // Replace field name with German label (both underscore and space variants)
+                        $label = $fieldLabels[$field] ?? $field;
+                        $err = str_replace([$field, str_replace('_', ' ', $field)], [$label, $label], $err);
+                        // Convert dates from Y-m-d to d.m.Y
+                        $err = preg_replace_callback('/(\d{4})-(\d{2})-(\d{2})/', fn ($m) => "{$m[3]}.{$m[2]}.{$m[1]}", $err);
+                        $messages[] = $err;
+                    }
+                }
+
+                $userMessage = ! empty($messages)
+                    ? implode(' ', $messages)
+                    : 'Die eingegebenen Daten konnten nicht verarbeitet werden.';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $userMessage . ' Diese Einschränkung wird systemseitig durch den Travel Requirements Service vorgegeben. Bei Rückfragen wenden Sie sich bitte an das Passolution-Team.',
+                ], 422);
+            }
+
+            $errorMessage = $errorBody['message'] ?? $errorBody['error'] ?? null;
+            if (is_array($errorMessage)) {
+                $errorMessage = json_encode($errorMessage);
+            }
+            if (! $errorMessage) {
+                $errorMessage = $response ? "Status {$response->status()}" : 'Keine Antwort vom Server';
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'API-Fehler: ' . $errorMessage,
+                'message' => 'Die Änderung konnte nicht gespeichert werden: ' . $errorMessage,
             ], 500);
         }
 
-        // 2. Update local td_trips record
+        // 2. Update local td_trips record with API response and form data
+        $responseData = $response->json() ?? [];
         $updateData = [];
-
         $rawPayload = $trip->raw_payload ?? [];
 
         if ($request->has('trip_name')) {
+            $updateData['trip_name'] = $request->input('trip_name');
             $rawPayload['trip_name'] = $request->input('trip_name');
         }
 
@@ -350,7 +428,19 @@ class TravelDataController extends Controller
             $updateData['countries_visited'] = $request->input('destinations');
         }
 
+        if ($request->has('nationalities')) {
+            $updateData['nationalities'] = $request->input('nationalities');
+            $rawPayload['nationalities'] = $request->input('nationalities');
+        }
+
+        if ($request->has('reference_id')) {
+            $updateData['booking_reference'] = $request->input('reference_id');
+            $updateData['reference_id'] = $request->input('reference_id');
+            $rawPayload['reference_id'] = $request->input('reference_id');
+        }
+
         if ($request->has('note')) {
+            $updateData['note'] = $request->input('note');
             $rawPayload['note'] = $request->input('note');
         }
 
@@ -359,18 +449,27 @@ class TravelDataController extends Controller
         }
 
         $updateData['raw_payload'] = $rawPayload;
+        $updateData['last_important_change_at'] = now();
 
-        if ($request->has('reference_id')) {
-            $updateData['booking_reference'] = $request->input('reference_id');
-        }
-
-        if (! empty($updateData)) {
-            $trip->update($updateData);
-        }
+        $trip->update($updateData);
 
         return response()->json([
             'success' => true,
             'message' => 'Travel Link erfolgreich aktualisiert',
+        ]);
+    }
+
+    public function deleteAllLinks(): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        $tripsDeleted = TdTrip::where('customer_id', $customer->id)->forceDelete();
+
+        $customer->update(['pds_last_synced_at' => null]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$tripsDeleted} Reisen und zugehörige Links lokal gelöscht",
         ]);
     }
 
