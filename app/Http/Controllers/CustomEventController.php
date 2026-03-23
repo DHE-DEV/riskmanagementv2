@@ -104,6 +104,9 @@ class CustomEventController extends Controller
                         'updater_name' => $event->updater?->name,
                         'source_logo' => $event->apiClient?->getLogoUrl() ?? '/Passolution-Logo-klein.png',
                         'source_name' => $event->apiClient?->company_name ?? 'Passolution',
+                        'source_show_frontend' => $event->source_show_frontend ?? true,
+                        'source_link_text' => $event->source_link_text,
+                        'source_link_url' => $event->source_link_url,
                     ];
                 });
 
@@ -210,6 +213,9 @@ class CustomEventController extends Controller
                         'end_date' => $event->end_date,
                         'source_logo' => $event->apiClient?->getLogoUrl() ?? '/Passolution-Logo-klein.png',
                         'source_name' => $event->apiClient?->company_name ?? 'Passolution',
+                        'source_show_frontend' => $event->source_show_frontend ?? true,
+                        'source_link_text' => $event->source_link_text,
+                        'source_link_url' => $event->source_link_url,
                     ];
                 });
 
@@ -540,6 +546,9 @@ class CustomEventController extends Controller
                 'source' => 'custom',
                 'source_logo' => $event->apiClient?->getLogoUrl() ?? '/Passolution-Logo-klein.png',
                 'source_name' => $event->apiClient?->company_name ?? 'Passolution',
+                'source_show_frontend' => $event->source_show_frontend ?? true,
+                'source_link_text' => $event->source_link_text,
+                'source_link_url' => $event->source_link_url,
             ];
 
             return response()->json([

@@ -62,13 +62,35 @@ class CustomEventForm
                     ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
                     ->columnSpanFull(),
 
-                TextInput::make('source')
-                    ->label('Quelle')
-                    ->required()
-                    ->maxLength(255)
-                    ->placeholder('z.B. Auswärtiges Amt, BBC News, interne Meldung')
-                    ->helperText('Woher stammt die Information?')
-                    ->columnSpanFull(),
+                \Filament\Schemas\Components\Grid::make(2)
+                    ->schema([
+                        TextInput::make('source')
+                            ->label('Quelle')
+                            ->maxLength(255)
+                            ->placeholder('z.B. Auswärtiges Amt, BBC News, interne Meldung')
+                            ->helperText('Woher stammt die Information?'),
+
+                        Toggle::make('source_show_frontend')
+                            ->label('Quelle im Frontend anzeigen')
+                            ->default(true)
+                            ->helperText('Quellenangabe in der Event-Detailansicht anzeigen'),
+                    ]),
+
+                \Filament\Schemas\Components\Grid::make(2)
+                    ->schema([
+                        TextInput::make('source_link_text')
+                            ->label('Link-Text')
+                            ->maxLength(255)
+                            ->placeholder('z.B. Zum Artikel')
+                            ->helperText('Text für den Quellen-Link'),
+
+                        TextInput::make('source_link_url')
+                            ->label('Link-URL')
+                            ->url()
+                            ->maxLength(2048)
+                            ->placeholder('https://...')
+                            ->helperText('URL der Quelle'),
+                    ]),
 
                 // Keep single event_type_id for backward compatibility but hide it
                 Select::make('event_type_id')

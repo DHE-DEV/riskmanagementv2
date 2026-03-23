@@ -2676,13 +2676,13 @@ async function loadEventDetails(event) {
                 ${event.description ? `
                     <div class="event-description mt-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}</div>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}${event.source_show_frontend !== false && event.source_link_text ? `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">Quelle: ${event.source_link_url ? `<a href="${event.source_link_url}" target="_blank" rel="noopener noreferrer" style="font-style: italic; text-decoration: underline;">${event.source_link_text}</a>` : event.source_link_text}</span></div>` : ''}</div>
                     </div>
                 ` : ''}
                 ${event.source === 'custom' && event.popup_content ? `
                     <div class="event-description mt-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}</div>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}${event.source_show_frontend !== false && event.source_link_text ? `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">Quelle: ${event.source_link_url ? `<a href="${event.source_link_url}" target="_blank" rel="noopener noreferrer" style="font-style: italic; text-decoration: underline;">${event.source_link_text}</a>` : event.source_link_text}</span></div>` : ''}</div>
                     </div>
                 ` : ''}
                 
