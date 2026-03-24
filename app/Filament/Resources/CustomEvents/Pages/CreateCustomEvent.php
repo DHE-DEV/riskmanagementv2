@@ -14,8 +14,18 @@ class CreateCustomEvent extends CreateRecord
     public ?string $infosystemSource = null;
     public ?string $infosystemSourceId = null;
 
+    /**
+     * Temporarily store location data from the repeater
+     * so we can attach it after the record is created.
+     */
+    protected array $locationCountries = [];
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Store location data for afterCreate, then remove from model data
+        $this->locationCountries = $data['location_countries'] ?? [];
+        unset($data['location_countries']);
+
         // Set data source if coming from InfosystemEntry
         if (request()->has('source') && request()->get('source') === 'infosystem') {
             $data['data_source'] = 'passolution_infosystem';
@@ -29,6 +39,9 @@ class CreateCustomEvent extends CreateRecord
 
     protected function afterCreate(): void
     {
+        // Attach location data from the repeater
+        $this->attachLocationData();
+
         // Mark InfosystemEntry as published if created from there
         if ($this->infosystemSourceId && $this->infosystemSource === 'infosystem') {
             $infosystemEntry = \App\Models\InfosystemEntry::where('api_id', $this->infosystemSourceId)->first();
@@ -53,6 +66,41 @@ class CreateCustomEvent extends CreateRecord
                 'marker_icon' => $firstEventType->icon,
                 'event_type_id' => $firstEventType->id,
             ]);
+        }
+    }
+
+    protected function attachLocationData(): void
+    {
+        if (empty($this->locationCountries)) {
+            return;
+        }
+
+        foreach ($this->locationCountries as $entry) {
+            $countryId = $entry['country_id'] ?? null;
+            if (!$countryId) {
+                continue;
+            }
+
+            // Attach country
+            $this->record->countries()->attach($countryId, [
+                'use_default_coordinates' => true,
+            ]);
+
+            // Attach regions
+            $regionIds = $entry['region_ids'] ?? [];
+            foreach ($regionIds as $regionId) {
+                $this->record->regions()->attach($regionId, [
+                    'use_default_coordinates' => true,
+                ]);
+            }
+
+            // Attach cities
+            $cityIds = $entry['city_ids'] ?? [];
+            foreach ($cityIds as $cityId) {
+                $this->record->cities()->attach($cityId, [
+                    'use_default_coordinates' => true,
+                ]);
+            }
         }
     }
 

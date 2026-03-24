@@ -14,6 +14,49 @@ class EditCustomEvent extends EditRecord
 {
     protected static string $resource = CustomEventResource::class;
 
+    protected array $locationCountries = [];
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Load existing location assignments into the repeater format
+        $record = $this->record->load(['countries', 'regions', 'cities']);
+
+        $countriesData = [];
+        foreach ($record->countries as $country) {
+            $countryId = $country->id;
+
+            // Find regions belonging to this country that are attached to this event
+            $regionIds = $record->regions
+                ->where('country_id', $countryId)
+                ->pluck('id')
+                ->toArray();
+
+            // Find cities belonging to this country that are attached to this event
+            $cityIds = $record->cities
+                ->where('country_id', $countryId)
+                ->pluck('id')
+                ->toArray();
+
+            $countriesData[] = [
+                'country_id' => $countryId,
+                'region_ids' => $regionIds,
+                'city_ids' => $cityIds,
+            ];
+        }
+
+        $data['location_countries'] = $countriesData;
+
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $this->locationCountries = $data['location_countries'] ?? [];
+        unset($data['location_countries']);
+
+        return $data;
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->previousUrl ?? $this->getResource()::getUrl('index');
@@ -177,6 +220,9 @@ class EditCustomEvent extends EditRecord
      */
     protected function afterSave(): void
     {
+        // Sync location data from repeater
+        $this->syncLocationData();
+
         // Refresh the record to load the updated eventTypes relationship
         $this->record->refresh();
         $this->record->load('eventTypes');
@@ -189,6 +235,65 @@ class EditCustomEvent extends EditRecord
                 'marker_icon' => $firstEventType->icon,
                 'event_type_id' => $firstEventType->id,
             ]);
+        }
+    }
+
+    protected function syncLocationData(): void
+    {
+        $newCountryIds = [];
+        $newRegionIds = [];
+        $newCityIds = [];
+
+        foreach ($this->locationCountries as $entry) {
+            $countryId = $entry['country_id'] ?? null;
+            if (!$countryId) {
+                continue;
+            }
+
+            $newCountryIds[] = $countryId;
+
+            foreach ($entry['region_ids'] ?? [] as $regionId) {
+                $newRegionIds[] = $regionId;
+            }
+
+            foreach ($entry['city_ids'] ?? [] as $cityId) {
+                $newCityIds[] = $cityId;
+            }
+        }
+
+        // Get existing IDs
+        $existingCountryIds = $this->record->countries()->pluck('countries.id')->toArray();
+        $existingRegionIds = $this->record->regions()->pluck('regions.id')->toArray();
+        $existingCityIds = $this->record->cities()->pluck('cities.id')->toArray();
+
+        // Detach removed entries
+        $countriesToDetach = array_diff($existingCountryIds, $newCountryIds);
+        $regionsToDetach = array_diff($existingRegionIds, $newRegionIds);
+        $citiesToDetach = array_diff($existingCityIds, $newCityIds);
+
+        if (!empty($countriesToDetach)) {
+            $this->record->countries()->detach($countriesToDetach);
+        }
+        if (!empty($regionsToDetach)) {
+            $this->record->regions()->detach($regionsToDetach);
+        }
+        if (!empty($citiesToDetach)) {
+            $this->record->cities()->detach($citiesToDetach);
+        }
+
+        // Attach new entries (existing pivot data stays untouched)
+        $countriesToAttach = array_diff($newCountryIds, $existingCountryIds);
+        $regionsToAttach = array_diff($newRegionIds, $existingRegionIds);
+        $citiesToAttach = array_diff($newCityIds, $existingCityIds);
+
+        foreach ($countriesToAttach as $id) {
+            $this->record->countries()->attach($id, ['use_default_coordinates' => true]);
+        }
+        foreach ($regionsToAttach as $id) {
+            $this->record->regions()->attach($id, ['use_default_coordinates' => true]);
+        }
+        foreach ($citiesToAttach as $id) {
+            $this->record->cities()->attach($id, ['use_default_coordinates' => true]);
         }
     }
 }
