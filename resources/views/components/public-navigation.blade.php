@@ -28,23 +28,42 @@
         </button>
         @endif
 
-        <!-- Ereignisse Button (nur für Dashboard) -->
-        @if($featureService->isFeatureEnabled('navigation_events_enabled', $customer))
-        @if($active === 'dashboard')
-        <button class="p-3 bg-white text-black rounded-lg transition-colors" title="Ereignisse" onclick="showSidebarLiveStatistics()">
-            <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
-        </button>
-        @else
-        <a href="{{ route('home') }}" class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Ereignisse">
-            <i class="fa-regular fa-brake-warning text-2xl" aria-hidden="true"></i>
-        </a>
-        @endif
-        @endif
-
         <!-- Einreisebestimmungen -->
         @if($featureService->isFeatureEnabled('navigation_entry_conditions_enabled', $customer))
         <a href="{{ route('entry-conditions') }}" class="p-3 {{ $active === 'entry-conditions' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Einreisebestimmungen">
             <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
+        <!-- Global Travel Monitor (Dashboard) -->
+        @if($featureService->isFeatureEnabled('navigation_events_enabled', $customer))
+        @if($active === 'dashboard')
+        <button class="p-3 bg-white text-black rounded-lg transition-colors" title="Global Travel Monitor" onclick="showSidebarLiveStatistics()">
+            <i class="fas fa-globe text-2xl" aria-hidden="true"></i>
+        </button>
+        @else
+        <a href="{{ route('home') }}" class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Global Travel Monitor">
+            <i class="fas fa-globe text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+        @endif
+
+        <!-- Travel Alert -->
+        <a href="{{ route('risk-overview') }}" class="p-3 {{ $active === 'travel-alert' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Alert">
+            <i class="fas fa-triangle-exclamation text-2xl" aria-hidden="true"></i>
+        </a>
+
+        <!-- Travel Data -->
+        @if(auth('customer')->check())
+        <a href="{{ route('customer.travel-data') }}" class="p-3 {{ $active === 'travel-data' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Data">
+            <i class="fas fa-route text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
+        <!-- Travel Links -->
+        @if(auth('customer')->check())
+        <a href="{{ route('customer.travel-links') }}" class="p-3 {{ $active === 'customer-travel-links' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Links">
+            <i class="fa-regular fa-link text-2xl" aria-hidden="true"></i>
         </a>
         @endif
 
@@ -82,18 +101,6 @@
             <i class="fa-regular fa-calendar-alt text-2xl" aria-hidden="true"></i>
         </a>
         @endif
-
-        <!-- Travel Links -->
-        @if(auth('customer')->check())
-        <a href="{{ route('customer.travel-links') }}" class="p-3 {{ $active === 'customer-travel-links' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Links">
-            <i class="fa-regular fa-link text-2xl" aria-hidden="true"></i>
-        </a>
-        @endif
-
-        <!-- TravelAlert -->
-        <a href="{{ route('risk-overview') }}" class="p-3 {{ $active === 'travel-alert' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="TravelAlert">
-            <i class="fa-regular fa-shield-exclamation text-2xl" aria-hidden="true"></i>
-        </a>
 
         <!-- Kreuzfahrt -->
         @if($featureService->isFeatureEnabled('navigation_cruise_enabled', $customer))

@@ -2,17 +2,14 @@
 
 namespace App\Filament\Resources\CustomEvents\Schemas;
 
-use App\Models\City;
 use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\EventCategory;
 use App\Models\EventDisplaySetting;
 use App\Models\EventType;
-use App\Models\Region;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\CheckboxList;
@@ -207,86 +204,6 @@ class CustomEventForm
                     ->options(CustomEvent::getPriorityOptions())
                     ->default('medium')
                     ->required(),
-
-                // Location Section: Länder, Regionen, Städte
-                \Filament\Schemas\Components\Section::make('Zuordnung zu Ländern, Regionen und Städten')
-                    ->description('Ordnen Sie das Event geografischen Standorten zu.')
-                    ->schema([
-                        Repeater::make('location_countries')
-                            ->label('Länder')
-                            ->schema([
-                                Select::make('country_id')
-                                    ->label('Land')
-                                    ->options(fn () => Country::query()
-                                        ->orderBy('name_translations->de')
-                                        ->get()
-                                        ->mapWithKeys(fn (Country $c) => [$c->id => $c->getName('de') . ' (' . $c->iso_code . ')'])
-                                        ->toArray()
-                                    )
-                                    ->searchable()
-                                    ->required()
-                                    ->live()
-                                    ->distinct()
-                                    ->columnSpanFull(),
-
-                                Select::make('region_ids')
-                                    ->label('Regionen')
-                                    ->multiple()
-                                    ->options(function (Get $get) {
-                                        $countryId = $get('country_id');
-                                        if (!$countryId) {
-                                            return [];
-                                        }
-                                        return Region::where('country_id', $countryId)
-                                            ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
-                                            ->get()
-                                            ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
-                                            ->toArray();
-                                    })
-                                    ->searchable()
-                                    ->preload()
-                                    ->visible(fn (Get $get): bool => (bool) $get('country_id'))
-                                    ->helperText('Optional - Regionen in diesem Land')
-                                    ->columnSpanFull(),
-
-                                Select::make('city_ids')
-                                    ->label('Städte')
-                                    ->multiple()
-                                    ->options(function (Get $get) {
-                                        $countryId = $get('country_id');
-                                        if (!$countryId) {
-                                            return [];
-                                        }
-                                        return City::where('country_id', $countryId)
-                                            ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))")
-                                            ->get()
-                                            ->mapWithKeys(fn (City $c) => [
-                                                $c->id => $c->getName('de') . ($c->region ? ' (' . $c->region->getName('de') . ')' : ''),
-                                            ])
-                                            ->toArray();
-                                    })
-                                    ->searchable()
-                                    ->preload()
-                                    ->visible(fn (Get $get): bool => (bool) $get('country_id'))
-                                    ->helperText('Optional - Städte in diesem Land')
-                                    ->columnSpanFull(),
-                            ])
-                            ->columns(1)
-                            ->itemLabel(function (array $state): ?string {
-                                $countryId = $state['country_id'] ?? null;
-                                if (!$countryId) {
-                                    return null;
-                                }
-                                $country = Country::find($countryId);
-                                return $country ? $country->getName('de') : null;
-                            })
-                            ->addActionLabel('Land hinzufügen')
-                            ->reorderable(false)
-                            ->collapsible()
-                            ->defaultItems(0)
-                            ->columnSpanFull(),
-                    ])
-                    ->columnSpanFull(),
 
                 TextInput::make('tags')
                     ->label('Tags')

@@ -185,13 +185,18 @@ class NotificationSettingsController extends Controller
         return response()->json($logs);
     }
 
-    public function rulesJson()
+    public function rulesJson(Request $request)
     {
         $customer = auth('customer')->user();
-        $rules = $customer->notificationRules()
+        $query = $customer->notificationRules()
             ->with(['recipients', 'template'])
-            ->latest()
-            ->get()
+            ->latest();
+
+        if ($request->has('source') && \Schema::hasColumn('notification_rules', 'source')) {
+            $query->where('source', $request->input('source'));
+        }
+
+        $rules = $query->get()
             ->map(function ($rule) {
                 return [
                     'id' => $rule->id,
@@ -227,7 +232,8 @@ class NotificationSettingsController extends Controller
         $customer = auth('customer')->user();
         $rule = $customer->notificationRules()->with(['template', 'recipients'])->findOrFail($id);
 
-        $template = $rule->template ?? NotificationTemplate::system()->first();
+        $template = $rule->template ?? NotificationTemplate::system($rule->source)->first()
+            ?? NotificationTemplate::system()->first();
         if (!$template) {
             return response()->json(['success' => false, 'message' => 'Keine E-Mail-Vorlage gefunden.'], 404);
         }

@@ -114,12 +114,6 @@
                     Mein Profil
                 </a>
 
-                <a href="{{ route('customer.settings', ['section' => 'notifications']) }}"
-                   class="settings-nav-item {{ $settingsSection === 'notifications' ? 'active' : '' }}">
-                    <i class="fas fa-bell"></i>
-                    Benachrichtigungen
-                </a>
-
                 @if($customer->branch_management_active)
                 <div class="settings-section-title mt-2">Organisation</div>
 
@@ -625,7 +619,7 @@
                         async loadRules() {
                             this.rulesLoading = true;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.rules.json') }}', { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.rules.json') }}?source=travel-alert', { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) { const d = await r.json(); this.rules = d.rules || []; }
                             } catch(e) {}
                             this.rulesLoading = false;
@@ -1659,7 +1653,26 @@
 
                 @php
                     $pluginClient = $customer->pluginClient;
+                    $gtmTab = request()->query('tab', 'general');
                 @endphp
+
+                {{-- Tabs --}}
+                <div class="mb-6">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex gap-6" aria-label="Tabs">
+                            <a href="{{ route('customer.settings', ['section' => 'global-travel-monitor', 'tab' => 'general']) }}"
+                               class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors {{ $gtmTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                <i class="fas fa-cog mr-1.5"></i>Allgemeines
+                            </a>
+                            <a href="{{ route('customer.settings', ['section' => 'global-travel-monitor', 'tab' => 'notifications']) }}"
+                               class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors {{ $gtmTab === 'notifications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                <i class="fas fa-bell mr-1.5"></i>Benachrichtigungen
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                @if($gtmTab === 'general')
 
                 @if(!$pluginClient)
                     <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="{ showOnboarding: false, onboardingLoading: false, integrationType: 'website' }">
@@ -2106,10 +2119,399 @@
                     </div>
                 </div>
 
+                @elseif($gtmTab === 'notifications')
+                {{-- Benachrichtigungen Tab --}}
+                    @if(auth('customer')->user()->isFeatureEnabled('navigation_risk_overview_enabled'))
+                    @php
+                        $notifCustomer = auth('customer')->user();
+                        $notifTemplateCount = \App\Models\NotificationTemplate::forCustomer($notifCustomer->id)->count();
+                        $notifCustomTemplateCount = $notifCustomer->notificationTemplates()->count();
+                        $notifSystemTemplateCount = \App\Models\NotificationTemplate::system()->count();
+                    @endphp
+
+                    {{-- Globale Einstellungen --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-3">Globale Einstellungen</h4>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-gray-700">Automatische Benachrichtigungen</p>
+                                <p class="text-[10px] text-gray-500 mt-1"><i class="fas fa-info-circle mr-1"></i>Wenn aktiviert, werden E-Mails basierend auf Ihren Regeln versendet.</p>
+                            </div>
+                            <form method="POST" action="{{ route('customer.notification-settings.toggle') }}">
+                                @csrf
+                                <button type="submit" class="relative inline-flex items-center cursor-pointer">
+                                    <div class="w-11 h-6 {{ $notifCustomer->notifications_enabled ? 'bg-blue-600' : 'bg-gray-200' }} rounded-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all {{ $notifCustomer->notifications_enabled ? 'after:translate-x-full after:border-white' : '' }}"></div>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="mt-2">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium {{ $notifCustomer->notifications_enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                                <i class="fas {{ $notifCustomer->notifications_enabled ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
+                                {{ $notifCustomer->notifications_enabled ? 'Aktiviert' : 'Deaktiviert' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- E-Mail-Vorlagen --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="{
+                        showTemplateModal: false,
+                        editTemplateId: null,
+                        templates: [],
+                        loading: true,
+                        async init() { await this.loadTemplates(); },
+                        async loadTemplates() {
+                            this.loading = true;
+                            try {
+                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}', { headers: { 'Accept': 'application/json' } });
+                                if (r.ok) {
+                                    const d = await r.json();
+                                    this.templates = d.templates || d;
+                                }
+                            } catch(e) {}
+                            this.loading = false;
+                        },
+                        openCreate() {
+                            this.editTemplateId = null;
+                            this.showTemplateModal = true;
+                            Livewire.dispatch('load-template', { id: null });
+                        },
+                        openEdit(id) {
+                            this.editTemplateId = id;
+                            this.showTemplateModal = true;
+                            Livewire.dispatch('load-template', { id: id });
+                        },
+                        async sendTestMail(id) {
+                            window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Test-Mail wird versendet...', type: 'info' } }));
+                            try {
+                                const r = await fetch('/customer/notification-settings/templates/' + id + '/test', {
+                                    method: 'POST',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                const d = await r.json();
+                                if (d.success) {
+                                    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: d.message, type: 'success' } }));
+                                    window.dispatchEvent(new CustomEvent('reload-logs'));
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: d.message || 'Fehler beim Versenden.', type: 'error' } }));
+                                }
+                            } catch(e) { window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Fehler beim Versenden.', type: 'error' } })); }
+                        },
+                        async deleteTemplate(id) {
+                            if (!confirm('Möchten Sie diese Vorlage wirklich löschen?')) return;
+                            try {
+                                const r = await fetch('/customer/notification-settings/templates/' + id, {
+                                    method: 'DELETE',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                if (r.ok) this.loadTemplates();
+                            } catch(e) {}
+                        },
+                    }"
+                    x-on:template-saved.window="showTemplateModal = false; loadTemplates()"
+                    x-on:template-deleted.window="showTemplateModal = false; loadTemplates()">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-file-alt mr-2 text-blue-500"></i>E-Mail-Vorlagen</h4>
+                            <button @click="openCreate()" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                                <i class="fas fa-plus"></i> Neue E-Mail-Vorlage
+                            </button>
+                        </div>
+
+                        <div x-show="loading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
+
+                        <div x-show="!loading && templates.length === 0" class="text-center py-6 text-gray-500">
+                            <i class="fas fa-file-alt text-2xl mb-2"></i>
+                            <p class="text-xs">Keine Vorlagen vorhanden.</p>
+                        </div>
+
+                        <div x-show="!loading && templates.length > 0" class="space-y-2">
+                            <template x-for="tpl in templates" :key="tpl.id">
+                                <div class="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="text-xs font-medium text-gray-900" x-text="tpl.name"></span>
+                                                <span x-show="tpl.is_system" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
+                                                    <i class="fas fa-lock mr-0.5 text-[8px]"></i> System
+                                                </span>
+                                            </div>
+                                            <p class="text-[10px] text-gray-500"><i class="fas fa-envelope mr-1"></i>Betreff: <span x-text="tpl.subject"></span></p>
+                                        </div>
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click="open = !open" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                                <i class="fas fa-ellipsis-vertical text-sm"></i>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" x-transition x-cloak
+                                                 class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                                <button x-show="!tpl.is_system" @click="openEdit(tpl.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-pen w-4 text-center text-blue-500"></i> Bearbeiten
+                                                </button>
+                                                <button @click="sendTestMail(tpl.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-paper-plane w-4 text-center text-amber-500"></i> Test-Mail versenden
+                                                </button>
+                                                <div x-show="!tpl.is_system" class="border-t border-gray-100 my-1"></div>
+                                                <button x-show="!tpl.is_system" @click="deleteTemplate(tpl.id); open = false" class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                                    <i class="fas fa-trash w-4 text-center"></i> Löschen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Template Modal --}}
+                        <div x-show="showTemplateModal" x-cloak class="fixed z-[10000] flex items-center justify-center" style="top: 64px; bottom: 56px; left: 0; right: 0; padding: 8px;" @keydown.escape.window="showTemplateModal = false">
+                            <div class="absolute inset-0 bg-black bg-opacity-50" @click="showTemplateModal = false"></div>
+                            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 flex flex-col" style="max-height: 100%;">
+                                <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                                    <h4 class="text-sm font-semibold text-gray-900" x-text="editTemplateId ? 'E-Mail-Vorlage bearbeiten' : 'Neue E-Mail-Vorlage'"></h4>
+                                    <button @click="showTemplateModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                                </div>
+                                <div class="flex-1 overflow-y-auto p-6">
+                                    @livewire('customer.notification-template-form', [], key('gtm-tpl-form'))
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Regeln --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="{
+                        rules: [], rulesLoading: true,
+                        async init() { await this.loadRules(); },
+                        async loadRules() {
+                            this.rulesLoading = true;
+                            try {
+                                const r = await fetch('{{ route('customer.notification-settings.rules.json') }}?source=global-travel-monitor', { headers: { 'Accept': 'application/json' } });
+                                if (r.ok) { const d = await r.json(); this.rules = d.rules || []; }
+                            } catch(e) {}
+                            this.rulesLoading = false;
+                        },
+                        async sendRuleTestMail(id) {
+                            window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Test-Mail wird versendet...', type: 'info' } }));
+                            try {
+                                const r = await fetch('/customer/notification-settings/rules/' + id + '/test', {
+                                    method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                const d = await r.json();
+                                window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: d.message, type: d.success ? 'success' : 'error' } }));
+                                if (d.success) window.dispatchEvent(new CustomEvent('reload-logs'));
+                            } catch(e) {
+                                window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Fehler beim Versenden.', type: 'error' } }));
+                            }
+                        },
+                        async deleteRule(id) {
+                            if (!confirm('Möchten Sie diese Regel wirklich löschen?')) return;
+                            try {
+                                const r = await fetch('/customer/notification-settings/rules/' + id, {
+                                    method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                if (r.ok) this.loadRules();
+                            } catch(e) {}
+                        },
+                        showRuleModal: false,
+                        editRuleId: null,
+                        openCreateRule() { this.editRuleId = null; this.showRuleModal = true; Livewire.dispatch('load-rule', { id: null }); },
+                        openEditRule(id) { this.editRuleId = id; this.showRuleModal = true; Livewire.dispatch('load-rule', { id: id }); },
+                    }" x-on:reload-rules.window="loadRules()" x-on:rule-saved.window="showRuleModal = false; loadRules()" x-on:rule-deleted.window="showRuleModal = false; loadRules()">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-list-check mr-2 text-blue-500"></i>Benachrichtigungs-Regeln</h4>
+                            <button @click="openCreateRule()" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                                <i class="fas fa-plus"></i> Neue Regel
+                            </button>
+                        </div>
+
+                        <div x-show="rulesLoading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
+
+                        <div x-show="!rulesLoading && rules.length === 0" class="text-center py-6 text-gray-500">
+                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                            <p class="text-xs">Noch keine Regeln erstellt.</p>
+                        </div>
+
+                        <div x-show="!rulesLoading && rules.length > 0" class="space-y-2">
+                            <template x-for="rule in rules" :key="rule.id">
+                                <div class="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="text-xs font-medium text-gray-900" x-text="rule.name"></span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                                      :class="rule.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
+                                                      x-text="rule.is_active ? 'aktiv' : 'inaktiv'"></span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
+                                                <span x-show="rule.risk_level_labels.length"><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span x-text="rule.risk_level_labels.join(', ')"></span></span>
+                                                <span x-show="rule.category_labels.length"><i class="fas fa-tag text-blue-500 mr-1"></i><span x-text="rule.category_labels.join(', ')"></span></span>
+                                                <span><i class="fas fa-globe text-green-500 mr-1"></i><span x-text="rule.country_count ? rule.country_count + ' Länder' : 'Alle Länder'"></span></span>
+                                                <span><i class="fas fa-envelope text-purple-500 mr-1"></i><span x-text="rule.recipients_count"></span> Empfänger</span>
+                                            </div>
+                                        </div>
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click="open = !open" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                                <i class="fas fa-ellipsis-vertical text-sm"></i>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" x-transition x-cloak
+                                                 class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                                <button @click="openEditRule(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-pen w-4 text-center text-blue-500"></i> Bearbeiten
+                                                </button>
+                                                <button @click="sendRuleTestMail(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-paper-plane w-4 text-center text-amber-500"></i> Test-Mail versenden
+                                                </button>
+                                                <div class="border-t border-gray-100 my-1"></div>
+                                                <button @click="deleteRule(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                                    <i class="fas fa-trash w-4 text-center"></i> Löschen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Rule Modal --}}
+                        <div x-show="showRuleModal" x-cloak class="fixed z-[10000] flex items-center justify-center" style="top: 64px; bottom: 56px; left: 0; right: 0; padding: 8px;" @keydown.escape.window="if(showRuleModal) showRuleModal = false">
+                            <div class="absolute inset-0 bg-black bg-opacity-50" @click="showRuleModal = false"></div>
+                            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 flex flex-col" style="max-height: 100%;">
+                                <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                                    <h4 class="text-sm font-semibold text-gray-900" x-text="editRuleId ? 'Regel bearbeiten' : 'Neue Benachrichtigungs-Regel'"></h4>
+                                    <button @click="showRuleModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                                </div>
+                                <div class="flex-1 overflow-y-auto p-6">
+                                    @livewire('customer.notification-rule-form', ['source' => 'global-travel-monitor'], key('gtm-rule-form'))
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Versandprotokoll --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5" x-on:reload-logs.window="loadLogs(1)" x-data="{
+                        logs: [], logsMeta: {}, logsLoading: true, logsPage: 1,
+                        async init() { await this.loadLogs(); },
+                        async loadLogs(page) {
+                            this.logsLoading = true;
+                            if (page) this.logsPage = page;
+                            try {
+                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
+                                if (r.ok) {
+                                    const d = await r.json();
+                                    this.logs = d.data || [];
+                                    this.logsMeta = { current_page: d.current_page, last_page: d.last_page, total: d.total, from: d.from, to: d.to };
+                                }
+                            } catch(e) {}
+                            this.logsLoading = false;
+                        }
+                    }">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-history mr-2 text-blue-500"></i>Versandprotokoll</h4>
+                            <span class="text-[10px] text-gray-400" x-show="logsMeta.total" x-text="logsMeta.total + ' Einträge'"></span>
+                        </div>
+
+                        <div x-show="logsLoading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
+
+                        <div x-show="!logsLoading && logs.length === 0" class="text-center py-6 text-gray-500">
+                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                            <p class="text-xs">Noch keine Nachrichten versendet.</p>
+                        </div>
+
+                        <div x-show="!logsLoading && logs.length > 0">
+                            <div class="space-y-2 mb-4">
+                                <template x-for="log in logs" :key="log.id">
+                                    <div class="border rounded-lg p-3 text-xs" :class="log.status === 'sent' ? 'border-gray-200' : 'border-red-200 bg-red-50'">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                                    <i class="fas text-[10px]" :class="log.status === 'sent' ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500'"></i>
+                                                    <span class="font-medium text-gray-900 truncate" x-text="log.subject"></span>
+                                                    <span x-show="log.is_test" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800">Test</span>
+                                                </div>
+                                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
+                                                    <span><i class="fas fa-envelope mr-1"></i><span x-text="log.recipient_email"></span></span>
+                                                    <span x-show="log.template_name"><i class="fas fa-file-alt mr-1"></i>Vorlage: <span x-text="log.template_name"></span></span>
+                                                    <span x-show="log.rule_name"><i class="fas fa-list-check mr-1"></i>Regel: <span x-text="log.rule_name"></span></span>
+                                                    <span x-show="log.notification_rule && !log.rule_name"><i class="fas fa-list-check mr-1"></i>Regel: <span x-text="log.notification_rule?.name"></span></span>
+                                                </div>
+                                                <p x-show="log.error_message" class="text-[10px] text-red-600 mt-1" x-text="log.error_message"></p>
+                                            </div>
+                                            <div class="text-[10px] text-gray-400 flex-shrink-0 text-right">
+                                                <div x-text="new Date(log.created_at).toLocaleDateString('de-DE')"></div>
+                                                <div x-text="new Date(log.created_at).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Paginator --}}
+                            <div x-show="logsMeta.last_page > 1" class="flex items-center justify-between">
+                                <p class="text-[10px] text-gray-500" x-text="'Seite ' + logsMeta.current_page + ' von ' + logsMeta.last_page"></p>
+                                <div class="flex gap-1">
+                                    <button @click="loadLogs(logsPage - 1)" :disabled="logsPage <= 1"
+                                        :class="logsPage <= 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'"
+                                        class="px-2 py-1 text-[10px] rounded border border-gray-200">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <template x-for="p in logsMeta.last_page" :key="p">
+                                        <button @click="loadLogs(p)"
+                                            class="px-2 py-1 text-[10px] rounded border"
+                                            :class="p === logsMeta.current_page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:bg-gray-100'"
+                                            x-text="p" x-show="Math.abs(p - logsMeta.current_page) < 3 || p === 1 || p === logsMeta.last_page">
+                                        </button>
+                                    </template>
+                                    <button @click="loadLogs(logsPage + 1)" :disabled="logsPage >= logsMeta.last_page"
+                                        :class="logsPage >= logsMeta.last_page ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'"
+                                        class="px-2 py-1 text-[10px] rounded border border-gray-200">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Globale Toast Notification --}}
+                    <div x-data="{ msg: '', type: 'success', visible: false }"
+                         x-on:show-toast.window="msg = $event.detail.message; type = $event.detail.type; visible = true; if(type !== 'info') setTimeout(() => visible = false, 5000)">
+                        <div x-show="visible" x-cloak x-transition
+                             class="fixed top-20 right-6 max-w-sm z-[10001] rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3"
+                             :class="{ 'bg-green-50 border-green-200': type==='success', 'bg-red-50 border-red-200': type==='error', 'bg-blue-50 border-blue-200': type==='info' }">
+                            <i class="fas mt-0.5" :class="{ 'fa-check-circle text-green-500': type==='success', 'fa-exclamation-circle text-red-500': type==='error', 'fa-spinner fa-spin text-blue-500': type==='info' }"></i>
+                            <p class="flex-1 text-xs font-medium" :class="{ 'text-green-800': type==='success', 'text-red-800': type==='error', 'text-blue-800': type==='info' }" x-text="msg"></p>
+                            <button @click="visible = false" class="text-gray-400 hover:text-gray-600 text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    @else
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                        <i class="fas fa-shield-exclamation text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-xs text-gray-500">TravelAlert ist nicht aktiviert.</p>
+                    </div>
+                    @endif
+                @endif
+
             @elseif($settingsSection === 'travel-alert')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Alert</h3>
                 <p class="text-sm text-gray-500 mb-6">Konfigurieren Sie Reisewarnungen und Benachrichtigungen für Ihre Reisenden.</p>
 
+                @php
+                    $taTab = request()->query('tab', 'general');
+                @endphp
+
+                {{-- Tabs --}}
+                <div class="mb-6">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex gap-6" aria-label="Tabs">
+                            <a href="{{ route('customer.settings', ['section' => 'travel-alert', 'tab' => 'general']) }}"
+                               class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors {{ $taTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                <i class="fas fa-cog mr-1.5"></i>Allgemeines
+                            </a>
+                            <a href="{{ route('customer.settings', ['section' => 'travel-alert', 'tab' => 'notifications']) }}"
+                               class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors {{ $taTab === 'notifications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                <i class="fas fa-bell mr-1.5"></i>Benachrichtigungen
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                @if($taTab === 'general')
                 <div class="bg-white rounded-lg border border-gray-200 p-5">
                     <div class="flex items-center gap-3 text-gray-400">
                         <i class="fas fa-triangle-exclamation text-2xl"></i>
@@ -2117,10 +2519,396 @@
                     </div>
                 </div>
 
+                @elseif($taTab === 'notifications')
+                {{-- Benachrichtigungen Tab --}}
+                    @if(auth('customer')->user()->isFeatureEnabled('navigation_risk_overview_enabled'))
+                    @php
+                        $taNotifCustomer = auth('customer')->user();
+                    @endphp
+
+                    {{-- Globale Einstellungen --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-3">Globale Einstellungen</h4>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-gray-700">Automatische Benachrichtigungen</p>
+                                <p class="text-[10px] text-gray-500 mt-1"><i class="fas fa-info-circle mr-1"></i>Wenn aktiviert, werden E-Mails basierend auf Ihren Regeln versendet.</p>
+                            </div>
+                            <form method="POST" action="{{ route('customer.notification-settings.toggle') }}">
+                                @csrf
+                                <button type="submit" class="relative inline-flex items-center cursor-pointer">
+                                    <div class="w-11 h-6 {{ $taNotifCustomer->notifications_enabled ? 'bg-blue-600' : 'bg-gray-200' }} rounded-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all {{ $taNotifCustomer->notifications_enabled ? 'after:translate-x-full after:border-white' : '' }}"></div>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="mt-2">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium {{ $taNotifCustomer->notifications_enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                                <i class="fas {{ $taNotifCustomer->notifications_enabled ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
+                                {{ $taNotifCustomer->notifications_enabled ? 'Aktiviert' : 'Deaktiviert' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- E-Mail-Vorlagen --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="{
+                        showTemplateModal: false,
+                        editTemplateId: null,
+                        templates: [],
+                        loading: true,
+                        async init() { await this.loadTemplates(); },
+                        async loadTemplates() {
+                            this.loading = true;
+                            try {
+                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}', { headers: { 'Accept': 'application/json' } });
+                                if (r.ok) {
+                                    const d = await r.json();
+                                    this.templates = d.templates || d;
+                                }
+                            } catch(e) {}
+                            this.loading = false;
+                        },
+                        openCreate() {
+                            this.editTemplateId = null;
+                            this.showTemplateModal = true;
+                            Livewire.dispatch('load-template', { id: null });
+                        },
+                        openEdit(id) {
+                            this.editTemplateId = id;
+                            this.showTemplateModal = true;
+                            Livewire.dispatch('load-template', { id: id });
+                        },
+                        async sendTestMail(id) {
+                            window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Test-Mail wird versendet...', type: 'info' } }));
+                            try {
+                                const r = await fetch('/customer/notification-settings/templates/' + id + '/test', {
+                                    method: 'POST',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                const d = await r.json();
+                                if (d.success) {
+                                    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: d.message, type: 'success' } }));
+                                    window.dispatchEvent(new CustomEvent('reload-logs'));
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: d.message || 'Fehler beim Versenden.', type: 'error' } }));
+                                }
+                            } catch(e) { window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Fehler beim Versenden.', type: 'error' } })); }
+                        },
+                        async deleteTemplate(id) {
+                            if (!confirm('Möchten Sie diese Vorlage wirklich löschen?')) return;
+                            try {
+                                const r = await fetch('/customer/notification-settings/templates/' + id, {
+                                    method: 'DELETE',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                if (r.ok) this.loadTemplates();
+                            } catch(e) {}
+                        },
+                    }"
+                    x-on:template-saved.window="showTemplateModal = false; loadTemplates()"
+                    x-on:template-deleted.window="showTemplateModal = false; loadTemplates()">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-file-alt mr-2 text-blue-500"></i>E-Mail-Vorlagen</h4>
+                            <button @click="openCreate()" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                                <i class="fas fa-plus"></i> Neue E-Mail-Vorlage
+                            </button>
+                        </div>
+
+                        <div x-show="loading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
+
+                        <div x-show="!loading && templates.length === 0" class="text-center py-6 text-gray-500">
+                            <i class="fas fa-file-alt text-2xl mb-2"></i>
+                            <p class="text-xs">Keine Vorlagen vorhanden.</p>
+                        </div>
+
+                        <div x-show="!loading && templates.length > 0" class="space-y-2">
+                            <template x-for="tpl in templates" :key="tpl.id">
+                                <div class="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="text-xs font-medium text-gray-900" x-text="tpl.name"></span>
+                                                <span x-show="tpl.is_system" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
+                                                    <i class="fas fa-lock mr-0.5 text-[8px]"></i> System
+                                                </span>
+                                            </div>
+                                            <p class="text-[10px] text-gray-500"><i class="fas fa-envelope mr-1"></i>Betreff: <span x-text="tpl.subject"></span></p>
+                                        </div>
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click="open = !open" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                                <i class="fas fa-ellipsis-vertical text-sm"></i>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" x-transition x-cloak
+                                                 class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                                <button x-show="!tpl.is_system" @click="openEdit(tpl.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-pen w-4 text-center text-blue-500"></i> Bearbeiten
+                                                </button>
+                                                <button @click="sendTestMail(tpl.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-paper-plane w-4 text-center text-amber-500"></i> Test-Mail versenden
+                                                </button>
+                                                <div x-show="!tpl.is_system" class="border-t border-gray-100 my-1"></div>
+                                                <button x-show="!tpl.is_system" @click="deleteTemplate(tpl.id); open = false" class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                                    <i class="fas fa-trash w-4 text-center"></i> Löschen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Template Modal --}}
+                        <div x-show="showTemplateModal" x-cloak class="fixed z-[10000] flex items-center justify-center" style="top: 64px; bottom: 56px; left: 0; right: 0; padding: 8px;" @keydown.escape.window="showTemplateModal = false">
+                            <div class="absolute inset-0 bg-black bg-opacity-50" @click="showTemplateModal = false"></div>
+                            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 flex flex-col" style="max-height: 100%;">
+                                <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                                    <h4 class="text-sm font-semibold text-gray-900" x-text="editTemplateId ? 'E-Mail-Vorlage bearbeiten' : 'Neue E-Mail-Vorlage'"></h4>
+                                    <button @click="showTemplateModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                                </div>
+                                <div class="flex-1 overflow-y-auto p-6">
+                                    @livewire('customer.notification-template-form', [], key('ta-tpl-form'))
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Regeln --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="{
+                        rules: [], rulesLoading: true,
+                        async init() { await this.loadRules(); },
+                        async loadRules() {
+                            this.rulesLoading = true;
+                            try {
+                                const r = await fetch('{{ route('customer.notification-settings.rules.json') }}?source=travel-alert', { headers: { 'Accept': 'application/json' } });
+                                if (r.ok) { const d = await r.json(); this.rules = d.rules || []; }
+                            } catch(e) {}
+                            this.rulesLoading = false;
+                        },
+                        async sendRuleTestMail(id) {
+                            window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Test-Mail wird versendet...', type: 'info' } }));
+                            try {
+                                const r = await fetch('/customer/notification-settings/rules/' + id + '/test', {
+                                    method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                const d = await r.json();
+                                window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: d.message, type: d.success ? 'success' : 'error' } }));
+                                if (d.success) window.dispatchEvent(new CustomEvent('reload-logs'));
+                            } catch(e) {
+                                window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Fehler beim Versenden.', type: 'error' } }));
+                            }
+                        },
+                        async deleteRule(id) {
+                            if (!confirm('Möchten Sie diese Regel wirklich löschen?')) return;
+                            try {
+                                const r = await fetch('/customer/notification-settings/rules/' + id, {
+                                    method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                });
+                                if (r.ok) this.loadRules();
+                            } catch(e) {}
+                        },
+                        showRuleModal: false,
+                        editRuleId: null,
+                        openCreateRule() { this.editRuleId = null; this.showRuleModal = true; Livewire.dispatch('load-rule', { id: null }); },
+                        openEditRule(id) { this.editRuleId = id; this.showRuleModal = true; Livewire.dispatch('load-rule', { id: id }); },
+                    }" x-on:reload-rules.window="loadRules()" x-on:rule-saved.window="showRuleModal = false; loadRules()" x-on:rule-deleted.window="showRuleModal = false; loadRules()">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-list-check mr-2 text-blue-500"></i>Benachrichtigungs-Regeln</h4>
+                            <button @click="openCreateRule()" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                                <i class="fas fa-plus"></i> Neue Regel
+                            </button>
+                        </div>
+
+                        <div x-show="rulesLoading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
+
+                        <div x-show="!rulesLoading && rules.length === 0" class="text-center py-6 text-gray-500">
+                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                            <p class="text-xs">Noch keine Regeln erstellt.</p>
+                        </div>
+
+                        <div x-show="!rulesLoading && rules.length > 0" class="space-y-2">
+                            <template x-for="rule in rules" :key="rule.id">
+                                <div class="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="text-xs font-medium text-gray-900" x-text="rule.name"></span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                                      :class="rule.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
+                                                      x-text="rule.is_active ? 'aktiv' : 'inaktiv'"></span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
+                                                <span x-show="rule.risk_level_labels.length"><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span x-text="rule.risk_level_labels.join(', ')"></span></span>
+                                                <span x-show="rule.category_labels.length"><i class="fas fa-tag text-blue-500 mr-1"></i><span x-text="rule.category_labels.join(', ')"></span></span>
+                                                <span><i class="fas fa-globe text-green-500 mr-1"></i><span x-text="rule.country_count ? rule.country_count + ' Länder' : 'Alle Länder'"></span></span>
+                                                <span><i class="fas fa-envelope text-purple-500 mr-1"></i><span x-text="rule.recipients_count"></span> Empfänger</span>
+                                            </div>
+                                        </div>
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click="open = !open" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                                <i class="fas fa-ellipsis-vertical text-sm"></i>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" x-transition x-cloak
+                                                 class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                                <button @click="openEditRule(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-pen w-4 text-center text-blue-500"></i> Bearbeiten
+                                                </button>
+                                                <button @click="sendRuleTestMail(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                    <i class="fas fa-paper-plane w-4 text-center text-amber-500"></i> Test-Mail versenden
+                                                </button>
+                                                <div class="border-t border-gray-100 my-1"></div>
+                                                <button @click="deleteRule(rule.id); open = false" class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                                    <i class="fas fa-trash w-4 text-center"></i> Löschen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Rule Modal --}}
+                        <div x-show="showRuleModal" x-cloak class="fixed z-[10000] flex items-center justify-center" style="top: 64px; bottom: 56px; left: 0; right: 0; padding: 8px;" @keydown.escape.window="if(showRuleModal) showRuleModal = false">
+                            <div class="absolute inset-0 bg-black bg-opacity-50" @click="showRuleModal = false"></div>
+                            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 flex flex-col" style="max-height: 100%;">
+                                <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                                    <h4 class="text-sm font-semibold text-gray-900" x-text="editRuleId ? 'Regel bearbeiten' : 'Neue Benachrichtigungs-Regel'"></h4>
+                                    <button @click="showRuleModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                                </div>
+                                <div class="flex-1 overflow-y-auto p-6">
+                                    @livewire('customer.notification-rule-form', ['source' => 'travel-alert'], key('ta-rule-form'))
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Versandprotokoll --}}
+                    <div class="bg-white rounded-lg border border-gray-200 p-5" x-on:reload-logs.window="loadLogs(1)" x-data="{
+                        logs: [], logsMeta: {}, logsLoading: true, logsPage: 1,
+                        async init() { await this.loadLogs(); },
+                        async loadLogs(page) {
+                            this.logsLoading = true;
+                            if (page) this.logsPage = page;
+                            try {
+                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
+                                if (r.ok) {
+                                    const d = await r.json();
+                                    this.logs = d.data || [];
+                                    this.logsMeta = { current_page: d.current_page, last_page: d.last_page, total: d.total, from: d.from, to: d.to };
+                                }
+                            } catch(e) {}
+                            this.logsLoading = false;
+                        }
+                    }">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900"><i class="fas fa-history mr-2 text-blue-500"></i>Versandprotokoll</h4>
+                            <span class="text-[10px] text-gray-400" x-show="logsMeta.total" x-text="logsMeta.total + ' Einträge'"></span>
+                        </div>
+
+                        <div x-show="logsLoading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
+
+                        <div x-show="!logsLoading && logs.length === 0" class="text-center py-6 text-gray-500">
+                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                            <p class="text-xs">Noch keine Nachrichten versendet.</p>
+                        </div>
+
+                        <div x-show="!logsLoading && logs.length > 0">
+                            <div class="space-y-2 mb-4">
+                                <template x-for="log in logs" :key="log.id">
+                                    <div class="border rounded-lg p-3 text-xs" :class="log.status === 'sent' ? 'border-gray-200' : 'border-red-200 bg-red-50'">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                                    <i class="fas text-[10px]" :class="log.status === 'sent' ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500'"></i>
+                                                    <span class="font-medium text-gray-900 truncate" x-text="log.subject"></span>
+                                                    <span x-show="log.is_test" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800">Test</span>
+                                                </div>
+                                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
+                                                    <span><i class="fas fa-envelope mr-1"></i><span x-text="log.recipient_email"></span></span>
+                                                    <span x-show="log.template_name"><i class="fas fa-file-alt mr-1"></i>Vorlage: <span x-text="log.template_name"></span></span>
+                                                    <span x-show="log.rule_name"><i class="fas fa-list-check mr-1"></i>Regel: <span x-text="log.rule_name"></span></span>
+                                                    <span x-show="log.notification_rule && !log.rule_name"><i class="fas fa-list-check mr-1"></i>Regel: <span x-text="log.notification_rule?.name"></span></span>
+                                                </div>
+                                                <p x-show="log.error_message" class="text-[10px] text-red-600 mt-1" x-text="log.error_message"></p>
+                                            </div>
+                                            <div class="text-[10px] text-gray-400 flex-shrink-0 text-right">
+                                                <div x-text="new Date(log.created_at).toLocaleDateString('de-DE')"></div>
+                                                <div x-text="new Date(log.created_at).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Paginator --}}
+                            <div x-show="logsMeta.last_page > 1" class="flex items-center justify-between">
+                                <p class="text-[10px] text-gray-500" x-text="'Seite ' + logsMeta.current_page + ' von ' + logsMeta.last_page"></p>
+                                <div class="flex gap-1">
+                                    <button @click="loadLogs(logsPage - 1)" :disabled="logsPage <= 1"
+                                        :class="logsPage <= 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'"
+                                        class="px-2 py-1 text-[10px] rounded border border-gray-200">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <template x-for="p in logsMeta.last_page" :key="p">
+                                        <button @click="loadLogs(p)"
+                                            class="px-2 py-1 text-[10px] rounded border"
+                                            :class="p === logsMeta.current_page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:bg-gray-100'"
+                                            x-text="p" x-show="Math.abs(p - logsMeta.current_page) < 3 || p === 1 || p === logsMeta.last_page">
+                                        </button>
+                                    </template>
+                                    <button @click="loadLogs(logsPage + 1)" :disabled="logsPage >= logsMeta.last_page"
+                                        :class="logsPage >= logsMeta.last_page ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'"
+                                        class="px-2 py-1 text-[10px] rounded border border-gray-200">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Globale Toast Notification --}}
+                    <div x-data="{ msg: '', type: 'success', visible: false }"
+                         x-on:show-toast.window="msg = $event.detail.message; type = $event.detail.type; visible = true; if(type !== 'info') setTimeout(() => visible = false, 5000)">
+                        <div x-show="visible" x-cloak x-transition
+                             class="fixed top-20 right-6 max-w-sm z-[10001] rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3"
+                             :class="{ 'bg-green-50 border-green-200': type==='success', 'bg-red-50 border-red-200': type==='error', 'bg-blue-50 border-blue-200': type==='info' }">
+                            <i class="fas mt-0.5" :class="{ 'fa-check-circle text-green-500': type==='success', 'fa-exclamation-circle text-red-500': type==='error', 'fa-spinner fa-spin text-blue-500': type==='info' }"></i>
+                            <p class="flex-1 text-xs font-medium" :class="{ 'text-green-800': type==='success', 'text-red-800': type==='error', 'text-blue-800': type==='info' }" x-text="msg"></p>
+                            <button @click="visible = false" class="text-gray-400 hover:text-gray-600 text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    @else
+                    <div class="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                        <i class="fas fa-triangle-exclamation text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-xs text-gray-500">Travel Alert ist nicht aktiviert.</p>
+                    </div>
+                    @endif
+                @endif
+
             @elseif($settingsSection === 'travel-link')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Link</h3>
                 <p class="text-sm text-gray-500 mb-6">Verwalten Sie Ihre Travel Link Dienste.</p>
 
+                @php
+                    $tlTab = request()->query('tab', 'general');
+                @endphp
+
+                {{-- Tabs --}}
+                <div class="mb-6">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex gap-6" aria-label="Tabs">
+                            <a href="{{ route('customer.settings', ['section' => 'travel-link', 'tab' => 'general']) }}"
+                               class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors {{ $tlTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                <i class="fas fa-cog mr-1.5"></i>Allgemeines
+                            </a>
+                            <a href="{{ route('customer.settings', ['section' => 'travel-link', 'tab' => 'notifications']) }}"
+                               class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors {{ $tlTab === 'notifications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                <i class="fas fa-bell mr-1.5"></i>Benachrichtigungen
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                @if($tlTab === 'general')
                 {{-- Travel Link Wrapper --}}
                 <div x-data="travelLinkManager()">
 
@@ -2350,63 +3138,18 @@
                 </div>{{-- /x-show enabled --}}
                 </div>{{-- /x-data travelLinkManager --}}
 
+                @elseif($tlTab === 'notifications')
+                <div class="bg-white rounded-lg border border-gray-200 p-5">
+                    <div class="flex items-center gap-3 text-gray-400">
+                        <i class="fas fa-bell text-2xl"></i>
+                        <p class="text-sm">Dieser Bereich wird derzeit eingerichtet.</p>
+                    </div>
+                </div>
+                @endif
+
             @elseif($settingsSection === 'travel-data')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Data</h3>
                 <p class="text-sm text-gray-500 mb-6">Verwalten Sie Reisedaten und Datenquellen.</p>
-
-                {{-- PDS Sync Aktivierung --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-6" x-data="pdsSyncManager()">
-                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                        <div class="hidden sm:block w-8 flex-shrink-0 pt-0.5 text-center">
-                            <i class="fas fa-sync-alt text-2xl text-gray-400"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-700">PDS Synchronisierung</p>
-                                    <p class="text-xs text-gray-500 mt-1">Reisedaten automatisch aus der Passolution API synchronisieren und lokal speichern.</p>
-                                </div>
-                                <div class="flex items-center gap-3 flex-shrink-0">
-                                    {{-- Toggle --}}
-                                    <button @click="toggle()" :disabled="toggling"
-                                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
-                                            :class="enabled ? 'bg-blue-600' : 'bg-gray-300'">
-                                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                                              :class="enabled ? 'translate-x-6' : 'translate-x-1'"></span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {{-- Sync-Status und Aktualisieren-Button (nur wenn aktiviert) --}}
-                            <div x-show="enabled" x-cloak class="mt-3 pt-3 border-t border-gray-100">
-                                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                                    <div class="flex-1 text-xs text-gray-500">
-                                        <span x-show="lastSyncedAt">
-                                            <i class="fas fa-clock mr-1"></i> Letzte Synchronisierung: <span x-text="lastSyncedAt"></span>
-                                        </span>
-                                        <span x-show="!lastSyncedAt">
-                                            <i class="fas fa-info-circle mr-1"></i> Noch nicht synchronisiert
-                                        </span>
-                                    </div>
-                                    <button @click="syncNow()" :disabled="syncing"
-                                            class="inline-flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-                                            :class="syncing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'">
-                                        <i class="fas mr-1.5" :class="syncing ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
-                                        <span x-text="syncing ? 'Wird synchronisiert...' : 'Jetzt aktualisieren'"></span>
-                                    </button>
-                                </div>
-
-                                {{-- Sync-Ergebnis --}}
-                                <div x-show="syncResult" x-cloak class="mt-3 p-3 rounded-lg text-xs"
-                                     :class="syncSuccess ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'">
-                                    <i class="fas mr-1" :class="syncSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
-                                    <span x-text="syncResult"></span>
-                                    <span x-show="syncStats" class="ml-2 text-gray-500" x-text="syncStats"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 {{-- Reiseliste mit Tabs --}}
                 <div class="mb-6" x-data="travelDataList()">
@@ -2946,6 +3689,134 @@ function travelLinkManager() {
     };
 }
 
+function jsonImportManager() {
+    return {
+        showModal: false,
+        jsonPayload: '',
+        importing: false,
+        importResult: null,
+        importSuccess: false,
+        loadExample() {
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() + 7);
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 10);
+
+            const fmt = (d, h = '10:00') => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}T${h}:00`;
+            };
+
+            const checkIn = new Date(startDate);
+            const checkOut = new Date(endDate);
+            const returnDate = new Date(endDate);
+
+            const example = {
+                trip: {
+                    travellers: [
+                        {
+                            name: { salutation: "Herr", first: "Max", last: "Mustermann" },
+                            date_of_birth: "1985-06-15",
+                            nationality: "DE",
+                            contact: { email: "max@example.com", phone: "+49 170 1234567" }
+                        },
+                        {
+                            name: { salutation: "Frau", first: "Anna", last: "Gruber" },
+                            date_of_birth: "1990-03-22",
+                            nationality: "AT",
+                            contact: { email: "anna@example.com", phone: "+43 660 9876543" }
+                        }
+                    ],
+                    itinerary: [
+                        {
+                            type: "travel",
+                            segments: [
+                                {
+                                    departure: {
+                                        airport: { code: "FRA", country_code: "DE" },
+                                        time: fmt(startDate, '08:30'),
+                                        terminal: "1"
+                                    },
+                                    arrival: {
+                                        airport: { code: "PMI", country_code: "ES" },
+                                        time: fmt(startDate, '11:15'),
+                                        terminal: "A"
+                                    },
+                                    marketing_carrier: { airline_code: "LH", flight_number: "1802" }
+                                }
+                            ]
+                        },
+                        {
+                            type: "stay",
+                            check_in: fmt(checkIn, '15:00'),
+                            check_out: fmt(checkOut, '11:00'),
+                            location: {
+                                name: "Hotel Playa de Palma",
+                                country_code: "ES",
+                                city: "Palma de Mallorca"
+                            }
+                        },
+                        {
+                            type: "travel",
+                            segments: [
+                                {
+                                    departure: {
+                                        airport: { code: "PMI", country_code: "ES" },
+                                        time: fmt(returnDate, '14:00'),
+                                        terminal: "A"
+                                    },
+                                    arrival: {
+                                        airport: { code: "FRA", country_code: "DE" },
+                                        time: fmt(returnDate, '16:45'),
+                                        terminal: "1"
+                                    },
+                                    marketing_carrier: { airline_code: "LH", flight_number: "1803" }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            this.jsonPayload = JSON.stringify(example, null, 2);
+            this.importResult = null;
+        },
+        async importJson() {
+            if (!this.jsonPayload.trim()) return;
+            this.importing = true;
+            this.importResult = null;
+            try {
+                const r = await fetch('{{ route("customer.travel-data.import-json") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ json_payload: this.jsonPayload })
+                });
+                const d = await r.json();
+                this.importSuccess = d.success;
+                this.importResult = d.message;
+                if (d.success) {
+                    setTimeout(() => {
+                        this.showModal = false;
+                        this.jsonPayload = '';
+                        this.importResult = null;
+                        window.dispatchEvent(new CustomEvent('travel-data-reload'));
+                    }, 1500);
+                }
+            } catch (e) {
+                this.importSuccess = false;
+                this.importResult = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
+            }
+            this.importing = false;
+        }
+    };
+}
+
 function pdsSyncManager() {
     return {
         enabled: {{ $customer->pds_sync_enabled ? 'true' : 'false' }},
@@ -3009,6 +3880,10 @@ function travelDataList() {
         init() {
             this.loadFolders();
             this.loadCounts();
+            window.addEventListener('travel-data-reload', () => {
+                this.loadFolders();
+                this.loadCounts();
+            });
         },
         switchTab(t) {
             this.tab = t;

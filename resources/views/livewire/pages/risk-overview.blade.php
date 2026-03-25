@@ -71,8 +71,8 @@ $version = '1.1.0';
                     <div class="sidebar-main">
                         <div class="p-4">
                             <h2 class="text-sm font-bold text-gray-900 mb-3">
-                                <i class="fa-regular fa-shield-exclamation mr-2"></i>
-                                TravelAlert
+                                <i class="fas fa-triangle-exclamation mr-2"></i>
+                                Travel Alert
                             </h2>
 
                             <!-- Sidebar Tabs -->
@@ -1157,8 +1157,13 @@ $version = '1.1.0';
                                                     <div class="flex items-center gap-2 flex-shrink-0">
                                                         <span
                                                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                                            :class="trip.source === 'api' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'"
+                                                            :class="trip.source === 'api' ? 'bg-purple-100 text-purple-700' : trip.source === 'travel-link' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'"
                                                             x-text="trip.source_label"></span>
+                                                        <a x-show="trip.travel_link_url" :href="trip.travel_link_url" target="_blank"
+                                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                                            @click.stop>
+                                                            <i class="fas fa-external-link-alt mr-1 text-[10px]"></i> Link
+                                                        </a>
                                                     </div>
                                                 </div>
                                                 <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">

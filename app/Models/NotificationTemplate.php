@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationTemplate extends Model
 {
@@ -13,6 +14,7 @@ class NotificationTemplate extends Model
 
     protected $fillable = [
         'customer_id',
+        'source',
         'name',
         'subject',
         'body_html',
@@ -30,6 +32,8 @@ class NotificationTemplate extends Model
         '{category}' => 'Kategorie',
         '{description}' => 'Beschreibung des Ereignisses',
         '{event_date}' => 'Datum des Ereignisses',
+        '{affected_trips}' => 'Betroffene Reisen (HTML-Block, nur Travel Alert)',
+        '{affected_trips_count}' => 'Anzahl betroffener Reisen',
     ];
 
     public function customer(): BelongsTo
@@ -42,16 +46,29 @@ class NotificationTemplate extends Model
         return $this->hasMany(NotificationRule::class);
     }
 
-    public function scopeSystem($query)
+    public function scopeSystem($query, ?string $source = null)
     {
-        return $query->where('is_system', true);
+        $query->where('is_system', true);
+
+        if ($source && Schema::hasColumn('notification_templates', 'source')) {
+            $query->where('source', $source);
+        }
+
+        return $query;
     }
 
-    public function scopeForCustomer($query, int $customerId)
+    public function scopeForCustomer($query, int $customerId, ?string $source = null)
     {
-        return $query->where(function ($q) use ($customerId) {
+        $hasSource = $source && Schema::hasColumn('notification_templates', 'source');
+
+        return $query->where(function ($q) use ($customerId, $hasSource, $source) {
             $q->where('customer_id', $customerId)
-              ->orWhere('is_system', true);
+              ->orWhere(function ($sq) use ($hasSource, $source) {
+                  $sq->where('is_system', true);
+                  if ($hasSource) {
+                      $sq->where('source', $source);
+                  }
+              });
         });
     }
 }

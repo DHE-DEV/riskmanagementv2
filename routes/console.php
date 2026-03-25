@@ -84,3 +84,17 @@ if (config('travel_detail.enabled') && config('travel_detail.retention.scheduled
         ->runInBackground()
         ->appendOutputTo(storage_path('logs/travel-detail-purge.log'));
 }
+
+// GTM Notification Queue
+Schedule::command('notifications:process-gtm')
+    ->cron('*/' . config('notifications.gtm_interval', 5) . ' * * * *')
+    ->withoutOverlapping(10)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/gtm-notifications.log'));
+
+// Travel Alert Notification Queue
+Schedule::command('notifications:process-travel-alert')
+    ->cron('*/' . config('notifications.travel_alert_interval', 5) . ' * * * *')
+    ->withoutOverlapping(10)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/travel-alert-notifications.log'));

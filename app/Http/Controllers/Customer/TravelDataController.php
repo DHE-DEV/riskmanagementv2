@@ -26,7 +26,7 @@ class TravelDataController extends Controller
         $tab = $request->query('tab', 'current');
         $today = Carbon::today();
 
-        $query = Folder::with(['participants', 'flightServices.segments', 'hotelServices'])
+        $query = Folder::with(['participants', 'itineraries', 'flightServices.segments', 'hotelServices', 'shipServices', 'carRentalServices'])
             ->orderBy('travel_start_date', $tab === 'upcoming' ? 'asc' : 'desc');
 
         match ($tab) {
@@ -50,6 +50,42 @@ class TravelDataController extends Controller
         };
 
         $folders = $query->paginate(10);
+
+        // Resolve country names for destinations and nationalities
+        $allCodes = collect();
+        foreach ($folders as $folder) {
+            $allCodes = $allCodes->merge($folder->destinations_visited ?? []);
+            foreach ($folder->participants as $p) {
+                if ($p->nationality) {
+                    $allCodes->push(strtoupper($p->nationality));
+                }
+            }
+        }
+        $countryNames = [];
+        if ($allCodes->isNotEmpty()) {
+            $countryNames = \App\Models\Country::whereIn('iso_code', $allCodes->unique()->toArray())
+                ->get()
+                ->mapWithKeys(fn ($c) => [$c->iso_code => $c->getName('de')])
+                ->toArray();
+        }
+
+        // Transform response to include resolved names
+        $folders->getCollection()->transform(function ($folder) use ($countryNames) {
+            $folder->destinations_resolved = collect($folder->destinations_visited ?? [])
+                ->map(fn ($code) => ['code' => $code, 'name' => $countryNames[$code] ?? $code])
+                ->values()
+                ->toArray();
+
+            $folder->nationalities_resolved = $folder->participants
+                ->pluck('nationality')
+                ->filter()
+                ->unique()
+                ->map(fn ($code) => ['code' => strtoupper($code), 'name' => $countryNames[strtoupper($code)] ?? strtoupper($code)])
+                ->values()
+                ->toArray();
+
+            return $folder;
+        });
 
         return response()->json($folders);
     }

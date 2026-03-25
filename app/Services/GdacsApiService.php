@@ -5,7 +5,6 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use App\Jobs\SendRiskEventNotifications;
 use App\Models\DisasterEvent;
 use App\Models\Country;
 use Carbon\Carbon;
@@ -415,8 +414,8 @@ class GdacsApiService
                         'raw_data' => json_encode($eventData['raw_data'])
                     ]);
 
-                    // Benachrichtigungen für neues GDACS Event versenden
-                    SendRiskEventNotifications::dispatch($newEvent);
+                    // Benachrichtigungen werden über die geplanten Queues verarbeitet
+                    // (notifications:process-gtm / notifications:process-travel-alert)
 
                     $savedCount++;
                 }

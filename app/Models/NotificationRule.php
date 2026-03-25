@@ -11,8 +11,12 @@ class NotificationRule extends Model
 {
     use SoftDeletes;
 
+    public const SOURCE_TRAVEL_ALERT = 'travel-alert';
+    public const SOURCE_GLOBAL_TRAVEL_MONITOR = 'global-travel-monitor';
+
     protected $fillable = [
         'customer_id',
+        'source',
         'name',
         'is_active',
 

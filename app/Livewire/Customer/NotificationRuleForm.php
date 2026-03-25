@@ -7,12 +7,14 @@ use App\Models\Country;
 use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
 class NotificationRuleForm extends Component
 {
     public ?int $ruleId = null;
     public ?string $testMailStatus = null;
+    public string $source = 'travel-alert';
 
     public string $name = '';
     public bool $isActive = true;
@@ -36,6 +38,7 @@ class NotificationRuleForm extends Component
 
             $this->name = $rule->name;
             $this->isActive = $rule->is_active;
+            $this->source = $rule->source ?? 'travel-alert';
             $this->riskLevels = $rule->risk_levels ?? [];
             $this->categories = $rule->categories ?? [];
             $this->notificationTemplateId = $rule->notification_template_id;
@@ -96,6 +99,7 @@ class NotificationRuleForm extends Component
             $rule = $customer->notificationRules()->with('recipients')->findOrFail($id);
             $this->name = $rule->name;
             $this->isActive = $rule->is_active;
+            $this->source = $rule->source ?? 'travel-alert';
             $this->riskLevels = $rule->risk_levels ?? [];
             $this->categories = $rule->categories ?? [];
             $this->notificationTemplateId = $rule->notification_template_id;
@@ -182,6 +186,10 @@ class NotificationRuleForm extends Component
             'notification_template_id' => $this->notificationTemplateId,
         ];
 
+        if (Schema::hasColumn('notification_rules', 'source')) {
+            $data['source'] = $this->source;
+        }
+
         if ($this->ruleId) {
             $rule = $customer->notificationRules()->findOrFail($this->ruleId);
             $rule->update($data);
@@ -212,7 +220,8 @@ class NotificationRuleForm extends Component
         $customer = auth('customer')->user();
         $rule = $customer->notificationRules()->with(['template', 'recipients'])->findOrFail($this->ruleId);
 
-        $template = $rule->template ?? NotificationTemplate::where('is_system', true)->first();
+        $template = $rule->template ?? NotificationTemplate::system($rule->source)->first()
+            ?? NotificationTemplate::system()->first();
 
         if (! $template) {
             $this->testMailStatus = 'error:Keine E-Mail-Vorlage gefunden.';
@@ -260,7 +269,7 @@ class NotificationRuleForm extends Component
     public function render()
     {
         $customer = auth('customer')->user();
-        $templates = NotificationTemplate::forCustomer($customer->id)->get();
+        $templates = NotificationTemplate::forCustomer($customer->id, $this->source)->get();
 
         return view('livewire.customer.notification-rule-form', [
             'templates' => $templates,

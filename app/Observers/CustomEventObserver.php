@@ -2,51 +2,28 @@
 
 namespace App\Observers;
 
-use App\Jobs\SendRiskEventNotifications;
 use App\Models\CustomEvent;
-use App\Models\EventType;
 use Illuminate\Support\Facades\Cache;
 
 class CustomEventObserver
 {
     /**
      * Handle the CustomEvent "created" event.
-     * Dispatch notification if the event is already approved and active.
+     * Benachrichtigungen werden nicht mehr sofort versendet,
+     * sondern über die geplanten Queues (notifications:process-gtm / notifications:process-travel-alert).
      */
     public function created(CustomEvent $customEvent): void
     {
-        // Don't send global notifications for customer-owned events
-        if ($customEvent->customer_id) {
-            return;
-        }
-
-        // Refresh to pick up DB defaults (e.g. review_status = 'approved')
-        // since Eloquent doesn't know about column defaults after insert.
-        $customEvent->refresh();
-
-        if ($customEvent->is_active && $customEvent->review_status === 'approved') {
-            SendRiskEventNotifications::dispatch($customEvent);
-        }
+        // Notifications are now handled by scheduled queue commands
     }
 
     /**
      * Handle the CustomEvent "updated" event.
-     * Dispatch notification when an event gets approved.
+     * Benachrichtigungen werden über die geplanten Queues verarbeitet.
      */
     public function updated(CustomEvent $customEvent): void
     {
-        // Don't send global notifications for customer-owned events
-        if ($customEvent->customer_id) {
-            return;
-        }
-
-        if (
-            $customEvent->isDirty('review_status')
-            && $customEvent->review_status === 'approved'
-            && $customEvent->is_active
-        ) {
-            SendRiskEventNotifications::dispatch($customEvent);
-        }
+        // Notifications are now handled by scheduled queue commands
     }
 
     /**

@@ -394,4 +394,8 @@ Route::middleware(['auth:customer'])->name('customer.')->group(function () {
     })->name('travel-links');
     Route::get('/travel-links/api', [\App\Http\Controllers\Customer\TravelDataController::class, 'travelLinksApi'])
         ->name('travel-links.api');
+
+    Route::get('/travel-data', function () {
+        return view('customer.travel-data.index');
+    })->name('travel-data');
 });

@@ -1124,15 +1124,16 @@ class RiskOverviewService
                 'trip_id' => $tripId,
                 'pds_tid' => $tripId,
                 'folder_id' => 'api-' . $tripId,
-                'folder_name' => $tripName,
+                'folder_name' => $trip->trip_name ?? $tripName,
                 'start_date' => $trip->computed_start_at?->format('Y-m-d'),
                 'end_date' => $trip->computed_end_at?->format('Y-m-d'),
                 'participant_count' => $trip->travellers->count() ?: 1,
                 'destinations' => $destinations,
                 'destination_codes' => $countryCodes,
                 'nationalities' => $nationalities,
-                'source' => 'local',
-                'source_label' => 'Lokal (synchronisiert)',
+                'travel_link_url' => $trip->pds_share_url,
+                'source' => 'travel-link',
+                'source_label' => 'Travel Link',
             ];
         }
 
@@ -1235,6 +1236,7 @@ class RiskOverviewService
                     'destinations' => $destinations,
                     'destination_codes' => $countryCodes,
                     'nationalities' => $nationalities,
+                    'travel_link_url' => null,
                     'source' => 'api',
                     'source_label' => 'PDS API',
                 ];
@@ -1427,6 +1429,7 @@ class RiskOverviewService
                         'icon' => $l->icon,
                     ])->toArray()
                     : [],
+                'travel_link_url' => null,
                 'source' => 'local',
                 'source_label' => 'Lokal importiert',
                 'pds_tid' => null,

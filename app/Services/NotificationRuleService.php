@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Mail\RiskEventMail;
+use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\Customer;
 use App\Models\DisasterEvent;
@@ -10,6 +11,8 @@ use App\Models\NotificationLog;
 use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
 use App\Models\NotificationUnsubscribeToken;
+use App\Models\TravelDetail\TdTrip;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -23,13 +26,18 @@ class NotificationRuleService
     /**
      * Versende Benachrichtigungen für ein neues CustomEvent.
      */
-    public function processCustomEvent(CustomEvent $event, bool $force = false): int
+    public function processCustomEvent(CustomEvent $event, bool $force = false, ?string $sourceFilter = null): int
     {
         $event->loadMissing(['countries', 'eventType', 'eventTypes']);
 
         $countryIds = $event->countries->pluck('id')->toArray();
         if (empty($countryIds) && $event->country_id) {
             $countryIds = [$event->country_id];
+        }
+
+        $countryIsoCodes = $event->countries->pluck('iso_code')->toArray();
+        if (empty($countryIsoCodes) && $event->country) {
+            $countryIsoCodes = [$event->country->iso_code];
         }
 
         $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->implode(', ')
@@ -82,17 +90,20 @@ class NotificationRuleService
             countryIds: $countryIds,
             placeholders: $placeholders,
             force: $force,
+            sourceFilter: $sourceFilter,
+            countryIsoCodes: $countryIsoCodes,
         );
     }
 
     /**
      * Versende Benachrichtigungen für ein neues DisasterEvent.
      */
-    public function processDisasterEvent(DisasterEvent $event, bool $force = false): int
+    public function processDisasterEvent(DisasterEvent $event, bool $force = false, ?string $sourceFilter = null): int
     {
         $event->loadMissing(['country']);
 
         $countryIds = $event->country_id ? [$event->country_id] : [];
+        $countryIsoCodes = $event->country ? [$event->country->iso_code] : [];
 
         // DisasterEvent severity mapping: critical→high für NotificationRule
         $riskLevel = $event->severity === 'critical' ? 'high' : $event->severity;
@@ -113,7 +124,77 @@ class NotificationRuleService
             countryIds: $countryIds,
             placeholders: $placeholders,
             force: $force,
+            sourceFilter: $sourceFilter,
+            countryIsoCodes: $countryIsoCodes,
         );
+    }
+
+    /**
+     * Batch-Verarbeitung: Finde unverarbeitete Events und sende Benachrichtigungen
+     * für eine bestimmte Source (Queue).
+     *
+     * @return array{events_processed: int, notifications_sent: int, errors: int}
+     */
+    public function processUnnotifiedEvents(string $source): array
+    {
+        $lookbackHours = config('notifications.lookback_hours', 24);
+        $since = now()->subHours($lookbackHours);
+
+        $eventsProcessed = 0;
+        $notificationsSent = 0;
+        $errors = 0;
+
+        // CustomEvents verarbeiten (nur für travel-alert, GTM bekommt keine CustomEvents)
+        if ($source === NotificationRule::SOURCE_TRAVEL_ALERT) {
+            $customEvents = CustomEvent::where('is_active', true)
+                ->where('review_status', 'approved')
+                ->whereNull('customer_id')
+                ->where('created_at', '>=', $since)
+                ->get();
+
+            foreach ($customEvents as $event) {
+                try {
+                    $sent = $this->processCustomEvent($event, sourceFilter: $source);
+                    if ($sent > 0) {
+                        $eventsProcessed++;
+                        $notificationsSent += $sent;
+                    }
+                } catch (\Exception $e) {
+                    $errors++;
+                    Log::error('Fehler bei Batch-Verarbeitung CustomEvent', [
+                        'source' => $source,
+                        'event_id' => $event->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        // DisasterEvents verarbeiten (für beide Quellen)
+        $disasterEvents = DisasterEvent::where('created_at', '>=', $since)->get();
+
+        foreach ($disasterEvents as $event) {
+            try {
+                $sent = $this->processDisasterEvent($event, sourceFilter: $source);
+                if ($sent > 0) {
+                    $eventsProcessed++;
+                    $notificationsSent += $sent;
+                }
+            } catch (\Exception $e) {
+                $errors++;
+                Log::error('Fehler bei Batch-Verarbeitung DisasterEvent', [
+                    'source' => $source,
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return [
+            'events_processed' => $eventsProcessed,
+            'notifications_sent' => $notificationsSent,
+            'errors' => $errors,
+        ];
     }
 
     /**
@@ -127,6 +208,8 @@ class NotificationRuleService
         array $countryIds,
         array $placeholders,
         bool $force = false,
+        ?string $sourceFilter = null,
+        array $countryIsoCodes = [],
     ): int {
         $sentCount = 0;
         $sentEmails = []; // Recipient deduplication per event
@@ -134,10 +217,20 @@ class NotificationRuleService
         // Alle Kunden mit aktivierten Benachrichtigungen
         $customers = Customer::where('notifications_enabled', true)->pluck('id');
 
-        $rules = NotificationRule::with(['recipients', 'template'])
+        $query = NotificationRule::with(['recipients', 'template'])
             ->where('is_active', true)
-            ->whereIn('customer_id', $customers)
-            ->get();
+            ->whereIn('customer_id', $customers);
+
+        // Source-Filter nur anwenden wenn die Spalte existiert
+        if (\Schema::hasColumn('notification_rules', 'source')) {
+            if ($sourceFilter) {
+                $query->where('source', $sourceFilter);
+            } elseif ($event instanceof CustomEvent) {
+                $query->where('source', '!=', NotificationRule::SOURCE_GLOBAL_TRAVEL_MONITOR);
+            }
+        }
+
+        $rules = $query->get();
 
         $eventId = $event->id;
         $eventType = get_class($event);
@@ -173,7 +266,18 @@ class NotificationRuleService
                 continue;
             }
 
-            if ($this->sendNotification($rule, $placeholders, $eventId, $eventType, $sentEmails)) {
+            // Bei Travel-Alert-Regeln: betroffene Reisen suchen
+            $rulePlaceholders = $placeholders;
+            if ($rule->source === NotificationRule::SOURCE_TRAVEL_ALERT && !empty($countryIsoCodes)) {
+                $affectedTrips = $this->findAffectedTrips($rule->customer_id, $countryIsoCodes, $event);
+                $rulePlaceholders['{affected_trips}'] = $this->buildAffectedTripsHtml($affectedTrips);
+                $rulePlaceholders['{affected_trips_count}'] = (string) $affectedTrips->count();
+            } else {
+                $rulePlaceholders['{affected_trips}'] = '';
+                $rulePlaceholders['{affected_trips_count}'] = '0';
+            }
+
+            if ($this->sendNotification($rule, $rulePlaceholders, $eventId, $eventType, $sentEmails)) {
                 $sentCount++;
             }
         }
@@ -260,7 +364,8 @@ class NotificationRuleService
         string $eventType,
         array &$sentEmails,
     ): bool {
-        $template = $rule->template ?? NotificationTemplate::system()->first();
+        $template = $rule->template ?? NotificationTemplate::system($rule->source)->first()
+            ?? NotificationTemplate::system()->first();
 
         if (!$template) {
             Log::warning('Kein Template gefunden für Notification Rule', ['rule_id' => $rule->id]);
@@ -357,5 +462,80 @@ class NotificationRuleService
 
             return false;
         }
+    }
+
+    /**
+     * Finde aktive Reisen eines Kunden, die von einem Event betroffen sind.
+     * Matching: Reiseland überschneidet sich mit Event-Ländern UND Reisezeitraum ist aktiv.
+     */
+    private function findAffectedTrips(
+        int $customerId,
+        array $countryIsoCodes,
+        CustomEvent|DisasterEvent $event,
+    ): Collection {
+        if (empty($countryIsoCodes)) {
+            return collect();
+        }
+
+        // Eventdatum bestimmen
+        $eventDate = $event instanceof CustomEvent
+            ? ($event->start_date ?? now())
+            : ($event->event_date ?? now());
+
+        return TdTrip::where('customer_id', $customerId)
+            ->where('status', 'active')
+            ->where('computed_start_at', '<=', $eventDate)
+            ->where('computed_end_at', '>=', $eventDate)
+            ->get()
+            ->filter(function (TdTrip $trip) use ($countryIsoCodes) {
+                $tripCountries = $trip->countries_visited ?? [];
+
+                return !empty(array_intersect(
+                    array_map('strtoupper', $tripCountries),
+                    array_map('strtoupper', $countryIsoCodes),
+                ));
+            });
+    }
+
+    /**
+     * Erzeuge HTML-Block mit betroffenen Reisen für die E-Mail.
+     */
+    private function buildAffectedTripsHtml(Collection $trips): string
+    {
+        if ($trips->isEmpty()) {
+            return '';
+        }
+
+        $html = '<div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">';
+        $html .= '<p style="margin: 0 0 10px; font-weight: bold; color: #856404;"><strong>Betroffene Reisen (' . $trips->count() . '):</strong></p>';
+        $html .= '<ul style="margin: 0; padding-left: 20px;">';
+
+        foreach ($trips as $trip) {
+            $name = $trip->trip_name ?: ($trip->booking_reference ?: 'Reise #' . $trip->id);
+            $dates = '';
+            if ($trip->computed_start_at && $trip->computed_end_at) {
+                $dates = $trip->computed_start_at->format('d.m.Y') . ' – ' . $trip->computed_end_at->format('d.m.Y');
+            }
+            $countries = implode(', ', $trip->countries_visited ?? []);
+            $linkHtml = '';
+            if ($trip->pds_share_url) {
+                $linkHtml = ' – <a href="' . e($trip->pds_share_url) . '" style="color: #0d6efd;">Travel Link</a>';
+            }
+
+            $html .= '<li style="margin-bottom: 6px;">';
+            $html .= '<strong>' . e($name) . '</strong>';
+            if ($dates) {
+                $html .= ' (' . $dates . ')';
+            }
+            if ($countries) {
+                $html .= ' – Ziele: ' . e($countries);
+            }
+            $html .= $linkHtml;
+            $html .= '</li>';
+        }
+
+        $html .= '</ul></div>';
+
+        return $html;
     }
 }
