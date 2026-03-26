@@ -3361,6 +3361,277 @@
                     </div>
                 </div>
 
+                {{-- Reise manuell erstellen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5" x-data="manualTripCreate()">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                            <i class="fas fa-pen-to-square text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">Reise manuell erstellen</p>
+                            <p class="text-xs text-gray-500 mt-1">Erstellen Sie eine neue Reise über ein Formular mit Reisenden, Flügen und Hotels.</p>
+                        </div>
+                        <div class="w-32 flex-shrink-0 flex justify-end">
+                            <button @click="showForm = true" class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 whitespace-nowrap">
+                                <i class="fas fa-plus mr-1.5"></i> Neue Reise
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Formular Modal --}}
+                    <div x-show="showForm" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="showForm = false">
+                        <div class="fixed inset-0 bg-black/50" @click="showForm = false"></div>
+                        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+                            <div class="flex items-center justify-between mb-5">
+                                <h3 class="text-lg font-semibold text-gray-900">Reise manuell erstellen</h3>
+                                <button @click="showForm = false" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-xmark text-lg"></i>
+                                </button>
+                            </div>
+
+                            {{-- Erfolgs-/Fehlermeldung --}}
+                            <div x-show="resultMessage" x-cloak class="mb-4 p-4 rounded-lg"
+                                 :class="resultSuccess ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+                                <p class="text-xs" :class="resultSuccess ? 'text-green-800' : 'text-red-800'">
+                                    <i class="fas mr-1" :class="resultSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                    <span x-text="resultMessage"></span>
+                                </p>
+                            </div>
+
+                            {{-- Step Indicator --}}
+                            <div class="flex items-center mb-6 border-b border-gray-200 pb-4">
+                                <template x-for="(s, i) in [{n:'Reisende',icon:'fa-users'},{n:'Flüge',icon:'fa-plane'},{n:'Hotels',icon:'fa-hotel'}]" :key="i">
+                                    <div class="flex items-center" :class="i > 0 ? 'ml-2' : ''">
+                                        <div v-if="i > 0" x-show="i > 0" class="w-8 h-px bg-gray-300 mx-1"></div>
+                                        <button @click="step = i + 1" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                                :class="step === i + 1 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-500 hover:text-gray-700'">
+                                            <i class="fas text-[10px]" :class="s.icon"></i>
+                                            <span x-text="s.n"></span>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Step 1: Reisende --}}
+                            <div x-show="step === 1">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-medium text-gray-700">Reisende</h4>
+                                    <button @click="addTraveller()" type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Reisenden hinzufügen
+                                    </button>
+                                </div>
+                                <template x-for="(t, ti) in travellers" :key="ti">
+                                    <div class="border border-gray-200 rounded-lg p-4 mb-3 relative">
+                                        <button x-show="travellers.length > 1" @click="travellers.splice(ti, 1)" type="button"
+                                                class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <div class="text-xs font-medium text-gray-500 mb-3">Reisender <span x-text="ti + 1"></span></div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Anrede</label>
+                                                <select x-model="t.salutation" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                                    <option value="Herr">Herr</option>
+                                                    <option value="Frau">Frau</option>
+                                                    <option value="Divers">Divers</option>
+                                                    <option value="Kind">Kind</option>
+                                                    <option value="Baby">Baby</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Vorname *</label>
+                                                <input type="text" x-model="t.first_name" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="Max">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Nachname *</label>
+                                                <input type="text" x-model="t.last_name" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="Mustermann">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Geburtsdatum</label>
+                                                <input type="date" x-model="t.dob" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Nationalität</label>
+                                                <input type="text" x-model="t.nationality" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="DE" maxlength="2">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">E-Mail</label>
+                                                <input type="email" x-model="t.email" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="max@beispiel.de">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Telefon</label>
+                                                <input type="text" x-model="t.phone" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="+49 170 ...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Step 2: Flüge --}}
+                            <div x-show="step === 2">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-medium text-gray-700">Flüge</h4>
+                                    <button @click="addFlight()" type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Flug hinzufügen
+                                    </button>
+                                </div>
+                                <template x-for="(f, fi) in flights" :key="fi">
+                                    <div class="border border-gray-200 rounded-lg p-4 mb-3 relative">
+                                        <button x-show="flights.length > 1" @click="flights.splice(fi, 1)" type="button"
+                                                class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <div class="text-xs font-medium text-gray-500 mb-3">
+                                            <i class="fas fa-plane mr-1"></i> Flug <span x-text="fi + 1"></span>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Abflug-Airport *</label>
+                                                <input type="text" x-model="f.dep_code" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" placeholder="FRA" maxlength="3">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Abflug Datum/Zeit *</label>
+                                                <input type="datetime-local" x-model="f.dep_time" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Ankunft-Airport *</label>
+                                                <input type="text" x-model="f.arr_code" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" placeholder="BCN" maxlength="3">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Ankunft Datum/Zeit *</label>
+                                                <input type="datetime-local" x-model="f.arr_time" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Airline-Code</label>
+                                                <input type="text" x-model="f.airline" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" placeholder="LH" maxlength="2">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Flugnummer</label>
+                                                <input type="text" x-model="f.flight_nr" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="1124">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Terminal Ab</label>
+                                                <input type="text" x-model="f.dep_terminal" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="1">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Terminal An</label>
+                                                <input type="text" x-model="f.arr_terminal" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="A">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="flights.length === 0" class="text-center py-6 text-gray-400 text-xs">
+                                    <i class="fas fa-plane text-2xl mb-2"></i>
+                                    <p>Noch keine Flüge hinzugefügt</p>
+                                </div>
+                            </div>
+
+                            {{-- Step 3: Hotels --}}
+                            <div x-show="step === 3">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-medium text-gray-700">Hotels</h4>
+                                    <button @click="addHotel()" type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Hotel hinzufügen
+                                    </button>
+                                </div>
+                                <template x-for="(h, hi) in hotels" :key="hi">
+                                    <div class="border border-gray-200 rounded-lg p-4 mb-3 relative">
+                                        <button x-show="hotels.length > 1" @click="hotels.splice(hi, 1)" type="button"
+                                                class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <div class="text-xs font-medium text-gray-500 mb-3">
+                                            <i class="fas fa-hotel mr-1"></i> Hotel <span x-text="hi + 1"></span>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div class="col-span-2">
+                                                <label class="block text-[11px] text-gray-500 mb-1">Hotelname *</label>
+                                                <input type="text" x-model="h.name" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="Hotel Arts Barcelona">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Check-in *</label>
+                                                <input type="datetime-local" x-model="h.check_in" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Check-out *</label>
+                                                <input type="datetime-local" x-model="h.check_out" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Land (ISO) *</label>
+                                                <input type="text" x-model="h.country" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" placeholder="ES" maxlength="2">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Stadt</label>
+                                                <input type="text" x-model="h.city" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="Barcelona">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Zimmertyp</label>
+                                                <select x-model="h.room_type" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                                    <option value="">-- wählen --</option>
+                                                    <option value="Single">Einzelzimmer</option>
+                                                    <option value="Double">Doppelzimmer</option>
+                                                    <option value="Suite">Suite</option>
+                                                    <option value="Twin">Zweibettzimmer</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Verpflegung</label>
+                                                <select x-model="h.board" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                                    <option value="">-- wählen --</option>
+                                                    <option value="OV">Ohne Verpflegung</option>
+                                                    <option value="BB">Frühstück</option>
+                                                    <option value="HB">Halbpension</option>
+                                                    <option value="FB">Vollpension</option>
+                                                    <option value="AI">All Inclusive</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="hotels.length === 0" class="text-center py-6 text-gray-400 text-xs">
+                                    <i class="fas fa-hotel text-2xl mb-2"></i>
+                                    <p>Noch keine Hotels hinzugefügt</p>
+                                </div>
+                            </div>
+
+                            {{-- Booking Reference --}}
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] text-gray-500 mb-1">Buchungsreferenz</label>
+                                        <input type="text" x-model="bookingRef" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" placeholder="ABC123">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Navigation & Submit --}}
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-200">
+                                <button x-show="step > 1" @click="step--" type="button"
+                                        class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+                                    <i class="fas fa-arrow-left"></i> Zurück
+                                </button>
+                                <div x-show="step === 1" class="w-1"></div>
+                                <div class="flex gap-3">
+                                    <button type="button" @click="showForm = false"
+                                            class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                        Abbrechen
+                                    </button>
+                                    <button x-show="step < 3" @click="step++" type="button"
+                                            class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                                        Weiter <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                    <button x-show="step === 3" @click="submitTrip()" :disabled="saving"
+                                            :class="saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'"
+                                            class="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-2">
+                                        <i class="fas" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                                        <span x-text="saving ? 'Wird erstellt...' : 'Reise erstellen'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             @elseif($settingsSection === 'connected-services')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Connected Services</h3>
                 <p class="text-sm text-gray-500 mb-6">Verwalten Sie Ihre verbundenen Dienste und Integrationen.</p>
@@ -4211,6 +4482,132 @@ function travelDataImport() {
             }
             this.loading = false;
         }
+    };
+}
+
+function manualTripCreate() {
+    return {
+        showForm: false,
+        step: 1,
+        saving: false,
+        resultMessage: '',
+        resultSuccess: false,
+        bookingRef: '',
+        travellers: [{ salutation: 'Herr', first_name: '', last_name: '', dob: '', nationality: 'DE', email: '', phone: '' }],
+        flights: [{ dep_code: '', dep_time: '', arr_code: '', arr_time: '', airline: '', flight_nr: '', dep_terminal: '', arr_terminal: '' }],
+        hotels: [],
+        addTraveller() {
+            this.travellers.push({ salutation: 'Herr', first_name: '', last_name: '', dob: '', nationality: 'DE', email: '', phone: '' });
+        },
+        addFlight() {
+            this.flights.push({ dep_code: '', dep_time: '', arr_code: '', arr_time: '', airline: '', flight_nr: '', dep_terminal: '', arr_terminal: '' });
+        },
+        addHotel() {
+            this.hotels.push({ name: '', check_in: '', check_out: '', country: '', city: '', room_type: '', board: '' });
+        },
+        buildJson() {
+            const travellers = this.travellers.filter(t => t.first_name && t.last_name).map((t, i) => ({
+                external_traveller_id: 'PAX-' + String(i + 1).padStart(3, '0'),
+                type: ['Kind', 'Baby'].includes(t.salutation) ? (t.salutation === 'Baby' ? 'infant' : 'child') : 'adult',
+                name: { salutation: t.salutation, first: t.first_name, last: t.last_name },
+                date_of_birth: t.dob || undefined,
+                nationality: t.nationality || undefined,
+                contact: (t.email || t.phone) ? { email: t.email || undefined, phone: t.phone || undefined } : undefined,
+                passport: t.nationality ? { country: t.nationality } : undefined,
+            }));
+
+            const itinerary = [];
+            this.flights.filter(f => f.dep_code && f.arr_code && f.dep_time && f.arr_time).forEach((f, i) => {
+                itinerary.push({
+                    type: 'travel',
+                    mode: 'air',
+                    leg_id: 'LEG-' + (i + 1),
+                    segments: [{
+                        segment_id: 'SEG-' + (i + 1),
+                        departure: {
+                            airport: { code: f.dep_code.toUpperCase() },
+                            time: f.dep_time + ':00',
+                            terminal: f.dep_terminal || undefined,
+                        },
+                        arrival: {
+                            airport: { code: f.arr_code.toUpperCase() },
+                            time: f.arr_time + ':00',
+                            terminal: f.arr_terminal || undefined,
+                        },
+                        marketing_carrier: (f.airline || f.flight_nr) ? {
+                            airline_code: f.airline ? f.airline.toUpperCase() : undefined,
+                            flight_number: f.flight_nr || undefined,
+                        } : undefined,
+                    }],
+                });
+            });
+            this.hotels.filter(h => h.name && h.check_in && h.check_out && h.country).forEach((h, i) => {
+                itinerary.push({
+                    type: 'stay',
+                    stay_id: 'STAY-' + (i + 1),
+                    stay_type: 'hotel',
+                    check_in: h.check_in + ':00',
+                    check_out: h.check_out + ':00',
+                    location: {
+                        name: h.name,
+                        country_code: h.country.toUpperCase(),
+                        city: h.city || undefined,
+                    },
+                });
+            });
+
+            return {
+                schema_version: '1.1',
+                provider: { id: 'manual-form', name: 'Manuelle Eingabe', sent_at: new Date().toISOString() },
+                trip: {
+                    external_trip_id: 'TRIP-' + Date.now(),
+                    booking_reference: this.bookingRef || undefined,
+                    travellers,
+                    itinerary,
+                },
+            };
+        },
+        async submitTrip() {
+            if (!this.travellers.some(t => t.first_name && t.last_name)) {
+                this.resultSuccess = false;
+                this.resultMessage = 'Bitte mindestens einen Reisenden mit Vor- und Nachname angeben.';
+                this.step = 1;
+                return;
+            }
+            if (!this.flights.some(f => f.dep_code && f.arr_code && f.dep_time && f.arr_time) && !this.hotels.some(h => h.name && h.check_in && h.check_out && h.country)) {
+                this.resultSuccess = false;
+                this.resultMessage = 'Bitte mindestens einen Flug oder ein Hotel angeben.';
+                return;
+            }
+            this.saving = true;
+            this.resultMessage = '';
+            try {
+                const payload = this.buildJson();
+                const r = await fetch('{{ route("customer.travel-data.import-json") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ json_payload: JSON.stringify(payload) }),
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.resultSuccess = true;
+                    this.resultMessage = d.message + ' (Vorgangsnummer: ' + d.folder_number + ')';
+                    this.travellers = [{ salutation: 'Herr', first_name: '', last_name: '', dob: '', nationality: 'DE', email: '', phone: '' }];
+                    this.flights = [{ dep_code: '', dep_time: '', arr_code: '', arr_time: '', airline: '', flight_nr: '', dep_terminal: '', arr_terminal: '' }];
+                    this.hotels = [];
+                    this.bookingRef = '';
+                    this.step = 1;
+                    window.dispatchEvent(new CustomEvent('travel-data-reload'));
+                } else {
+                    this.resultSuccess = false;
+                    this.resultMessage = d.message || 'Unbekannter Fehler';
+                }
+            } catch (e) {
+                this.resultSuccess = false;
+                this.resultMessage = 'Fehler beim Erstellen. Bitte versuchen Sie es erneut.';
+            }
+            this.saving = false;
+        },
     };
 }
 
