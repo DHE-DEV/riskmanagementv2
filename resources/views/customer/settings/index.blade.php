@@ -3242,6 +3242,7 @@
                                                     <span class="inline-flex items-center px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">
                                                         <i class="fas fa-plane mr-1 text-[10px]"></i>
                                                         <span x-text="(seg.departure_airport_code || '') + ' → ' + (seg.arrival_airport_code || '')"></span>
+                                                        <span class="ml-1 text-blue-500" x-show="seg.departure_time" x-text="formatDateTime(seg.departure_time)"></span>
                                                     </span>
                                                 </template>
                                             </template>
@@ -3249,6 +3250,7 @@
                                                 <span class="inline-flex items-center px-2 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
                                                     <i class="fas fa-hotel mr-1 text-[10px]"></i>
                                                     <span x-text="hs.hotel_name || hs.country_code || 'Hotel'"></span>
+                                                    <span class="ml-1 text-amber-500" x-show="hs.check_in_date" x-text="formatDateRange(hs.check_in_date, hs.check_out_date)"></span>
                                                 </span>
                                             </template>
                                         </div>
@@ -3325,10 +3327,23 @@
                             </div>
 
                             <div class="flex justify-between">
-                                <button type="button" @click="loadExample()"
-                                        class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-2">
-                                    <i class="fas fa-lightbulb"></i> Beispiel
-                                </button>
+                                <div class="relative" x-data="{ exampleOpen: false }" @click.outside="exampleOpen = false">
+                                    <button type="button" @click="exampleOpen = !exampleOpen"
+                                            class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+                                        <i class="fas fa-lightbulb"></i> Beispiel <i class="fas fa-chevron-down text-xs ml-1"></i>
+                                    </button>
+                                    <div x-show="exampleOpen" x-cloak x-transition
+                                         class="absolute left-0 bottom-full mb-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                        <button type="button" @click="loadExample('current'); exampleOpen = false"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg flex items-center gap-2">
+                                            <i class="fas fa-plane-departure text-gray-400"></i> Beispiel Aktuell
+                                        </button>
+                                        <button type="button" @click="loadExample('future'); exampleOpen = false"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg flex items-center gap-2">
+                                            <i class="fas fa-calendar-plus text-gray-400"></i> Beispiel Zukünftig
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="flex gap-3">
                                     <button type="button" @click="showImport = false"
                                             class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
@@ -3929,6 +3944,23 @@ function travelDataList() {
             const parts = d.split('-');
             return parts[2] + '.' + parts[1] + '.' + parts[0];
         },
+        formatDateTime(dt) {
+            if (!dt) return '';
+            const d = new Date(dt);
+            if (isNaN(d)) return '';
+            return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        },
+        formatDateRange(from, to) {
+            if (!from) return '';
+            const f = new Date(from);
+            if (isNaN(f)) return '';
+            let result = f.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            if (to) {
+                const t = new Date(to);
+                if (!isNaN(t)) result += ' – ' + t.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+            return result;
+        },
         statusClass(s) {
             return {
                 'draft': 'bg-gray-100 text-gray-600',
@@ -3957,18 +3989,102 @@ function travelDataImport() {
         loading: false,
         resultMessage: '',
         resultSuccess: false,
-        loadExample() {
+        loadExample(type = 'current') {
             const today = new Date();
-            const dep = new Date(today);
-            dep.setDate(dep.getDate() - 2);
-            const ret = new Date(today);
-            ret.setDate(ret.getDate() + 5);
-            const checkIn = new Date(dep);
-            const checkOut = new Date(ret);
-
+            const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
             const pad = (n) => String(n).padStart(2, '0');
             const fmt = (d, h, m) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(h)}:${pad(m)}:00+01:00`;
-            const fmtDate = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+            const dep = new Date(today);
+            const ret = new Date(today);
+
+            if (type === 'current') {
+                dep.setDate(dep.getDate() - rand(1, 3));
+                ret.setDate(ret.getDate() + rand(3, 7));
+            } else {
+                dep.setDate(dep.getDate() + rand(14, 60));
+                ret.setDate(dep.getDate() + rand(4, 10));
+            }
+
+            const depH = rand(6, 11);
+            const depM = [0, 15, 30, 45][rand(0, 3)];
+            const retH = rand(12, 19);
+            const retM = [0, 15, 30, 45][rand(0, 3)];
+
+            const routes = [
+                { from: 'FRA', fromLat: 50.0379, fromLng: 8.5622, to: 'BCN', toLat: 41.2974, toLng: 2.0833, cc: 'ES', al: 'LH', fn1: '1124', fn2: '1125', hotels: [
+                    { name: 'Hotel Arts Barcelona', lat: 41.3879, lng: 2.1942 },
+                    { name: 'W Barcelona', lat: 41.3686, lng: 2.1893 },
+                    { name: 'Mandarin Oriental Barcelona', lat: 41.3916, lng: 2.1650 },
+                ]},
+                { from: 'MUC', fromLat: 48.3537, fromLng: 11.7750, to: 'JFK', toLat: 40.6413, toLng: -73.7781, cc: 'US', al: 'LH', fn1: '410', fn2: '411', hotels: [
+                    { name: 'The Plaza New York', lat: 40.7645, lng: -73.9746 },
+                    { name: 'The Waldorf Astoria New York', lat: 40.7565, lng: -73.9737 },
+                    { name: 'Park Hyatt New York', lat: 40.7648, lng: -73.9718 },
+                ]},
+                { from: 'ZRH', fromLat: 47.4647, fromLng: 8.5492, to: 'NRT', toLat: 35.7720, toLng: 140.3929, cc: 'JP', al: 'LX', fn1: '160', fn2: '161', hotels: [
+                    { name: 'Park Hyatt Tokyo', lat: 35.6855, lng: 139.6906 },
+                    { name: 'The Peninsula Tokyo', lat: 35.6752, lng: 139.7630 },
+                    { name: 'Aman Tokyo', lat: 35.6872, lng: 139.7635 },
+                ]},
+                { from: 'VIE', fromLat: 48.1103, fromLng: 16.5697, to: 'DXB', toLat: 25.2532, toLng: 55.3657, cc: 'AE', al: 'OS', fn1: '881', fn2: '882', hotels: [
+                    { name: 'Burj Al Arab Jumeirah', lat: 25.1412, lng: 55.1853 },
+                    { name: 'Atlantis The Palm', lat: 25.1304, lng: 55.1172 },
+                    { name: 'Armani Hotel Dubai', lat: 25.1972, lng: 55.2744 },
+                ]},
+                { from: 'HAM', fromLat: 53.6304, fromLng: 9.9882, to: 'LIS', toLat: 38.7756, toLng: -9.1354, cc: 'PT', al: 'TP', fn1: '561', fn2: '562', hotels: [
+                    { name: 'Pestana Palace Lisboa', lat: 38.7023, lng: -9.1780 },
+                    { name: 'Four Seasons Hotel Ritz Lisbon', lat: 38.7277, lng: -9.1516 },
+                    { name: 'Bairro Alto Hotel', lat: 38.7107, lng: -9.1449 },
+                ]},
+                { from: 'DUS', fromLat: 51.2895, fromLng: 6.7668, to: 'ATH', toLat: 37.9364, toLng: 23.9445, cc: 'GR', al: 'LH', fn1: '3380', fn2: '3381', hotels: [
+                    { name: 'Hotel Grande Bretagne Athens', lat: 37.9755, lng: 23.7348 },
+                    { name: 'King George Athens', lat: 37.9753, lng: 23.7344 },
+                    { name: 'Electra Palace Athens', lat: 37.9733, lng: 23.7290 },
+                ]},
+                { from: 'BER', fromLat: 52.3667, fromLng: 13.5033, to: 'IST', toLat: 41.2753, toLng: 28.7519, cc: 'TR', al: 'TK', fn1: '1724', fn2: '1725', hotels: [
+                    { name: 'Four Seasons Hotel Istanbul at Sultanahmet', lat: 41.0064, lng: 28.9784 },
+                    { name: 'Ciragan Palace Kempinski Istanbul', lat: 41.0460, lng: 29.0212 },
+                    { name: 'Raffles Istanbul', lat: 41.0445, lng: 29.0100 },
+                ]},
+                { from: 'FRA', fromLat: 50.0379, fromLng: 8.5622, to: 'BKK', toLat: 13.6900, toLng: 100.7501, cc: 'TH', al: 'TG', fn1: '921', fn2: '922', hotels: [
+                    { name: 'Mandarin Oriental Bangkok', lat: 13.7237, lng: 100.5133 },
+                    { name: 'The Peninsula Bangkok', lat: 13.7220, lng: 100.5098 },
+                    { name: 'Shangri-La Bangkok', lat: 13.7210, lng: 100.5155 },
+                ]},
+                { from: 'MUC', fromLat: 48.3537, fromLng: 11.7750, to: 'PMI', toLat: 39.5517, toLng: 2.7388, cc: 'ES', al: 'LH', fn1: '1802', fn2: '1803', hotels: [
+                    { name: 'Castillo Hotel Son Vida', lat: 39.6010, lng: 2.6180 },
+                    { name: 'Hotel St. Regis Mardavall', lat: 39.5296, lng: 2.5194 },
+                    { name: 'Belmond La Residencia Deia', lat: 39.7490, lng: 2.7490 },
+                ]},
+                { from: 'ZRH', fromLat: 47.4647, fromLng: 8.5492, to: 'SIN', toLat: 1.3644, toLng: 103.9915, cc: 'SG', al: 'SQ', fn1: '345', fn2: '346', hotels: [
+                    { name: 'Marina Bay Sands Singapore', lat: 1.2834, lng: 103.8607 },
+                    { name: 'Raffles Hotel Singapore', lat: 1.2949, lng: 103.8543 },
+                    { name: 'The Fullerton Hotel Singapore', lat: 1.2865, lng: 103.8530 },
+                ]},
+                { from: 'VIE', fromLat: 48.1103, fromLng: 16.5697, to: 'CPT', toLat: -33.9715, toLng: 18.6021, cc: 'ZA', al: 'OS', fn1: '57', fn2: '58', hotels: [
+                    { name: 'One&Only Cape Town', lat: -33.9083, lng: 18.4176 },
+                    { name: 'Belmond Mount Nelson Hotel', lat: -33.9362, lng: 18.4095 },
+                    { name: 'Table Bay Hotel', lat: -33.9033, lng: 18.4218 },
+                ]},
+                { from: 'BER', fromLat: 52.3667, fromLng: 13.5033, to: 'CDG', toLat: 49.0097, toLng: 2.5479, cc: 'FR', al: 'AF', fn1: '1035', fn2: '1036', hotels: [
+                    { name: 'Le Meurice Paris', lat: 48.8651, lng: 2.3281 },
+                    { name: 'Shangri-La Hotel Paris', lat: 48.8630, lng: 2.2935 },
+                    { name: 'Hotel Plaza Athenee Paris', lat: 48.8660, lng: 2.3040 },
+                ]},
+                { from: 'HAM', fromLat: 53.6304, fromLng: 9.9882, to: 'LHR', toLat: 51.4700, toLng: -0.4543, cc: 'GB', al: 'BA', fn1: '967', fn2: '968', hotels: [
+                    { name: 'The Savoy London', lat: 51.5103, lng: -0.1205 },
+                    { name: 'Claridges London', lat: 51.5126, lng: -0.1473 },
+                    { name: 'The Ritz London', lat: 51.5072, lng: -0.1416 },
+                ]},
+                { from: 'DUS', fromLat: 51.2895, fromLng: 6.7668, to: 'FCO', toLat: 41.8003, toLng: 12.2389, cc: 'IT', al: 'LH', fn1: '240', fn2: '241', hotels: [
+                    { name: 'Hotel de Russie Rome', lat: 41.9094, lng: 12.4763 },
+                    { name: 'Hotel Hassler Roma', lat: 41.9062, lng: 12.4831 },
+                    { name: 'Hotel Eden Rome', lat: 41.9065, lng: 12.4876 },
+                ]},
+            ];
+            const r = routes[rand(0, routes.length - 1)];
+            const h = r.hotels[rand(0, r.hotels.length - 1)];
 
             const example = {
                 "schema_version": "1.1",
@@ -3979,7 +4095,7 @@ function travelDataImport() {
                 },
                 "trip": {
                     "external_trip_id": "TRIP-" + Date.now(),
-                    "booking_reference": "ABC123",
+                    "booking_reference": String.fromCharCode(rand(65,90)) + String.fromCharCode(rand(65,90)) + String.fromCharCode(rand(65,90)) + rand(100, 999),
                     "travellers": [
                         {
                             "external_traveller_id": "PAX-001",
@@ -4009,17 +4125,17 @@ function travelDataImport() {
                                 {
                                     "segment_id": "SEG-OUT-1",
                                     "departure": {
-                                        "airport": { "code": "FRA", "geocode": { "lat": 50.0379, "lng": 8.5622 } },
-                                        "time": fmt(dep, 7, 30),
+                                        "airport": { "code": r.from, "geocode": { "lat": r.fromLat, "lng": r.fromLng } },
+                                        "time": fmt(dep, depH, depM),
                                         "terminal": "1"
                                     },
                                     "arrival": {
-                                        "airport": { "code": "BCN", "geocode": { "lat": 41.2974, "lng": 2.0833 } },
-                                        "time": fmt(dep, 10, 0),
+                                        "airport": { "code": r.to, "geocode": { "lat": r.toLat, "lng": r.toLng } },
+                                        "time": fmt(dep, depH + 2 + rand(0, 6), depM),
                                         "terminal": "1"
                                     },
-                                    "marketing_carrier": { "airline_code": "LH", "flight_number": "1124" },
-                                    "operating_carrier": { "airline_code": "LH" },
+                                    "marketing_carrier": { "airline_code": r.al, "flight_number": r.fn1 },
+                                    "operating_carrier": { "airline_code": r.al },
                                     "transfer_role_hint": "none"
                                 }
                             ]
@@ -4029,9 +4145,9 @@ function travelDataImport() {
                             "stay_id": "STAY-001",
                             "stay_type": "hotel",
                             "location": {
-                                "name": "Hotel Arts Barcelona",
-                                "geocode": { "lat": 41.3879, "lng": 2.1942 },
-                                "country_code": "ES"
+                                "name": h.name,
+                                "geocode": { "lat": h.lat, "lng": h.lng },
+                                "country_code": r.cc
                             },
                             "check_in": fmt(dep, 14, 0),
                             "check_out": fmt(ret, 11, 0)
@@ -4044,17 +4160,17 @@ function travelDataImport() {
                                 {
                                     "segment_id": "SEG-RET-1",
                                     "departure": {
-                                        "airport": { "code": "BCN", "geocode": { "lat": 41.2974, "lng": 2.0833 } },
-                                        "time": fmt(ret, 13, 15),
+                                        "airport": { "code": r.to, "geocode": { "lat": r.toLat, "lng": r.toLng } },
+                                        "time": fmt(ret, retH, retM),
                                         "terminal": "1"
                                     },
                                     "arrival": {
-                                        "airport": { "code": "FRA", "geocode": { "lat": 50.0379, "lng": 8.5622 } },
-                                        "time": fmt(ret, 15, 45),
+                                        "airport": { "code": r.from, "geocode": { "lat": r.fromLat, "lng": r.fromLng } },
+                                        "time": fmt(ret, retH + 2 + rand(0, 6), retM),
                                         "terminal": "1"
                                     },
-                                    "marketing_carrier": { "airline_code": "LH", "flight_number": "1125" },
-                                    "operating_carrier": { "airline_code": "LH" },
+                                    "marketing_carrier": { "airline_code": r.al, "flight_number": r.fn2 },
+                                    "operating_carrier": { "airline_code": r.al },
                                     "transfer_role_hint": "none"
                                 }
                             ]
