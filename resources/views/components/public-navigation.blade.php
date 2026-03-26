@@ -30,7 +30,7 @@
 
         <!-- Passolution -->
         <a href="{{ route('passolution') }}" class="p-3 {{ $active === 'passolution' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Passolution">
-            <i class="fa-regular fa-passport text-2xl" aria-hidden="true"></i>
+            <i class="fa-regular fa-browser text-2xl" aria-hidden="true"></i>
         </a>
 
         <!-- Einreisebestimmungen -->
