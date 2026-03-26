@@ -125,6 +125,10 @@ Route::get('/global-travel-monitor', function () {
     ]);
 })->name('global-travel-monitor');
 
+Route::get('/passolution', function () {
+    return view('livewire.pages.passolution');
+})->name('passolution');
+
 /*
 |--------------------------------------------------------------------------
 | Embed Routes (for iframe embedding on external websites)

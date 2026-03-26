@@ -28,6 +28,11 @@
         </button>
         @endif
 
+        <!-- Passolution -->
+        <a href="{{ route('passolution') }}" class="p-3 {{ $active === 'passolution' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Passolution">
+            <i class="fa-regular fa-shield-check text-2xl" aria-hidden="true"></i>
+        </a>
+
         <!-- Einreisebestimmungen -->
         @if($featureService->isFeatureEnabled('navigation_entry_conditions_enabled', $customer))
         <a href="{{ route('entry-conditions') }}" class="p-3 {{ $active === 'entry-conditions' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Einreisebestimmungen">
