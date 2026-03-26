@@ -486,6 +486,7 @@ class NotificationRuleService
             ->where('status', 'active')
             ->where('computed_start_at', '<=', $eventDate)
             ->where('computed_end_at', '>=', $eventDate)
+            ->with('travellers')
             ->get()
             ->filter(function (TdTrip $trip) use ($countryIsoCodes) {
                 $tripCountries = $trip->countries_visited ?? [];
@@ -507,8 +508,7 @@ class NotificationRuleService
         }
 
         $html = '<div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">';
-        $html .= '<p style="margin: 0 0 10px; font-weight: bold; color: #856404;"><strong>Betroffene Reisen (' . $trips->count() . '):</strong></p>';
-        $html .= '<ul style="margin: 0; padding-left: 20px;">';
+        $html .= '<p style="margin: 0 0 10px; font-weight: bold; color: #856404;"><strong>&#9888; Betroffene Reisen (' . $trips->count() . '):</strong></p>';
 
         foreach ($trips as $trip) {
             $name = $trip->trip_name ?: ($trip->booking_reference ?: 'Reise #' . $trip->id);
@@ -517,24 +517,44 @@ class NotificationRuleService
                 $dates = $trip->computed_start_at->format('d.m.Y') . ' – ' . $trip->computed_end_at->format('d.m.Y');
             }
             $countries = implode(', ', $trip->countries_visited ?? []);
-            $linkHtml = '';
-            if ($trip->pds_share_url) {
-                $linkHtml = ' – <a href="' . e($trip->pds_share_url) . '" style="color: #0d6efd;">Travel Link</a>';
-            }
 
-            $html .= '<li style="margin-bottom: 6px;">';
-            $html .= '<strong>' . e($name) . '</strong>';
+            // Quelle: Travel Link oder Travel Data
+            $sourceLabel = $trip->pds_share_url ? 'Travel Link' : 'Travel Data';
+            $sourceBg = $trip->pds_share_url ? '#d1ecf1' : '#e2e3e5';
+            $sourceColor = $trip->pds_share_url ? '#0c5460' : '#383d41';
+
+            $html .= '<div style="margin-bottom: 10px; padding: 10px; background: #ffffff; border: 1px solid #e0c36a; border-radius: 6px;">';
+            $html .= '<div style="margin-bottom: 4px;">';
+            $html .= '<strong style="font-size: 14px;">' . e($name) . '</strong>';
+            $html .= ' <span style="display: inline-block; padding: 1px 8px; font-size: 11px; border-radius: 10px; background: ' . $sourceBg . '; color: ' . $sourceColor . ';">' . $sourceLabel . '</span>';
+            $html .= '</div>';
+
             if ($dates) {
-                $html .= ' (' . $dates . ')';
+                $html .= '<div style="font-size: 13px; color: #555;">&#128197; ' . $dates . '</div>';
             }
             if ($countries) {
-                $html .= ' – Ziele: ' . e($countries);
+                $html .= '<div style="font-size: 13px; color: #555;">&#127758; Ziele: ' . e($countries) . '</div>';
             }
-            $html .= $linkHtml;
-            $html .= '</li>';
+
+            // Reisende anzeigen
+            if ($trip->relationLoaded('travellers') && $trip->travellers->isNotEmpty()) {
+                $travellerNames = $trip->travellers
+                    ->map(fn ($t) => $t->full_name ?: $t->email)
+                    ->filter()
+                    ->implode(', ');
+                if ($travellerNames) {
+                    $html .= '<div style="font-size: 13px; color: #555;">&#128100; Reisende: ' . e($travellerNames) . '</div>';
+                }
+            }
+
+            if ($trip->pds_share_url) {
+                $html .= '<div style="margin-top: 4px;"><a href="' . e($trip->pds_share_url) . '" style="color: #0d6efd; font-size: 13px;">&#128279; Travel Link öffnen</a></div>';
+            }
+
+            $html .= '</div>';
         }
 
-        $html .= '</ul></div>';
+        $html .= '</div>';
 
         return $html;
     }
