@@ -3941,8 +3941,9 @@ function travelDataList() {
         },
         formatDate(d) {
             if (!d) return '';
-            const parts = d.split('-');
-            return parts[2] + '.' + parts[1] + '.' + parts[0];
+            const dt = new Date(d);
+            if (isNaN(dt)) return '';
+            return dt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
         },
         formatDateTime(dt) {
             if (!dt) return '';
