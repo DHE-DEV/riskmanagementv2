@@ -62,13 +62,17 @@ class NotificationTemplate extends Model
         $hasSource = $source && Schema::hasColumn('notification_templates', 'source');
 
         return $query->where(function ($q) use ($customerId, $hasSource, $source) {
-            $q->where('customer_id', $customerId)
-              ->orWhere(function ($sq) use ($hasSource, $source) {
-                  $sq->where('is_system', true);
-                  if ($hasSource) {
-                      $sq->where('source', $source);
-                  }
-              });
+            $q->where(function ($cq) use ($customerId, $hasSource, $source) {
+                $cq->where('customer_id', $customerId);
+                if ($hasSource) {
+                    $cq->where('source', $source);
+                }
+            })->orWhere(function ($sq) use ($hasSource, $source) {
+                $sq->where('is_system', true);
+                if ($hasSource) {
+                    $sq->where('source', $source);
+                }
+            });
         });
     }
 }

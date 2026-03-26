@@ -12,6 +12,7 @@ class NotificationTemplateForm extends Component
 {
     public ?int $templateId = null;
     public ?string $testMailStatus = null;
+    public string $source = 'travel-alert';
 
     public string $name = '';
     public string $subject = '';
@@ -77,6 +78,10 @@ class NotificationTemplateForm extends Component
             'body_html' => $this->bodyHtml,
             'is_system' => false,
         ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('notification_templates', 'source')) {
+            $data['source'] = $this->source;
+        }
 
         if ($this->templateId) {
             $template = $customer->notificationTemplates()->findOrFail($this->templateId);

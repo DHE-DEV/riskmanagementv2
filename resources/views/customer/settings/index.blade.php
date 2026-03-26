@@ -606,7 +606,7 @@
                                     <button @click="showTemplateModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
                                 </div>
                                 <div class="flex-1 overflow-y-auto p-6">
-                                    @livewire('customer.notification-template-form', [], key('settings-tpl-form'))
+                                    @livewire('customer.notification-template-form', ['source' => 'travel-alert'], key('settings-tpl-form'))
                                 </div>
                             </div>
                         </div>
@@ -715,7 +715,7 @@
                                     <button @click="showRuleModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
                                 </div>
                                 <div class="flex-1 overflow-y-auto p-6">
-                                    @livewire('customer.notification-rule-form', [], key('settings-rule-form'))
+                                    @livewire('customer.notification-rule-form', ['source' => 'travel-alert'], key('settings-rule-form'))
                                 </div>
                             </div>
                         </div>
@@ -2323,7 +2323,7 @@
                                     <button @click="showTemplateModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
                                 </div>
                                 <div class="flex-1 overflow-y-auto p-6">
-                                    @livewire('customer.notification-template-form', [], key('gtm-tpl-form'))
+                                    @livewire('customer.notification-template-form', ['source' => 'global-travel-monitor'], key('gtm-tpl-form'))
                                 </div>
                             </div>
                         </div>
@@ -2720,7 +2720,7 @@
                                     <button @click="showTemplateModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
                                 </div>
                                 <div class="flex-1 overflow-y-auto p-6">
-                                    @livewire('customer.notification-template-form', [], key('ta-tpl-form'))
+                                    @livewire('customer.notification-template-form', ['source' => 'travel-alert'], key('ta-tpl-form'))
                                 </div>
                             </div>
                         </div>

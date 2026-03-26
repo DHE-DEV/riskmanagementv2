@@ -88,7 +88,7 @@ class NotificationRuleForm extends Component
     }
 
     #[\Livewire\Attributes\On('load-rule')]
-    public function loadRule(?int $id = null): void
+    public function loadRule(?int $id = null, ?string $source = null): void
     {
         $this->ruleId = $id;
         $this->testMailStatus = null;
@@ -99,7 +99,7 @@ class NotificationRuleForm extends Component
             $rule = $customer->notificationRules()->with('recipients')->findOrFail($id);
             $this->name = $rule->name;
             $this->isActive = $rule->is_active;
-            $this->source = $rule->source ?? 'travel-alert';
+            $this->source = $rule->source ?? $this->source;
             $this->riskLevels = $rule->risk_levels ?? [];
             $this->categories = $rule->categories ?? [];
             $this->notificationTemplateId = $rule->notification_template_id;
@@ -118,6 +118,10 @@ class NotificationRuleForm extends Component
             $this->selectedCountries = [];
             $this->notificationTemplateId = null;
             $this->recipients = [['email' => '', 'type' => 'to']];
+            // Source bleibt beim mount-Wert, es sei denn explizit übergeben
+            if ($source) {
+                $this->source = $source;
+            }
         }
         $this->countrySearch = '';
         $this->countryResults = [];
