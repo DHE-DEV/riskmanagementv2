@@ -77,6 +77,73 @@ class GtmApiController extends Controller
         ]);
     }
 
+    public function nearby(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => 'nullable|required_without_all:latitude,longitude|string|size:3',
+            'latitude' => 'nullable|required_without:code|numeric|between:-90,90',
+            'longitude' => 'nullable|required_without:code|numeric|between:-180,180',
+            'radius' => 'required|numeric|min:1|max:20000',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
+        ]);
+
+        $location = [];
+
+        if ($request->filled('code')) {
+            $airportCode = \App\Models\AirportCode::where('iata_code', strtoupper($request->input('code')))->first();
+
+            if (!$airportCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unknown 3-letter code: ' . strtoupper($request->input('code')),
+                ], 404);
+            }
+
+            $centerLat = (float) $airportCode->latitude_deg;
+            $centerLng = (float) $airportCode->longitude_deg;
+            $location = [
+                'code' => strtoupper($request->input('code')),
+                'name' => $airportCode->name,
+                'latitude' => $centerLat,
+                'longitude' => $centerLng,
+                'radius_km' => (float) $request->input('radius'),
+            ];
+        } else {
+            $centerLat = (float) $request->input('latitude');
+            $centerLng = (float) $request->input('longitude');
+            $location = [
+                'latitude' => $centerLat,
+                'longitude' => $centerLng,
+                'radius_km' => (float) $request->input('radius'),
+            ];
+        }
+
+        $events = $this->eventService->getEventsNearbyCoordinates(
+            latitude: $centerLat,
+            longitude: $centerLng,
+            radiusKm: (float) $request->input('radius'),
+        );
+
+        $perPage = $request->integer('per_page', 25);
+        $page = $request->integer('page', 1);
+        $total = $events->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $paginated = $events->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => GtmEventResource::collection($paginated),
+            'location' => $location,
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => max($lastPage, 1),
+            ],
+        ]);
+    }
+
     public function countriesWithEvents(): JsonResponse
     {
         $countries = $this->eventService->getCountriesWithEventCounts();

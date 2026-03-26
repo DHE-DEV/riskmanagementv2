@@ -105,6 +105,7 @@ Route::prefix('v1')->middleware([
     // Events
     Route::get('/events', [GtmApiController::class, 'index'])->name('sub.v1.events.index');
     Route::get('/events/countries', [GtmApiController::class, 'countriesWithEvents'])->name('sub.v1.events.countries');
+    Route::get('/events/nearby', [GtmApiController::class, 'nearby'])->name('sub.v1.events.nearby');
     Route::get('/events/{id}', [GtmApiController::class, 'show'])->name('sub.v1.events.show');
 
     // Basisdaten
@@ -126,6 +127,7 @@ Route::prefix('v1/custom/events')->middleware([
     'throttle:api-client',
 ])->group(function () {
     Route::get('/', [EventApiController::class, 'index'])->name('sub.v1.custom.events.index');
+    Route::get('/nearby', [EventApiController::class, 'nearby'])->name('sub.v1.custom.events.nearby');
     Route::post('/', [EventApiController::class, 'store'])->name('sub.v1.custom.events.store');
     Route::get('/{uuid}', [EventApiController::class, 'show'])->name('sub.v1.custom.events.show');
     Route::put('/{uuid}', [EventApiController::class, 'update'])->name('sub.v1.custom.events.update');

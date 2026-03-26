@@ -70,6 +70,61 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/global-travel-monitor', function () {
+    $eventId = request()->query('event');
+    $viewParam = request()->query('view');
+    $sharedEvent = null;
+
+    // Detect mobile/tablet devices
+    $agent = new \Jenssegers\Agent\Agent;
+    $isMobile = $agent->isMobile() || $agent->isTablet();
+
+    // Load shared event if event ID is provided
+    if ($eventId) {
+        $sharedEvent = \App\Models\CustomEvent::with(['countries.capital', 'eventType', 'eventTypes'])
+            ->where('is_active', true)
+            ->find($eventId);
+
+        // Track direct link access
+        if ($sharedEvent) {
+            try {
+                EventClick::create([
+                    'custom_event_id' => $sharedEvent->id,
+                    'click_type' => 'direct_link',
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'session_id' => session()->getId() ?? null,
+                    'user_id' => auth()->id(),
+                    'clicked_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Direct link tracking failed: '.$e->getMessage());
+            }
+        }
+
+        // Show mobile-optimized event view for mobile devices with event parameter
+        if ($sharedEvent && $isMobile) {
+            return view('livewire.pages.event-mobile', [
+                'event' => $sharedEvent,
+            ]);
+        }
+    }
+
+    // Mobile routing (without event parameter)
+    if ($isMobile && ! $eventId) {
+        if ($viewParam === 'map') {
+            return view('livewire.pages.dashboard-mobile-map');
+        }
+
+        return view('livewire.pages.dashboard-mobile');
+    }
+
+    // Desktop view
+    return view('livewire.pages.dashboard', [
+        'sharedEvent' => $sharedEvent,
+    ]);
+})->name('global-travel-monitor');
+
 /*
 |--------------------------------------------------------------------------
 | Embed Routes (for iframe embedding on external websites)

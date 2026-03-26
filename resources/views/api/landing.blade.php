@@ -325,6 +325,7 @@
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/nearby</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/countries</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/continents</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
@@ -350,6 +351,7 @@
                 <p class="description">Für API-Partner: Eigene Sicherheits-Events erstellen, aktualisieren und löschen. Jeder Partner verwaltet nur seine eigenen Events. Benötigt einen API-Client-Token.</p>
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/events</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/events/nearby</span></li>
                     <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/custom/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
                     <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/custom/events/{uuid}</span></li>
@@ -577,6 +579,88 @@ curl -H "Authorization: Bearer {TOKEN}" \
     },
     "created_at": "2025-03-15T09:00:00+00:00",
     "updated_at": "2025-03-15T10:15:00+00:00"
+  }
+}</code></pre>
+
+            <hr>
+
+            <h3>Events im Umkreis suchen (Nearby)</h3>
+            <pre><code>GET /v1/events/nearby</code></pre>
+            <p>Sucht aktive Events im Umkreis eines Standorts. Der Standort kann entweder über einen <strong>3-Letter IATA-Code</strong> (z.B. Flughafen) oder über <strong>Geokoordinaten</strong> angegeben werden.</p>
+
+            <table>
+                <thead>
+                    <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>code</code></td><td>string</td><td>Ja*</td><td>3-Letter IATA-Code (z.B. <code>FRA</code>, <code>MUC</code>, <code>JFK</code>)</td></tr>
+                    <tr><td><code>latitude</code></td><td>numeric</td><td>Ja*</td><td>Breitengrad (-90 bis 90)</td></tr>
+                    <tr><td><code>longitude</code></td><td>numeric</td><td>Ja*</td><td>Längengrad (-180 bis 180)</td></tr>
+                    <tr><td><code>radius</code></td><td>numeric</td><td>Ja</td><td>Umkreis in Kilometern (1–20.000)</td></tr>
+                    <tr><td><code>per_page</code></td><td>integer</td><td>Nein</td><td>Ergebnisse pro Seite (1–100, Standard: 25)</td></tr>
+                    <tr><td><code>page</code></td><td>integer</td><td>Nein</td><td>Seitennummer (Standard: 1)</td></tr>
+                </tbody>
+            </table>
+            <p><small>* Entweder <code>code</code> oder <code>latitude</code> + <code>longitude</code> muss angegeben werden.</small></p>
+
+            <p><strong>Beispiel mit 3-Letter-Code:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events/nearby?code=FRA&amp;radius=500"</code></pre>
+
+            <p><strong>Beispiel mit Geokoordinaten:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/events/nearby?latitude=50.0379&amp;longitude=8.5622&amp;radius=500"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "title": "Storm Warning Central Europe",
+      "description": "Severe storm warning for the Frankfurt area.",
+      "risk_level": "medium",
+      "start_date": "2026-03-20T06:00:00+00:00",
+      "end_date": "2026-03-21T18:00:00+00:00",
+      "latitude": 50.1109,
+      "longitude": 8.6821,
+      "event_categories": [
+        {
+          "code": "natural_disaster",
+          "name": "Natural Disaster"
+        }
+      ],
+      "countries": [
+        {
+          "iso_code": "DE",
+          "iso3_code": "DEU",
+          "name_de": "Deutschland",
+          "name_en": "Germany",
+          "continent": "Europe",
+          "latitude": 50.1109,
+          "longitude": 8.6821
+        }
+      ],
+      "source": {
+        "type": "manual",
+        "name": null
+      },
+      "created_at": "2026-03-20T07:00:00+00:00",
+      "updated_at": "2026-03-20T07:00:00+00:00"
+    }
+  ],
+  "location": {
+    "code": "FRA",
+    "name": "Frankfurt am Main International Airport",
+    "latitude": 50.0379,
+    "longitude": 8.5622,
+    "radius_km": 500
+  },
+  "meta": {
+    "current_page": 1,
+    "per_page": 25,
+    "total": 3,
+    "last_page": 1
   }
 }</code></pre>
 
@@ -1138,6 +1222,88 @@ curl -H "Authorization: Bearer {TOKEN}" \
 # Eigene Events + Partner-Gruppe kombiniert
 curl -H "Authorization: Bearer {TOKEN}" \
   "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events?scope=own,meine-partner-gruppe"</code></pre>
+
+            <hr>
+
+            <h4>Events im Umkreis suchen (Nearby)</h4>
+            <pre><code>GET /v1/custom/events/nearby</code></pre>
+            <p>Sucht aktive Events im Umkreis eines Standorts. Der Standort kann entweder über einen <strong>3-Letter IATA-Code</strong> (z.B. Flughafen) oder über <strong>Geokoordinaten</strong> angegeben werden.</p>
+
+            <table>
+                <thead>
+                    <tr><th>Parameter</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>code</code></td><td>string</td><td>Ja*</td><td>3-Letter IATA-Code (z.B. <code>FRA</code>, <code>MUC</code>, <code>JFK</code>)</td></tr>
+                    <tr><td><code>latitude</code></td><td>numeric</td><td>Ja*</td><td>Breitengrad (-90 bis 90)</td></tr>
+                    <tr><td><code>longitude</code></td><td>numeric</td><td>Ja*</td><td>Längengrad (-180 bis 180)</td></tr>
+                    <tr><td><code>radius</code></td><td>numeric</td><td>Ja</td><td>Umkreis in Kilometern (1–20.000)</td></tr>
+                    <tr><td><code>per_page</code></td><td>integer</td><td>Nein</td><td>Ergebnisse pro Seite (1–100, Standard: 25)</td></tr>
+                    <tr><td><code>page</code></td><td>integer</td><td>Nein</td><td>Seitennummer (Standard: 1)</td></tr>
+                </tbody>
+            </table>
+            <p><small>* Entweder <code>code</code> oder <code>latitude</code> + <code>longitude</code> muss angegeben werden.</small></p>
+
+            <p><strong>Beispiel mit 3-Letter-Code:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events/nearby?code=FRA&amp;radius=500"</code></pre>
+
+            <p><strong>Beispiel mit Geokoordinaten:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer {TOKEN}" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/custom/events/nearby?latitude=50.0379&amp;longitude=8.5622&amp;radius=500"</code></pre>
+
+            <p><strong>Response (200 OK):</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "title": "Storm Warning Central Europe",
+      "description": "Severe storm warning for the Frankfurt area.",
+      "risk_level": "medium",
+      "start_date": "2026-03-20T06:00:00+00:00",
+      "end_date": "2026-03-21T18:00:00+00:00",
+      "latitude": 50.1109,
+      "longitude": 8.6821,
+      "event_categories": [
+        {
+          "code": "natural_disaster",
+          "name": "Natural Disaster"
+        }
+      ],
+      "countries": [
+        {
+          "iso_code": "DE",
+          "iso3_code": "DEU",
+          "name_de": "Deutschland",
+          "name_en": "Germany",
+          "continent": "Europe",
+          "latitude": 50.1109,
+          "longitude": 8.6821
+        }
+      ],
+      "source": {
+        "type": "api_client",
+        "name": "Partner XY GmbH"
+      },
+      "created_at": "2026-03-20T07:00:00+00:00",
+      "updated_at": "2026-03-20T07:00:00+00:00"
+    }
+  ],
+  "location": {
+    "code": "FRA",
+    "name": "Frankfurt am Main International Airport",
+    "latitude": 50.0379,
+    "longitude": 8.5622,
+    "radius_km": 500
+  },
+  "meta": {
+    "current_page": 1,
+    "per_page": 25,
+    "total": 3,
+    "last_page": 1
+  }
+}</code></pre>
 
             <hr>
 

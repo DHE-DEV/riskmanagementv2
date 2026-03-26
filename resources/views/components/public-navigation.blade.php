@@ -37,15 +37,9 @@
 
         <!-- Global Travel Monitor (Dashboard) -->
         @if($featureService->isFeatureEnabled('navigation_events_enabled', $customer))
-        @if($active === 'dashboard')
-        <button class="p-3 bg-white text-black rounded-lg transition-colors" title="Global Travel Monitor" onclick="showSidebarLiveStatistics()">
-            <i class="fas fa-globe text-2xl" aria-hidden="true"></i>
-        </button>
-        @else
-        <a href="{{ route('home') }}" class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Global Travel Monitor">
+        <a href="{{ route('global-travel-monitor') }}" class="p-3 {{ $active === 'dashboard' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Global Travel Monitor">
             <i class="fas fa-globe text-2xl" aria-hidden="true"></i>
         </a>
-        @endif
         @endif
 
         <!-- Travel Alert -->

@@ -133,6 +133,98 @@ class GtmEventService
     }
 
     /**
+     * Get active events within a radius (km) of given coordinates.
+     */
+    public function getEventsNearbyCoordinates(float $latitude, float $longitude, float $radiusKm): Collection
+    {
+        $events = $this->getBaseEvents();
+
+        return $events->filter(function (CustomEvent $event) use ($latitude, $longitude, $radiusKm) {
+            $coordinates = $this->resolveEventCoordinates($event);
+
+            if ($coordinates === null) {
+                return false;
+            }
+
+            $distance = $this->haversineDistance($latitude, $longitude, $coordinates['lat'], $coordinates['lng']);
+
+            return $distance <= $radiusKm;
+        })->values();
+    }
+
+    /**
+     * Resolve the primary coordinates for an event using the same cascade as the API resource.
+     */
+    private function resolveEventCoordinates(CustomEvent $event): ?array
+    {
+        // Try first country pivot coordinates
+        if ($event->relationLoaded('countries') && $event->countries->isNotEmpty()) {
+            foreach ($event->countries as $country) {
+                $lat = null;
+                $lng = null;
+
+                if ($country->pivot && $country->pivot->use_default_coordinates) {
+                    if ($country->pivot->city_id) {
+                        $city = \App\Models\City::find($country->pivot->city_id);
+                        if ($city && $city->lat && $city->lng) {
+                            $lat = (float) $city->lat;
+                            $lng = (float) $city->lng;
+                        }
+                    }
+                    if (!$lat && !$lng && $country->pivot->region_id) {
+                        $region = Region::find($country->pivot->region_id);
+                        if ($region && $region->lat && $region->lng) {
+                            $lat = (float) $region->lat;
+                            $lng = (float) $region->lng;
+                        }
+                    }
+                    if (!$lat && !$lng && $country->capital && $country->capital->lat && $country->capital->lng) {
+                        $lat = (float) $country->capital->lat;
+                        $lng = (float) $country->capital->lng;
+                    }
+                    if (!$lat && !$lng) {
+                        $lat = (float) $country->lat;
+                        $lng = (float) $country->lng;
+                    }
+                } elseif ($country->pivot && $country->pivot->latitude && $country->pivot->longitude) {
+                    $lat = (float) $country->pivot->latitude;
+                    $lng = (float) $country->pivot->longitude;
+                }
+
+                if ($lat && $lng) {
+                    return ['lat' => $lat, 'lng' => $lng];
+                }
+            }
+        }
+
+        // Fallback: event-level coordinates
+        if ($event->latitude && $event->longitude) {
+            return ['lat' => (float) $event->latitude, 'lng' => (float) $event->longitude];
+        }
+
+        return null;
+    }
+
+    /**
+     * Calculate the distance between two points using the Haversine formula.
+     */
+    private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadiusKm = 6371.0;
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2)
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
+            * sin($dLng / 2) * sin($dLng / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadiusKm * $c;
+    }
+
+    /**
      * Get countries that have active events, with a count of active events per country.
      */
     public function getCountriesWithEventCounts(): Collection
