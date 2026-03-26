@@ -268,7 +268,8 @@ class NotificationRuleService
 
             // Bei Travel-Alert-Regeln: betroffene Reisen suchen
             $rulePlaceholders = $placeholders;
-            if ($rule->source === NotificationRule::SOURCE_TRAVEL_ALERT && !empty($countryIsoCodes)) {
+            $ruleSource = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
+            if ($ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT && !empty($countryIsoCodes)) {
                 $affectedTrips = $this->findAffectedTrips($rule->customer_id, $countryIsoCodes, $event);
                 $rulePlaceholders['{affected_trips}'] = $this->buildAffectedTripsHtml($affectedTrips);
                 $rulePlaceholders['{affected_trips_count}'] = (string) $affectedTrips->count();
@@ -501,6 +502,14 @@ class NotificationRuleService
     /**
      * Erzeuge HTML-Block mit betroffenen Reisen für die E-Mail.
      */
+    /**
+     * Public wrapper für buildAffectedTripsHtml (für Test-Mails).
+     */
+    public function buildAffectedTripsHtmlPublic(Collection $trips): string
+    {
+        return $this->buildAffectedTripsHtml($trips);
+    }
+
     private function buildAffectedTripsHtml(Collection $trips): string
     {
         if ($trips->isEmpty()) {

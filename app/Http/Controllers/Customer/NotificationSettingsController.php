@@ -253,6 +253,24 @@ class NotificationSettingsController extends Controller
             return response()->json(['success' => false, 'message' => 'Keine E-Mail-Vorlage gefunden.'], 404);
         }
 
+        // Betroffene Reisen für Test-Mail ermitteln (Travel Alert)
+        $affectedTripsHtml = '';
+        $affectedTripsCount = '0';
+        if ($source === NotificationRule::SOURCE_TRAVEL_ALERT) {
+            $activeTrips = \App\Models\TravelDetail\TdTrip::where('customer_id', $customer->id)
+                ->where('status', 'active')
+                ->where('computed_start_at', '<=', now())
+                ->where('computed_end_at', '>=', now())
+                ->with('travellers')
+                ->limit(10)
+                ->get();
+            if ($activeTrips->isNotEmpty()) {
+                $affectedTripsCount = (string) $activeTrips->count();
+                $affectedTripsHtml = app(\App\Services\NotificationRuleService::class)
+                    ->buildAffectedTripsHtmlPublic($activeTrips);
+            }
+        }
+
         $placeholders = [
             '{event_title}' => 'Test-Ereignis',
             '{country_name}' => 'Deutschland',
@@ -261,6 +279,8 @@ class NotificationSettingsController extends Controller
             '{description}' => 'Dies ist eine Test-Benachrichtigung für die Regel "' . $rule->name . '".',
             '{event_date}' => now()->format('d.m.Y'),
             '{unsubscribe_url}' => '#',
+            '{affected_trips}' => $affectedTripsHtml,
+            '{affected_trips_count}' => $affectedTripsCount,
         ];
 
         try {
@@ -289,6 +309,25 @@ class NotificationSettingsController extends Controller
         $customer = auth('customer')->user();
         $template = NotificationTemplate::forCustomer($customer->id)->findOrFail($id);
 
+        // Betroffene Reisen für Test-Mail ermitteln (Travel Alert)
+        $affectedTripsHtml = '';
+        $affectedTripsCount = '0';
+        $templateSource = $template->source ?? 'travel-alert';
+        if ($templateSource === NotificationRule::SOURCE_TRAVEL_ALERT) {
+            $activeTrips = \App\Models\TravelDetail\TdTrip::where('customer_id', $customer->id)
+                ->where('status', 'active')
+                ->where('computed_start_at', '<=', now())
+                ->where('computed_end_at', '>=', now())
+                ->with('travellers')
+                ->limit(10)
+                ->get();
+            if ($activeTrips->isNotEmpty()) {
+                $affectedTripsCount = (string) $activeTrips->count();
+                $affectedTripsHtml = app(\App\Services\NotificationRuleService::class)
+                    ->buildAffectedTripsHtmlPublic($activeTrips);
+            }
+        }
+
         $placeholders = [
             '{event_title}' => 'Test-Ereignis',
             '{country_name}' => 'Deutschland',
@@ -297,6 +336,8 @@ class NotificationSettingsController extends Controller
             '{description}' => 'Dies ist eine Test-Benachrichtigung um den E-Mail-Versand zu prüfen.',
             '{event_date}' => now()->format('d.m.Y'),
             '{unsubscribe_url}' => '#',
+            '{affected_trips}' => $affectedTripsHtml,
+            '{affected_trips_count}' => $affectedTripsCount,
         ];
 
         $tempRule = new NotificationRule();
