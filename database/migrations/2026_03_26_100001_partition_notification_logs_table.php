@@ -47,7 +47,7 @@ return new class extends Migration
                 is_test TINYINT(1) NOT NULL DEFAULT 0,
                 status ENUM('sent', 'failed') NOT NULL DEFAULT 'sent',
                 error_message TEXT NULL,
-                created_at DATETIME NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME NULL,
                 PRIMARY KEY (id, created_at),
                 INDEX idx_notification_rule_id (notification_rule_id),
