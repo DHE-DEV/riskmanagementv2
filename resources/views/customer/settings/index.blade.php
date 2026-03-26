@@ -3190,7 +3190,7 @@
                     {{-- Reiseliste --}}
                     <div x-show="!loading && folders.length > 0" x-cloak>
                         <template x-for="folder in folders" :key="folder.id">
-                            <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-3 hover:border-gray-300 transition-colors">
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-3 hover:border-gray-300 transition-colors relative">
                                 <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                                     {{-- Icon --}}
                                     <div class="hidden sm:block w-8 flex-shrink-0 pt-0.5 text-center">
@@ -3205,6 +3205,23 @@
                                                 <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap"
                                                       :class="statusClass(folder.status)"
                                                       x-text="statusLabel(folder.status)"></span>
+                                                {{-- Kebab Menü --}}
+                                                <div class="relative" x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
+                                                    <button @click.stop="menuOpen = !menuOpen" class="p-1 text-gray-400 hover:text-gray-600 rounded">
+                                                        <i class="fas fa-ellipsis-vertical"></i>
+                                                    </button>
+                                                    <div x-show="menuOpen" x-cloak x-transition
+                                                         class="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                                                        <button @click="menuOpen = false; $dispatch('edit-folder', folder.id)"
+                                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg flex items-center gap-2">
+                                                            <i class="fas fa-pen text-gray-400 text-xs"></i> Bearbeiten
+                                                        </button>
+                                                        <button @click="menuOpen = false; $dispatch('delete-folder', folder.id)"
+                                                                class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-b-lg flex items-center gap-2">
+                                                            <i class="fas fa-trash text-red-400 text-xs"></i> Löschen
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -3280,6 +3297,180 @@
                         </div>
                     </div>
                 </div>
+
+                    {{-- Delete Confirm --}}
+                    <div x-show="deleteConfirm" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="deleteConfirm = false">
+                        <div class="fixed inset-0 bg-black/50" @click="deleteConfirm = false"></div>
+                        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6" @click.stop>
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+                                    <i class="fas fa-trash text-red-500 text-lg"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Reise löschen?</h3>
+                                <p class="text-sm text-gray-500 mb-6">Diese Aktion kann nicht rückgängig gemacht werden. Alle zugehörigen Teilnehmer, Flüge und Hotels werden ebenfalls gelöscht.</p>
+                                <div class="flex gap-3 justify-center">
+                                    <button @click="deleteConfirm = false" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Abbrechen</button>
+                                    <button @click="confirmDelete()" class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">Endgültig löschen</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Edit Modal --}}
+                    <div x-show="editModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape.window="editModal = false">
+                        <div class="fixed inset-0 bg-black/50" @click="editModal = false"></div>
+                        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+                            <div class="flex items-center justify-between mb-5">
+                                <h3 class="text-lg font-semibold text-gray-900">Reise bearbeiten</h3>
+                                <button @click="editModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-xmark text-lg"></i></button>
+                            </div>
+
+                            <div x-show="editResult" x-cloak class="mb-4 p-4 rounded-lg"
+                                 :class="editSuccess ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+                                <p class="text-xs" :class="editSuccess ? 'text-green-800' : 'text-red-800'">
+                                    <i class="fas mr-1" :class="editSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                    <span x-text="editResult"></span>
+                                </p>
+                            </div>
+
+                            {{-- Step Indicator --}}
+                            <div class="flex items-center mb-6 border-b border-gray-200 pb-4">
+                                <template x-for="(s, i) in [{n:'Reisende',icon:'fa-users'},{n:'Flüge',icon:'fa-plane'},{n:'Hotels',icon:'fa-hotel'}]" :key="i">
+                                    <div class="flex items-center" :class="i > 0 ? 'ml-2' : ''">
+                                        <div x-show="i > 0" class="w-8 h-px bg-gray-300 mx-1"></div>
+                                        <button @click="editStep = i + 1" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                                :class="editStep === i + 1 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-500 hover:text-gray-700'">
+                                            <i class="fas text-[10px]" :class="s.icon"></i> <span x-text="s.n"></span>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Step 1: Reisende --}}
+                            <div x-show="editStep === 1">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-medium text-gray-700">Reisende</h4>
+                                    <button @click="editTravellers.push({salutation:'Herr',first_name:'',last_name:'',dob:'',nationality:'DE',email:'',phone:''})" type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Hinzufügen
+                                    </button>
+                                </div>
+                                <template x-for="(t, ti) in editTravellers" :key="ti">
+                                    <div class="border border-gray-200 rounded-lg p-4 mb-3 relative">
+                                        <button x-show="editTravellers.length > 1" @click="editTravellers.splice(ti,1)" type="button" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button>
+                                        <div class="text-xs font-medium text-gray-500 mb-3">Reisender <span x-text="ti+1"></span></div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Anrede</label>
+                                                <select x-model="t.salutation" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                                    <option value="Herr">Herr</option><option value="Frau">Frau</option><option value="Divers">Divers</option><option value="Kind">Kind</option><option value="Baby">Baby</option>
+                                                </select>
+                                            </div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Vorname *</label><input type="text" x-model="t.first_name" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Nachname *</label><input type="text" x-model="t.last_name" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Geburtsdatum</label><input type="date" x-model="t.dob" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Nationalität</label><input type="text" x-model="t.nationality" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs" maxlength="2"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">E-Mail</label><input type="email" x-model="t.email" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Telefon</label><input type="text" x-model="t.phone" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Step 2: Flüge --}}
+                            <div x-show="editStep === 2">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-medium text-gray-700">Flüge</h4>
+                                    <button @click="editFlights.push({dep_code:'',dep_time:'',arr_code:'',arr_time:'',airline:'',flight_nr:'',dep_terminal:'',arr_terminal:''})" type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Hinzufügen
+                                    </button>
+                                </div>
+                                <template x-for="(f, fi) in editFlights" :key="fi">
+                                    <div class="border border-gray-200 rounded-lg p-4 mb-3 relative">
+                                        <button @click="editFlights.splice(fi,1)" type="button" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button>
+                                        <div class="text-xs font-medium text-gray-500 mb-3"><i class="fas fa-plane mr-1"></i> Flug <span x-text="fi+1"></span></div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Abflug-Airport *</label><input type="text" x-model="f.dep_code" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" maxlength="3"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Abflug Datum/Zeit *</label><input type="datetime-local" x-model="f.dep_time" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Ankunft-Airport *</label><input type="text" x-model="f.arr_code" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" maxlength="3"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Ankunft Datum/Zeit *</label><input type="datetime-local" x-model="f.arr_time" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Airline-Code</label><input type="text" x-model="f.airline" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" maxlength="2"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Flugnummer</label><input type="text" x-model="f.flight_nr" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Terminal Ab</label><input type="text" x-model="f.dep_terminal" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Terminal An</label><input type="text" x-model="f.arr_terminal" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="editFlights.length === 0" class="text-center py-6 text-gray-400 text-xs">
+                                    <i class="fas fa-plane text-2xl mb-2"></i><p>Keine Flüge</p>
+                                </div>
+                            </div>
+
+                            {{-- Step 3: Hotels --}}
+                            <div x-show="editStep === 3">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-medium text-gray-700">Hotels</h4>
+                                    <button @click="editHotels.push({name:'',check_in:'',check_out:'',country:'',city:'',room_type:'',board:''})" type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Hinzufügen
+                                    </button>
+                                </div>
+                                <template x-for="(h, hi) in editHotels" :key="hi">
+                                    <div class="border border-gray-200 rounded-lg p-4 mb-3 relative">
+                                        <button @click="editHotels.splice(hi,1)" type="button" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button>
+                                        <div class="text-xs font-medium text-gray-500 mb-3"><i class="fas fa-hotel mr-1"></i> Hotel <span x-text="hi+1"></span></div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div class="col-span-2"><label class="block text-[11px] text-gray-500 mb-1">Hotelname *</label><input type="text" x-model="h.name" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Check-in *</label><input type="datetime-local" x-model="h.check_in" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Check-out *</label><input type="datetime-local" x-model="h.check_out" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Land (ISO) *</label><input type="text" x-model="h.country" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs uppercase" maxlength="2"></div>
+                                            <div><label class="block text-[11px] text-gray-500 mb-1">Stadt</label><input type="text" x-model="h.city" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Zimmertyp</label>
+                                                <select x-model="h.room_type" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                                    <option value="">--</option><option value="Single">Einzelzimmer</option><option value="Double">Doppelzimmer</option><option value="Suite">Suite</option><option value="Twin">Zweibettzimmer</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] text-gray-500 mb-1">Verpflegung</label>
+                                                <select x-model="h.board" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs">
+                                                    <option value="">--</option><option value="OV">Ohne</option><option value="BB">Frühstück</option><option value="HB">Halbpension</option><option value="FB">Vollpension</option><option value="AI">All Inclusive</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="editHotels.length === 0" class="text-center py-6 text-gray-400 text-xs">
+                                    <i class="fas fa-hotel text-2xl mb-2"></i><p>Keine Hotels</p>
+                                </div>
+                            </div>
+
+                            {{-- Booking Reference --}}
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div><label class="block text-[11px] text-gray-500 mb-1">Buchungsreferenz</label><input type="text" x-model="editBookingRef" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"></div>
+                                </div>
+                            </div>
+
+                            {{-- Navigation --}}
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-200">
+                                <button x-show="editStep > 1" @click="editStep--" type="button" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+                                    <i class="fas fa-arrow-left"></i> Zurück
+                                </button>
+                                <div x-show="editStep === 1" class="w-1"></div>
+                                <div class="flex gap-3">
+                                    <button @click="editModal = false" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Abbrechen</button>
+                                    <button x-show="editStep < 3" @click="editStep++" type="button" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                                        Weiter <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                    <button x-show="editStep === 3" @click="saveEdit()" :disabled="editSaving"
+                                            :class="editSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'"
+                                            class="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-2">
+                                        <i class="fas" :class="editSaving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                                        <span x-text="editSaving ? 'Wird gespeichert...' : 'Speichern'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 {{-- Reise aus JSON erstellen --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="travelDataImport()">
@@ -4163,14 +4354,6 @@ function travelDataList() {
         lastPage: 1,
         total: 0,
         counts: { current: null, upcoming: null, archive: null },
-        init() {
-            this.loadFolders();
-            this.loadCounts();
-            window.addEventListener('travel-data-reload', () => {
-                this.loadFolders();
-                this.loadCounts();
-            });
-        },
         switchTab(t) {
             this.tab = t;
             this.currentPage = 1;
@@ -4250,7 +4433,136 @@ function travelDataList() {
                 'completed': 'Abgeschlossen',
                 'cancelled': 'Storniert',
             }[s] || s;
-        }
+        },
+
+        // Edit/Delete
+        editModal: false,
+        deleteConfirm: false,
+        editId: null,
+        deleteId: null,
+        editSaving: false,
+        editResult: '',
+        editSuccess: false,
+        editStep: 1,
+        editBookingRef: '',
+        editTravellers: [],
+        editFlights: [],
+        editHotels: [],
+
+        init() {
+            this.loadFolders();
+            this.loadCounts();
+            window.addEventListener('travel-data-reload', () => { this.loadFolders(); this.loadCounts(); });
+            window.addEventListener('edit-folder', (e) => this.openEdit(e.detail));
+            window.addEventListener('delete-folder', (e) => { this.deleteId = e.detail; this.deleteConfirm = true; });
+        },
+
+        salutationReverse(code) {
+            return { mr: 'Herr', mrs: 'Frau', child: 'Kind', infant: 'Baby', diverse: 'Divers' }[code] || 'Herr';
+        },
+        async openEdit(id) {
+            this.editId = id;
+            this.editResult = '';
+            this.editStep = 1;
+            this.editSaving = false;
+            try {
+                const r = await fetch(`{{ url('customer/travel-data/folders') }}/${id}`, { headers: { 'Accept': 'application/json' } });
+                const d = await r.json();
+                const f = d.folder;
+                this.editBookingRef = (f.itineraries && f.itineraries[0]) ? f.itineraries[0].booking_reference || '' : '';
+                this.editTravellers = (f.participants || []).map(p => ({
+                    salutation: this.salutationReverse(p.salutation),
+                    first_name: p.first_name || '',
+                    last_name: p.last_name || '',
+                    dob: p.birth_date ? p.birth_date.substring(0, 10) : '',
+                    nationality: p.nationality || '',
+                    email: p.email || '',
+                    phone: p.phone || '',
+                }));
+                if (this.editTravellers.length === 0) this.editTravellers = [{ salutation: 'Herr', first_name: '', last_name: '', dob: '', nationality: 'DE', email: '', phone: '' }];
+
+                this.editFlights = [];
+                (f.flight_services || []).forEach(fs => {
+                    (fs.segments || []).forEach(seg => {
+                        const fmtDt = (v) => v ? v.replace(/\.000000Z$/, '').replace(/Z$/, '').substring(0, 16) : '';
+                        this.editFlights.push({
+                            dep_code: seg.departure_airport_code || '',
+                            dep_time: fmtDt(seg.departure_time),
+                            arr_code: seg.arrival_airport_code || '',
+                            arr_time: fmtDt(seg.arrival_time),
+                            airline: seg.airline_code || '',
+                            flight_nr: seg.flight_number || '',
+                            dep_terminal: seg.departure_terminal || '',
+                            arr_terminal: seg.arrival_terminal || '',
+                        });
+                    });
+                });
+
+                this.editHotels = (f.hotel_services || []).map(h => {
+                    const fmtD = (v) => v ? v.substring(0, 10) + 'T14:00' : '';
+                    const fmtD2 = (v) => v ? v.substring(0, 10) + 'T11:00' : '';
+                    return {
+                        name: h.hotel_name || '',
+                        check_in: h.check_in_date ? fmtD(h.check_in_date) : '',
+                        check_out: h.check_out_date ? fmtD2(h.check_out_date) : '',
+                        country: h.country_code || '',
+                        city: h.city || '',
+                        room_type: h.room_type || '',
+                        board: h.board_type || '',
+                    };
+                });
+
+                this.editModal = true;
+            } catch (e) {
+                this.editResult = 'Fehler beim Laden der Reise.';
+                this.editSuccess = false;
+            }
+        },
+        async saveEdit() {
+            this.editSaving = true;
+            this.editResult = '';
+            try {
+                const r = await fetch(`{{ url('customer/travel-data/folders') }}/${this.editId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({
+                        booking_reference: this.editBookingRef,
+                        travellers: this.editTravellers,
+                        flights: this.editFlights.filter(f => f.dep_code && f.arr_code && f.dep_time && f.arr_time),
+                        hotels: this.editHotels.filter(h => h.name && h.check_in && h.check_out && h.country),
+                    }),
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.editSuccess = true;
+                    this.editResult = d.message;
+                    this.loadFolders();
+                    setTimeout(() => { this.editModal = false; }, 1500);
+                } else {
+                    this.editSuccess = false;
+                    this.editResult = d.message || 'Fehler beim Speichern.';
+                }
+            } catch (e) {
+                this.editSuccess = false;
+                this.editResult = 'Verbindungsfehler.';
+            }
+            this.editSaving = false;
+        },
+        async confirmDelete() {
+            try {
+                const r = await fetch(`{{ url('customer/travel-data/folders') }}/${this.deleteId}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.loadFolders();
+                    this.loadCounts();
+                }
+            } catch (e) {}
+            this.deleteConfirm = false;
+            this.deleteId = null;
+        },
     };
 }
 

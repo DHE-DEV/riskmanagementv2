@@ -198,6 +198,12 @@ Route::prefix('customer')->name('customer.')->group(function () {
             ->name('travel-data.update-link');
         Route::post('/travel-data/delete-all-links', [\App\Http\Controllers\Customer\TravelDataController::class, 'deleteAllLinks'])
             ->name('travel-data.delete-all-links');
+        Route::get('/travel-data/folders/{id}', [\App\Http\Controllers\Customer\TravelDataController::class, 'showFolder'])
+            ->name('travel-data.folder.show');
+        Route::put('/travel-data/folders/{id}', [\App\Http\Controllers\Customer\TravelDataController::class, 'updateFolder'])
+            ->name('travel-data.folder.update');
+        Route::delete('/travel-data/folders/{id}', [\App\Http\Controllers\Customer\TravelDataController::class, 'deleteFolder'])
+            ->name('travel-data.folder.delete');
 
         // Notification Settings routes (Benachrichtigungs-Abonnement)
         Route::prefix('notification-settings')->name('notification-settings.')->group(function () {

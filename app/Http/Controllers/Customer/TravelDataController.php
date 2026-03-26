@@ -726,4 +726,175 @@ class TravelDataController extends Controller
             'check_out_date' => Carbon::parse($item['check_out']),
         ]);
     }
+
+    public function showFolder(int $id): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $folder = Folder::where('customer_id', $customer->id)
+            ->with(['participants', 'flightServices.segments', 'hotelServices'])
+            ->findOrFail($id);
+
+        return response()->json(['folder' => $folder]);
+    }
+
+    public function updateFolder(Request $request, int $id): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $folder = Folder::where('customer_id', $customer->id)->findOrFail($id);
+
+        return DB::transaction(function () use ($request, $folder, $customer) {
+            $data = $request->validate([
+                'booking_reference' => 'nullable|string|max:50',
+                'travellers' => 'required|array|min:1',
+                'travellers.*.salutation' => 'required|string',
+                'travellers.*.first_name' => 'required|string|max:255',
+                'travellers.*.last_name' => 'required|string|max:255',
+                'travellers.*.dob' => 'nullable|date',
+                'travellers.*.nationality' => 'nullable|string|max:2',
+                'travellers.*.email' => 'nullable|email|max:255',
+                'travellers.*.phone' => 'nullable|string|max:50',
+                'flights' => 'nullable|array',
+                'flights.*.dep_code' => 'required|string|max:3',
+                'flights.*.dep_time' => 'required|string',
+                'flights.*.arr_code' => 'required|string|max:3',
+                'flights.*.arr_time' => 'required|string',
+                'flights.*.airline' => 'nullable|string|max:2',
+                'flights.*.flight_nr' => 'nullable|string|max:10',
+                'flights.*.dep_terminal' => 'nullable|string|max:10',
+                'flights.*.arr_terminal' => 'nullable|string|max:10',
+                'hotels' => 'nullable|array',
+                'hotels.*.name' => 'required|string|max:255',
+                'hotels.*.check_in' => 'required|string',
+                'hotels.*.check_out' => 'required|string',
+                'hotels.*.country' => 'required|string|max:2',
+                'hotels.*.city' => 'nullable|string|max:255',
+                'hotels.*.room_type' => 'nullable|string|max:50',
+                'hotels.*.board' => 'nullable|string|max:10',
+            ]);
+
+            // Update participants
+            $folder->participants()->delete();
+            $salutationMap = ['Herr' => 'mr', 'Frau' => 'mrs', 'Kind' => 'child', 'Baby' => 'infant', 'Divers' => 'diverse'];
+            foreach ($data['travellers'] as $t) {
+                FolderParticipant::create([
+                    'folder_id' => $folder->id,
+                    'customer_id' => $customer->id,
+                    'salutation' => $salutationMap[$t['salutation']] ?? 'mr',
+                    'first_name' => $t['first_name'],
+                    'last_name' => $t['last_name'],
+                    'birth_date' => $t['dob'] ?? null,
+                    'nationality' => $t['nationality'] ?? null,
+                    'email' => $t['email'] ?? null,
+                    'phone' => $t['phone'] ?? null,
+                ]);
+            }
+
+            // Update itinerary: delete old services, rebuild
+            $folder->flightServices()->each(fn ($fs) => $fs->segments()->delete());
+            $folder->flightServices()->delete();
+            $folder->hotelServices()->delete();
+
+            $itinerary = $folder->itineraries()->first();
+            if (!$itinerary) {
+                $itinerary = FolderItinerary::create([
+                    'folder_id' => $folder->id,
+                    'customer_id' => $customer->id,
+                    'booking_reference' => $data['booking_reference'] ?? null,
+                    'start_date' => $folder->travel_start_date,
+                    'end_date' => $folder->travel_end_date,
+                ]);
+            }
+
+            $destinations = [];
+            $dates = [];
+
+            foreach ($data['flights'] ?? [] as $f) {
+                $depTime = Carbon::parse($f['dep_time']);
+                $arrTime = Carbon::parse($f['arr_time']);
+                $dates[] = $depTime;
+                $dates[] = $arrTime;
+
+                $flightService = FolderFlightService::create([
+                    'itinerary_id' => $itinerary->id,
+                    'folder_id' => $folder->id,
+                    'customer_id' => $customer->id,
+                    'departure_time' => $depTime,
+                    'arrival_time' => $arrTime,
+                    'origin_airport_code' => strtoupper($f['dep_code']),
+                    'destination_airport_code' => strtoupper($f['arr_code']),
+                ]);
+
+                FolderFlightSegment::create([
+                    'flight_service_id' => $flightService->id,
+                    'folder_id' => $folder->id,
+                    'customer_id' => $customer->id,
+                    'segment_number' => 1,
+                    'departure_airport_code' => strtoupper($f['dep_code']),
+                    'departure_time' => $depTime,
+                    'departure_terminal' => $f['dep_terminal'] ?? null,
+                    'arrival_airport_code' => strtoupper($f['arr_code']),
+                    'arrival_time' => $arrTime,
+                    'arrival_terminal' => $f['arr_terminal'] ?? null,
+                    'airline_code' => isset($f['airline']) ? strtoupper($f['airline']) : null,
+                    'flight_number' => $f['flight_nr'] ?? null,
+                ]);
+            }
+
+            foreach ($data['hotels'] ?? [] as $h) {
+                $checkIn = Carbon::parse($h['check_in']);
+                $checkOut = Carbon::parse($h['check_out']);
+                $dates[] = $checkIn;
+                $dates[] = $checkOut;
+                $cc = strtoupper($h['country']);
+                $destinations[] = $cc;
+
+                FolderHotelService::create([
+                    'itinerary_id' => $itinerary->id,
+                    'folder_id' => $folder->id,
+                    'customer_id' => $customer->id,
+                    'hotel_name' => $h['name'],
+                    'country_code' => $cc,
+                    'city' => $h['city'] ?? null,
+                    'check_in_date' => $checkIn,
+                    'check_out_date' => $checkOut,
+                    'room_type' => $h['room_type'] ?? null,
+                    'board_type' => $h['board'] ?? null,
+                ]);
+            }
+
+            // Update folder dates and destinations
+            if (!empty($dates)) {
+                $folder->travel_start_date = collect($dates)->min();
+                $folder->travel_end_date = collect($dates)->max();
+            }
+            if (!empty($destinations)) {
+                $existing = $folder->destinations_visited ?? [];
+                $folder->destinations_visited = array_values(array_unique(array_merge($existing, $destinations)));
+            }
+            $folder->total_participants = count($data['travellers']);
+            if ($data['booking_reference'] ?? null) {
+                $itinerary->update(['booking_reference' => $data['booking_reference']]);
+            }
+            $folder->save();
+
+            return response()->json(['success' => true, 'message' => 'Reise erfolgreich aktualisiert.']);
+        });
+    }
+
+    public function deleteFolder(int $id): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $folder = Folder::where('customer_id', $customer->id)->findOrFail($id);
+
+        DB::transaction(function () use ($folder) {
+            $folder->flightServices()->each(fn ($fs) => $fs->segments()->delete());
+            $folder->flightServices()->delete();
+            $folder->hotelServices()->delete();
+            $folder->participants()->delete();
+            $folder->itineraries()->delete();
+            $folder->delete();
+        });
+
+        return response()->json(['success' => true, 'message' => 'Reise erfolgreich gelöscht.']);
+    }
 }
