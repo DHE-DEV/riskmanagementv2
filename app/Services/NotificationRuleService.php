@@ -364,8 +364,8 @@ class NotificationRuleService
         string $eventType,
         array &$sentEmails,
     ): bool {
-        $template = $rule->template ?? NotificationTemplate::system($rule->source)->first()
-            ?? NotificationTemplate::system()->first();
+        $source = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
+        $template = $rule->template ?? NotificationTemplate::system($source)->first();
 
         if (!$template) {
             Log::warning('Kein Template gefunden für Notification Rule', ['rule_id' => $rule->id]);

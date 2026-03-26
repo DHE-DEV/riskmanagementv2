@@ -224,8 +224,8 @@ class NotificationRuleForm extends Component
         $customer = auth('customer')->user();
         $rule = $customer->notificationRules()->with(['template', 'recipients'])->findOrFail($this->ruleId);
 
-        $template = $rule->template ?? NotificationTemplate::system($rule->source)->first()
-            ?? NotificationTemplate::system()->first();
+        $source = $rule->source ?? $this->source;
+        $template = $rule->template ?? NotificationTemplate::system($source)->first();
 
         if (! $template) {
             $this->testMailStatus = 'error:Keine E-Mail-Vorlage gefunden.';

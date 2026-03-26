@@ -247,8 +247,8 @@ class NotificationSettingsController extends Controller
         $customer = auth('customer')->user();
         $rule = $customer->notificationRules()->with(['template', 'recipients'])->findOrFail($id);
 
-        $template = $rule->template ?? NotificationTemplate::system($rule->source)->first()
-            ?? NotificationTemplate::system()->first();
+        $source = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
+        $template = $rule->template ?? NotificationTemplate::system($source)->first();
         if (!$template) {
             return response()->json(['success' => false, 'message' => 'Keine E-Mail-Vorlage gefunden.'], 404);
         }
