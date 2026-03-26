@@ -171,8 +171,35 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         // Customer Settings
         Route::get('/settings', function () {
+            $customer = auth('customer')->user();
+            $section = request()->query('section');
+
+            // Auto-sync Passolution features when visiting travel-requirements
+            if ($section === 'travel-requirements' && $customer->hasActivePassolution()) {
+                $passolutionService = app(\App\Services\PassolutionService::class);
+                if ($passolutionService->needsUpdate($customer)) {
+                    $passolutionService->updateSubscription($customer);
+                    $customer->refresh();
+                }
+            }
+
             return view('customer.settings.index');
         })->name('settings');
+
+        Route::post('/settings/sync-features', function () {
+            $customer = auth('customer')->user();
+            if (!$customer->hasActivePassolution()) {
+                return response()->json(['success' => false, 'message' => 'Keine aktive Verbindung.']);
+            }
+            $passolutionService = app(\App\Services\PassolutionService::class);
+            $result = $passolutionService->updateSubscription($customer);
+            $customer->refresh();
+            return response()->json([
+                'success' => $result,
+                'message' => $result ? 'Features erfolgreich aktualisiert.' : 'Fehler beim Aktualisieren.',
+                'features' => $customer->passolution_features ?? [],
+            ]);
+        })->name('settings.sync-features');
 
         // API Token routes
         Route::prefix('api-tokens')->name('api-tokens.')->group(function () {

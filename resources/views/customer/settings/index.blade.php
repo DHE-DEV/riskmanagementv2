@@ -1630,6 +1630,30 @@
                     @endif
                 </div>
 
+                {{-- Refresh Button --}}
+                @if($hasActiveToken)
+                    <div class="flex justify-end mt-4" x-data="{ syncing: false, syncMsg: '' }">
+                        <button @click="async () => {
+                            syncing = true; syncMsg = '';
+                            try {
+                                const r = await fetch('{{ route('customer.settings.sync-features') }}', {
+                                    method: 'POST',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                });
+                                const d = await r.json();
+                                syncMsg = d.message;
+                                if (d.success) setTimeout(() => location.reload(), 800);
+                            } catch(e) { syncMsg = 'Verbindungsfehler.'; }
+                            syncing = false;
+                        }" :disabled="syncing"
+                                class="inline-flex items-center px-3 py-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 gap-1.5">
+                            <i class="fas" :class="syncing ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'"></i>
+                            <span x-text="syncing ? 'Wird aktualisiert...' : 'Features aktualisieren'"></span>
+                        </button>
+                        <span x-show="syncMsg" x-cloak x-text="syncMsg" class="ml-3 text-xs text-gray-500 self-center"></span>
+                    </div>
+                @endif
+
                 {{-- Freigeschaltete Funktionen als einzelne Sections --}}
                 @php
                     $activeFeatures = $customer->passolution_features ?? [];
