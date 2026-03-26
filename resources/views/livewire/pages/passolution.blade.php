@@ -106,7 +106,12 @@
 
             <!-- Content: Passolution iframe -->
             <div class="content-area">
-                <iframe src="https://web.passolution.de" allow="geolocation; clipboard-write" loading="lazy"></iframe>
+                <iframe
+                    src="https://web.passolution.de"
+                    allow="geolocation; clipboard-write; storage-access"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-top-navigation-by-user-activation allow-modals"
+                    loading="lazy"
+                ></iframe>
             </div>
         </div>
 
