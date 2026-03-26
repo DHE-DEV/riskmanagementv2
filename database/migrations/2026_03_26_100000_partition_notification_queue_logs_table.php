@@ -8,8 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Backup existing data
-        $existingData = DB::table('notification_queue_logs')->get();
+        // Backup existing data (table may not exist on fresh deployments)
+        $existingData = Schema::hasTable('notification_queue_logs')
+            ? DB::table('notification_queue_logs')->get()
+            : collect();
 
         Schema::dropIfExists('notification_queue_logs');
 
