@@ -1614,23 +1614,6 @@
 
 
 
-                            {{-- Freigeschaltete Funktionen --}}
-                            @if(!empty($customer->passolution_features))
-                                @php
-                                    $featureLabels = app(\App\Services\PassolutionService::class)->getFeatureLabels($customer->passolution_features);
-                                @endphp
-                                <div class="pt-2 border-t border-gray-200">
-                                    <p class="text-xs font-medium text-gray-600 mb-2">Freigeschaltete Funktionen:</p>
-                                    <div class="flex flex-wrap gap-1">
-                                        @foreach($featureLabels as $label)
-                                            <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-green-50 text-green-700 rounded border border-green-200">
-                                                <i class="fas fa-check mr-1 text-[8px]"></i> {{ $label }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-
                             @if($tokenSource === 'oauth')
                                 <div class="pt-2 border-t border-gray-200">
                                     <form method="POST" action="{{ route('customer.passolution.disconnect') }}" class="inline">
@@ -1646,6 +1629,54 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Freigeschaltete Funktionen als einzelne Sections --}}
+                @php
+                    $activeFeatures = $customer->passolution_features ?? [];
+                    $featureCards = [
+                        'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],
+                        'content.cruise' => ['icon' => 'fa-ship', 'label' => 'Kreuzfahrt-Inhalte', 'desc' => 'Informationen zu Kreuzfahrtrouten, Häfen, Einreisebestimmungen für Kreuzfahrtreisende und hafenbezogene Sicherheitshinweise.'],
+                        'content.individual' => ['icon' => 'fa-user-pen', 'label' => 'Individuelle Inhalte', 'desc' => 'Erstellung und Verwaltung eigener Inhalte und Informationen, die individuell für Ihre Reisenden bereitgestellt werden.'],
+                        'content.tour_operator' => ['icon' => 'fa-building', 'label' => 'Veranstalter-Inhalte', 'desc' => 'Zugriff auf veranstalterspezifische Inhalte mit Pauschalreise-Informationen, Hoteldetails und Zielgebietsbeschreibungen.'],
+                        'customer.send_emails' => ['icon' => 'fa-envelope', 'label' => 'E-Mail versenden', 'desc' => 'Versand von E-Mails mit Reiseinformationen, Einreisebestimmungen und Sicherheitshinweisen direkt an Ihre Reisenden.'],
+                        'customer.travel_detail_link.create' => ['icon' => 'fa-link', 'label' => 'Reisedetail-Links erstellen', 'desc' => 'Erstellung personalisierter Reisedetail-Links mit individuellen Einreisebestimmungen und Informationen für jeden Reisenden.'],
+                        'customer.travel_detail_link.manage' => ['icon' => 'fa-sliders', 'label' => 'Reisedetail-Links verwalten', 'desc' => 'Verwaltung, Bearbeitung und Überwachung bestehender Reisedetail-Links mit Zugriffsstatistiken und Konfigurationsoptionen.'],
+                        'customer.travel_detail_link.advert.manage' => ['icon' => 'fa-bullhorn', 'label' => 'Werbung verwalten', 'desc' => 'Integration und Verwaltung von Werbeinhalten und Partnerbannern in Ihren Reisedetail-Links.'],
+                        'customer.travel_detail_link.email_subscriptions' => ['icon' => 'fa-bell', 'label' => 'E-Mail Abonnements', 'desc' => 'Verwaltung von E-Mail-Abonnements für automatische Benachrichtigungen bei Änderungen der Einreisebestimmungen.'],
+                        'customer.travel_detail_link.inspiration.manage' => ['icon' => 'fa-lightbulb', 'label' => 'Inspirationen verwalten', 'desc' => 'Erstellung und Verwaltung von Reise-Inspirationen und Empfehlungen für Ihre Kunden.'],
+                        'customer.travel_detail_link.media.manage' => ['icon' => 'fa-photo-film', 'label' => 'Medien verwalten', 'desc' => 'Upload und Verwaltung von Bildern, Videos und Dokumenten für Ihre Reisedetail-Links.'],
+                        'subscription' => ['icon' => 'fa-credit-card', 'label' => 'Abonnement', 'desc' => 'Verwaltung Ihres Abonnements mit Lizenzdetails, Laufzeit und verfügbaren Erweiterungen.'],
+                    ];
+                    $hiddenFeatures = ['embed.corona', 'content.infosystem', 'content.cruise_operator'];
+                @endphp
+
+                @foreach($featureCards as $featureKey => $card)
+                    @if(!in_array($featureKey, $hiddenFeatures))
+                        @php $isActive = in_array($featureKey, $activeFeatures); @endphp
+                        <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5">
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 flex-shrink-0 pt-0.5 text-center">
+                                    <i class="fas {{ $card['icon'] }} text-2xl {{ $isActive ? 'text-blue-400' : 'text-gray-400' }}"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-700">{{ $card['label'] }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ $card['desc'] }}</p>
+                                </div>
+                                <div class="w-32 flex-shrink-0 flex justify-end">
+                                    @if($isActive)
+                                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                                            <i class="fas fa-check-circle mr-1.5"></i> Aktiv
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap">
+                                            <i class="fas fa-circle-minus mr-1.5"></i> Inaktiv
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
 
             @elseif($settingsSection === 'global-travel-monitor')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Global Travel Monitor</h3>
