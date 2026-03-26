@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Passolution - Global Travel Monitor</title>
 
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-32x32.png') }}">
@@ -108,7 +111,7 @@
         </div>
 
         <!-- Footer -->
-        <x-public-header type="footer" />
+        <x-public-footer />
     </div>
 </body>
 </html>
