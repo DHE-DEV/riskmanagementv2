@@ -1656,7 +1656,7 @@
                         <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5">
                             <div class="flex items-start gap-4">
                                 <div class="w-8 flex-shrink-0 pt-0.5 text-center">
-                                    <i class="fas {{ $card['icon'] }} text-2xl {{ $isActive ? 'text-blue-400' : 'text-gray-400' }}"></i>
+                                    <i class="fas {{ $card['icon'] }} text-2xl text-gray-400"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-700">{{ $card['label'] }}</p>
