@@ -1032,6 +1032,64 @@
                         </div>
                     </div>
 
+                    <!-- 3-Letter-Code -->
+                    <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
+                        <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('airportCodeSection')">
+                            <h4 class="text-sm font-medium text-gray-700">3-Letter-Code</h4>
+                            <svg id="airportCodeToggleIcon" class="w-4 h-4 transform transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="airportCodeSection" class="p-3" style="display: none;">
+                            <div class="space-y-2">
+                                <input
+                                    type="text"
+                                    placeholder="IATA-Code oder Name suchen..."
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    id="airportCodeFilterInput"
+                                    onkeyup="handleAirportCodeFilterKeyup(event)"
+                                    onkeydown="handleAirportCodeFilterKeydown(event)"
+                                >
+                                <div id="airportCodeFilterResults" class="space-y-1 text-sm text-gray-700 max-h-32 overflow-y-auto transition-all duration-200"></div>
+                                <div id="selectedAirportCodeDisplay" class="mt-2 space-y-1"></div>
+
+                                <!-- Radius -->
+                                <div id="airportCodeRadiusSection" class="mt-2" style="display: none;">
+                                    <label class="text-xs font-medium text-gray-600 block mb-1">Radius (km)</label>
+                                    <div class="flex flex-wrap gap-1">
+                                        <button onclick="setProximityRadius(50)" class="proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">50</button>
+                                        <button onclick="setProximityRadius(100)" class="proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">100</button>
+                                        <button onclick="setProximityRadius(200)" class="proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">200</button>
+                                        <button onclick="setProximityRadius(300)" class="proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">300</button>
+                                        <button onclick="setProximityRadius(400)" class="proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">400</button>
+                                        <button onclick="setProximityRadius(500)" class="proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">500</button>
+                                    </div>
+                                </div>
+
+                                <!-- Oder: Geokoordinaten manuell -->
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <label class="text-xs font-medium text-gray-600 block mb-1">Oder: Koordinaten eingeben</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="proximityLatInput" placeholder="Breitengrad" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <input type="text" id="proximityLngInput" placeholder="Längengrad" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div class="mt-1">
+                                        <label class="text-xs font-medium text-gray-600 block mb-1">Radius (km)</label>
+                                        <div class="flex flex-wrap gap-1">
+                                            <button onclick="setManualProximityRadius(50)" class="manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">50</button>
+                                            <button onclick="setManualProximityRadius(100)" class="manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">100</button>
+                                            <button onclick="setManualProximityRadius(200)" class="manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">200</button>
+                                            <button onclick="setManualProximityRadius(300)" class="manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">300</button>
+                                            <button onclick="setManualProximityRadius(400)" class="manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">400</button>
+                                            <button onclick="setManualProximityRadius(500)" class="manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300">500</button>
+                                        </div>
+                                    </div>
+                                    <div id="manualProximityDisplay" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Continents -->
                     <div class="xborder xborder-gray-200 xrounded-lg bg-gray-100">
                         <div class="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onclick="toggleFilterSubSection('continentsSection')">
@@ -1953,8 +2011,39 @@ async function loadDashboardData() {
                     timeMatch = daysDiff <= 30;
                 }
             }
-            
-            return providerMatch && countryMatch && allowRisk && allowEventType && timeMatch;
+
+            // Proximity-Filter (3-Letter-Code / Geokoordinaten + Radius)
+            let proximityMatch = true;
+            if (window.proximityFilter && window.proximityFilter.radiusKm) {
+                const pf = window.proximityFilter;
+                let eventLat = null;
+                let eventLng = null;
+
+                // Event-Koordinaten ermitteln
+                if (e.lat && e.lng) {
+                    eventLat = parseFloat(e.lat);
+                    eventLng = parseFloat(e.lng);
+                } else if (e.latitude && e.longitude) {
+                    eventLat = parseFloat(e.latitude);
+                    eventLng = parseFloat(e.longitude);
+                } else if (e.countries && e.countries.length > 0) {
+                    const firstCountry = e.countries[0];
+                    if (firstCountry.latitude && firstCountry.longitude) {
+                        eventLat = parseFloat(firstCountry.latitude);
+                        eventLng = parseFloat(firstCountry.longitude);
+                    }
+                }
+
+                if (eventLat !== null && eventLng !== null && !isNaN(eventLat) && !isNaN(eventLng)) {
+                    const dist = haversineDistanceJs(pf.lat, pf.lng, eventLat, eventLng);
+                    proximityMatch = dist <= pf.radiusKm;
+                } else {
+                    // Events ohne Koordinaten bei aktivem Proximity-Filter ausblenden
+                    proximityMatch = false;
+                }
+            }
+
+            return providerMatch && countryMatch && allowRisk && allowEventType && timeMatch && proximityMatch;
         });
         currentEvents = filtered;
         addMarkersToMap();
@@ -5137,6 +5226,340 @@ function clearAllCountryFilters() {
     }
 }
 
+// ===== 3-Letter-Code (Proximity) Filter =====
+let airportCodeSearchTimer;
+let airportCodeActiveIndex = 0;
+window.proximityFilter = null; // { lat, lng, radiusKm, code?, name? }
+window.proximityRadiusCircle = null;
+window.proximityMarker = null;
+
+function handleAirportCodeFilterKeyup(event) {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') {
+        clearTimeout(airportCodeSearchTimer);
+        airportCodeSearchTimer = setTimeout(() => searchAirportCodes(event.target.value), 250);
+    }
+}
+
+function handleAirportCodeFilterKeydown(event) {
+    const box = document.getElementById('airportCodeFilterResults');
+    if (!box) return;
+    const items = box.querySelectorAll('.autocomplete-item');
+    if (items.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        airportCodeActiveIndex = Math.min(airportCodeActiveIndex + 1, items.length - 1);
+        setAirportCodeActiveIndex(airportCodeActiveIndex);
+        items[airportCodeActiveIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        airportCodeActiveIndex = Math.max(airportCodeActiveIndex - 1, 0);
+        setAirportCodeActiveIndex(airportCodeActiveIndex);
+        items[airportCodeActiveIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const activeItem = items[airportCodeActiveIndex];
+        if (activeItem) {
+            selectAirportCode(
+                activeItem.getAttribute('data-iata'),
+                activeItem.getAttribute('data-name'),
+                parseFloat(activeItem.getAttribute('data-lat')),
+                parseFloat(activeItem.getAttribute('data-lng'))
+            );
+            box.innerHTML = '';
+            document.getElementById('airportCodeFilterInput').value = '';
+        }
+    } else if (event.key === 'Escape') {
+        event.preventDefault();
+        box.innerHTML = '';
+        airportCodeActiveIndex = 0;
+    }
+}
+
+function setAirportCodeActiveIndex(index) {
+    const box = document.getElementById('airportCodeFilterResults');
+    if (!box) return;
+    airportCodeActiveIndex = index;
+    box.querySelectorAll('.autocomplete-item').forEach((el, i) => {
+        if (i === index) {
+            el.classList.add('bg-blue-50', 'border-blue-300');
+            el.classList.remove('hover:bg-gray-50');
+        } else {
+            el.classList.remove('bg-blue-50', 'border-blue-300');
+            el.classList.add('hover:bg-gray-50');
+        }
+    });
+}
+
+async function searchAirportCodes(query) {
+    const box = document.getElementById('airportCodeFilterResults');
+    if (!box) return;
+    const q = (query || '').trim();
+    if (!q) { box.innerHTML = ''; return; }
+
+    try {
+        box.innerHTML = '<div class="text-xs text-gray-500">Suche…</div>';
+        const res = await fetch('/api/airport-codes/search?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = Array.isArray(data.data) ? data.data : [];
+
+        if (!list.length) {
+            box.innerHTML = '<div class="text-xs text-gray-500">Keine Treffer für "' + escapeHtml(q) + '"</div>';
+            box.style.maxHeight = '8rem';
+            return;
+        }
+
+        box.style.maxHeight = list.length > 2 ? '16rem' : '8rem';
+
+        box.innerHTML = list.map((ac, i) => (
+            `<div class="autocomplete-item px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 flex items-center justify-between cursor-pointer" data-index="${i}" data-iata="${escapeForAttr(ac.iata_code)}" data-name="${escapeForAttr(ac.name)}" data-lat="${ac.latitude}" data-lng="${ac.longitude}">
+                <div>
+                    <div class="font-medium"><span class="text-blue-600">${escapeHtml(ac.iata_code)}</span> — ${escapeHtml(ac.name)}</div>
+                    <div class="text-xs text-gray-500">${escapeHtml(ac.municipality || '')}${ac.country ? ' (' + escapeHtml(ac.country) + ')' : ''}</div>
+                </div>
+                <button class="text-xs px-2 py-1 border rounded text-gray-700 bg-gray-300 hover:bg-gray-100">Übernehmen</button>
+            </div>`
+        )).join('');
+
+        box.querySelectorAll('.autocomplete-item').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                setAirportCodeActiveIndex(parseInt(el.getAttribute('data-index')));
+            });
+            const selectFn = (e) => {
+                e.preventDefault();
+                selectAirportCode(
+                    el.getAttribute('data-iata'),
+                    el.getAttribute('data-name'),
+                    parseFloat(el.getAttribute('data-lat')),
+                    parseFloat(el.getAttribute('data-lng'))
+                );
+                box.innerHTML = '';
+                document.getElementById('airportCodeFilterInput').value = '';
+            };
+            el.addEventListener('click', selectFn);
+            el.querySelector('button')?.addEventListener('click', (e) => { e.stopPropagation(); selectFn(e); });
+        });
+    } catch (e) {
+        box.innerHTML = '<div class="text-xs text-red-600">Fehler: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
+function selectAirportCode(iataCode, name, lat, lng) {
+    window.proximityFilter = { lat, lng, code: iataCode, name: name, radiusKm: null };
+
+    // Show radius section
+    document.getElementById('airportCodeRadiusSection').style.display = 'block';
+
+    // Clear manual coordinate inputs
+    document.getElementById('proximityLatInput').value = '';
+    document.getElementById('proximityLngInput').value = '';
+    clearManualProximityDisplay();
+
+    // Render selected code badge
+    renderSelectedAirportCode();
+
+    // Show pin and center map on selected location
+    updateProximityMarker(lat, lng, iataCode);
+    if (map) {
+        map.setView([lat, lng], 8, { animate: true, duration: 0.8 });
+    }
+}
+
+function renderSelectedAirportCode() {
+    const display = document.getElementById('selectedAirportCodeDisplay');
+    if (!display) return;
+
+    if (!window.proximityFilter || !window.proximityFilter.code) {
+        display.innerHTML = '';
+        return;
+    }
+
+    const f = window.proximityFilter;
+    let label = `<span class="text-blue-600 font-medium">${escapeHtml(f.code)}</span> — ${escapeHtml(f.name)}`;
+    if (f.radiusKm) {
+        label += ` <span class="text-gray-500">(${f.radiusKm} km)</span>`;
+    }
+
+    display.innerHTML = `
+        <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded px-2 py-1 text-sm">
+            <span>${label}</span>
+            <button type="button" class="text-blue-700 hover:text-blue-900" onclick="clearProximityFilter()" style="cursor: pointer;">&times;</button>
+        </span>
+    `;
+}
+
+function setProximityRadius(km) {
+    if (!window.proximityFilter) return;
+    window.proximityFilter.radiusKm = km;
+
+    // Highlight active button
+    document.querySelectorAll('.proximity-radius-btn').forEach(btn => {
+        if (parseInt(btn.textContent) === km) {
+            btn.className = 'proximity-radius-btn px-2 py-1 text-xs rounded border bg-blue-600 text-white border-blue-600';
+        } else {
+            btn.className = 'proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300';
+        }
+    });
+
+    renderSelectedAirportCode();
+    applyProximityFilter();
+}
+
+function setManualProximityRadius(km) {
+    const latVal = parseFloat(document.getElementById('proximityLatInput').value);
+    const lngVal = parseFloat(document.getElementById('proximityLngInput').value);
+
+    if (isNaN(latVal) || isNaN(lngVal) || latVal < -90 || latVal > 90 || lngVal < -180 || lngVal > 180) {
+        const display = document.getElementById('manualProximityDisplay');
+        if (display) display.innerHTML = '<span class="text-xs text-red-600">Bitte gültige Koordinaten eingeben</span>';
+        return;
+    }
+
+    // Clear airport code selection
+    window.proximityFilter = { lat: latVal, lng: lngVal, radiusKm: km, code: null, name: null };
+    document.getElementById('airportCodeRadiusSection').style.display = 'none';
+    document.querySelectorAll('.proximity-radius-btn').forEach(btn => {
+        btn.className = 'proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300';
+    });
+    document.getElementById('selectedAirportCodeDisplay').innerHTML = '';
+    document.getElementById('airportCodeFilterInput').value = '';
+
+    // Highlight active manual button
+    document.querySelectorAll('.manual-proximity-radius-btn').forEach(btn => {
+        if (parseInt(btn.textContent) === km) {
+            btn.className = 'manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-blue-600 text-white border-blue-600';
+        } else {
+            btn.className = 'manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300';
+        }
+    });
+
+    // Show manual selection badge
+    const display = document.getElementById('manualProximityDisplay');
+    if (display) {
+        display.innerHTML = `
+            <span class="inline-flex items-center gap-2 bg-green-50 text-green-800 border border-green-200 rounded px-2 py-1 text-sm">
+                <span>${latVal.toFixed(4)}, ${lngVal.toFixed(4)} <span class="text-gray-500">(${km} km)</span></span>
+                <button type="button" class="text-green-700 hover:text-green-900" onclick="clearProximityFilter()" style="cursor: pointer;">&times;</button>
+            </span>
+        `;
+    }
+
+    if (map) {
+        map.setView([latVal, lngVal], 8, { animate: true, duration: 0.8 });
+    }
+
+    applyProximityFilter();
+}
+
+function clearManualProximityDisplay() {
+    const display = document.getElementById('manualProximityDisplay');
+    if (display) display.innerHTML = '';
+    document.querySelectorAll('.manual-proximity-radius-btn').forEach(btn => {
+        btn.className = 'manual-proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300';
+    });
+}
+
+function clearProximityFilter() {
+    window.proximityFilter = null;
+
+    // Remove radius circle and marker from map
+    if (window.proximityRadiusCircle && map) {
+        map.removeLayer(window.proximityRadiusCircle);
+        window.proximityRadiusCircle = null;
+    }
+    if (window.proximityMarker && map) {
+        map.removeLayer(window.proximityMarker);
+        window.proximityMarker = null;
+    }
+
+    // Reset UI
+    document.getElementById('selectedAirportCodeDisplay').innerHTML = '';
+    document.getElementById('airportCodeRadiusSection').style.display = 'none';
+    document.getElementById('airportCodeFilterInput').value = '';
+    document.getElementById('proximityLatInput').value = '';
+    document.getElementById('proximityLngInput').value = '';
+    clearManualProximityDisplay();
+
+    document.querySelectorAll('.proximity-radius-btn').forEach(btn => {
+        btn.className = 'proximity-radius-btn px-2 py-1 text-xs rounded border bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300';
+    });
+
+    const resultsBox = document.getElementById('airportCodeFilterResults');
+    if (resultsBox) resultsBox.innerHTML = '';
+
+    checkActiveFilters();
+    loadDashboardData();
+
+    if (map && initialMapView) {
+        map.setView(initialMapView.center, initialMapView.zoom, { animate: true, duration: 0.8 });
+    }
+}
+
+function updateProximityMarker(lat, lng, label) {
+    // Remove existing marker
+    if (window.proximityMarker && map) {
+        map.removeLayer(window.proximityMarker);
+        window.proximityMarker = null;
+    }
+    if (!map || lat === null || lng === null) return;
+
+    const icon = L.divIcon({
+        className: 'proximity-pin',
+        html: `<div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="background:#3b82f6;color:#fff;font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.3);">${escapeHtml(label)}</div>
+            <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #3b82f6;"></div>
+            <div style="width:8px;height:8px;background:#3b82f6;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);margin-top:-1px;"></div>
+        </div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 38]
+    });
+
+    window.proximityMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+}
+
+function applyProximityFilter() {
+    if (!window.proximityFilter || !window.proximityFilter.radiusKm) return;
+
+    const f = window.proximityFilter;
+
+    // Draw radius circle on map
+    if (window.proximityRadiusCircle && map) {
+        map.removeLayer(window.proximityRadiusCircle);
+    }
+    if (map) {
+        window.proximityRadiusCircle = L.circle([f.lat, f.lng], {
+            radius: f.radiusKm * 1000,
+            color: '#3b82f6',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.08,
+            weight: 2,
+            dashArray: '5, 5'
+        }).addTo(map);
+
+        // Fit map to circle bounds
+        map.fitBounds(window.proximityRadiusCircle.getBounds(), { padding: [20, 20], animate: true, duration: 0.8 });
+    }
+
+    // Update pin marker
+    const label = f.code ? f.code : `${f.lat.toFixed(2)}, ${f.lng.toFixed(2)}`;
+    updateProximityMarker(f.lat, f.lng, label);
+
+    checkActiveFilters();
+    loadDashboardData();
+}
+
+function haversineDistanceJs(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 // Test-Funktion für Länder-Suche
 function testCountrySearch() {
     const testQueries = ['Deutschland', 'Germany', 'DE', 'USA', 'Frankreich'];
@@ -5319,6 +5742,11 @@ function updateFilterIndicator() {
 
     // Check Country filter
     if (window.selectedCountries && window.selectedCountries.size > 0) {
+        hasActiveFilters = true;
+    }
+
+    // Check Proximity filter (3-Letter-Code / Coordinates)
+    if (window.proximityFilter && window.proximityFilter.radiusKm) {
         hasActiveFilters = true;
     }
 
@@ -5565,6 +5993,32 @@ function resetAllFilters() {
     window.selectedCountries = new Map();
     const countryDisplay = document.getElementById('selectedCountriesFilterDisplay');
     if (countryDisplay) countryDisplay.innerHTML = '';
+
+    // Reset Proximity filter (3-Letter-Code / Coordinates)
+    window.proximityFilter = null;
+    if (window.proximityRadiusCircle && map) {
+        map.removeLayer(window.proximityRadiusCircle);
+        window.proximityRadiusCircle = null;
+    }
+    if (window.proximityMarker && map) {
+        map.removeLayer(window.proximityMarker);
+        window.proximityMarker = null;
+    }
+    const acDisplay = document.getElementById('selectedAirportCodeDisplay');
+    if (acDisplay) acDisplay.innerHTML = '';
+    const acRadiusSection = document.getElementById('airportCodeRadiusSection');
+    if (acRadiusSection) acRadiusSection.style.display = 'none';
+    const acInput = document.getElementById('airportCodeFilterInput');
+    if (acInput) acInput.value = '';
+    const proxLatInput = document.getElementById('proximityLatInput');
+    if (proxLatInput) proxLatInput.value = '';
+    const proxLngInput = document.getElementById('proximityLngInput');
+    if (proxLngInput) proxLngInput.value = '';
+    const manualProxDisplay = document.getElementById('manualProximityDisplay');
+    if (manualProxDisplay) manualProxDisplay.innerHTML = '';
+    document.querySelectorAll('.proximity-radius-btn, .manual-proximity-radius-btn').forEach(btn => {
+        btn.className = btn.className.replace(/bg-blue-600 text-white border-blue-600/, 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300');
+    });
 
     // Reset Continent filters - all continents active by default
     window.selectedContinents = new Set(continents.map(c => c.id));

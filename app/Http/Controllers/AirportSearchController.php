@@ -269,6 +269,47 @@ class AirportSearchController extends Controller
         ]);
     }
 
+    public function airportCodeSearch(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        if ($q === '') {
+            return response()->json(['data' => []]);
+        }
+
+        try {
+            $upperQ = strtoupper($q);
+
+            $results = AirportCode::query()
+                ->where(function ($query) use ($q, $upperQ) {
+                    $query->where('iata_code', 'like', "{$upperQ}%")
+                        ->orWhere('name', 'like', "%{$q}%")
+                        ->orWhere('municipality', 'like', "%{$q}%");
+                })
+                ->whereNotNull('iata_code')
+                ->where('iata_code', '!=', '')
+                ->whereNotNull('latitude_deg')
+                ->whereNotNull('longitude_deg')
+                ->orderByRaw("CASE WHEN iata_code = ? THEN 0 WHEN iata_code LIKE ? THEN 1 ELSE 2 END", [$upperQ, "{$upperQ}%"])
+                ->limit(20)
+                ->get();
+
+            $data = $results->map(fn (AirportCode $ac) => [
+                'iata_code' => $ac->iata_code,
+                'name' => $ac->name,
+                'municipality' => $ac->municipality,
+                'latitude' => (float) $ac->latitude_deg,
+                'longitude' => (float) $ac->longitude_deg,
+                'country' => $ac->iso_country,
+                'type' => $ac->type,
+            ]);
+
+            return response()->json(['data' => $data->values()]);
+        } catch (\Exception $e) {
+            \Log::error('Airport code search error: ' . $e->getMessage());
+            return response()->json(['data' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
     public function countrySearch(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
