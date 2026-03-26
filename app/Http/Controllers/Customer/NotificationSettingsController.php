@@ -127,7 +127,8 @@ class NotificationSettingsController extends Controller
             abort(403);
         }
 
-        $templates = NotificationTemplate::forCustomer($customer->id)
+        $source = request()->query('source');
+        $templates = NotificationTemplate::forCustomer($customer->id, $source)
             ->latest()
             ->get();
 
@@ -173,14 +174,28 @@ class NotificationSettingsController extends Controller
     public function logs()
     {
         $customer = auth('customer')->user();
-        $logs = NotificationLog::where('customer_id', $customer->id)
-            ->with('notificationRule:id,name')
-            ->orderBy('created_at', 'desc')
-            ->paginate(25);
+        $query = NotificationLog::where('customer_id', $customer->id)
+            ->with('notificationRule:id,name,source')
+            ->orderBy('created_at', 'desc');
 
-        if (request()->wantsJson()) {
-            return response()->json($logs);
+        $source = request()->query('source');
+        if ($source) {
+            $query->where(function ($q) use ($source) {
+                $q->whereHas('notificationRule', fn ($r) => $r->where('source', $source))
+                  ->orWhere(function ($q2) use ($source) {
+                      // Test-Mails ohne Rule: über template_name filtern
+                      $q2->whereNull('notification_rule_id')
+                         ->whereExists(function ($sub) use ($source) {
+                             $sub->select(\DB::raw(1))
+                                 ->from('notification_templates')
+                                 ->whereColumn('notification_templates.name', 'notification_logs.template_name')
+                                 ->where('notification_templates.source', $source);
+                         });
+                  });
+            });
         }
+
+        $logs = $query->paginate(25);
 
         return response()->json($logs);
     }

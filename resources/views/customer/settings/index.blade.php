@@ -500,7 +500,7 @@
                         async loadTemplates() {
                             this.loading = true;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}', { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}?source=travel-alert', { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) {
                                     const d = await r.json();
                                     this.templates = d.templates || d;
@@ -729,7 +729,7 @@
                             this.logsLoading = true;
                             if (page) this.logsPage = page;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?source=travel-alert&page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) {
                                     const d = await r.json();
                                     this.logs = d.data || [];
@@ -2162,7 +2162,7 @@
                         async loadTemplates() {
                             this.loading = true;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}', { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}?source=global-travel-monitor', { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) {
                                     const d = await r.json();
                                     this.templates = d.templates || d;
@@ -2391,7 +2391,7 @@
                             this.logsLoading = true;
                             if (page) this.logsPage = page;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?source=global-travel-monitor&page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) {
                                     const d = await r.json();
                                     this.logs = d.data || [];
@@ -2559,7 +2559,7 @@
                         async loadTemplates() {
                             this.loading = true;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}', { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.templates.index') }}?source=travel-alert', { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) {
                                     const d = await r.json();
                                     this.templates = d.templates || d;
@@ -2788,7 +2788,7 @@
                             this.logsLoading = true;
                             if (page) this.logsPage = page;
                             try {
-                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
+                                const r = await fetch('{{ route('customer.notification-settings.logs') }}?source=travel-alert&page=' + this.logsPage, { headers: { 'Accept': 'application/json' } });
                                 if (r.ok) {
                                     const d = await r.json();
                                     this.logs = d.data || [];
