@@ -136,7 +136,7 @@
                 </a>
                 @endif
 
-                <div class="settings-section-title mt-2">Travel Compliance Platform</div>
+                <div class="settings-section-title mt-2">Travel Information Platform</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'travel-requirements']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-requirements' ? 'active' : '' }}">
