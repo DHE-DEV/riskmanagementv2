@@ -144,29 +144,27 @@ class NotificationRuleService
         $notificationsSent = 0;
         $errors = 0;
 
-        // CustomEvents verarbeiten (nur für travel-alert, GTM bekommt keine CustomEvents)
-        if ($source === NotificationRule::SOURCE_TRAVEL_ALERT) {
-            $customEvents = CustomEvent::where('is_active', true)
-                ->where('review_status', 'approved')
-                ->whereNull('customer_id')
-                ->where('created_at', '>=', $since)
-                ->get();
+        // CustomEvents verarbeiten (für beide Quellen: Travel Alert und GTM)
+        $customEvents = CustomEvent::where('is_active', true)
+            ->where('review_status', 'approved')
+            ->whereNull('customer_id')
+            ->where('created_at', '>=', $since)
+            ->get();
 
-            foreach ($customEvents as $event) {
-                try {
-                    $sent = $this->processCustomEvent($event, sourceFilter: $source);
-                    if ($sent > 0) {
-                        $eventsProcessed++;
-                        $notificationsSent += $sent;
-                    }
-                } catch (\Exception $e) {
-                    $errors++;
-                    Log::error('Fehler bei Batch-Verarbeitung CustomEvent', [
-                        'source' => $source,
-                        'event_id' => $event->id,
-                        'error' => $e->getMessage(),
-                    ]);
+        foreach ($customEvents as $event) {
+            try {
+                $sent = $this->processCustomEvent($event, sourceFilter: $source);
+                if ($sent > 0) {
+                    $eventsProcessed++;
+                    $notificationsSent += $sent;
                 }
+            } catch (\Exception $e) {
+                $errors++;
+                Log::error('Fehler bei Batch-Verarbeitung CustomEvent', [
+                    'source' => $source,
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
@@ -221,13 +219,9 @@ class NotificationRuleService
             ->where('is_active', true)
             ->whereIn('customer_id', $customers);
 
-        // Source-Filter nur anwenden wenn die Spalte existiert
-        if (\Schema::hasColumn('notification_rules', 'source')) {
-            if ($sourceFilter) {
-                $query->where('source', $sourceFilter);
-            } elseif ($event instanceof CustomEvent) {
-                $query->where('source', '!=', NotificationRule::SOURCE_GLOBAL_TRAVEL_MONITOR);
-            }
+        // Source-Filter: nur Regeln der passenden Quelle laden
+        if ($sourceFilter && \Schema::hasColumn('notification_rules', 'source')) {
+            $query->where('source', $sourceFilter);
         }
 
         $rules = $query->get();
