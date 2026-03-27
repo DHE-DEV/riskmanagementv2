@@ -478,15 +478,20 @@ class NotificationRuleService
             return collect();
         }
 
-        // Eventdatum bestimmen
-        $eventDate = $event instanceof CustomEvent
+        // Eventzeitraum bestimmen (bei CustomEvent kann es ein Datumsbereich sein)
+        $eventStartDate = $event instanceof CustomEvent
             ? ($event->start_date ?? now())
             : ($event->event_date ?? now());
 
+        $eventEndDate = $event instanceof CustomEvent
+            ? ($event->end_date ?? $eventStartDate)
+            : $eventStartDate;
+
+        // Überschneidung: Reise startet vor Event-Ende UND Reise endet nach Event-Start
         return TdTrip::where('customer_id', $customerId)
             ->where('status', 'active')
-            ->where('computed_start_at', '<=', $eventDate)
-            ->where('computed_end_at', '>=', $eventDate)
+            ->where('computed_start_at', '<=', $eventEndDate)
+            ->where('computed_end_at', '>=', $eventStartDate)
             ->with('travellers')
             ->get()
             ->filter(function (TdTrip $trip) use ($countryIsoCodes) {
