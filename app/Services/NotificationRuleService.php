@@ -633,8 +633,13 @@ class NotificationRuleService
                 }
             }
 
-            if ($trip->pds_share_url) {
-                $html .= '<div style="margin-top: 4px;"><a href="' . e($trip->pds_share_url) . '" style="color: #0d6efd; font-size: 13px;">&#128279; Travel Link öffnen</a></div>';
+            if ($trip->pds_tid || $trip->pds_share_url) {
+                $travelDetailsBase = rtrim(env('PASSOLUTION_TRAVEL_DETAILS_LINK', 'https://travel-details.eu'), '/');
+                $tid = $trip->pds_tid ?: $trip->external_trip_id;
+                $travelLink = $tid
+                    ? $travelDetailsBase . '/de?tid=' . urlencode($tid) . '&preview'
+                    : $trip->pds_share_url;
+                $html .= '<div style="margin-top: 4px;"><a href="' . e($travelLink) . '" style="color: #0d6efd; font-size: 13px;">&#128279; Travel Link öffnen</a></div>';
             }
 
             $html .= '</div>';
