@@ -33,10 +33,17 @@ class SendRiskEventNotifications implements ShouldQueue, ShouldBeUnique
 
     public function handle(NotificationRuleService $service): void
     {
-        $sentCount = match (true) {
-            $this->event instanceof CustomEvent => $service->processCustomEvent($this->event, $this->force),
-            $this->event instanceof DisasterEvent => $service->processDisasterEvent($this->event, $this->force),
-        };
+        // Beide Quellen separat verarbeiten, damit jede ihre eigene
+        // Empfänger-Deduplizierung hat und Regeln korrekt greifen
+        $sentCount = 0;
+
+        if ($this->event instanceof CustomEvent) {
+            $sentCount += $service->processCustomEvent($this->event, $this->force, 'travel-alert');
+            $sentCount += $service->processCustomEvent($this->event, $this->force, 'global-travel-monitor');
+        } else {
+            $sentCount += $service->processDisasterEvent($this->event, $this->force, 'travel-alert');
+            $sentCount += $service->processDisasterEvent($this->event, $this->force, 'global-travel-monitor');
+        }
 
         Log::info('Risk-Event Benachrichtigungen verarbeitet', [
             'event_type' => class_basename($this->event),
