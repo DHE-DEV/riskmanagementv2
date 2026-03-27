@@ -242,10 +242,34 @@ class NotificationRuleService
                 ->delete();
         }
 
+        Log::info('sendMatchingNotifications: Starte Regelprüfung', [
+            'event_id' => $event->id,
+            'event_type' => get_class($event),
+            'riskLevel' => $riskLevel,
+            'categories' => $categories,
+            'countryIds' => $countryIds,
+            'countryIsoCodes' => $countryIsoCodes,
+            'rules_count' => $rules->count(),
+            'sourceFilter' => $sourceFilter,
+        ]);
+
         foreach ($rules as $rule) {
+            Log::info('sendMatchingNotifications: Prüfe Regel', [
+                'rule_id' => $rule->id,
+                'rule_name' => $rule->name,
+                'rule_source' => $rule->source,
+                'rule_risk_levels' => $rule->risk_levels,
+                'rule_categories' => $rule->categories,
+                'rule_country_ids' => $rule->country_ids,
+                'customer_id' => $rule->customer_id,
+            ]);
+
             if (!$this->ruleMatches($rule, $riskLevel, $categories, $countryIds)) {
+                Log::info('sendMatchingNotifications: Regel matcht NICHT', ['rule_id' => $rule->id]);
                 continue;
             }
+
+            Log::info('sendMatchingNotifications: Regel matcht', ['rule_id' => $rule->id]);
 
             // Duplicate prevention: skip if already sent for this rule + event (unless forced)
             if (!$force && $this->alreadySentForEvent($rule->id, $eventId, $eventType)) {
