@@ -540,8 +540,9 @@ class NotificationRuleService
         ]);
 
         // Überschneidung: Reise startet vor Event-Ende UND Reise endet nach Event-Start
+        // Status: active + confirmed berücksichtigen (nicht cancelled/completed/draft)
         $trips = TdTrip::where('customer_id', $customerId)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'confirmed'])
             ->where('computed_start_at', '<=', $eventEndDate)
             ->where('computed_end_at', '>=', $eventStartDate)
             ->with('travellers')
