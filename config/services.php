@@ -55,6 +55,7 @@ return [
         'oauth_refresh_url' => env('PASSOLUTION_OAUTH_REFRESH_URL', 'https://web.passolution.eu/oauth/token/refresh'),
         // Scheduled sync settings
         'sync_enabled' => env('PASSOLUTION_SYNC_ENABLED', true),
+        'travel_details_link' => env('PASSOLUTION_TRAVEL_DETAILS_LINK', 'https://travel-details.eu'),
     ],
 
     // PDS API - For SSO token-based API access

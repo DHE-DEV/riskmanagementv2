@@ -634,7 +634,7 @@ class NotificationRuleService
             }
 
             if ($trip->pds_tid || $trip->pds_share_url) {
-                $travelDetailsBase = rtrim(env('PASSOLUTION_TRAVEL_DETAILS_LINK', 'https://travel-details.eu'), '/');
+                $travelDetailsBase = rtrim(config('services.passolution.travel_details_link', 'https://travel-details.eu'), '/');
                 $tid = $trip->pds_tid ?: $trip->external_trip_id;
                 $travelLink = $tid
                     ? $travelDetailsBase . '/de?tid=' . urlencode($tid) . '&preview'
