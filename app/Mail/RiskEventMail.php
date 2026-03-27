@@ -37,6 +37,10 @@ class RiskEventMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: new \Illuminate\Mail\Mailables\Address(
+                config('mail.from.address'),
+                'Passolution Travel Information Platform',
+            ),
             subject: $this->replacePlaceholders($this->template->subject, $this->placeholders),
         );
     }
