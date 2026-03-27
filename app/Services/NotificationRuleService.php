@@ -293,16 +293,27 @@ class NotificationRuleService
             // Bei Travel-Alert-Regeln: betroffene Reisen suchen
             $rulePlaceholders = $placeholders;
             $ruleSource = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
-            Log::info('Travel Alert: Prüfe affected_trips', [
-                'rule_id' => $rule->id,
-                'rule_source' => $ruleSource,
-                'customer_id' => $rule->customer_id,
-                'countryIsoCodes' => $countryIsoCodes,
-                'is_travel_alert' => $ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT,
-                'has_country_codes' => !empty($countryIsoCodes),
-            ]);
-            if ($ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT && !empty($countryIsoCodes)) {
-                $affectedTrips = $this->findAffectedTrips($rule->customer_id, $countryIsoCodes, $event);
+            if ($ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT) {
+                // Regel-Länder bestimmen: leer = alle Reisen (kein Länderfilter)
+                $ruleCountryIsoCodes = [];
+                if (!empty($rule->country_ids)) {
+                    $ruleCountryIsoCodes = Country::whereIn('id', $rule->country_ids)
+                        ->pluck('iso_code')
+                        ->filter()
+                        ->map(fn ($c) => strtoupper($c))
+                        ->values()
+                        ->toArray();
+                }
+
+                Log::info('Travel Alert: Prüfe affected_trips', [
+                    'rule_id' => $rule->id,
+                    'customer_id' => $rule->customer_id,
+                    'rule_country_ids' => $rule->country_ids,
+                    'ruleCountryIsoCodes' => $ruleCountryIsoCodes,
+                    'filter_by_countries' => !empty($ruleCountryIsoCodes),
+                ]);
+
+                $affectedTrips = $this->findAffectedTrips($rule->customer_id, $ruleCountryIsoCodes, $event);
                 $rulePlaceholders['{affected_trips}'] = $this->buildAffectedTripsHtml($affectedTrips);
                 $rulePlaceholders['{affected_trips_count}'] = (string) $affectedTrips->count();
                 Log::info('Travel Alert: affected_trips Ergebnis', [
@@ -310,7 +321,6 @@ class NotificationRuleService
                     'affected_trips_count' => $affectedTrips->count(),
                 ]);
             } else {
-                Log::info('Travel Alert: Überspringe affected_trips (kein Travel-Alert oder keine Länder-Codes)');
                 $rulePlaceholders['{affected_trips}'] = '';
                 $rulePlaceholders['{affected_trips_count}'] = '0';
             }
@@ -504,17 +514,14 @@ class NotificationRuleService
 
     /**
      * Finde aktive Reisen eines Kunden, die von einem Event betroffen sind.
-     * Matching: Reiseland überschneidet sich mit Event-Ländern UND Reisezeitraum ist aktiv.
+     * Bei Travel-Alert: countryIsoCodes sind die REGEL-Länder.
+     * Leer = alle Reisen im Zeitraum, gefüllt = nur Reisen in diese Länder.
      */
     private function findAffectedTrips(
         int $customerId,
         array $countryIsoCodes,
         CustomEvent|DisasterEvent $event,
     ): Collection {
-        if (empty($countryIsoCodes)) {
-            return collect();
-        }
-
         // Eventzeitraum bestimmen (bei CustomEvent kann es ein Datumsbereich sein)
         $eventStartDate = $event instanceof CustomEvent
             ? ($event->start_date ?? now())
@@ -527,21 +534,22 @@ class NotificationRuleService
         Log::info('findAffectedTrips: Suche Reisen', [
             'customer_id' => $customerId,
             'countryIsoCodes' => $countryIsoCodes,
+            'filterByCountries' => !empty($countryIsoCodes),
             'eventStartDate' => $eventStartDate?->toDateTimeString(),
             'eventEndDate' => $eventEndDate?->toDateTimeString(),
         ]);
 
         // Überschneidung: Reise startet vor Event-Ende UND Reise endet nach Event-Start
-        $tripsBeforeFilter = TdTrip::where('customer_id', $customerId)
+        $trips = TdTrip::where('customer_id', $customerId)
             ->where('status', 'active')
             ->where('computed_start_at', '<=', $eventEndDate)
             ->where('computed_end_at', '>=', $eventStartDate)
             ->with('travellers')
             ->get();
 
-        Log::info('findAffectedTrips: Reisen vor Länder-Filter', [
-            'count' => $tripsBeforeFilter->count(),
-            'trips' => $tripsBeforeFilter->map(fn ($t) => [
+        Log::info('findAffectedTrips: Reisen im Zeitraum', [
+            'count' => $trips->count(),
+            'trips' => $trips->map(fn ($t) => [
                 'id' => $t->id,
                 'countries_visited' => $t->countries_visited,
                 'computed_start_at' => $t->computed_start_at?->toDateString(),
@@ -549,31 +557,21 @@ class NotificationRuleService
             ])->toArray(),
         ]);
 
-        // Zusätzlich: Alle aktiven Reisen des Kunden loggen (ohne Datumsfilter)
-        $allActiveTrips = TdTrip::where('customer_id', $customerId)
-            ->where('status', 'active')
-            ->count();
-        Log::info('findAffectedTrips: Alle aktiven Reisen des Kunden (ohne Datumsfilter)', [
-            'count' => $allActiveTrips,
-        ]);
+        // Wenn keine Regel-Länder gesetzt: alle Reisen im Zeitraum zurückgeben
+        if (empty($countryIsoCodes)) {
+            Log::info('findAffectedTrips: Keine Länder-Filterung (Regel hat keine Länder)');
+            return $trips;
+        }
 
-        return $tripsBeforeFilter
+        // Sonst: nur Reisen filtern, die in die Regel-Länder reisen
+        return $trips
             ->filter(function (TdTrip $trip) use ($countryIsoCodes) {
                 $tripCountries = $trip->countries_visited ?? [];
 
-                $match = !empty(array_intersect(
+                return !empty(array_intersect(
                     array_map('strtoupper', $tripCountries),
                     array_map('strtoupper', $countryIsoCodes),
                 ));
-
-                Log::info('findAffectedTrips: Länder-Vergleich', [
-                    'trip_id' => $trip->id,
-                    'tripCountries' => $tripCountries,
-                    'eventCountries' => $countryIsoCodes,
-                    'match' => $match,
-                ]);
-
-                return $match;
             });
     }
 
