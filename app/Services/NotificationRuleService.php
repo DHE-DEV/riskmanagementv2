@@ -269,11 +269,24 @@ class NotificationRuleService
             // Bei Travel-Alert-Regeln: betroffene Reisen suchen
             $rulePlaceholders = $placeholders;
             $ruleSource = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
+            Log::info('Travel Alert: Prüfe affected_trips', [
+                'rule_id' => $rule->id,
+                'rule_source' => $ruleSource,
+                'customer_id' => $rule->customer_id,
+                'countryIsoCodes' => $countryIsoCodes,
+                'is_travel_alert' => $ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT,
+                'has_country_codes' => !empty($countryIsoCodes),
+            ]);
             if ($ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT && !empty($countryIsoCodes)) {
                 $affectedTrips = $this->findAffectedTrips($rule->customer_id, $countryIsoCodes, $event);
                 $rulePlaceholders['{affected_trips}'] = $this->buildAffectedTripsHtml($affectedTrips);
                 $rulePlaceholders['{affected_trips_count}'] = (string) $affectedTrips->count();
+                Log::info('Travel Alert: affected_trips Ergebnis', [
+                    'rule_id' => $rule->id,
+                    'affected_trips_count' => $affectedTrips->count(),
+                ]);
             } else {
+                Log::info('Travel Alert: Überspringe affected_trips (kein Travel-Alert oder keine Länder-Codes)');
                 $rulePlaceholders['{affected_trips}'] = '';
                 $rulePlaceholders['{affected_trips_count}'] = '0';
             }
@@ -487,20 +500,56 @@ class NotificationRuleService
             ? ($event->end_date ?? $eventStartDate)
             : $eventStartDate;
 
+        Log::info('findAffectedTrips: Suche Reisen', [
+            'customer_id' => $customerId,
+            'countryIsoCodes' => $countryIsoCodes,
+            'eventStartDate' => $eventStartDate?->toDateTimeString(),
+            'eventEndDate' => $eventEndDate?->toDateTimeString(),
+        ]);
+
         // Überschneidung: Reise startet vor Event-Ende UND Reise endet nach Event-Start
-        return TdTrip::where('customer_id', $customerId)
+        $tripsBeforeFilter = TdTrip::where('customer_id', $customerId)
             ->where('status', 'active')
             ->where('computed_start_at', '<=', $eventEndDate)
             ->where('computed_end_at', '>=', $eventStartDate)
             ->with('travellers')
-            ->get()
+            ->get();
+
+        Log::info('findAffectedTrips: Reisen vor Länder-Filter', [
+            'count' => $tripsBeforeFilter->count(),
+            'trips' => $tripsBeforeFilter->map(fn ($t) => [
+                'id' => $t->id,
+                'countries_visited' => $t->countries_visited,
+                'computed_start_at' => $t->computed_start_at?->toDateString(),
+                'computed_end_at' => $t->computed_end_at?->toDateString(),
+            ])->toArray(),
+        ]);
+
+        // Zusätzlich: Alle aktiven Reisen des Kunden loggen (ohne Datumsfilter)
+        $allActiveTrips = TdTrip::where('customer_id', $customerId)
+            ->where('status', 'active')
+            ->count();
+        Log::info('findAffectedTrips: Alle aktiven Reisen des Kunden (ohne Datumsfilter)', [
+            'count' => $allActiveTrips,
+        ]);
+
+        return $tripsBeforeFilter
             ->filter(function (TdTrip $trip) use ($countryIsoCodes) {
                 $tripCountries = $trip->countries_visited ?? [];
 
-                return !empty(array_intersect(
+                $match = !empty(array_intersect(
                     array_map('strtoupper', $tripCountries),
                     array_map('strtoupper', $countryIsoCodes),
                 ));
+
+                Log::info('findAffectedTrips: Länder-Vergleich', [
+                    'trip_id' => $trip->id,
+                    'tripCountries' => $tripCountries,
+                    'eventCountries' => $countryIsoCodes,
+                    'match' => $match,
+                ]);
+
+                return $match;
             });
     }
 
