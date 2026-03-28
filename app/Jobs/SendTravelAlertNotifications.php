@@ -13,7 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class SendRiskEventNotifications implements ShouldQueue, ShouldBeUnique
+class SendTravelAlertNotifications implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -39,7 +39,7 @@ class SendRiskEventNotifications implements ShouldQueue, ShouldBeUnique
             $this->event instanceof DisasterEvent => $service->processDisasterEvent($this->event, $this->force, 'travel-alert'),
         };
 
-        Log::info('Risk-Event Benachrichtigungen verarbeitet', [
+        Log::info('Travel-Alert Benachrichtigungen verarbeitet', [
             'event_type' => class_basename($this->event),
             'event_id' => $this->event->id,
             'title' => $this->event->title,

@@ -36,11 +36,12 @@ class ViewCustomEvent extends ViewRecord
                         return;
                     }
 
-                    \App\Jobs\SendRiskEventNotifications::dispatch($event, force: true);
+                    \App\Jobs\SendTravelAlertNotifications::dispatch($event, force: true);
+                    \App\Jobs\SendGtmNotifications::dispatch($event, force: true);
 
                     \Filament\Notifications\Notification::make()
                         ->title('Benachrichtigungen ausgelöst')
-                        ->body('Die Benachrichtigungen werden im Hintergrund verarbeitet.')
+                        ->body('Travel Alert und GTM Benachrichtigungen werden im Hintergrund verarbeitet.')
                         ->success()
                         ->send();
                 }),

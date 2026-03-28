@@ -314,6 +314,12 @@ class NotificationRuleService
                     'rule_id' => $rule->id,
                     'affected_trips_count' => $affectedTrips->count(),
                 ]);
+
+                // Travel Alert: Keine Mail senden wenn keine Reisen betroffen sind
+                if ($affectedTrips->isEmpty()) {
+                    Log::info('Travel Alert: Keine betroffenen Reisen, überspringe', ['rule_id' => $rule->id]);
+                    continue;
+                }
             } else {
                 $rulePlaceholders['{affected_trips}'] = '';
                 $rulePlaceholders['{affected_trips_count}'] = '0';
