@@ -85,6 +85,13 @@ if (config('travel_detail.enabled') && config('travel_detail.retention.scheduled
         ->appendOutputTo(storage_path('logs/travel-detail-purge.log'));
 }
 
+// Travel Links Sync (pro Kunde ein Job auf eigener Queue)
+Schedule::command('travel-links:sync')
+    ->cron('*/' . config('notifications.travel_links_sync_interval', 30) . ' * * * *')
+    ->withoutOverlapping(10)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/travel-links-sync.log'));
+
 // GTM Notification Queue
 Schedule::command('notifications:process-gtm')
     ->cron('*/' . config('notifications.gtm_interval', 5) . ' * * * *')

@@ -22,4 +22,12 @@ return [
     | Wie weit zurück nach unverarbeiteten Events gesucht wird.
     */
     'lookback_hours' => (int) env('NOTIFICATION_LOOKBACK_HOURS', 24),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Travel Links Sync Interval (Minuten)
+    |--------------------------------------------------------------------------
+    | Wie oft die Travel Links der Kunden automatisch synchronisiert werden.
+    */
+    'travel_links_sync_interval' => (int) env('TRAVEL_LINKS_SYNC_INTERVAL', 30),
 ];

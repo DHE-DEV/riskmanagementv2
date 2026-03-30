@@ -89,6 +89,19 @@ class NotificationQueueMonitor extends Page
                     ->where('started_at', '>=', $today)->sum('errors'),
                 'interval' => config('notifications.travel_alert_interval', 5),
             ],
+            'travel_link_sync' => [
+                'last_run' => NotificationQueueLog::forQueue('travel-link-sync')
+                    ->latest('started_at')->first(),
+                'today_runs' => NotificationQueueLog::forQueue('travel-link-sync')
+                    ->where('started_at', '>=', $today)->count(),
+                'today_synced' => NotificationQueueLog::forQueue('travel-link-sync')
+                    ->where('started_at', '>=', $today)->sum('notifications_sent'),
+                'today_errors' => NotificationQueueLog::forQueue('travel-link-sync')
+                    ->where('started_at', '>=', $today)->sum('errors'),
+                'today_customers' => NotificationQueueLog::forQueue('travel-link-sync')
+                    ->where('started_at', '>=', $today)->sum('events_processed'),
+                'interval' => config('notifications.travel_links_sync_interval', 30),
+            ],
         ];
     }
 
@@ -120,6 +133,24 @@ class NotificationQueueMonitor extends Page
 
                     Notification::make()
                         ->title('Travel-Alert-Queue wurde ausgeführt')
+                        ->body(Artisan::output())
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('syncTravelLinks')
+                ->label('Travel Links Sync')
+                ->icon('heroicon-o-link')
+                ->color('info')
+                ->requiresConfirmation()
+                ->modalHeading('Travel Links synchronisieren')
+                ->modalDescription('Für alle Kunden mit aktivierten Travel Links wird ein Sync-Job auf die Queue gestellt.')
+                ->modalSubmitActionLabel('Sync starten')
+                ->action(function () {
+                    Artisan::call('travel-links:sync');
+
+                    Notification::make()
+                        ->title('Travel Links Sync gestartet')
                         ->body(Artisan::output())
                         ->success()
                         ->send();
