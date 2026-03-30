@@ -46,6 +46,7 @@ class TdTrip extends Model
         'pds_tid',
         'pds_share_created_at',
         'raw_payload',
+        'is_test_data',
     ];
 
     protected $casts = [
@@ -63,6 +64,7 @@ class TdTrip extends Model
         'raw_payload' => 'array',
         'is_archived' => 'boolean',
         'is_cruise' => 'boolean',
+        'is_test_data' => 'boolean',
         'with_minors' => 'boolean',
         'visits' => 'integer',
     ];
