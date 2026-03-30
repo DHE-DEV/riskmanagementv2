@@ -2793,7 +2793,7 @@
                                             <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-500">
                                                 <span x-show="rule.risk_level_labels.length"><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span x-text="rule.risk_level_labels.join(', ')"></span></span>
                                                 <span x-show="rule.category_labels.length"><i class="fas fa-tag text-blue-500 mr-1"></i><span x-text="rule.category_labels.join(', ')"></span></span>
-                                                <span><i class="fas fa-globe text-green-500 mr-1"></i><span x-text="rule.country_count ? rule.country_count + ' Länder' : 'Alle Länder'"></span></span>
+                                                <span><i class="fas fa-globe text-green-500 mr-1"></i>Automatisch (Reisedaten)</span>
                                                 <span><i class="fas fa-envelope text-purple-500 mr-1"></i><span x-text="rule.recipients_count"></span> Empfänger</span>
                                             </div>
                                         </div>

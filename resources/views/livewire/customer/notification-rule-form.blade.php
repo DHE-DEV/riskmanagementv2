@@ -85,43 +85,52 @@
                 <p class="text-xs text-gray-500 mt-1">Leer = alle Kategorien</p>
             </div>
 
-            {{-- Country Search --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Länder</label>
-                <p class="text-xs text-gray-500 mb-2">Leer = alle Länder</p>
+            {{-- Country Search (nur für Global Travel Monitor) --}}
+            @if($source !== 'travel-alert')
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Länder</label>
+                    <p class="text-xs text-gray-500 mb-2">Leer = alle Länder</p>
 
-                <div class="relative">
-                    <input type="text" wire:model.live.debounce.300ms="countrySearch"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Land suchen...">
+                    <div class="relative">
+                        <input type="text" wire:model.live.debounce.300ms="countrySearch"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Land suchen...">
 
-                    @if(count($countryResults) > 0)
-                        <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                            @foreach($countryResults as $country)
-                                <button type="button"
-                                        wire:click="addCountry({{ $country['id'] }}, '{{ addslashes($country['name']) }}')"
-                                        class="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm">
+                        @if(count($countryResults) > 0)
+                            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                @foreach($countryResults as $country)
+                                    <button type="button"
+                                            wire:click="addCountry({{ $country['id'] }}, '{{ addslashes($country['name']) }}')"
+                                            class="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm">
+                                        {{ $country['name'] }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    @if(count($selectedCountries) > 0)
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            @foreach($selectedCountries as $country)
+                                <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
                                     {{ $country['name'] }}
-                                </button>
+                                    <button type="button" wire:click="removeCountry({{ $country['id'] }})"
+                                            class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </span>
                             @endforeach
                         </div>
                     @endif
                 </div>
-
-                @if(count($selectedCountries) > 0)
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        @foreach($selectedCountries as $country)
-                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                                {{ $country['name'] }}
-                                <button type="button" wire:click="removeCountry({{ $country['id'] }})"
-                                        class="text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-times text-xs"></i>
-                                </button>
-                            </span>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
+            @else
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p class="text-sm text-green-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Die Länderzuordnung erfolgt automatisch anhand der Reisedaten (Travel Links / Travel Data). Es werden nur Reisen berücksichtigt, deren Reiseziele vom Ereignis betroffen sind.
+                    </p>
+                </div>
+            @endif
         </div>
 
         {{-- Recipients --}}

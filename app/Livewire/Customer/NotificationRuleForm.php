@@ -184,9 +184,11 @@ class NotificationRuleForm extends Component
             'is_active' => $this->isActive,
             'risk_levels' => ! empty($this->riskLevels) ? $this->riskLevels : null,
             'categories' => ! empty($this->categories) ? $this->categories : null,
-            'country_ids' => ! empty($this->selectedCountries)
-                ? collect($this->selectedCountries)->pluck('id')->toArray()
-                : null,
+            'country_ids' => $this->source === 'travel-alert'
+                ? null
+                : (! empty($this->selectedCountries)
+                    ? collect($this->selectedCountries)->pluck('id')->toArray()
+                    : null),
             'notification_template_id' => $this->notificationTemplateId,
         ];
 

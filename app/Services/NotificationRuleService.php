@@ -288,26 +288,17 @@ class NotificationRuleService
             $rulePlaceholders = $placeholders;
             $ruleSource = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
             if ($ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT) {
-                // Regel-Länder bestimmen: leer = alle Reisen (kein Länderfilter)
-                $ruleCountryIsoCodes = [];
-                if (!empty($rule->country_ids)) {
-                    $ruleCountryIsoCodes = Country::whereIn('id', $rule->country_ids)
-                        ->pluck('iso_code')
-                        ->filter()
-                        ->map(fn ($c) => strtoupper($c))
-                        ->values()
-                        ->toArray();
-                }
+                // Event-Länder verwenden: Abgleich mit countries_visited der Reisen
+                // Die Länder kommen vom Event selbst, nicht von der Regel
+                $eventCountryIsos = array_map('strtoupper', $countryIsoCodes);
 
                 Log::info('Travel Alert: Prüfe affected_trips', [
                     'rule_id' => $rule->id,
                     'customer_id' => $rule->customer_id,
-                    'rule_country_ids' => $rule->country_ids,
-                    'ruleCountryIsoCodes' => $ruleCountryIsoCodes,
-                    'filter_by_countries' => !empty($ruleCountryIsoCodes),
+                    'eventCountryIsoCodes' => $eventCountryIsos,
                 ]);
 
-                $affectedTrips = $this->findAffectedTrips($rule->customer_id, $ruleCountryIsoCodes, $event);
+                $affectedTrips = $this->findAffectedTrips($rule->customer_id, $eventCountryIsos, $event);
                 $rulePlaceholders['{affected_trips}'] = $this->buildAffectedTripsHtml($affectedTrips);
                 $rulePlaceholders['{affected_trips_count}'] = (string) $affectedTrips->count();
                 Log::info('Travel Alert: affected_trips Ergebnis', [
@@ -356,8 +347,11 @@ class NotificationRuleService
             }
         }
 
-        // Country Filter: leer = alle Länder matchen
-        if (!empty($rule->country_ids)) {
+        // Country Filter: Bei Travel-Alert-Regeln wird die Länderzuordnung
+        // über findAffectedTrips() anhand der Reisedaten geprüft, nicht hier.
+        // Nur bei GTM-Regeln wird der manuelle Länderfilter geprüft.
+        $ruleSource = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
+        if ($ruleSource !== NotificationRule::SOURCE_TRAVEL_ALERT && !empty($rule->country_ids)) {
             if (empty($countryIds) || empty(array_intersect($rule->country_ids, $countryIds))) {
                 return false;
             }
@@ -558,13 +552,13 @@ class NotificationRuleService
             ])->toArray(),
         ]);
 
-        // Wenn keine Regel-Länder gesetzt: alle Reisen im Zeitraum zurückgeben
+        // Wenn keine Länder angegeben: keine Reisen betroffen (Event hat keine Länderzuordnung)
         if (empty($countryIsoCodes)) {
-            Log::info('findAffectedTrips: Keine Länder-Filterung (Regel hat keine Länder)');
-            return $trips;
+            Log::info('findAffectedTrips: Keine Event-Länder vorhanden, keine Reisen betroffen');
+            return collect();
         }
 
-        // Sonst: nur Reisen filtern, die in die Regel-Länder reisen
+        // Reisen filtern, deren countries_visited mit den Event-Ländern übereinstimmen
         return $trips
             ->filter(function (TdTrip $trip) use ($countryIsoCodes) {
                 $tripCountries = $trip->countries_visited ?? [];
