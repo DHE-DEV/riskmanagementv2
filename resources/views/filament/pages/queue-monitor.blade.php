@@ -225,7 +225,7 @@
                             </svg>
                         </div>
                     </div>
-                    <p class="text-gray-500 dark:text-gray-400 font-medium">Keine wartenden Jobs in der Queue</p>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium">Keine wartenden Jobs im Automator vorhanden</p>
                     <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Alle Aufgaben wurden abgearbeitet</p>
                 </div>
             @endif

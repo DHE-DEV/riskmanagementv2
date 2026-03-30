@@ -15,9 +15,9 @@ class QueueMonitor extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
 
-    protected static ?string $navigationLabel = 'Queue';
+    protected static ?string $navigationLabel = 'Automator';
 
-    protected static ?string $title = 'Queue Monitor';
+    protected static ?string $title = 'Automator';
 
     protected static ?int $navigationSort = 100;
 

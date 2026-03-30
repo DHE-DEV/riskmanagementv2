@@ -14,9 +14,9 @@ class NotificationQueueMonitor extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBell;
 
-    protected static ?string $navigationLabel = 'Notification Queues';
+    protected static ?string $navigationLabel = 'Automator Monitor';
 
-    protected static ?string $title = 'Notification Queue Monitor';
+    protected static ?string $title = 'Automator Monitor';
 
     protected static ?int $navigationSort = 101;
 
