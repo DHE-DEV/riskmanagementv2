@@ -265,16 +265,6 @@ class NotificationRuleService
 
             Log::info('sendMatchingNotifications: Regel matcht', ['rule_id' => $rule->id]);
 
-            // Duplicate prevention: skip if already sent for this rule + event (unless forced)
-            if (!$force && $this->alreadySentForEvent($rule->id, $eventId, $eventType)) {
-                Log::debug('Notification bereits versendet, überspringe', [
-                    'rule_id' => $rule->id,
-                    'event_id' => $eventId,
-                    'event_type' => $eventType,
-                ]);
-                continue;
-            }
-
             // Rate limiting: check per customer per hour
             if ($this->isRateLimited($rule->customer_id)) {
                 Log::warning('Rate-Limit erreicht, überspringe Benachrichtigung', [
@@ -311,7 +301,43 @@ class NotificationRuleService
                     Log::info('Travel Alert: Keine betroffenen Reisen, überspringe', ['rule_id' => $rule->id]);
                     continue;
                 }
+
+                // Duplikat-Prüfung mit Trips-Vergleich: erneut senden wenn mehr Reisen betroffen
+                if (!$force) {
+                    $lastLog = NotificationLog::where('notification_rule_id', $rule->id)
+                        ->forEvent($eventId, $eventType)
+                        ->byStatus('sent')
+                        ->latest('created_at')
+                        ->first();
+
+                    if ($lastLog) {
+                        $previousCount = $lastLog->affected_trips_count ?? 0;
+                        if ($affectedTrips->count() <= $previousCount) {
+                            Log::debug('Travel Alert: Keine neuen Reisen betroffen, überspringe', [
+                                'rule_id' => $rule->id,
+                                'event_id' => $eventId,
+                                'previous_trips' => $previousCount,
+                                'current_trips' => $affectedTrips->count(),
+                            ]);
+                            continue;
+                        }
+                        Log::info('Travel Alert: Neue Reisen betroffen, sende erneut', [
+                            'rule_id' => $rule->id,
+                            'event_id' => $eventId,
+                            'previous_trips' => $previousCount,
+                            'current_trips' => $affectedTrips->count(),
+                        ]);
+                    }
+                }
             } else {
+                // GTM: Standard-Duplikat-Prüfung (ohne Trips-Vergleich)
+                if (!$force && $this->alreadySentForEvent($rule->id, $eventId, $eventType)) {
+                    Log::debug('GTM: Notification bereits versendet, überspringe', [
+                        'rule_id' => $rule->id,
+                        'event_id' => $eventId,
+                    ]);
+                    continue;
+                }
                 $rulePlaceholders['{affected_trips}'] = '';
                 $rulePlaceholders['{affected_trips_count}'] = '0';
             }
@@ -478,6 +504,7 @@ class NotificationRuleService
                 'subject' => $subject,
                 'status' => 'sent',
                 'error_message' => null,
+                'affected_trips_count' => (int) ($placeholders['{affected_trips_count}'] ?? 0),
             ]);
 
             // Track for deduplication

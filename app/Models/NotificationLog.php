@@ -20,6 +20,7 @@ class NotificationLog extends Model
         'is_test',
         'status',
         'error_message',
+        'affected_trips_count',
     ];
 
     protected $casts_extra = [
