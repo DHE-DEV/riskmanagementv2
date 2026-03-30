@@ -4,12 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Models\NotificationTemplate;
 use BackedEnum;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -73,34 +70,12 @@ class SystemNotificationTemplateResource extends Resource
                         ->maxLength(255)
                         ->helperText('Platzhalter wie {event_title} oder {country_name} können verwendet werden.'),
 
-                    Tabs::make('body_editor')
+                    Textarea::make('body_html')
+                        ->label('E-Mail-Inhalt (HTML)')
+                        ->required()
                         ->columnSpanFull()
-                        ->tabs([
-                            Tab::make('Editor')
-                                ->icon('heroicon-o-pencil-square')
-                                ->schema([
-                                    RichEditor::make('body_html')
-                                        ->label('E-Mail-Inhalt')
-                                        ->required()
-                                        ->toolbarButtons([
-                                            'bold', 'italic', 'underline', 'strike',
-                                            'h2', 'h3',
-                                            'bulletList', 'orderedList',
-                                            'link',
-                                            'blockquote',
-                                            'undo', 'redo',
-                                        ]),
-                                ]),
-                            Tab::make('HTML-Code')
-                                ->icon('heroicon-o-code-bracket')
-                                ->schema([
-                                    Textarea::make('body_html')
-                                        ->label('HTML-Quellcode')
-                                        ->required()
-                                        ->rows(20)
-                                        ->helperText('HTML-Code mit Platzhaltern direkt bearbeiten.'),
-                                ]),
-                        ]),
+                        ->rows(25)
+                        ->helperText('HTML-Code mit Platzhaltern. Änderungen wirken sich auf alle Kunden aus, die die Standardvorlage verwenden.'),
                 ]),
 
             Section::make('Verfügbare Platzhalter')
