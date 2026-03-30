@@ -521,8 +521,9 @@ class NotificationRuleService
             ? ($event->start_date ?? now())
             : ($event->event_date ?? now());
 
+        // Kein end_date = offenes/andauerndes Event
         $eventEndDate = $event instanceof CustomEvent
-            ? ($event->end_date ?? $eventStartDate)
+            ? $event->end_date
             : $eventStartDate;
 
         Log::info('findAffectedTrips: Suche Reisen', [
@@ -530,17 +531,21 @@ class NotificationRuleService
             'countryIsoCodes' => $countryIsoCodes,
             'filterByCountries' => !empty($countryIsoCodes),
             'eventStartDate' => $eventStartDate?->toDateTimeString(),
-            'eventEndDate' => $eventEndDate?->toDateTimeString(),
+            'eventEndDate' => $eventEndDate?->toDateTimeString() ?? 'offen',
         ]);
 
-        // Überschneidung: Reise startet vor Event-Ende UND Reise endet nach Event-Start
+        // Überschneidung: Reise endet nach Event-Start
+        // Wenn Event ein Enddatum hat: Reise muss auch vor Event-Ende starten
         // Status: active + confirmed berücksichtigen (nicht cancelled/completed/draft)
-        $trips = TdTrip::where('customer_id', $customerId)
+        $query = TdTrip::where('customer_id', $customerId)
             ->whereIn('status', ['active', 'confirmed'])
-            ->where('computed_start_at', '<=', $eventEndDate)
-            ->where('computed_end_at', '>=', $eventStartDate)
-            ->with('travellers')
-            ->get();
+            ->where('computed_end_at', '>=', $eventStartDate);
+
+        if ($eventEndDate) {
+            $query->where('computed_start_at', '<=', $eventEndDate);
+        }
+
+        $trips = $query->with('travellers')->get();
 
         Log::info('findAffectedTrips: Reisen im Zeitraum', [
             'count' => $trips->count(),

@@ -14,7 +14,7 @@ class EditCustomEvent extends EditRecord
 {
     protected static string $resource = CustomEventResource::class;
 
-    protected array $locationCountries = [];
+    protected ?array $locationCountries = null;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -51,8 +51,11 @@ class EditCustomEvent extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $this->locationCountries = $data['location_countries'] ?? [];
-        unset($data['location_countries']);
+        // Nur location_countries verarbeiten wenn das Feld im Formular vorhanden ist
+        if (array_key_exists('location_countries', $data)) {
+            $this->locationCountries = $data['location_countries'];
+            unset($data['location_countries']);
+        }
 
         return $data;
     }
@@ -241,6 +244,11 @@ class EditCustomEvent extends EditRecord
 
     protected function syncLocationData(): void
     {
+        // Nur synchronisieren wenn location_countries im Formular vorhanden war
+        if ($this->locationCountries === null) {
+            return;
+        }
+
         $newCountryIds = [];
         $newRegionIds = [];
         $newCityIds = [];
