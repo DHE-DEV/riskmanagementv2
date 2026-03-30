@@ -230,11 +230,21 @@ class PdsTripSyncService
     {
         $countries = [];
 
-        // From destinations array
+        // From destinations array (simple ISO codes)
         if (isset($tripData['destinations']) && is_array($tripData['destinations'])) {
             foreach ($tripData['destinations'] as $dest) {
                 if (is_string($dest) && strlen($dest) === 2) {
                     $countries[] = strtoupper($dest);
+                }
+            }
+        }
+
+        // From destinations_list array (objects with code + type)
+        if (isset($tripData['destinations_list']) && is_array($tripData['destinations_list'])) {
+            foreach ($tripData['destinations_list'] as $dest) {
+                $code = is_array($dest) ? ($dest['code'] ?? null) : null;
+                if ($code && strlen($code) === 2) {
+                    $countries[] = strtoupper($code);
                 }
             }
         }

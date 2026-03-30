@@ -112,6 +112,26 @@
 
         {{-- Link Liste --}}
         <div x-show="!loading && trips.length > 0" x-cloak>
+            {{-- Pagination oben --}}
+            <div x-show="lastPage > 1" class="flex items-center justify-between mb-4">
+                <p class="text-xs text-gray-500">
+                    Seite <span x-text="currentPage"></span> von <span x-text="lastPage"></span>
+                    (<span x-text="total"></span> Einträge)
+                </p>
+                <div class="flex gap-2">
+                    <button @click="loadPage(currentPage - 1)" :disabled="currentPage <= 1"
+                            :class="currentPage <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'"
+                            class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button @click="loadPage(currentPage + 1)" :disabled="currentPage >= lastPage"
+                            :class="currentPage >= lastPage ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'"
+                            class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
             <template x-for="trip in trips" :key="trip.id">
                 <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-3 hover:border-gray-300 transition-colors">
                     <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
