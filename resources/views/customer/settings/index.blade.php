@@ -2542,7 +2542,7 @@
                 @endif
 
             @elseif($settingsSection === 'travel-alert')
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Alert</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Travel Alert</h3>
 
                 @php
                     $taTab = request()->query('tab', 'general');
