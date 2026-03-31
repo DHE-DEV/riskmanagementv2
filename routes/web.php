@@ -104,25 +104,29 @@ Route::get('/global-travel-monitor', function () {
 
         // Show mobile-optimized event view for mobile devices with event parameter
         if ($sharedEvent && $isMobile) {
-            return view('livewire.pages.event-mobile', [
-                'event' => $sharedEvent,
-            ]);
+            return response()
+                ->view('livewire.pages.event-mobile', ['event' => $sharedEvent])
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
         }
     }
 
     // Mobile routing (without event parameter)
     if ($isMobile && ! $eventId) {
         if ($viewParam === 'map') {
-            return view('livewire.pages.dashboard-mobile-map');
+            return response()
+                ->view('livewire.pages.dashboard-mobile-map')
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
         }
 
-        return view('livewire.pages.dashboard-mobile');
+        return response()
+            ->view('livewire.pages.dashboard-mobile')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     // Desktop view
-    return view('livewire.pages.dashboard', [
-        'sharedEvent' => $sharedEvent,
-    ]);
+    return response()
+        ->view('livewire.pages.dashboard', ['sharedEvent' => $sharedEvent])
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
 })->name('global-travel-monitor');
 
 Route::get('/passolution', function () {
