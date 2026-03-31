@@ -102,6 +102,8 @@ Sie können beliebig viele Domains in Ihrem Dashboard registrieren. Das Plugin f
 - `app.meine-firma.de`
 - `intranet.meine-firma.de`
 
+> **Tipp:** Für die Verwaltung großer Mengen an Domains (Hunderte bis Tausende) steht eine **Domain Management API** zur Verfügung, die Einzel- und Massenoperationen unterstützt. Siehe [Plugin Domain API Anleitung](plugin-domain-api-guide.md).
+
 ---
 
 ### 2. App-Integration (WebView)

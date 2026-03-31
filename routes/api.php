@@ -13,8 +13,10 @@ use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
 use App\Http\Controllers\SocialLinkController;
+use App\Http\Controllers\Api\V1\PluginDomainController;
 use App\Http\Middleware\ApiClientAuthenticate;
 use App\Http\Middleware\ApiClientRequestLogger;
+use App\Http\Middleware\AuthenticatePluginKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -225,6 +227,28 @@ Route::prefix('plugin')->group(function () {
     Route::post('/handshake', HandshakeController::class)
         ->middleware(['throttle:60,1'])
         ->name('plugin.handshake');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Plugin Domain Management API Routes
+|--------------------------------------------------------------------------
+|
+| REST API for plugin clients to manage their allowed domains.
+| Authenticated via plugin key (pk_live_*) as Bearer Token.
+|
+*/
+Route::prefix('v1/plugin/domains')->middleware([
+    AuthenticatePluginKey::class,
+    'throttle:plugin-api',
+])->group(function () {
+    Route::get('/', [PluginDomainController::class, 'index'])->name('v1.plugin.domains.index');
+    Route::post('/', [PluginDomainController::class, 'store'])->name('v1.plugin.domains.store');
+    Route::post('/bulk', [PluginDomainController::class, 'bulkStore'])->name('v1.plugin.domains.bulk-store');
+    Route::delete('/bulk', [PluginDomainController::class, 'bulkDestroy'])->name('v1.plugin.domains.bulk-destroy');
+    Route::get('/{uuid}', [PluginDomainController::class, 'show'])->name('v1.plugin.domains.show');
+    Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('v1.plugin.domains.update');
+    Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('v1.plugin.domains.destroy');
 });
 
 /*
