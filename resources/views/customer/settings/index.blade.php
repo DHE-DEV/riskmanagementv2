@@ -2544,7 +2544,7 @@
 
             @elseif($settingsSection === 'travel-alert')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Alert</h3>
-                <p class="text-sm text-gray-500 mb-6">Konfigurieren Sie Reisewarnungen und Benachrichtigungen für Ihre Reisenden.</p>
+                <p class="text-sm text-gray-500 mb-6">Erstellen Sie Benachrichtigungsregeln, um informiert zu werden, wenn Ereignisse Ihre Reisen betreffen. Sie erhalten eine E-Mail, sobald ein Ereignis Auswirkungen auf Reisen in Ihrem Portfolio hat.</p>
 
                 @php
                     $taTab = request()->query('tab', 'general');
