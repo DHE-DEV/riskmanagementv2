@@ -61,7 +61,7 @@ Jede Domain erhält eine eindeutige **UUID**. Alle Operationen auf einzelne Doma
 ### Domains auflisten
 
 ```
-GET /v1/plugin-gtm/domains
+GET /v1/plugin/gtm/domains
 ```
 
 Gibt eine paginierte Liste aller registrierten Domains zurück.
@@ -79,7 +79,7 @@ Gibt eine paginierte Liste aller registrierten Domains zurück.
 
 ```bash
 curl -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains?per_page=100&search=example"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains?per_page=100&search=example"
 ```
 
 **Response (200):**
@@ -109,14 +109,14 @@ curl -H "Authorization: Bearer pk_live_xxx" \
 ### Einzelne Domain abrufen
 
 ```
-GET /v1/plugin-gtm/domains/{uuid}
+GET /v1/plugin/gtm/domains/{uuid}
 ```
 
 **Beispiel:**
 
 ```bash
 curl -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/550e8400-e29b-41d4-a716-446655440000"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200):**
@@ -138,7 +138,7 @@ curl -H "Authorization: Bearer pk_live_xxx" \
 ### Domain hinzufügen
 
 ```
-POST /v1/plugin-gtm/domains
+POST /v1/plugin/gtm/domains
 ```
 
 **Request-Body (JSON):**
@@ -154,7 +154,7 @@ POST /v1/plugin-gtm/domains
 curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domain": "neue-website.de"}' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains"
 ```
 
 **Response (201):**
@@ -178,7 +178,7 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
 ### Domains im Bulk importieren
 
 ```
-POST /v1/plugin-gtm/domains/bulk
+POST /v1/plugin/gtm/domains/bulk
 ```
 
 Importiert bis zu **1.000 Domains** in einem Aufruf. Bereits vorhandene Domains werden übersprungen, ungültige Domains werden gemeldet.
@@ -202,7 +202,7 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
       "ungültig..domain"
     ]
   }' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/bulk"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
 ```
 
 **Response (201):**
@@ -249,7 +249,7 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
 ### Domain aktualisieren
 
 ```
-PUT /v1/plugin-gtm/domains/{uuid}
+PUT /v1/plugin/gtm/domains/{uuid}
 ```
 
 Aktualisiert eine Domain. Kann zum Umbenennen oder Aktivieren/Deaktivieren verwendet werden.
@@ -267,7 +267,7 @@ Aktualisiert eine Domain. Kann zum Umbenennen oder Aktivieren/Deaktivieren verwe
 curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"is_active": false}' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/550e8400-e29b-41d4-a716-446655440000"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200):**
@@ -289,7 +289,7 @@ curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
 ### Domain löschen
 
 ```
-DELETE /v1/plugin-gtm/domains/{uuid}
+DELETE /v1/plugin/gtm/domains/{uuid}
 ```
 
 Löscht eine einzelne Domain. Es muss immer mindestens eine Domain verbleiben.
@@ -298,7 +298,7 @@ Löscht eine einzelne Domain. Es muss immer mindestens eine Domain verbleiben.
 
 ```bash
 curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/550e8400-e29b-41d4-a716-446655440000"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response:** `204 No Content`
@@ -310,7 +310,7 @@ curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
 ### Domains im Bulk löschen
 
 ```
-DELETE /v1/plugin-gtm/domains/bulk
+DELETE /v1/plugin/gtm/domains/bulk
 ```
 
 Löscht bis zu **1.000 Domains** anhand ihrer UUIDs in einem Aufruf. Es muss mindestens eine Domain verbleiben.
@@ -332,7 +332,7 @@ curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
       "660e8400-e29b-41d4-a716-446655440001"
     ]
   }' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/bulk"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
 ```
 
 **Response (200):**
@@ -384,7 +384,7 @@ DOMAINS=$(cat domains.txt | jq -R -s 'split("\n") | map(select(length > 0))')
 curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d "{\"domains\": $DOMAINS}" \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/bulk"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
 ```
 
 ### Domains synchronisieren (vollständiger Abgleich)
@@ -392,19 +392,19 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
 ```bash
 # 1. Alle bestehenden Domains abrufen
 EXISTING=$(curl -s -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains?per_page=200")
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains?per_page=200")
 
 # 2. Nicht mehr benötigte Domains löschen
 curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"uuids": ["uuid1", "uuid2"]}' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/bulk"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
 
 # 3. Neue Domains importieren
 curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domains": ["new1.com", "new2.com"]}' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/bulk"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
 ```
 
 ### Domain vorübergehend deaktivieren
@@ -413,7 +413,7 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
 curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"is_active": false}' \
-  "https://api.global-travel-monitor.de/v1/plugin-gtm/domains/{uuid}"
+  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/{uuid}"
 ```
 
 ---

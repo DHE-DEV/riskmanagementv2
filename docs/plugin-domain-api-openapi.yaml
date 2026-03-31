@@ -10,9 +10,9 @@ info:
     name: Global Travel Monitor Support
 
 servers:
-  - url: https://api.global-travel-monitor.de/v1/plugin-gtm
+  - url: https://api.global-travel-monitor.de/v1/plugin/gtm
     description: Produktionsserver
-  - url: https://global-travel-monitor.eu/api/v1/plugin-gtm
+  - url: https://global-travel-monitor.eu/api/v1/plugin/gtm
     description: Alternativer Server
 
 security:
