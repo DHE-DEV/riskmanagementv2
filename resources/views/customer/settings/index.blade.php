@@ -1704,7 +1704,7 @@
 
             @elseif($settingsSection === 'global-travel-monitor')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Global Travel Monitor</h3>
-                <p class="text-sm text-gray-500 mb-6"><b>Bleiben Sie automatisch über für Sie relevante Ereignisse informiert.</b><br>Erstellen Sie Regeln basierend auf Kriterien wie Land, Risikostufe oder Ereignistyp und erhalten Sie passende Benachrichtigungen per E-Mail.</p>
+                <p class="text-sm text-gray-500 mb-6">Plugin-Konfiguration und API-Integration für den Global Travel Monitor.</p>
 
                 @php
                     $pluginClient = $customer->pluginClient;
@@ -2176,6 +2176,7 @@
 
                 @elseif($gtmTab === 'notifications')
                 {{-- Benachrichtigungen Tab --}}
+                <p class="text-sm text-gray-500 mb-5"><b>Bleiben Sie automatisch über für Sie relevante Ereignisse informiert.</b><br>Erstellen Sie Regeln basierend auf Kriterien wie Land, Risikostufe oder Ereignistyp und erhalten Sie passende Benachrichtigungen per E-Mail.</p>
                     @if(auth('customer')->user()->isFeatureEnabled('navigation_risk_overview_enabled'))
                     @php
                         $notifCustomer = auth('customer')->user();
