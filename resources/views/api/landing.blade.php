@@ -402,6 +402,32 @@
                     </a>
                 </div>
             </div>
+
+            {{-- Plugin Domain Management API --}}
+            <div class="api-card">
+                <span class="badge badge-auth">Plugin-Key</span>
+                <h3>Plugin Domain API</h3>
+                <p class="description">REST API zur programmatischen Verwaltung erlaubter Domains für das Plugin. Unterstützt Einzel- und Massenoperationen (bis 1.000 Domains pro Aufruf).</p>
+                <ul class="endpoints">
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/plugin/domains</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/plugin/domains</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/plugin/domains/bulk</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/plugin/domains/{uuid}</span></li>
+                    <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/plugin/domains/{uuid}</span></li>
+                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/plugin/domains/{uuid}</span></li>
+                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/plugin/domains/bulk</span></li>
+                </ul>
+                <div class="downloads">
+                    <a href="#plugin-domain-api-guide" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        Anleitung
+                    </a>
+                    <a href="/docs/plugin-domain-api-openapi.yaml" class="btn btn-outline">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        OpenAPI Spec
+                    </a>
+                </div>
+            </div>
         </div>
 
         {{-- ========================================== --}}
@@ -2286,6 +2312,241 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <h3>Support</h3>
             <p>Bei Fragen zur Feed API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.</p>
+        </div>
+
+        {{-- ========================================== --}}
+        {{-- Plugin Domain API Guide --}}
+        {{-- ========================================== --}}
+        <div class="doc-section" id="plugin-domain-api-guide">
+            <h2>Plugin Domain API – Anleitung</h2>
+
+            <h3>Übersicht</h3>
+            <p>Die Plugin Domain API ermöglicht es Plugin-Kunden, ihre erlaubten Domains <strong>programmatisch</strong> zu verwalten. Domains bestimmen, welche Websites das Global Travel Monitor Plugin per iframe einbetten dürfen.</p>
+            <p>Die API unterstützt das Anlegen, Abrufen, Aktualisieren und Löschen einzelner Domains sowie <strong>Massenoperationen</strong> für den Import und die Löschung von bis zu 1.000 Domains pro Aufruf.</p>
+
+            <hr>
+
+            <h3>Authentifizierung</h3>
+            <p>Alle API-Aufrufe erfordern Ihren <strong>Plugin-Key</strong> als Bearer-Token im HTTP-Header:</p>
+            <pre><code>Authorization: Bearer pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+            <p>Den Key finden Sie in Ihrem Plugin-Dashboard unter <code>https://global-travel-monitor.eu/plugin/dashboard</code>.</p>
+            <blockquote>Der Plugin-Key ist derselbe Key, den Sie auch für die iframe-Integration verwenden.</blockquote>
+
+            <hr>
+
+            <h3>Base-URL</h3>
+            <pre><code>{{ request()->getSchemeAndHttpHost() }}/v1/plugin</code></pre>
+
+            <hr>
+
+            <h3>Rate Limit</h3>
+            <p>Standardmäßig sind <strong>120 Requests pro Minute</strong> erlaubt. Bei Überschreitung erhalten Sie einen <code>429 Too Many Requests</code> Response.</p>
+
+            <hr>
+
+            <h3>Domain-Normalisierung</h3>
+            <p>Domains werden beim Speichern automatisch normalisiert:</p>
+            <ul>
+                <li>Protokoll wird entfernt (<code>https://example.com</code> &rarr; <code>example.com</code>)</li>
+                <li><code>www.</code>-Prefix wird entfernt</li>
+                <li>Pfade und Ports werden entfernt</li>
+                <li>Alles wird zu Kleinbuchstaben konvertiert</li>
+            </ul>
+
+            <hr>
+
+            <h3>Domains auflisten</h3>
+            <pre><code>GET /v1/plugin/domains</code></pre>
+            <p>Gibt eine paginierte Liste aller registrierten Domains zurück.</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Parameter</th><th>Typ</th><th>Standard</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>per_page</code></td><td>integer</td><td>50</td><td>Einträge pro Seite (max. 200)</td></tr>
+                        <tr><td><code>page</code></td><td>integer</td><td>1</td><td>Seitennummer</td></tr>
+                        <tr><td><code>search</code></td><td>string</td><td>–</td><td>Volltextsuche im Domain-Namen</td></tr>
+                        <tr><td><code>is_active</code></td><td>boolean</td><td>–</td><td>Filter: nur aktive oder inaktive Domains</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer pk_live_xxx" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains?per_page=100"</code></pre>
+            <p><strong>Response (200):</strong></p>
+            <pre><code>{
+  "data": [
+    {
+      "uuid": "550e8400-e29b-41d4-a716-446655440000",
+      "domain": "example.com",
+      "is_active": true,
+      "created_at": "2026-03-15T10:30:00+00:00",
+      "updated_at": "2026-03-15T10:30:00+00:00"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 1,
+    "per_page": 100,
+    "total": 1
+  }
+}</code></pre>
+
+            <hr>
+
+            <h3>Einzelne Domain abrufen</h3>
+            <pre><code>GET /v1/plugin/domains/{uuid}</code></pre>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -H "Authorization: Bearer pk_live_xxx" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains/550e8400-e29b-41d4-a716-446655440000"</code></pre>
+
+            <hr>
+
+            <h3>Domain hinzufügen</h3>
+            <pre><code>POST /v1/plugin/domains</code></pre>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>domain</code></td><td>string</td><td>Ja</td><td>Die Domain (z.B. <code>example.com</code>)</td></tr>
+                        <tr><td><code>is_active</code></td><td>boolean</td><td>Nein</td><td>Aktiv-Status (Standard: <code>true</code>)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -X POST -H "Authorization: Bearer pk_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "neue-website.de"}' \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains"</code></pre>
+            <p><strong>Response (201):</strong></p>
+            <pre><code>{
+  "data": {
+    "uuid": "660e8400-e29b-41d4-a716-446655440001",
+    "domain": "neue-website.de",
+    "is_active": true,
+    "created_at": "2026-03-31T12:00:00+00:00",
+    "updated_at": "2026-03-31T12:00:00+00:00"
+  }
+}</code></pre>
+
+            <hr>
+
+            <h3>Domains im Bulk importieren</h3>
+            <pre><code>POST /v1/plugin/domains/bulk</code></pre>
+            <p>Importiert bis zu <strong>1.000 Domains</strong> in einem Aufruf. Bereits vorhandene Domains werden übersprungen, ungültige Domains werden gemeldet.</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>domains</code></td><td>string[]</td><td>Ja</td><td>Array von Domain-Strings (max. 1.000)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -X POST -H "Authorization: Bearer pk_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"domains": ["website1.de", "website2.com", "app.website3.de"]}' \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains/bulk"</code></pre>
+            <p><strong>Response (201):</strong></p>
+            <pre><code>{
+  "data": {
+    "created": [
+      {"uuid": "...", "domain": "website1.de", "is_active": true, ...},
+      {"uuid": "...", "domain": "website2.com", "is_active": true, ...}
+    ],
+    "skipped": [],
+    "invalid": ["ungültig..domain"]
+  },
+  "meta": {
+    "created_count": 2,
+    "skipped_count": 0,
+    "invalid_count": 1
+  }
+}</code></pre>
+
+            <hr>
+
+            <h3>Domain aktualisieren</h3>
+            <pre><code>PUT /v1/plugin/domains/{uuid}</code></pre>
+            <p>Aktualisiert eine Domain. Kann zum Umbenennen oder Aktivieren/Deaktivieren verwendet werden.</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>domain</code></td><td>string</td><td>Nein</td><td>Neuer Domain-Name</td></tr>
+                        <tr><td><code>is_active</code></td><td>boolean</td><td>Nein</td><td>Aktiv-Status ändern</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel – Domain deaktivieren:</strong></p>
+            <pre><code>curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active": false}' \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains/{uuid}"</code></pre>
+
+            <hr>
+
+            <h3>Domain löschen</h3>
+            <pre><code>DELETE /v1/plugin/domains/{uuid}</code></pre>
+            <p>Löscht eine einzelne Domain. Es muss immer mindestens eine Domain verbleiben.</p>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains/{uuid}"</code></pre>
+            <p><strong>Response:</strong> <code>204 No Content</code></p>
+
+            <hr>
+
+            <h3>Domains im Bulk löschen</h3>
+            <pre><code>DELETE /v1/plugin/domains/bulk</code></pre>
+            <p>Löscht bis zu <strong>1.000 Domains</strong> anhand ihrer UUIDs. Es muss mindestens eine Domain verbleiben.</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>Feld</th><th>Typ</th><th>Pflicht</th><th>Beschreibung</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>uuids</code></td><td>string[]</td><td>Ja</td><td>Array von Domain-UUIDs (max. 1.000)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Beispiel:</strong></p>
+            <pre><code>curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"uuids": ["uuid1", "uuid2"]}' \
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/domains/bulk"</code></pre>
+            <p><strong>Response (200):</strong></p>
+            <pre><code>{"data": {"deleted_count": 2}}</code></pre>
+
+            <hr>
+
+            <h3>Fehlercodes</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr><th>HTTP-Code</th><th>Bedeutung</th><th>Typische Ursache</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>401</code></td><td>Nicht authentifiziert</td><td>Fehlender oder ungültiger API-Key</td></tr>
+                        <tr><td><code>403</code></td><td>Zugriff verweigert</td><td>Plugin-Konto nicht aktiv</td></tr>
+                        <tr><td><code>404</code></td><td>Nicht gefunden</td><td>Domain-UUID existiert nicht</td></tr>
+                        <tr><td><code>409</code></td><td>Konflikt</td><td>Domain bereits registriert</td></tr>
+                        <tr><td><code>422</code></td><td>Validierungsfehler</td><td>Ungültiges Domain-Format oder Mindestanzahl unterschritten</td></tr>
+                        <tr><td><code>429</code></td><td>Rate Limit</td><td>Zu viele Requests</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <hr>
+
+            <h3>Support</h3>
+            <p>Bei Fragen zur Plugin Domain API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.</p>
         </div>
     </div>
 

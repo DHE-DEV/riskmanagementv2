@@ -37,6 +37,7 @@ Route::get('/v1', function () {
                 'Event-Kategorien' => '/v1/event-categories',
             ],
             'Referenzdaten (Partner)' => ['/v1/custom/event-categories', '/v1/custom/countries'],
+            'Plugin Domain Management' => '/v1/plugin/domains',
         ],
         'authentication' => 'Bearer Token via Authorization header',
     ]);
@@ -53,6 +54,8 @@ Route::get('/docs/{file}', function (string $file) {
         'feed-api-guide.md',
         'folder-import-api-openapi.yaml',
         'folder-import-api-guide.md',
+        'plugin-domain-api-openapi.yaml',
+        'plugin-domain-api-guide.md',
     ];
 
     if (!in_array($file, $allowed)) {
@@ -85,8 +88,10 @@ use App\Http\Controllers\Api\FolderImportController;
 use App\Http\Controllers\Api\V1\EventApiController;
 use App\Http\Controllers\Api\V1\EventReferenceController;
 use App\Http\Controllers\Api\V1\GtmApiController;
+use App\Http\Controllers\Api\V1\PluginDomainController;
 use App\Http\Middleware\ApiClientAuthenticate;
 use App\Http\Middleware\ApiClientRequestLogger;
+use App\Http\Middleware\AuthenticatePluginKey;
 use App\Http\Middleware\GtmApiAuthenticate;
 use App\Http\Middleware\GtmApiRequestLogger;
 use Illuminate\Support\Facades\Route;
@@ -162,5 +167,23 @@ Route::prefix('v1/folders')->middleware(['auth:sanctum'])->group(function () {
     Route::post('/import', [FolderImportController::class, 'import'])->name('sub.customer.folders.import');
     Route::get('/imports', [FolderImportController::class, 'listImports'])->name('sub.customer.folders.imports.list');
     Route::get('/imports/{logId}/status', [FolderImportController::class, 'getImportStatus'])->name('sub.customer.folders.imports.status');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Plugin Domain Management API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/plugin/domains')->middleware([
+    AuthenticatePluginKey::class,
+    'throttle:plugin-api',
+])->group(function () {
+    Route::get('/', [PluginDomainController::class, 'index'])->name('sub.v1.plugin.domains.index');
+    Route::post('/', [PluginDomainController::class, 'store'])->name('sub.v1.plugin.domains.store');
+    Route::post('/bulk', [PluginDomainController::class, 'bulkStore'])->name('sub.v1.plugin.domains.bulk-store');
+    Route::delete('/bulk', [PluginDomainController::class, 'bulkDestroy'])->name('sub.v1.plugin.domains.bulk-destroy');
+    Route::get('/{uuid}', [PluginDomainController::class, 'show'])->name('sub.v1.plugin.domains.show');
+    Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('sub.v1.plugin.domains.update');
+    Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('sub.v1.plugin.domains.destroy');
 });
 
