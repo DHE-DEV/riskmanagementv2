@@ -1704,7 +1704,7 @@
 
             @elseif($settingsSection === 'global-travel-monitor')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Global Travel Monitor</h3>
-
+<p></p>
                 @php
                     $pluginClient = $customer->pluginClient;
                     $gtmTab = request()->query('tab', 'general');
