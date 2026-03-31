@@ -1704,7 +1704,7 @@
 
             @elseif($settingsSection === 'global-travel-monitor')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Global Travel Monitor</h3>
-                <p class="text-sm text-gray-500 mb-6">Bleiben Sie automatisch über für Sie relevante Ereignisse informiert. Erstellen Sie Regeln basierend auf Kriterien wie Land, Risikostufe oder Ereignistyp und erhalten Sie passende Benachrichtigungen per E-Mail.</p>
+                <p class="text-sm text-gray-500 mb-6"><b>Bleiben Sie automatisch über für Sie relevante Ereignisse informiert.</b><br>Erstellen Sie Regeln basierend auf Kriterien wie Land, Risikostufe oder Ereignistyp und erhalten Sie passende Benachrichtigungen per E-Mail.</p>
 
                 @php
                     $pluginClient = $customer->pluginClient;
@@ -2544,7 +2544,7 @@
 
             @elseif($settingsSection === 'travel-alert')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Alert</h3>
-                <p class="text-sm text-gray-500 mb-6">Erstellen Sie Benachrichtigungsregeln, um informiert zu werden, wenn Ereignisse Ihre Reisen betreffen. Sie erhalten eine E-Mail, sobald ein Ereignis Auswirkungen auf Reisen in Ihrem Portfolio hat.</p>
+                <p class="text-sm text-gray-500 mb-6"><b>Erstellen Sie Benachrichtigungsregeln, um informiert zu werden, wenn Ereignisse Ihre Reisen betreffen.</b> <br>Sie erhalten eine E-Mail, sobald ein Ereignis Auswirkungen auf Reisen in Ihrem Portfolio hat.</p>
 
                 @php
                     $taTab = request()->query('tab', 'general');
