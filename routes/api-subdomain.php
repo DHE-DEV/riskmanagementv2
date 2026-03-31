@@ -37,7 +37,7 @@ Route::get('/v1', function () {
                 'Event-Kategorien' => '/v1/event-categories',
             ],
             'Referenzdaten (Partner)' => ['/v1/custom/event-categories', '/v1/custom/countries'],
-            'Plugin Domain Management' => '/v1/plugin/domains',
+            'Plugin GTM Domain Management' => '/v1/plugin-gtm/domains',
         ],
         'authentication' => 'Bearer Token via Authorization header',
     ]);
@@ -172,16 +172,16 @@ Route::prefix('v1/folders')->middleware(['auth:sanctum'])->group(function () {
 | Plugin Domain Management API Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/plugin/domains')->middleware([
+Route::prefix('v1/plugin-gtm/domains')->middleware([
     AuthenticatePluginKey::class,
     'throttle:plugin-api',
 ])->group(function () {
-    Route::get('/', [PluginDomainController::class, 'index'])->name('sub.v1.plugin.domains.index');
-    Route::post('/', [PluginDomainController::class, 'store'])->name('sub.v1.plugin.domains.store');
-    Route::post('/bulk', [PluginDomainController::class, 'bulkStore'])->name('sub.v1.plugin.domains.bulk-store');
-    Route::delete('/bulk', [PluginDomainController::class, 'bulkDestroy'])->name('sub.v1.plugin.domains.bulk-destroy');
-    Route::get('/{uuid}', [PluginDomainController::class, 'show'])->name('sub.v1.plugin.domains.show');
-    Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('sub.v1.plugin.domains.update');
-    Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('sub.v1.plugin.domains.destroy');
+    Route::get('/', [PluginDomainController::class, 'index'])->name('sub.v1.plugin-gtm.domains.index');
+    Route::post('/', [PluginDomainController::class, 'store'])->name('sub.v1.plugin-gtm.domains.store');
+    Route::post('/bulk', [PluginDomainController::class, 'bulkStore'])->name('sub.v1.plugin-gtm.domains.bulk-store');
+    Route::delete('/bulk', [PluginDomainController::class, 'bulkDestroy'])->name('sub.v1.plugin-gtm.domains.bulk-destroy');
+    Route::get('/{uuid}', [PluginDomainController::class, 'show'])->name('sub.v1.plugin-gtm.domains.show');
+    Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('sub.v1.plugin-gtm.domains.update');
+    Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('sub.v1.plugin-gtm.domains.destroy');
 });
 
