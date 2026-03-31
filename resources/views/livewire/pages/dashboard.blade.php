@@ -5346,7 +5346,9 @@ async function searchAirportCodes(query) {
 }
 
 function selectAirportCode(iataCode, name, lat, lng) {
-    window.proximityFilter = { lat, lng, code: iataCode, name: name, radiusKm: null };
+    // Bestehenden Radius beibehalten, falls bereits einer ausgewählt war
+    const existingRadius = window.proximityFilter ? window.proximityFilter.radiusKm : null;
+    window.proximityFilter = { lat, lng, code: iataCode, name: name, radiusKm: existingRadius };
 
     // Show radius section
     document.getElementById('airportCodeRadiusSection').style.display = 'block';
@@ -5363,6 +5365,11 @@ function selectAirportCode(iataCode, name, lat, lng) {
     updateProximityMarker(lat, lng, iataCode);
     if (map) {
         map.setView([lat, lng], 8, { animate: true, duration: 0.8 });
+    }
+
+    // Wenn bereits ein Radius gesetzt ist, Filter direkt anwenden
+    if (existingRadius) {
+        applyProximityFilter();
     }
 }
 
