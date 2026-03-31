@@ -56,6 +56,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute($limit)->by($customer?->id ?: $request->ip());
         });
 
+        // Plugin API Rate Limiter - per plugin client
+        RateLimiter::for('plugin-api', function (Request $request) {
+            $client = $request->attributes->get('plugin_client');
+
+            return Limit::perMinute(120)->by('plugin:' . ($client?->id ?: $request->ip()));
+        });
+
         // API Client Rate Limiter - per API client, configurable rate limit
         RateLimiter::for('api-client', function (Request $request) {
             $apiClient = $request->attributes->get('api_client');
