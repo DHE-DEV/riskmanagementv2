@@ -1704,7 +1704,6 @@
 
             @elseif($settingsSection === 'global-travel-monitor')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Global Travel Monitor</h3>
-                <p class="text-sm text-gray-500 mb-6">Plugin-Konfiguration und API-Integration für den Global Travel Monitor.</p>
 
                 @php
                     $pluginClient = $customer->pluginClient;
@@ -2545,7 +2544,6 @@
 
             @elseif($settingsSection === 'travel-alert')
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Travel Alert</h3>
-                <p class="text-sm text-gray-500 mb-6">Konfigurieren Sie Reisewarnungen und Benachrichtigungen für Ihre Reisenden.</p>
 
                 @php
                     $taTab = request()->query('tab', 'general');
