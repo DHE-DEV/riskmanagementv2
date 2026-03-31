@@ -407,13 +407,13 @@
                 <h3>Plugin Domain API</h3>
                 <p class="description">REST API zur programmatischen Verwaltung erlaubter Domains für das Plugin. Unterstützt Einzel- und Massenoperationen (bis 1.000 Domains pro Aufruf).</p>
                 <ul class="endpoints">
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/plugin-gtm/domains</span></li>
-                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/plugin-gtm/domains</span></li>
-                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/plugin-gtm/domains/bulk</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/plugin-gtm/domains/{uuid}</span></li>
-                    <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/plugin-gtm/domains/{uuid}</span></li>
-                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/plugin-gtm/domains/{uuid}</span></li>
-                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/plugin-gtm/domains/bulk</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/plugin/gtm/domains</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/plugin/gtm/domains</span></li>
+                    <li><span class="method method-post">POST</span> <span class="endpoint-path">/v1/plugin/gtm/domains/bulk</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/plugin/gtm/domains/{uuid}</span></li>
+                    <li><span class="method method-put">PUT</span> <span class="endpoint-path">/v1/plugin/gtm/domains/{uuid}</span></li>
+                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/plugin/gtm/domains/{uuid}</span></li>
+                    <li><span class="method method-delete">DEL</span> <span class="endpoint-path">/v1/plugin/gtm/domains/bulk</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="#plugin-domain-api-guide" class="btn btn-primary">
@@ -2190,7 +2190,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Domains auflisten</h3>
-            <pre><code>GET /v1/plugin-gtm/domains</code></pre>
+            <pre><code>GET /v1/plugin/gtm/domains</code></pre>
             <p>Gibt eine paginierte Liste aller registrierten Domains zurück.</p>
             <div class="table-responsive">
                 <table>
@@ -2207,7 +2207,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             </div>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer pk_live_xxx" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains?per_page=100"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains?per_page=100"</code></pre>
             <p><strong>Response (200):</strong></p>
             <pre><code>{
   "data": [
@@ -2230,15 +2230,15 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Einzelne Domain abrufen</h3>
-            <pre><code>GET /v1/plugin-gtm/domains/{uuid}</code></pre>
+            <pre><code>GET /v1/plugin/gtm/domains/{uuid}</code></pre>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -H "Authorization: Bearer pk_live_xxx" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains/550e8400-e29b-41d4-a716-446655440000"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"</code></pre>
 
             <hr>
 
             <h3>Domain hinzufügen</h3>
-            <pre><code>POST /v1/plugin-gtm/domains</code></pre>
+            <pre><code>POST /v1/plugin/gtm/domains</code></pre>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -2254,7 +2254,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domain": "neue-website.de"}' \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains"</code></pre>
             <p><strong>Response (201):</strong></p>
             <pre><code>{
   "data": {
@@ -2269,7 +2269,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Domains im Bulk importieren</h3>
-            <pre><code>POST /v1/plugin-gtm/domains/bulk</code></pre>
+            <pre><code>POST /v1/plugin/gtm/domains/bulk</code></pre>
             <p>Importiert bis zu <strong>1.000 Domains</strong> in einem Aufruf. Bereits vorhandene Domains werden übersprungen, ungültige Domains werden gemeldet.</p>
             <div class="table-responsive">
                 <table>
@@ -2285,7 +2285,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domains": ["website1.de", "website2.com", "app.website3.de"]}' \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains/bulk"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains/bulk"</code></pre>
             <p><strong>Response (201):</strong></p>
             <pre><code>{
   "data": {
@@ -2306,7 +2306,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <hr>
 
             <h3>Domain aktualisieren</h3>
-            <pre><code>PUT /v1/plugin-gtm/domains/{uuid}</code></pre>
+            <pre><code>PUT /v1/plugin/gtm/domains/{uuid}</code></pre>
             <p>Aktualisiert eine Domain. Kann zum Umbenennen oder Aktivieren/Deaktivieren verwendet werden.</p>
             <div class="table-responsive">
                 <table>
@@ -2323,22 +2323,22 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"is_active": false}' \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains/{uuid}"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains/{uuid}"</code></pre>
 
             <hr>
 
             <h3>Domain löschen</h3>
-            <pre><code>DELETE /v1/plugin-gtm/domains/{uuid}</code></pre>
+            <pre><code>DELETE /v1/plugin/gtm/domains/{uuid}</code></pre>
             <p>Löscht eine einzelne Domain. Es muss immer mindestens eine Domain verbleiben.</p>
             <p><strong>Beispiel:</strong></p>
             <pre><code>curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains/{uuid}"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains/{uuid}"</code></pre>
             <p><strong>Response:</strong> <code>204 No Content</code></p>
 
             <hr>
 
             <h3>Domains im Bulk löschen</h3>
-            <pre><code>DELETE /v1/plugin-gtm/domains/bulk</code></pre>
+            <pre><code>DELETE /v1/plugin/gtm/domains/bulk</code></pre>
             <p>Löscht bis zu <strong>1.000 Domains</strong> anhand ihrer UUIDs. Es muss mindestens eine Domain verbleiben.</p>
             <div class="table-responsive">
                 <table>
@@ -2354,7 +2354,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <pre><code>curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"uuids": ["uuid1", "uuid2"]}' \
-  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin-gtm/domains/bulk"</code></pre>
+  "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains/bulk"</code></pre>
             <p><strong>Response (200):</strong></p>
             <pre><code>{"data": {"deleted_count": 2}}</code></pre>
 

@@ -236,17 +236,17 @@ Route::prefix('plugin')->group(function () {
 | Authenticated via plugin key (pk_live_*) as Bearer Token.
 |
 */
-Route::prefix('v1/plugin-gtm/domains')->middleware([
+Route::prefix('v1/plugin/gtm/domains')->middleware([
     AuthenticatePluginKey::class,
     'throttle:plugin-api',
 ])->group(function () {
-    Route::get('/', [PluginDomainController::class, 'index'])->name('v1.plugin-gtm.domains.index');
-    Route::post('/', [PluginDomainController::class, 'store'])->name('v1.plugin-gtm.domains.store');
-    Route::post('/bulk', [PluginDomainController::class, 'bulkStore'])->name('v1.plugin-gtm.domains.bulk-store');
-    Route::delete('/bulk', [PluginDomainController::class, 'bulkDestroy'])->name('v1.plugin-gtm.domains.bulk-destroy');
-    Route::get('/{uuid}', [PluginDomainController::class, 'show'])->name('v1.plugin-gtm.domains.show');
-    Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('v1.plugin-gtm.domains.update');
-    Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('v1.plugin-gtm.domains.destroy');
+    Route::get('/', [PluginDomainController::class, 'index'])->name('v1.plugin.gtm.domains.index');
+    Route::post('/', [PluginDomainController::class, 'store'])->name('v1.plugin.gtm.domains.store');
+    Route::post('/bulk', [PluginDomainController::class, 'bulkStore'])->name('v1.plugin.gtm.domains.bulk-store');
+    Route::delete('/bulk', [PluginDomainController::class, 'bulkDestroy'])->name('v1.plugin.gtm.domains.bulk-destroy');
+    Route::get('/{uuid}', [PluginDomainController::class, 'show'])->name('v1.plugin.gtm.domains.show');
+    Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('v1.plugin.gtm.domains.update');
+    Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('v1.plugin.gtm.domains.destroy');
 });
 
 /*
