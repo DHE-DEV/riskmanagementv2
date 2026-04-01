@@ -1044,7 +1044,22 @@ curl -H "Authorization: Bearer {TOKEN}" \
                 </table>
             </div>
 
-            <p><strong>Beispiel:</strong></p>
+            <p><strong>Beispiel Request-Body (JSON):</strong></p>
+            <pre><code>{
+  "title": "Überschwemmung Bangkok",
+  "description": "&lt;p&gt;Schwere Überschwemmungen im Großraum Bangkok.&lt;/p&gt;",
+  "risk_level": "high",
+  "start_date": "2026-02-11T08:00:00Z",
+  "end_date": "2026-02-18T08:00:00Z",
+  "event_category_codes": ["flood"],
+  "country_codes": ["TH"],
+  "latitude": 13.7563,
+  "longitude": 100.5018,
+  "tags": ["flooding", "bangkok"],
+  "external_id": "EXT-2026-001"
+}</code></pre>
+
+            <p><strong>Beispiel (curl):</strong></p>
             <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/custom/events \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
@@ -1179,7 +1194,16 @@ curl -H "Authorization: Bearer {TOKEN}" \
             <blockquote><p>Erfordert Freischaltung der Event-Erstellung für Ihren Account.</p></blockquote>
             <pre><code>PUT /v1/custom/events/{uuid}</code></pre>
             <p>Es müssen nur die zu ändernden Felder gesendet werden.</p>
-            <p><strong>Beispiel:</strong></p>
+            <p><strong>Beispiel Request-Body (JSON) – Risikostufe ändern:</strong></p>
+            <pre><code>{
+  "title": "Überschwemmung Bangkok - Entwarnung",
+  "risk_level": "low"
+}</code></pre>
+            <p><strong>Beispiel Request-Body (JSON) – Enddatum setzen:</strong></p>
+            <pre><code>{
+  "end_date": "2026-02-18T08:00:00Z"
+}</code></pre>
+            <p><strong>Beispiel (curl):</strong></p>
             <pre><code>curl -X PUT {{ request()->getSchemeAndHttpHost() }}/v1/custom/events/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
@@ -1614,7 +1638,43 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
             <h3>Beispiele</h3>
 
-            <h4>Minimaler Import (nur Hotel)</h4>
+            <h4>Minimaler Request-Body (JSON) – nur Hotel</h4>
+            <pre><code>{
+  "source": "api",
+  "provider": "Test System",
+  "data": {
+    "folder": {
+      "folder_name": "Test Reise",
+      "travel_start_date": "2026-06-01",
+      "travel_end_date": "2026-06-14"
+    },
+    "customer": {
+      "first_name": "Max",
+      "last_name": "Mustermann"
+    },
+    "participants": [
+      {
+        "first_name": "Max",
+        "last_name": "Mustermann",
+        "is_main_contact": true
+      }
+    ],
+    "itineraries": [
+      {
+        "itinerary_name": "Hauptreise",
+        "hotels": [
+          {
+            "hotel_name": "Test Hotel",
+            "check_in_date": "2026-06-01",
+            "check_out_date": "2026-06-14"
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+
+            <h4>Beispiel (curl) – Minimaler Import</h4>
             <pre><code>curl -X POST {{ request()->getSchemeAndHttpHost() }}/v1/folders/import \
   -H "Authorization: Bearer {TOKEN}" \
   -H "Content-Type: application/json" \
