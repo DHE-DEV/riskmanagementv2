@@ -2416,7 +2416,16 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     </tbody>
                 </table>
             </div>
-            <p><strong>Beispiel:</strong></p>
+            <p><strong>Request-Body (JSON):</strong></p>
+            <pre><code>{
+  "domain": "neue-website.de"
+}</code></pre>
+            <p>Oder mit optionalem Aktiv-Status:</p>
+            <pre><code>{
+  "domain": "staging.meine-firma.de",
+  "is_active": false
+}</code></pre>
+            <p><strong>Beispiel (curl):</strong></p>
             <pre><code>curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domain": "neue-website.de"}' \
@@ -2447,7 +2456,17 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     </tbody>
                 </table>
             </div>
-            <p><strong>Beispiel:</strong></p>
+            <p><strong>Request-Body (JSON):</strong></p>
+            <pre><code>{
+  "domains": [
+    "website1.de",
+    "website2.com",
+    "app.website3.de",
+    "portal.meine-firma.de",
+    "intranet.kunde.com"
+  ]
+}</code></pre>
+            <p><strong>Beispiel (curl):</strong></p>
             <pre><code>curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domains": ["website1.de", "website2.com", "app.website3.de"]}' \
@@ -2457,15 +2476,16 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "data": {
     "created": [
       {"uuid": "...", "domain": "website1.de", "is_active": true, ...},
-      {"uuid": "...", "domain": "website2.com", "is_active": true, ...}
+      {"uuid": "...", "domain": "website2.com", "is_active": true, ...},
+      {"uuid": "...", "domain": "app.website3.de", "is_active": true, ...}
     ],
     "skipped": [],
-    "invalid": ["ungültig..domain"]
+    "invalid": []
   },
   "meta": {
-    "created_count": 2,
+    "created_count": 3,
     "skipped_count": 0,
-    "invalid_count": 1
+    "invalid_count": 0
   }
 }</code></pre>
 
@@ -2485,7 +2505,15 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     </tbody>
                 </table>
             </div>
-            <p><strong>Beispiel – Domain deaktivieren:</strong></p>
+            <p><strong>Request-Body (JSON) – Domain deaktivieren:</strong></p>
+            <pre><code>{
+  "is_active": false
+}</code></pre>
+            <p><strong>Request-Body (JSON) – Domain umbenennen:</strong></p>
+            <pre><code>{
+  "domain": "neue-domain.de"
+}</code></pre>
+            <p><strong>Beispiel (curl):</strong></p>
             <pre><code>curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"is_active": false}' \
@@ -2516,13 +2544,24 @@ curl -H "Authorization: Bearer {TOKEN}" \
                     </tbody>
                 </table>
             </div>
-            <p><strong>Beispiel:</strong></p>
+            <p><strong>Request-Body (JSON):</strong></p>
+            <pre><code>{
+  "uuids": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "660e8400-e29b-41d4-a716-446655440001"
+  ]
+}</code></pre>
+            <p><strong>Beispiel (curl):</strong></p>
             <pre><code>curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
-  -d '{"uuids": ["uuid1", "uuid2"]}' \
+  -d '{"uuids": ["550e8400-...", "660e8400-..."]}' \
   "{{ request()->getSchemeAndHttpHost() }}/v1/plugin/gtm/domains/bulk"</code></pre>
             <p><strong>Response (200):</strong></p>
-            <pre><code>{"data": {"deleted_count": 2}}</code></pre>
+            <pre><code>{
+  "data": {
+    "deleted_count": 2
+  }
+}</code></pre>
 
             <hr>
 
