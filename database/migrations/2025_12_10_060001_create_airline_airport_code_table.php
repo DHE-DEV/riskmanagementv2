@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('airport_codes_1')) {
+            return;
+        }
+
         Schema::create('airline_airport_code', function (Blueprint $table) {
             $table->id();
             $table->foreignId('airline_id')->constrained()->onDelete('cascade');

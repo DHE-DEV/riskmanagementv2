@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('airport_codes_1')) {
+            return;
+        }
+
         Schema::table('airport_codes_1', function (Blueprint $table) {
             // Foreign keys für City und Country
             $table->foreignId('city_id')->nullable()->after('iso_region');
@@ -42,6 +46,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (!Schema::hasTable('airport_codes_1')) {
+            return;
+        }
+
         Schema::table('airport_codes_1', function (Blueprint $table) {
             $table->dropColumn([
                 'city_id',

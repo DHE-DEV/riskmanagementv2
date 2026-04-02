@@ -12,24 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('folder_flight_segments', function (Blueprint $table) {
-            // Add foreign keys to airport_codes_1 table
+            // Add columns
             $table->unsignedBigInteger('departure_airport_id')->nullable()->after('departure_airport_code');
             $table->unsignedBigInteger('arrival_airport_id')->nullable()->after('arrival_airport_code');
-
-            // Add foreign keys to countries table
             $table->unsignedBigInteger('departure_country_id')->nullable()->after('departure_country_code');
             $table->unsignedBigInteger('arrival_country_id')->nullable()->after('arrival_country_code');
 
-            // Add foreign key constraints
-            $table->foreign('departure_airport_id')
-                ->references('id')
-                ->on('airport_codes_1')
-                ->onDelete('set null');
+            // Add foreign key constraints only if referenced tables exist
+            if (Schema::hasTable('airport_codes_1')) {
+                $table->foreign('departure_airport_id')
+                    ->references('id')
+                    ->on('airport_codes_1')
+                    ->onDelete('set null');
 
-            $table->foreign('arrival_airport_id')
-                ->references('id')
-                ->on('airport_codes_1')
-                ->onDelete('set null');
+                $table->foreign('arrival_airport_id')
+                    ->references('id')
+                    ->on('airport_codes_1')
+                    ->onDelete('set null');
+            }
 
             $table->foreign('departure_country_id')
                 ->references('id')

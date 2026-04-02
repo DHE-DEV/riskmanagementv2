@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('entry_conditions_logs')) {
+            return;
+        }
+
         Schema::table('entry_conditions_logs', function (Blueprint $table) {
             // Erweitere nationality von VARCHAR(2) auf VARCHAR(255) für mehrere komma-separierte Codes
             $table->string('nationality', 255)->change();
@@ -22,6 +26,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('entry_conditions_logs')) {
+            return;
+        }
+
         Schema::table('entry_conditions_logs', function (Blueprint $table) {
             // Zurück zu VARCHAR(2)
             $table->string('nationality', 2)->change();

@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('airport_codes_1')) {
+            return;
+        }
+
         // Get all airports from the airports table
         $airports = DB::table('airports')->whereNull('deleted_at')->get();
 
