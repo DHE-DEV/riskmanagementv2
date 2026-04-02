@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::table('airports', function (Blueprint $table) {
             // Erhöhe die Präzision für maximale Genauigkeit bei GPS-Koordinaten
             // decimal(20,16) erlaubt bis zu 16 Dezimalstellen nach dem Komma
-            $table->decimal('lat', 20, 16)->nullable()->change();
-            $table->decimal('lng', 20, 16)->nullable()->change();
+            $table->decimal('latitude', 20, 16)->nullable()->change();
+            $table->decimal('longitude', 20, 16)->nullable()->change();
         });
     }
 
@@ -26,8 +26,8 @@ return new class extends Migration
     {
         Schema::table('airports', function (Blueprint $table) {
             // Zurück auf die ursprüngliche Präzision
-            $table->decimal('lat', 10, 8)->nullable()->change();
-            $table->decimal('lng', 11, 8)->nullable()->change();
+            $table->decimal('latitude', 10, 8)->nullable()->change();
+            $table->decimal('longitude', 11, 8)->nullable()->change();
         });
     }
 };
