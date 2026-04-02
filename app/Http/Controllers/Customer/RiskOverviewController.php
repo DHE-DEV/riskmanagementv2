@@ -43,8 +43,7 @@ class RiskOverviewController extends Controller
         if (! $customer || ! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
             return response()
                 ->view('livewire.pages.risk-overview-promo', ['isLoggedIn' => $isLoggedIn])
-                ->header('Cache-Control', 'public, max-age=3600, s-maxage=86400')
-                ->header('Vary', 'Cookie');
+                ->header('Cache-Control', 'no-cache, private');
         }
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
