@@ -10,10 +10,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql' || \Schema::hasTable('gtm_api_request_logs')) {
+            return;
+        }
+
         $partitions = [];
 
-        // Generate 360 monthly partitions from 202601 to 205512
-        for ($year = 2026; $year <= 2055; $year++) {
+        for ($year = 2026; $year <= 2030; $year++) {
             for ($month = 1; $month <= 12; $month++) {
                 $partitionKey = sprintf('%d%02d', $year, $month);
 
