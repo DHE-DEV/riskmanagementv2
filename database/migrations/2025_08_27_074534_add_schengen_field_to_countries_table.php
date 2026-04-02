@@ -12,6 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('countries', function (Blueprint $table) {
+            if (!Schema::hasColumn('countries', 'is_eu_member')) {
+                $table->boolean('is_eu_member')->default(false)->after('is_active');
+            }
             $table->boolean('is_schengen_member')->default(false)->after('is_eu_member');
         });
     }
