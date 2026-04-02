@@ -36,7 +36,7 @@ return new class extends Migration
         ];
 
         foreach ($fallback as $iso => [$lat, $lng]) {
-            Country::where('iso_code', $iso)
+            Country::where('code', $iso)
                 ->where(fn ($q) => $q->whereNull('lat')->orWhereNull('lng'))
                 ->update(['lat' => $lat, 'lng' => $lng]);
         }
