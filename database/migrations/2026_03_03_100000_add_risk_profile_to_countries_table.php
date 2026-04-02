@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('countries', function (Blueprint $table) {
-            $table->json('risk_profile')->nullable()->after('climate_zones');
+            $table->json('risk_profile')->nullable()->after('lng');
         });
     }
 

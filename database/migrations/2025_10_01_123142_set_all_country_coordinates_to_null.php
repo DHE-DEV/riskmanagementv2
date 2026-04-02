@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,10 +17,12 @@ return new class extends Migration
         }
 
         // Setze alle Geokoordinaten bei Ländern auf null
-        DB::table('countries')->update([
-            'lat' => null,
-            'lng' => null,
-        ]);
+        if (Schema::hasColumn('countries', 'lat')) {
+            DB::table('countries')->update([
+                'lat' => null,
+                'lng' => null,
+            ]);
+        }
     }
 
     /**

@@ -83,7 +83,7 @@ return new class extends Migration
 
         foreach ($coordinates as $isoCode => $coords) {
             \DB::table('countries')
-                ->where('iso_code', $isoCode)
+                ->where('code', $isoCode)
                 ->update([
                     'lat' => $coords[0],
                     'lng' => $coords[1],
