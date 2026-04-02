@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Passolution - Global Travel Monitor</title>
+    <title>Travel Requirements Service - Travel Information Platform</title>
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -102,12 +102,12 @@
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->
-            <x-public-navigation active="passolution" />
+            <x-public-navigation active="travel-requirements-service" />
 
-            <!-- Content: Passolution iframe -->
+            <!-- Content: Travel Requirements Service -->
             <div class="content-area">
                 <iframe
-                    src="https://web.passolution.de"
+                    src="/travel-requirements-service/"
                     allow="geolocation; clipboard-write; storage-access"
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-top-navigation-by-user-activation allow-modals"
                     loading="lazy"

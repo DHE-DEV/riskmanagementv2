@@ -129,9 +129,9 @@ Route::get('/global-travel-monitor', function () {
         ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
 })->name('global-travel-monitor');
 
-Route::get('/passolution', function () {
+Route::get('/travel-requirements-service', function () {
     return view('livewire.pages.passolution');
-})->name('passolution');
+})->name('travel-requirements-service');
 
 /*
 |--------------------------------------------------------------------------
