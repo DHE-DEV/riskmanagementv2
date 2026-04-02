@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('booking_locations')) {
+            return;
+        }
+
         Schema::table('booking_locations', function (Blueprint $table) {
             // Prüfen ob customer_id existiert, um after() Position zu bestimmen
             if (Schema::hasColumn('booking_locations', 'customer_id')) {

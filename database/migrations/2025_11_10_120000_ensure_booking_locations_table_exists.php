@@ -15,6 +15,7 @@ return new class extends Migration
             Schema::create('booking_locations', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('cascade');
+                $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('cascade');
                 $table->string('type'); // 'online' oder 'stationary'
                 $table->string('name');
                 $table->text('description')->nullable();
@@ -33,6 +34,9 @@ return new class extends Migration
             Schema::table('booking_locations', function (Blueprint $table) {
                 if (!Schema::hasColumn('booking_locations', 'customer_id')) {
                     $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('cascade');
+                }
+                if (!Schema::hasColumn('booking_locations', 'branch_id')) {
+                    $table->foreignId('branch_id')->nullable()->after('customer_id')->constrained('branches')->onDelete('cascade');
                 }
             });
         }
