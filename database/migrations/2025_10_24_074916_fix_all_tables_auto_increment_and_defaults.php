@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -47,6 +48,10 @@ return new class extends Migration
 
         // Setze AUTO_INCREMENT für alle id Felder
         foreach ($tables as $table) {
+            if (!Schema::hasTable($table)) {
+                continue;
+            }
+
             // Prüfe ob Tabelle bereits einen PRIMARY KEY auf id hat
             $hasPrimaryKey = DB::select("SHOW KEYS FROM {$table} WHERE Key_name = 'PRIMARY' AND Column_name = 'id'");
 
@@ -60,8 +65,12 @@ return new class extends Migration
         }
 
         // Setze Default-Werte für sort_order Felder
-        DB::statement('ALTER TABLE event_types MODIFY sort_order INT NOT NULL DEFAULT 0');
-        DB::statement('ALTER TABLE event_categories MODIFY sort_order INT NOT NULL DEFAULT 0');
+        if (Schema::hasTable('event_types') && Schema::hasColumn('event_types', 'sort_order')) {
+            DB::statement('ALTER TABLE event_types MODIFY sort_order INT NOT NULL DEFAULT 0');
+        }
+        if (Schema::hasTable('event_categories') && Schema::hasColumn('event_categories', 'sort_order')) {
+            DB::statement('ALTER TABLE event_categories MODIFY sort_order INT NOT NULL DEFAULT 0');
+        }
     }
 
     /**
