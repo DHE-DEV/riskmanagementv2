@@ -4,16 +4,20 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Mail\TravelAlertOrderMail;
+use App\Models\Customer;
 use App\Models\CustomEvent;
 use App\Models\TravelAlertOrder;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Services\CustomerFeatureService;
 use App\Services\RiskOverviewService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class RiskOverviewController extends Controller
 {
@@ -72,6 +76,33 @@ class RiskOverviewController extends Controller
 
         try {
             TravelAlertOrder::create($validated);
+
+            // Create customer account if none exists for this email
+            $existingCustomer = Customer::where('email', $validated['email'])->first();
+
+            if (! $existingCustomer) {
+                $name = trim(($validated['first_name'] ?? '').' '.($validated['last_name'] ?? ''));
+                if (empty($name)) {
+                    $name = $validated['company'];
+                }
+
+                $customer = Customer::create([
+                    'name' => $name,
+                    'email' => $validated['email'],
+                    'password' => Hash::make(Str::random(32)),
+                    'company_name' => $validated['company'],
+                    'company_street' => $validated['street'],
+                    'company_postal_code' => $validated['postal_code'],
+                    'company_city' => $validated['city'],
+                    'company_country' => $validated['country'],
+                    'phone' => $validated['phone'],
+                    'customer_type' => 'business',
+                ]);
+
+                event(new Registered($customer));
+
+                Log::info('Customer account created from TravelAlert order', ['customer_id' => $customer->id, 'email' => $customer->email]);
+            }
 
             $recipient = config('mail.order_recipient', 'info@passolution.de');
 

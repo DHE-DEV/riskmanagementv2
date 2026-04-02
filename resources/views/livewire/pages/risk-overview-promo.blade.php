@@ -259,16 +259,6 @@ $version = '1.2.0';
                                     <i class="fa-regular fa-unlock mr-2"></i>
                                     Jetzt freischalten
                                 </a>
-                            @else
-                                <a href="{{ route('customer.login') }}"
-                                   class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
-                                   style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
-                                   onmouseover="this.style.background='#a8e2f5'; this.style.boxShadow='0 10px 30px -5px rgba(145, 218, 242, 0.5)'"
-                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'"
-                                   aria-label="Anmelden um TravelAlert zu nutzen">
-                                    <i class="fa-regular fa-right-to-bracket mr-2"></i>
-                                    Jetzt anmelden
-                                </a>
                             @endif
                         </div>
 
@@ -590,16 +580,6 @@ $version = '1.2.0';
                                    aria-label="TravelAlert im Dashboard freischalten">
                                         <i class="fa-regular fa-unlock mr-2"></i>
                                         Jetzt freischalten
-                                    </a>
-                                @else
-                                    <a href="{{ route('customer.login') }}"
-                                       class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
-                                   style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
-                                   onmouseover="this.style.background='#a8e2f5'; this.style.boxShadow='0 10px 30px -5px rgba(145, 218, 242, 0.5)'"
-                                   onmouseout="this.style.background='#91daf2'; this.style.boxShadow='0 10px 25px -5px rgba(145, 218, 242, 0.3)'"
-                                   aria-label="Anmelden um TravelAlert zu nutzen">
-                                        <i class="fa-regular fa-right-to-bracket mr-2"></i>
-                                        Jetzt anmelden
                                     </a>
                                 @endif
                             </div>
