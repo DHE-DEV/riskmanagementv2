@@ -1,4 +1,4 @@
-@props(['tourKey', 'tourLabel', 'tourIcon' => 'fa-regular fa-compass', 'steps' => '[]'])
+@props(['tourKey', 'tourLabel', 'tourIcon' => 'fa-regular fa-compass', 'steps' => '[]', 'finishCtaLabel' => '', 'finishCtaUrl' => ''])
 
 @php
     $customer = auth('customer')->user();
@@ -71,6 +71,12 @@
                         <span style="font-size: 13px; color: #374151;">Bereits gesehene Einführungen nicht mehr anzeigen</span>
                     </label>
                     <p style="margin: 0 0 20px 0; font-size: 12px; color: #9ca3af;">Sie können die Einführung jederzeit in Ihren <strong>Einstellungen</strong> unter <strong>Mein Profil</strong> erneut starten.</p>
+                    @if($finishCtaLabel && $finishCtaUrl)
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin: 0 0 20px 0;">
+                        <p style="margin: 0 0 10px 0; font-size: 13px; color: #166534; font-weight: 600;">{{ $finishCtaLabel }}</p>
+                        <a href="{{ $finishCtaUrl }}" style="display: inline-block; padding: 8px 20px; font-size: 13px; color: white; background: #166534; border-radius: 8px; text-decoration: none; font-weight: 600;">Jetzt einrichten</a>
+                    </div>
+                    @endif
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
                         <button @click="showConfirm = false" style="padding: 8px 16px; font-size: 13px; color: #6b7280; background: none; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">Zurück</button>
                         <button @click="confirmFinish()" style="padding: 8px 20px; font-size: 13px; color: white; background: #002742; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Beenden</button>
