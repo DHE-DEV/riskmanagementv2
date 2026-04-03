@@ -219,6 +219,18 @@
         <!-- Header -->
         <x-public-header />
 
+        @auth('customer')
+            <x-page-tour
+                tourKey="cruise"
+                tourLabel="Kreuzfahrt"
+                tourIcon="fa-regular fa-ship"
+                :steps='json_encode([
+                    ["target" => ".sidebar", "title" => "Kreuzfahrtauswahl", "description" => "In der Seitenleiste finden Sie die Auswahl der Kreuzfahrtrouten und Reisedaten. Wählen Sie eine Route aus, um Details zu den Häfen und Sicherheitsinformationen einzusehen."],
+                    ["target" => ".content-area", "title" => "Routenansicht", "description" => "Im Hauptbereich wird die Kreuzfahrtroute auf der Karte dargestellt. Sie sehen alle Häfen, Reisezeiten und relevante Sicherheitsinformationen für jeden Anlaufhafen.", "forceBelow" => true],
+                ])'
+            />
+        @endauth
+
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->

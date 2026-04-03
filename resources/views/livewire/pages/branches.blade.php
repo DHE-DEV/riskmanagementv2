@@ -164,6 +164,18 @@
     <!-- Header -->
     <x-public-header />
 
+    @auth('customer')
+        <x-page-tour
+            tourKey="branches"
+            tourLabel="Filialen & Standorte"
+            tourIcon="fa-regular fa-building"
+            :steps='json_encode([
+                ["target" => ".sidebar", "title" => "Filialenliste", "description" => "In der Seitenleiste sehen Sie alle Ihre Filialen und Standorte. Wählen Sie eine Filiale aus, um Details einzusehen oder zu bearbeiten."],
+                ["target" => ".content-area", "title" => "Standortdetails", "description" => "Im Hauptbereich werden die Details des ausgewählten Standorts angezeigt: Adresse, Kontaktdaten und die Position auf der Karte. Hier können Sie Standorte verwalten und neue hinzufügen.", "forceBelow" => true],
+            ])'
+        />
+    @endauth
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Navigation -->

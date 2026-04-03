@@ -207,6 +207,18 @@
         <!-- Header -->
         <x-public-header />
 
+        @auth('customer')
+            <x-page-tour
+                tourKey="booking"
+                tourLabel="Buchungsmöglichkeit"
+                tourIcon="fa-regular fa-calendar-check"
+                :steps='json_encode([
+                    ["target" => ".sidebar", "title" => "Seitenleiste", "description" => "In der Seitenleiste finden Sie Suchoptionen und Filter für Buchungsmöglichkeiten. Wählen Sie Reiseziel, Datum und weitere Kriterien aus."],
+                    ["target" => ".content-area", "title" => "Buchungsübersicht", "description" => "Im Hauptbereich werden verfügbare Buchungsmöglichkeiten angezeigt. Hier können Sie Angebote vergleichen und direkt buchen.", "forceBelow" => true],
+                ])'
+            />
+        @endauth
+
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->

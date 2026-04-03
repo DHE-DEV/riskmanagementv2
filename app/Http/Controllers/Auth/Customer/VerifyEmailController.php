@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\TravelAlertOrder;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +19,25 @@ class VerifyEmailController extends Controller
             abort(403, 'Ungültiger Verifizierungslink.');
         }
 
+        $hasTravelAlertOrder = TravelAlertOrder::where('email', $customer->email)->exists();
+
         if ($customer->hasVerifiedEmail()) {
+            if ($hasTravelAlertOrder) {
+                return redirect('/travel-alert')
+                    ->with('success', 'Ihre E-Mail-Adresse wurde bereits bestätigt.');
+            }
+
             return redirect()->route('customer.login')
                 ->with('success', 'Ihre E-Mail-Adresse wurde bereits bestätigt. Sie können sich jetzt einloggen.');
         }
 
         if ($customer->markEmailAsVerified()) {
             event(new Verified($customer));
+        }
+
+        if ($hasTravelAlertOrder) {
+            return redirect('/travel-alert')
+                ->with('success', 'Ihre E-Mail-Adresse wurde erfolgreich bestätigt. Willkommen bei Travel Alert!');
         }
 
         return redirect()->route('customer.login')

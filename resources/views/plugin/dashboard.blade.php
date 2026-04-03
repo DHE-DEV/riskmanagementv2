@@ -1,12 +1,12 @@
 @extends('layouts.dashboard-minimal')
 
-@section('title', 'Plugin Dashboard - Global Travel Monitor')
+@section('title', 'Plugin Dashboard - Passolution Travel Information Platform')
 
 @section('content')
 <div class="p-6 max-w-7xl mx-auto">
     <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-900">Plugin Dashboard</h1>
-        <p class="mt-1 text-sm text-gray-600">Verwalten Sie Ihren Global Travel Monitor Plugin-Zugang</p>
+        <p class="mt-1 text-sm text-gray-600">Verwalten Sie Ihren Passolution Travel Information Platform Plugin-Zugang</p>
     </div>
 
     @if (session('success'))

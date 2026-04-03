@@ -581,6 +581,18 @@
         <!-- Header -->
         <x-public-header />
 
+        @auth('customer')
+            <x-page-tour
+                tourKey="entry_conditions"
+                tourLabel="Einreisebestimmungen"
+                tourIcon="fa-regular fa-passport"
+                :steps='json_encode([
+                    ["target" => ".sidebar", "title" => "Länderauswahl", "description" => "Wählen Sie in der Seitenleiste ein Land aus, um die aktuellen Einreisebestimmungen einzusehen. Sie können nach Ländernamen suchen oder durch die Liste scrollen."],
+                    ["target" => ".map-container", "title" => "Einreisebestimmungen", "description" => "Hier werden die detaillierten Einreisebestimmungen für das ausgewählte Land angezeigt: Visabestimmungen, Passanforderungen, Zollvorschriften und weitere wichtige Reiseinformationen.", "forceBelow" => true],
+                ])'
+            />
+        @endauth
+
         <!-- Main Content -->
         <div class="main-content">
             <!-- Navigation -->

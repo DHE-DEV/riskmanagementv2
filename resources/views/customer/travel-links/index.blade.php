@@ -42,6 +42,17 @@
 @endpush
 
 @section('content')
+@auth('customer')
+    <x-page-tour
+        tourKey="travel_links"
+        tourLabel="Travel Links"
+        tourIcon="fa-regular fa-link"
+        :steps='json_encode([
+            ["target" => ".travel-links-sidebar", "title" => "Link-Übersicht", "description" => "In der Seitenleiste sehen Sie alle Ihre Travel Links. Filtern Sie nach aktiven, zukünftigen oder archivierten Reisen."],
+            ["target" => ".travel-links-content", "title" => "Link-Details", "description" => "Im Hauptbereich werden die Details und Einstellungen des ausgewählten Travel Links angezeigt. Hier können Sie Links teilen und verwalten.", "forceBelow" => true],
+        ])'
+    />
+@endauth
 <div class="travel-links-sidebar" x-data="travelLinksSidebar()">
     <div class="p-4">
         <h2 class="text-sm font-bold text-gray-900 mb-4">

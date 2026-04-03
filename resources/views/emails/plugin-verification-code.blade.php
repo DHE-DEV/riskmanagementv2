@@ -76,14 +76,14 @@
 </head>
 <body>
     <div class="header">
-        <h1>Global Travel Monitor</h1>
+        <h1>Passolution Travel Information Platform</h1>
         <p>E-Mail-Verifizierung</p>
     </div>
 
     <div class="content">
         <p>Hallo {{ $contactName }},</p>
 
-        <p>vielen Dank für die Registrierung beim Global Travel Monitor Plugin. Um die E-Mail-Adresse zu bestätigen, geben Sie bitte den folgenden Code im Abfragefenster ein:</p>
+        <p>vielen Dank für die Registrierung beim Passolution Travel Information Platform Plugin. Um die E-Mail-Adresse zu bestätigen, geben Sie bitte den folgenden Code im Abfragefenster ein:</p>
 
         <div class="code-box">
             <div class="code">{{ $code }}</div>
@@ -100,7 +100,7 @@
 
     <div class="footer">
         <p>Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
-        <p>&copy; {{ date('Y') }} Global Travel Monitor</p>
+        <p>&copy; {{ date('Y') }} Passolution Travel Information Platform</p>
     </div>
 </body>
 </html>

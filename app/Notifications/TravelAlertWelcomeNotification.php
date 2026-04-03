@@ -8,8 +8,12 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 
-class VerifyEmailNotification extends VerifyEmail
+class TravelAlertWelcomeNotification extends VerifyEmail
 {
+    public function __construct(
+        public array $orderData
+    ) {}
+
     protected function verificationUrl($notifiable)
     {
         if (static::$createUrlCallback) {
@@ -26,20 +30,21 @@ class VerifyEmailNotification extends VerifyEmail
         );
     }
 
-    protected function buildMailMessage($url)
+    public function toMail($notifiable)
     {
-        $expireMinutes = Config::get('auth.verification.expire', 60);
-        $expiresAt = Carbon::now()
-            ->addMinutes($expireMinutes)
-            ->timezone('Europe/Berlin')
-            ->format('d.m.Y \u\m H:i \U\h\r');
+        $verificationUrl = $this->verificationUrl($notifiable);
+        $loginUrl = route('customer.login');
+        $passwordResetUrl = route('customer.password.request');
 
         return (new MailMessage)
             ->from(config('mail.from.address'), 'Passolution Travel Information Platform')
-            ->subject('E-Mail-Adresse bestätigen')
-            ->line('Bitte klicken Sie auf die Schaltfläche unten, um Ihre E-Mail-Adresse zu bestätigen.')
-            ->action('E-Mail-Adresse bestätigen', $url)
-            ->line("Dieser Link ist gültig bis zum {$expiresAt}.")
-            ->line('Falls Sie kein Konto erstellt haben, ist keine weitere Aktion erforderlich.');
+            ->subject('Ihre Travel Alert-Bestellung - E-Mail-Adresse bestätigen')
+            ->view('emails.travel-alert-welcome', [
+                'orderData' => $this->orderData,
+                'verificationUrl' => $verificationUrl,
+                'loginUrl' => $loginUrl,
+                'passwordResetUrl' => $passwordResetUrl,
+                'customerName' => $notifiable->name,
+            ]);
     }
 }

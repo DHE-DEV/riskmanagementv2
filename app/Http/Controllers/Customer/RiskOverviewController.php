@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Mail\TravelAlertOrderMail;
 use App\Models\Customer;
+use App\Models\CustomerFeatureOverride;
 use App\Models\CustomEvent;
 use App\Models\TravelAlertOrder;
 use App\Models\Folder\Folder;
 use App\Models\Label;
+use App\Notifications\TravelAlertWelcomeNotification;
 use App\Services\CustomerFeatureService;
 use App\Services\RiskOverviewService;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -78,6 +79,7 @@ class RiskOverviewController extends Controller
 
             // Create customer account if none exists for this email
             $existingCustomer = Customer::where('email', $validated['email'])->first();
+            $accountCreated = false;
 
             if (! $existingCustomer) {
                 $name = trim(($validated['first_name'] ?? '').' '.($validated['last_name'] ?? ''));
@@ -98,8 +100,16 @@ class RiskOverviewController extends Controller
                     'customer_type' => 'business',
                 ]);
 
-                event(new Registered($customer));
+                // Auto-enable TravelAlert feature for the new customer
+                CustomerFeatureOverride::create([
+                    'customer_id' => $customer->id,
+                    'navigation_risk_overview_enabled' => true,
+                ]);
 
+                // Send welcome email with verification link and order details
+                $customer->notify(new TravelAlertWelcomeNotification($validated));
+
+                $accountCreated = true;
                 Log::info('Customer account created from TravelAlert order', ['customer_id' => $customer->id, 'email' => $customer->email]);
             }
 
@@ -111,12 +121,72 @@ class RiskOverviewController extends Controller
 
             Log::info('TravelAlert order submitted', ['company' => $validated['company'], 'email' => $validated['email']]);
 
-            return response()->json(['success' => true, 'message' => 'Bestellung erfolgreich eingereicht.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Bestellung erfolgreich eingereicht.',
+                'account_created' => $accountCreated,
+            ]);
         } catch (\Exception $e) {
             Log::error('TravelAlert order failed: '.$e->getMessage(), ['data' => $validated]);
 
             return response()->json(['success' => false, 'message' => 'Fehler beim Senden. Bitte versuchen Sie es erneut.'], 500);
         }
+    }
+
+    /**
+     * Mark a product tour as completed.
+     */
+    public function completeTour(Request $request): JsonResponse
+    {
+        $tour = $request->input('tour', 'platform');
+        $dontShowAgain = $request->boolean('dont_show_again', false);
+
+        if ($dontShowAgain) {
+            $field = self::tourField($tour);
+            $customer = auth('customer')->user();
+            $customer->update([$field => true]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Reset a product tour so it shows again.
+     */
+    public function resetTour(Request $request): JsonResponse
+    {
+        $tour = $request->input('tour', 'platform');
+        $fields = ['platform' => 'has_seen_platform_tour', 'travel_alert' => 'has_seen_travel_alert_tour', 'gtm' => 'has_seen_gtm_tour'];
+        $field = $fields[$tour] ?? 'has_seen_platform_tour';
+
+        $customer = auth('customer')->user();
+        $customer->update([$field => false]);
+
+        return response()->json(['success' => true]);
+    }
+
+    private static function tourField(string $tour): string
+    {
+        $fields = [
+            'platform' => 'has_seen_platform_tour',
+            'travel_alert' => 'has_seen_travel_alert_tour',
+            'gtm' => 'has_seen_gtm_tour',
+            'trs' => 'has_seen_trs_tour',
+            'entry_conditions' => 'has_seen_entry_conditions_tour',
+            'travel_data' => 'has_seen_travel_data_tour',
+            'travel_links' => 'has_seen_travel_links_tour',
+            'booking' => 'has_seen_booking_tour',
+            'airports' => 'has_seen_airports_tour',
+            'branches' => 'has_seen_branches_tour',
+            'my_travelers' => 'has_seen_my_travelers_tour',
+            'customer_events' => 'has_seen_customer_events_tour',
+            'cruise' => 'has_seen_cruise_tour',
+            'business_visa' => 'has_seen_business_visa_tour',
+            'visumpoint' => 'has_seen_visumpoint_tour',
+            'settings' => 'has_seen_settings_tour',
+        ];
+
+        return $fields[$tour] ?? 'has_seen_platform_tour';
     }
 
     /**

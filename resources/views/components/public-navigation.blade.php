@@ -15,7 +15,7 @@
     }
 </style>
 
-<nav class="navigation flex flex-col items-center py-4 h-full">
+<nav id="main-navigation" class="navigation flex flex-col items-center py-4 h-full">
     <!-- Top Buttons (scrollable) -->
     <div class="flex-1 overflow-y-auto nav-scrollable w-full">
         <div class="flex flex-col items-center space-y-3">

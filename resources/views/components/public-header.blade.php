@@ -70,7 +70,7 @@
                 </div>
 
                 <!-- User Dropdown -->
-                <div class="relative" x-data="{ open: false }">
+                <div id="user-menu" class="relative" x-data="{ open: false }">
                     <button
                         @click="open = !open"
                         @click.away="open = false"

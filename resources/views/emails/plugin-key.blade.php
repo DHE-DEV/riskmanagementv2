@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ihr Global Travel Monitor Plugin-Zugang</title>
+    <title>Ihr Passolution Travel Information Platform Plugin-Zugang</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -83,7 +83,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Global Travel Monitor</h1>
+        <h1>Passolution Travel Information Platform</h1>
         <p>Ihr Plugin-Zugang</p>
     </div>
 
@@ -118,12 +118,12 @@
             Bei Fragen stehen wir Ihnen gerne zur Verfügung.
         </p>
 
-        <p>Mit freundlichen Grüßen,<br>Ihr Global Travel Monitor Team</p>
+        <p>Mit freundlichen Grüßen,<br>Ihr Passolution Travel Information Platform Team</p>
     </div>
 
     <div class="footer">
         <p>Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
-        <p>&copy; {{ date('Y') }} Global Travel Monitor</p>
+        <p>&copy; {{ date('Y') }} Passolution Travel Information Platform</p>
     </div>
 </body>
 </html>

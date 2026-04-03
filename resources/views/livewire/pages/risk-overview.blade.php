@@ -58,13 +58,19 @@ $version = '1.1.0';
         <!-- Header -->
         <x-public-header />
 
+        <!-- Product Tours -->
+        @auth('customer')
+            <x-product-tour />
+            <x-travel-alert-tour />
+        @endauth
+
         <!-- Main Content -->
         <div class="main-content">
             <!-- Navigation -->
             <x-public-navigation :active="$active" />
 
             <!-- Sidebar -->
-            <div class="sidebar"
+            <div id="ta-sidebar" class="sidebar"
                 :class="{ 'sidebar-expanded': (showTripFilters && sidebarTab === 'reisen') || (showCountryFilters && sidebarTab === 'laender') }">
                 <div class="sidebar-inner">
                     <!-- Main Sidebar Content -->
@@ -76,7 +82,7 @@ $version = '1.1.0';
                             </h2>
 
                             <!-- Sidebar Tabs -->
-                            <div class="flex border-b border-gray-200 mb-4">
+                            <div id="ta-tabs" class="flex border-b border-gray-200 mb-4">
                                 <button
                                     @click="sidebarTab = 'reisen'; showCountryFilters = false; if (!tripsLoaded) loadTrips();"
                                     class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
@@ -95,7 +101,7 @@ $version = '1.1.0';
                             <!-- ==================== Tab: Reisen ==================== -->
                             <div x-show="sidebarTab === 'reisen'" x-cloak>
                                 <!-- Filter Toggle Button -->
-                                <button @click="showTripFilters = !showTripFilters"
+                                <button id="ta-filter-btn" @click="showTripFilters = !showTripFilters"
                                     class="w-full mb-3 px-3 py-2 text-xs rounded-lg border transition-colors flex items-center gap-2"
                                     :class="showTripFilters ? 'bg-white border-blue-500 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
                                     <span class="flex items-center shrink-0">
@@ -447,7 +453,7 @@ $version = '1.1.0';
                     </div><!-- /sidebar-main -->
 
                     <!-- Trip Filter Panel (right side, shown when toggled on Reisen tab) -->
-                    <div class="trip-filter-panel" x-show="showTripFilters && sidebarTab === 'reisen'" x-cloak>
+                    <div id="ta-filter-panel" class="trip-filter-panel" x-show="showTripFilters && sidebarTab === 'reisen'" x-cloak>
                         <h3 class="text-sm font-semibold text-gray-900 flex items-center mb-3">
                             <i class="fa-regular fa-filter mr-2"></i>
                             Filter
@@ -573,9 +579,9 @@ $version = '1.1.0';
             </div><!-- /sidebar -->
 
             <!-- Content Container: Länder -->
-            <div class="content-container flex flex-col flex-1 min-h-0" x-show="sidebarTab === 'laender'">
+            <div id="ta-content" class="content-container flex flex-col flex-1 min-h-0" x-show="sidebarTab === 'laender'">
                 <!-- Tab Navigation -->
-                <div class="tab-navigation flex border-b border-gray-200 bg-white px-4">
+                <div id="ta-content-tabs" class="tab-navigation flex border-b border-gray-200 bg-white px-4">
                     <button @click="activeTab = 'tiles'"
                         class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
                         :class="activeTab === 'tiles' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">

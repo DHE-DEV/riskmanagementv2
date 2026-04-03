@@ -21,7 +21,7 @@ class PluginVerificationCodeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Ihr Verifizierungscode für Global Travel Monitor',
+            subject: 'Ihr Verifizierungscode für Passolution Travel Information Platform',
         );
     }
 

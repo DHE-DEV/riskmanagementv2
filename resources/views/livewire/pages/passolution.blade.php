@@ -99,6 +99,18 @@
         <!-- Header -->
         <x-public-header />
 
+        @auth('customer')
+            <x-page-tour
+                tourKey="trs"
+                tourLabel="Travel Requirements Service"
+                tourIcon="fa-regular fa-browser"
+                :steps='json_encode([
+                    ["target" => ".navigation", "title" => "Seitenleiste", "description" => "In der Seitenleiste finden Sie Länderauswahl und Filteroptionen, um schnell die gewünschten Einreisebestimmungen und Reiseanforderungen zu finden."],
+                    ["target" => ".content-area", "title" => "Inhaltsbereich", "description" => "Im Hauptbereich werden die detaillierten Reiseanforderungen für das ausgewählte Land angezeigt. Hier finden Sie Pass- und Visabestimmungen, Gesundheitsvorschriften und weitere wichtige Informationen.", "forceBelow" => true],
+                ])'
+            />
+        @endauth
+
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->

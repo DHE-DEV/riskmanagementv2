@@ -42,6 +42,17 @@
 @endpush
 
 @section('content')
+@auth('customer')
+    <x-page-tour
+        tourKey="travel_data"
+        tourLabel="Travel Data"
+        tourIcon="fas fa-route"
+        :steps='json_encode([
+            ["target" => ".travel-data-sidebar", "title" => "Reiseübersicht", "description" => "In der Seitenleiste sehen Sie alle Ihre Reisen sortiert nach Status: aktive, zukünftige und archivierte Reisen. Wählen Sie eine Reise aus, um Details einzusehen."],
+            ["target" => ".travel-data-content", "title" => "Reisedetails", "description" => "Im Hauptbereich werden die Details der ausgewählten Reise angezeigt: Reiseziele, Zeitraum, Teilnehmer und alle zugehörigen Reisedaten.", "forceBelow" => true],
+        ])'
+    />
+@endauth
 <div class="travel-data-sidebar" x-data="travelDataSidebar()">
     <div class="p-4">
         <h2 class="text-sm font-bold text-gray-900 mb-4">

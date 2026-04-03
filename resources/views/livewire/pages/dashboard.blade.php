@@ -942,6 +942,11 @@
     <!-- Fixed Header -->
     <x-public-header />
 
+    <!-- Product Tour -->
+    @auth('customer')
+        <x-gtm-tour />
+    @endauth
+
     <!-- Main Content Area -->
     <div class="main-content">
         <!-- Black Navigation Bar -->

@@ -129,6 +129,15 @@ Route::get('/global-travel-monitor', function () {
         ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
 })->name('global-travel-monitor');
 
+// Generic tour routes (used by all page tours)
+Route::post('/tour/completed', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'completeTour'])
+    ->middleware('auth:customer')
+    ->name('tour.completed');
+
+Route::post('/tour/reset', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'resetTour'])
+    ->middleware('auth:customer')
+    ->name('tour.reset');
+
 Route::get('/travel-requirements-service', function () {
     return view('livewire.pages.passolution');
 })->name('travel-requirements-service');
@@ -430,6 +439,14 @@ Route::post('/travel-alert/event/{eventId}/labels', [\App\Http\Controllers\Custo
 Route::delete('/travel-alert/event/{eventId}/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'detachEventLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.event.labels.detach');
+
+Route::post('/travel-alert/tour-completed', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'completeTour'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.tour-completed');
+
+Route::post('/travel-alert/tour-reset', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'resetTour'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.tour-reset');
 
 Route::middleware([
     'auth:sanctum',

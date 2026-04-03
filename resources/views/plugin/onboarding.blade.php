@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-minimal')
 
-@section('title', 'Plugin Onboarding - Global Travel Monitor')
+@section('title', 'Plugin Onboarding - Passolution Travel Information Platform')
 
 @section('content')
 <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -10,7 +10,7 @@
                 Plugin einrichten
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
-                Richten Sie Ihren Global Travel Monitor Plugin-Zugang ein, um das Widget auf Ihrer Website zu integrieren.
+                Richten Sie Ihren Passolution Travel Information Platform Plugin-Zugang ein, um das Widget auf Ihrer Website zu integrieren.
             </p>
         </div>
 

@@ -19,7 +19,7 @@ class TravelAlertOrderMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Neue TravelAlert-Bestellung: '.$this->orderData['company'],
+            subject: 'Neue Travel Alert-Bestellung: '.$this->orderData['company'],
         );
     }
 

@@ -183,6 +183,17 @@
         <!-- Header -->
         <x-public-header />
 
+        @auth('customer')
+            <x-page-tour
+                tourKey="business_visa"
+                tourLabel="Business Visum"
+                tourIcon="fa-regular fa-id-card"
+                :steps='json_encode([
+                    ["target" => ".content-area", "title" => "Visum-Prüfung", "description" => "Hier können Sie prüfen, ob für Ihre Geschäftsreise ein Visum erforderlich ist. Wählen Sie Ihre Staatsangehörigkeit und das Reiseziel aus, um sofort eine Auskunft zu erhalten.", "forceBelow" => true],
+                ])'
+            />
+        @endauth
+
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->

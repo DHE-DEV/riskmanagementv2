@@ -1,7 +1,7 @@
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: #002742; color: white; padding: 20px 30px; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 22px;">Neue TravelAlert-Bestellung</h1>
+        <h1 style="margin: 0; font-size: 22px;">Neue Travel Alert-Bestellung</h1>
     </div>
 
     <div style="background: #f8f9fa; padding: 25px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
@@ -56,7 +56,7 @@
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0 15px;">
         <p style="font-size: 12px; color: #6b7280; margin: 0;">
-            Diese Bestellung wurde über das TravelAlert-Bestellformular auf global-travel-monitor.eu eingereicht.<br>
+            Diese Bestellung wurde über das Travel Alert-Bestellformular auf global-travel-monitor.eu eingereicht.<br>
             Eingegangen am {{ now()->format('d.m.Y') }} um {{ now()->format('H:i') }} Uhr.
         </p>
     </div>

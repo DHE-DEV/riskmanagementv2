@@ -146,6 +146,18 @@
     <!-- Header -->
     <x-public-header />
 
+    @auth('customer')
+        <x-page-tour
+            tourKey="airports"
+            tourLabel="Flughäfen"
+            tourIcon="fa-regular fa-plane"
+            :steps='json_encode([
+                ["target" => ".sidebar", "title" => "Flughafensuche", "description" => "In der Seitenleiste können Sie nach Flughäfen suchen &ndash; nach Name, IATA-Code oder Stadt. Nutzen Sie die Filter, um die Ergebnisse einzugrenzen."],
+                ["target" => ".content-area", "title" => "Flughafeninformationen", "description" => "Im Hauptbereich werden Details zum ausgewählten Flughafen angezeigt: Standort auf der Karte, Kontaktdaten, Terminals und aktuelle Informationen.", "forceBelow" => true],
+            ])'
+        />
+    @endauth
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Navigation -->

@@ -321,6 +321,18 @@
     <!-- Header -->
     <x-public-header />
 
+    @auth('customer')
+        <x-page-tour
+            tourKey="my_travelers"
+            tourLabel="Meine Reisenden"
+            tourIcon="fa-regular fa-users"
+            :steps='json_encode([
+                ["target" => ".sidebar", "title" => "Reisendenübersicht", "description" => "In der Seitenleiste sehen Sie alle registrierten Reisenden Ihres Unternehmens. Wählen Sie einen Reisenden aus, um aktuelle Aufenthaltsdaten und Reisepläne einzusehen."],
+                ["target" => ".content-area", "title" => "Reisendendetails", "description" => "Im Hauptbereich werden die Details des ausgewählten Reisenden angezeigt: aktuelle Position, geplante Reisen und Sicherheitsinformationen zu den Aufenthaltsorten.", "forceBelow" => true],
+            ])'
+        />
+    @endauth
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Navigation -->

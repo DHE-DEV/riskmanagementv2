@@ -77,6 +77,22 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'travel_links_enabled',
         // Notification settings
         'notifications_enabled',
+        'has_seen_platform_tour',
+        'has_seen_travel_alert_tour',
+        'has_seen_gtm_tour',
+        'has_seen_trs_tour',
+        'has_seen_entry_conditions_tour',
+        'has_seen_travel_data_tour',
+        'has_seen_travel_links_tour',
+        'has_seen_booking_tour',
+        'has_seen_airports_tour',
+        'has_seen_branches_tour',
+        'has_seen_my_travelers_tour',
+        'has_seen_customer_events_tour',
+        'has_seen_cruise_tour',
+        'has_seen_business_visa_tour',
+        'has_seen_visumpoint_tour',
+        'has_seen_settings_tour',
     ];
 
     protected $hidden = [
@@ -109,6 +125,22 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'travel_links_enabled' => 'boolean',
         // Notifications
         'notifications_enabled' => 'boolean',
+        'has_seen_platform_tour' => 'boolean',
+        'has_seen_travel_alert_tour' => 'boolean',
+        'has_seen_gtm_tour' => 'boolean',
+        'has_seen_trs_tour' => 'boolean',
+        'has_seen_entry_conditions_tour' => 'boolean',
+        'has_seen_travel_data_tour' => 'boolean',
+        'has_seen_travel_links_tour' => 'boolean',
+        'has_seen_booking_tour' => 'boolean',
+        'has_seen_airports_tour' => 'boolean',
+        'has_seen_branches_tour' => 'boolean',
+        'has_seen_my_travelers_tour' => 'boolean',
+        'has_seen_customer_events_tour' => 'boolean',
+        'has_seen_cruise_tour' => 'boolean',
+        'has_seen_business_visa_tour' => 'boolean',
+        'has_seen_visumpoint_tour' => 'boolean',
+        'has_seen_settings_tour' => 'boolean',
     ];
 
     /**

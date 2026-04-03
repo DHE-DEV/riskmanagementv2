@@ -2,14 +2,14 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
-        <title>Plugin-Zugang registrieren - Global Travel Monitor</title>
+        <title>Plugin-Zugang registrieren - Passolution Travel Information Platform</title>
     </head>
     <body class="min-h-screen bg-neutral-100 antialiased dark:bg-gradient-to-b dark:from-neutral-950 dark:to-neutral-900">
         <div class="flex min-h-screen flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div class="flex w-full max-w-xl flex-col gap-6">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium">
-                    <img src="/logo.png" alt="Global Travel Monitor" class="h-12 w-auto" />
+                    <img src="/logo.png" alt="Passolution Travel Information Platform" class="h-12 w-auto" />
                     <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
                 </a>
 
@@ -20,7 +20,7 @@
                             <!-- Header -->
                             <div class="flex w-full flex-col text-center mb-8">
                                 <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Plugin-Zugang registrieren</h1>
-                                <p class="text-sm text-stone-600 dark:text-stone-400">Durch Ihre Registrierung schalten Sie jetzt kostenlos das Global Travel Monitor Plugin zur Nutzung in Ihrer Website oder Anwendung frei.</p>
+                                <p class="text-sm text-stone-600 dark:text-stone-400">Durch Ihre Registrierung schalten Sie jetzt kostenlos das Passolution Travel Information Platform Plugin zur Nutzung in Ihrer Website oder Anwendung frei.</p>
                             </div>
 
                             @if (session('error'))

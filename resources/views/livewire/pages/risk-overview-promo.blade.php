@@ -614,8 +614,8 @@ $version = '1.2.0';
                                 <i class="fa-regular fa-cart-shopping" style="color: #CEE741;"></i>
                             </div>
                             <div>
-                                <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">Travel<span class="text-[#cee741]">Alert</span> bestellen</h2>
-                                <p class="text-xs" style="color: rgba(255,255,255,0.6);">Füllen Sie das Formular aus - wir melden uns umgehend.</p>
+                                <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">Travel <span class="text-[#cee741]">Alert</span> bestellen</h2>
+                                <p x-show="!submitted" class="text-xs" style="color: rgba(255,255,255,0.6);">Füllen Sie das Formular aus - Ihr Zugang wird sofort freigeschaltet.</p>
                             </div>
                         </div>
                         <button @click="open = false" class="p-2 rounded-lg transition-colors text-white/60 hover:text-white hover:bg-white/10">
@@ -624,14 +624,36 @@ $version = '1.2.0';
                     </div>
 
                     <!-- Success State -->
-                    <div x-show="submitted" class="px-6 py-16 text-center">
+                    <div x-show="submitted" class="px-6 py-12 text-center">
                         <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-emerald-50">
                             <i class="fa-regular fa-check text-4xl text-emerald-500"></i>
                         </div>
                         <h3 class="text-2xl font-bold mb-3 text-gray-900" style="font-family: Archivo, sans-serif;">Bestellung eingegangen!</h3>
-                        <p class="mb-8 max-w-md mx-auto text-gray-500">
-                            Vielen Dank für Ihre Bestellung. Wir werden uns in Kürze bei Ihnen melden, um die Details zu besprechen.
-                        </p>
+
+                        <!-- New account created -->
+                        <template x-if="accountCreated">
+                            <div>
+                                <p class="mb-4 max-w-md mx-auto text-gray-500">
+                                    Vielen Dank für Ihre Bestellung. Ihr TravelAlert-Zugang wurde automatisch freigeschaltet.
+                                </p>
+                                <div class="mb-6 mx-auto max-w-md rounded-xl border border-blue-200 bg-blue-50 p-4 text-left">
+                                    <p class="text-sm font-semibold text-blue-800 mb-2">
+                                        <i class="fa-regular fa-envelope mr-1"></i> E-Mail-Bestätigung erforderlich
+                                    </p>
+                                    <p class="text-sm text-blue-700">
+                                        Wir haben Ihnen eine E-Mail mit einer Bestellübersicht gesendet. Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link in der E-Mail, um Ihren Account zu aktivieren.
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Existing account -->
+                        <template x-if="!accountCreated">
+                            <p class="mb-6 max-w-md mx-auto text-gray-500">
+                                Vielen Dank für Ihre Bestellung. Ihr TravelAlert-Zugang wurde automatisch freigeschaltet. Sie können TravelAlert ab sofort nutzen.
+                            </p>
+                        </template>
+
                         <button @click="open = false" class="inline-flex items-center px-6 py-2.5 font-semibold rounded-xl transition-all"
                                 style="background: #002742; color: white;">
                             Schließen
@@ -904,6 +926,7 @@ $version = '1.2.0';
                 open: false,
                 loading: false,
                 submitted: false,
+                accountCreated: false,
                 errorMessage: '',
                 errors: {},
                 form: {
@@ -924,6 +947,7 @@ $version = '1.2.0';
                     document.addEventListener('open-order-modal', () => {
                         this.open = true;
                         this.submitted = false;
+                        this.accountCreated = false;
                         this.errorMessage = '';
                         this.errors = {};
                     });
@@ -962,6 +986,7 @@ $version = '1.2.0';
 
                         if (response.ok && data.success) {
                             this.submitted = true;
+                            this.accountCreated = data.account_created || false;
                             // Reset form
                             this.form = {
                                 company: '', first_name: '', last_name: '', email: '', phone: '',

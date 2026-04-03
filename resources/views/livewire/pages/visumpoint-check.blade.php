@@ -216,6 +216,17 @@
         <!-- Header -->
         <x-public-header />
 
+        @auth('customer')
+            <x-page-tour
+                tourKey="visumpoint"
+                tourLabel="Visum Check"
+                tourIcon="fa-regular fa-stamp"
+                :steps='json_encode([
+                    ["target" => ".content-area", "title" => "VisumPoint Check", "description" => "Mit dem VisumPoint Check erhalten Sie detaillierte Visa-Informationen für Ihr Reiseziel. Wählen Sie Staatsangehörigkeit und Zielland aus, um Anforderungen, Bearbeitungszeiten und benötigte Dokumente einzusehen.", "forceBelow" => true],
+                ])'
+            />
+        @endauth
+
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Black Navigation Sidebar -->

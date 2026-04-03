@@ -25,7 +25,7 @@ class ResetPasswordNotification extends ResetPassword
         $expireMinutes = Config::get('auth.passwords.customers.expire', 60);
 
         return (new MailMessage)
-            ->from(config('mail.from.address'), 'Global Travel Monitor')
+            ->from(config('mail.from.address'), 'Passolution Travel Information Platform')
             ->subject('Passwort zurücksetzen')
             ->line('Sie erhalten diese E-Mail, weil wir eine Anfrage zum Zurücksetzen des Passworts für Ihr Konto erhalten haben.')
             ->action('Passwort zurücksetzen', $url)

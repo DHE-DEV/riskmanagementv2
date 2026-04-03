@@ -20,7 +20,7 @@ class PluginKeyMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Ihr Global Travel Monitor Plugin-Zugang',
+            subject: 'Ihr Passolution Travel Information Platform Plugin-Zugang',
         );
     }
 

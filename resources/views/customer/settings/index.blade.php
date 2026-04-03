@@ -97,6 +97,26 @@
 @endpush
 
 @section('content')
+    @auth('customer')
+        @php
+            $settingsTourSteps = [
+                ['target' => '.settings-sidebar', 'title' => 'Navigation', 'description' => 'Über die Seitenleiste navigieren Sie zwischen den verschiedenen Einstellungsbereichen. Die Bereiche sind thematisch gruppiert.'],
+                ['target' => '#settings-nav-general', 'title' => 'Allgemein', 'description' => 'Unter <strong>Mein Profil</strong> verwalten Sie Ihre persönlichen Daten, Ihr Passwort, die Zwei-Faktor-Authentifizierung und die Produkteinführungen.'],
+            ];
+            if ($customer->branch_management_active) {
+                $settingsTourSteps[] = ['target' => '#settings-nav-org', 'title' => 'Organisation', 'description' => '<strong>Stammdaten</strong> &ndash; Firmenadresse, Kontaktdaten und Abteilungen verwalten.<br><br><strong>Organisationsstruktur</strong> &ndash; Ihre Unternehmenshierarchie abbilden.<br><br><strong>Benutzerverwaltung</strong> &ndash; Mitarbeiter anlegen und Zugriffsrechte steuern.'];
+            }
+            $settingsTourSteps[] = ['target' => '#settings-nav-tip', 'title' => 'Travel Information Platform', 'description' => 'Hier konfigurieren Sie die einzelnen Module der Plattform: <strong>Travel Requirements Service</strong>, <strong>Global Travel Monitor</strong>, <strong>Travel Alert</strong>, <strong>Travel Data</strong>, <strong>Travel Link</strong>, <strong>Travel Information</strong> und <strong>Connected Services</strong>.'];
+            $settingsTourSteps[] = ['target' => '.settings-content', 'title' => 'Einstellungsbereich', 'description' => 'Im Hauptbereich werden die Einstellungen des ausgewählten Menüpunkts angezeigt. Hier nehmen Sie Änderungen vor und speichern diese.', 'forceBelow' => true];
+        @endphp
+        <x-page-tour
+            tourKey="settings"
+            tourLabel="Einstellungen"
+            tourIcon="fas fa-cog"
+            :steps='json_encode($settingsTourSteps)'
+        />
+    @endauth
+
     {{-- Sidebar --}}
     <div class="settings-sidebar">
         <div class="p-4">
@@ -106,7 +126,7 @@
             </h2>
 
             <nav class="space-y-1">
-                <div class="settings-section-title">Allgemein</div>
+                <div id="settings-nav-general" class="settings-section-title">Allgemein</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'general']) }}"
                    class="settings-nav-item {{ $settingsSection === 'general' ? 'active' : '' }}">
@@ -115,7 +135,7 @@
                 </a>
 
                 @if($customer->branch_management_active)
-                <div class="settings-section-title mt-2">Organisation</div>
+                <div id="settings-nav-org" class="settings-section-title mt-2">Organisation</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'master-data']) }}"
                    class="settings-nav-item {{ $settingsSection === 'master-data' ? 'active' : '' }}">
@@ -136,7 +156,7 @@
                 </a>
                 @endif
 
-                <div class="settings-section-title mt-2">Travel Information Platform</div>
+                <div id="settings-nav-tip" class="settings-section-title mt-2">Travel Information Platform</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'travel-requirements']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-requirements' ? 'active' : '' }}">
@@ -316,7 +336,7 @@
                 @endif
 
                 {{-- Zwei-Faktor-Authentifizierung --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="twoFactorManager()">
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="twoFactorManager()">
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <h4 class="text-sm font-semibold text-gray-900">Zwei-Faktor-Authentifizierung</h4>
@@ -437,6 +457,100 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Produkteinführungen --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4">Produkteinführungen</h4>
+
+                    {{-- Oberfläche --}}
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Oberfläche</p>
+                            <p class="text-xs text-gray-500">
+                                @if($customer->has_seen_platform_tour)
+                                    Abgeschlossen
+                                @else
+                                    Wird beim nächsten Besuch angezeigt
+                                @endif
+                            </p>
+                        </div>
+                        @if($customer->has_seen_platform_tour)
+                        <button onclick="resetTour('platform')" class="px-3 py-1.5 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors inline-flex items-center gap-1">
+                            <i class="fas fa-rotate-right"></i> Erneut starten
+                        </button>
+                        @endif
+                    </div>
+
+                    {{-- Global Travel Monitor --}}
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Global Travel Monitor</p>
+                            <p class="text-xs text-gray-500">
+                                @if($customer->has_seen_gtm_tour)
+                                    Abgeschlossen
+                                @else
+                                    Wird beim nächsten Besuch angezeigt
+                                @endif
+                            </p>
+                        </div>
+                        @if($customer->has_seen_gtm_tour)
+                        <button onclick="resetTour('gtm')" class="px-3 py-1.5 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors inline-flex items-center gap-1">
+                            <i class="fas fa-rotate-right"></i> Erneut starten
+                        </button>
+                        @endif
+                    </div>
+
+                    @php
+                        $tourItems = [
+                            ['key' => 'travel_alert', 'label' => 'Travel Alert'],
+                            ['key' => 'trs', 'label' => 'Travel Requirements Service'],
+                            ['key' => 'entry_conditions', 'label' => 'Einreisebestimmungen'],
+                            ['key' => 'travel_data', 'label' => 'Travel Data'],
+                            ['key' => 'travel_links', 'label' => 'Travel Links'],
+                            ['key' => 'booking', 'label' => 'Buchungsmöglichkeit'],
+                            ['key' => 'airports', 'label' => 'Flughäfen'],
+                            ['key' => 'branches', 'label' => 'Filialen & Standorte'],
+                            ['key' => 'my_travelers', 'label' => 'Meine Reisenden'],
+                            ['key' => 'customer_events', 'label' => 'Meine Ereignisse'],
+                            ['key' => 'cruise', 'label' => 'Kreuzfahrt'],
+                            ['key' => 'business_visa', 'label' => 'Business Visum'],
+                            ['key' => 'visumpoint', 'label' => 'Visum Check'],
+                            ['key' => 'settings', 'label' => 'Einstellungen'],
+                        ];
+                    @endphp
+
+                    @foreach($tourItems as $i => $tour)
+                        @php $field = 'has_seen_' . $tour['key'] . '_tour'; @endphp
+                        <div class="flex items-center justify-between py-3 {{ $i < count($tourItems) - 1 ? 'border-b border-gray-100' : '' }}">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $tour['label'] }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {{ $customer->$field ? 'Abgeschlossen' : 'Wird beim nächsten Besuch angezeigt' }}
+                                </p>
+                            </div>
+                            @if($customer->$field)
+                            <button onclick="resetTour('{{ $tour['key'] }}')" class="px-3 py-1.5 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors inline-flex items-center gap-1">
+                                <i class="fas fa-rotate-right"></i> Erneut starten
+                            </button>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
+                <script>
+                function resetTour(tour) {
+                    fetch('/tour/reset', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ tour: tour })
+                    }).then(r => r.json()).then(data => {
+                        if (data.success) location.reload();
+                    });
+                }
+                </script>
 
             @elseif($settingsSection === 'notifications')
                 <div x-data="{ notifTab: 'travelalert' }">

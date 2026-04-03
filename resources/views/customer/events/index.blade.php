@@ -435,6 +435,18 @@ function eventContentManager() {
 @endpush
 
 @section('content')
+    @auth('customer')
+        <x-page-tour
+            tourKey="customer_events"
+            tourLabel="Meine Ereignisse"
+            tourIcon="fa-regular fa-calendar-alt"
+            :steps='json_encode([
+                ["target" => ".events-sidebar", "title" => "Ereignisliste", "description" => "In der Seitenleiste sehen Sie alle Ihre eigenen Ereignisse. Erstellen Sie neue Ereignisse oder wählen Sie bestehende aus, um sie zu bearbeiten."],
+                ["target" => ".events-content", "title" => "Ereignisdetails", "description" => "Im Hauptbereich bearbeiten Sie das ausgewählte Ereignis: Titel, Beschreibung, betroffene Länder, Risikostufe und die Position auf der Karte.", "forceBelow" => true],
+            ])'
+        />
+    @endauth
+
     {{-- Sidebar --}}
     <div class="events-sidebar">
         <div class="p-4">
