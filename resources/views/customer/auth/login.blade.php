@@ -29,17 +29,6 @@
                                 </div>
                             @endif
 
-                            <!-- Keycloak SSO Button -->
-                            <div class="mb-6">
-                                <a href="{{ route('auth.keycloak.redirect') }}"
-                                   class="flex w-full items-center justify-center gap-2 rounded-lg bg-[#4e73df] hover:bg-[#3a5bc7] active:bg-[#2f4bb0] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#4e73df] focus:ring-offset-2 dark:focus:ring-offset-stone-950">
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                                    </svg>
-                                    Mit Passolution SSO anmelden
-                                </a>
-                            </div>
-
                             <!-- Social Login Buttons -->
                             @php
                                 $hasSocialLogin = config('services.google.client_id')
@@ -150,76 +139,14 @@
 
                                 <!-- Tab: Login mit Passwort -->
                                 <div x-show="tab === 'password'" x-cloak>
-                                    <form method="POST" action="{{ route('customer.login') }}" class="space-y-5">
-                                        @csrf
-                                        <input type="hidden" name="_tab" value="password">
+                                    <p class="text-sm text-stone-600 dark:text-stone-400 mb-5">
+                                        Sie werden zur Passolution-Anmeldeseite weitergeleitet, um sich mit Ihren Zugangsdaten anzumelden.
+                                    </p>
 
-                                        <!-- Email -->
-                                        <div>
-                                            <label for="email" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                                E-Mail-Adresse
-                                            </label>
-                                            <input
-                                                id="email"
-                                                type="email"
-                                                name="email"
-                                                value="{{ old('email') }}"
-                                                required
-                                                autofocus
-                                                autocomplete="email"
-                                                placeholder="email@beispiel.de"
-                                                class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
-                                            >
-                                            @error('email')
-                                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- Password -->
-                                        <div>
-                                            <div class="flex items-center justify-between mb-2">
-                                                <label for="password" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
-                                                    Passwort
-                                                </label>
-                                                <a href="{{ route('customer.password.request') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                                                    Passwort vergessen?
-                                                </a>
-                                            </div>
-                                            <input
-                                                id="password"
-                                                type="password"
-                                                name="password"
-                                                required
-                                                autocomplete="current-password"
-                                                placeholder="Geben Sie Ihr Passwort ein"
-                                                class="block w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-2.5 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
-                                            >
-                                            @error('password')
-                                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- Remember Me -->
-                                        <div class="flex items-center">
-                                            <input
-                                                id="remember"
-                                                type="checkbox"
-                                                name="remember"
-                                                class="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-blue-600 focus:ring-2 focus:ring-blue-500/20 dark:bg-stone-900"
-                                            >
-                                            <label for="remember" class="ml-2 block text-sm text-stone-700 dark:text-stone-300">
-                                                Angemeldet bleiben für 30 Tage
-                                            </label>
-                                        </div>
-
-                                        <!-- Submit Button -->
-                                        <button
-                                            type="submit"
-                                            class="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950"
-                                        >
-                                            Anmelden
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('auth.keycloak.redirect') }}"
+                                       class="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950">
+                                        Weiter zur Anmeldung
+                                    </a>
                                 </div>
                             </div>
                         </div>
