@@ -47,8 +47,7 @@ Route::middleware('guest:customer')->prefix('customer')->name('customer.')->grou
 
 // Magic Login verification (signed URL, no auth required)
 Route::get('customer/magic-login/{id}', [MagicLoginController::class, 'verify'])
-    ->name('customer.magic-login.verify')
-    ->middleware('signed');
+    ->name('customer.magic-login.verify');
 
 // Keycloak OIDC routes (redirect URI: /auth/callback)
 Route::get('auth/login/keycloak', [KeycloakAuthController::class, 'redirect'])->name('auth.keycloak.redirect');
