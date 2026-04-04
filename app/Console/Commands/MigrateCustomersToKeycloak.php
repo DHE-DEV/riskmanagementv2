@@ -175,53 +175,54 @@ class MigrateCustomersToKeycloak extends Command
         $errors = 0;
 
         foreach ($customers as $customer) {
-            $this->importPasswordHash($customer->provider_id, $customer->password);
-            $this->line(" <info>Passwort importiert:</info> {$customer->email}");
-            $fixed++;
-        }
+            // Erst den alten User löschen, dann neu importieren mit Passwort
+            $deleteResponse = Http::withToken($this->adminToken)
+                ->delete("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$customer->provider_id}");
 
-        $this->info("Ergebnis: {$fixed} Passwörter importiert, {$errors} Fehler");
-        return $errors > 0 ? 1 : 0;
-    }
+            if (!$deleteResponse->successful() && $deleteResponse->status() !== 404) {
+                $this->line(" <error>Löschen fehlgeschlagen:</error> {$customer->email}");
+                $errors++;
+                continue;
+            }
 
-    private function importPasswordHash(string $keycloakUserId, string $bcryptHash): void
-    {
-        // Laravel uses $2y$ prefix, Keycloak expects $2a$ — they are equivalent
-        $hash = str_replace('$2y$', '$2a$', $bcryptHash);
+            // Neu importieren via Partial Import (mit bcrypt-Hash)
+            $hash = str_replace('$2y$', '$2a$', $customer->password);
+            $nameParts = explode(' ', $customer->name ?? '', 2);
 
-        // First, delete any existing (empty) credentials
-        $existingCreds = Http::withToken($this->adminToken)
-            ->get("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$keycloakUserId}/credentials");
+            $response = Http::withToken($this->adminToken)
+                ->post("{$this->baseUrl}/admin/realms/{$this->realm}/partialImport", [
+                    'users' => [[
+                        'username' => $customer->email,
+                        'email' => $customer->email,
+                        'emailVerified' => $customer->hasVerifiedEmail(),
+                        'enabled' => true,
+                        'firstName' => $nameParts[0] ?? '',
+                        'lastName' => $nameParts[1] ?? '',
+                        'attributes' => [
+                            'platform_customer_id' => [(string) $customer->id],
+                        ],
+                        'credentials' => [[
+                            'type' => 'password',
+                            'hashedSaltedValue' => $hash,
+                            'algorithm' => 'bcrypt',
+                            'hashIterations' => 10,
+                        ]],
+                    ]],
+                ]);
 
-        if ($existingCreds->successful()) {
-            foreach ($existingCreds->json() as $cred) {
-                if ($cred['type'] === 'password') {
-                    Http::withToken($this->adminToken)
-                        ->delete("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$keycloakUserId}/credentials/{$cred['id']}");
-                }
+            if ($response->successful()) {
+                $keycloakUserId = $response->json('results.0.id') ?? $this->getKeycloakUserId($customer->email);
+                $customer->update(['provider_id' => $keycloakUserId]);
+                $this->line(" <info>Repariert:</info> {$customer->email} → {$keycloakUserId}");
+                $fixed++;
+            } else {
+                $this->line(" <error>Fehler:</error> {$customer->email} - {$response->body()}");
+                $errors++;
             }
         }
 
-        // Import the bcrypt hash via PUT credentials
-        $response = Http::withToken($this->adminToken)
-            ->put("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$keycloakUserId}", [
-                'credentials' => [
-                    [
-                        'type' => 'password',
-                        'credentialData' => json_encode([
-                            'hashIterations' => 10,
-                            'algorithm' => 'bcrypt',
-                        ]),
-                        'secretData' => json_encode([
-                            'value' => $hash,
-                        ]),
-                    ],
-                ],
-            ]);
-
-        if (!$response->successful()) {
-            $this->line("  <comment>Passwort-Import fehlgeschlagen: {$response->status()}</comment>");
-        }
+        $this->info("Ergebnis: {$fixed} repariert, {$errors} Fehler");
+        return $errors > 0 ? 1 : 0;
     }
 
     private function createKeycloakUser(Customer $customer): bool
@@ -231,61 +232,66 @@ class MigrateCustomersToKeycloak extends Command
         $firstName = $nameParts[0] ?? '';
         $lastName = $nameParts[1] ?? '';
 
-        // Keycloak User-Payload (ohne Credentials)
-        $userData = [
-            'username' => $customer->email,
-            'email' => $customer->email,
-            'emailVerified' => $customer->hasVerifiedEmail(),
-            'enabled' => true,
-            'firstName' => $firstName,
-            'lastName' => $lastName,
-            'attributes' => [
-                'platform_customer_id' => [(string) $customer->id],
-                'company_name' => [$customer->company_name ?? ''],
-                'customer_type' => [$customer->customer_type ?? ''],
+        // Laravel $2y$ → $2a$ (identisch, aber Keycloak erwartet $2a$)
+        $hash = $customer->password ? str_replace('$2y$', '$2a$', $customer->password) : null;
+
+        // Via Partial Import — der einzige Weg bcrypt-Hashes korrekt zu importieren
+        $importData = [
+            'users' => [
+                [
+                    'username' => $customer->email,
+                    'email' => $customer->email,
+                    'emailVerified' => $customer->hasVerifiedEmail(),
+                    'enabled' => true,
+                    'firstName' => $firstName,
+                    'lastName' => $lastName,
+                    'attributes' => [
+                        'platform_customer_id' => [(string) $customer->id],
+                        'company_name' => [$customer->company_name ?? ''],
+                        'customer_type' => [$customer->customer_type ?? ''],
+                    ],
+                    'credentials' => $hash ? [
+                        [
+                            'type' => 'password',
+                            'hashedSaltedValue' => $hash,
+                            'algorithm' => 'bcrypt',
+                            'hashIterations' => 10,
+                        ],
+                    ] : [],
+                ],
             ],
         ];
 
         $response = Http::withToken($this->adminToken)
-            ->post("{$this->baseUrl}/admin/realms/{$this->realm}/users", $userData);
+            ->post("{$this->baseUrl}/admin/realms/{$this->realm}/partialImport", $importData);
 
-        if ($response->status() === 201) {
-            // Keycloak-User-ID aus Location-Header extrahieren
-            $location = $response->header('Location');
-            $keycloakUserId = $location ? basename($location) : null;
+        if ($response->successful()) {
+            $result = $response->json();
+            $action = $result['results'][0]['action'] ?? 'UNKNOWN';
 
-            // Falls kein Location-Header, User per API suchen
-            if (!$keycloakUserId) {
-                $keycloakUserId = $this->getKeycloakUserId($customer->email);
-            }
+            if ($action === 'ADDED' || $action === 'OVERWRITTEN') {
+                $keycloakUserId = $result['results'][0]['id'] ?? $this->getKeycloakUserId($customer->email);
 
-            // Bcrypt-Hash über Credentials-API importieren
-            if ($keycloakUserId && $customer->password) {
-                $this->importPasswordHash($keycloakUserId, $customer->password);
-            }
+                if ($keycloakUserId) {
+                    $customer->update([
+                        'provider' => 'keycloak',
+                        'provider_id' => $keycloakUserId,
+                    ]);
+                }
 
-            // Provider-Daten im Customer speichern
-            if ($keycloakUserId) {
-                $customer->update([
-                    'provider' => 'keycloak',
-                    'provider_id' => $keycloakUserId,
+                $this->line(" <info>Migriert:</info> {$customer->email} → {$keycloakUserId}");
+                Log::info('Customer migrated to Keycloak', [
+                    'email' => $customer->email,
+                    'customer_id' => $customer->id,
+                    'keycloak_id' => $keycloakUserId,
                 ]);
-                $this->line(" <info>Migriert:</info> {$customer->email} → Keycloak ID: {$keycloakUserId}");
-            } else {
-                $this->line(" <info>Migriert:</info> {$customer->email} (Keycloak-ID konnte nicht ermittelt werden)");
+                return true;
             }
 
-            Log::info('Customer migrated to Keycloak', [
-                'email' => $customer->email,
-                'customer_id' => $customer->id,
-                'keycloak_id' => $keycloakUserId,
-            ]);
-            return true;
-        }
-
-        if ($response->status() === 409) {
-            $this->line(" <comment>Übersprungen:</comment> {$customer->email} (existiert bereits)");
-            return true;
+            if ($action === 'SKIPPED') {
+                $this->line(" <comment>Übersprungen:</comment> {$customer->email} (existiert bereits)");
+                return true;
+            }
         }
 
         $this->line(" <error>Fehler:</error> {$customer->email} - {$response->status()}: {$response->body()}");
