@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\Customer\KeycloakAuthController;
 use App\Http\Controllers\Auth\Customer\LoginController;
+use App\Http\Controllers\Auth\Customer\MagicLoginController;
 use App\Http\Controllers\Auth\Customer\RegisterController;
 use App\Http\Controllers\Auth\Customer\SocialAuthController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,9 @@ Route::middleware('guest:customer')->prefix('customer')->name('customer.')->grou
     Route::get('login', [LoginController::class, 'create'])->name('login');
     Route::post('login', [LoginController::class, 'store']);
 
+    // Magic Login (passwordless)
+    Route::post('magic-login', [MagicLoginController::class, 'send'])->name('magic-login.send');
+
     // Standard Registration
     Route::get('register', [RegisterController::class, 'create'])->name('register');
     Route::post('register', [RegisterController::class, 'store']);
@@ -40,6 +44,11 @@ Route::middleware('guest:customer')->prefix('customer')->name('customer.')->grou
             ->where('provider', 'facebook|google|linkedin|twitter');
     });
 });
+
+// Magic Login verification (signed URL, no auth required)
+Route::get('customer/magic-login/{id}', [MagicLoginController::class, 'verify'])
+    ->name('customer.magic-login.verify')
+    ->middleware('signed');
 
 // Keycloak OIDC routes (redirect URI: /auth/callback)
 Route::get('auth/login/keycloak', [KeycloakAuthController::class, 'redirect'])->name('auth.keycloak.redirect');

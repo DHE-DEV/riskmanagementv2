@@ -29,53 +29,104 @@
             </div>
         @endif
 
-        <form class="mt-8 space-y-6" action="{{ route('customer.login') }}" method="POST">
-            @csrf
-            <div class="rounded-md shadow-sm -space-y-px">
-                <div>
-                    <label for="email" class="sr-only">E-Mail-Adresse</label>
-                    <input id="email" name="email" type="email" autocomplete="email" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm @error('email') border-red-500 @enderror"
-                           placeholder="E-Mail-Adresse"
-                           value="{{ old('email') }}">
-                    @error('email')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label for="password" class="sr-only">Passwort</label>
-                    <input id="password" name="password" type="password" autocomplete="current-password" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm @error('password') border-red-500 @enderror"
-                           placeholder="Passwort">
-                    @error('password')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input id="remember" name="remember" type="checkbox"
-                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="remember" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                        Angemeldet bleiben
-                    </label>
-                </div>
-
-                <div class="text-sm">
-                    <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
-                        Passwort vergessen?
-                    </a>
-                </div>
-            </div>
-
-            <div>
-                <button type="submit"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Anmelden
+        {{-- Tabs --}}
+        <div x-data="{ tab: '{{ old('_tab', 'email') }}' }">
+            <div class="flex border-b border-gray-300 dark:border-gray-600">
+                <button type="button"
+                        @click="tab = 'email'"
+                        :class="tab === 'email'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="w-1/2 py-3 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                    Login mit E-Mail
+                </button>
+                <button type="button"
+                        @click="tab = 'password'"
+                        :class="tab === 'password'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="w-1/2 py-3 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                    Login mit Passwort
                 </button>
             </div>
-        </form>
+
+            {{-- Tab: Login mit E-Mail (Magic Link) --}}
+            <div x-show="tab === 'email'" x-cloak class="mt-6">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Geben Sie Ihre E-Mail-Adresse ein, um sich mit einem Einmalcode anzumelden.
+                </p>
+
+                <form action="{{ route('customer.magic-login.send') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="_tab" value="email">
+                    <div>
+                        <label for="magic_email" class="sr-only">E-Mail-Adresse</label>
+                        <input id="magic_email" name="email" type="email" autocomplete="email" required
+                               class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('email') border-red-500 @enderror"
+                               placeholder="E-Mail-Adresse"
+                               value="{{ old('email') }}">
+                        @error('email')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <button type="submit"
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Login-Link senden
+                    </button>
+                </form>
+            </div>
+
+            {{-- Tab: Login mit Passwort --}}
+            <div x-show="tab === 'password'" x-cloak class="mt-6">
+                <form action="{{ route('customer.login') }}" method="POST" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="_tab" value="password">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="email" class="sr-only">E-Mail-Adresse</label>
+                            <input id="email" name="email" type="email" autocomplete="email" required
+                                   class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm @error('email') border-red-500 @enderror"
+                                   placeholder="E-Mail-Adresse"
+                                   value="{{ old('email') }}">
+                            @error('email')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Passwort</label>
+                            <input id="password" name="password" type="password" autocomplete="current-password" required
+                                   class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm @error('password') border-red-500 @enderror"
+                                   placeholder="Passwort">
+                            @error('password')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember" name="remember" type="checkbox"
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="remember" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                                Angemeldet bleiben
+                            </label>
+                        </div>
+
+                        <div class="text-sm">
+                            <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                                Passwort vergessen?
+                            </a>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Anmelden
+                    </button>
+                </form>
+            </div>
+        </div>
 
         <div class="mt-6">
             <div class="relative">
