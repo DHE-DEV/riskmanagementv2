@@ -1,0 +1,309 @@
+/* ==========================================================================
+   Passolution Keycloak Theme
+   Matching: platform.passolution.de login design
+   ========================================================================== */
+
+/* Font */
+@import url('https://fonts.bunny.net/css?family=instrument-sans:400,500,600');
+
+/* ---------- Page Background ---------- */
+body, html {
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.login-pf body,
+body.login-pf {
+    background: linear-gradient(to bottom, #0a0a0a, #171717) !important;
+}
+
+/* ---------- Login Container ---------- */
+#kc-header {
+    display: none;
+}
+
+#kc-content {
+    padding: 0;
+}
+
+.login-pf .container-fluid {
+    padding: 0;
+}
+
+#kc-container-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2.5rem 1.5rem;
+}
+
+/* ---------- Logo ---------- */
+#kc-logo {
+    display: block;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+#kc-logo-wrapper {
+    background-image: url('../img/logo.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    height: 48px;
+    width: 200px;
+    margin: 0 auto;
+}
+
+/* ---------- Login Card ---------- */
+#kc-form-wrapper,
+.card-pf,
+#kc-form-login,
+#kc-login {
+    font-family: 'Instrument Sans', sans-serif;
+}
+
+.card-pf {
+    background: #0c0a09 !important;
+    border: 1px solid #292524 !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2) !important;
+    max-width: 512px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 2rem 2.5rem !important;
+    color: #d6d3d1 !important;
+}
+
+/* ---------- Card Header / Title ---------- */
+#kc-page-title,
+#kc-header-wrapper {
+    text-align: center !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    margin-bottom: 0.25rem !important;
+    white-space: nowrap !important;
+}
+
+#kc-locale {
+    display: none;
+}
+
+/* ---------- Form Labels ---------- */
+.control-label-text,
+label.control-label,
+label.pf-c-form__label,
+.pf-c-form__label-text,
+label {
+    color: #d6d3d1 !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* ---------- Input Fields ---------- */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+.pf-c-form-control,
+#kc-form-login input.pf-c-form-control,
+input.form-control {
+    background-color: #1c1917 !important;
+    border: 1px solid #44403c !important;
+    border-radius: 0.5rem !important;
+    padding: 0.625rem 1rem !important;
+    font-size: 0.875rem !important;
+    color: #ffffff !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    outline: none !important;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+.pf-c-form-control:focus,
+input.form-control:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+input::placeholder {
+    color: #78716c !important;
+}
+
+/* ---------- Checkbox (Remember me) ---------- */
+.checkbox label,
+.pf-c-check__label,
+#rememberMe label {
+    color: #d6d3d1 !important;
+    font-size: 0.875rem !important;
+}
+
+input[type="checkbox"] {
+    accent-color: #2563eb !important;
+    border-radius: 0.25rem !important;
+}
+
+/* ---------- Primary Button (Login) ---------- */
+input[type="submit"],
+button[type="submit"],
+.btn-primary,
+#kc-login,
+.pf-c-button.pf-m-primary {
+    background-color: #2563eb !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    padding: 0.625rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover,
+.btn-primary:hover,
+#kc-login:hover,
+.pf-c-button.pf-m-primary:hover {
+    background-color: #1d4ed8 !important;
+}
+
+input[type="submit"]:active,
+button[type="submit"]:active,
+.btn-primary:active,
+#kc-login:active,
+.pf-c-button.pf-m-primary:active {
+    background-color: #1e40af !important;
+}
+
+/* ---------- Links ---------- */
+a,
+.login-pf a,
+#kc-registration a,
+.pf-c-form__helper-text a {
+    color: #60a5fa !important;
+    text-decoration: none !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    transition: color 0.15s ease !important;
+}
+
+a:hover,
+.login-pf a:hover {
+    color: #93bbfc !important;
+}
+
+/* ---------- Forgot Password Link ---------- */
+#kc-form-options {
+    margin-top: 0.5rem;
+}
+
+#kc-form-options .col-xs-8 {
+    text-align: right;
+}
+
+/* ---------- Error / Alert Messages ---------- */
+.alert,
+.pf-c-alert,
+.alert-error,
+.alert-warning {
+    background-color: rgba(127, 29, 29, 0.2) !important;
+    border: 1px solid #991b1b !important;
+    border-radius: 0.5rem !important;
+    color: #fca5a5 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.alert-success {
+    background-color: rgba(20, 83, 45, 0.2) !important;
+    border: 1px solid #166534 !important;
+    color: #86efac !important;
+}
+
+/* ---------- Social / Identity Provider Buttons ---------- */
+#kc-social-providers {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #44403c;
+}
+
+#kc-social-providers ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#kc-social-providers li {
+    margin-bottom: 0.75rem;
+}
+
+#kc-social-providers a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border: 1px solid #44403c !important;
+    border-radius: 0.5rem;
+    background-color: #1c1917 !important;
+    color: #d6d3d1 !important;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease;
+}
+
+#kc-social-providers a:hover {
+    background-color: #292524 !important;
+}
+
+/* ---------- Registration Link ---------- */
+#kc-registration {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: #a8a29e;
+}
+
+/* ---------- Footer / Info ---------- */
+#kc-info,
+#kc-info-wrapper {
+    text-align: center;
+    color: #a8a29e !important;
+    font-size: 0.875rem;
+}
+
+/* ---------- Misc Cleanup ---------- */
+.login-pf .feedback-alignment,
+#kc-form-buttons {
+    margin-top: 1.25rem;
+}
+
+/* Hide unnecessary Keycloak branding */
+#kc-attempts-count,
+.kc-logo-text {
+    display: none !important;
+}
+
+/* Form group spacing */
+.form-group,
+.pf-c-form__group {
+    margin-bottom: 1.25rem !important;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .card-pf {
+        padding: 1.5rem !important;
+        margin: 0 0.5rem !important;
+    }
+}
