@@ -19,7 +19,7 @@ html, body {
 }
 
 body {
-    background: linear-gradient(to bottom, #0a0a0a, #171717);
+    background: #f5f5f5;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -56,7 +56,6 @@ body {
     display: contents !important;
 }
 
-/* ---------- Main Card Container ---------- */
 #kc-content-wrapper,
 #kc-content,
 .pf-c-login__main-body {
@@ -91,12 +90,12 @@ body {
     display: none;
 }
 
-/* ---------- Login Box ---------- */
+/* ---------- Login Box (White Card) ---------- */
 #kc-form-wrapper {
-    background: #0c0a09;
-    border: 1px solid #292524;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
     border-radius: 0.75rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
     padding: 2rem 2.5rem;
     width: 100%;
     max-width: 512px;
@@ -107,7 +106,7 @@ body {
     text-align: center;
     font-size: 1.25rem;
     font-weight: 600;
-    color: #ffffff;
+    color: #1c1917;
     margin-bottom: 0.25rem;
     white-space: nowrap;
 }
@@ -118,7 +117,7 @@ body {
     display: block;
     text-align: center;
     font-size: 0.875rem;
-    color: #a8a29e;
+    color: #57534e;
     margin-bottom: 1.5rem;
 }
 
@@ -129,7 +128,7 @@ label,
 .pf-c-form__label-text,
 .control-label-text {
     display: block;
-    color: #d6d3d1;
+    color: #44403c;
     font-size: 0.875rem;
     font-weight: 500;
     margin-bottom: 0.5rem;
@@ -143,13 +142,13 @@ input[type="email"],
 input.form-control {
     display: block;
     width: 100%;
-    background-color: #1c1917;
-    border: 1px solid #44403c;
+    background-color: #ffffff;
+    border: 1px solid #d6d3d1;
     border-radius: 0.5rem;
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
     font-family: 'Instrument Sans', sans-serif;
-    color: #ffffff;
+    color: #1c1917;
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     -webkit-appearance: none;
@@ -165,7 +164,7 @@ input.form-control:focus {
 }
 
 input::placeholder {
-    color: #78716c;
+    color: #a8a29e;
 }
 
 /* ---------- Form Groups ---------- */
@@ -186,7 +185,7 @@ input::placeholder {
 .checkbox label,
 .pf-c-check__label,
 #rememberMe label {
-    color: #d6d3d1;
+    color: #44403c;
     font-size: 0.875rem;
     font-weight: 400;
     margin-bottom: 0;
@@ -210,7 +209,7 @@ input[type="checkbox"] {
 
 #kc-form-options a,
 #kc-form-options span a {
-    color: #60a5fa;
+    color: #2563eb;
     font-size: 0.875rem;
     font-weight: 500;
     text-decoration: none;
@@ -218,7 +217,7 @@ input[type="checkbox"] {
 }
 
 #kc-form-options a:hover {
-    color: #93bbfc;
+    color: #3b82f6;
 }
 
 /* ---------- Submit Button ---------- */
@@ -239,7 +238,7 @@ button[type="submit"],
     color: #ffffff;
     cursor: pointer;
     transition: background-color 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     text-transform: none;
     letter-spacing: normal;
     -webkit-appearance: none;
@@ -265,7 +264,7 @@ button[type="submit"]:active,
 
 /* ---------- Links ---------- */
 a {
-    color: #60a5fa;
+    color: #2563eb;
     text-decoration: none;
     font-size: 0.875rem;
     font-weight: 500;
@@ -273,7 +272,7 @@ a {
 }
 
 a:hover {
-    color: #93bbfc;
+    color: #3b82f6;
 }
 
 /* ---------- Error / Alert Messages ---------- */
@@ -282,10 +281,10 @@ a:hover {
 .alert-error,
 .alert-warning,
 .kc-feedback-text {
-    background-color: rgba(127, 29, 29, 0.2);
-    border: 1px solid #991b1b;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
     border-radius: 0.5rem;
-    color: #fca5a5;
+    color: #991b1b;
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
     margin-bottom: 1rem;
@@ -294,16 +293,16 @@ a:hover {
 
 .alert-success,
 .pf-c-alert.pf-m-success {
-    background-color: rgba(20, 83, 45, 0.2);
-    border-color: #166534;
-    color: #86efac;
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
 }
 
 /* ---------- Social / Identity Provider Buttons ---------- */
 #kc-social-providers {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #44403c;
+    border-top: 1px solid #e7e5e4;
 }
 
 #kc-social-providers ul {
@@ -323,10 +322,10 @@ a:hover {
     justify-content: center;
     width: 100%;
     padding: 0.625rem 1rem;
-    border: 1px solid #44403c;
+    border: 1px solid #d6d3d1;
     border-radius: 0.5rem;
-    background-color: #1c1917;
-    color: #d6d3d1;
+    background-color: #ffffff;
+    color: #57534e;
     font-size: 0.875rem;
     font-weight: 500;
     font-family: 'Instrument Sans', sans-serif;
@@ -336,8 +335,8 @@ a:hover {
 
 #kc-social-providers a:hover,
 .zocial:hover {
-    background-color: #292524;
-    color: #ffffff;
+    background-color: #fafaf9;
+    color: #1c1917;
 }
 
 /* ---------- Registration Link ---------- */
@@ -348,7 +347,7 @@ a:hover {
 }
 
 #kc-registration span {
-    color: #a8a29e;
+    color: #57534e;
     font-size: 0.875rem;
 }
 
@@ -356,7 +355,7 @@ a:hover {
 #kc-info,
 #kc-info-wrapper {
     text-align: center;
-    color: #a8a29e;
+    color: #57534e;
     font-size: 0.875rem;
     margin-top: 1rem;
 }
