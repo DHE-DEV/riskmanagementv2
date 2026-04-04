@@ -5,7 +5,7 @@
     </head>
     <body class="min-h-screen bg-neutral-100 antialiased dark:bg-gradient-to-b dark:from-neutral-950 dark:to-neutral-900">
         <div class="flex min-h-screen flex-col items-center justify-center gap-6 p-6 md:p-10">
-            <div class="flex w-full max-w-md flex-col gap-6">
+            <div class="flex w-full max-w-lg flex-col gap-6">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium">
                     <img src="/logo.png" alt="Passolution" class="h-12 w-auto" />
@@ -17,8 +17,8 @@
                     <div class="rounded-xl border bg-white dark:bg-stone-950 dark:border-stone-800 text-stone-800 shadow-lg">
                         <div class="px-8 py-8 sm:px-10">
                             <!-- Header -->
-                            <div class="flex w-full flex-col text-center mb-8">
-                                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white mb-2">Passolution Travel Information Platform</h1>
+                            <div class="flex w-full flex-col text-center mb-4">
+                                <h1 class="text-xl font-semibold text-stone-900 dark:text-white whitespace-nowrap mb-1">Passolution Travel Information Platform</h1>
                                 <p class="text-sm text-stone-600 dark:text-stone-400">Melden Sie sich bei Ihrem Kundenkonto an</p>
                             </div>
 
@@ -92,21 +92,21 @@
 
                             <!-- Login Tabs -->
                             <div x-data="{ tab: '{{ old('_tab', 'email') }}' }">
-                                <div class="flex border-b border-stone-200 dark:border-stone-700 mb-6">
+                                <div class="flex gap-2 border-b-2 border-stone-200 dark:border-stone-700 mb-6">
                                     <button type="button"
                                             @click="tab = 'email'"
                                             :class="tab === 'email'
-                                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                                : 'border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:border-stone-300'"
-                                            class="w-1/2 py-2.5 text-center border-b-2 text-sm font-medium transition-colors">
+                                                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30'
+                                                : 'border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900'"
+                                            class="flex-1 py-3 text-center border-b-[3px] -mb-[2px] rounded-t-lg text-sm font-semibold transition-colors">
                                         Login mit E-Mail
                                     </button>
                                     <button type="button"
                                             @click="tab = 'password'"
                                             :class="tab === 'password'
-                                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                                : 'border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:border-stone-300'"
-                                            class="w-1/2 py-2.5 text-center border-b-2 text-sm font-medium transition-colors">
+                                                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30'
+                                                : 'border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900'"
+                                            class="flex-1 py-3 text-center border-b-[3px] -mb-[2px] rounded-t-lg text-sm font-semibold transition-colors">
                                         Login mit Passwort
                                     </button>
                                 </div>
