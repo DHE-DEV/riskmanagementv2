@@ -12,7 +12,8 @@ class MigrateCustomersToKeycloak extends Command
     protected $signature = 'customers:migrate-to-keycloak
                             {--dry-run : Nur anzeigen, was migriert würde}
                             {--limit= : Maximale Anzahl zu migrierender Kunden}
-                            {--email= : Nur einen bestimmten Kunden migrieren}';
+                            {--email= : Nur einen bestimmten Kunden migrieren}
+                            {--fix-passwords : Passwort-Hashes für bereits migrierte Kunden nachimportieren}';
 
     protected $description = 'Migriert bestehende Kunden (mit Passwort) aus der DB nach Keycloak';
 
@@ -35,6 +36,11 @@ class MigrateCustomersToKeycloak extends Command
         if (!$this->adminToken) {
             $this->error('Konnte kein Admin-Token von Keycloak holen. Prüfe KEYCLOAK_ADMIN_* Variablen.');
             return 1;
+        }
+
+        // Fix-Passwords Modus: Nur Passwörter für bereits migrierte User nachimportieren
+        if ($this->option('fix-passwords')) {
+            return $this->fixPasswords();
         }
 
         // Kunden mit Passwort laden (keine Social-Login-Accounts)
@@ -152,6 +158,72 @@ class MigrateCustomersToKeycloak extends Command
         return null;
     }
 
+    private function fixPasswords(): int
+    {
+        $query = Customer::where('provider', 'keycloak')
+            ->whereNotNull('provider_id')
+            ->whereNotNull('password');
+
+        if ($email = $this->option('email')) {
+            $query->where('email', $email);
+        }
+
+        $customers = $query->get();
+        $this->info("Gefunden: {$customers->count()} bereits migrierte Kunden mit Passwort");
+
+        $fixed = 0;
+        $errors = 0;
+
+        foreach ($customers as $customer) {
+            $this->importPasswordHash($customer->provider_id, $customer->password);
+            $this->line(" <info>Passwort importiert:</info> {$customer->email}");
+            $fixed++;
+        }
+
+        $this->info("Ergebnis: {$fixed} Passwörter importiert, {$errors} Fehler");
+        return $errors > 0 ? 1 : 0;
+    }
+
+    private function importPasswordHash(string $keycloakUserId, string $bcryptHash): void
+    {
+        // Laravel uses $2y$ prefix, Keycloak expects $2a$ — they are equivalent
+        $hash = str_replace('$2y$', '$2a$', $bcryptHash);
+
+        // First, delete any existing (empty) credentials
+        $existingCreds = Http::withToken($this->adminToken)
+            ->get("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$keycloakUserId}/credentials");
+
+        if ($existingCreds->successful()) {
+            foreach ($existingCreds->json() as $cred) {
+                if ($cred['type'] === 'password') {
+                    Http::withToken($this->adminToken)
+                        ->delete("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$keycloakUserId}/credentials/{$cred['id']}");
+                }
+            }
+        }
+
+        // Import the bcrypt hash via PUT credentials
+        $response = Http::withToken($this->adminToken)
+            ->put("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$keycloakUserId}", [
+                'credentials' => [
+                    [
+                        'type' => 'password',
+                        'credentialData' => json_encode([
+                            'hashIterations' => 10,
+                            'algorithm' => 'bcrypt',
+                        ]),
+                        'secretData' => json_encode([
+                            'value' => $hash,
+                        ]),
+                    ],
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            $this->line("  <comment>Passwort-Import fehlgeschlagen: {$response->status()}</comment>");
+        }
+    }
+
     private function createKeycloakUser(Customer $customer): bool
     {
         // Name aufteilen
@@ -159,7 +231,7 @@ class MigrateCustomersToKeycloak extends Command
         $firstName = $nameParts[0] ?? '';
         $lastName = $nameParts[1] ?? '';
 
-        // Keycloak User-Payload
+        // Keycloak User-Payload (ohne Credentials)
         $userData = [
             'username' => $customer->email,
             'email' => $customer->email,
@@ -174,22 +246,6 @@ class MigrateCustomersToKeycloak extends Command
             ],
         ];
 
-        // Bcrypt-Hash direkt übertragen (Keycloak unterstützt das)
-        if ($customer->password) {
-            $userData['credentials'] = [
-                [
-                    'type' => 'password',
-                    'credentialData' => json_encode([
-                        'hashIterations' => 10,
-                        'algorithm' => 'bcrypt',
-                    ]),
-                    'secretData' => json_encode([
-                        'value' => $customer->password,
-                    ]),
-                ],
-            ];
-        }
-
         $response = Http::withToken($this->adminToken)
             ->post("{$this->baseUrl}/admin/realms/{$this->realm}/users", $userData);
 
@@ -201,6 +257,11 @@ class MigrateCustomersToKeycloak extends Command
             // Falls kein Location-Header, User per API suchen
             if (!$keycloakUserId) {
                 $keycloakUserId = $this->getKeycloakUserId($customer->email);
+            }
+
+            // Bcrypt-Hash über Credentials-API importieren
+            if ($keycloakUserId && $customer->password) {
+                $this->importPasswordHash($keycloakUserId, $customer->password);
             }
 
             // Provider-Daten im Customer speichern
