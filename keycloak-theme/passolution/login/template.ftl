@@ -59,8 +59,6 @@
                 </#if>
             </div>
 
-            <!-- Footer links -->
-            <#nested "info">
         </div>
     </div>
 </body>
