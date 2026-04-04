@@ -101,6 +101,14 @@ return [
         'redirect' => env('APP_URL') . '/customer/auth/twitter/callback',
     ],
 
+    'keycloak' => [
+        'client_id' => env('OIDC_CLIENT_ID'),
+        'client_secret' => env('OIDC_CLIENT_SECRET'),
+        'redirect' => env('OIDC_REDIRECT_URI', env('APP_URL') . '/auth/callback'),
+        'base_url' => env('OIDC_ISSUER'),
+        'realms' => env('OIDC_REALM', 'passolution'),
+    ],
+
     // Plugin Demo Key for documentation page
     'plugin' => [
         'demo_key' => env('PLUGIN_DEMO_KEY'),

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\Customer\KeycloakAuthController;
 use App\Http\Controllers\Auth\Customer\LoginController;
 use App\Http\Controllers\Auth\Customer\RegisterController;
 use App\Http\Controllers\Auth\Customer\SocialAuthController;
@@ -40,11 +41,18 @@ Route::middleware('guest:customer')->prefix('customer')->name('customer.')->grou
     });
 });
 
+// Keycloak OIDC routes (redirect URI: /auth/callback)
+Route::get('auth/login/keycloak', [KeycloakAuthController::class, 'redirect'])->name('auth.keycloak.redirect');
+Route::get('auth/callback', [KeycloakAuthController::class, 'callback'])->name('auth.keycloak.callback');
+
 // Authenticated customer routes
 Route::middleware('auth:customer')->prefix('customer')->name('customer.')->group(function () {
 
     // Logout
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
+
+    // Keycloak OIDC Logout (ends Keycloak session too)
+    Route::post('logout/keycloak', [KeycloakAuthController::class, 'logout'])->name('logout.keycloak');
 
     // Dashboard (handled by routes/customer.php to avoid duplication)
     // Route::get('dashboard', ...)->name('dashboard');
