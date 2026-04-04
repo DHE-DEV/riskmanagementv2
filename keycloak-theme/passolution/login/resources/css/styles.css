@@ -307,6 +307,22 @@ body {
     text-decoration: none;
 }
 
+/* Info/Expired messages */
+.pso-info-message {
+    font-size: 0.875rem;
+    color: #44403c;
+    line-height: 1.6;
+}
+
+.pso-info-message a {
+    color: #2563eb;
+    font-weight: 500;
+}
+
+.pso-info-message a:hover {
+    color: #3b82f6;
+}
+
 /* Links general */
 a { color: #2563eb; text-decoration: none; }
 a:hover { color: #3b82f6; }
