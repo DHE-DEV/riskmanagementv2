@@ -209,6 +209,26 @@ body {
 .pso-button:hover { background: #1d4ed8; }
 .pso-button:active { background: #1e40af; }
 
+/* Secondary Button */
+.pso-button-secondary {
+    display: block;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #d6d3d1;
+    border-radius: 0.5rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: #44403c;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.pso-button-secondary:hover { background: #fafaf9; color: #1c1917; }
+
 /* Divider */
 .pso-divider {
     position: relative;
