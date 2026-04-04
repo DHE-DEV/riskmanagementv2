@@ -90,8 +90,9 @@ class KeycloakAuthController extends Controller
      */
     public function logout(): RedirectResponse
     {
+        $realm = config('services.keycloak.realms', 'passolution');
         $logoutRedirect = config('services.keycloak.base_url')
-            . '/protocol/openid-connect/logout'
+            . '/realms/' . $realm . '/protocol/openid-connect/logout'
             . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
             . '&client_id=' . config('services.keycloak.client_id');
 

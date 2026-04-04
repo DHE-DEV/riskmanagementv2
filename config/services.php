@@ -105,7 +105,7 @@ return [
         'client_id' => env('OIDC_CLIENT_ID'),
         'client_secret' => env('OIDC_CLIENT_SECRET'),
         'redirect' => env('OIDC_REDIRECT_URI', env('APP_URL') . '/auth/callback'),
-        'base_url' => env('OIDC_ISSUER'),
+        'base_url' => env('OIDC_BASE_URL', 'https://auth.passolution.de'),
         'realms' => env('OIDC_REALM', 'passolution'),
     ],
 
