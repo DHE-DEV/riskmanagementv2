@@ -1,348 +1,298 @@
-/* ==========================================================================
-   Passolution Keycloak Theme
-   Matching: platform.passolution.de/customer/login
-   ========================================================================== */
-
+/* Passolution Login Theme — matches platform.passolution.de/customer/login */
 @import url('https://fonts.bunny.net/css?family=instrument-sans:400,500,600');
 
-/* ---------- Reset & Base ---------- */
-html.login-pf,
-html.login-pf body,
-.login-pf,
-.login-pf body,
-body[data-page-id] {
-    background: #f5f5f5 !important;
-    background-image: none !important;
-    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    -webkit-font-smoothing: antialiased !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 100% !important;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: #f5f5f5;
+    color: #1c1917;
+    min-height: 100vh;
 }
 
-/* ---------- Page Layout ---------- */
-.login-pf-page {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    min-height: 100vh !important;
-    padding: 1.5rem !important;
-    background: #f5f5f5 !important;
-    background-image: none !important;
+/* Page */
+.pso-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1.5rem;
 }
 
-/* ---------- Hide default header ---------- */
-.login-pf-page-header,
-#kc-header,
-#kc-header-wrapper {
-    display: none !important;
+.pso-container {
+    width: 100%;
+    max-width: 512px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-/* ---------- Logo (before card) ---------- */
-.card-pf::before {
-    content: '' !important;
-    display: block !important;
-    width: 200px !important;
-    height: 48px !important;
-    background: url('../img/logo.png') no-repeat center / contain !important;
-    margin: 0 auto 1.5rem auto !important;
+/* Logo */
+.pso-logo {
+    display: flex;
+    justify-content: center;
 }
 
-/* ---------- Card ---------- */
-.card-pf {
-    background: #ffffff !important;
-    border: 1px solid #e5e5e5 !important;
-    border-radius: 0.75rem !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
-    max-width: 512px !important;
-    width: 100% !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    color: #1c1917 !important;
+.pso-logo img {
+    height: 48px;
+    width: auto;
 }
 
-/* ---------- Header inside card ---------- */
-.login-pf-header {
-    display: block !important;
-    padding: 2rem 2.5rem 0 2.5rem !important;
-    margin: 0 !important;
-    background: none !important;
+/* Card */
+.pso-card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
+    padding: 2rem 2.5rem;
+}
+
+/* Card Header */
+.pso-card-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
 }
 
 #kc-page-title {
-    text-align: center !important;
-    font-size: 1.25rem !important;
-    font-weight: 600 !important;
-    color: #1c1917 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-family: 'Instrument Sans', sans-serif !important;
-    white-space: nowrap !important;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1c1917;
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
 }
 
-/* ---------- Content area ---------- */
-#kc-content {
-    padding: 0 2.5rem 2rem 2.5rem !important;
+.pso-subtitle {
+    font-size: 0.875rem;
+    color: #57534e;
+    margin: 0;
 }
 
-/* Subtitle */
-#kc-content::before {
-    content: 'Melden Sie sich bei Ihrem Kundenkonto an' !important;
-    display: block !important;
-    text-align: center !important;
-    font-size: 0.875rem !important;
-    color: #57534e !important;
-    margin: 0.25rem 0 1.5rem 0 !important;
-    font-family: 'Instrument Sans', sans-serif !important;
+/* Alert */
+.pso-alert {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    text-align: center;
 }
 
-#kc-content-wrapper {
-    padding: 0 !important;
-    margin: 0 !important;
+.pso-alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.pso-alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.pso-alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.pso-alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+/* Form */
+.pso-form-group {
+    margin-bottom: 1.25rem;
 }
 
-/* ---------- Labels ---------- */
-.pf-c-form__label,
-.pf-c-form__label-text,
-label {
-    display: block !important;
-    color: #44403c !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    margin-bottom: 0.5rem !important;
-    font-family: 'Instrument Sans', sans-serif !important;
-    padding: 0 !important;
-    line-height: 1.5 !important;
+.pso-label {
+    display: block;
+    color: #44403c;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
 }
 
-/* ---------- Input Fields ---------- */
-input.pf-c-form-control,
-.pf-c-form-control,
-input[type="text"],
-input[type="password"],
-input[type="email"] {
-    display: block !important;
-    width: 100% !important;
-    background-color: #ffffff !important;
-    border: 1px solid #d6d3d1 !important;
-    border-radius: 0.5rem !important;
-    padding: 0.625rem 1rem !important;
-    font-size: 0.875rem !important;
-    font-family: 'Instrument Sans', sans-serif !important;
-    color: #1c1917 !important;
-    outline: none !important;
-    height: auto !important;
-    line-height: 1.5 !important;
-    box-shadow: none !important;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+.pso-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
 }
 
-input.pf-c-form-control:focus,
-.pf-c-form-control:focus,
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="email"]:focus {
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+.pso-label-row .pso-label {
+    margin-bottom: 0;
 }
 
-input::placeholder {
-    color: #a8a29e !important;
+.pso-forgot {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #2563eb;
+    text-decoration: none;
 }
 
-/* ---------- Password toggle button ---------- */
-.pf-c-input-group {
-    display: flex !important;
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
+.pso-forgot:hover { color: #3b82f6; }
+
+/* Input */
+.pso-input {
+    display: block;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #d6d3d1;
+    border-radius: 0.5rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: #1c1917;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.pf-c-input-group .pf-c-form-control {
-    border-radius: 0.5rem 0 0 0.5rem !important;
-    border-right: none !important;
-    flex: 1 !important;
+.pso-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
 }
 
-.pf-c-button.pf-m-control {
-    background: #ffffff !important;
-    border: 1px solid #d6d3d1 !important;
-    border-left: none !important;
-    border-radius: 0 0.5rem 0.5rem 0 !important;
-    color: #78716c !important;
-    padding: 0.625rem 0.75rem !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    box-shadow: none !important;
+.pso-input::placeholder { color: #a8a29e; }
+
+/* Password group */
+.pso-password-group {
+    display: flex;
 }
 
-.pf-c-button.pf-m-control:hover {
-    color: #1c1917 !important;
-    background: #fafaf9 !important;
+.pso-input-password {
+    border-radius: 0.5rem 0 0 0.5rem;
+    border-right: none;
+    flex: 1;
 }
 
-/* ---------- Form Groups ---------- */
-.form-group {
-    margin-bottom: 1.25rem !important;
+.pso-password-toggle {
+    background: #ffffff;
+    border: 1px solid #d6d3d1;
+    border-left: none;
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 0 0.75rem;
+    color: #78716c;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
 }
 
-/* ---------- Remember me / Options ---------- */
-.login-pf-settings {
-    margin-bottom: 0.5rem !important;
+.pso-password-toggle:hover { color: #1c1917; background: #fafaf9; }
+
+/* Error */
+.pso-error {
+    display: block;
+    color: #dc2626;
+    font-size: 0.8125rem;
+    margin-top: 0.375rem;
 }
 
-#kc-form-options a {
-    color: #2563eb !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    text-decoration: none !important;
-    font-family: 'Instrument Sans', sans-serif !important;
+/* Remember me */
+.pso-remember {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-#kc-form-options a:hover {
-    color: #3b82f6 !important;
+.pso-remember input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #2563eb;
 }
 
-/* ---------- Submit Button ---------- */
-input#kc-login,
-input.pf-c-button.pf-m-primary,
-.pf-c-button.pf-m-primary.pf-m-block {
-    display: block !important;
-    width: 100% !important;
-    background-color: #2563eb !important;
-    border: none !important;
-    border-radius: 0.5rem !important;
-    padding: 0.625rem 1rem !important;
-    font-size: 0.875rem !important;
-    font-weight: 600 !important;
-    font-family: 'Instrument Sans', sans-serif !important;
-    color: #ffffff !important;
-    cursor: pointer !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-    text-transform: none !important;
-    letter-spacing: normal !important;
-    line-height: 1.5 !important;
-    height: auto !important;
-    transition: background-color 0.15s ease !important;
+.pso-remember label {
+    font-size: 0.875rem;
+    color: #44403c;
+    margin: 0;
 }
 
-input#kc-login:hover,
-input.pf-c-button.pf-m-primary:hover {
-    background-color: #1d4ed8 !important;
+/* Button */
+.pso-button {
+    display: block;
+    width: 100%;
+    background: #2563eb;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-input#kc-login:active,
-input.pf-c-button.pf-m-primary:active {
-    background-color: #1e40af !important;
+.pso-button:hover { background: #1d4ed8; }
+.pso-button:active { background: #1e40af; }
+
+/* Divider */
+.pso-divider {
+    position: relative;
+    text-align: center;
+    margin: 1.5rem 0;
 }
 
-#kc-form-buttons {
-    margin-top: 0.25rem !important;
+.pso-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #e7e5e4;
 }
 
-/* ---------- Links ---------- */
-a {
-    color: #2563eb !important;
-    text-decoration: none !important;
-    font-family: 'Instrument Sans', sans-serif !important;
+.pso-divider span {
+    position: relative;
+    background: #ffffff;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    color: #a8a29e;
 }
 
-a:hover {
-    color: #3b82f6 !important;
-    text-decoration: none !important;
+/* Social buttons */
+.pso-social {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-/* ---------- Alerts ---------- */
-.alert,
-.pf-c-alert,
-.alert-error {
-    background-color: #fef2f2 !important;
-    border: 1px solid #fecaca !important;
-    border-radius: 0.5rem !important;
-    color: #991b1b !important;
-    padding: 0.75rem 1rem !important;
-    font-size: 0.875rem !important;
-    margin-bottom: 1rem !important;
-    text-align: center !important;
+.pso-social-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border: 1px solid #d6d3d1;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    color: #57534e;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    text-decoration: none;
+    transition: background 0.15s;
 }
 
-.alert-success {
-    background-color: #f0fdf4 !important;
-    border-color: #bbf7d0 !important;
-    color: #166534 !important;
+.pso-social-button:hover { background: #fafaf9; color: #1c1917; }
+
+/* Register link */
+.pso-register {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #57534e;
 }
 
-/* ---------- Social Providers ---------- */
-#kc-social-providers {
-    margin-top: 1.5rem !important;
-    padding-top: 1.5rem !important;
-    border-top: 1px solid #e7e5e4 !important;
+.pso-register a {
+    color: #2563eb;
+    font-weight: 500;
+    text-decoration: none;
 }
 
-#kc-social-providers ul {
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+.pso-register a:hover { color: #3b82f6; }
+
+/* Info */
+.pso-info {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #57534e;
 }
 
-#kc-social-providers li {
-    margin-bottom: 0.75rem !important;
+.pso-info a {
+    color: #2563eb;
+    text-decoration: none;
 }
 
-#kc-social-providers a {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    padding: 0.625rem 1rem !important;
-    border: 1px solid #d6d3d1 !important;
-    border-radius: 0.5rem !important;
-    background-color: #ffffff !important;
-    color: #57534e !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-}
+/* Links general */
+a { color: #2563eb; text-decoration: none; }
+a:hover { color: #3b82f6; }
 
-#kc-social-providers a:hover {
-    background-color: #fafaf9 !important;
-    color: #1c1917 !important;
-}
-
-/* ---------- Registration ---------- */
-#kc-registration {
-    text-align: center !important;
-    margin-top: 1.5rem !important;
-}
-
-#kc-registration span {
-    color: #57534e !important;
-    font-size: 0.875rem !important;
-}
-
-/* ---------- Info ---------- */
-#kc-info,
-#kc-info-wrapper {
-    text-align: center !important;
-    color: #57534e !important;
-    font-size: 0.875rem !important;
-    margin-top: 1rem !important;
-}
-
-/* ---------- Responsive ---------- */
+/* Responsive */
 @media (max-width: 480px) {
-    .login-pf-header {
-        padding: 1.5rem 1.25rem 0 1.25rem !important;
-    }
-
-    #kc-content {
-        padding: 0 1.25rem 1.5rem 1.25rem !important;
-    }
-
-    #kc-page-title {
-        font-size: 1.1rem !important;
-        white-space: normal !important;
-    }
+    .pso-card { padding: 1.5rem 1.25rem; }
+    #kc-page-title { font-size: 1.1rem; white-space: normal; }
 }
