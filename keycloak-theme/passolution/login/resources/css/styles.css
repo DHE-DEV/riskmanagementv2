@@ -1,373 +1,363 @@
 /* ==========================================================================
    Passolution Keycloak Theme
    Pixel-perfect match: platform.passolution.de/customer/login
+   Overrides PatternFly with !important
    ========================================================================== */
 
 @import url('https://fonts.bunny.net/css?family=instrument-sans:400,500,600');
 
 *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    box-sizing: border-box !important;
 }
 
-html, body {
-    height: 100%;
-    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+html, html.login-pf, body, body.login-pf {
+    height: 100% !important;
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    -webkit-font-smoothing: antialiased !important;
+    background: #f5f5f5 !important;
+    background-image: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-body {
-    background: #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 1.5rem;
-}
-
-/* Hide all default Keycloak chrome */
+/* ---------- Hide Keycloak chrome ---------- */
 #kc-header,
 #kc-header-wrapper,
 #kc-locale,
-#kc-attempts-count,
-.kc-logo-text,
 .login-pf-header,
-.pf-c-login__header,
-.pf-c-login__footer,
-.pf-c-brand {
+.login-pf-page-header {
     display: none !important;
 }
 
-/* Reset Keycloak layout */
-.login-pf,
-.login-pf body,
-.pf-c-login,
-.pf-c-login__container,
-.pf-c-login__main,
-#kc-container,
-#kc-container-wrapper,
-.container-fluid {
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    min-height: auto !important;
-    display: contents !important;
-}
-
-#kc-content-wrapper,
-#kc-content,
-.pf-c-login__main-body {
-    all: unset;
-    display: block;
-}
-
-#kc-form {
-    width: 100%;
-    max-width: 512px;
-    margin: 0 auto;
-}
-
-.card-pf {
-    all: unset;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 512px;
+/* ---------- Page layout ---------- */
+.login-pf-page {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh !important;
+    padding: 1.5rem !important;
+    background: #f5f5f5 !important;
+    background-image: none !important;
 }
 
 /* ---------- Logo ---------- */
-#kc-logo-wrapper {
-    display: block;
-    text-align: center;
-    margin-bottom: 0.5rem;
+.login-pf-page::before {
+    content: '' !important;
+    display: block !important;
+    width: 200px !important;
+    height: 48px !important;
+    background: url('../img/logo.png') no-repeat center / contain !important;
+    position: absolute !important;
+    top: 2.5rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
 }
 
-#kc-logo-wrapper img,
-.kc-logo-text {
-    display: none;
+/* ---------- Card ---------- */
+.card-pf {
+    background: #ffffff !important;
+    border: 1px solid #e5e5e5 !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+    max-width: 512px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 2rem 2.5rem !important;
+    position: relative !important;
 }
 
-/* ---------- Login Box (White Card) ---------- */
-#kc-form-wrapper {
-    background: #ffffff;
-    border: 1px solid #e5e5e5;
-    border-radius: 0.75rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-    padding: 2rem 2.5rem;
-    width: 100%;
-    max-width: 512px;
-}
-
-/* ---------- Page Title ---------- */
+/* ---------- Title ---------- */
 #kc-page-title {
-    text-align: center;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1c1917;
-    margin-bottom: 0.25rem;
-    white-space: nowrap;
+    text-align: center !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    color: #1c1917 !important;
+    margin: 0 0 0.25rem 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+    font-family: 'Instrument Sans', sans-serif !important;
 }
 
-/* Subtitle */
-#kc-form-wrapper::before {
-    content: 'Melden Sie sich bei Ihrem Kundenkonto an';
-    display: block;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #57534e;
-    margin-bottom: 1.5rem;
+/* Subtitle after title */
+.login-pf-header + #kc-content::before,
+#kc-page-title::after {
+    content: '' !important;
 }
 
-/* ---------- Form Labels ---------- */
+#kc-content::before {
+    content: 'Melden Sie sich bei Ihrem Kundenkonto an' !important;
+    display: block !important;
+    text-align: center !important;
+    font-size: 0.875rem !important;
+    color: #57534e !important;
+    margin-bottom: 1.5rem !important;
+    font-family: 'Instrument Sans', sans-serif !important;
+}
+
+/* ---------- Labels ---------- */
 label,
 .control-label,
 .pf-c-form__label,
+label.pf-c-form__label,
 .pf-c-form__label-text,
 .control-label-text {
-    display: block;
-    color: #44403c;
-    font-size: 0.875rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
+    display: block !important;
+    color: #44403c !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+    font-family: 'Instrument Sans', sans-serif !important;
+    padding: 0 !important;
+    line-height: 1.5 !important;
 }
 
 /* ---------- Input Fields ---------- */
 input[type="text"],
 input[type="password"],
 input[type="email"],
-.pf-c-form-control,
-input.form-control {
-    display: block;
-    width: 100%;
-    background-color: #ffffff;
-    border: 1px solid #d6d3d1;
-    border-radius: 0.5rem;
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-    font-family: 'Instrument Sans', sans-serif;
-    color: #1c1917;
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    -webkit-appearance: none;
+input.pf-c-form-control,
+.pf-c-form-control {
+    display: block !important;
+    width: 100% !important;
+    background-color: #ffffff !important;
+    border: 1px solid #d6d3d1 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.625rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-family: 'Instrument Sans', sans-serif !important;
+    color: #1c1917 !important;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    -webkit-appearance: none !important;
+    height: auto !important;
+    line-height: 1.5 !important;
 }
 
 input[type="text"]:focus,
 input[type="password"]:focus,
 input[type="email"]:focus,
-.pf-c-form-control:focus,
-input.form-control:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+input.pf-c-form-control:focus,
+.pf-c-form-control:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
 }
 
 input::placeholder {
-    color: #a8a29e;
+    color: #a8a29e !important;
+}
+
+/* Password input group (with eye icon) */
+.pf-c-input-group {
+    display: flex !important;
+    border: none !important;
+    background: none !important;
+}
+
+.pf-c-input-group .pf-c-form-control {
+    border-radius: 0.5rem 0 0 0.5rem !important;
+    border-right: none !important;
+}
+
+.pf-c-input-group .pf-c-button.pf-m-control {
+    background: #ffffff !important;
+    border: 1px solid #d6d3d1 !important;
+    border-left: none !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    color: #78716c !important;
+    padding: 0.625rem 0.75rem !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.pf-c-input-group .pf-c-button.pf-m-control:hover {
+    color: #1c1917 !important;
+    background: #fafaf9 !important;
 }
 
 /* ---------- Form Groups ---------- */
 .form-group,
 .pf-c-form__group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.25rem !important;
 }
 
 /* ---------- Checkbox (Remember me) ---------- */
-.checkbox,
-#rememberMe,
-.pf-c-check {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1.25rem;
+.login-pf-settings {
+    margin-bottom: 1.25rem !important;
 }
 
-.checkbox label,
-.pf-c-check__label,
-#rememberMe label {
-    color: #44403c;
-    font-size: 0.875rem;
-    font-weight: 400;
-    margin-bottom: 0;
-    margin-left: 0.5rem;
+.login-pf-settings .checkbox label,
+.login-pf-settings label {
+    color: #44403c !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    display: inline !important;
 }
 
 input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
-    accent-color: #2563eb;
-    border-radius: 0.25rem;
-    flex-shrink: 0;
+    accent-color: #2563eb !important;
 }
 
 /* ---------- Forgot Password ---------- */
 #kc-form-options {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.5rem !important;
 }
 
-#kc-form-options a,
-#kc-form-options span a {
-    color: #2563eb;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-decoration: none;
-    transition: color 0.15s ease;
+#kc-form-options a {
+    color: #2563eb !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    font-family: 'Instrument Sans', sans-serif !important;
 }
 
 #kc-form-options a:hover {
-    color: #3b82f6;
+    color: #3b82f6 !important;
 }
 
 /* ---------- Submit Button ---------- */
-input[type="submit"],
-button[type="submit"],
-.btn-primary,
-#kc-login,
-.pf-c-button.pf-m-primary {
-    display: block;
-    width: 100%;
-    background-color: #2563eb;
-    border: none;
-    border-radius: 0.5rem;
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    font-family: 'Instrument Sans', sans-serif;
-    color: #ffffff;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    text-transform: none;
-    letter-spacing: normal;
-    -webkit-appearance: none;
+input[type="submit"].pf-c-button.pf-m-primary,
+input#kc-login,
+.pf-c-button.pf-m-primary.pf-m-block {
+    display: block !important;
+    width: 100% !important;
+    background-color: #2563eb !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    padding: 0.625rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    font-family: 'Instrument Sans', sans-serif !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    -webkit-appearance: none !important;
+    line-height: 1.5 !important;
+    height: auto !important;
 }
 
-input[type="submit"]:hover,
-button[type="submit"]:hover,
-.btn-primary:hover,
-#kc-login:hover {
-    background-color: #1d4ed8;
+input[type="submit"].pf-c-button.pf-m-primary:hover,
+input#kc-login:hover {
+    background-color: #1d4ed8 !important;
 }
 
-input[type="submit"]:active,
-button[type="submit"]:active,
-.btn-primary:active,
-#kc-login:active {
-    background-color: #1e40af;
+input[type="submit"].pf-c-button.pf-m-primary:active,
+input#kc-login:active {
+    background-color: #1e40af !important;
 }
 
 #kc-form-buttons {
-    margin-top: 0.25rem;
+    margin-top: 0.25rem !important;
 }
 
 /* ---------- Links ---------- */
 a {
-    color: #2563eb;
-    text-decoration: none;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: color 0.15s ease;
+    color: #2563eb !important;
+    text-decoration: none !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    font-family: 'Instrument Sans', sans-serif !important;
 }
 
 a:hover {
-    color: #3b82f6;
+    color: #3b82f6 !important;
+    text-decoration: none !important;
 }
 
-/* ---------- Error / Alert Messages ---------- */
+/* ---------- Error / Alert ---------- */
 .alert,
 .pf-c-alert,
 .alert-error,
 .alert-warning,
 .kc-feedback-text {
-    background-color: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 0.5rem;
-    color: #991b1b;
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
-    text-align: center;
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    border-radius: 0.5rem !important;
+    color: #991b1b !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 1rem !important;
+    text-align: center !important;
 }
 
 .alert-success,
 .pf-c-alert.pf-m-success {
-    background-color: #f0fdf4;
-    border-color: #bbf7d0;
-    color: #166534;
+    background-color: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+    color: #166534 !important;
 }
 
-/* ---------- Social / Identity Provider Buttons ---------- */
+/* ---------- Social Providers ---------- */
 #kc-social-providers {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e7e5e4;
+    margin-top: 1.5rem !important;
+    padding-top: 1.5rem !important;
+    border-top: 1px solid #e7e5e4 !important;
 }
 
 #kc-social-providers ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 #kc-social-providers li {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.75rem !important;
 }
 
 #kc-social-providers a,
 .zocial {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 0.625rem 1rem;
-    border: 1px solid #d6d3d1;
-    border-radius: 0.5rem;
-    background-color: #ffffff;
-    color: #57534e;
-    font-size: 0.875rem;
-    font-weight: 500;
-    font-family: 'Instrument Sans', sans-serif;
-    text-decoration: none;
-    transition: background-color 0.15s ease;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    padding: 0.625rem 1rem !important;
+    border: 1px solid #d6d3d1 !important;
+    border-radius: 0.5rem !important;
+    background-color: #ffffff !important;
+    color: #57534e !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    font-family: 'Instrument Sans', sans-serif !important;
+    text-decoration: none !important;
+    transition: background-color 0.15s ease !important;
 }
 
-#kc-social-providers a:hover,
-.zocial:hover {
-    background-color: #fafaf9;
-    color: #1c1917;
+#kc-social-providers a:hover {
+    background-color: #fafaf9 !important;
+    color: #1c1917 !important;
 }
 
-/* ---------- Registration Link ---------- */
+/* ---------- Registration ---------- */
 #kc-registration {
-    text-align: center;
-    margin-top: 1.5rem;
-    padding-top: 0;
+    text-align: center !important;
+    margin-top: 1.5rem !important;
 }
 
 #kc-registration span {
-    color: #57534e;
-    font-size: 0.875rem;
+    color: #57534e !important;
+    font-size: 0.875rem !important;
+    font-family: 'Instrument Sans', sans-serif !important;
 }
 
-/* ---------- Info area ---------- */
+/* ---------- Info ---------- */
 #kc-info,
 #kc-info-wrapper {
-    text-align: center;
-    color: #57534e;
-    font-size: 0.875rem;
-    margin-top: 1rem;
+    text-align: center !important;
+    color: #57534e !important;
+    font-size: 0.875rem !important;
 }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
-    #kc-form-wrapper {
-        padding: 1.5rem 1.25rem;
+    .card-pf {
+        padding: 1.5rem 1.25rem !important;
     }
 
     #kc-page-title {
-        font-size: 1.1rem;
-        white-space: normal;
+        font-size: 1.1rem !important;
+        white-space: normal !important;
     }
 }
