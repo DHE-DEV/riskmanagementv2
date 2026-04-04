@@ -143,10 +143,11 @@
                                         Sie werden zur Passolution-Anmeldeseite weitergeleitet, um sich mit Ihren Zugangsdaten anzumelden.
                                     </p>
 
-                                    <a href="{{ route('auth.keycloak.redirect') }}"
-                                       class="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950">
+                                    <button type="button"
+                                            onclick="window.location.href='{{ route('auth.keycloak.redirect') }}'"
+                                            class="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-950">
                                         Weiter zur Anmeldung
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </div>
