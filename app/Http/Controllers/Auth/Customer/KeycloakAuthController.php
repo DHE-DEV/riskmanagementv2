@@ -17,7 +17,10 @@ class KeycloakAuthController extends Controller
      */
     public function redirect(): RedirectResponse
     {
-        return Socialite::driver('keycloak')->redirect();
+        return Socialite::driver('keycloak')
+            ->setScopes(['openid', 'profile', 'email'])
+            ->enablePKCE()
+            ->redirect();
     }
 
     /**
@@ -26,7 +29,7 @@ class KeycloakAuthController extends Controller
     public function callback(): RedirectResponse
     {
         try {
-            $keycloakUser = Socialite::driver('keycloak')->user();
+            $keycloakUser = Socialite::driver('keycloak')->enablePKCE()->user();
         } catch (Exception $e) {
             Log::error('Keycloak login failed', ['error' => $e->getMessage()]);
 
