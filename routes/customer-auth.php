@@ -26,6 +26,7 @@ Route::middleware('guest:customer')->prefix('customer')->name('customer.')->grou
 
     // Magic Login (passwordless)
     Route::post('magic-login', [MagicLoginController::class, 'send'])->name('magic-login.send');
+    Route::post('magic-login/verify-code', [MagicLoginController::class, 'verifyCode'])->name('magic-login.verify-code');
 
     // Standard Registration
     Route::get('register', [RegisterController::class, 'create'])->name('register');

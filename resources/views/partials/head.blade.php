@@ -8,6 +8,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="csrf-token" content="{{ csrf_token() }}" />
 
 <title>{{ $title ?? config('app.name') }}</title>
 

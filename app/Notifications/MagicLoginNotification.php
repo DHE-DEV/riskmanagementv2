@@ -11,6 +11,7 @@ class MagicLoginNotification extends Notification
 {
     public function __construct(
         protected string $loginUrl,
+        protected string $code,
     ) {}
 
     public function via($notifiable): array
@@ -28,12 +29,14 @@ class MagicLoginNotification extends Notification
 
         return (new MailMessage)
             ->from(config('mail.from.address'), 'Passolution Travel Information Platform')
-            ->subject('Ihr Login-Link')
+            ->subject('Ihr Login-Code: ' . $this->code)
             ->greeting('Hallo ' . ($notifiable->name ?? '') . '!')
-            ->line('Sie haben einen Login-Link für Ihr Konto angefordert.')
-            ->line('Klicken Sie auf die Schaltfläche unten, um sich anzumelden:')
-            ->action('Jetzt anmelden', $this->loginUrl)
-            ->line("Dieser Link ist gültig bis zum {$expiresAt}.")
-            ->line('Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren.');
+            ->line('Sie haben einen Login-Code für Ihr Konto angefordert.')
+            ->line('Ihr Login-Code lautet:')
+            ->line('**' . implode(' ', str_split($this->code, 3)) . '**')
+            ->line('Geben Sie diesen Code auf der Login-Seite ein.')
+            ->line("Dieser Code ist gültig bis zum {$expiresAt}.")
+            ->line('Falls Sie diesen Code nicht angefordert haben, können Sie diese E-Mail ignorieren.')
+            ->line('Falls Sie Probleme haben, können Sie auch [diesen Link](' . $this->loginUrl . ') verwenden, um sich anzumelden.');
     }
 }

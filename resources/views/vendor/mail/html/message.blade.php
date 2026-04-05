@@ -2,7 +2,7 @@
 {{-- Header --}}
 <x-slot:header>
 <x-mail::header :url="config('app.url')">
-Global Travel Monitor
+Passolution Travel Information Platform
 </x-mail::header>
 </x-slot:header>
 
@@ -21,7 +21,7 @@ Global Travel Monitor
 {{-- Footer --}}
 <x-slot:footer>
 <x-mail::footer>
-© {{ date('Y') }} Global Travel Monitor. Alle Rechte vorbehalten.
+© {{ date('Y') }} Passolution Travel Information Platform. Alle Rechte vorbehalten.
 </x-mail::footer>
 </x-slot:footer>
 </x-mail::layout>

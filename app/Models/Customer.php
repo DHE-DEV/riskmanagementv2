@@ -93,6 +93,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'has_seen_business_visa_tour',
         'has_seen_visumpoint_tour',
         'has_seen_settings_tour',
+        // Login code
+        'login_code',
+        'login_code_expires_at',
     ];
 
     protected $hidden = [
@@ -101,9 +104,11 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'two_factor_secret',
         'two_factor_recovery_codes',
         'pds_api_token', // Hide API token from serialization
+        'login_code',
     ];
 
     protected $casts = [
+        'login_code_expires_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
         'business_type' => 'array',

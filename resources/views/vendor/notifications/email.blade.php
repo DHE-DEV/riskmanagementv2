@@ -34,7 +34,7 @@
 {{ $salutation }}
 @else
 Mit freundlichen Grüßen,<br>
-Global Travel Monitor
+Passolution Travel Information Platform
 @endif
 
 {{-- Subcopy --}}
