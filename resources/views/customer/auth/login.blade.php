@@ -212,7 +212,7 @@
                     <!-- Register Link -->
                     <div class="text-center text-sm text-stone-600 dark:text-stone-400">
                         Sie haben noch kein Konto?
-                        <a href="{{ route('customer.register') }}" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                        <a href="{{ route('customer.register') }}" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
                             Konto erstellen
                         </a>
                     </div>
