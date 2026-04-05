@@ -71,6 +71,12 @@
                                     <p class="text-sm text-stone-600 dark:text-stone-400">Erstellen Sie Ihr Kundenkonto</p>
                                 </div>
 
+                                @if (session('error'))
+                                    <div class="mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-sm text-red-800 dark:text-red-200 text-center">
+                                        {{ session('error') }}
+                                    </div>
+                                @endif
+
                                 <!-- Social Registration Buttons -->
                                 @php
                                     $hasSocialLogin = config('services.google.client_id')

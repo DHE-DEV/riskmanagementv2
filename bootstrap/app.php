@@ -36,6 +36,11 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->is('customer/register')) {
+                return redirect()->route('customer.register')
+                    ->withInput($request->except('password', 'password_confirmation'))
+                    ->with('error', 'Ihre Sitzung ist abgelaufen. Bitte versuchen Sie es erneut.');
+            }
             if ($request->is('customer/*')) {
                 return redirect()->route('customer.login')
                     ->with('error', 'Ihre Sitzung ist abgelaufen. Bitte versuchen Sie es erneut.');
