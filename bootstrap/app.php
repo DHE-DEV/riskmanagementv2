@@ -35,7 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            if ($e->getStatusCode() !== 419) {
+                return null;
+            }
             if ($request->is('customer/register')) {
                 return redirect()->route('customer.register')
                     ->withInput($request->except('password', 'password_confirmation'))
