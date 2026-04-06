@@ -61,7 +61,10 @@ class RiskOverviewController extends Controller
     public function submitOrder(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'company' => 'required|string|max:255',
+            'customer_type' => 'required|in:private,business',
+            'business_type' => 'nullable|array',
+            'business_type.*' => 'string|in:travel_agency,organizer,online_provider,mobile_travel_consultant,software_provider,cooperation,other',
+            'company' => 'required_if:customer_type,business|nullable|string|max:255',
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'email' => 'required|email|max:255',
@@ -87,18 +90,24 @@ class RiskOverviewController extends Controller
                     $name = $validated['company'];
                 }
 
-                $customer = Customer::create([
+                $customerData = [
                     'name' => $name,
                     'email' => $validated['email'],
                     'password' => Hash::make(Str::random(32)),
-                    'company_name' => $validated['company'],
                     'company_street' => $validated['street'],
                     'company_postal_code' => $validated['postal_code'],
                     'company_city' => $validated['city'],
                     'company_country' => $validated['country'],
                     'phone' => $validated['phone'],
-                    'customer_type' => 'business',
-                ]);
+                    'customer_type' => $validated['customer_type'],
+                ];
+
+                if ($validated['customer_type'] === 'business') {
+                    $customerData['company_name'] = $validated['company'] ?? '';
+                    $customerData['business_type'] = $validated['business_type'] ?? [];
+                }
+
+                $customer = Customer::create($customerData);
 
                 // Auto-enable TravelAlert feature for the new customer
                 CustomerFeatureOverride::create([

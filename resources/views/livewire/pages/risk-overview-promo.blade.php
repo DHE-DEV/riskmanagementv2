@@ -590,6 +590,65 @@ $version = '1.2.0';
             </main>
         </div>
 
+        @guest('customer')
+        <!-- Customer Check Modal -->
+        <div x-data="customerCheckModal()" x-cloak>
+            <!-- Backdrop -->
+            <div x-show="showCustomerCheck"
+                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-[20000]" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
+                 @click.self="showCustomerCheck = false">
+
+                <!-- Modal -->
+                <div x-show="showCustomerCheck"
+                     x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-8 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-8 scale-95"
+                     class="relative mx-auto mt-[15vh] w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+                     @keydown.escape.window="showCustomerCheck = false">
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-6 py-4" style="background: #002742;">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(206, 231, 65, 0.2);">
+                                <i class="fa-regular fa-user" style="color: #CEE741;"></i>
+                            </div>
+                            <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">Travel<span class="text-[#cee741]">Alert</span> bestellen</h2>
+                        </div>
+                        <button @click="showCustomerCheck = false" class="p-2 rounded-lg transition-colors text-white/60 hover:text-white hover:bg-white/10">
+                            <i class="fa-regular fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="px-6 py-8">
+                        <p class="text-gray-700 text-center text-lg mb-8">Sind Sie bereits Kunde der<br><strong>Passolution Travel Information Platform</strong>?</p>
+
+                        <div class="flex flex-col gap-3">
+                            <!-- Existing customer → Login -->
+                            <a href="{{ route('login', ['redirect' => url('/travel-alert')]) }}"
+                               class="flex items-center justify-center gap-2 w-full px-6 py-3.5 font-semibold rounded-xl transition-all text-white"
+                               style="background: #002742;"
+                               onmouseover="this.style.background='#043451'" onmouseout="this.style.background='#002742'">
+                                <i class="fa-regular fa-right-to-bracket"></i>
+                                Ja, ich möchte mich einloggen
+                            </a>
+
+                            <!-- New customer → Order form -->
+                            <button @click="showCustomerCheck = false; document.dispatchEvent(new CustomEvent('open-order-form'))"
+                                    class="flex items-center justify-center gap-2 w-full px-6 py-3.5 font-semibold rounded-xl transition-all cursor-pointer"
+                                    style="background: #CEE741; color: #002742;"
+                                    onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                <i class="fa-regular fa-cart-shopping"></i>
+                                Nein, ich bin Neukunde
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endguest
+
         <!-- Order Modal -->
         <div x-data="orderForm()" x-cloak>
             <!-- Backdrop -->
@@ -664,256 +723,360 @@ $version = '1.2.0';
                     <form x-show="!submitted" @submit.prevent="submit" class="overflow-y-auto" style="max-height: calc(94vh - 73px);">
                         <div class="px-6 py-5 space-y-5">
 
-                            <!-- Preisinformationen -->
-                            <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
-                                    <span class="text-sm font-semibold" style="color: #002742;">Preis</span>
-                                </div>
-                                <p class="text-sm text-gray-700 mb-3">
-                                    Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
-                                    <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
-                                </p>
-                                <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
-                                <div class="space-y-2 ml-1">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-800">Für Reisebüros:</p>
-                                        <ul class="text-sm text-gray-600 ml-4 list-disc">
-                                            <li>Monatliches Entgelt <strong>7,00 EUR</strong> ohne Kooperation/Kette</li>
-                                            <li>Monatliches Entgelt <strong>5,00 EUR</strong> mit Kooperation/Kette</li>
-                                        </ul>
+                            <!-- Step Indicator -->
+                            <div class="flex items-center justify-center">
+                                <template x-for="i in 3" :key="i">
+                                    <div class="flex items-center">
+                                        <!-- Step circle -->
+                                        <button type="button" @click="goToStep(i)"
+                                                class="flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-colors"
+                                                :class="{
+                                                    'bg-[#002742] text-white': i === step,
+                                                    'bg-emerald-500 text-white cursor-pointer': i < step,
+                                                    'bg-gray-200 text-gray-400 cursor-default': i > step
+                                                }"
+                                                :disabled="i > step">
+                                            <template x-if="i < step">
+                                                <i class="fa-regular fa-check text-xs"></i>
+                                            </template>
+                                            <template x-if="i >= step">
+                                                <span x-text="i"></span>
+                                            </template>
+                                        </button>
+                                        <!-- Connector line -->
+                                        <div x-show="i < 3" class="w-12 sm:w-16 h-0.5 mx-1 transition-colors"
+                                             :class="i < step ? 'bg-emerald-500' : 'bg-gray-200'"></div>
                                     </div>
+                                </template>
+                            </div>
+
+                            <!-- Step labels -->
+                            <div class="flex justify-between px-1 -mt-2">
+                                <span class="text-xs text-center w-20" :class="step === 1 ? 'text-[#002742] font-medium' : (step > 1 ? 'text-emerald-600' : 'text-gray-400')">Kundentyp</span>
+                                <span class="text-xs text-center w-20" :class="step === 2 ? 'text-[#002742] font-medium' : (step > 2 ? 'text-emerald-600' : 'text-gray-400')" x-text="form.customer_type === 'business' ? 'Firmendaten' : 'Kontaktdaten'"></span>
+                                <span class="text-xs text-center w-20" :class="step === 3 ? 'text-[#002742] font-medium' : 'text-gray-400'">Bestellung</span>
+                            </div>
+
+                            <!-- ========== STEP 1: Kundentyp ========== -->
+                            <div x-show="step === 1" x-cloak>
+                                <div class="space-y-5">
+                                    <!-- Kundentyp Auswahl -->
                                     <div>
-                                        <p class="text-sm font-semibold text-gray-800">Für Reiseveranstalter, OTA, o.Ä.:</p>
-                                        <p class="text-sm text-gray-600 ml-4">
-                                            Als Veranstalter, OTA, o.Ä. fallen andere Kosten an. Bitte melden Sie sich dafür an
-                                            <a href="mailto:vertrieb@passolution.de" class="text-blue-600 underline">vertrieb@passolution.de</a>.
-                                        </p>
+                                        <label class="block text-sm font-semibold mb-3 text-gray-700">Ich bin... <span class="text-red-500">*</span></label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <button type="button" @click="form.customer_type = 'private'; form.business_type = []; form.company = ''"
+                                                    class="flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all"
+                                                    :class="form.customer_type === 'private' ? 'border-[#002742] bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'">
+                                                <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                                                     :class="form.customer_type === 'private' ? 'bg-[#002742]' : 'bg-gray-200'">
+                                                    <i class="fa-regular fa-user" :class="form.customer_type === 'private' ? 'text-white' : 'text-gray-500'"></i>
+                                                </div>
+                                                <span class="text-sm font-medium" :class="form.customer_type === 'private' ? 'text-[#002742]' : 'text-gray-600'">Privatkunde</span>
+                                            </button>
+                                            <button type="button" @click="form.customer_type = 'business'"
+                                                    class="flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all"
+                                                    :class="form.customer_type === 'business' ? 'border-[#002742] bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'">
+                                                <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                                                     :class="form.customer_type === 'business' ? 'bg-[#002742]' : 'bg-gray-200'">
+                                                    <i class="fa-regular fa-building" :class="form.customer_type === 'business' ? 'text-white' : 'text-gray-500'"></i>
+                                                </div>
+                                                <span class="text-sm font-medium" :class="form.customer_type === 'business' ? 'text-[#002742]' : 'text-gray-600'">Geschäftskunde</span>
+                                            </button>
+                                        </div>
+                                        <p x-show="errors.customer_type" x-text="errors.customer_type" class="text-red-500 text-xs mt-1"></p>
+                                    </div>
+
+                                    <!-- Geschäftstyp (nur bei Business) -->
+                                    <div x-show="form.customer_type === 'business'" x-cloak>
+                                        <label class="block text-sm font-semibold mb-3 text-gray-700">Geschäftstyp <span class="text-red-500">*</span></label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <template x-for="bt in businessTypes" :key="bt.value">
+                                                <label class="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all border text-sm"
+                                                       :class="form.business_type.includes(bt.value) ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200 hover:border-gray-300'">
+                                                    <input type="checkbox" :value="bt.value" class="sr-only"
+                                                           @change="form.business_type.includes(bt.value) ? form.business_type = form.business_type.filter(v => v !== bt.value) : form.business_type.push(bt.value)">
+                                                    <div class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                                         :class="form.business_type.includes(bt.value) ? 'border-blue-500 bg-blue-500' : 'border-gray-300'">
+                                                        <i x-show="form.business_type.includes(bt.value)" class="fa-regular fa-check text-[10px] text-white"></i>
+                                                    </div>
+                                                    <span class="text-gray-700" x-text="bt.label"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                        <p x-show="errors.business_type" x-text="errors.business_type" class="text-red-500 text-xs mt-1"></p>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Firmendaten -->
-                            <div>
-                                <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-building text-sm text-blue-600"></i>
-                                    <span class="text-sm font-semibold text-gray-700">Firmendaten</span>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <!-- Firmenname -->
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1 text-gray-700">
-                                            Firmenname <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="text" x-model="form.company" required
-                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                               placeholder="Musterfirma GmbH">
-                                        <p x-show="errors.company" x-text="errors.company" class="text-red-500 text-xs mt-1"></p>
+                            <!-- ========== STEP 2: Kontakt & Adresse ========== -->
+                            <div x-show="step === 2" x-cloak>
+                                <div class="space-y-5">
+                                    <!-- Firmenname (nur bei Business) -->
+                                    <div x-show="form.customer_type === 'business'" x-cloak>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-regular fa-building text-sm text-blue-600"></i>
+                                            <span class="text-sm font-semibold text-gray-700">Firmendaten</span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                Firmenname <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" x-model="form.company"
+                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                   placeholder="Musterfirma GmbH">
+                                            <p x-show="errors.company" x-text="errors.company" class="text-red-500 text-xs mt-1"></p>
+                                        </div>
                                     </div>
 
                                     <!-- Ansprechpartner -->
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 text-gray-700">Vorname</label>
-                                            <input type="text" x-model="form.first_name"
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                   placeholder="Max">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 text-gray-700">Nachname</label>
-                                            <input type="text" x-model="form.last_name"
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                   placeholder="Mustermann">
-                                        </div>
-                                    </div>
-
-                                    <!-- E-Mail & Telefon -->
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 text-gray-700">
-                                                E-Mail <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="email" x-model="form.email" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                   placeholder="max@musterfirma.de">
-                                            <p x-show="errors.email" x-text="errors.email" class="text-red-500 text-xs mt-1"></p>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 text-gray-700">
-                                                Telefon <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="tel" x-model="form.phone" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                   placeholder="+49 123 456 789">
-                                            <p x-show="errors.phone" x-text="errors.phone" class="text-red-500 text-xs mt-1"></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Divider -->
-                            <div class="border-t border-gray-200"></div>
-
-                            <!-- Adresse -->
-                            <div>
-                                <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-location-dot text-sm text-emerald-600"></i>
-                                    <span class="text-sm font-semibold text-gray-700">Adresse</span>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <!-- Straße -->
                                     <div>
-                                        <label class="block text-sm font-medium mb-1 text-gray-700">
-                                            Straße & Hausnr. <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="text" x-model="form.street" required
-                                               class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                               placeholder="Musterstraße 1">
-                                        <p x-show="errors.street" x-text="errors.street" class="text-red-500 text-xs mt-1"></p>
-                                    </div>
-
-                                    <!-- PLZ & Stadt -->
-                                    <div class="grid grid-cols-3 gap-3">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 text-gray-700">
-                                                PLZ <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="text" x-model="form.postal_code" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                   placeholder="12345">
-                                            <p x-show="errors.postal_code" x-text="errors.postal_code" class="text-red-500 text-xs mt-1"></p>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-regular fa-user text-sm text-blue-600"></i>
+                                            <span class="text-sm font-semibold text-gray-700" x-text="form.customer_type === 'business' ? 'Ansprechpartner' : 'Persönliche Daten'"></span>
                                         </div>
-                                        <div class="col-span-2">
-                                            <label class="block text-sm font-medium mb-1 text-gray-700">
-                                                Stadt <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="text" x-model="form.city" required
-                                                   class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                   placeholder="Musterstadt">
-                                            <p x-show="errors.city" x-text="errors.city" class="text-red-500 text-xs mt-1"></p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Land -->
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1 text-gray-700">
-                                            Land <span class="text-red-500">*</span>
-                                        </label>
-                                        <select x-model="form.country" required
-                                                class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all appearance-none border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                                style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%236b7280%22 d=%22M2 4l4 4 4-4%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;">
-                                            <option value="" disabled>Land auswählen...</option>
-                                            <option value="Deutschland">Deutschland</option>
-                                            <option value="Österreich">Österreich</option>
-                                            <option value="Schweiz">Schweiz</option>
-                                            <option value="" disabled>────────────</option>
-                                            <option value="Belgien">Belgien</option>
-                                            <option value="Dänemark">Dänemark</option>
-                                            <option value="Finnland">Finnland</option>
-                                            <option value="Frankreich">Frankreich</option>
-                                            <option value="Griechenland">Griechenland</option>
-                                            <option value="Irland">Irland</option>
-                                            <option value="Italien">Italien</option>
-                                            <option value="Liechtenstein">Liechtenstein</option>
-                                            <option value="Luxemburg">Luxemburg</option>
-                                            <option value="Niederlande">Niederlande</option>
-                                            <option value="Norwegen">Norwegen</option>
-                                            <option value="Polen">Polen</option>
-                                            <option value="Portugal">Portugal</option>
-                                            <option value="Schweden">Schweden</option>
-                                            <option value="Spanien">Spanien</option>
-                                            <option value="Tschechien">Tschechien</option>
-                                            <option value="Ungarn">Ungarn</option>
-                                            <option value="Vereinigtes Königreich">Vereinigtes Königreich</option>
-                                            <option value="" disabled>────────────</option>
-                                            <option value="Andere">Andere</option>
-                                        </select>
-                                        <p x-show="errors.country" x-text="errors.country" class="text-red-500 text-xs mt-1"></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Divider -->
-                            <div class="border-t border-gray-200"></div>
-
-                            <!-- Abrechnung -->
-                            <div>
-                                <div class="flex items-center gap-2 mb-3">
-                                    <i class="fa-regular fa-file-invoice text-sm text-violet-600"></i>
-                                    <span class="text-sm font-semibold text-gray-700">Abrechnung</span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium mb-2 text-gray-700">
-                                        Bestehendes Abrechnungsverfahren nutzen? <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="flex gap-4">
-                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all border"
-                                               :class="form.existing_billing === 'ja' ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200'">
-                                            <input type="radio" x-model="form.existing_billing" value="ja" class="sr-only">
-                                            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
-                                                 :class="form.existing_billing === 'ja' ? 'border-blue-500' : 'border-gray-300'">
-                                                <div x-show="form.existing_billing === 'ja'" class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        <div class="space-y-3">
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-sm font-medium mb-1 text-gray-700">Vorname</label>
+                                                    <input type="text" x-model="form.first_name"
+                                                           class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="Max">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium mb-1 text-gray-700">Nachname</label>
+                                                    <input type="text" x-model="form.last_name"
+                                                           class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="Mustermann">
+                                                </div>
                                             </div>
-                                            <span class="text-sm text-gray-700">Ja</span>
-                                        </label>
-                                        <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all border"
-                                               :class="form.existing_billing === 'nein' ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200'">
-                                            <input type="radio" x-model="form.existing_billing" value="nein" class="sr-only">
-                                            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
-                                                 :class="form.existing_billing === 'nein' ? 'border-blue-500' : 'border-gray-300'">
-                                                <div x-show="form.existing_billing === 'nein'" class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                        E-Mail <span class="text-red-500">*</span>
+                                                    </label>
+                                                    <input type="email" x-model="form.email"
+                                                           class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="max@musterfirma.de">
+                                                    <p x-show="errors.email" x-text="errors.email" class="text-red-500 text-xs mt-1"></p>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                        Telefon <span class="text-red-500">*</span>
+                                                    </label>
+                                                    <input type="tel" x-model="form.phone"
+                                                           class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="+49 123 456 789">
+                                                    <p x-show="errors.phone" x-text="errors.phone" class="text-red-500 text-xs mt-1"></p>
+                                                </div>
                                             </div>
-                                            <span class="text-sm text-gray-700">Nein</span>
-                                        </label>
+                                        </div>
                                     </div>
-                                    <p x-show="errors.existing_billing" x-text="errors.existing_billing" class="text-red-500 text-xs mt-1"></p>
+
+                                    <!-- Divider -->
+                                    <div class="border-t border-gray-200"></div>
+
+                                    <!-- Adresse -->
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-regular fa-location-dot text-sm text-emerald-600"></i>
+                                            <span class="text-sm font-semibold text-gray-700" x-text="form.customer_type === 'business' ? 'Firmenadresse' : 'Adresse'"></span>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                    Straße & Hausnr. <span class="text-red-500">*</span>
+                                                </label>
+                                                <input type="text" x-model="form.street"
+                                                       class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                       placeholder="Musterstraße 1">
+                                                <p x-show="errors.street" x-text="errors.street" class="text-red-500 text-xs mt-1"></p>
+                                            </div>
+                                            <div class="grid grid-cols-3 gap-3">
+                                                <div>
+                                                    <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                        PLZ <span class="text-red-500">*</span>
+                                                    </label>
+                                                    <input type="text" x-model="form.postal_code"
+                                                           class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="12345">
+                                                    <p x-show="errors.postal_code" x-text="errors.postal_code" class="text-red-500 text-xs mt-1"></p>
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                        Stadt <span class="text-red-500">*</span>
+                                                    </label>
+                                                    <input type="text" x-model="form.city"
+                                                           class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="Musterstadt">
+                                                    <p x-show="errors.city" x-text="errors.city" class="text-red-500 text-xs mt-1"></p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium mb-1 text-gray-700">
+                                                    Land <span class="text-red-500">*</span>
+                                                </label>
+                                                <select x-model="form.country"
+                                                        class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all appearance-none border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                        style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%236b7280%22 d=%22M2 4l4 4 4-4%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;">
+                                                    <option value="" disabled>Land auswählen...</option>
+                                                    <option value="Deutschland">Deutschland</option>
+                                                    <option value="Österreich">Österreich</option>
+                                                    <option value="Schweiz">Schweiz</option>
+                                                    <option value="" disabled>────────────</option>
+                                                    <option value="Belgien">Belgien</option>
+                                                    <option value="Dänemark">Dänemark</option>
+                                                    <option value="Finnland">Finnland</option>
+                                                    <option value="Frankreich">Frankreich</option>
+                                                    <option value="Griechenland">Griechenland</option>
+                                                    <option value="Irland">Irland</option>
+                                                    <option value="Italien">Italien</option>
+                                                    <option value="Liechtenstein">Liechtenstein</option>
+                                                    <option value="Luxemburg">Luxemburg</option>
+                                                    <option value="Niederlande">Niederlande</option>
+                                                    <option value="Norwegen">Norwegen</option>
+                                                    <option value="Polen">Polen</option>
+                                                    <option value="Portugal">Portugal</option>
+                                                    <option value="Schweden">Schweden</option>
+                                                    <option value="Spanien">Spanien</option>
+                                                    <option value="Tschechien">Tschechien</option>
+                                                    <option value="Ungarn">Ungarn</option>
+                                                    <option value="Vereinigtes Königreich">Vereinigtes Königreich</option>
+                                                    <option value="" disabled>────────────</option>
+                                                    <option value="Andere">Andere</option>
+                                                </select>
+                                                <p x-show="errors.country" x-text="errors.country" class="text-red-500 text-xs mt-1"></p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Bemerkung -->
-                            <div>
-                                <label class="block text-sm font-medium mb-1 text-gray-700">Bemerkung</label>
-                                <textarea x-model="form.remarks" rows="3"
-                                          class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all resize-none border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                                          placeholder="Optionale Anmerkungen zu Ihrer Bestellung..."></textarea>
-                            </div>
-
-                            <!-- Wichtige Informationen -->
-                            <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
-                                <div class="flex items-start gap-2">
-                                    <i class="fa-regular fa-circle-info text-sm text-amber-600 mt-0.5 flex-shrink-0"></i>
-                                    <div>
-                                        <span class="text-sm font-semibold text-amber-800">Wichtige Informationen</span>
-                                        <p class="text-xs text-amber-700 mt-1">
-                                            Es gelten die AGBs der Passolution GmbH und die Bedingungen aus dem vorab geschlossenen Vertrag. Mündliche Absprachen finden keine Anwendung.
+                            <!-- ========== STEP 3: Bestellung ========== -->
+                            <div x-show="step === 3" x-cloak>
+                                <div class="space-y-5">
+                                    <!-- Preisinformationen -->
+                                    <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
+                                            <span class="text-sm font-semibold" style="color: #002742;">Preis</span>
+                                        </div>
+                                        <p class="text-sm text-gray-700 mb-3">
+                                            Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
+                                            <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
                                         </p>
+                                        <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
+                                        <div class="space-y-2 ml-1">
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-800">Für Reisebüros:</p>
+                                                <ul class="text-sm text-gray-600 ml-4 list-disc">
+                                                    <li>Monatliches Entgelt <strong>7,00 EUR</strong> ohne Kooperation/Kette</li>
+                                                    <li>Monatliches Entgelt <strong>5,00 EUR</strong> mit Kooperation/Kette</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-800">Für Reiseveranstalter, OTA, o.Ä.:</p>
+                                                <p class="text-sm text-gray-600 ml-4">
+                                                    Als Veranstalter, OTA, o.Ä. fallen andere Kosten an. Bitte melden Sie sich dafür an
+                                                    <a href="mailto:vertrieb@passolution.de" class="text-blue-600 underline">vertrieb@passolution.de</a>.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Abrechnung -->
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-regular fa-file-invoice text-sm text-violet-600"></i>
+                                            <span class="text-sm font-semibold text-gray-700">Abrechnung</span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2 text-gray-700">
+                                                Bestehendes Abrechnungsverfahren nutzen? <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="flex gap-4">
+                                                <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all border"
+                                                       :class="form.existing_billing === 'ja' ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200'">
+                                                    <input type="radio" x-model="form.existing_billing" value="ja" class="sr-only">
+                                                    <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
+                                                         :class="form.existing_billing === 'ja' ? 'border-blue-500' : 'border-gray-300'">
+                                                        <div x-show="form.existing_billing === 'ja'" class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                    </div>
+                                                    <span class="text-sm text-gray-700">Ja</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all border"
+                                                       :class="form.existing_billing === 'nein' ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200'">
+                                                    <input type="radio" x-model="form.existing_billing" value="nein" class="sr-only">
+                                                    <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
+                                                         :class="form.existing_billing === 'nein' ? 'border-blue-500' : 'border-gray-300'">
+                                                        <div x-show="form.existing_billing === 'nein'" class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                    </div>
+                                                    <span class="text-sm text-gray-700">Nein</span>
+                                                </label>
+                                            </div>
+                                            <p x-show="errors.existing_billing" x-text="errors.existing_billing" class="text-red-500 text-xs mt-1"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bemerkung -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1 text-gray-700">Bemerkung</label>
+                                        <textarea x-model="form.remarks" rows="3"
+                                                  class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all resize-none border border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                                                  placeholder="Optionale Anmerkungen zu Ihrer Bestellung..."></textarea>
+                                    </div>
+
+                                    <!-- Wichtige Informationen -->
+                                    <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                                        <div class="flex items-start gap-2">
+                                            <i class="fa-regular fa-circle-info text-sm text-amber-600 mt-0.5 flex-shrink-0"></i>
+                                            <div>
+                                                <span class="text-sm font-semibold text-amber-800">Wichtige Informationen</span>
+                                                <p class="text-xs text-amber-700 mt-1">
+                                                    Es gelten die AGBs der Passolution GmbH und die Bedingungen aus dem vorab geschlossenen Vertrag. Mündliche Absprachen finden keine Anwendung.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Error Message -->
+                                    <div x-show="errorMessage" class="p-3 rounded-xl text-sm bg-red-50 border border-red-200 text-red-600">
+                                        <i class="fa-regular fa-circle-exclamation mr-1"></i>
+                                        <span x-text="errorMessage"></span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Error Message -->
-                            <div x-show="errorMessage" class="p-3 rounded-xl text-sm bg-red-50 border border-red-200 text-red-600">
-                                <i class="fa-regular fa-circle-exclamation mr-1"></i>
-                                <span x-text="errorMessage"></span>
                             </div>
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-6 py-4 flex items-center justify-end gap-3 bg-gray-50 border-t border-gray-200">
-                            <button type="button" @click="open = false"
+                        <div class="px-6 py-4 flex items-center justify-between bg-gray-50 border-t border-gray-200">
+                            <button type="button"
+                                    x-show="step > 1"
+                                    @click="previousStep()"
+                                    class="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-xl transition-all text-gray-500 border border-gray-300 hover:bg-gray-100">
+                                <i class="fa-regular fa-arrow-left mr-2"></i>
+                                Zurück
+                            </button>
+                            <button type="button"
+                                    x-show="step === 1"
+                                    @click="open = false"
                                     class="px-5 py-2.5 text-sm font-medium rounded-xl transition-all text-gray-500 border border-gray-300 hover:bg-gray-100">
                                 Abbrechen
                             </button>
-                            <button type="submit" :disabled="loading"
-                                    class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 text-white"
-                                    style="background: #002742;">
-                                <i x-show="!loading" class="fa-regular fa-paper-plane mr-2"></i>
-                                <i x-show="loading" class="fa-regular fa-spinner-third fa-spin mr-2"></i>
-                                <span x-text="loading ? 'Wird gesendet...' : 'Bestellung absenden'"></span>
-                            </button>
+                            <div class="flex items-center gap-3">
+                                <button type="button" x-show="step < 3" @click="nextStep()"
+                                        class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all text-white"
+                                        style="background: #002742;">
+                                    Weiter
+                                    <i class="fa-regular fa-arrow-right ml-2"></i>
+                                </button>
+                                <button type="submit" x-show="step === 3" :disabled="loading"
+                                        class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 text-white"
+                                        style="background: #002742;">
+                                    <i x-show="!loading" class="fa-regular fa-paper-plane mr-2"></i>
+                                    <i x-show="loading" class="fa-regular fa-spinner-third fa-spin mr-2"></i>
+                                    <span x-text="loading ? 'Wird gesendet...' : 'Bestellung absenden'"></span>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -921,6 +1084,17 @@ $version = '1.2.0';
         </div>
 
         <script>
+        function customerCheckModal() {
+            return {
+                showCustomerCheck: false,
+                init() {
+                    document.addEventListener('open-order-modal', () => {
+                        this.showCustomerCheck = true;
+                    });
+                }
+            };
+        }
+
         function orderForm() {
             return {
                 open: false,
@@ -929,7 +1103,21 @@ $version = '1.2.0';
                 accountCreated: false,
                 errorMessage: '',
                 errors: {},
+                step: 1,
+
+                businessTypes: [
+                    { value: 'travel_agency', label: 'Reisebüro' },
+                    { value: 'organizer', label: 'Veranstalter' },
+                    { value: 'online_provider', label: 'Online-Anbieter' },
+                    { value: 'mobile_travel_consultant', label: 'Mobiler Reiseberater' },
+                    { value: 'software_provider', label: 'Softwareanbieter' },
+                    { value: 'cooperation', label: 'Kooperation' },
+                    { value: 'other', label: 'Sonstiges' }
+                ],
+
                 form: {
+                    customer_type: '',
+                    business_type: [],
                     company: '',
                     first_name: '',
                     last_name: '',
@@ -944,30 +1132,66 @@ $version = '1.2.0';
                 },
 
                 init() {
-                    document.addEventListener('open-order-modal', () => {
+                    const openHandler = () => {
                         this.open = true;
+                        this.step = 1;
                         this.submitted = false;
                         this.accountCreated = false;
                         this.errorMessage = '';
                         this.errors = {};
-                    });
+                    };
+
+                    // Guests: only open via 'open-order-form' (after customer check dialog)
+                    document.addEventListener('open-order-form', openHandler);
+
+                    // Logged-in users: open directly via 'open-order-modal'
+                    @auth('customer')
+                        document.addEventListener('open-order-modal', openHandler);
+                    @endauth
+                },
+
+                nextStep() {
+                    this.errors = {};
+                    if (this.step === 1) {
+                        if (!this.form.customer_type) {
+                            this.errors.customer_type = 'Bitte wählen Sie einen Kundentyp.';
+                            return;
+                        }
+                        if (this.form.customer_type === 'business' && this.form.business_type.length === 0) {
+                            this.errors.business_type = 'Bitte wählen Sie mindestens einen Geschäftstyp.';
+                            return;
+                        }
+                    }
+                    if (this.step === 2) {
+                        if (this.form.customer_type === 'business' && !this.form.company.trim()) this.errors.company = 'Firmenname ist erforderlich.';
+                        if (!this.form.email.trim()) this.errors.email = 'E-Mail ist erforderlich.';
+                        if (!this.form.phone.trim()) this.errors.phone = 'Telefon ist erforderlich.';
+                        if (!this.form.street.trim()) this.errors.street = 'Straße ist erforderlich.';
+                        if (!this.form.postal_code.trim()) this.errors.postal_code = 'PLZ ist erforderlich.';
+                        if (!this.form.city.trim()) this.errors.city = 'Stadt ist erforderlich.';
+                        if (!this.form.country) this.errors.country = 'Land ist erforderlich.';
+                        if (Object.keys(this.errors).length > 0) return;
+                    }
+                    if (this.step < 3) this.step++;
+                },
+
+                previousStep() {
+                    if (this.step > 1) this.step--;
+                },
+
+                goToStep(target) {
+                    if (target < this.step) this.step = target;
                 },
 
                 async submit() {
                     this.errors = {};
                     this.errorMessage = '';
 
-                    // Client-side validation
-                    if (!this.form.company.trim()) this.errors.company = 'Firmenname ist erforderlich.';
-                    if (!this.form.email.trim()) this.errors.email = 'E-Mail ist erforderlich.';
-                    if (!this.form.phone.trim()) this.errors.phone = 'Telefon ist erforderlich.';
-                    if (!this.form.street.trim()) this.errors.street = 'Straße ist erforderlich.';
-                    if (!this.form.postal_code.trim()) this.errors.postal_code = 'PLZ ist erforderlich.';
-                    if (!this.form.city.trim()) this.errors.city = 'Stadt ist erforderlich.';
-                    if (!this.form.country) this.errors.country = 'Land ist erforderlich.';
-                    if (!this.form.existing_billing) this.errors.existing_billing = 'Bitte wählen Sie eine Option.';
-
-                    if (Object.keys(this.errors).length > 0) return;
+                    // Final step validation
+                    if (!this.form.existing_billing) {
+                        this.errors.existing_billing = 'Bitte wählen Sie eine Option.';
+                        return;
+                    }
 
                     this.loading = true;
 
@@ -987,14 +1211,14 @@ $version = '1.2.0';
                         if (response.ok && data.success) {
                             this.submitted = true;
                             this.accountCreated = data.account_created || false;
-                            // Reset form
                             this.form = {
-                                company: '', first_name: '', last_name: '', email: '', phone: '',
+                                customer_type: '', business_type: [], company: '',
+                                first_name: '', last_name: '', email: '', phone: '',
                                 street: '', postal_code: '', city: '', country: 'Deutschland',
                                 existing_billing: '', remarks: ''
                             };
+                            this.step = 1;
                         } else if (response.status === 422 && data.errors) {
-                            // Validation errors from server
                             for (const [key, messages] of Object.entries(data.errors)) {
                                 this.errors[key] = messages[0];
                             }

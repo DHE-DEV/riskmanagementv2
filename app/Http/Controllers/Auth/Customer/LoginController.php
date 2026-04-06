@@ -16,8 +16,12 @@ class LoginController extends Controller
     /**
      * Display the login view
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        if ($request->has('redirect') && str_starts_with($request->query('redirect'), url('/'))) {
+            redirect()->setIntendedUrl($request->query('redirect'));
+        }
+
         return view('auth.customer.login');
     }
 

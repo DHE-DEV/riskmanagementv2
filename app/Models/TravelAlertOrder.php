@@ -10,6 +10,8 @@ class TravelAlertOrder extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'customer_type',
+        'business_type',
         'company',
         'first_name',
         'last_name',
@@ -25,6 +27,7 @@ class TravelAlertOrder extends Model
     ];
 
     protected $casts = [
+        'business_type' => 'array',
         'trial_expires_at' => 'date',
     ];
 }
