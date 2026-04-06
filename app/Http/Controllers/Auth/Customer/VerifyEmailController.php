@@ -36,8 +36,8 @@ class VerifyEmailController extends Controller
         }
 
         if ($hasTravelAlertOrder) {
-            return redirect()->route('customer.settings')
-                ->with('success', 'Ihre E-Mail-Adresse wurde erfolgreich bestätigt. Willkommen bei der Passolution Travel Information Platform!');
+            return redirect()->route('customer.login')
+                ->with('success', 'Ihre E-Mail-Adresse wurde erfolgreich bestätigt. Sie können sich jetzt einloggen.');
         }
 
         return redirect()->route('customer.login')

@@ -149,15 +149,15 @@
     <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@graph": [
+        "@@context": "https://schema.org",
+        "@@graph": [
             {
-                "@type": "Organization",
-                "@id": "{{ url('/') }}#organization",
+                "@@type": "Organization",
+                "@@id": "{{ url('/') }}#organization",
                 "name": "Global Travel Monitor",
                 "url": "{{ url('/') }}",
                 "logo": {
-                    "@type": "ImageObject",
+                    "@@type": "ImageObject",
                     "url": "{{ asset('android-chrome-192x192.png') }}",
                     "width": 192,
                     "height": 192
@@ -165,18 +165,18 @@
                 "sameAs": []
             },
             {
-                "@type": "WebSite",
-                "@id": "{{ url('/') }}#website",
+                "@@type": "WebSite",
+                "@@id": "{{ url('/') }}#website",
                 "url": "{{ url('/') }}",
                 "name": "Global Travel Monitor",
                 "description": "Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen",
                 "publisher": {
-                    "@id": "{{ url('/') }}#organization"
+                    "@@id": "{{ url('/') }}#organization"
                 },
                 "potentialAction": {
-                    "@type": "SearchAction",
+                    "@@type": "SearchAction",
                     "target": {
-                        "@type": "EntryPoint",
+                        "@@type": "EntryPoint",
                         "urlTemplate": "{{ url('/') }}?search={search_term_string}"
                     },
                     "query-input": "required name=search_term_string"
@@ -184,15 +184,15 @@
                 "inLanguage": "de-DE"
             },
             {
-                "@type": "WebPage",
-                "@id": "{{ url()->current() }}#webpage",
+                "@@type": "WebPage",
+                "@@id": "{{ url()->current() }}#webpage",
                 "url": "{{ url()->current() }}",
                 "name": "@yield('title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen')",
                 "isPartOf": {
-                    "@id": "{{ url('/') }}#website"
+                    "@@id": "{{ url('/') }}#website"
                 },
                 "about": {
-                    "@id": "{{ url('/') }}#organization"
+                    "@@id": "{{ url('/') }}#organization"
                 },
                 "description": "@yield('description', 'Global Travel Monitor bietet Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen.')",
                 "inLanguage": "de-DE"

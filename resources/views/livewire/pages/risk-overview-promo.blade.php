@@ -626,7 +626,7 @@ $version = '1.2.0';
 
                         <div class="flex flex-col gap-3">
                             <!-- Existing customer → Login -->
-                            <a href="{{ route('login', ['redirect' => url('/travel-alert')]) }}"
+                            <a href="{{ route('customer.login', ['redirect' => url('/travel-alert')]) }}"
                                class="flex items-center justify-center gap-2 w-full px-6 py-3.5 font-semibold rounded-xl transition-all text-white"
                                style="background: #002742;"
                                onmouseover="this.style.background='#043451'" onmouseout="this.style.background='#002742'">
@@ -693,7 +693,7 @@ $version = '1.2.0';
                         <template x-if="accountCreated">
                             <div>
                                 <p class="mb-4 max-w-md mx-auto text-gray-500">
-                                    Vielen Dank für Ihre Bestellung. Ihr TravelAlert-Zugang wurde automatisch freigeschaltet.
+                                    Vielen Dank für Ihre Bestellung. Ihr Travel Alert-Zugang wurde automatisch freigeschaltet.
                                 </p>
                                 <div class="mb-6 mx-auto max-w-md rounded-xl border border-blue-200 bg-blue-50 p-4 text-left">
                                     <p class="text-sm font-semibold text-blue-800 mb-2">
@@ -709,7 +709,7 @@ $version = '1.2.0';
                         <!-- Existing account -->
                         <template x-if="!accountCreated">
                             <p class="mb-6 max-w-md mx-auto text-gray-500">
-                                Vielen Dank für Ihre Bestellung. Ihr TravelAlert-Zugang wurde automatisch freigeschaltet. Sie können TravelAlert ab sofort nutzen.
+                                Vielen Dank für Ihre Bestellung. Ihr Travel Alert-Zugang wurde automatisch freigeschaltet. Sie können Travel Alert ab sofort nutzen.
                             </p>
                         </template>
 
@@ -725,9 +725,8 @@ $version = '1.2.0';
 
                             <!-- Step Indicator -->
                             <div class="flex items-center justify-center">
-                                <template x-for="i in 3" :key="i">
+                                <template x-for="i in totalSteps" :key="i">
                                     <div class="flex items-center">
-                                        <!-- Step circle -->
                                         <button type="button" @click="goToStep(i)"
                                                 class="flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-colors"
                                                 :class="{
@@ -743,8 +742,7 @@ $version = '1.2.0';
                                                 <span x-text="i"></span>
                                             </template>
                                         </button>
-                                        <!-- Connector line -->
-                                        <div x-show="i < 3" class="w-12 sm:w-16 h-0.5 mx-1 transition-colors"
+                                        <div x-show="i < totalSteps" class="w-8 sm:w-12 h-0.5 mx-1 transition-colors"
                                              :class="i < step ? 'bg-emerald-500' : 'bg-gray-200'"></div>
                                     </div>
                                 </template>
@@ -752,15 +750,48 @@ $version = '1.2.0';
 
                             <!-- Step labels -->
                             <div class="flex justify-between px-1 -mt-2">
-                                <span class="text-xs text-center w-20" :class="step === 1 ? 'text-[#002742] font-medium' : (step > 1 ? 'text-emerald-600' : 'text-gray-400')">Kundentyp</span>
-                                <span class="text-xs text-center w-20" :class="step === 2 ? 'text-[#002742] font-medium' : (step > 2 ? 'text-emerald-600' : 'text-gray-400')" x-text="form.customer_type === 'business' ? 'Firmendaten' : 'Kontaktdaten'"></span>
-                                <span class="text-xs text-center w-20" :class="step === 3 ? 'text-[#002742] font-medium' : 'text-gray-400'">Bestellung</span>
+                                <span class="text-xs text-center w-20" :class="step === 1 ? 'text-[#002742] font-medium' : (step > 1 ? 'text-emerald-600' : 'text-gray-400')">Preise</span>
+                                <span class="text-xs text-center w-20" :class="step === 2 ? 'text-[#002742] font-medium' : (step > 2 ? 'text-emerald-600' : 'text-gray-400')">Kundentyp</span>
+                                <span class="text-xs text-center w-20" :class="step === 3 ? 'text-[#002742] font-medium' : (step > 3 ? 'text-emerald-600' : 'text-gray-400')" x-text="form.customer_type === 'business' ? 'Firmendaten' : 'Kontaktdaten'"></span>
+                                <span class="text-xs text-center w-24" :class="step === 4 ? 'text-[#002742] font-medium' : 'text-gray-400'">Zusammenfassung</span>
                             </div>
 
-                            <!-- ========== STEP 1: Kundentyp ========== -->
+                            <!-- ========== STEP 1: Preisinformationen ========== -->
                             <div x-show="step === 1" x-cloak>
                                 <div class="space-y-5">
-                                    <!-- Kundentyp Auswahl -->
+                                    <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
+                                            <span class="text-sm font-semibold" style="color: #002742;">Preisinformationen</span>
+                                        </div>
+                                        <p class="text-sm text-gray-700 mb-3">
+                                            Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
+                                            <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
+                                        </p>
+                                        <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
+                                        <div class="space-y-2 ml-1">
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-800">Für Reisebüros:</p>
+                                                <ul class="text-sm text-gray-600 ml-4 list-disc">
+                                                    <li>Monatliches Entgelt <strong>7,00 EUR</strong> ohne Kooperation/Kette</li>
+                                                    <li>Monatliches Entgelt <strong>5,00 EUR</strong> mit Kooperation/Kette</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-800">Für Reiseveranstalter, OTA, o.Ä.:</p>
+                                                <p class="text-sm text-gray-600 ml-4">
+                                                    Als Veranstalter, OTA, o.Ä. fallen andere Kosten an. Bitte melden Sie sich dafür an
+                                                    <a href="mailto:vertrieb@passolution.de" class="text-blue-600 underline">vertrieb@passolution.de</a>.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ========== STEP 2: Kundentyp ========== -->
+                            <div x-show="step === 2" x-cloak>
+                                <div class="space-y-5">
                                     <div>
                                         <label class="block text-sm font-semibold mb-3 text-gray-700">Ich bin... <span class="text-red-500">*</span></label>
                                         <div class="grid grid-cols-2 gap-3">
@@ -786,7 +817,6 @@ $version = '1.2.0';
                                         <p x-show="errors.customer_type" x-text="errors.customer_type" class="text-red-500 text-xs mt-1"></p>
                                     </div>
 
-                                    <!-- Geschäftstyp (nur bei Business) -->
                                     <div x-show="form.customer_type === 'business'" x-cloak>
                                         <label class="block text-sm font-semibold mb-3 text-gray-700">Geschäftstyp <span class="text-red-500">*</span></label>
                                         <div class="grid grid-cols-2 gap-2">
@@ -808,10 +838,9 @@ $version = '1.2.0';
                                 </div>
                             </div>
 
-                            <!-- ========== STEP 2: Kontakt & Adresse ========== -->
-                            <div x-show="step === 2" x-cloak>
+                            <!-- ========== STEP 3: Kontakt & Adresse ========== -->
+                            <div x-show="step === 3" x-cloak>
                                 <div class="space-y-5">
-                                    <!-- Firmenname (nur bei Business) -->
                                     <div x-show="form.customer_type === 'business'" x-cloak>
                                         <div class="flex items-center gap-2 mb-3">
                                             <i class="fa-regular fa-building text-sm text-blue-600"></i>
@@ -828,7 +857,6 @@ $version = '1.2.0';
                                         </div>
                                     </div>
 
-                                    <!-- Ansprechpartner -->
                                     <div>
                                         <div class="flex items-center gap-2 mb-3">
                                             <i class="fa-regular fa-user text-sm text-blue-600"></i>
@@ -872,10 +900,8 @@ $version = '1.2.0';
                                         </div>
                                     </div>
 
-                                    <!-- Divider -->
                                     <div class="border-t border-gray-200"></div>
 
-                                    <!-- Adresse -->
                                     <div>
                                         <div class="flex items-center gap-2 mb-3">
                                             <i class="fa-regular fa-location-dot text-sm text-emerald-600"></i>
@@ -951,36 +977,65 @@ $version = '1.2.0';
                                 </div>
                             </div>
 
-                            <!-- ========== STEP 3: Bestellung ========== -->
-                            <div x-show="step === 3" x-cloak>
+                            <!-- ========== STEP 4: Zusammenfassung & Bestellung ========== -->
+                            <div x-show="step === 4" x-cloak>
                                 <div class="space-y-5">
-                                    <!-- Preisinformationen -->
+
+                                    <!-- Zusammenfassung der eingegebenen Daten -->
+                                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa-regular fa-clipboard-list text-sm" style="color: #002742;"></i>
+                                                <span class="text-sm font-semibold" style="color: #002742;">Ihre Angaben</span>
+                                            </div>
+                                            <button type="button" @click="step = 2" class="text-xs text-blue-600 hover:underline">Bearbeiten</button>
+                                        </div>
+                                        <div class="space-y-2 text-sm">
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-500">Kundentyp</span>
+                                                <span class="text-gray-900 font-medium" x-text="form.customer_type === 'business' ? 'Geschäftskunde' : 'Privatkunde'"></span>
+                                            </div>
+                                            <div x-show="form.customer_type === 'business' && form.business_type.length > 0" class="flex justify-between">
+                                                <span class="text-gray-500">Geschäftstyp</span>
+                                                <span class="text-gray-900 font-medium text-right" x-text="form.business_type.map(v => businessTypes.find(b => b.value === v)?.label).join(', ')"></span>
+                                            </div>
+                                            <div x-show="form.customer_type === 'business' && form.company" class="flex justify-between">
+                                                <span class="text-gray-500">Firma</span>
+                                                <span class="text-gray-900 font-medium" x-text="form.company"></span>
+                                            </div>
+                                            <div x-show="form.first_name || form.last_name" class="flex justify-between">
+                                                <span class="text-gray-500">Name</span>
+                                                <span class="text-gray-900 font-medium" x-text="(form.first_name + ' ' + form.last_name).trim()"></span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-500">E-Mail</span>
+                                                <span class="text-gray-900 font-medium" x-text="form.email"></span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-500">Telefon</span>
+                                                <span class="text-gray-900 font-medium" x-text="form.phone"></span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-500">Adresse</span>
+                                                <span class="text-gray-900 font-medium text-right" x-text="form.street + ', ' + form.postal_code + ' ' + form.city + ', ' + form.country"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Preisinformationen (Bestätigung) -->
                                     <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                                         <div class="flex items-center gap-2 mb-3">
                                             <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
                                             <span class="text-sm font-semibold" style="color: #002742;">Preis</span>
                                         </div>
-                                        <p class="text-sm text-gray-700 mb-3">
-                                            Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
-                                            <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
+                                        <p class="text-sm text-gray-700 mb-2">
+                                            <strong>Bis 30.06.2026 kostenlos</strong>, danach:
                                         </p>
-                                        <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
-                                        <div class="space-y-2 ml-1">
-                                            <div>
-                                                <p class="text-sm font-semibold text-gray-800">Für Reisebüros:</p>
-                                                <ul class="text-sm text-gray-600 ml-4 list-disc">
-                                                    <li>Monatliches Entgelt <strong>7,00 EUR</strong> ohne Kooperation/Kette</li>
-                                                    <li>Monatliches Entgelt <strong>5,00 EUR</strong> mit Kooperation/Kette</li>
-                                                </ul>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-semibold text-gray-800">Für Reiseveranstalter, OTA, o.Ä.:</p>
-                                                <p class="text-sm text-gray-600 ml-4">
-                                                    Als Veranstalter, OTA, o.Ä. fallen andere Kosten an. Bitte melden Sie sich dafür an
-                                                    <a href="mailto:vertrieb@passolution.de" class="text-blue-600 underline">vertrieb@passolution.de</a>.
-                                                </p>
-                                            </div>
-                                        </div>
+                                        <ul class="text-sm text-gray-600 ml-4 list-disc">
+                                            <li><strong>7,00 EUR/Monat</strong> ohne Kooperation/Kette</li>
+                                            <li><strong>5,00 EUR/Monat</strong> mit Kooperation/Kette</li>
+                                        </ul>
+                                        <p class="text-xs text-gray-500 mt-2">Kündigung jederzeit per Mail an info@passolution.de.</p>
                                     </div>
 
                                     <!-- Abrechnung -->
@@ -1063,13 +1118,13 @@ $version = '1.2.0';
                                 Abbrechen
                             </button>
                             <div class="flex items-center gap-3">
-                                <button type="button" x-show="step < 3" @click="nextStep()"
+                                <button type="button" x-show="step < totalSteps" @click="nextStep()"
                                         class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all text-white"
                                         style="background: #002742;">
                                     Weiter
                                     <i class="fa-regular fa-arrow-right ml-2"></i>
                                 </button>
-                                <button type="submit" x-show="step === 3" :disabled="loading"
+                                <button type="submit" x-show="step === totalSteps" :disabled="loading"
                                         class="inline-flex items-center px-6 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 text-white"
                                         style="background: #002742;">
                                     <i x-show="!loading" class="fa-regular fa-paper-plane mr-2"></i>
@@ -1104,6 +1159,7 @@ $version = '1.2.0';
                 errorMessage: '',
                 errors: {},
                 step: 1,
+                totalSteps: 4,
 
                 businessTypes: [
                     { value: 'travel_agency', label: 'Reisebüro' },
@@ -1152,7 +1208,8 @@ $version = '1.2.0';
 
                 nextStep() {
                     this.errors = {};
-                    if (this.step === 1) {
+                    // Step 1 (Preise): keine Validierung
+                    if (this.step === 2) {
                         if (!this.form.customer_type) {
                             this.errors.customer_type = 'Bitte wählen Sie einen Kundentyp.';
                             return;
@@ -1162,7 +1219,7 @@ $version = '1.2.0';
                             return;
                         }
                     }
-                    if (this.step === 2) {
+                    if (this.step === 3) {
                         if (this.form.customer_type === 'business' && !this.form.company.trim()) this.errors.company = 'Firmenname ist erforderlich.';
                         if (!this.form.email.trim()) this.errors.email = 'E-Mail ist erforderlich.';
                         if (!this.form.phone.trim()) this.errors.phone = 'Telefon ist erforderlich.';
@@ -1172,7 +1229,7 @@ $version = '1.2.0';
                         if (!this.form.country) this.errors.country = 'Land ist erforderlich.';
                         if (Object.keys(this.errors).length > 0) return;
                     }
-                    if (this.step < 3) this.step++;
+                    if (this.step < this.totalSteps) this.step++;
                 },
 
                 previousStep() {
