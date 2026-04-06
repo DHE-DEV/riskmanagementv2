@@ -18,6 +18,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
+    protected $attributes = [
+        'branch_management_active' => true,
+    ];
+
     protected $fillable = [
         'name',
         'email',
