@@ -15,11 +15,6 @@
             <div class="flex flex-col gap-6">
                 <div class="rounded-xl border bg-white text-stone-800 shadow-lg">
                     <div class="px-8 py-8 sm:px-10">
-                        <!-- Logo -->
-                        <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium mb-4">
-                            <img src="/logo.png" alt="Passolution" class="h-12 w-auto" />
-                        </a>
-
                         <!-- Header -->
                         <div class="flex w-full flex-col text-center mb-6">
                             <h1 class="text-xl font-semibold text-stone-900 whitespace-nowrap mb-1">Passolution Travel Information Platform</h1>
