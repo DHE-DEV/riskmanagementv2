@@ -152,6 +152,37 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'has_seen_settings_tour' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (Customer $customer) {
+            $adminGroup = EmployeeGroup::create([
+                'customer_id' => $customer->id,
+                'name' => 'Administratoren',
+                'description' => 'Systemadministratoren in der Passolution Travel Information Platform',
+            ]);
+
+            EmployeeGroup::create([
+                'customer_id' => $customer->id,
+                'name' => 'Mitarbeiter',
+                'description' => 'Mitarbeiter der Organisation',
+            ]);
+
+            // Create an employee entry for the owner and assign to Administratoren
+            $nameParts = explode(' ', $customer->name, 2);
+            $ownerEmployee = Employee::create([
+                'customer_id' => $customer->id,
+                'first_name' => $nameParts[0] ?? $customer->name,
+                'last_name' => $nameParts[1] ?? '',
+                'email' => $customer->email,
+                'phone' => $customer->phone ?? '',
+                'position' => 'Inhaber / Administrator',
+                'is_active' => true,
+            ]);
+
+            $ownerEmployee->groups()->attach($adminGroup->id);
+        });
+    }
+
     /**
      * Send the email verification notification in German.
      */

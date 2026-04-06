@@ -115,7 +115,7 @@
             tourLabel="Einstellungen"
             tourIcon="fas fa-cog"
             :steps='json_encode($settingsTourSteps)'
-            finishCtaLabel="Möchten Sie jetzt weitere Benutzer anlegen?"
+            finishCtaLabel="Möchten Sie jetzt weitere kostenlose Benutzer für ein maximales Benutzererlebnis anlegen?"
             :finishCtaUrl="route('customer.settings', ['section' => 'users'])"
         />
     @endauth
@@ -1293,16 +1293,122 @@
 
             @elseif($settingsSection === 'users')
                 <div x-data="usersManager()">
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">Benutzer</h3>
-                <p class="text-sm text-gray-500 mb-4">Verwalten Sie die Benutzer Ihrer Organisation.</p>
 
+                {{-- Tab-Leiste --}}
+                <div class="tab-navigation flex border-b border-gray-200 bg-white -mx-6 -mt-6 px-4 mb-6">
+                    <button @click="usersTab = 'benutzer'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="usersTab === 'benutzer' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-users mr-2"></i>
+                        Benutzer
+                    </button>
+                    <button @click="usersTab = 'gruppen'; loadGroups();"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="usersTab === 'gruppen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-layer-group mr-2"></i>
+                        Gruppen
+                    </button>
+                </div>
+
+                {{-- Tab: Benutzer --}}
+                <div x-show="usersTab === 'benutzer'">
+
+                    {{-- Header mit Suche und Filter-Toggle --}}
                     <div class="flex items-center justify-between mb-4">
-                        <p class="text-xs text-gray-500"><span x-text="employees.length"></span> Benutzer erfasst</p>
-                        <button @click="showEmpForm = true; empEditId = null; resetEmpForm();"
-                                class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-xs">
-                            <i class="fas fa-plus"></i> Neuer Benutzer
-                        </button>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-0.5">Benutzer</h3>
+                            <p class="text-xs text-gray-500"><span x-text="filteredEmployees.length"></span> von <span x-text="employees.length"></span> Benutzern</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="showFilter = !showFilter"
+                                    class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-xs border"
+                                    :class="showFilter || hasActiveFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                <i class="fas fa-filter"></i>
+                                Filter
+                                <span x-show="hasActiveFilters" class="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] flex items-center justify-center" x-text="activeFilterCount"></span>
+                            </button>
+                            <button @click="showEmpForm = true; empEditId = null; resetEmpForm();"
+                                    class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-xs">
+                                <i class="fas fa-plus"></i> Neuer Benutzer
+                            </button>
+                        </div>
                     </div>
+
+                    <div class="flex gap-4">
+                        {{-- Filter Sidebar --}}
+                        <div x-show="showFilter" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-x-4" x-transition:enter-end="opacity-100 translate-x-0"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-4"
+                             class="w-64 flex-shrink-0">
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 sticky top-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Filter</h4>
+                                    <button @click="resetFilters()" x-show="hasActiveFilters"
+                                            class="text-[10px] text-blue-600 hover:underline">Zurücksetzen</button>
+                                </div>
+
+                                <div class="space-y-4">
+                                    {{-- Suche --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Suche</label>
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400"><i class="fas fa-search text-[10px]"></i></span>
+                                            <input type="text" x-model="filter.search" placeholder="Name, E-Mail, Telefon..."
+                                                   class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                        </div>
+                                    </div>
+
+                                    {{-- Status --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                                        <select x-model="filter.status" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                            <option value="">Alle</option>
+                                            <option value="active">Aktiv</option>
+                                            <option value="inactive">Inaktiv</option>
+                                        </select>
+                                    </div>
+
+                                    {{-- Gruppe --}}
+                                    <div x-show="availableGroups.length > 0">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Gruppe</label>
+                                        <select x-model="filter.group" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                            <option value="">Alle Gruppen</option>
+                                            <option value="none">Ohne Gruppe</option>
+                                            <template x-for="g in availableGroups" :key="g.id">
+                                                <option :value="g.id" x-text="g.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                    {{-- Abteilung --}}
+                                    <div x-show="availableDepartments.length > 0">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Abteilung</label>
+                                        <select x-model="filter.department" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                            <option value="">Alle Abteilungen</option>
+                                            <template x-for="d in availableDepartments" :key="d.id">
+                                                <option :value="d.id" x-text="d.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                    {{-- Standort --}}
+                                    <div x-show="availableBranches.length > 0">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Standort</label>
+                                        <select x-model="filter.branch" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                            <option value="">Alle Standorte</option>
+                                            <template x-for="b in availableBranches" :key="b.id">
+                                                <option :value="b.id" x-text="b.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Benutzerliste --}}
+                        <div class="flex-1 min-w-0">
 
                     {{-- Add/Edit Form --}}
                     <div x-show="showEmpForm" x-cloak class="bg-white rounded-lg border border-gray-200 mb-5 overflow-hidden">
@@ -1418,6 +1524,28 @@
                                 </div>
                             </div>
 
+                            {{-- Sektion: Gruppen --}}
+                            <div class="mb-5" x-show="availableGroups.length > 0">
+                                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i class="fas fa-layer-group text-gray-400"></i> Gruppen
+                                </h5>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="g in availableGroups" :key="g.id">
+                                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all border text-sm"
+                                               :class="empForm.group_ids.includes(g.id) ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-200 hover:border-gray-300'">
+                                            <input type="checkbox" class="sr-only"
+                                                   :checked="empForm.group_ids.includes(g.id)"
+                                                   @change="empForm.group_ids.includes(g.id) ? empForm.group_ids = empForm.group_ids.filter(v => v !== g.id) : empForm.group_ids.push(g.id)">
+                                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                                 :class="empForm.group_ids.includes(g.id) ? 'border-blue-500 bg-blue-500' : 'border-gray-300'">
+                                                <i x-show="empForm.group_ids.includes(g.id)" class="fas fa-check text-[8px] text-white"></i>
+                                            </div>
+                                            <span class="text-gray-700" x-text="g.name"></span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+
                             {{-- Sektion: Notiz --}}
                             <div class="mb-5">
                                 <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -1459,9 +1587,17 @@
                         </div>
                     </template>
 
+                    {{-- No results after filter --}}
+                    <div x-show="!empLoading && employees.length > 0 && filteredEmployees.length === 0" class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                        <i class="fas fa-filter-circle-xmark text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-sm text-gray-500">Keine Benutzer gefunden.</p>
+                        <p class="text-xs text-gray-400 mt-1">Passen Sie Ihre Filterkriterien an.</p>
+                        <button @click="resetFilters()" class="mt-3 text-xs text-blue-600 hover:underline">Filter zurücksetzen</button>
+                    </div>
+
                     {{-- User List --}}
-                    <div x-show="!empLoading && employees.length > 0" class="space-y-3">
-                        <template x-for="emp in employees" :key="emp.id">
+                    <div x-show="!empLoading && filteredEmployees.length > 0" class="space-y-3">
+                        <template x-for="emp in filteredEmployees" :key="emp.id">
                             <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
@@ -1471,8 +1607,11 @@
                                                 <span x-show="emp.title" x-text="emp.title"></span>
                                                 <span x-text="emp.first_name + ' ' + emp.last_name"></span>
                                             </h4>
-                                            <span x-show="!emp.is_active" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">Inaktiv</span>
-                                            <span x-show="emp.position" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800" x-text="emp.position"></span>
+                                            <span x-show="emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">
+                                                <i class="fas fa-crown mr-1 text-[8px]"></i>Eigenes Profil
+                                            </span>
+                                            <span x-show="!emp.is_active && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">Inaktiv</span>
+                                            <span x-show="emp.position && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800" x-text="emp.position"></span>
                                         </div>
                                         <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                                             <span x-show="emp.department_relation || emp.department"><i class="fas fa-folder mr-1"></i><span x-text="emp.department_relation ? emp.department_relation.name : emp.department"></span></span>
@@ -1482,9 +1621,16 @@
                                             <span x-show="emp.branch"><i class="fas fa-building mr-1"></i><span x-text="emp.branch?.name"></span></span>
                                             <span x-show="emp.personnel_number"><i class="fas fa-id-badge mr-1"></i><span x-text="emp.personnel_number"></span></span>
                                         </div>
+                                        <div x-show="emp.groups && emp.groups.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                            <template x-for="g in (emp.groups || [])" :key="g.id">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
+                                                    <i class="fas fa-layer-group mr-1 text-[8px]"></i><span x-text="g.name"></span>
+                                                </span>
+                                            </template>
+                                        </div>
                                         <p x-show="emp.notes" class="text-xs text-gray-400 mt-1 italic line-clamp-1" x-text="emp.notes"></p>
                                     </div>
-                                    <div class="flex items-center gap-1">
+                                    <div class="flex items-center gap-1" x-show="!emp.is_owner">
                                         <button @click="editEmployee(emp)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
                                             <i class="fas fa-pen text-xs"></i>
                                         </button>
@@ -1492,10 +1638,103 @@
                                             <i class="fas fa-trash text-xs"></i>
                                         </button>
                                     </div>
+                                    <div x-show="emp.is_owner" class="flex items-center">
+                                        <a href="{{ route('customer.settings', ['section' => 'general']) }}" class="text-xs text-blue-600 hover:underline">Profil bearbeiten</a>
+                                    </div>
                                 </div>
                             </div>
                         </template>
                     </div>
+
+                        </div>{{-- Ende Benutzerliste --}}
+                    </div>{{-- Ende flex gap-4 --}}
+                </div>
+                {{-- Ende Tab: Benutzer --}}
+
+                {{-- Tab: Gruppen --}}
+                <div x-show="usersTab === 'gruppen'" x-cloak>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-1">Gruppen</h3>
+                    <p class="text-sm text-gray-500 mb-4">Erstellen Sie Benutzergruppen, um Ihre Mitarbeiter zu organisieren.</p>
+
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-xs text-gray-500"><span x-text="groups.length"></span> Gruppen erfasst</p>
+                        <button @click="showGroupForm = true; groupEditId = null; resetGroupForm();"
+                                class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-xs">
+                            <i class="fas fa-plus"></i> Neue Gruppe
+                        </button>
+                    </div>
+
+                    {{-- Add/Edit Group Form --}}
+                    <div x-show="showGroupForm" x-cloak class="bg-white rounded-lg border border-gray-200 mb-5 overflow-hidden">
+                        <div class="bg-gray-50 border-b border-gray-200 px-5 py-3">
+                            <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas" :class="groupEditId ? 'fa-pen' : 'fa-layer-group'" style="color: #2563eb;"></i>
+                                <span x-text="groupEditId ? 'Gruppe bearbeiten' : 'Neue Gruppe erstellen'"></span>
+                            </h4>
+                        </div>
+                        <form @submit.prevent="saveGroup()" class="p-5">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+                                    <input type="text" x-model="groupForm.name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="z.B. Marketing-Team">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Beschreibung</label>
+                                    <textarea x-model="groupForm.description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Optionale Beschreibung der Gruppe..."></textarea>
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+                                <button type="button" @click="showGroupForm = false" class="px-4 py-2 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Abbrechen</button>
+                                <button type="submit" class="px-4 py-2 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1">
+                                    <i class="fas fa-save"></i> <span x-text="groupEditId ? 'Aktualisieren' : 'Speichern'"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- Loading --}}
+                    <div x-show="groupLoading" class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-gray-400 text-xl"></i>
+                    </div>
+
+                    {{-- Empty --}}
+                    <template x-if="!groupLoading && groups.length === 0 && !showGroupForm">
+                        <div class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                            <i class="fas fa-layer-group text-3xl text-gray-300 mb-2"></i>
+                            <p class="text-sm text-gray-500">Noch keine Gruppen erstellt.</p>
+                            <p class="text-xs text-gray-400 mt-1">Erstellen Sie Ihre erste Benutzergruppe.</p>
+                        </div>
+                    </template>
+
+                    {{-- Group List --}}
+                    <div x-show="!groupLoading && groups.length > 0" class="space-y-3">
+                        <template x-for="group in groups" :key="group.id">
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h4 class="text-sm font-semibold text-gray-900" x-text="group.name"></h4>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
+                                                <span x-text="group.employees_count"></span>&nbsp;Benutzer
+                                            </span>
+                                        </div>
+                                        <p x-show="group.description" class="text-xs text-gray-500" x-text="group.description"></p>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button @click="editGroup(group)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
+                                            <i class="fas fa-pen text-xs"></i>
+                                        </button>
+                                        <button @click="deleteGroup(group.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" title="Löschen">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                {{-- Ende Tab: Gruppen --}}
+
                 </div>
 
             @elseif($settingsSection === 'organization')
@@ -5622,30 +5861,94 @@ function masterDataManager() {
 
 function usersManager() {
     return {
+        usersTab: 'benutzer',
         employees: [],
         empLoading: false,
         showEmpForm: false,
         empEditId: null,
-        empForm: { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, notes: '' },
+        empForm: { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, notes: '', group_ids: [] },
         availableBranches: [],
         availableDepartments: [],
+        availableGroups: [],
+
+        // Filter
+        showFilter: false,
+        filter: { search: '', status: '', group: '', department: '', branch: '' },
+
+        get filteredEmployees() {
+            return this.employees.filter(emp => {
+                // Search
+                if (this.filter.search) {
+                    const q = this.filter.search.toLowerCase();
+                    const haystack = [emp.first_name, emp.last_name, emp.email, emp.phone, emp.mobile, emp.position, emp.personnel_number].filter(Boolean).join(' ').toLowerCase();
+                    if (!haystack.includes(q)) return false;
+                }
+                // Status
+                if (this.filter.status === 'active' && !emp.is_active) return false;
+                if (this.filter.status === 'inactive' && emp.is_active) return false;
+                // Group
+                if (this.filter.group === 'none' && emp.groups && emp.groups.length > 0) return false;
+                if (this.filter.group && this.filter.group !== 'none') {
+                    const gid = parseInt(this.filter.group);
+                    if (!(emp.groups || []).some(g => g.id === gid)) return false;
+                }
+                // Department
+                if (this.filter.department) {
+                    if (String(emp.department_id) !== String(this.filter.department)) return false;
+                }
+                // Branch
+                if (this.filter.branch) {
+                    if (String(emp.branch_id) !== String(this.filter.branch)) return false;
+                }
+                return true;
+            });
+        },
+
+        get hasActiveFilters() {
+            return !!(this.filter.search || this.filter.status || this.filter.group || this.filter.department || this.filter.branch);
+        },
+
+        get activeFilterCount() {
+            let c = 0;
+            if (this.filter.search) c++;
+            if (this.filter.status) c++;
+            if (this.filter.group) c++;
+            if (this.filter.department) c++;
+            if (this.filter.branch) c++;
+            return c;
+        },
+
+        resetFilters() {
+            this.filter = { search: '', status: '', group: '', department: '', branch: '' };
+        },
+
+        // Groups
+        groups: [],
+        groupLoading: false,
+        showGroupForm: false,
+        groupEditId: null,
+        groupForm: { name: '', description: '' },
+        groupsLoaded: false,
 
         init() { this.loadEmployees(); },
 
         async loadEmployees() {
             this.empLoading = true;
             try {
-                const [empRes, brRes, deptRes] = await Promise.all([
+                const [empRes, brRes, deptRes, grpRes] = await Promise.all([
                     fetch('{{ route("customer.employees.index") }}', { headers: { 'Accept': 'application/json' } }),
                     fetch('{{ route("customer.branches.index") }}', { headers: { 'Accept': 'application/json' } }),
-                    fetch('{{ route("customer.departments.index") }}', { headers: { 'Accept': 'application/json' } })
+                    fetch('{{ route("customer.departments.index") }}', { headers: { 'Accept': 'application/json' } }),
+                    fetch('{{ route("customer.employee-groups.index") }}', { headers: { 'Accept': 'application/json' } })
                 ]);
                 const empData = await empRes.json();
                 const brData = await brRes.json();
                 const deptData = await deptRes.json();
+                const grpData = await grpRes.json();
                 this.employees = empData.employees || [];
                 this.availableBranches = brData.branches || brData || [];
                 this.availableDepartments = (deptData.departments || []).filter(d => d.is_active);
+                this.availableGroups = grpData.groups || [];
             } catch (e) { console.error('Error:', e); }
             this.empLoading = false;
         },
@@ -5669,7 +5972,7 @@ function usersManager() {
         },
 
         resetEmpForm() {
-            this.empForm = { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, notes: '' };
+            this.empForm = { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, notes: '', group_ids: [] };
         },
 
         editEmployee(emp) {
@@ -5682,7 +5985,8 @@ function usersManager() {
                 department_id: emp.department_id || '',
                 personnel_number: emp.personnel_number || '',
                 branch_id: emp.branch_id || '', is_active: emp.is_active,
-                notes: emp.notes || ''
+                notes: emp.notes || '',
+                group_ids: (emp.groups || []).map(g => g.id)
             };
             this.showEmpForm = true;
         },
@@ -5694,6 +5998,62 @@ function usersManager() {
                     method: 'DELETE',
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
                 });
+                this.loadEmployees();
+            } catch (e) { console.error('Error:', e); }
+        },
+
+        // --- Groups ---
+        async loadGroups() {
+            if (this.groupsLoaded) return;
+            this.groupLoading = true;
+            try {
+                const res = await fetch('{{ route("customer.employee-groups.index") }}', { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                this.groups = data.groups || [];
+                this.groupsLoaded = true;
+            } catch (e) { console.error('Error:', e); }
+            this.groupLoading = false;
+        },
+
+        async saveGroup() {
+            const url = this.groupEditId
+                ? '{{ route("customer.employee-groups.index") }}/' + this.groupEditId
+                : '{{ route("customer.employee-groups.store") }}';
+            try {
+                const res = await fetch(url, {
+                    method: this.groupEditId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify(this.groupForm)
+                });
+                if (res.ok) {
+                    this.showGroupForm = false;
+                    this.groupEditId = null;
+                    this.groupsLoaded = false;
+                    this.loadGroups();
+                    this.loadEmployees();
+                }
+            } catch (e) { console.error('Error:', e); }
+        },
+
+        resetGroupForm() {
+            this.groupForm = { name: '', description: '' };
+        },
+
+        editGroup(group) {
+            this.groupEditId = group.id;
+            this.groupForm = { name: group.name, description: group.description || '' };
+            this.showGroupForm = true;
+        },
+
+        async deleteGroup(id) {
+            if (!confirm('Gruppe wirklich löschen? Die Zuordnungen zu Benutzern werden ebenfalls entfernt.')) return;
+            try {
+                await fetch('{{ route("customer.employee-groups.index") }}/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                this.groupsLoaded = false;
+                this.loadGroups();
                 this.loadEmployees();
             } catch (e) { console.error('Error:', e); }
         }

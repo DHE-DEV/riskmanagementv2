@@ -169,6 +169,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
             Route::delete('/{employee}', [\App\Http\Controllers\Customer\EmployeeController::class, 'destroy'])->name('destroy');
         });
 
+        Route::prefix('employee-groups')->name('employee-groups.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Customer\EmployeeGroupController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Customer\EmployeeGroupController::class, 'store'])->name('store');
+            Route::put('/{employeeGroup}', [\App\Http\Controllers\Customer\EmployeeGroupController::class, 'update'])->name('update');
+            Route::delete('/{employeeGroup}', [\App\Http\Controllers\Customer\EmployeeGroupController::class, 'destroy'])->name('destroy');
+        });
+
         // Customer Settings
         Route::get('/settings', function () {
             $customer = auth('customer')->user();

@@ -74,7 +74,7 @@
                     @if($finishCtaLabel && $finishCtaUrl)
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin: 0 0 20px 0;">
                         <p style="margin: 0 0 10px 0; font-size: 13px; color: #166534; font-weight: 600;">{{ $finishCtaLabel }}</p>
-                        <a href="{{ $finishCtaUrl }}" style="display: inline-block; padding: 8px 20px; font-size: 13px; color: white; background: #166534; border-radius: 8px; text-decoration: none; font-weight: 600;">Jetzt einrichten</a>
+                        <a href="{{ $finishCtaUrl }}" @click.prevent="finishAndNavigate('{{ $finishCtaUrl }}')" style="display: inline-block; padding: 8px 20px; font-size: 13px; color: white; background: #166534; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">Jetzt einrichten</a>
                     </div>
                     @endif
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
@@ -100,7 +100,10 @@ function {{ $uniqueId }}() {
         dontShowAgain: false,
         steps: {!! $steps !!},
 
-        init() { setTimeout(() => this.showStep(), 600); },
+        init() {
+            if (sessionStorage.getItem('tour_{{ $tourKey }}_dismissed')) { this.active = false; return; }
+            setTimeout(() => this.showStep(), 600);
+        },
 
         showStep() {
             const step = this.steps[this.currentStep];
@@ -166,6 +169,17 @@ function {{ $uniqueId }}() {
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tour: '{{ $tourKey }}', dont_show_again: this.dontShowAgain })
             });
+        },
+
+        finishAndNavigate(url) {
+            this.showConfirm = false;
+            this.active = false;
+            sessionStorage.setItem('tour_{{ $tourKey }}_dismissed', '1');
+            fetch('{{ route("tour.completed") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tour: '{{ $tourKey }}', dont_show_again: this.dontShowAgain })
+            }).finally(() => { window.location.href = url; });
         }
     };
 }

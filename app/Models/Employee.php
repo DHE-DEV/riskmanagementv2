@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Employee extends Model
 {
@@ -42,5 +43,10 @@ class Employee extends Model
     public function departmentRelation(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(EmployeeGroup::class);
     }
 }

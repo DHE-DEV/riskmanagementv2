@@ -10,10 +10,43 @@ class EmployeeController extends Controller
 {
     public function index()
     {
-        $employees = Employee::where('customer_id', auth('customer')->id())
-            ->with(['branch:id,name', 'departmentRelation:id,name'])
+        $customer = auth('customer')->user();
+
+        $employees = Employee::where('customer_id', $customer->id)
+            ->with(['branch:id,name', 'departmentRelation:id,name', 'groups:id,name'])
             ->orderBy('last_name')
             ->get();
+
+        // Check if owner has an employee entry (new accounts get one automatically)
+        $hasOwnerEntry = $employees->contains(fn ($e) => $e->email === $customer->email);
+
+        if (! $hasOwnerEntry) {
+            // Add virtual owner entry for legacy accounts
+            $nameParts = explode(' ', $customer->name, 2);
+            $ownerEntry = [
+                'id' => 'owner',
+                'is_owner' => true,
+                'salutation' => '',
+                'title' => '',
+                'first_name' => $nameParts[0] ?? '',
+                'last_name' => $nameParts[1] ?? '',
+                'email' => $customer->email,
+                'phone' => $customer->phone ?? '',
+                'mobile' => '',
+                'position' => 'Inhaber / Administrator',
+                'department' => '',
+                'department_id' => null,
+                'department_relation' => null,
+                'personnel_number' => '',
+                'branch_id' => null,
+                'branch' => null,
+                'is_active' => true,
+                'notes' => '',
+                'groups' => [],
+            ];
+
+            return response()->json(['employees' => collect([$ownerEntry])->concat($employees)]);
+        }
 
         return response()->json(['employees' => $employees]);
     }
@@ -35,6 +68,8 @@ class EmployeeController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
             'is_active' => 'boolean',
             'notes' => 'nullable|string|max:2000',
+            'group_ids' => 'nullable|array',
+            'group_ids.*' => 'exists:employee_groups,id',
         ]);
 
         $employee = Employee::create([
@@ -43,7 +78,11 @@ class EmployeeController extends Controller
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-        return response()->json(['success' => true, 'employee' => $employee->load(['branch:id,name', 'departmentRelation:id,name'])]);
+        if ($request->has('group_ids')) {
+            $employee->groups()->sync($request->input('group_ids', []));
+        }
+
+        return response()->json(['success' => true, 'employee' => $employee->load(['branch:id,name', 'departmentRelation:id,name', 'groups:id,name'])]);
     }
 
     public function update(Request $request, Employee $employee)
@@ -67,11 +106,17 @@ class EmployeeController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
             'is_active' => 'boolean',
             'notes' => 'nullable|string|max:2000',
+            'group_ids' => 'nullable|array',
+            'group_ids.*' => 'exists:employee_groups,id',
         ]);
 
         $employee->update($request->only(['salutation', 'title', 'first_name', 'last_name', 'email', 'phone', 'mobile', 'position', 'department', 'department_id', 'personnel_number', 'branch_id', 'is_active', 'notes']));
 
-        return response()->json(['success' => true, 'employee' => $employee->load(['branch:id,name', 'departmentRelation:id,name'])]);
+        if ($request->has('group_ids')) {
+            $employee->groups()->sync($request->input('group_ids', []));
+        }
+
+        return response()->json(['success' => true, 'employee' => $employee->load(['branch:id,name', 'departmentRelation:id,name', 'groups:id,name'])]);
     }
 
     public function destroy(Employee $employee)
