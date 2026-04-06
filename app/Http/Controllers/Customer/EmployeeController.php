@@ -41,6 +41,9 @@ class EmployeeController extends Controller
                 'branch_id' => null,
                 'branch' => null,
                 'is_active' => true,
+                'active_from' => null,
+                'active_until' => null,
+                'is_currently_active' => true,
                 'notes' => '',
                 'groups' => [],
             ];
@@ -68,13 +71,15 @@ class EmployeeController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
             'is_active' => 'boolean',
             'notes' => 'nullable|string|max:2000',
+            'active_from' => 'nullable|date',
+            'active_until' => 'nullable|date|after_or_equal:active_from',
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:employee_groups,id',
         ]);
 
         $employee = Employee::create([
             'customer_id' => auth('customer')->id(),
-            ...$request->only(['salutation', 'title', 'first_name', 'last_name', 'email', 'phone', 'mobile', 'position', 'department', 'department_id', 'personnel_number', 'branch_id', 'notes']),
+            ...$request->only(['salutation', 'title', 'first_name', 'last_name', 'email', 'phone', 'mobile', 'position', 'department', 'department_id', 'personnel_number', 'branch_id', 'notes', 'active_from', 'active_until']),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -106,11 +111,13 @@ class EmployeeController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
             'is_active' => 'boolean',
             'notes' => 'nullable|string|max:2000',
+            'active_from' => 'nullable|date',
+            'active_until' => 'nullable|date|after_or_equal:active_from',
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:employee_groups,id',
         ]);
 
-        $employee->update($request->only(['salutation', 'title', 'first_name', 'last_name', 'email', 'phone', 'mobile', 'position', 'department', 'department_id', 'personnel_number', 'branch_id', 'is_active', 'notes']));
+        $employee->update($request->only(['salutation', 'title', 'first_name', 'last_name', 'email', 'phone', 'mobile', 'position', 'department', 'department_id', 'personnel_number', 'branch_id', 'is_active', 'active_from', 'active_until', 'notes']));
 
         if ($request->has('group_ids')) {
             $employee->groups()->sync($request->input('group_ids', []));

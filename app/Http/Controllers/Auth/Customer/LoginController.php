@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Auth\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -41,10 +43,29 @@ class LoginController extends Controller
 
         $this->ensureIsNotRateLimited($request);
 
-        if (!Auth::guard('customer')->attempt(
+        $authenticated = Auth::guard('customer')->attempt(
             $request->only('email', 'password'),
             $request->boolean('remember')
-        )) {
+        );
+
+        // Fallback: try MD5 legacy password
+        if (! $authenticated) {
+            $customer = Customer::where('email', $request->input('email'))->first();
+            if ($customer && $customer->legacy_password_md5) {
+                $md5Input = md5($request->input('password'));
+                if (hash_equals($customer->legacy_password_md5, $md5Input)) {
+                    // Migrate to bcrypt and login
+                    $customer->update([
+                        'password' => Hash::make($request->input('password')),
+                        'legacy_password_md5' => null,
+                    ]);
+                    Auth::guard('customer')->login($customer, $request->boolean('remember'));
+                    $authenticated = true;
+                }
+            }
+        }
+
+        if (! $authenticated) {
             RateLimiter::hit($this->throttleKey($request));
 
             throw ValidationException::withMessages([

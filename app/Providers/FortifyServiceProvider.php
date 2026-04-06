@@ -9,8 +9,10 @@ use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\PasswordResetResponse;
 use App\Http\Responses\RegisterResponse;
+use App\Models\Customer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -45,6 +47,39 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
+
+        // Custom authentication with MD5 legacy password fallback
+        Fortify::authenticateUsing(function (Request $request) {
+            $customer = Customer::where('email', $request->input('email'))->first();
+
+            if (! $customer) {
+                return null;
+            }
+
+            // Try standard bcrypt password first
+            if (Hash::check($request->input('password'), $customer->password)) {
+                // Clear legacy hash if still present
+                if ($customer->legacy_password_md5) {
+                    $customer->update(['legacy_password_md5' => null]);
+                }
+                return $customer;
+            }
+
+            // Fallback: try MD5 legacy password
+            if ($customer->legacy_password_md5) {
+                $md5Input = md5($request->input('password'));
+                if (hash_equals($customer->legacy_password_md5, $md5Input)) {
+                    // Migrate password to bcrypt
+                    $customer->update([
+                        'password' => Hash::make($request->input('password')),
+                        'legacy_password_md5' => null,
+                    ]);
+                    return $customer;
+                }
+            }
+
+            return null;
+        });
 
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

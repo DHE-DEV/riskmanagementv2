@@ -12,6 +12,11 @@ class EmployeeGroup extends Model
         'customer_id',
         'name',
         'description',
+        'is_system',
+    ];
+
+    protected $casts = [
+        'is_system' => 'boolean',
     ];
 
     public function customer(): BelongsTo

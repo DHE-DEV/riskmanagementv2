@@ -159,6 +159,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
                 'customer_id' => $customer->id,
                 'name' => 'Administratoren',
                 'description' => 'Systemadministratoren in der Passolution Travel Information Platform',
+                'is_system' => true,
             ]);
 
             EmployeeGroup::create([

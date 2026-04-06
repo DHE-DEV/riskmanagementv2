@@ -310,6 +310,34 @@
                     </form>
                 </div>
 
+                {{-- Gruppenzuordnung --}}
+                @php
+                    $ownerEmployee = \App\Models\Employee::where('customer_id', $customer->id)
+                        ->where('email', $customer->email)
+                        ->with('groups:id,name')
+                        ->first();
+                    $employeeGroups = $ownerEmployee ? $ownerEmployee->groups : collect();
+                @endphp
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4">Gruppenzuordnung</h4>
+                    @if($employeeGroups->isNotEmpty())
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($employeeGroups as $group)
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-800 border border-purple-200">
+                                    <i class="fas fa-layer-group mr-1.5 text-[10px] text-purple-500"></i>{{ $group->name }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-400">Keiner Gruppe zugeordnet.</p>
+                    @endif
+                    <p class="text-xs text-gray-400 mt-3">
+                        Die Gruppenzuordnung kann unter
+                        <a href="{{ route('customer.settings', ['section' => 'users']) }}" class="text-blue-600 hover:underline">Benutzerverwaltung</a>
+                        geändert werden.
+                    </p>
+                </div>
+
                 {{-- Passwort ändern (nur für User mit lokalem Passwort) --}}
                 @if(!$customer->provider)
                 <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
@@ -1314,7 +1342,7 @@
                 <div x-show="usersTab === 'benutzer'">
 
                     {{-- Header mit Suche und Filter-Toggle --}}
-                    <div class="flex items-center justify-between mb-4">
+                    <div x-show="!showEmpForm" class="flex items-center justify-between mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 mb-0.5">Benutzer</h3>
                             <p class="text-xs text-gray-500"><span x-text="filteredEmployees.length"></span> von <span x-text="employees.length"></span> Benutzern</p>
@@ -1334,7 +1362,7 @@
                         </div>
                     </div>
 
-                    <div class="flex gap-4">
+                    <div x-show="!showEmpForm" class="flex gap-4">
                         {{-- Filter Sidebar --}}
                         <div x-show="showFilter" x-cloak
                              x-transition:enter="transition ease-out duration-200"
@@ -1410,13 +1438,96 @@
                         {{-- Benutzerliste --}}
                         <div class="flex-1 min-w-0">
 
-                    {{-- Add/Edit Form --}}
-                    <div x-show="showEmpForm" x-cloak class="bg-white rounded-lg border border-gray-200 mb-5 overflow-hidden">
-                        <div class="bg-gray-50 border-b border-gray-200 px-5 py-3">
+                    {{-- Loading --}}
+                    <div x-show="empLoading" class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-gray-400 text-xl"></i>
+                    </div>
+
+                    {{-- Empty --}}
+                    <template x-if="!empLoading && employees.length === 0 && !showEmpForm">
+                        <div class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                            <i class="fas fa-users text-3xl text-gray-300 mb-2"></i>
+                            <p class="text-sm text-gray-500">Noch keine Benutzer erfasst.</p>
+                            <p class="text-xs text-gray-400 mt-1">Fügen Sie Ihren ersten Benutzer hinzu.</p>
+                        </div>
+                    </template>
+
+                    {{-- No results after filter --}}
+                    <div x-show="!empLoading && employees.length > 0 && filteredEmployees.length === 0" class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                        <i class="fas fa-filter-circle-xmark text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-sm text-gray-500">Keine Benutzer gefunden.</p>
+                        <p class="text-xs text-gray-400 mt-1">Passen Sie Ihre Filterkriterien an.</p>
+                        <button @click="resetFilters()" class="mt-3 text-xs text-blue-600 hover:underline">Filter zurücksetzen</button>
+                    </div>
+
+                    {{-- User List --}}
+                    <div x-show="!empLoading && filteredEmployees.length > 0" class="space-y-3">
+                        <template x-for="emp in filteredEmployees" :key="emp.id">
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                            <h4 class="text-sm font-semibold text-gray-900">
+                                                <span x-show="emp.salutation" x-text="emp.salutation === 'herr' ? 'Herr' : emp.salutation === 'frau' ? 'Frau' : ''"></span>
+                                                <span x-show="emp.title" x-text="emp.title"></span>
+                                                <span x-text="emp.first_name + ' ' + emp.last_name"></span>
+                                            </h4>
+                                            <span x-show="emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">
+                                                <i class="fas fa-crown mr-1 text-[8px]"></i>Eigenes Profil
+                                            </span>
+                                            <span x-show="!emp.is_currently_active && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">Inaktiv</span>
+                                            <span x-show="emp.active_from || emp.active_until" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700">
+                                                <i class="fas fa-clock mr-1 text-[8px]"></i>
+                                                <span x-text="(emp.active_from ? new Date(emp.active_from).toLocaleDateString('de-DE') : '∞') + ' – ' + (emp.active_until ? new Date(emp.active_until).toLocaleDateString('de-DE') : '∞')"></span>
+                                            </span>
+                                            <span x-show="emp.position && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800" x-text="emp.position"></span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                            <span x-show="emp.department_relation || emp.department"><i class="fas fa-folder mr-1"></i><span x-text="emp.department_relation ? emp.department_relation.name : emp.department"></span></span>
+                                            <span x-show="emp.email"><i class="fas fa-envelope mr-1"></i><span x-text="emp.email"></span></span>
+                                            <span x-show="emp.phone"><i class="fas fa-phone mr-1"></i><span x-text="emp.phone"></span></span>
+                                            <span x-show="emp.mobile"><i class="fas fa-mobile-screen mr-1"></i><span x-text="emp.mobile"></span></span>
+                                            <span x-show="emp.branch"><i class="fas fa-building mr-1"></i><span x-text="emp.branch?.name"></span></span>
+                                            <span x-show="emp.personnel_number"><i class="fas fa-id-badge mr-1"></i><span x-text="emp.personnel_number"></span></span>
+                                        </div>
+                                        <div x-show="emp.groups && emp.groups.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                            <template x-for="g in (emp.groups || [])" :key="g.id">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
+                                                    <i class="fas fa-layer-group mr-1 text-[8px]"></i><span x-text="g.name"></span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <p x-show="emp.notes" class="text-xs text-gray-400 mt-1 italic line-clamp-1" x-text="emp.notes"></p>
+                                    </div>
+                                    <div class="flex items-center gap-1" x-show="!emp.is_owner">
+                                        <button @click="editEmployee(emp)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
+                                            <i class="fas fa-pen text-xs"></i>
+                                        </button>
+                                        <button @click="deleteEmployee(emp.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" title="Löschen">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div x-show="emp.is_owner" class="flex items-center">
+                                        <a href="{{ route('customer.settings', ['section' => 'general']) }}" class="text-xs text-blue-600 hover:underline">Profil bearbeiten</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                        </div>{{-- Ende Benutzerliste --}}
+                    </div>{{-- Ende flex gap-4 --}}
+
+                    {{-- Add/Edit Form (eigenständige Ansicht) --}}
+                    <div x-show="showEmpForm" x-cloak class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div class="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
                             <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                <i class="fas" :class="empEditId ? 'fa-pen' : 'fa-user-plus'" class="text-blue-600"></i>
+                                <i class="fas" :class="empEditId ? 'fa-pen' : 'fa-user-plus'" style="color: #2563eb;"></i>
                                 <span x-text="empEditId ? 'Benutzer bearbeiten' : 'Neuen Benutzer erfassen'"></span>
                             </h4>
+                            <button type="button" @click="showEmpForm = false" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors" title="Schließen">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                         <form @submit.prevent="saveEmployee" class="p-5">
                             {{-- Sektion: Persönliche Daten --}}
@@ -1554,100 +1665,45 @@
                                 <textarea x-model="empForm.notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Interne Anmerkungen zu diesem Benutzer..."></textarea>
                             </div>
 
-                            {{-- Status + Buttons --}}
-                            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <div class="relative">
-                                        <input type="checkbox" x-model="empForm.is_active" class="sr-only peer">
-                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                            {{-- Sektion: Status & Aktivitätszeitraum --}}
+                            <div class="mb-5">
+                                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i class="fas fa-clock text-gray-400"></i> Status & Aktivitätszeitraum
+                                </h5>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="flex items-center">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <div class="relative">
+                                                <input type="checkbox" x-model="empForm.is_active" class="sr-only peer">
+                                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </div>
+                                            <span class="text-xs font-medium text-gray-700">Benutzer ist aktiv</span>
+                                        </label>
                                     </div>
-                                    <span class="text-xs font-medium text-gray-700">Benutzer ist aktiv</span>
-                                </label>
-                                <div class="flex gap-2">
-                                    <button type="button" @click="showEmpForm = false" class="px-4 py-2 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Abbrechen</button>
-                                    <button type="submit" class="px-4 py-2 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1">
-                                        <i class="fas fa-save"></i> <span x-text="empEditId ? 'Aktualisieren' : 'Speichern'"></span>
-                                    </button>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Aktiv von</label>
+                                        <input type="date" x-model="empForm.active_from"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Aktiv bis</label>
+                                        <input type="date" x-model="empForm.active_until"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
                                 </div>
+                                <p class="text-[10px] text-gray-400 mt-2">Ohne Datumsangabe ist der Benutzer dauerhaft aktiv.</p>
+                            </div>
+
+                            {{-- Buttons --}}
+                            <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                                <button type="button" @click="showEmpForm = false" class="px-4 py-2 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Abbrechen</button>
+                                <button type="submit" class="px-4 py-2 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1">
+                                    <i class="fas fa-save"></i> <span x-text="empEditId ? 'Aktualisieren' : 'Speichern'"></span>
+                                </button>
                             </div>
                         </form>
                     </div>
 
-                    {{-- Loading --}}
-                    <div x-show="empLoading" class="text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-gray-400 text-xl"></i>
-                    </div>
-
-                    {{-- Empty --}}
-                    <template x-if="!empLoading && employees.length === 0 && !showEmpForm">
-                        <div class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
-                            <i class="fas fa-users text-3xl text-gray-300 mb-2"></i>
-                            <p class="text-sm text-gray-500">Noch keine Benutzer erfasst.</p>
-                            <p class="text-xs text-gray-400 mt-1">Fügen Sie Ihren ersten Benutzer hinzu.</p>
-                        </div>
-                    </template>
-
-                    {{-- No results after filter --}}
-                    <div x-show="!empLoading && employees.length > 0 && filteredEmployees.length === 0" class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
-                        <i class="fas fa-filter-circle-xmark text-3xl text-gray-300 mb-2"></i>
-                        <p class="text-sm text-gray-500">Keine Benutzer gefunden.</p>
-                        <p class="text-xs text-gray-400 mt-1">Passen Sie Ihre Filterkriterien an.</p>
-                        <button @click="resetFilters()" class="mt-3 text-xs text-blue-600 hover:underline">Filter zurücksetzen</button>
-                    </div>
-
-                    {{-- User List --}}
-                    <div x-show="!empLoading && filteredEmployees.length > 0" class="space-y-3">
-                        <template x-for="emp in filteredEmployees" :key="emp.id">
-                            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                            <h4 class="text-sm font-semibold text-gray-900">
-                                                <span x-show="emp.salutation" x-text="emp.salutation === 'herr' ? 'Herr' : emp.salutation === 'frau' ? 'Frau' : ''"></span>
-                                                <span x-show="emp.title" x-text="emp.title"></span>
-                                                <span x-text="emp.first_name + ' ' + emp.last_name"></span>
-                                            </h4>
-                                            <span x-show="emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">
-                                                <i class="fas fa-crown mr-1 text-[8px]"></i>Eigenes Profil
-                                            </span>
-                                            <span x-show="!emp.is_active && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">Inaktiv</span>
-                                            <span x-show="emp.position && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800" x-text="emp.position"></span>
-                                        </div>
-                                        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                                            <span x-show="emp.department_relation || emp.department"><i class="fas fa-folder mr-1"></i><span x-text="emp.department_relation ? emp.department_relation.name : emp.department"></span></span>
-                                            <span x-show="emp.email"><i class="fas fa-envelope mr-1"></i><span x-text="emp.email"></span></span>
-                                            <span x-show="emp.phone"><i class="fas fa-phone mr-1"></i><span x-text="emp.phone"></span></span>
-                                            <span x-show="emp.mobile"><i class="fas fa-mobile-screen mr-1"></i><span x-text="emp.mobile"></span></span>
-                                            <span x-show="emp.branch"><i class="fas fa-building mr-1"></i><span x-text="emp.branch?.name"></span></span>
-                                            <span x-show="emp.personnel_number"><i class="fas fa-id-badge mr-1"></i><span x-text="emp.personnel_number"></span></span>
-                                        </div>
-                                        <div x-show="emp.groups && emp.groups.length > 0" class="flex flex-wrap gap-1 mt-1">
-                                            <template x-for="g in (emp.groups || [])" :key="g.id">
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
-                                                    <i class="fas fa-layer-group mr-1 text-[8px]"></i><span x-text="g.name"></span>
-                                                </span>
-                                            </template>
-                                        </div>
-                                        <p x-show="emp.notes" class="text-xs text-gray-400 mt-1 italic line-clamp-1" x-text="emp.notes"></p>
-                                    </div>
-                                    <div class="flex items-center gap-1" x-show="!emp.is_owner">
-                                        <button @click="editEmployee(emp)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
-                                            <i class="fas fa-pen text-xs"></i>
-                                        </button>
-                                        <button @click="deleteEmployee(emp.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" title="Löschen">
-                                            <i class="fas fa-trash text-xs"></i>
-                                        </button>
-                                    </div>
-                                    <div x-show="emp.is_owner" class="flex items-center">
-                                        <a href="{{ route('customer.settings', ['section' => 'general']) }}" class="text-xs text-blue-600 hover:underline">Profil bearbeiten</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                        </div>{{-- Ende Benutzerliste --}}
-                    </div>{{-- Ende flex gap-4 --}}
                 </div>
                 {{-- Ende Tab: Benutzer --}}
 
@@ -1717,10 +1773,13 @@
                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
                                                 <span x-text="group.employees_count"></span>&nbsp;Benutzer
                                             </span>
+                                            <span x-show="group.is_system" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                <i class="fas fa-lock mr-1 text-[8px]"></i>System
+                                            </span>
                                         </div>
                                         <p x-show="group.description" class="text-xs text-gray-500" x-text="group.description"></p>
                                     </div>
-                                    <div class="flex items-center gap-1">
+                                    <div class="flex items-center gap-1" x-show="!group.is_system">
                                         <button @click="editGroup(group)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
                                             <i class="fas fa-pen text-xs"></i>
                                         </button>
@@ -1792,63 +1851,69 @@
                     @include('customer.settings.partials.branch-form')
 
                     {{-- Adressen-Liste --}}
-                    <div class="bg-white rounded-lg border border-gray-200 p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-semibold text-gray-900">Adressen</h4>
+                    <div x-show="loading" class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-gray-400 text-xl"></i>
+                    </div>
+
+                    <template x-if="!loading && branches.length === 0 && !showNewForm">
+                        <div class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                            <i class="fas fa-building text-3xl text-gray-300 mb-2"></i>
+                            <p class="text-sm text-gray-500">Noch keine Adressen angelegt.</p>
+                            <p class="text-xs text-gray-400 mt-1">Fügen Sie Ihre erste Adresse hinzu.</p>
                         </div>
-                        <div x-show="loading" class="text-center py-4"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>
-                        <div x-show="!loading" class="space-y-2">
-                            <template x-if="branches.length === 0 && !showNewForm">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-building text-2xl text-gray-300 mb-2"></i>
-                                    <p class="text-xs text-gray-500">Noch keine Adressen angelegt.</p>
-                                </div>
-                            </template>
-                            <template x-for="branch in branches" :key="branch.id">
-                                <div class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0 group">
-                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-building text-xs text-gray-500"></i>
-                                    </div>
+                    </template>
+
+                    <div x-show="!loading && branches.length > 0" class="space-y-3">
+                        <template x-for="branch in branches" :key="branch.id">
+                            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-start justify-between">
                                     <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-xs font-medium text-gray-900 truncate" x-text="branch.name"></p>
-                                            <span x-show="branch.is_headquarters" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800 flex-shrink-0">HQ</span>
+                                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                            <h4 class="text-sm font-semibold text-gray-900" x-text="branch.name"></h4>
+                                            <span x-show="branch.is_headquarters" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                                                <i class="fas fa-crown mr-1 text-[8px]"></i>Hauptsitz
+                                            </span>
                                         </div>
-                                        <p class="text-[10px] text-gray-500" x-text="(branch.street || '') + ' ' + (branch.house_number || '') + ', ' + (branch.postal_code || '') + ' ' + (branch.city || '')"></p>
-                                        <div class="flex flex-wrap gap-1 mt-1">
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-1">
+                                            <span>
+                                                <i class="fas fa-location-dot mr-1"></i>
+                                                <span x-text="(branch.street || '') + ' ' + (branch.house_number || '') + ', ' + (branch.postal_code || '') + ' ' + (branch.city || '')"></span>
+                                            </span>
+                                            <span x-show="branch.country"><i class="fas fa-globe mr-1"></i><span x-text="branch.country"></span></span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                            <span x-show="(branch.phone_numbers || []).length > 0">
+                                                <i class="fas fa-phone mr-1"></i><span x-text="branch.phone_numbers[0]?.number"></span>
+                                                <span x-show="branch.phone_numbers.length > 1" class="text-gray-400" x-text="'(+' + (branch.phone_numbers.length - 1) + ')'"></span>
+                                            </span>
+                                            <span x-show="(branch.email_addresses || []).length > 0">
+                                                <i class="fas fa-envelope mr-1"></i><span x-text="branch.email_addresses[0]?.email"></span>
+                                                <span x-show="branch.email_addresses.length > 1" class="text-gray-400" x-text="'(+' + (branch.email_addresses.length - 1) + ')'"></span>
+                                            </span>
+                                            <span x-show="(branch.websites || []).length > 0">
+                                                <i class="fas fa-globe mr-1"></i><span x-text="branch.websites[0]?.url"></span>
+                                            </span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-1 mt-2">
                                             <template x-for="on in (branch.org_nodes || [])" :key="on.id">
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700" x-text="on.name"></span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-700" x-text="on.name"></span>
                                             </template>
-                                            <span x-show="(branch.phone_numbers || []).length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                <i class="fas fa-phone mr-0.5 text-[8px]"></i> <span x-text="branch.phone_numbers.length"></span>
-                                            </span>
-                                            <span x-show="(branch.email_addresses || []).length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                <i class="fas fa-envelope mr-0.5 text-[8px]"></i> <span x-text="branch.email_addresses.length"></span>
-                                            </span>
-                                            <span x-show="(branch.websites || []).length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                <i class="fas fa-globe mr-0.5 text-[8px]"></i> <span x-text="branch.websites.length"></span>
-                                            </span>
-                                            <span x-show="(branch.contacts || []).length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                <i class="fas fa-address-card mr-0.5 text-[8px]"></i> <span x-text="branch.contacts.length"></span>
+                                            <span x-show="(branch.contacts || []).length" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                <i class="fas fa-address-card mr-1 text-[8px]"></i><span x-text="branch.contacts.length"></span>&nbsp;Kontakte
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="relative flex-shrink-0" x-data="{ open: false }">
-                                        <button @click="open = !open" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
-                                            <i class="fas fa-ellipsis-vertical text-sm"></i>
+                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                        <button @click="editExistingBranch(branch)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
+                                            <i class="fas fa-pen text-xs"></i>
                                         </button>
-                                        <div x-show="open" @click.away="open = false" x-transition x-cloak class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                            <button @click="editExistingBranch(branch); open = false" class="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                <i class="fas fa-pen w-4 text-center text-blue-500"></i> Bearbeiten
-                                            </button>
-                                            <button x-show="!branch.is_headquarters" @click="deleteBranch(branch.id); open = false" class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                                <i class="fas fa-trash w-4 text-center"></i> Löschen
-                                            </button>
-                                        </div>
+                                        <button x-show="!branch.is_headquarters" @click="deleteBranch(branch.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" title="Löschen">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
                                     </div>
                                 </div>
-                            </template>
-                        </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
 
@@ -5866,7 +5931,7 @@ function usersManager() {
         empLoading: false,
         showEmpForm: false,
         empEditId: null,
-        empForm: { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, notes: '', group_ids: [] },
+        empForm: { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, active_from: '', active_until: '', notes: '', group_ids: [] },
         availableBranches: [],
         availableDepartments: [],
         availableGroups: [],
@@ -5884,8 +5949,9 @@ function usersManager() {
                     if (!haystack.includes(q)) return false;
                 }
                 // Status
-                if (this.filter.status === 'active' && !emp.is_active) return false;
-                if (this.filter.status === 'inactive' && emp.is_active) return false;
+                const isActive = emp.is_currently_active !== undefined ? emp.is_currently_active : emp.is_active;
+                if (this.filter.status === 'active' && !isActive) return false;
+                if (this.filter.status === 'inactive' && isActive) return false;
                 // Group
                 if (this.filter.group === 'none' && emp.groups && emp.groups.length > 0) return false;
                 if (this.filter.group && this.filter.group !== 'none') {
@@ -5972,7 +6038,7 @@ function usersManager() {
         },
 
         resetEmpForm() {
-            this.empForm = { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, notes: '', group_ids: [] };
+            this.empForm = { salutation: '', title: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', position: '', department: '', department_id: '', personnel_number: '', branch_id: '', is_active: true, active_from: '', active_until: '', notes: '', group_ids: [] };
         },
 
         editEmployee(emp) {
@@ -5985,6 +6051,8 @@ function usersManager() {
                 department_id: emp.department_id || '',
                 personnel_number: emp.personnel_number || '',
                 branch_id: emp.branch_id || '', is_active: emp.is_active,
+                active_from: emp.active_from ? emp.active_from.substring(0, 10) : '',
+                active_until: emp.active_until ? emp.active_until.substring(0, 10) : '',
                 notes: emp.notes || '',
                 group_ids: (emp.groups || []).map(g => g.id)
             };

@@ -41,6 +41,10 @@ class EmployeeGroupController extends Controller
             abort(403);
         }
 
+        if ($employeeGroup->is_system) {
+            return response()->json(['success' => false, 'message' => 'Systemgruppen können nicht bearbeitet werden.'], 403);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
@@ -55,6 +59,10 @@ class EmployeeGroupController extends Controller
     {
         if ($employeeGroup->customer_id !== auth('customer')->id()) {
             abort(403);
+        }
+
+        if ($employeeGroup->is_system) {
+            return response()->json(['success' => false, 'message' => 'Systemgruppen können nicht gelöscht werden.'], 403);
         }
 
         $employeeGroup->delete();
