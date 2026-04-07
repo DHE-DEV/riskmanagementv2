@@ -244,19 +244,20 @@ class ImportLegacyUsers extends Command
                         'provider_id' => $keycloakUserId,
                     ]);
                 }
+            } else {
+                throw new \RuntimeException("Keycloak sync failed: {$response->status()}: {$response->body()}");
             }
+        } catch (\RuntimeException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            Log::warning('Keycloak sync failed for legacy user', [
-                'email' => $customer->email,
-                'error' => $e->getMessage(),
-            ]);
+            throw new \RuntimeException("Keycloak sync failed: {$e->getMessage()}");
         }
     }
 
     private function refreshTokenIfNeeded(): void
     {
-        // Token alle 4 Minuten erneuern (Keycloak default: 5 Min Lebensdauer)
-        if ($this->adminToken && (time() - $this->tokenTime) > 240) {
+        // Token alle 50 Sekunden erneuern (Keycloak default: 60 Sek Lebensdauer)
+        if ($this->adminToken && (time() - $this->tokenTime) > 50) {
             $this->adminToken = $this->getKeycloakAdminToken();
             $this->tokenTime = time();
         }
