@@ -560,8 +560,8 @@
                 <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal').classList.remove('hidden');" class="text-blue-600 hover:underline">Haftungsausschluss</a>
             </div>
             <div class="flex justify-between">
-                <span>© 2025 Passolution GmbH</span>
-                <span>Version 1.0.4</span>
+                <span>© 2026 Passolution GmbH</span>
+                <span>Version 1.1.0</span>
             </div>
         </div>
     </div>

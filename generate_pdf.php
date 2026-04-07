@@ -365,7 +365,7 @@ $printHtml = '<!DOCTYPE html>
 
     <p style="text-align: center; margin-top: 50pt;">
         <strong>Stand: Januar 2025</strong><br>
-        © 2025 Passolution - Alle Rechte vorbehalten
+        © 2026 Passolution - Alle Rechte vorbehalten
     </p>
 </body>
 </html>';

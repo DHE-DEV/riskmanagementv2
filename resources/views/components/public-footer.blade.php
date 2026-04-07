@@ -1,15 +1,15 @@
 <footer class="footer">
     <div class="flex items-center justify-between px-4 h-full">
         <div class="flex items-center space-x-6 text-sm">
-            <span>© 2025 Passolution GmbH</span>
+            <span>© 2026 Passolution GmbH</span>
             <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Impressum</a>
             <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">Datenschutz</a>
             <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-300 transition-colors">AGB</a>
             <a href="#" onclick="event.preventDefault(); document.getElementById('disclaimerModal').classList.remove('hidden');" class="hover:text-blue-300 transition-colors">Haftungsausschluss</a>
         </div>
         <div class="flex items-center space-x-4 text-sm">
-            <span>Version 1.0.4</span>
-            <span>Build: 2026-03-12</span>
+            <span>Version 1.1.0</span>
+            <span>Build: 2026-04-07</span>
         </div>
     </div>
 </footer>

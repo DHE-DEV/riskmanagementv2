@@ -425,4 +425,4 @@ Termine und Anmeldung unter: https://info.passolution.eu/schulungen
 ---
 
 *Stand: Januar 2025*
-*© 2025 Passolution - Alle Rechte vorbehalten*
+*© 2026 Passolution - Alle Rechte vorbehalten*
