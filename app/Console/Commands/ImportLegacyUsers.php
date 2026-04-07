@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class ImportLegacyUsers extends Command
 {
-    protected $signature = 'import:legacy-users {--limit=0 : Limit number of users to import} {--dry-run : Only show what would be imported}';
+    protected $signature = 'import:legacy-users {--limit=0 : Limit number of users to import} {--dry-run : Only show what would be imported} {--last : Import die letzten statt die ersten User} {--email= : Nur einen bestimmten User importieren}';
     protected $description = 'Import users from webold_usersweb into customers table and Keycloak';
 
     private string $keycloakUrl;
@@ -33,6 +33,10 @@ class ImportLegacyUsers extends Command
             ->where('email', '!=', '')
             ->where('active', '!=', 0);
 
+        if ($email = $this->option('email')) {
+            $query->where('email', $email);
+        }
+
         $total = $query->count();
         $this->info("Found {$total} users with email in webold_usersweb");
 
@@ -50,7 +54,7 @@ class ImportLegacyUsers extends Command
             }
         }
 
-        $users = $query->orderBy('id');
+        $users = $this->option('last') ? $query->orderByDesc('id') : $query->orderBy('id');
         if ($limit > 0) {
             $users = $users->limit($limit);
         }
