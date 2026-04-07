@@ -68,7 +68,13 @@ class ImportLegacyUsers extends Command
         $bar = $this->output->createProgressBar($limit > 0 ? $limit : $total);
         $bar->start();
 
-        $users->chunk(100, function ($chunk) use (&$imported, &$skipped, &$errors, $dryRun, $bar) {
+        $users->chunk(50, function ($chunk) use (&$imported, &$skipped, &$errors, $dryRun, $bar) {
+            // Neuen Token vor jedem Chunk holen
+            if (! $dryRun && $this->keycloakUrl) {
+                $this->adminToken = $this->getKeycloakAdminToken();
+                $this->tokenTime = time();
+            }
+
             foreach ($chunk as $legacyUser) {
                 $bar->advance();
 
