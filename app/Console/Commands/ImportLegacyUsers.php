@@ -140,7 +140,8 @@ class ImportLegacyUsers extends Command
             'phone' => $legacyUser->phone ?? null,
             'customer_type' => $customerType,
             'company_name' => $legacyUser->realname ?? null,
-            'company_street' => $legacyUser->street ?? null,
+            'company_street' => $this->parseStreet($legacyUser->address1 ?? $legacyUser->street ?? null),
+            'company_house_number' => $this->parseHouseNumber($legacyUser->address1 ?? $legacyUser->street ?? null),
             'company_postal_code' => $legacyUser->zip ?? null,
             'company_city' => $legacyUser->city ?? null,
             'company_country' => $legacyUser->land ?? 'DE',
@@ -303,6 +304,38 @@ class ImportLegacyUsers extends Command
             }
         } catch (\Exception $e) {
             // ignore
+        }
+
+        return null;
+    }
+
+    private function parseStreet(?string $address): ?string
+    {
+        if (empty($address)) {
+            return null;
+        }
+
+        // "Karl-Schiller-Str. 1" → "Karl-Schiller-Str."
+        // "Hauptstraße 12a" → "Hauptstraße"
+        // "Am Markt 3-5" → "Am Markt"
+        if (preg_match('/^(.+?)\s+(\d+.*)$/u', trim($address), $matches)) {
+            return trim($matches[1]);
+        }
+
+        return trim($address);
+    }
+
+    private function parseHouseNumber(?string $address): ?string
+    {
+        if (empty($address)) {
+            return null;
+        }
+
+        // "Karl-Schiller-Str. 1" → "1"
+        // "Hauptstraße 12a" → "12a"
+        // "Am Markt 3-5" → "3-5"
+        if (preg_match('/^.+?\s+(\d+.*)$/u', trim($address), $matches)) {
+            return trim($matches[1]);
         }
 
         return null;
