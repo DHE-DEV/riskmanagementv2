@@ -30,7 +30,8 @@ class ImportLegacyUsers extends Command
 
         $query = DB::table('webold_usersweb')
             ->whereNotNull('email')
-            ->where('email', '!=', '');
+            ->where('email', '!=', '')
+            ->where('active', '!=', 0);
 
         $total = $query->count();
         $this->info("Found {$total} users with email in webold_usersweb");
