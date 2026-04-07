@@ -20,6 +20,7 @@ class ImportLegacyUsers extends Command
     private string $keycloakUrl;
     private string $realm;
     private ?string $adminToken = null;
+    private int $tokenTime = 0;
 
     public function handle(): int
     {
@@ -47,6 +48,7 @@ class ImportLegacyUsers extends Command
         // Get admin token for Keycloak
         if (! $dryRun && $this->keycloakUrl) {
             $this->adminToken = $this->getKeycloakAdminToken();
+            $this->tokenTime = time();
             if (! $this->adminToken) {
                 $this->error('Could not get Keycloak admin token. Continuing without Keycloak sync.');
             } else {
@@ -214,9 +216,20 @@ class ImportLegacyUsers extends Command
         ];
 
         try {
+            $this->refreshTokenIfNeeded();
+
             $response = Http::withToken($this->adminToken)
                 ->timeout(10)
                 ->post("{$this->keycloakUrl}/admin/realms/{$this->realm}/partialImport", $importData);
+
+            // Token abgelaufen → erneuern und erneut versuchen
+            if ($response->status() === 401) {
+                $this->adminToken = $this->getKeycloakAdminToken();
+                $this->tokenTime = time();
+                $response = Http::withToken($this->adminToken)
+                    ->timeout(10)
+                    ->post("{$this->keycloakUrl}/admin/realms/{$this->realm}/partialImport", $importData);
+            }
 
             if ($response->successful()) {
                 $keycloakUserId = $response->json('results.0.id');
@@ -237,6 +250,15 @@ class ImportLegacyUsers extends Command
                 'email' => $customer->email,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    private function refreshTokenIfNeeded(): void
+    {
+        // Token alle 4 Minuten erneuern (Keycloak default: 5 Min Lebensdauer)
+        if ($this->adminToken && (time() - $this->tokenTime) > 240) {
+            $this->adminToken = $this->getKeycloakAdminToken();
+            $this->tokenTime = time();
         }
     }
 
