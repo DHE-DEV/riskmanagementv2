@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ $event->title }} - Global Travel Monitor</title>
+    <title>{{ $event->title }} - Passolution</title>
 
     {{-- SEO Meta Tags --}}
     <meta name="description" content="{{ Str::limit(strip_tags($event->description ?? $event->popup_content ?? ''), 160) }}">
@@ -12,7 +12,7 @@
     {{-- Open Graph / Facebook --}}
     <meta property="og:type" content="article">
     <meta property="og:url" content="{{ config('app.url') }}/?event={{ $event->id }}">
-    <meta property="og:title" content="{{ $event->title }} - Global Travel Monitor">
+    <meta property="og:title" content="{{ $event->title }} - Passolution">
     <meta property="og:description" content="{{ Str::limit(strip_tags($event->description ?? $event->popup_content ?? ''), 200) }}">
     @if($event->countries->isNotEmpty())
         @php
@@ -23,12 +23,12 @@
     @else
         <meta property="og:image" content="{{ asset('og-image.png') }}">
     @endif
-    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:site_name" content="Passolution Travel Information Platform">
     <meta property="og:locale" content="de_DE">
 
     {{-- Twitter --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $event->title }} - GTM">
+    <meta name="twitter:title" content="{{ $event->title }} - Passolution">
     <meta name="twitter:description" content="{{ Str::limit(strip_tags($event->description ?? $event->popup_content ?? ''), 200) }}">
 
     <!-- Favicons -->

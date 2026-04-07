@@ -9,7 +9,7 @@ $version = '1.2.0';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>TravelAlert – Reisesicherheit & Travel Risk Management | Global Travel Monitor</title>
+    <title>TravelAlert – Reisesicherheit & Travel Risk Management | Passolution</title>
     <meta name="description" content="TravelAlert: Reisewarnungen per E-Mail, automatisches Reise-Monitoring und Risikoanalysen für Reisen. 24/7 Sicherheitsmonitoring in über 200 Ländern. Jetzt kostenlos testen.">
     <meta name="keywords" content="TravelAlert, Reisesicherheit, Travel Risk Management, Reisewarnungen, Geschäftsreise Sicherheit, Duty of Care, Reiserisiko Monitoring, Passolution">
     <meta name="author" content="Passolution GmbH">
@@ -22,7 +22,7 @@ $version = '1.2.0';
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:site_name" content="Passolution Travel Information Platform">
     <meta property="og:title" content="TravelAlert – Reisesicherheit für Unternehmen">
     <meta property="og:description" content="Automatisches Reise-Monitoring, E-Mail-Warnungen und länderweise Risikoanalysen. TravelAlert schützt Ihre Reisenden in über 200 Ländern.">
     <meta property="og:url" content="https://global-travel-monitor.eu/travel-alert">

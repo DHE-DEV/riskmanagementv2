@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-minimal')
 
-@section('title', 'Einstellungen - Global Travel Monitor')
+@section('title', 'Einstellungen - Passolution Travel Information Platform')
 
 @php
     $active = 'customer-settings';

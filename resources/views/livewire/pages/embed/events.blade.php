@@ -1,6 +1,6 @@
 @extends('layouts.embed')
 
-@section('title', 'Ereignisse - Global Travel Monitor')
+@section('title', 'Ereignisse - Passolution Travel Information Platform')
 @section('hide_default_badge', true)
 
 @push('styles')

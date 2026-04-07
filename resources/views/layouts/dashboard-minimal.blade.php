@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Customer Dashboard - Global Travel Monitor')</title>
+    <title>@yield('title', 'Customer Dashboard - Passolution Travel Information Platform')</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 

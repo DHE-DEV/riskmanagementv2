@@ -5,20 +5,20 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Global Travel Monitor - Ereignisse</title>
+    <title>Passolution Travel Information Platform - Ereignisse</title>
 
     {{-- SEO Meta Tags --}}
-    <meta name="description" content="Global Travel Monitor - Aktuelle Reisesicherheitsinformationen und Ereignisse weltweit.">
+    <meta name="description" content="Passolution Travel Information Platform – Aktuelle Reisesicherheitsinformationen und Ereignisse weltweit.">
     <meta name="robots" content="{{ env('ROBOTS_ALLOW_INDEXING', false) ? 'index, follow' : 'noindex, nofollow' }}">
     <link rel="canonical" href="{{ config('app.url') }}">
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ config('app.url') }}">
-    <meta property="og:title" content="Global Travel Monitor - Ereignisse">
+    <meta property="og:title" content="Passolution Travel Information Platform - Ereignisse">
     <meta property="og:description" content="Aktuelle Reisesicherheitsinformationen und Ereignisse weltweit.">
     <meta property="og:image" content="{{ asset('og-image.png') }}">
-    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:site_name" content="Passolution Travel Information Platform">
 
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">

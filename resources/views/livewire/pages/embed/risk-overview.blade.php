@@ -1,6 +1,6 @@
 @extends('layouts.embed')
 
-@section('title', 'TravelAlert - Global Travel Monitor')
+@section('title', 'TravelAlert - Passolution Travel Information Platform')
 @section('hide_default_badge', true)
 
 @push('head-scripts')

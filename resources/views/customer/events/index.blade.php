@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-minimal')
 
-@section('title', 'Meine Ereignisse - Global Travel Monitor')
+@section('title', 'Meine Ereignisse - Passolution Travel Information Platform')
 
 @php
     $active = 'customer-events';

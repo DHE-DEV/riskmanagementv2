@@ -8,18 +8,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- SEO Meta Tags -->
-    <title>@yield('title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen')</title>
-    <meta name="description" content="@yield('description', 'Global Travel Monitor bietet Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen. Umfassende Länder-Risikoanalysen, Destination Manager und Live-Statistiken für sicheres Reisen.')">
+    <title>@yield('title', 'Passolution Travel Information Platform – Reisesicherheit, Einreisebestimmungen & Risiko-Monitoring')</title>
+    <meta name="description" content="@yield('description', 'Passolution Travel Information Platform – Ihre zentrale Plattform für Reisesicherheit, Einreisebestimmungen, Risiko-Monitoring und Travel Risk Management. Echtzeit-Informationen für über 200 Länder.')">
     <meta name="keywords" content="@yield('keywords', 'Reiserisiko, Travel Risk Management, Destination Manager, Länderrisiken, Sicherheitswarnungen, Business Travel, Reisesicherheit, Risk Map, Krisenmanagement, Weltweite Ereignisse')">
-    <meta name="author" content="Global Travel Monitor">
+    <meta name="author" content="Passolution GmbH">
     <meta name="robots" content="{{ env('ROBOTS_ALLOW_INDEXING', false) ? 'index, follow' : 'noindex, nofollow' }}">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
     <!-- Open Graph Meta Tags -->
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Global Travel Monitor">
-    <meta property="og:title" content="@yield('og_title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring')">
-    <meta property="og:description" content="@yield('og_description', 'Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen für sicheres Reisen.')">
+    <meta property="og:site_name" content="Passolution Travel Information Platform">
+    <meta property="og:title" content="@yield('og_title', 'Passolution Travel Information Platform')">
+    <meta property="og:description" content="@yield('og_description', 'Ihre zentrale Plattform für Reisesicherheit, Einreisebestimmungen, Risiko-Monitoring und Travel Risk Management.')">
     <meta property="og:url" content="@yield('og_url', url()->current())">
     <meta property="og:image" content="@yield('og_image', asset('android-chrome-192x192.png'))">
     <meta property="og:locale" content="de_DE">
@@ -27,8 +27,8 @@
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('twitter_title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring')">
-    <meta name="twitter:description" content="@yield('twitter_description', 'Echtzeit-Informationen zu weltweiten Reiserisiken und Sicherheitswarnungen.')">
+    <meta name="twitter:title" content="@yield('twitter_title', 'Passolution Travel Information Platform')">
+    <meta name="twitter:description" content="@yield('twitter_description', 'Ihre zentrale Plattform für Reisesicherheit, Einreisebestimmungen und Risiko-Monitoring.')">
     <meta name="twitter:image" content="@yield('twitter_image', asset('android-chrome-192x192.png'))">
 
     <!-- Language Alternates -->
@@ -155,7 +155,7 @@
             {
                 "@@type": "Organization",
                 "@@id": "{{ url('/') }}#organization",
-                "name": "Global Travel Monitor",
+                "name": "Passolution Travel Information Platform",
                 "url": "{{ url('/') }}",
                 "logo": {
                     "@@type": "ImageObject",
@@ -169,8 +169,8 @@
                 "@@type": "WebSite",
                 "@@id": "{{ url('/') }}#website",
                 "url": "{{ url('/') }}",
-                "name": "Global Travel Monitor",
-                "description": "Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen",
+                "name": "Passolution Travel Information Platform",
+                "description": "Zentrale Plattform für Reisesicherheit, Einreisebestimmungen, Risiko-Monitoring und Travel Risk Management",
                 "publisher": {
                     "@@id": "{{ url('/') }}#organization"
                 },
@@ -188,14 +188,14 @@
                 "@@type": "WebPage",
                 "@@id": "{{ url()->current() }}#webpage",
                 "url": "{{ url()->current() }}",
-                "name": "@yield('title', 'Global Travel Monitor - Weltweites Reiserisiko-Monitoring & Sicherheitsinformationen')",
+                "name": "@yield('title', 'Passolution Travel Information Platform – Reisesicherheit, Einreisebestimmungen & Risiko-Monitoring')",
                 "isPartOf": {
                     "@@id": "{{ url('/') }}#website"
                 },
                 "about": {
                     "@@id": "{{ url('/') }}#organization"
                 },
-                "description": "@yield('description', 'Global Travel Monitor bietet Echtzeit-Informationen zu weltweiten Reiserisiken, Sicherheitswarnungen und Ereignissen.')",
+                "description": "@yield('description', 'Passolution Travel Information Platform – Ihre zentrale Plattform für Reisesicherheit, Einreisebestimmungen, Risiko-Monitoring und Travel Risk Management.')",
                 "inLanguage": "de-DE"
             }
         ]

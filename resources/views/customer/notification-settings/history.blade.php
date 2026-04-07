@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-minimal')
 
-@section('title', 'Versandprotokoll - Global Travel Monitor')
+@section('title', 'Versandprotokoll - Passolution Travel Information Platform')
 
 @php
     $active = 'notification-settings';

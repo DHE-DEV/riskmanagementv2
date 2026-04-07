@@ -1,6 +1,6 @@
 @extends('layouts.embed')
 
-@section('title', 'Dashboard - Global Travel Monitor')
+@section('title', 'Dashboard - Passolution Travel Information Platform')
 @section('badge_position', 'top-right')
 
 @push('styles')

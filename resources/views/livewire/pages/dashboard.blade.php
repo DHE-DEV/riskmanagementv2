@@ -5,11 +5,11 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Travel Monitor (GTM) - Reisesicherheit by Passolution</title>
+    <title>Passolution Travel Information Platform</title>
 
     {{-- SEO Meta Tags --}}
-    <meta name="description" content="Global Travel Monitor (GTM) von Passolution - Aktuelle Reisesicherheitsinformationen, Reisewarnungen und Ereignisse weltweit. Echtzeit-Monitoring für sichere Reisen.">
-    <meta name="keywords" content="Global Travel Monitor, GTM, Passolution, Reisesicherheit, Reisewarnungen, Travel Risk Management, Reiserisiko, Sicherheitsinformationen, Reisemonitoring">
+    <meta name="description" content="Passolution Travel Information Platform – Ihre zentrale Plattform für Reisesicherheit, Einreisebestimmungen, Risiko-Monitoring und Travel Risk Management. Echtzeit-Informationen für über 200 Länder.">
+    <meta name="keywords" content="Passolution, Travel Information Platform, Reisesicherheit, Einreisebestimmungen, Travel Risk Management, Reiserisiko, Risiko-Monitoring, Länderinformationen, Reisewarnungen">
     <meta name="author" content="Passolution GmbH">
     <meta name="robots" content="{{ env('ROBOTS_ALLOW_INDEXING', false) ? 'index, follow' : 'noindex, nofollow' }}">
     <link rel="canonical" href="{{ config('app.url') }}">
@@ -17,8 +17,8 @@
     {{-- Open Graph / Facebook --}}
     <meta property="og:type" content="{{ isset($sharedEvent) ? 'article' : 'website' }}">
     <meta property="og:url" content="{{ isset($sharedEvent) ? config('app.url') . '/?event=' . $sharedEvent->id : config('app.url') }}">
-    <meta property="og:title" content="{{ isset($sharedEvent) ? $sharedEvent->title . ' - Global Travel Monitor' : 'Global Travel Monitor (GTM) - Reisesicherheit by Passolution' }}">
-    <meta property="og:description" content="{{ isset($sharedEvent) ? Str::limit(strip_tags($sharedEvent->description ?? $sharedEvent->popup_content ?? ''), 200) : 'Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit. Das Travel Risk Management Tool von Passolution.' }}">
+    <meta property="og:title" content="{{ isset($sharedEvent) ? $sharedEvent->title . ' - Passolution' : 'Passolution Travel Information Platform' }}">
+    <meta property="og:description" content="{{ isset($sharedEvent) ? Str::limit(strip_tags($sharedEvent->description ?? $sharedEvent->popup_content ?? ''), 200) : 'Passolution Travel Information Platform – Reisesicherheit, Einreisebestimmungen und Risiko-Monitoring für über 200 Länder.' }}">
     @if(isset($sharedEvent) && $sharedEvent->countries->isNotEmpty())
         @php
             $firstCountry = $sharedEvent->countries->first();
@@ -28,13 +28,13 @@
     @else
         <meta property="og:image" content="{{ asset('og-image.png') }}">
     @endif
-    <meta property="og:site_name" content="Global Travel Monitor">
+    <meta property="og:site_name" content="Passolution Travel Information Platform">
     <meta property="og:locale" content="de_DE">
 
     {{-- Twitter --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ isset($sharedEvent) ? $sharedEvent->title . ' - GTM' : 'Global Travel Monitor (GTM) by Passolution' }}">
-    <meta name="twitter:description" content="{{ isset($sharedEvent) ? Str::limit(strip_tags($sharedEvent->description ?? $sharedEvent->popup_content ?? ''), 200) : 'Aktuelle Reisesicherheitsinformationen und Reisewarnungen weltweit.' }}">
+    <meta name="twitter:title" content="{{ isset($sharedEvent) ? $sharedEvent->title . ' - Passolution' : 'Passolution Travel Information Platform' }}">
+    <meta name="twitter:description" content="{{ isset($sharedEvent) ? Str::limit(strip_tags($sharedEvent->description ?? $sharedEvent->popup_content ?? ''), 200) : 'Passolution Travel Information Platform – Reisesicherheit, Einreisebestimmungen und Risiko-Monitoring für über 200 Länder.' }}">
     @if(isset($sharedEvent) && $sharedEvent->countries->isNotEmpty())
         <meta name="twitter:image" content="{{ file_exists(public_path($countryImagePath)) ? asset($countryImagePath) : asset('og-image.png') }}">
     @else
@@ -42,7 +42,7 @@
     @endif
 
     {{-- Additional SEO --}}
-    <meta name="application-name" content="Global Travel Monitor">
+    <meta name="application-name" content="Passolution Travel Information Platform">
     <meta name="theme-color" content="#1e40af">
 
     <!-- Favicons -->

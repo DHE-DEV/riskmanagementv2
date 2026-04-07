@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Global Travel Monitor - Karte</title>
+    <title>Passolution Travel Information Platform - Karte</title>
 
     {{-- SEO Meta Tags --}}
-    <meta name="description" content="Global Travel Monitor - Weltkarte mit aktuellen Reiseereignissen.">
+    <meta name="description" content="Passolution Travel Information Platform – Weltkarte mit aktuellen Reiseereignissen.">
     <meta name="robots" content="index, follow">
 
     <!-- Favicons -->

@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-minimal')
 
-@section('title', 'Travel Links - Global Travel Monitor')
+@section('title', 'Travel Links - Passolution Travel Information Platform')
 
 @php
     $active = 'customer-travel-links';
