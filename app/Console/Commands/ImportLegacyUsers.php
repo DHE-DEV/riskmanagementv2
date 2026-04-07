@@ -182,7 +182,7 @@ class ImportLegacyUsers extends Command
     {
         $nameParts = explode(' ', $customer->name ?? '', 2);
 
-        // Import user with MD5 credential (Keycloak can handle unencoded passwords)
+        // Import user with MD5 credential via custom md5 password hash provider
         $importData = [
             'ifResourceExists' => 'SKIP',
             'users' => [
@@ -200,9 +200,9 @@ class ImportLegacyUsers extends Command
                     'credentials' => [
                         [
                             'type' => 'password',
-                            'hashedSaltedValue' => str_replace('$2y$', '$2a$', $customer->password),
-                            'algorithm' => 'bcrypt',
-                            'hashIterations' => 10,
+                            'hashedSaltedValue' => $md5Hash,
+                            'algorithm' => 'md5',
+                            'hashIterations' => 1,
                         ],
                     ],
                 ],
