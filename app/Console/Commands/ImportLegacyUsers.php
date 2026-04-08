@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 class ImportLegacyUsers extends Command
 {
     protected $signature = 'import:legacy-users {--limit=0 : Limit number of users to import} {--dry-run : Only show what would be imported} {--last : Import die letzten statt die ersten User} {--email= : Nur einen bestimmten User importieren}';
-    protected $description = 'Import users from webold_usersweb into customers table and Keycloak';
+    protected $description = 'Import users from webold_usersweb as employees into existing customers (matched via assignto → legacy_client_account_id)';
 
     private string $keycloakUrl;
     private string $realm;
@@ -39,11 +39,18 @@ class ImportLegacyUsers extends Command
         }
 
         $total = $query->count();
-        $this->info("Found {$total} users with email in webold_usersweb");
+        $this->info("Found {$total} active users with email in webold_usersweb");
 
         if ($dryRun) {
             $this->warn('DRY RUN - no changes will be made');
         }
+
+        // Pre-load customers by legacy_client_account_id for fast lookup
+        $customersByLegacyId = Customer::whereNotNull('legacy_client_account_id')
+            ->get()
+            ->keyBy('legacy_client_account_id');
+
+        $this->info("Loaded {$customersByLegacyId->count()} customers with legacy_client_account_id");
 
         // Get admin token for Keycloak
         if (! $dryRun && $this->keycloakUrl) {
@@ -61,15 +68,16 @@ class ImportLegacyUsers extends Command
             $users = $users->limit($limit);
         }
 
-        $imported = 0;
+        $employeesCreated = 0;
         $skipped = 0;
+        $noCustomer = 0;
         $errors = 0;
 
         $bar = $this->output->createProgressBar($limit > 0 ? $limit : $total);
         $bar->start();
 
-        $users->chunk(50, function ($chunk) use (&$imported, &$skipped, &$errors, $dryRun, $bar) {
-            // Neuen Token vor jedem Chunk holen
+        $users->chunk(50, function ($chunk) use (&$employeesCreated, &$skipped, &$noCustomer, &$errors, $dryRun, $bar, $customersByLegacyId) {
+            // Refresh Keycloak token before each chunk
             if (! $dryRun && $this->keycloakUrl) {
                 $this->adminToken = $this->getKeycloakAdminToken();
                 $this->tokenTime = time();
@@ -84,25 +92,37 @@ class ImportLegacyUsers extends Command
                     continue;
                 }
 
-                // Skip if customer already exists with this email
-                if (Customer::where('email', $email)->exists()) {
+                // Find parent customer via assignto → legacy_client_account_id
+                $parentCustomer = null;
+                if (! empty($legacyUser->assignto)) {
+                    $parentCustomer = $customersByLegacyId->get($legacyUser->assignto);
+                }
+
+                if (! $parentCustomer) {
+                    $noCustomer++;
+                    continue;
+                }
+
+                // Skip if employee with this email already exists under this customer
+                if (Employee::where('customer_id', $parentCustomer->id)->where('email', $email)->exists()) {
                     $skipped++;
                     continue;
                 }
 
                 if ($dryRun) {
-                    $imported++;
+                    $employeesCreated++;
                     continue;
                 }
 
                 try {
-                    $this->importUser($legacyUser, $email);
-                    $imported++;
+                    $this->importAsEmployee($legacyUser, $email, $parentCustomer);
+                    $employeesCreated++;
                 } catch (\Exception $e) {
                     $errors++;
                     Log::error('Legacy user import failed', [
                         'legacy_id' => $legacyUser->id,
                         'email' => $email,
+                        'customer_id' => $parentCustomer->id,
                         'error' => $e->getMessage(),
                     ]);
                 }
@@ -111,104 +131,53 @@ class ImportLegacyUsers extends Command
 
         $bar->finish();
         $this->newLine(2);
-        $this->info("Import complete: {$imported} imported, {$skipped} skipped, {$errors} errors");
+        $this->info("Import complete: {$employeesCreated} employees created, {$skipped} skipped, {$noCustomer} no matching customer, {$errors} errors");
 
         return self::SUCCESS;
     }
 
-    private function importUser(object $legacyUser, string $email): void
+    private function importAsEmployee(object $legacyUser, string $email, Customer $customer): void
     {
-        $name = trim(($legacyUser->forename ?? '') . ' ' . ($legacyUser->surname ?? ''));
-        if (empty($name)) {
-            $name = $legacyUser->realname ?? $legacyUser->username ?? $email;
-        }
-
-        // Store a random bcrypt password (will be replaced on first login)
-        // The actual MD5 hash goes into legacy_password_md5
-        $bcryptPassword = Hash::make(\Illuminate\Support\Str::random(32));
-
-        // Determine customer type
-        $customerType = $legacyUser->accounttype == 1 ? 'private' : 'business';
-
-        // Create Customer - use withoutEvents to prevent the booted() hook
-        // from running (we'll create groups manually after)
-        $customer = new Customer();
-        $customer->fill([
-            'name' => $name,
-            'email' => $email,
-            'password' => $bcryptPassword,
-            'phone' => $legacyUser->phone ?? null,
-            'customer_type' => $customerType,
-            'company_name' => $legacyUser->realname ?? null,
-            'company_street' => $this->parseStreet($legacyUser->address1 ?? $legacyUser->street ?? null),
-            'company_house_number' => $this->parseHouseNumber($legacyUser->address1 ?? $legacyUser->street ?? null),
-            'company_postal_code' => $legacyUser->zip ?? null,
-            'company_city' => $legacyUser->city ?? null,
-            'company_country' => $legacyUser->land ?? 'DE',
-            'email_verified_at' => now(),
-            'branch_management_active' => true,
-        ]);
-        // Save without triggering events (to avoid duplicate group creation for existing emails)
-        $customer->saveQuietly();
-
-        // Create default groups
-        $adminGroup = EmployeeGroup::create([
+        // Create Employee under parent customer
+        $employee = Employee::create([
             'customer_id' => $customer->id,
-            'name' => 'Administratoren',
-            'description' => 'Systemadministratoren in der Passolution Travel Information Platform',
-            'is_system' => true,
-        ]);
-
-        EmployeeGroup::create([
-            'customer_id' => $customer->id,
-            'name' => 'Mitarbeiter',
-            'description' => 'Mitarbeiter der Organisation',
-        ]);
-
-        // Create Employee entry for owner
-        $ownerEmployee = Employee::create([
-            'customer_id' => $customer->id,
-            'first_name' => $legacyUser->forename ?? $name,
+            'first_name' => $legacyUser->forename ?? '',
             'last_name' => $legacyUser->surname ?? '',
             'email' => $email,
             'phone' => $legacyUser->phone ?? '',
-            'position' => 'Inhaber / Administrator',
-            'is_active' => $legacyUser->active === '1',
+            'position' => '',
+            'is_active' => $legacyUser->active == 1,
         ]);
 
-        $ownerEmployee->groups()->attach($adminGroup->id);
+        // Assign to "Mitarbeiter" group
+        $staffGroup = EmployeeGroup::where('customer_id', $customer->id)
+            ->where('name', 'Mitarbeiter')
+            ->first();
 
-        // Store legacy MD5 hash for migration login
-        if ($legacyUser->password) {
-            DB::table('customers')
-                ->where('id', $customer->id)
-                ->update(['legacy_password_md5' => $legacyUser->password]);
+        if ($staffGroup) {
+            $employee->groups()->attach($staffGroup->id);
         }
 
         // Sync to Keycloak
         if ($this->adminToken && $legacyUser->password) {
-            $this->syncToKeycloak($customer, $legacyUser->password);
+            $this->syncToKeycloak($employee, $customer, $legacyUser->password);
         }
     }
 
-    private function syncToKeycloak(Customer $customer, string $md5Hash): void
+    private function syncToKeycloak(Employee $employee, Customer $customer, string $md5Hash): void
     {
-        $nameParts = explode(' ', $customer->name ?? '', 2);
-
-        // Import user with MD5 credential via custom md5 password hash provider
         $importData = [
             'ifResourceExists' => 'SKIP',
             'users' => [
                 [
-                    'username' => $customer->email,
-                    'email' => $customer->email,
+                    'username' => $employee->email,
+                    'email' => $employee->email,
                     'emailVerified' => true,
                     'enabled' => true,
-                    'firstName' => $nameParts[0] ?? '',
-                    'lastName' => $nameParts[1] ?? '',
+                    'firstName' => $employee->first_name,
+                    'lastName' => $employee->last_name,
                     'attributes' => [
                         'platform_customer_id' => [(string) $customer->id],
-                        'legacy_id' => [(string) $customer->id],
                     ],
                     'credentials' => [
                         [
@@ -229,7 +198,6 @@ class ImportLegacyUsers extends Command
                 ->timeout(10)
                 ->post("{$this->keycloakUrl}/admin/realms/{$this->realm}/partialImport", $importData);
 
-            // Token abgelaufen → erneuern und erneut versuchen
             if ($response->status() === 401) {
                 $this->adminToken = $this->getKeycloakAdminToken();
                 $this->tokenTime = time();
@@ -238,20 +206,7 @@ class ImportLegacyUsers extends Command
                     ->post("{$this->keycloakUrl}/admin/realms/{$this->realm}/partialImport", $importData);
             }
 
-            if ($response->successful()) {
-                $keycloakUserId = $response->json('results.0.id');
-
-                if (! $keycloakUserId) {
-                    $keycloakUserId = $this->getKeycloakUserId($customer->email);
-                }
-
-                if ($keycloakUserId) {
-                    $customer->update([
-                        'provider' => 'keycloak',
-                        'provider_id' => $keycloakUserId,
-                    ]);
-                }
-            } else {
+            if (! $response->successful()) {
                 throw new \RuntimeException("Keycloak sync failed: {$response->status()}: {$response->body()}");
             }
         } catch (\RuntimeException $e) {
@@ -263,7 +218,6 @@ class ImportLegacyUsers extends Command
 
     private function refreshTokenIfNeeded(): void
     {
-        // Token alle 50 Sekunden erneuern (Keycloak default: 60 Sek Lebensdauer)
         if ($this->adminToken && (time() - $this->tokenTime) > 50) {
             $this->adminToken = $this->getKeycloakAdminToken();
             $this->tokenTime = time();
@@ -287,57 +241,5 @@ class ImportLegacyUsers extends Command
         } catch (\Exception $e) {
             return null;
         }
-    }
-
-    private function getKeycloakUserId(string $email): ?string
-    {
-        try {
-            $response = Http::withToken($this->adminToken)
-                ->timeout(10)
-                ->get("{$this->keycloakUrl}/admin/realms/{$this->realm}/users", [
-                    'email' => $email,
-                    'exact' => 'true',
-                ]);
-
-            if ($response->successful() && count($response->json()) > 0) {
-                return $response->json()[0]['id'] ?? null;
-            }
-        } catch (\Exception $e) {
-            // ignore
-        }
-
-        return null;
-    }
-
-    private function parseStreet(?string $address): ?string
-    {
-        if (empty($address)) {
-            return null;
-        }
-
-        // "Karl-Schiller-Str. 1" → "Karl-Schiller-Str."
-        // "Hauptstraße 12a" → "Hauptstraße"
-        // "Am Markt 3-5" → "Am Markt"
-        if (preg_match('/^(.+?)\s+(\d+.*)$/u', trim($address), $matches)) {
-            return trim($matches[1]);
-        }
-
-        return trim($address);
-    }
-
-    private function parseHouseNumber(?string $address): ?string
-    {
-        if (empty($address)) {
-            return null;
-        }
-
-        // "Karl-Schiller-Str. 1" → "1"
-        // "Hauptstraße 12a" → "12a"
-        // "Am Markt 3-5" → "3-5"
-        if (preg_match('/^.+?\s+(\d+.*)$/u', trim($address), $matches)) {
-            return trim($matches[1]);
-        }
-
-        return null;
     }
 }

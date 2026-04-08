@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 class MatchLegacyEmployees extends Command
 {
     protected $signature = 'import:match-legacy-employees {--dry-run : Only show what would be changed} {--delete-orphans : Soft-delete customer accounts that become employees}';
-    protected $description = 'Match legacy users with assignto to their parent customer as employees';
+    protected $description = 'Match legacy users with assignto to their parent customer (via webold_client_accounts) as employees';
 
     public function handle(): int
     {
@@ -23,7 +23,7 @@ class MatchLegacyEmployees extends Command
             $this->warn('DRY RUN - no changes will be made');
         }
 
-        // Get all legacy users that have an assignto value pointing to another user
+        // Get all legacy users that have an assignto value
         $assigned = DB::table('webold_usersweb')
             ->whereNotNull('assignto')
             ->where('assignto', '!=', 0)
@@ -38,14 +38,12 @@ class MatchLegacyEmployees extends Command
             return self::SUCCESS;
         }
 
-        // Pre-load all referenced parent IDs
-        $parentIds = $assigned->pluck('assignto')->unique();
-        $parents = DB::table('webold_usersweb')
-            ->whereIn('id', $parentIds)
+        // Pre-load all customers mapped by legacy_client_account_id
+        $customersByLegacyId = Customer::whereNotNull('legacy_client_account_id')
             ->get()
-            ->keyBy('id');
+            ->keyBy('legacy_client_account_id');
 
-        $this->info("Found {$parents->count()} unique parent users");
+        $this->info("Found {$customersByLegacyId->count()} customers with legacy_client_account_id");
 
         $matched = 0;
         $skipped = 0;
@@ -59,28 +57,17 @@ class MatchLegacyEmployees extends Command
             $bar->advance();
 
             $email = strtolower(trim($legacyUser->email));
-            $parent = $parents->get($legacyUser->assignto);
 
-            if (! $parent) {
-                $this->newLine();
-                $this->warn("  Parent ID {$legacyUser->assignto} not found for user {$email}");
-                $skipped++;
-                continue;
-            }
+            // Find the parent customer via assignto → legacy_client_account_id
+            $parentCustomer = $customersByLegacyId->get($legacyUser->assignto);
 
-            $parentEmail = strtolower(trim($parent->email ?? ''));
-            if (empty($parentEmail)) {
-                $this->newLine();
-                $this->warn("  Parent ID {$parent->id} has no email, skipping user {$email}");
-                $skipped++;
-                continue;
-            }
-
-            // Find the parent customer in our system
-            $parentCustomer = Customer::where('email', $parentEmail)->first();
             if (! $parentCustomer) {
-                $this->newLine();
-                $this->warn("  No customer found for parent email {$parentEmail}, skipping user {$email}");
+                $skipped++;
+                continue;
+            }
+
+            // Skip if this user's email is the same as the parent customer (they're the owner)
+            if ($email === strtolower($parentCustomer->email)) {
                 $skipped++;
                 continue;
             }
@@ -93,7 +80,7 @@ class MatchLegacyEmployees extends Command
 
             if ($dryRun) {
                 $this->newLine();
-                $this->line("  Would assign <info>{$email}</info> as employee to customer <info>{$parentCustomer->name}</info> ({$parentEmail})");
+                $this->line("  Would assign <info>{$email}</info> as employee to <info>{$parentCustomer->name}</info> (legacy_client_account_id={$legacyUser->assignto})");
                 $matched++;
                 continue;
             }
@@ -110,7 +97,7 @@ class MatchLegacyEmployees extends Command
                     'is_active' => $legacyUser->active == 1,
                 ]);
 
-                // Assign to "Mitarbeiter" group if it exists
+                // Assign to "Mitarbeiter" group
                 $staffGroup = EmployeeGroup::where('customer_id', $parentCustomer->id)
                     ->where('name', 'Mitarbeiter')
                     ->first();
@@ -137,7 +124,7 @@ class MatchLegacyEmployees extends Command
                 Log::error('Legacy employee matching failed', [
                     'legacy_id' => $legacyUser->id,
                     'email' => $email,
-                    'parent_email' => $parentEmail,
+                    'assignto' => $legacyUser->assignto,
                     'error' => $e->getMessage(),
                 ]);
             }
