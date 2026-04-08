@@ -56,6 +56,7 @@ Route::get('/docs/{file}', function (string $file) {
         'folder-import-api-guide.md',
         'plugin-domain-api-openapi.yaml',
         'plugin-domain-api-guide.md',
+        'customer-settings-api-guide.md',
     ];
 
     if (!in_array($file, $allowed)) {
