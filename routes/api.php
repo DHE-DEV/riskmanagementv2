@@ -13,7 +13,17 @@ use App\Http\Controllers\CustomEventController;
 use App\Http\Controllers\GdacsController;
 use App\Http\Controllers\GeolocationController;
 use App\Http\Controllers\SocialLinkController;
+use App\Http\Controllers\Api\V1\BranchApiController;
+use App\Http\Controllers\Api\V1\BranchContactApiController;
+use App\Http\Controllers\Api\V1\CustomerSettingsController;
+use App\Http\Controllers\Api\V1\DepartmentApiController;
+use App\Http\Controllers\Api\V1\EmailAddressApiController;
+use App\Http\Controllers\Api\V1\EmployeeApiController;
+use App\Http\Controllers\Api\V1\EmployeeGroupApiController;
+use App\Http\Controllers\Api\V1\OrgNodeApiController;
+use App\Http\Controllers\Api\V1\PhoneNumberApiController;
 use App\Http\Controllers\Api\V1\PluginDomainController;
+use App\Http\Controllers\Api\V1\WebsiteApiController;
 use App\Http\Middleware\ApiClientAuthenticate;
 use App\Http\Middleware\ApiClientRequestLogger;
 use App\Http\Middleware\AuthenticatePluginKey;
@@ -181,6 +191,108 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         Route::post('/at-location', [ProximityController::class, 'atLocation'])->name('v1.proximity.at-location');
         Route::post('/affected-by-event/{event}', [ProximityController::class, 'affectedByEvent'])->name('v1.proximity.affected-by-event');
         Route::post('/trips-in-country', [ProximityController::class, 'tripsInCountry'])->name('v1.proximity.trips-in-country');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Customer Settings API Routes (Customer-Protected)
+|--------------------------------------------------------------------------
+|
+| REST API for managing customer master data, branches, contacts,
+| organization structure, departments, employees, and groups.
+| Protected by Sanctum token authentication.
+|
+*/
+Route::prefix('v1/customer')->middleware(['auth:sanctum'])->group(function () {
+    // Master Data (Firmendaten)
+    Route::get('/settings', [CustomerSettingsController::class, 'show'])->name('v1.customer.settings.show');
+    Route::put('/settings/company-address', [CustomerSettingsController::class, 'updateCompanyAddress'])->name('v1.customer.settings.company-address');
+    Route::put('/settings/billing-address', [CustomerSettingsController::class, 'updateBillingAddress'])->name('v1.customer.settings.billing-address');
+    Route::put('/settings/customer-type', [CustomerSettingsController::class, 'updateCustomerType'])->name('v1.customer.settings.customer-type');
+    Route::put('/settings/business-type', [CustomerSettingsController::class, 'updateBusinessType'])->name('v1.customer.settings.business-type');
+
+    // Branches (Adressen)
+    Route::prefix('branches')->group(function () {
+        Route::get('/', [BranchApiController::class, 'index'])->name('v1.customer.branches.index');
+        Route::post('/', [BranchApiController::class, 'store'])->name('v1.customer.branches.store');
+        Route::get('/{branch}', [BranchApiController::class, 'show'])->name('v1.customer.branches.show');
+        Route::put('/{branch}', [BranchApiController::class, 'update'])->name('v1.customer.branches.update');
+        Route::delete('/{branch}', [BranchApiController::class, 'destroy'])->name('v1.customer.branches.destroy');
+        Route::post('/{branch}/cancel-deletion', [BranchApiController::class, 'cancelScheduledDeletion'])->name('v1.customer.branches.cancel-deletion');
+    });
+
+    // Phone Numbers (Rufnummern)
+    Route::prefix('phone-numbers')->group(function () {
+        Route::get('/', [PhoneNumberApiController::class, 'index'])->name('v1.customer.phone-numbers.index');
+        Route::post('/', [PhoneNumberApiController::class, 'store'])->name('v1.customer.phone-numbers.store');
+        Route::put('/{phoneNumber}', [PhoneNumberApiController::class, 'update'])->name('v1.customer.phone-numbers.update');
+        Route::delete('/{phoneNumber}', [PhoneNumberApiController::class, 'destroy'])->name('v1.customer.phone-numbers.destroy');
+        Route::post('/reorder', [PhoneNumberApiController::class, 'reorder'])->name('v1.customer.phone-numbers.reorder');
+    });
+
+    // Email Addresses (E-Mail-Adressen)
+    Route::prefix('email-addresses')->group(function () {
+        Route::get('/', [EmailAddressApiController::class, 'index'])->name('v1.customer.email-addresses.index');
+        Route::post('/', [EmailAddressApiController::class, 'store'])->name('v1.customer.email-addresses.store');
+        Route::put('/{emailAddress}', [EmailAddressApiController::class, 'update'])->name('v1.customer.email-addresses.update');
+        Route::delete('/{emailAddress}', [EmailAddressApiController::class, 'destroy'])->name('v1.customer.email-addresses.destroy');
+        Route::post('/reorder', [EmailAddressApiController::class, 'reorder'])->name('v1.customer.email-addresses.reorder');
+    });
+
+    // Websites (Web)
+    Route::prefix('websites')->group(function () {
+        Route::get('/', [WebsiteApiController::class, 'index'])->name('v1.customer.websites.index');
+        Route::post('/', [WebsiteApiController::class, 'store'])->name('v1.customer.websites.store');
+        Route::put('/{website}', [WebsiteApiController::class, 'update'])->name('v1.customer.websites.update');
+        Route::delete('/{website}', [WebsiteApiController::class, 'destroy'])->name('v1.customer.websites.destroy');
+        Route::post('/reorder', [WebsiteApiController::class, 'reorder'])->name('v1.customer.websites.reorder');
+    });
+
+    // Branch Contacts (Ansprechpartner pro Adresse)
+    Route::prefix('branch-contacts')->group(function () {
+        Route::get('/', [BranchContactApiController::class, 'index'])->name('v1.customer.branch-contacts.index');
+        Route::post('/', [BranchContactApiController::class, 'store'])->name('v1.customer.branch-contacts.store');
+        Route::put('/{branchContact}', [BranchContactApiController::class, 'update'])->name('v1.customer.branch-contacts.update');
+        Route::delete('/{branchContact}', [BranchContactApiController::class, 'destroy'])->name('v1.customer.branch-contacts.destroy');
+    });
+
+    // Organization Structure (Organisationsstruktur)
+    Route::prefix('org-nodes')->group(function () {
+        Route::get('/', [OrgNodeApiController::class, 'index'])->name('v1.customer.org-nodes.index');
+        Route::post('/', [OrgNodeApiController::class, 'store'])->name('v1.customer.org-nodes.store');
+        Route::get('/{orgNode}', [OrgNodeApiController::class, 'show'])->name('v1.customer.org-nodes.show');
+        Route::put('/{orgNode}', [OrgNodeApiController::class, 'update'])->name('v1.customer.org-nodes.update');
+        Route::delete('/{orgNode}', [OrgNodeApiController::class, 'destroy'])->name('v1.customer.org-nodes.destroy');
+        Route::post('/reorder', [OrgNodeApiController::class, 'reorder'])->name('v1.customer.org-nodes.reorder');
+        Route::post('/{orgNode}/move', [OrgNodeApiController::class, 'move'])->name('v1.customer.org-nodes.move');
+    });
+
+    // Departments (Abteilungen)
+    Route::prefix('departments')->group(function () {
+        Route::get('/', [DepartmentApiController::class, 'index'])->name('v1.customer.departments.index');
+        Route::post('/', [DepartmentApiController::class, 'store'])->name('v1.customer.departments.store');
+        Route::put('/{department}', [DepartmentApiController::class, 'update'])->name('v1.customer.departments.update');
+        Route::delete('/{department}', [DepartmentApiController::class, 'destroy'])->name('v1.customer.departments.destroy');
+        Route::post('/reorder', [DepartmentApiController::class, 'reorder'])->name('v1.customer.departments.reorder');
+    });
+
+    // Employees (Benutzer)
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeApiController::class, 'index'])->name('v1.customer.employees.index');
+        Route::post('/', [EmployeeApiController::class, 'store'])->name('v1.customer.employees.store');
+        Route::get('/{employee}', [EmployeeApiController::class, 'show'])->name('v1.customer.employees.show');
+        Route::put('/{employee}', [EmployeeApiController::class, 'update'])->name('v1.customer.employees.update');
+        Route::delete('/{employee}', [EmployeeApiController::class, 'destroy'])->name('v1.customer.employees.destroy');
+    });
+
+    // Employee Groups (Benutzergruppen)
+    Route::prefix('employee-groups')->group(function () {
+        Route::get('/', [EmployeeGroupApiController::class, 'index'])->name('v1.customer.employee-groups.index');
+        Route::post('/', [EmployeeGroupApiController::class, 'store'])->name('v1.customer.employee-groups.store');
+        Route::get('/{employeeGroup}', [EmployeeGroupApiController::class, 'show'])->name('v1.customer.employee-groups.show');
+        Route::put('/{employeeGroup}', [EmployeeGroupApiController::class, 'update'])->name('v1.customer.employee-groups.update');
+        Route::delete('/{employeeGroup}', [EmployeeGroupApiController::class, 'destroy'])->name('v1.customer.employee-groups.destroy');
     });
 });
 

@@ -1039,9 +1039,10 @@
                             <p class="text-2xl font-bold text-gray-900">{{ $customer->company_city ?: '—' }}</p>
                             <p class="text-xs text-gray-500 mt-1">Hauptsitz</p>
                         </div>
+                        @php $headquarterBranch = \App\Models\Branch::where('customer_id', $customer->id)->where('is_headquarters', true)->first(); @endphp
                         <div class="bg-white rounded-lg border border-gray-200 p-4 text-center">
-                            <p class="text-2xl font-bold text-gray-900">{{ $customer->company_country ?: '—' }}</p>
-                            <p class="text-xs text-gray-500 mt-1">Land</p>
+                            <p class="text-2xl font-bold text-gray-900 font-mono tracking-wider">{{ $headquarterBranch?->app_code ?: '—' }}</p>
+                            <p class="text-xs text-gray-500 mt-1">App-Code</p>
                         </div>
                     </div>
 
