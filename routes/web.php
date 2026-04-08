@@ -373,6 +373,17 @@ Route::get('/doc-plugin', function () {
     return view('livewire.pages.doc-plugin');
 })->name('doc-plugin');
 
+// API Dokumentation
+Route::prefix('docs/api')->name('docs.api.')->group(function () {
+    Route::get('/', fn () => view('docs.api.index'))->name('index');
+    Route::get('/gtm', fn () => view('docs.api.gtm'))->name('gtm');
+    Route::get('/events', fn () => view('docs.api.events'))->name('events');
+    Route::get('/feeds', fn () => view('docs.api.feeds'))->name('feeds');
+    Route::get('/folders', fn () => view('docs.api.folders'))->name('folders');
+    Route::get('/organisation', fn () => view('docs.api.organisation'))->name('organisation');
+    Route::get('/plugin', fn () => view('docs.api.plugin'))->name('plugin');
+});
+
 // Meine Reisenden - nur für eingeloggte Kunden mit gültigem Token
 Route::get('/my-travelers', [\App\Http\Controllers\Customer\MyTravelersController::class, 'index'])
     ->middleware('auth:customer')
