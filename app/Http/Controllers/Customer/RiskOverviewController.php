@@ -12,6 +12,7 @@ use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Notifications\TravelAlertWelcomeNotification;
 use App\Services\CustomerFeatureService;
+use App\Services\KeycloakUserService;
 use App\Services\RiskOverviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -115,18 +116,42 @@ class RiskOverviewController extends Controller
                     'navigation_risk_overview_enabled' => true,
                 ]);
 
+                // Sync new customer to Keycloak
+                try {
+                    app(KeycloakUserService::class)->syncCustomer($customer);
+                } catch (\Exception $e) {
+                    Log::warning('Keycloak sync failed for new TravelAlert customer', [
+                        'customer_id' => $customer->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 // Send welcome email with verification link and order details
                 $customer->notify(new TravelAlertWelcomeNotification($validated));
 
                 $accountCreated = true;
                 Log::info('Customer account created from TravelAlert order', ['customer_id' => $customer->id, 'email' => $customer->email]);
+            } else {
+                $customer = $existingCustomer;
+
+                // Auto-enable TravelAlert feature for existing customer if not already enabled
+                CustomerFeatureOverride::firstOrCreate(
+                    ['customer_id' => $customer->id],
+                    ['navigation_risk_overview_enabled' => true]
+                );
+
+                // Ensure navigation_risk_overview_enabled is true even if override already existed
+                CustomerFeatureOverride::where('customer_id', $customer->id)
+                    ->update(['navigation_risk_overview_enabled' => true]);
+
+                Log::info('TravelAlert order for existing customer', ['customer_id' => $customer->id, 'email' => $customer->email]);
             }
 
             $recipient = config('mail.order_recipient', 'info@passolution.de');
 
             Mail::to($recipient)
                 ->bcc(['info@passolution.de', 'info@dhe.de'])
-                ->send(new TravelAlertOrderMail($validated));
+                ->send(new TravelAlertOrderMail($validated, $accountCreated, $customer->id));
 
             Log::info('TravelAlert order submitted', ['company' => $validated['company'], 'email' => $validated['email']]);
 

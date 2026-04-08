@@ -5,6 +5,15 @@
     </div>
 
     <div style="background: #f8f9fa; padding: 25px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+
+        <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; {{ $isNewCustomer ? 'background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46;' : 'background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af;' }}">
+            <strong>{{ $isNewCustomer ? '🆕 Neukunde' : '👤 Bestandskunde' }}:</strong>
+            {{ $isNewCustomer ? 'Es wurde ein neues Kundenkonto in der Passolution Travel Information Platform angelegt.' : 'Die Bestellung wurde für einen bestehenden Kunden durchgeführt.' }}
+            @if($customerUrl)
+                <br><a href="{{ $customerUrl }}" style="color: inherit; font-weight: bold;">→ Kunde im Admin-Bereich öffnen</a>
+            @endif
+        </div>
+
         <h2 style="color: #002742; font-size: 16px; margin-top: 0; border-bottom: 2px solid #CEE741; padding-bottom: 8px;">Firmendaten</h2>
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
@@ -56,7 +65,7 @@
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0 15px;">
         <p style="font-size: 12px; color: #6b7280; margin: 0;">
-            Diese Bestellung wurde über das Travel Alert-Bestellformular auf global-travel-monitor.eu eingereicht.<br>
+            Diese Bestellung wurde über das Travel Alert-Bestellformular auf der Passolution Travel Information Platform eingereicht.<br>
             Eingegangen am {{ now()->format('d.m.Y') }} um {{ now()->format('H:i') }} Uhr.
         </p>
     </div>
