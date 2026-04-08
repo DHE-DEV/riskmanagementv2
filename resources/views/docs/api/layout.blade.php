@@ -186,7 +186,7 @@
         }
 
         /* ── Inline code ── */
-        .prose code:not(.code-block code) {
+        .prose code:not(.code-block code):not(.response-block code) {
             background: #f3f4f6;
             color: #dc2626;
             padding: 2px 6px;
