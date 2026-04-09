@@ -147,6 +147,7 @@ class ImportLegacyUsers extends Command
             'phone' => $legacyUser->phone ?? '',
             'position' => '',
             'is_active' => $legacyUser->active == 1,
+            'legacy_usersweb_id' => $legacyUser->id,
         ]);
 
         // Assign to "Mitarbeiter" group

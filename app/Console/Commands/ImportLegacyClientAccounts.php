@@ -149,6 +149,7 @@ class ImportLegacyClientAccounts extends Command
                             'phone' => $account->phone ?? '',
                             'position' => 'Inhaber / Administrator',
                             'is_active' => true,
+                            'legacy_client_account_id' => $account->id,
                         ]);
 
                         $ownerEmployee->groups()->attach($adminGroup->id);

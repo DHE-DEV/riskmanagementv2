@@ -26,6 +26,8 @@ class Employee extends Model
         'active_from',
         'active_until',
         'notes',
+        'legacy_usersweb_id',
+        'legacy_client_account_id',
     ];
 
     protected $casts = [
