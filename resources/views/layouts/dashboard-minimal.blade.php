@@ -91,8 +91,22 @@
     <!-- Black Navigation Bar -->
     <x-public-navigation :active="$active ?? 'dashboard'" />
 
+    <!-- Impersonation Banner -->
+    @if(session('original_customer_id'))
+    <div style="position: fixed; top: 64px; left: 64px; right: 0; z-index: 9998; height: 36px;" class="bg-amber-500 text-amber-900 text-center text-xs flex items-center justify-center gap-3">
+        <i class="fa-regular fa-eye"></i>
+        <span>Sie sind aktuell in dieser Agentur eingeloggt: <strong>{{ auth('customer')->user()->company_name }}</strong> ({{ auth('customer')->user()->app_code }})</span>
+        <form method="POST" action="{{ route('customer.account.switch-back') }}" class="inline">
+            @csrf
+            <button type="submit" class="ml-2 px-2 py-0.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-800 transition-colors">
+                Zurück zu meiner Agentur
+            </button>
+        </form>
+    </div>
+    @endif
+
     <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-content" @if(session('original_customer_id')) style="margin-top: 100px; height: calc(100vh - 156px);" @endif>
         @yield('content')
     </div>
 

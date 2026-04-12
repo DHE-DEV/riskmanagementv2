@@ -7,7 +7,7 @@
     $uniqueId = 'tour_' . $tourKey;
 @endphp
 
-@if($customer && !$hasSeen)
+@if($customer && !$hasSeen && config('app.customer_product_tours_enabled', true))
 <div x-data="{{ $uniqueId }}()" x-show="active || showConfirm" x-cloak>
     {{-- Backdrop --}}
     <div x-show="active && !showConfirm" style="position: fixed; inset: 0; pointer-events: none; z-index: 200000;">

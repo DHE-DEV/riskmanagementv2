@@ -6,7 +6,12 @@
     $active = 'customer-settings';
     $customer = auth('customer')->user();
     $featureService = app(\App\Services\CustomerFeatureService::class);
+    $isImpersonating = session()->has('original_customer_id');
+    $isSuperAdmin = in_array(auth('customer')->user()->email, config('app.agentur_super_admin_emails', []));
     $settingsSection = request()->query('section', 'general');
+    if ($isImpersonating && $settingsSection === 'general') {
+        $settingsSection = 'master-data';
+    }
 @endphp
 
 @push('styles')
@@ -129,6 +134,7 @@
             </h2>
 
             <nav class="space-y-1">
+                @if(!$isImpersonating)
                 <div id="settings-nav-general" class="settings-section-title">Allgemein</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'general']) }}"
@@ -136,8 +142,9 @@
                     <i class="fas fa-user"></i>
                     Mein Profil
                 </a>
+                @endif
 
-                @if($customer->branch_management_active)
+                @if($customer->branch_management_active || $isSuperAdmin)
                 <div id="settings-nav-org" class="settings-section-title mt-2">Organisation</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'master-data']) }}"
@@ -209,7 +216,7 @@
     {{-- Main Content --}}
     <div class="settings-content">
         <div class="p-6" x-data="settingsManager()">
-            @if($settingsSection === 'general')
+            @if($settingsSection === 'general' && !$isImpersonating)
                 <h3 class="text-lg font-semibold text-gray-900 mb-1">Mein Profil</h3>
                 <p class="text-sm text-gray-500 mb-6">Verwalten und bearbeiten Sie Ihre persönlichen Daten und Firmeninformationen.</p>
 
@@ -259,15 +266,15 @@
                     <div x-show="editSection !== 'personal'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div>
                             <span class="text-xs text-gray-500">Name</span>
-                            <p class="font-medium text-gray-900">{{ $customer->name }}</p>
+                            <p class="font-medium text-gray-900" x-text="personal.name"></p>
                         </div>
                         <div>
                             <span class="text-xs text-gray-500">E-Mail</span>
-                            <p class="font-medium text-gray-900">{{ $customer->email }}</p>
+                            <p class="font-medium text-gray-900" x-text="personal.email"></p>
                         </div>
                         <div>
                             <span class="text-xs text-gray-500">Telefon</span>
-                            <p class="font-medium text-gray-900">{{ $customer->phone ?: '—' }}</p>
+                            <p class="font-medium text-gray-900" x-text="personal.phone || '—'"></p>
                         </div>
                         <div>
                             <span class="text-xs text-gray-500">Kundentyp</span>
@@ -490,8 +497,13 @@
                 </div>
 
                 {{-- Produkteinführungen --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
-                    <h4 class="text-sm font-semibold text-gray-900 mb-4">Produkteinführungen</h4>
+                @if(config('app.customer_product_tours_enabled', true))
+                <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="{ toursOpen: false }">
+                    <button @click="toursOpen = !toursOpen" class="flex items-center justify-between w-full text-left">
+                        <h4 class="text-sm font-semibold text-gray-900">Produkteinführungen</h4>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform" :class="toursOpen ? 'rotate-180' : ''"></i>
+                    </button>
+                    <div x-show="toursOpen" x-collapse x-cloak class="mt-4">
 
                     {{-- Oberfläche --}}
                     <div class="flex items-center justify-between py-3 border-b border-gray-100">
@@ -566,7 +578,9 @@
                             @endif
                         </div>
                     @endforeach
+                    </div>
                 </div>
+                @endif
 
                 <script>
                 function resetTour(tour) {
@@ -1039,10 +1053,21 @@
                             <p class="text-2xl font-bold text-gray-900">{{ $customer->company_city ?: '—' }}</p>
                             <p class="text-xs text-gray-500 mt-1">Hauptsitz</p>
                         </div>
-                        @php $headquarterBranch = \App\Models\Branch::where('customer_id', $customer->id)->where('is_headquarters', true)->first(); @endphp
-                        <div class="bg-white rounded-lg border border-gray-200 p-4 text-center">
-                            <p class="text-2xl font-bold text-gray-900 font-mono tracking-wider">{{ $headquarterBranch?->app_code ?: '—' }}</p>
-                            <p class="text-xs text-gray-500 mt-1">App-Code</p>
+                        <div class="bg-white rounded-lg border border-gray-200 p-4 text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                             x-data="{ copied: false }"
+                             @click="
+                                const tmp = document.createElement('textarea');
+                                tmp.value = '{{ $customer->app_code }}';
+                                document.body.appendChild(tmp);
+                                tmp.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(tmp);
+                                copied = true;
+                                setTimeout(() => copied = false, 2000);
+                             "
+                             title="In Zwischenablage kopieren">
+                            <p class="text-2xl font-bold text-gray-900 font-mono tracking-wider">{{ $customer->app_code }}</p>
+                            <p class="text-xs mt-1" :class="copied ? 'text-green-600' : 'text-gray-500'" x-text="copied ? 'Kopiert!' : 'App-Code'"></p>
                         </div>
                     </div>
 
@@ -1370,7 +1395,7 @@
                              x-transition:enter-start="opacity-0 -translate-x-4" x-transition:enter-end="opacity-100 translate-x-0"
                              x-transition:leave="transition ease-in duration-150"
                              x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-4"
-                             class="w-64 flex-shrink-0">
+                             class="w-64 flex-shrink-0 pt-3">
                             <div class="bg-white rounded-lg border border-gray-200 p-4 sticky top-4">
                                 <div class="flex items-center justify-between mb-4">
                                     <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Filter</h4>
@@ -1814,6 +1839,15 @@
                         <i class="fas fa-sitemap mr-2"></i>
                         Struktur
                     </button>
+                    @php $assignedCount = \App\Models\Customer::where('assign_to', $customer->id)->count(); @endphp
+                    @if($assignedCount > 0)
+                    <button @click="orgTab = 'agenturen'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="orgTab === 'agenturen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-store mr-2"></i>
+                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{{ $assignedCount }}</span>
+                    </button>
+                    @endif
                 </div>
 
                 {{-- ==================== Tab: Übersicht ==================== --}}
@@ -1838,10 +1872,6 @@
                             <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
                                 <p class="text-lg font-bold text-gray-900">{{ $deptCount }}</p>
                                 <p class="text-[10px] text-gray-500">Abteilungen</p>
-                            </div>
-                            <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                                <p class="text-lg font-bold text-gray-900 truncate">{{ $customer->company_city ?: '—' }}</p>
-                                <p class="text-[10px] text-gray-500">Hauptsitz</p>
                             </div>
                         </div>
                         <button @click="showNewForm = true" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-xs flex-shrink-0">
@@ -1922,6 +1952,69 @@
                 <div x-show="orgTab === 'struktur'" x-cloak>
                     @include('customer.settings.partials.tab-org-chart')
                 </div>
+
+                {{-- ==================== Tab: Agenturen ==================== --}}
+                @if($assignedCount > 0)
+                <div x-show="orgTab === 'agenturen'" x-cloak x-data="assignedAgencies()">
+                    {{-- Suche --}}
+                    <div class="mb-4">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
+                            <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()"
+                                   placeholder="Suche nach Firma, Code, PLZ, Ort..."
+                                   class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    {{-- Tabelle --}}
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Code</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Firma</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">PLZ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ort</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">E-Mail</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-if="loading">
+                                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
+                                </template>
+                                <template x-if="!loading && agencies.length === 0">
+                                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
+                                </template>
+                                <template x-for="agency in agencies" :key="agency.id">
+                                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                        <td class="px-4 py-2"><span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="agency.app_code"></span></td>
+                                        <td class="px-4 py-2 font-medium" x-text="agency.company_name"></td>
+                                        <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
+                                        <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
+                                        <td class="px-4 py-2 text-gray-600" x-text="agency.email"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Pagination --}}
+                    <div class="flex items-center justify-between mt-3">
+                        <span class="text-xs text-gray-500" x-text="total + ' Agenturen gesamt'"></span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500" x-text="'Seite ' + page + ' von ' + lastPage"></span>
+                            <button @click="prevPage()" :disabled="page <= 1"
+                                    class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button @click="nextPage()" :disabled="page >= lastPage"
+                                    class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 </div>
 
@@ -5938,7 +6031,7 @@ function usersManager() {
         availableGroups: [],
 
         // Filter
-        showFilter: false,
+        showFilter: true,
         filter: { search: '', status: '', group: '', department: '', branch: '' },
 
         get filteredEmployees() {
@@ -6125,6 +6218,44 @@ function usersManager() {
                 this.loadGroups();
                 this.loadEmployees();
             } catch (e) { console.error('Error:', e); }
+        }
+    };
+}
+
+function assignedAgencies() {
+    return {
+        agencies: [],
+        search: '',
+        page: 1,
+        lastPage: 1,
+        total: 0,
+        loading: false,
+
+        init() {
+            this.loadAgencies();
+        },
+
+        async loadAgencies() {
+            this.loading = true;
+            try {
+                const params = new URLSearchParams({ page: this.page, search: this.search });
+                const res = await fetch(`/customer/assigned-agencies?${params}`);
+                const data = await res.json();
+                this.agencies = data.data;
+                this.lastPage = data.last_page;
+                this.total = data.total;
+            } catch (e) {
+                console.error('Error loading agencies:', e);
+            }
+            this.loading = false;
+        },
+
+        nextPage() {
+            if (this.page < this.lastPage) { this.page++; this.loadAgencies(); }
+        },
+
+        prevPage() {
+            if (this.page > 1) { this.page--; this.loadAgencies(); }
         }
     };
 }

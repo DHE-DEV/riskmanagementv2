@@ -217,6 +217,9 @@ return [
     'customer_dashboard_branches_box_enabled' => env('CUSTOMER_DASHBOARD_BRANCHES_BOX_ENABLED', true),
     'customer_dashboard_branches_sidebar_enabled' => env('CUSTOMER_DASHBOARD_BRANCHES_SIDEBAR_ENABLED', true),
 
+    'customer_product_tours_enabled' => env('CUSTOMER_PRODUCT_TOURS_ENABLED', true),
+    'customer_notifications_enabled' => env('CUSTOMER_NOTIFICATIONS_ENABLED', true),
+
     /*
     |--------------------------------------------------------------------------
     | API Subdomain
@@ -228,5 +231,17 @@ return [
     */
 
     'api_domain' => env('API_DOMAIN', 'api.global-travel-monitor.de'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Emails
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated list of customer email addresses that are allowed to
+    | switch to any customer account without explicit access grants.
+    |
+    */
+
+    'agentur_super_admin_emails' => array_filter(array_map('trim', explode(',', env('AGENTUR_SUPER_ADMIN_EMAILS', '')))),
 
 ];

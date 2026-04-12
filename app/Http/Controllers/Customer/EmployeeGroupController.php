@@ -9,10 +9,17 @@ use Illuminate\Http\Request;
 
 class EmployeeGroupController extends Controller
 {
+    private const SYSTEM_GROUPS = ['Administrator', 'Büroleiter', 'Mitarbeiter'];
+
     public function index(): JsonResponse
     {
-        $groups = EmployeeGroup::where('customer_id', auth('customer')->id())
+        $customerId = auth('customer')->id();
+
+        $this->ensureSystemGroups($customerId);
+
+        $groups = EmployeeGroup::where('customer_id', $customerId)
             ->withCount('employees')
+            ->orderByDesc('is_system')
             ->orderBy('name')
             ->get();
 
@@ -25,6 +32,10 @@ class EmployeeGroupController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
         ]);
+
+        if (in_array($request->input('name'), self::SYSTEM_GROUPS)) {
+            return response()->json(['success' => false, 'message' => 'Dieser Gruppenname ist für Systemgruppen reserviert.'], 422);
+        }
 
         $group = EmployeeGroup::create([
             'customer_id' => auth('customer')->id(),
@@ -68,5 +79,15 @@ class EmployeeGroupController extends Controller
         $employeeGroup->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    private function ensureSystemGroups(int $customerId): void
+    {
+        foreach (self::SYSTEM_GROUPS as $name) {
+            EmployeeGroup::firstOrCreate(
+                ['customer_id' => $customerId, 'name' => $name, 'is_system' => true],
+                ['description' => null]
+            );
+        }
     }
 }

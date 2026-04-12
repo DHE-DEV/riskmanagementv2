@@ -103,7 +103,7 @@
 
 <script>
 function travelAlertTour() {
-    const shouldShow = {{ auth('customer')->user() && !auth('customer')->user()->has_seen_travel_alert_tour ? 'true' : 'false' }};
+    const shouldShow = {{ auth('customer')->user() && !auth('customer')->user()->has_seen_travel_alert_tour && config('app.customer_product_tours_enabled', true) ? 'true' : 'false' }};
     const platformTourActive = {{ auth('customer')->user() && !auth('customer')->user()->has_seen_platform_tour ? 'true' : 'false' }};
 
     return {

@@ -115,7 +115,7 @@
 <script>
 function productTour() {
     return {
-        active: {{ auth('customer')->user() && !auth('customer')->user()->has_seen_platform_tour ? 'true' : 'false' }},
+        active: {{ auth('customer')->user() && !auth('customer')->user()->has_seen_platform_tour && config('app.customer_product_tours_enabled', true) ? 'true' : 'false' }},
         currentStep: 0,
         userMenuWasOpened: false,
         cutoutBox: { x: 0, y: 0, w: 0, h: 0 },

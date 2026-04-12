@@ -14,6 +14,7 @@
         <div class="flex items-center space-x-4">
             @auth('customer')
                 <!-- Benachrichtigungen -->
+                @if(config('app.customer_notifications_enabled', true))
                 <div x-data="notificationDropdown()" class="relative" :style="'margin-right: 30px; margin-top: ' + (unreadCount > 0 ? '15px' : '8px')">
                     <button @click="toggleDropdown" class="relative p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Benachrichtigungen">
                         <i class="fa-regular fa-bell text-xl"></i>
@@ -68,6 +69,102 @@
                         </div>
                     </div>
                 </div>
+                @endif
+
+                @php
+                    $originalCustomerId = session('original_customer_id');
+                    $currentCustomer = auth('customer')->user();
+                    $originalCustomer = $originalCustomerId ? \App\Models\Customer::find($originalCustomerId) : $currentCustomer;
+                    $hasAccessibleAccounts = in_array($originalCustomer->email, config('app.agentur_super_admin_emails', []))
+                        || $originalCustomer->accessibleAccounts()->exists();
+                @endphp
+
+                <!-- Account Switcher -->
+                @if($hasAccessibleAccounts)
+                <div class="relative" x-data="accountSwitcher()" @click.away="open = false">
+                    <button @click="toggle()"
+                            class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg transition-colors {{ $originalCustomerId ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'text-gray-700 hover:bg-gray-100' }}">
+                        <i class="fa-regular fa-arrows-repeat"></i>
+                        <span class="text-xs font-medium">{{ $currentCustomer->company_name }}</span>
+                        <span class="font-mono text-xs font-bold">({{ $currentCustomer->app_code }})</span>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    <div x-show="open" x-transition
+                         class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-[10000]">
+
+                        {{-- Header with total count --}}
+                        <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-500 uppercase">Agentur wechseln</span>
+                            <span class="text-xs text-gray-400" x-text="total + ' Agenturen'"></span>
+                        </div>
+
+                        {{-- Search --}}
+                        <div class="p-2 border-b border-gray-100">
+                            <input type="text" x-model="search" @input.debounce.300ms="searchAccounts()"
+                                   placeholder="Suche: Code, PLZ, Ort, Firma..."
+                                   class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        {{-- Own account (always visible) --}}
+                        <form method="POST" action="{{ route('customer.account.switch', $originalCustomer) }}" class="border-b border-gray-100">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between {{ !$originalCustomerId ? 'bg-blue-50' : '' }}">
+                                <div>
+                                    <span class="font-medium">{{ $originalCustomer->company_name }}</span>
+                                    <span class="text-xs text-gray-500 block">{{ $originalCustomer->email }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-400">Eigener</span>
+                                    <span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{{ $originalCustomer->app_code }}</span>
+                                </div>
+                            </button>
+                        </form>
+
+                        {{-- Results --}}
+                        <div class="max-h-[400px] overflow-y-auto">
+                            <template x-if="loading">
+                                <div class="p-4 text-center text-gray-500 text-sm">
+                                    <i class="fa-regular fa-spinner-third fa-spin mr-1"></i> Laden...
+                                </div>
+                            </template>
+                            <template x-if="!loading && accounts.length === 0">
+                                <div class="p-4 text-center text-gray-500 text-sm">Keine Ergebnisse</div>
+                            </template>
+                            <template x-for="account in accounts" :key="account.id">
+                                <form method="POST" :action="'/customer/account/switch/' + account.id">
+                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between border-b border-gray-50"
+                                            :class="account.id === {{ $currentCustomer->id }} ? 'bg-blue-50' : ''">
+                                        <div class="min-w-0 flex-1">
+                                            <span class="font-semibold block truncate" x-text="account.company_name"></span>
+                                            <span class="text-xs text-gray-500 block" x-text="account.company_postal_code + ' ' + account.company_city"></span>
+                                        </div>
+                                        <span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded flex-shrink-0 ml-2" x-text="account.app_code"></span>
+                                    </button>
+                                </form>
+                            </template>
+                        </div>
+
+                        {{-- Pagination --}}
+                        <div class="px-3 py-2 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-xs text-gray-500" x-text="'Seite ' + page + ' von ' + lastPage"></span>
+                            <div class="flex gap-1">
+                                <button @click="prevPage()" :disabled="page <= 1"
+                                        class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                                    <i class="fa-regular fa-chevron-left"></i>
+                                </button>
+                                <button @click="nextPage()" :disabled="page >= lastPage"
+                                        class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                                    <i class="fa-regular fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- User Dropdown -->
                 <div id="user-menu" class="relative" x-data="{ open: false }">
@@ -77,9 +174,9 @@
                         class="flex items-center space-x-2 p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                            {{ strtoupper(substr(auth('customer')->user()->name, 0, 1)) }}
+                            {{ strtoupper(substr($originalCustomer->name, 0, 1)) }}
                         </div>
-                        <span class="text-sm font-medium">{{ auth('customer')->user()->name }}</span>
+                        <span class="text-sm font-medium">{{ $originalCustomer->name }}</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
@@ -232,6 +329,61 @@ function notificationDropdown() {
             if (days === 1) return 'Gestern';
             if (days < 7) return `vor ${days} Tagen`;
             return date.toLocaleDateString('de-DE');
+        }
+    };
+}
+function accountSwitcher() {
+    return {
+        open: false,
+        search: '',
+        accounts: [],
+        page: 1,
+        lastPage: 1,
+        total: 0,
+        loading: false,
+
+        toggle() {
+            this.open = !this.open;
+            if (this.open && this.accounts.length === 0) {
+                this.loadAccounts();
+            }
+        },
+
+        async loadAccounts() {
+            this.loading = true;
+            try {
+                const params = new URLSearchParams({
+                    page: this.page,
+                    search: this.search
+                });
+                const response = await fetch(`/customer/account/accessible?${params}`);
+                const data = await response.json();
+                this.accounts = data.data;
+                this.lastPage = data.last_page;
+                this.total = data.total;
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+            }
+            this.loading = false;
+        },
+
+        searchAccounts() {
+            this.page = 1;
+            this.loadAccounts();
+        },
+
+        nextPage() {
+            if (this.page < this.lastPage) {
+                this.page++;
+                this.loadAccounts();
+            }
+        },
+
+        prevPage() {
+            if (this.page > 1) {
+                this.page--;
+                this.loadAccounts();
+            }
         }
     };
 }

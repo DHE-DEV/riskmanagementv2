@@ -6,6 +6,8 @@ use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -105,6 +107,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // Login code
         'login_code',
         'login_code_expires_at',
+        // App code
+        'app_code',
+        'assign_to',
     ];
 
     protected $hidden = [
@@ -159,6 +164,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
 
     protected static function booted(): void
     {
+        static::creating(function (Customer $customer) {
+            $customer->app_code = self::generateUniqueAppCode();
+        });
+
         static::created(function (Customer $customer) {
             $adminGroup = EmployeeGroup::create([
                 'customer_id' => $customer->id,
@@ -187,6 +196,21 @@ class Customer extends Authenticatable implements MustVerifyEmail
 
             $ownerEmployee->groups()->attach($adminGroup->id);
         });
+    }
+
+    /**
+     * Generate a unique 4-character alphanumeric app code.
+     */
+    public static function generateUniqueAppCode(): string
+    {
+        do {
+            $code = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 4));
+        } while (
+            self::where('app_code', $code)->exists() ||
+            Branch::where('app_code', $code)->exists()
+        );
+
+        return $code;
     }
 
     /**
@@ -303,6 +327,16 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Branch::class);
     }
 
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'assign_to');
+    }
+
+    public function assignedCustomers(): HasMany
+    {
+        return $this->hasMany(self::class, 'assign_to');
+    }
+
     public function pluginClient(): HasOne
     {
         return $this->hasOne(PluginClient::class);
@@ -341,6 +375,32 @@ class Customer extends Authenticatable implements MustVerifyEmail
     public function customEvents(): HasMany
     {
         return $this->hasMany(CustomEvent::class);
+    }
+
+    /**
+     * Accounts this customer can access (granted by admin).
+     */
+    public function accessibleAccounts(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'customer_access', 'accessor_customer_id', 'customer_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Users who can access this customer's account.
+     */
+    public function accessors(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'customer_access', 'customer_id', 'accessor_customer_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all accounts this customer can work with (own + granted).
+     */
+    public function allAccessibleAccounts()
+    {
+        return collect([$this])->merge($this->accessibleAccounts);
     }
 
     /**

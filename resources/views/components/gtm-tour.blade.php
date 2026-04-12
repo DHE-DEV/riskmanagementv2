@@ -104,7 +104,7 @@
 <script>
 function gtmTour() {
     return {
-        active: {{ auth('customer')->user() && !auth('customer')->user()->has_seen_gtm_tour ? 'true' : 'false' }},
+        active: {{ auth('customer')->user() && !auth('customer')->user()->has_seen_gtm_tour && config('app.customer_product_tours_enabled', true) ? 'true' : 'false' }},
         currentStep: 0,
         cutoutBox: { x: 0, y: 0, w: 0, h: 0 },
         tooltipTop: -1000,

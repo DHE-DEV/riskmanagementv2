@@ -1538,9 +1538,9 @@ function branchManager() {
                     </div>
                     <div class="flex flex-col items-center gap-2 flex-shrink-0">
                         <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded cursor-pointer hover:bg-blue-200 transition-colors"
-                              onclick="event.stopPropagation(); copyToClipboard('HQ00', this)"
+                              onclick="event.stopPropagation(); copyToClipboard('{{ auth('customer')->user()->app_code }}', this)"
                               title="In Zwischenablage kopieren">
-                            HQ00
+                            {{ auth('customer')->user()->app_code }}
                         </span>
                         <div class="flex flex-col gap-1">
                             <i class="fa-regular fa-building text-gray-400 text-sm" title="Hauptsitz"></i>

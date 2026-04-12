@@ -69,6 +69,7 @@ class ImportLegacyUsers extends Command
         }
 
         $employeesCreated = 0;
+        $employeesUpdated = 0;
         $skipped = 0;
         $noCustomer = 0;
         $errors = 0;
@@ -76,7 +77,7 @@ class ImportLegacyUsers extends Command
         $bar = $this->output->createProgressBar($limit > 0 ? $limit : $total);
         $bar->start();
 
-        $users->chunk(50, function ($chunk) use (&$employeesCreated, &$skipped, &$noCustomer, &$errors, $dryRun, $bar, $customersByLegacyId) {
+        $users->chunk(50, function ($chunk) use (&$employeesCreated, &$employeesUpdated, &$skipped, &$noCustomer, &$errors, $dryRun, $bar, $customersByLegacyId) {
             // Refresh Keycloak token before each chunk
             if (! $dryRun && $this->keycloakUrl) {
                 $this->adminToken = $this->getKeycloakAdminToken();
@@ -103,9 +104,33 @@ class ImportLegacyUsers extends Command
                     continue;
                 }
 
-                // Skip if employee with this email already exists under this customer
-                if (Employee::where('customer_id', $parentCustomer->id)->where('email', $email)->exists()) {
-                    $skipped++;
+                // If employee with this email already exists under this customer, update legacy ID + Keycloak sync
+                $existingEmployee = Employee::where('customer_id', $parentCustomer->id)->where('email', $email)->first();
+                if ($existingEmployee) {
+                    if ($dryRun) {
+                        $employeesUpdated++;
+                        continue;
+                    }
+
+                    try {
+                        $existingEmployee->update([
+                            'legacy_usersweb_id' => $legacyUser->id,
+                        ]);
+
+                        if ($this->adminToken && $legacyUser->password) {
+                            $this->syncToKeycloak($existingEmployee, $parentCustomer, $legacyUser->password);
+                        }
+
+                        $employeesUpdated++;
+                    } catch (\Exception $e) {
+                        $errors++;
+                        Log::error('Legacy user update failed', [
+                            'legacy_id' => $legacyUser->id,
+                            'email' => $email,
+                            'employee_id' => $existingEmployee->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                     continue;
                 }
 
@@ -131,7 +156,7 @@ class ImportLegacyUsers extends Command
 
         $bar->finish();
         $this->newLine(2);
-        $this->info("Import complete: {$employeesCreated} employees created, {$skipped} skipped, {$noCustomer} no matching customer, {$errors} errors");
+        $this->info("Import complete: {$employeesCreated} created, {$employeesUpdated} updated (legacy ID + Keycloak), {$skipped} skipped, {$noCustomer} no matching customer, {$errors} errors");
 
         return self::SUCCESS;
     }

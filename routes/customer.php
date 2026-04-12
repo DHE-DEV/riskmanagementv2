@@ -38,6 +38,18 @@ Route::prefix('customer')->name('customer.')->group(function () {
             return view('customer.dashboard');
         })->name('dashboard');
 
+        // Account switching
+        Route::get('/account/accessible', [\App\Http\Controllers\Customer\AccountSwitchController::class, 'accessible'])
+            ->name('account.accessible');
+        Route::post('/account/switch/{customer}', [\App\Http\Controllers\Customer\AccountSwitchController::class, 'switch'])
+            ->name('account.switch');
+        Route::post('/account/switch-back', [\App\Http\Controllers\Customer\AccountSwitchController::class, 'switchBack'])
+            ->name('account.switch-back');
+
+        // Assigned agencies
+        Route::get('/assigned-agencies', [\App\Http\Controllers\Customer\AccountSwitchController::class, 'assignedAgencies'])
+            ->name('assigned-agencies');
+
         Route::post('/profile/update-personal', [\App\Http\Controllers\Customer\ProfileController::class, 'updatePersonal'])
             ->name('profile.update-personal');
 
