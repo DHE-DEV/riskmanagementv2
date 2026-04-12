@@ -64,9 +64,9 @@ class AccountSwitchController extends Controller
         }
 
         $agencies = $query
-            ->select('id', 'app_code', 'company_name', 'company_postal_code', 'company_city', 'email')
+            ->select('id', 'app_code', 'name', 'email', 'phone', 'company_name', 'company_additional', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country', 'billing_company_name', 'billing_additional', 'billing_street', 'billing_house_number', 'billing_postal_code', 'billing_city', 'billing_country')
             ->orderBy('company_name')
-            ->paginate(15);
+            ->paginate(1000);
 
         return response()->json($agencies);
     }

@@ -1960,9 +1960,12 @@
                     <div class="mb-4">
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
-                            <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()"
+                            <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()" @keydown.escape="search = ''; loadAgencies()"
                                    placeholder="Suche nach Firma, Code, PLZ, Ort..."
-                                   class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                   class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button x-show="search.length > 0" @click="search = ''; loadAgencies()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times-circle text-sm"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -1973,29 +1976,137 @@
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Code</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Firma</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Straße</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">PLZ</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ort</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">E-Mail</th>
+                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="loading">
-                                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
                                 </template>
                                 <template x-if="!loading && agencies.length === 0">
-                                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
                                 </template>
                                 <template x-for="agency in agencies" :key="agency.id">
                                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                                         <td class="px-4 py-2"><span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="agency.app_code"></span></td>
                                         <td class="px-4 py-2 font-medium" x-text="agency.company_name"></td>
+                                        <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.email"></td>
+                                        <td class="px-4 py-2 text-right">
+                                            <div class="relative" x-data="{ menuOpen: false }">
+                                                <button @click="menuOpen = !menuOpen" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                                    <i class="fas fa-ellipsis-vertical"></i>
+                                                </button>
+                                                <div x-show="menuOpen" @click.away="menuOpen = false" x-cloak
+                                                     class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
+                                                    <button @click="menuOpen = false; showAgencyDetail(agency)"
+                                                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                        <i class="fas fa-eye text-xs text-gray-400"></i> Details anzeigen
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
                                     </tr>
                                 </template>
                             </tbody>
                         </table>
+                    </div>
+
+                    {{-- Detail Modal --}}
+                    <div x-show="detailAgency" x-cloak class="fixed inset-0 z-[10000] flex items-center justify-center" @keydown.escape.window="detailAgency = null">
+                        <div class="absolute inset-0 bg-black/50" @click="detailAgency = null"></div>
+                        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
+                            <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                                <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <i class="fas fa-building text-blue-600"></i>
+                                    <span x-text="detailAgency?.company_name"></span>
+                                    <span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="detailAgency?.app_code"></span>
+                                </h3>
+                                <button @click="detailAgency = null" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                {{-- Kontakt --}}
+                                <div>
+                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Kontakt</h4>
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">Name</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.name || '—'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">E-Mail</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.email || '—'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">Telefon</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.phone || '—'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Firmenadresse --}}
+                                <div>
+                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Firmenadresse</h4>
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div class="col-span-2">
+                                            <span class="text-xs text-gray-500 block">Firma</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.company_name || '—'"></span>
+                                        </div>
+                                        <div class="col-span-2" x-show="detailAgency?.company_additional">
+                                            <span class="text-xs text-gray-500 block">Zusatz</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.company_additional"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">Straße</span>
+                                            <span class="text-gray-900" x-text="(detailAgency?.company_street || '') + ' ' + (detailAgency?.company_house_number || '') || '—'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">PLZ / Ort</span>
+                                            <span class="text-gray-900" x-text="(detailAgency?.company_postal_code || '') + ' ' + (detailAgency?.company_city || '') || '—'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">Land</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.company_country || '—'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Rechnungsadresse --}}
+                                <div x-show="detailAgency?.billing_company_name || detailAgency?.billing_street">
+                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Rechnungsadresse</h4>
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div class="col-span-2">
+                                            <span class="text-xs text-gray-500 block">Firma</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.billing_company_name || '—'"></span>
+                                        </div>
+                                        <div class="col-span-2" x-show="detailAgency?.billing_additional">
+                                            <span class="text-xs text-gray-500 block">Zusatz</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.billing_additional"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">Straße</span>
+                                            <span class="text-gray-900" x-text="(detailAgency?.billing_street || '') + ' ' + (detailAgency?.billing_house_number || '') || '—'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">PLZ / Ort</span>
+                                            <span class="text-gray-900" x-text="(detailAgency?.billing_postal_code || '') + ' ' + (detailAgency?.billing_city || '') || '—'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 block">Land</span>
+                                            <span class="text-gray-900" x-text="detailAgency?.billing_country || '—'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Pagination --}}
@@ -6230,6 +6341,7 @@ function assignedAgencies() {
         lastPage: 1,
         total: 0,
         loading: false,
+        detailAgency: null,
 
         init() {
             this.loadAgencies();
@@ -6256,6 +6368,10 @@ function assignedAgencies() {
 
         prevPage() {
             if (this.page > 1) { this.page--; this.loadAgencies(); }
+        },
+
+        showAgencyDetail(agency) {
+            this.detailAgency = agency;
         }
     };
 }
