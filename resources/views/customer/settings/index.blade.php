@@ -7,7 +7,8 @@
     $customer = auth('customer')->user();
     $featureService = app(\App\Services\CustomerFeatureService::class);
     $isImpersonating = session()->has('original_customer_id');
-    $isSuperAdmin = in_array(auth('customer')->user()->email, config('app.agentur_super_admin_emails', []));
+    $originalUser = session()->has('original_customer_id') ? \App\Models\Customer::find(session('original_customer_id')) : auth('customer')->user();
+    $isSuperAdmin = in_array($originalUser->email, config('app.agentur_super_admin_emails', []));
     $settingsSection = request()->query('section', 'general');
     if ($isImpersonating && $settingsSection === 'general') {
         $settingsSection = 'master-data';
@@ -1856,7 +1857,62 @@
                         $branchCount = \App\Models\Branch::where('customer_id', $customer->id)->count();
                         $employeeCount = \App\Models\Employee::where('customer_id', $customer->id)->count();
                         $deptCount = \App\Models\Department::where('customer_id', $customer->id)->count();
+                        $assignedToCustomer = $customer->assign_to ? \App\Models\Customer::find($customer->assign_to) : null;
                     @endphp
+
+                    {{-- Zugeordnete Organisation --}}
+                    @if($assignedToCustomer)
+                    <div class="bg-blue-50 rounded-lg border border-blue-200 p-4 mb-4">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-building text-blue-600"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-xs font-semibold text-blue-800 uppercase tracking-wider mb-2">Zugeordnete Organisation</h4>
+                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">Firma</span>
+                                        <span class="text-gray-900 font-medium">{{ $assignedToCustomer->company_name ?? '—' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">App-Code</span>
+                                        <span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{{ $assignedToCustomer->app_code }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">Adresse</span>
+                                        <span class="text-gray-900">{{ trim(($assignedToCustomer->company_street ?? '') . ' ' . ($assignedToCustomer->company_house_number ?? '')) ?: '—' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">PLZ / Ort</span>
+                                        <span class="text-gray-900">{{ trim(($assignedToCustomer->company_postal_code ?? '') . ' ' . ($assignedToCustomer->company_city ?? '')) ?: '—' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">Land</span>
+                                        <span class="text-gray-900">{{ $assignedToCustomer->company_country ?? '—' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">E-Mail</span>
+                                        <span class="text-gray-900">{{ $assignedToCustomer->email ?? '—' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-blue-600 block">Telefon</span>
+                                        <span class="text-gray-900">{{ $assignedToCustomer->phone ?? '—' }}</span>
+                                    </div>
+                                </div>
+                                @if($isSuperAdmin)
+                                <div class="mt-3 pt-3 border-t border-blue-200">
+                                    <form method="POST" action="{{ route('customer.account.switch', $assignedToCustomer) }}">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-xs">
+                                            <i class="fas fa-arrows-repeat"></i> Zu Agentur wechseln
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- Header mit Neu-Button --}}
                     <div class="flex items-center justify-between mb-4">
@@ -2009,6 +2065,15 @@
                                                             class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                                         <i class="fas fa-eye text-xs text-gray-400"></i> Details anzeigen
                                                     </button>
+                                                    @if($isSuperAdmin)
+                                                    <form method="POST" :action="'/customer/account/switch/' + agency.id">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                                        <button type="submit"
+                                                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                            <i class="fas fa-arrows-repeat text-xs text-gray-400"></i> Zur Agentur wechseln
+                                                        </button>
+                                                    </form>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
