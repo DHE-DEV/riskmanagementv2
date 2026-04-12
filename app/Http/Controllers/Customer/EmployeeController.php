@@ -11,44 +11,48 @@ class EmployeeController extends Controller
     public function index()
     {
         $customer = auth('customer')->user();
+        $isImpersonating = session()->has('original_customer_id');
 
         $employees = Employee::where('customer_id', $customer->id)
             ->with(['branch:id,name', 'departmentRelation:id,name', 'groups:id,name'])
             ->orderBy('last_name')
             ->get();
 
-        // Check if owner has an employee entry (new accounts get one automatically)
-        $hasOwnerEntry = $employees->contains(fn ($e) => $e->email === $customer->email);
+        // Only show owner entry when not impersonating
+        if (! $isImpersonating) {
+            // Check if owner has an employee entry (new accounts get one automatically)
+            $hasOwnerEntry = $employees->contains(fn ($e) => $e->email === $customer->email);
 
-        if (! $hasOwnerEntry) {
-            // Add virtual owner entry for legacy accounts
-            $nameParts = explode(' ', $customer->name, 2);
-            $ownerEntry = [
-                'id' => 'owner',
-                'is_owner' => true,
-                'salutation' => '',
-                'title' => '',
-                'first_name' => $nameParts[0] ?? '',
-                'last_name' => $nameParts[1] ?? '',
-                'email' => $customer->email,
-                'phone' => $customer->phone ?? '',
-                'mobile' => '',
-                'position' => 'Inhaber / Administrator',
-                'department' => '',
-                'department_id' => null,
-                'department_relation' => null,
-                'personnel_number' => '',
-                'branch_id' => null,
-                'branch' => null,
-                'is_active' => true,
-                'active_from' => null,
-                'active_until' => null,
-                'is_currently_active' => true,
-                'notes' => '',
-                'groups' => [],
-            ];
+            if (! $hasOwnerEntry) {
+                // Add virtual owner entry for legacy accounts
+                $nameParts = explode(' ', $customer->name, 2);
+                $ownerEntry = [
+                    'id' => 'owner',
+                    'is_owner' => true,
+                    'salutation' => '',
+                    'title' => '',
+                    'first_name' => $nameParts[0] ?? '',
+                    'last_name' => $nameParts[1] ?? '',
+                    'email' => $customer->email,
+                    'phone' => $customer->phone ?? '',
+                    'mobile' => '',
+                    'position' => 'Inhaber / Administrator',
+                    'department' => '',
+                    'department_id' => null,
+                    'department_relation' => null,
+                    'personnel_number' => '',
+                    'branch_id' => null,
+                    'branch' => null,
+                    'is_active' => true,
+                    'active_from' => null,
+                    'active_until' => null,
+                    'is_currently_active' => true,
+                    'notes' => '',
+                    'groups' => [],
+                ];
 
-            return response()->json(['employees' => collect([$ownerEntry])->concat($employees)]);
+                return response()->json(['employees' => collect([$ownerEntry])->concat($employees)]);
+            }
         }
 
         return response()->json(['employees' => $employees]);
