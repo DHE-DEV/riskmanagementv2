@@ -357,6 +357,11 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(CustomerFeatureOverride::class);
     }
 
+    public function legacyOptions(): HasOne
+    {
+        return $this->hasOne(CustomerLegacyOption::class, 'account_id');
+    }
+
     public function labels(): HasMany
     {
         return $this->hasMany(Label::class);

@@ -2035,25 +2035,24 @@
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Straße</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">PLZ</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ort</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">E-Mail</th>
                                     <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="loading">
-                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
+                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
                                 </template>
                                 <template x-if="!loading && agencies.length === 0">
-                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
+                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
                                 </template>
                                 <template x-for="agency in agencies" :key="agency.id">
-                                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                    <tr class="border-b border-gray-100"
+                                        :class="(agency.legacy_options?.live_from && new Date().toISOString().slice(0,10) < agency.legacy_options.live_from) || (agency.legacy_options?.end_of_use && new Date().toISOString().slice(0,10) > agency.legacy_options.end_of_use) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'">
                                         <td class="px-4 py-2"><span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="agency.app_code"></span></td>
                                         <td class="px-4 py-2 font-medium" x-text="agency.company_name"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
-                                        <td class="px-4 py-2 text-gray-600" x-text="agency.email"></td>
                                         <td class="px-4 py-2 text-right">
                                             <div class="relative" x-data="{ menuOpen: false }">
                                                 <button @click="menuOpen = !menuOpen" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
@@ -2086,7 +2085,7 @@
                     {{-- Detail Modal --}}
                     <div x-show="detailAgency" x-cloak class="fixed inset-0 z-[10000] flex items-center justify-center" @keydown.escape.window="detailAgency = null">
                         <div class="absolute inset-0 bg-black/50" @click="detailAgency = null"></div>
-                        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
+                        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" x-data="{ detailTab: 'kontakt' }">
                             <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                                 <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
                                     <i class="fas fa-building text-blue-600"></i>
@@ -2097,7 +2096,25 @@
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                            <div class="p-5 space-y-4">
+
+                            {{-- Tabs --}}
+                            <div class="flex border-b border-gray-200 px-5">
+                                <button @click="detailTab = 'kontakt'"
+                                        :class="detailTab === 'kontakt' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                        class="px-3 py-2 text-xs font-medium border-b-2 transition-colors">
+                                    Kontakt & Adresse
+                                </button>
+                                @if($isSuperAdmin)
+                                <button @click="detailTab = 'legacy'"
+                                        :class="detailTab === 'legacy' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                        class="px-3 py-2 text-xs font-medium border-b-2 transition-colors">
+                                    Legacy Optionen
+                                </button>
+                                @endif
+                            </div>
+
+                            {{-- Tab: Kontakt & Adresse --}}
+                            <div x-show="detailTab === 'kontakt'" class="p-5 space-y-4">
                                 {{-- Kontakt --}}
                                 <div>
                                     <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Kontakt</h4>
@@ -2171,12 +2188,156 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- Tab: Legacy Optionen (nur für Super-Admins) --}}
+                            @if($isSuperAdmin)
+                            <div x-show="detailTab === 'legacy'" class="p-5 space-y-4">
+                                <template x-if="!detailAgency?.legacy_options">
+                                    <div class="text-sm text-gray-500 text-center py-4">Keine Legacy-Optionen vorhanden</div>
+                                </template>
+                                <template x-if="detailAgency?.legacy_options">
+                                    <div class="space-y-4">
+                                        {{-- Status --}}
+                                        <div>
+                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Status</h4>
+                                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Revised</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.revised ? 'Ja' : 'Nein'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Account Typ</span>
+                                                    <span class="text-gray-900" x-text="({'1':'Testaccount VA','2':'Testaccount RB','3':'Veranstalter','4':'Reisebüro','5':'Reiseberater'})[detailAgency.legacy_options.account_type] || '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Client Typ</span>
+                                                    <span class="text-gray-900" x-text="({'1':'Client','2':'Lead'})[detailAgency.legacy_options.client_type] || '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Anzahl Büros</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.office_count ?? '—'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Zeitraum --}}
+                                        <div>
+                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Zeitraum</h4>
+                                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Live ab</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.live_from ? new Date(detailAgency.legacy_options.live_from).toLocaleDateString('de-DE') : '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Nutzungsende</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.end_of_use ? new Date(detailAgency.legacy_options.end_of_use).toLocaleDateString('de-DE') : '—'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Visa Service --}}
+                                        <div>
+                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Visa Service</h4>
+                                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Visa Service anzeigen</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.show_visa_service ? 'Ja' : 'Nein'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Visa Orte</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.visa_places || '—'"></span>
+                                                </div>
+                                                <div class="col-span-2" x-show="detailAgency.legacy_options.show_visa_service_link">
+                                                    <span class="text-xs text-gray-500 block">Visa Service Link</span>
+                                                    <span class="text-gray-900 break-all" x-text="detailAgency.legacy_options.show_visa_service_link"></span>
+                                                </div>
+                                                <div class="col-span-2" x-show="detailAgency.legacy_options.show_visa_service_text">
+                                                    <span class="text-xs text-gray-500 block">Visa Service Text</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.show_visa_service_text"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Reisewarnung --}}
+                                        <div>
+                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reisewarnung</h4>
+                                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Reisewarnung anzeigen</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.show_travel_warning ? 'Ja' : 'Nein'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Land</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.travel_warning_country || '—'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- API & Technik --}}
+                                        <div>
+                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">API & Technik</h4>
+                                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">API Version</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.response_api_version || '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">API Status</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.response_api_status ?? '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Tech Access</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.tech_access ?? '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Report</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.use_report ?? '—'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Sonstiges (nur für Super-Admins) --}}
+                                        @if($isSuperAdmin)
+                                        <div>
+                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Sonstiges</h4>
+                                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Zoho CRM ID</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.zoho_crm_id || '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">MyJack Agency ID</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.myjack_agency_id || '—'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block">Adressposition</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.agency_address_position ?? '—'"></span>
+                                                </div>
+                                                <div class="col-span-2" x-show="detailAgency.legacy_options.note">
+                                                    <span class="text-xs text-gray-500 block">Notiz</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.note"></span>
+                                                </div>
+                                                <div x-show="detailAgency.legacy_options.logo">
+                                                    <span class="text-xs text-gray-500 block">Logo</span>
+                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.logo"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </template>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
                     {{-- Pagination --}}
                     <div class="flex items-center justify-between mt-3">
-                        <span class="text-xs text-gray-500" x-text="total + ' Agenturen gesamt'"></span>
+                        <span class="text-xs text-gray-500">
+                            <span x-text="total + ' Agenturen gesamt'"></span>
+                            <span class="ml-2 text-green-600" x-text="'(' + agencies.filter(a => { const today = new Date().toISOString().slice(0,10); return (!a.legacy_options?.live_from || today >= a.legacy_options.live_from) && (!a.legacy_options?.end_of_use || today <= a.legacy_options.end_of_use); }).length + ' aktiv'"></span>,
+                            <span class="text-red-600" x-text="agencies.filter(a => { const today = new Date().toISOString().slice(0,10); return (a.legacy_options?.live_from && today < a.legacy_options.live_from) || (a.legacy_options?.end_of_use && today > a.legacy_options.end_of_use); }).length + ' inaktiv)'"></span>
+                        </span>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500" x-text="'Seite ' + page + ' von ' + lastPage"></span>
                             <button @click="prevPage()" :disabled="page <= 1"

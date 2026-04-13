@@ -64,6 +64,7 @@ class AccountSwitchController extends Controller
         }
 
         $agencies = $query
+            ->with('legacyOptions')
             ->select('id', 'app_code', 'name', 'email', 'phone', 'company_name', 'company_additional', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country', 'billing_company_name', 'billing_additional', 'billing_street', 'billing_house_number', 'billing_postal_code', 'billing_city', 'billing_country')
             ->orderBy('company_name')
             ->paginate(1000);
