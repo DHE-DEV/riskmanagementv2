@@ -2013,8 +2013,8 @@
                 @if($assignedCount > 0)
                 <div x-show="orgTab === 'agenturen'" x-cloak x-data="assignedAgencies()">
                     {{-- Suche --}}
-                    <div class="mb-4">
-                        <div class="relative">
+                    <div class="mb-4 flex items-center gap-3">
+                        <div class="relative flex-1">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
                             <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()" @keydown.escape="search = ''; loadAgencies()"
                                    placeholder="Suche nach Firma, Code, PLZ, Ort..."
@@ -2023,6 +2023,10 @@
                                 <i class="fas fa-times-circle text-sm"></i>
                             </button>
                         </div>
+                        <label class="flex items-center gap-2 text-xs text-gray-600 whitespace-nowrap cursor-pointer select-none">
+                            <input type="checkbox" x-model="showInactive" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            Inaktive anzeigen
+                        </label>
                     </div>
 
                     {{-- Tabelle --}}
@@ -2049,12 +2053,12 @@
                                 <template x-if="loading">
                                     <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
                                 </template>
-                                <template x-if="!loading && agencies.length === 0">
+                                <template x-if="!loading && filteredAgencies.length === 0">
                                     <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
                                 </template>
-                                <template x-for="agency in agencies" :key="agency.id">
+                                <template x-for="agency in filteredAgencies" :key="agency.id">
                                     <tr class="border-b border-gray-100"
-                                        :class="(agency.legacy_options?.live_from && new Date().toISOString().slice(0,10) < agency.legacy_options.live_from) || (agency.legacy_options?.end_of_use && new Date().toISOString().slice(0,10) > agency.legacy_options.end_of_use) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'">
+                                        :class="isInactive(agency) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'">
                                         <td class="px-4 py-2"><span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="agency.app_code"></span></td>
                                         <td class="px-4 py-2 font-medium" x-text="agency.company_name"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
@@ -2342,9 +2346,9 @@
                     {{-- Pagination --}}
                     <div class="flex items-center justify-between mt-3">
                         <span class="text-xs text-gray-500">
-                            <span x-text="total + ' Agenturen gesamt'"></span>
-                            <span class="ml-2 text-green-600" x-text="'(' + agencies.filter(a => { const today = new Date().toISOString().slice(0,10); return (!a.legacy_options?.live_from || today >= a.legacy_options.live_from) && (!a.legacy_options?.end_of_use || today <= a.legacy_options.end_of_use); }).length + ' aktiv'"></span>,
-                            <span class="text-red-600" x-text="agencies.filter(a => { const today = new Date().toISOString().slice(0,10); return (a.legacy_options?.live_from && today < a.legacy_options.live_from) || (a.legacy_options?.end_of_use && today > a.legacy_options.end_of_use); }).length + ' inaktiv)'"></span>
+                            <span x-text="filteredAgencies.length + ' angezeigt'"></span>
+                            <span class="ml-2 text-green-600" x-text="'(' + agencies.filter(a => !isInactive(a)).length + ' aktiv'"></span>,
+                            <span class="text-red-600" x-text="agencies.filter(a => isInactive(a)).length + ' inaktiv)'"></span>
                         </span>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500" x-text="'Seite ' + page + ' von ' + lastPage"></span>
@@ -6578,6 +6582,18 @@ function assignedAgencies() {
         detailAgency: null,
         sortField: 'company_name',
         sortDir: 'asc',
+        showInactive: false,
+
+        isInactive(agency) {
+            const today = new Date().toISOString().slice(0, 10);
+            return (agency.legacy_options?.live_from && today < agency.legacy_options.live_from) ||
+                   (agency.legacy_options?.end_of_use && today > agency.legacy_options.end_of_use);
+        },
+
+        get filteredAgencies() {
+            if (this.showInactive) return this.agencies;
+            return this.agencies.filter(a => !this.isInactive(a));
+        },
 
         init() {
             this.loadAgencies();
