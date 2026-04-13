@@ -13,6 +13,8 @@
     if ($isImpersonating && $settingsSection === 'general') {
         $settingsSection = 'master-data';
     }
+    $loggedInEmployee = session('logged_in_employee_id') ? \App\Models\Employee::find(session('logged_in_employee_id')) : null;
+    $isEmployeeLogin = $loggedInEmployee !== null;
 @endphp
 
 @push('styles')
@@ -231,7 +233,7 @@
                                 @if($customer->avatar)
                                     <img src="{{ Storage::disk('public')->url($customer->avatar) }}" alt="Profilbild" class="w-full h-full object-cover">
                                 @else
-                                    {{ strtoupper(substr($customer->name, 0, 1)) }}
+                                    {{ strtoupper(substr($isEmployeeLogin ? $loggedInEmployee->first_name : $customer->name, 0, 1)) }}
                                 @endif
                             </div>
                         </div>
@@ -277,6 +279,16 @@
                             <span class="text-xs text-gray-500">Telefon</span>
                             <p class="font-medium text-gray-900" x-text="personal.phone || '—'"></p>
                         </div>
+                        @if($isEmployeeLogin)
+                        <div>
+                            <span class="text-xs text-gray-500">Firma</span>
+                            <p class="font-medium text-gray-900">{{ $customer->company_name }}</p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500">Position</span>
+                            <p class="font-medium text-gray-900">{{ $loggedInEmployee->position ?: '—' }}</p>
+                        </div>
+                        @else
                         <div>
                             <span class="text-xs text-gray-500">Kundentyp</span>
                             <p class="font-medium text-gray-900">
@@ -289,6 +301,7 @@
                             <span class="text-xs text-gray-500">Registriert am</span>
                             <p class="font-medium text-gray-900">{{ $customer->created_at?->format('d.m.Y') }}</p>
                         </div>
+                        @endif
                         <div>
                             <span class="text-xs text-gray-500">Login via</span>
                             <p class="font-medium text-gray-900">{{ $customer->provider ?: 'E-Mail' }}</p>
@@ -5863,9 +5876,9 @@ function settingsManager() {
         },
 
         personal: {
-            name: @json($customer->name),
-            email: @json($customer->email),
-            phone: @json($customer->phone ?? ''),
+            name: @json($isEmployeeLogin ? $loggedInEmployee->first_name . ' ' . $loggedInEmployee->last_name : $customer->name),
+            email: @json($isEmployeeLogin ? $loggedInEmployee->email : $customer->email),
+            phone: @json($isEmployeeLogin ? ($loggedInEmployee->phone ?? '') : ($customer->phone ?? '')),
         },
 
         company: {
