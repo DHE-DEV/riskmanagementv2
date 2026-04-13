@@ -52,6 +52,7 @@ Route::get('customer/magic-login/{id}', [MagicLoginController::class, 'verify'])
 
 // Keycloak OIDC routes (redirect URI: /auth/callback)
 Route::get('auth/login/keycloak', [KeycloakAuthController::class, 'redirect'])->name('auth.keycloak.redirect');
+Route::get('auth/login/keycloak/start', [KeycloakAuthController::class, 'startLogin'])->name('auth.keycloak.start');
 Route::get('auth/callback', [KeycloakAuthController::class, 'callback'])->name('auth.keycloak.callback');
 
 // Authenticated customer routes

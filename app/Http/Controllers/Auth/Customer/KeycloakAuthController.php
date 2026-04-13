@@ -14,29 +14,31 @@ use Laravel\Socialite\Facades\Socialite;
 class KeycloakAuthController extends Controller
 {
     /**
-     * Redirect to Keycloak login page.
-     * First ends any existing Keycloak session, then redirects to login.
+     * End any existing Keycloak session, then redirect to the actual login.
      */
     public function redirect(): RedirectResponse
     {
-        // End any existing Keycloak session before starting a new login
         $realm = config('services.keycloak.realms', 'passolution');
         $baseUrl = config('services.keycloak.base_url');
         $clientId = config('services.keycloak.client_id');
 
-        // Build the actual Socialite login URL
-        $loginUrl = Socialite::driver('keycloak')
-            ->setScopes(['openid', 'profile', 'email'])
-            ->enablePKCE()
-            ->redirect()
-            ->getTargetUrl();
-
-        // Redirect to Keycloak logout first, which then redirects to the login URL
+        // Redirect to Keycloak logout, which redirects back to our startLogin route
         $logoutUrl = $baseUrl . '/realms/' . $realm . '/protocol/openid-connect/logout'
-            . '?post_logout_redirect_uri=' . urlencode($loginUrl)
+            . '?post_logout_redirect_uri=' . urlencode(route('auth.keycloak.start'))
             . '&client_id=' . $clientId;
 
         return redirect($logoutUrl);
+    }
+
+    /**
+     * Actually start the Keycloak login (called after session was cleared).
+     */
+    public function startLogin(): RedirectResponse
+    {
+        return Socialite::driver('keycloak')
+            ->setScopes(['openid', 'profile', 'email'])
+            ->enablePKCE()
+            ->redirect();
     }
 
     /**
