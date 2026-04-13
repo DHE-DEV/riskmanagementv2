@@ -2346,11 +2346,7 @@
 
                     {{-- Pagination --}}
                     <div class="flex items-center justify-between mt-3">
-                        <span class="text-xs text-gray-500">
-                            <span x-text="filteredAgencies.length + ' angezeigt'"></span>
-                            <span class="ml-2 text-green-600" x-text="'(' + agencies.filter(a => !isInactive(a)).length + ' aktiv'"></span>,
-                            <span class="text-red-600" x-text="agencies.filter(a => isInactive(a)).length + ' inaktiv)'"></span>
-                        </span>
+                        <span class="text-xs text-gray-500" x-text="filteredAgencies.length + ' Agenturen'"></span>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500" x-text="'Seite ' + page + ' von ' + lastPage"></span>
                             <button @click="prevPage()" :disabled="page <= 1"
