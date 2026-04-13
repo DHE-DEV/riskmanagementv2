@@ -84,14 +84,19 @@ class KeycloakAuthController extends Controller
                 ->with('error', 'Kein Konto mit dieser E-Mail-Adresse gefunden.');
         }
 
-        // Update tokens on customer
-        $customer->update([
+        // Update tokens on customer (only set provider_id if this is a direct customer login, not employee)
+        $updateData = [
             'provider' => 'keycloak',
-            'provider_id' => $customer->provider_id ?: $keycloakUser->getId(),
             'provider_token' => $keycloakUser->token,
             'provider_refresh_token' => $keycloakUser->refreshToken ?? $customer->provider_refresh_token,
-            'avatar' => $keycloakUser->getAvatar() ?? $customer->avatar,
-        ]);
+        ];
+
+        if (! $employee) {
+            $updateData['provider_id'] = $keycloakUser->getId();
+            $updateData['avatar'] = $keycloakUser->getAvatar() ?? $customer->avatar;
+        }
+
+        $customer->update($updateData);
 
         Auth::guard('customer')->login($customer, true);
 
