@@ -8,7 +8,6 @@
             <div id="kc-form-wrapper">
                 <#if realm.password>
                     <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
-                        <#if !usernameHidden??>
                             <div class="pso-form-group">
                                 <label for="username" class="pso-label">
                                     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -18,7 +17,6 @@
                                     <span class="pso-error">${messagesPerField.getFirstError('username','password')}</span>
                                 </#if>
                             </div>
-                        </#if>
 
                         <div class="pso-form-group">
                             <div class="pso-label-row">
@@ -35,7 +33,7 @@
                             </div>
                         </div>
 
-                        <#if realm.rememberMe && !usernameHidden??>
+                        <#if realm.rememberMe>
                             <div class="pso-form-group pso-remember">
                                 <input tabindex="5" id="rememberMe" name="rememberMe" type="checkbox" <#if login.rememberMe??>checked</#if>>
                                 <label for="rememberMe">${msg("rememberMe")}</label>

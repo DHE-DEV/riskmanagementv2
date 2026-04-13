@@ -15,14 +15,28 @@ class KeycloakAuthController extends Controller
 {
     /**
      * Redirect to Keycloak login page.
+     * First ends any existing Keycloak session, then redirects to login.
      */
     public function redirect(): RedirectResponse
     {
-        return Socialite::driver('keycloak')
+        // End any existing Keycloak session before starting a new login
+        $realm = config('services.keycloak.realms', 'passolution');
+        $baseUrl = config('services.keycloak.base_url');
+        $clientId = config('services.keycloak.client_id');
+
+        // Build the actual Socialite login URL
+        $loginUrl = Socialite::driver('keycloak')
             ->setScopes(['openid', 'profile', 'email'])
-            ->with(['prompt' => 'login'])
             ->enablePKCE()
-            ->redirect();
+            ->redirect()
+            ->getTargetUrl();
+
+        // Redirect to Keycloak logout first, which then redirects to the login URL
+        $logoutUrl = $baseUrl . '/realms/' . $realm . '/protocol/openid-connect/logout'
+            . '?post_logout_redirect_uri=' . urlencode($loginUrl)
+            . '&client_id=' . $clientId;
+
+        return redirect($logoutUrl);
     }
 
     /**
