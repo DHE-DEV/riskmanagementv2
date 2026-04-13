@@ -21,11 +21,16 @@ class KeycloakAuthController extends Controller
         $realm = config('services.keycloak.realms', 'passolution');
         $baseUrl = config('services.keycloak.base_url');
         $clientId = config('services.keycloak.client_id');
+        $idToken = session('keycloak_id_token');
 
         // Redirect to Keycloak logout, which redirects back to our startLogin route
         $logoutUrl = $baseUrl . '/realms/' . $realm . '/protocol/openid-connect/logout'
             . '?post_logout_redirect_uri=' . urlencode(route('auth.keycloak.start'))
             . '&client_id=' . $clientId;
+
+        if ($idToken) {
+            $logoutUrl .= '&id_token_hint=' . urlencode($idToken);
+        }
 
         return redirect($logoutUrl);
     }
@@ -115,6 +120,9 @@ class KeycloakAuthController extends Controller
         $customer->update($updateData);
 
         Auth::guard('customer')->login($customer, true);
+
+        // Store Keycloak token for clean logout/re-login
+        session(['keycloak_id_token' => $keycloakUser->accessTokenResponseBody['id_token'] ?? null]);
 
         // Store employee context in session
         if ($employee) {

@@ -98,6 +98,7 @@ class LoginController extends Controller
     {
         $customer = Auth::guard('customer')->user();
         $wasKeycloak = $customer && $customer->provider === 'keycloak';
+        $idToken = session('keycloak_id_token');
 
         Auth::guard('customer')->logout();
 
@@ -110,6 +111,10 @@ class LoginController extends Controller
                 . '/realms/' . $realm . '/protocol/openid-connect/logout'
                 . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
                 . '&client_id=' . config('services.keycloak.client_id');
+
+            if ($idToken) {
+                $logoutUrl .= '&id_token_hint=' . urlencode($idToken);
+            }
 
             return redirect($logoutUrl);
         }
