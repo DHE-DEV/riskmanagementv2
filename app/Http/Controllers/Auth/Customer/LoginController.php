@@ -96,10 +96,23 @@ class LoginController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $customer = Auth::guard('customer')->user();
+        $wasKeycloak = $customer && $customer->provider === 'keycloak';
+
         Auth::guard('customer')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($wasKeycloak) {
+            $realm = config('services.keycloak.realms', 'passolution');
+            $logoutUrl = config('services.keycloak.base_url')
+                . '/realms/' . $realm . '/protocol/openid-connect/logout'
+                . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
+                . '&client_id=' . config('services.keycloak.client_id');
+
+            return redirect($logoutUrl);
+        }
 
         return redirect()->route('customer.login')
             ->with('success', 'Erfolgreich abgemeldet!');
