@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Employee;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,7 @@ class KeycloakAuthController extends Controller
     {
         return Socialite::driver('keycloak')
             ->setScopes(['openid', 'profile', 'email'])
+            ->with(['prompt' => 'login'])
             ->enablePKCE()
             ->redirect();
     }
@@ -37,17 +39,20 @@ class KeycloakAuthController extends Controller
                 ->with('error', 'Anmeldung über Keycloak fehlgeschlagen: ' . $e->getMessage());
         }
 
-        // Try to find customer by keycloak provider_id
+        $email = $keycloakUser->getEmail();
+        $customer = null;
+        $employee = null;
+
+        // 1. Try to find customer by keycloak provider_id
         $customer = Customer::where('provider', 'keycloak')
             ->where('provider_id', $keycloakUser->getId())
             ->first();
 
-        // If not found, check if email exists
-        if (!$customer && $keycloakUser->getEmail()) {
-            $existing = Customer::where('email', $keycloakUser->getEmail())->first();
+        // 2. If not found by provider_id, try by email as customer
+        if (! $customer && $email) {
+            $existing = Customer::where('email', $email)->first();
 
             if ($existing) {
-                // Link Keycloak to existing customer
                 $existing->update([
                     'provider' => 'keycloak',
                     'provider_id' => $keycloakUser->getId(),
@@ -60,29 +65,50 @@ class KeycloakAuthController extends Controller
             }
         }
 
-        // If still not found, create new customer
-        if (!$customer) {
-            $customer = Customer::create([
-                'name' => $keycloakUser->getName() ?? $keycloakUser->getNickname() ?? 'User',
-                'email' => $keycloakUser->getEmail(),
-                'avatar' => $keycloakUser->getAvatar(),
-                'provider' => 'keycloak',
-                'provider_id' => $keycloakUser->getId(),
-                'provider_token' => $keycloakUser->token,
-                'provider_refresh_token' => $keycloakUser->refreshToken ?? null,
-                'password' => null,
-                'email_verified_at' => now(),
-            ]);
-        } else {
-            // Update tokens
-            $customer->update([
-                'provider_token' => $keycloakUser->token,
-                'provider_refresh_token' => $keycloakUser->refreshToken ?? $customer->provider_refresh_token,
-                'avatar' => $keycloakUser->getAvatar() ?? $customer->avatar,
-            ]);
+        // 3. If not a customer, try to find as employee
+        if (! $customer && $email) {
+            $employee = Employee::where('email', $email)
+                ->where('is_active', true)
+                ->first();
+
+            if ($employee && $employee->isCurrentlyActive() && $employee->customer) {
+                $customer = $employee->customer;
+            }
         }
 
+        // 4. If still not found, reject login
+        if (! $customer) {
+            Log::warning('Keycloak login: no matching customer or employee', ['email' => $email]);
+
+            return redirect()->route('customer.login')
+                ->with('error', 'Kein Konto mit dieser E-Mail-Adresse gefunden.');
+        }
+
+        // Update tokens on customer
+        $customer->update([
+            'provider' => 'keycloak',
+            'provider_id' => $customer->provider_id ?: $keycloakUser->getId(),
+            'provider_token' => $keycloakUser->token,
+            'provider_refresh_token' => $keycloakUser->refreshToken ?? $customer->provider_refresh_token,
+            'avatar' => $keycloakUser->getAvatar() ?? $customer->avatar,
+        ]);
+
         Auth::guard('customer')->login($customer, true);
+
+        // Store employee context in session
+        if ($employee) {
+            session([
+                'logged_in_employee_id' => $employee->id,
+                'logged_in_employee_name' => $employee->first_name . ' ' . $employee->last_name,
+                'logged_in_employee_email' => $employee->email,
+            ]);
+
+            Log::info('Employee logged in via Keycloak', [
+                'employee_id' => $employee->id,
+                'email' => $employee->email,
+                'customer_id' => $customer->id,
+            ]);
+        }
 
         return redirect()->intended('/customer/dashboard')
             ->with('success', 'Erfolgreich angemeldet!');
