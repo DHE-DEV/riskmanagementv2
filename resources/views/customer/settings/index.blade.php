@@ -1515,6 +1515,11 @@
                                             <span x-show="emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">
                                                 <i class="fas fa-crown mr-1 text-[8px]"></i>Eigenes Profil
                                             </span>
+                                            @if($isEmployeeLogin)
+                                            <span x-show="emp.id === {{ $loggedInEmployee->id }}" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                                                <i class="fas fa-user-check mr-1 text-[8px]"></i>Eingeloggt
+                                            </span>
+                                            @endif
                                             <span x-show="!emp.is_currently_active && !emp.is_owner" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">Inaktiv</span>
                                             <span x-show="emp.active_from || emp.active_until" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700">
                                                 <i class="fas fa-clock mr-1 text-[8px]"></i>

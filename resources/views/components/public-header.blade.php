@@ -167,6 +167,10 @@
                 @endif
 
                 <!-- User Dropdown -->
+                @php
+                    $headerEmployee = session('logged_in_employee_id') ? \App\Models\Employee::find(session('logged_in_employee_id')) : null;
+                    $headerDisplayName = $headerEmployee ? $headerEmployee->first_name . ' ' . $headerEmployee->last_name : $originalCustomer->name;
+                @endphp
                 <div id="user-menu" class="relative" x-data="{ open: false }">
                     <button
                         @click="open = !open"
@@ -174,9 +178,9 @@
                         class="flex items-center space-x-2 p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                            {{ strtoupper(substr($originalCustomer->name, 0, 1)) }}
+                            {{ strtoupper(substr($headerDisplayName, 0, 1)) }}
                         </div>
-                        <span class="text-sm font-medium">{{ $originalCustomer->name }}</span>
+                        <span class="text-sm font-medium">{{ $headerDisplayName }}</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
