@@ -2031,19 +2031,26 @@
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Code</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Firma</th>
+                                    <th @click="toggleSort('company_name')" class="px-4 py-2 text-left text-xs font-semibold text-gray-600 cursor-pointer select-none hover:text-blue-600">
+                                        Firma
+                                        <i class="fas ml-1" :class="sortField === 'company_name' ? (sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-gray-300'"></i>
+                                    </th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Straße</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">PLZ</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ort</th>
+                                    <th @click="toggleSort('legacy_client_account_id')" class="px-4 py-2 text-left text-xs font-semibold text-gray-600 cursor-pointer select-none hover:text-blue-600">
+                                        Legacy ID
+                                        <i class="fas ml-1" :class="sortField === 'legacy_client_account_id' ? (sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-gray-300'"></i>
+                                    </th>
                                     <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="loading">
-                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
                                 </template>
                                 <template x-if="!loading && agencies.length === 0">
-                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
                                 </template>
                                 <template x-for="agency in agencies" :key="agency.id">
                                     <tr class="border-b border-gray-100"
@@ -2053,6 +2060,7 @@
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
+                                        <td class="px-4 py-2 text-gray-600" x-text="agency.legacy_client_account_id || '—'"></td>
                                         <td class="px-4 py-2 text-right">
                                             <div class="relative" x-data="{ menuOpen: false }">
                                                 <button @click="menuOpen = !menuOpen" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
@@ -6568,6 +6576,8 @@ function assignedAgencies() {
         total: 0,
         loading: false,
         detailAgency: null,
+        sortField: 'company_name',
+        sortDir: 'asc',
 
         init() {
             this.loadAgencies();
@@ -6582,10 +6592,33 @@ function assignedAgencies() {
                 this.agencies = data.data;
                 this.lastPage = data.last_page;
                 this.total = data.total;
+                this.sortAgencies();
             } catch (e) {
                 console.error('Error loading agencies:', e);
             }
             this.loading = false;
+        },
+
+        toggleSort(field) {
+            if (this.sortField === field) {
+                this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortField = field;
+                this.sortDir = 'asc';
+            }
+            this.sortAgencies();
+        },
+
+        sortAgencies() {
+            const field = this.sortField;
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            this.agencies.sort((a, b) => {
+                let valA = field === 'legacy_client_account_id' ? (a[field] ?? 0) : (a[field] || '').toString().toLowerCase();
+                let valB = field === 'legacy_client_account_id' ? (b[field] ?? 0) : (b[field] || '').toString().toLowerCase();
+                if (valA < valB) return -1 * dir;
+                if (valA > valB) return 1 * dir;
+                return 0;
+            });
         },
 
         nextPage() {
