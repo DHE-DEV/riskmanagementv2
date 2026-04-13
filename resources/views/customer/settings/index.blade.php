@@ -2023,8 +2023,8 @@
                 @if($assignedCount > 0)
                 <div x-show="orgTab === 'agenturen'" x-cloak x-data="assignedAgencies()">
                     {{-- Suche --}}
-                    <div class="mb-4 flex items-center gap-3">
-                        <div class="relative flex-1">
+                    <div class="mb-4">
+                        <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
                             <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()" @keydown.escape="search = ''; loadAgencies()"
                                    placeholder="Suche nach Firma, Code, PLZ, Ort..."
@@ -2033,10 +2033,6 @@
                                 <i class="fas fa-times-circle text-sm"></i>
                             </button>
                         </div>
-                        <label class="flex items-center gap-2 text-xs text-gray-600 whitespace-nowrap cursor-pointer select-none">
-                            <input type="checkbox" x-model="showInactive" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            Inaktive anzeigen
-                        </label>
                     </div>
 
                     {{-- Tabelle --}}
@@ -2052,19 +2048,15 @@
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Straße</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">PLZ</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ort</th>
-                                    <th @click="toggleSort('legacy_client_account_id')" class="px-4 py-2 text-left text-xs font-semibold text-gray-600 cursor-pointer select-none hover:text-blue-600">
-                                        Legacy ID
-                                        <i class="fas ml-1" :class="sortField === 'legacy_client_account_id' ? (sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-gray-300'"></i>
-                                    </th>
                                     <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="loading">
-                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
+                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
                                 </template>
                                 <template x-if="!loading && filteredAgencies.length === 0">
-                                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
+                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
                                 </template>
                                 <template x-for="agency in filteredAgencies" :key="agency.id">
                                     <tr class="border-b border-gray-100"
@@ -2074,7 +2066,6 @@
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
-                                        <td class="px-4 py-2 text-gray-600" x-text="agency.legacy_client_account_id || '—'"></td>
                                         <td class="px-4 py-2 text-right">
                                             <div class="relative" x-data="{ menuOpen: false }">
                                                 <button @click="menuOpen = !menuOpen" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
