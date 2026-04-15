@@ -283,7 +283,7 @@ class CustomerForm
 
                                     Select::make('company_country')
                                         ->label('Land')
-                                        ->options(fn () => Country::orderBy('name')->pluck('name', 'iso_code'))
+                                        ->options(fn () => Country::all()->sortBy(fn ($c) => $c->getName('de'))->mapWithKeys(fn ($c) => [$c->iso_code => $c->getName('de')]))
                                         ->searchable(),
                                 ]),
 
@@ -317,7 +317,7 @@ class CustomerForm
 
                                     Select::make('billing_country')
                                         ->label('Land')
-                                        ->options(fn () => Country::orderBy('name')->pluck('name', 'iso_code'))
+                                        ->options(fn () => Country::all()->sortBy(fn ($c) => $c->getName('de'))->mapWithKeys(fn ($c) => [$c->iso_code => $c->getName('de')]))
                                         ->searchable(),
                                 ]),
                         ]),
