@@ -16,6 +16,7 @@ class Module extends Model
         'price_monthly',
         'price_yearly',
         'price_one_time',
+        'price_setup',
         'currency',
         'is_active',
         'sort_order',
@@ -25,6 +26,7 @@ class Module extends Model
         'price_monthly' => 'decimal:2',
         'price_yearly' => 'decimal:2',
         'price_one_time' => 'decimal:2',
+        'price_setup' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 

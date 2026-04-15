@@ -66,7 +66,7 @@ class ProductResource extends Resource
                         ->label('Interne Beschreibung')
                         ->rows(3),
 
-                    Grid::make(4)->schema([
+                    Grid::make(5)->schema([
                         TextInput::make('price_monthly')
                             ->label('Preis monatlich')
                             ->numeric()
@@ -79,6 +79,11 @@ class ProductResource extends Resource
 
                         TextInput::make('price_one_time')
                             ->label('Einmalpreis')
+                            ->numeric()
+                            ->prefix('€'),
+
+                        TextInput::make('price_setup')
+                            ->label('Einrichtungsgebühr')
                             ->numeric()
                             ->prefix('€'),
 
