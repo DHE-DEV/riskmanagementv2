@@ -53,14 +53,14 @@
         </a>
 
         <!-- Travel Data -->
-        @if(auth('customer')->check())
+        @if(config('app.navigation_travel_data_enabled', true) && auth('customer')->check())
         <a href="{{ route('customer.travel-data') }}" class="p-3 {{ $active === 'travel-data' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Data">
             <i class="fas fa-route text-2xl" aria-hidden="true"></i>
         </a>
         @endif
 
         <!-- Travel Links -->
-        @if(auth('customer')->check())
+        @if(config('app.navigation_travel_links_enabled', true) && auth('customer')->check())
         <a href="{{ route('customer.travel-links') }}" class="p-3 {{ $active === 'customer-travel-links' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Links">
             <i class="fa-regular fa-link text-2xl" aria-hidden="true"></i>
         </a>
@@ -95,7 +95,7 @@
         @endif
 
         <!-- Meine Ereignisse -->
-        @if($featureService->isFeatureEnabled('navigation_customer_events_enabled', $customer) && auth('customer')->check())
+        @if(config('app.navigation_customer_events_enabled', true) && $featureService->isFeatureEnabled('navigation_customer_events_enabled', $customer) && auth('customer')->check())
         <a href="{{ route('customer.events') }}" class="p-3 {{ $active === 'customer-events' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Meine Ereignisse">
             <i class="fa-regular fa-calendar-alt text-2xl" aria-hidden="true"></i>
         </a>
