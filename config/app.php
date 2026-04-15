@@ -189,7 +189,7 @@ return [
     |
     */
 
-    'navigation_menu_enabled' => env('NAVIGATION_MENU_ENABLED', true),
+    'navigation_hamburger_enabled' => env('NAVIGATION_HAMBURGER_ENABLED', true),
     'navigation_events_enabled' => env('NAVIGATION_EVENTS_ENABLED', true),
     'navigation_entry_conditions_enabled' => env('NAVIGATION_ENTRY_CONDITIONS_ENABLED', true),
     'navigation_booking_enabled' => env('NAVIGATION_BOOKING_ENABLED', true),

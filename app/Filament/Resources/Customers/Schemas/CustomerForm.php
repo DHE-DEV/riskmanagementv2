@@ -11,6 +11,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use App\Models\Country;
 
 class CustomerForm
 {
@@ -280,9 +281,10 @@ class CustomerForm
                                             ->maxLength(255),
                                     ]),
 
-                                    TextInput::make('company_country')
+                                    Select::make('company_country')
                                         ->label('Land')
-                                        ->maxLength(255),
+                                        ->options(fn () => Country::orderBy('name')->pluck('name', 'iso_code'))
+                                        ->searchable(),
                                 ]),
 
                             Section::make('Rechnungsadresse')
@@ -313,9 +315,10 @@ class CustomerForm
                                             ->maxLength(255),
                                     ]),
 
-                                    TextInput::make('billing_country')
+                                    Select::make('billing_country')
                                         ->label('Land')
-                                        ->maxLength(255),
+                                        ->options(fn () => Country::orderBy('name')->pluck('name', 'iso_code'))
+                                        ->searchable(),
                                 ]),
                         ]),
                 ]),

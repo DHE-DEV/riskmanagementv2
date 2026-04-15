@@ -29,6 +29,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'validate.embed.key' => \App\Http\Middleware\ValidateEmbedKey::class,
         ]);
 
+        $middleware->redirectGuestsTo(function ($request) {
+            if ($request->is('admin/*')) {
+                return route('filament.admin.auth.login');
+            }
+
+            return route('customer.login');
+        });
+
         // Enable CORS for API routes
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,

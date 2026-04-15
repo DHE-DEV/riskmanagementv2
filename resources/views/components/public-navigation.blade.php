@@ -20,7 +20,7 @@
     <div class="flex-1 overflow-y-auto nav-scrollable w-full">
         <div class="flex flex-col items-center space-y-3">
         <!-- Menü Button -->
-        @if(config('app.navigation_menu_enabled', true))
+        @if(config('app.navigation_hamburger_enabled', true))
         <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Menü" onclick="toggleRightContainer()">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
