@@ -141,7 +141,6 @@
         </button>
         @endif
 
-        @if(config('app.navigation_guest_auth_enabled', true))
         @guest('customer')
         <!-- Login -->
         <a href="{{ route('customer.login') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">
@@ -152,6 +151,5 @@
             <i class="fa-regular fa-user-plus text-2xl" aria-hidden="true"></i>
         </a>
         @endguest
-        @endif
     </div>
 </nav>

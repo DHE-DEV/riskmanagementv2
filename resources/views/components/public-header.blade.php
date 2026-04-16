@@ -209,6 +209,7 @@
             @endauth
 
             @guest('customer')
+                @if(config('app.navigation_guest_auth_enabled', true))
                 <!-- Login & Register Buttons -->
                 <a
                     href="{{ route('customer.login') }}"
@@ -227,6 +228,7 @@
                     >
                         <i class="fas fa-user-plus mr-2"></i>Registrieren
                     </a>
+                @endif
                 @endif
             @endguest
         </div>
