@@ -140,7 +140,7 @@
             width: 320px; /* 20 * 16 = 320px */
             background: #e5e7eb;
             overflow-y: auto;
-            height: 100vh;
+            height: 100%;
             position: relative;
             z-index: 10;
         }
@@ -1459,54 +1459,6 @@
                 </div>
             </div>
 
-            <!-- Map Controls Overlay entfernt - Leaflet bietet eigene Controls -->
-
-            <!-- Legend -->
-             <!--
-            <div class="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg z-[1000] border border-gray-200 transition-all duration-300" id="legendContainer" style="bottom: 35px; right: 15px;">
-
-                <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" onclick="toggleLegend()">
-                    <div class="flex items-center justify-between" id="legendHeader">
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="font-semibold text-gray-800">Legende</span>
-                        </div>
-                        <svg class="w-4 h-4 text-gray-500 transition-all duration-300" id="legendToggleIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-                </div>
-                
-                <div class="p-4 max-w-xs" id="legendContent">
-                    <div class="space-y-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 rounded-full" style="background-color: #ff0000;"></div>
-                            <span class="text-sm text-gray-700 font-medium">Hohes Risiko</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 rounded-full" style="background-color: #e6a50a;"></div>
-                            <span class="text-sm text-gray-700 font-medium">Mittleres Risiko</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 rounded-full" style="background-color: #0fb67f;"></div>
-                            <span class="text-sm text-gray-700 font-medium">Niedriges Risiko</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span class="text-sm text-gray-700 font-medium">Information</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-gray-200">
-                        <p class="text-xs text-gray-500 flex items-center">
-                            <i class="fa-regular fa-pointer mr-1"></i>
-                            Auf Marker klicken für Details
-                        </p>
-                    </div>
-                </div>
-            </div>-->
-
             <!-- Map Attribution -->
             <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 rounded px-2 py-1 text-xs text-gray-600 z-[1000]">
                 Leaflet | OpenStreetMap Deutschland - Kartendaten © OpenStreetMap-Mitwirkende
@@ -1516,6 +1468,7 @@
 
     <!-- Fixed Footer -->
     <x-public-footer />
+    <x-cookie-banner />
 </div>
 
 <!-- Leaflet JavaScript -->

@@ -1,6 +1,6 @@
 {{-- Cookie Consent Banner --}}
 <div x-data="cookieConsent()" x-show="showBanner" x-cloak
-     class="fixed bottom-0 left-0 right-0 z-[9999] p-4 shadow-2xl"
+     class="w-full p-4"
      style="background-color: rgb(211, 227, 96);"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 transform translate-y-full"

@@ -204,6 +204,7 @@ return [
     'navigation_travel_links_enabled' => env('NAVIGATION_TRAVEL_LINKS_ENABLED', true),
     'navigation_customer_events_enabled' => env('NAVIGATION_CUSTOMER_EVENTS_ENABLED', true),
     'navigation_visumpoint_enabled' => env('NAVIGATION_VISUMPOINT_ENABLED', false),
+    'navigation_guest_auth_enabled' => env('NAVIGATION_GUEST_AUTH_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
