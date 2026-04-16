@@ -132,6 +132,8 @@
             flex-shrink: 0;
             width: 64px; /* 16 * 4 = 64px */
             background: black;
+            height: 100%;
+            overflow: hidden;
         }
         
         /* Sidebar - feste Breite */
