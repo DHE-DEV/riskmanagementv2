@@ -19,7 +19,7 @@ class GtmApiController extends Controller
     {
         $request->validate([
             'risk_level' => 'nullable|string|in:high,medium,low,info',
-            'country' => 'nullable|string|max:3',
+            'country' => 'nullable|string|max:255',
             'event_category' => 'nullable|string|max:50',
             'region' => 'nullable|integer',
             'source' => 'nullable|string|max:100',

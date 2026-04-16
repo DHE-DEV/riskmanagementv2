@@ -71,14 +71,17 @@ class GtmEventService
         }
 
         if ($countryCode !== null) {
-            $country = Country::where('iso_code', $countryCode)
-                ->orWhere('iso3_code', $countryCode)
-                ->first();
+            $codes = array_map('trim', explode(',', $countryCode));
+            $countries = Country::where(function ($query) use ($codes) {
+                $query->whereIn('iso_code', $codes)
+                      ->orWhereIn('iso3_code', $codes);
+            })->get();
 
-            if ($country) {
-                $events = $events->filter(function (CustomEvent $event) use ($country) {
-                    return $event->country_id === $country->id
-                        || $event->countries->contains('id', $country->id);
+            if ($countries->isNotEmpty()) {
+                $countryIds = $countries->pluck('id');
+                $events = $events->filter(function (CustomEvent $event) use ($countryIds) {
+                    return $countryIds->contains($event->country_id)
+                        || $event->countries->pluck('id')->intersect($countryIds)->isNotEmpty();
                 });
             } else {
                 $events = collect();
