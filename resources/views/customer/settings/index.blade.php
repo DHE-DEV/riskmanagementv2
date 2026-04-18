@@ -2551,11 +2551,10 @@
                         'subscription' => ['icon' => 'fa-credit-card', 'label' => 'Abonnement', 'desc' => 'Verwaltung Ihres Abonnements mit Lizenzdetails, Laufzeit und verfügbaren Erweiterungen.'],
                     ];
                     $hiddenFeatures = ['embed.corona', 'content.infosystem', 'content.cruise_operator'];
-                    $trsMenuVisibility = config('trs.menu_items', []);
                 @endphp
 
                 @foreach($featureCards as $featureKey => $card)
-                    @if(!in_array($featureKey, $hiddenFeatures) && ($trsMenuVisibility[$featureKey] ?? true))
+                    @if(!in_array($featureKey, $hiddenFeatures))
                         @php $isActive = in_array($featureKey, $activeFeatures); @endphp
                         <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5">
                             <div class="flex items-start gap-4">
