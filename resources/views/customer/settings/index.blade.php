@@ -1096,11 +1096,11 @@
                                 class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-2">
                                 <i class="fas fa-building text-xs"></i> Firmenkunde
                             </button>
-                            <button @click="updateCustomerType('private')"
+                            {{-- <button @click="updateCustomerType('private')"
                                 :class="customerType === 'private' ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
                                 class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors flex items-center gap-2">
                                 <i class="fas fa-user text-xs"></i> Privatkunde
-                            </button>
+                            </button> --}}
                         </div>
 
                         {{-- Geschäftstyp (nur bei Firmenkunde) --}}
