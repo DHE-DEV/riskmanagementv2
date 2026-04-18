@@ -379,7 +379,7 @@
                 </div>
 
                 {{-- Passwort ändern (nur für User mit lokalem Passwort) --}}
-                @if(!$customer->provider)
+                @if(!$customer->provider && config('customer_settings.blocks.password_change', true))
                 <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
                     <h4 class="text-sm font-semibold text-gray-900 mb-4">Passwort ändern</h4>
                     <form @submit.prevent="changePassword">

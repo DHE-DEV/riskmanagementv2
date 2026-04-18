@@ -21,4 +21,13 @@ return [
         'travel-information'    => env('CUSTOMER_SETTINGS_TRAVEL_INFORMATION_ENABLED', true),
         'connected-services'    => env('CUSTOMER_SETTINGS_CONNECTED_SERVICES_ENABLED', true),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Einzelne Blöcke auf Section "general" (Mein Profil)
+    |--------------------------------------------------------------------------
+    */
+    'blocks' => [
+        'password_change' => env('CUSTOMER_SETTINGS_PASSWORD_CHANGE_ENABLED', true),
+    ],
 ];
