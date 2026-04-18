@@ -82,7 +82,7 @@ class CustomerFeatureOverride extends Model
             'navigation_airports_enabled' => 'Flughäfen',
             'navigation_branches_enabled' => 'Filialen',
             'navigation_my_travelers_enabled' => 'Meine Reisenden',
-            'navigation_risk_overview_enabled' => 'Risiko-Übersicht',
+            'navigation_risk_overview_enabled' => 'Travel Alert',
             'navigation_cruise_enabled' => 'Kreuzfahrten',
             'navigation_business_visa_enabled' => 'Business Visum',
             'navigation_center_map_enabled' => 'Karte zentrieren',

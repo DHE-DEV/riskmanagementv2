@@ -1,6 +1,6 @@
 @extends('layouts.embed')
 
-@section('title', 'Anmeldung - Risiko-Übersicht')
+@section('title', 'Anmeldung - Travel Alert')
 @section('hide_default_badge', true)
 
 @section('additional-styles')
@@ -16,9 +16,9 @@
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
                 <i class="fa-regular fa-shield-exclamation text-2xl text-blue-600"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-900">Risiko-Übersicht</h2>
+            <h2 class="text-2xl font-bold text-gray-900">Travel Alert</h2>
             <p class="mt-2 text-sm text-gray-600">
-                Bitte melden Sie sich an, um die Risiko-Übersicht zu sehen.
+                Bitte melden Sie sich an, um den Travel Alert zu sehen.
             </p>
         </div>
 

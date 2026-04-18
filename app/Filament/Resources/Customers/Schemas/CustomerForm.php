@@ -169,7 +169,7 @@ class CustomerForm
                                             ->native(false),
 
                                         Select::make('navigation_risk_overview_enabled')
-                                            ->label('Risiko-Übersicht')
+                                            ->label('Travel Alert')
                                             ->options([
                                                 '1' => 'Aktiviert',
                                                 '0' => 'Deaktiviert',
