@@ -15,6 +15,11 @@
     }
     $loggedInEmployee = session('logged_in_employee_id') ? \App\Models\Employee::find(session('logged_in_employee_id')) : null;
     $isEmployeeLogin = $loggedInEmployee !== null;
+
+    $customerSettingsSections = config('customer_settings.sections', []);
+    if (array_key_exists($settingsSection, $customerSettingsSections) && ! $customerSettingsSections[$settingsSection]) {
+        abort(404);
+    }
 @endphp
 
 @push('styles')
@@ -171,47 +176,61 @@
 
                 <div id="settings-nav-tip" class="settings-section-title mt-2">Travel Information Platform</div>
 
+                @if($customerSettingsSections['travel-requirements'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'travel-requirements']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-requirements' ? 'active' : '' }}">
                     <i class="fas fa-passport"></i>
                     Travel Requirements Service
                 </a>
+                @endif
 
+                @if($customerSettingsSections['global-travel-monitor'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'global-travel-monitor']) }}"
                    class="settings-nav-item {{ $settingsSection === 'global-travel-monitor' ? 'active' : '' }}">
                     <i class="fas fa-globe"></i>
                     Global Travel Monitor
                 </a>
+                @endif
 
+                @if($customerSettingsSections['travel-alert'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'travel-alert']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-alert' ? 'active' : '' }}">
                     <i class="fas fa-triangle-exclamation"></i>
                     Travel Alert
                 </a>
+                @endif
 
+                @if($customerSettingsSections['travel-data'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'travel-data']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-data' ? 'active' : '' }}">
                     <i class="fas fa-route"></i>
                     Travel Data
                 </a>
+                @endif
 
+                @if($customerSettingsSections['travel-link'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'travel-link']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-link' ? 'active' : '' }}">
                     <i class="fas fa-link"></i>
                     Travel Link
                 </a>
+                @endif
 
+                @if($customerSettingsSections['travel-information'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'travel-information']) }}"
                    class="settings-nav-item {{ $settingsSection === 'travel-information' ? 'active' : '' }}">
                     <i class="fas fa-book-atlas"></i>
                     Travel Information
                 </a>
+                @endif
 
+                @if($customerSettingsSections['connected-services'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'connected-services']) }}"
                    class="settings-nav-item {{ $settingsSection === 'connected-services' ? 'active' : '' }}">
                     <i class="fas fa-plug"></i>
                     Connected Services
                 </a>
+                @endif
             </nav>
         </div>
     </div>
