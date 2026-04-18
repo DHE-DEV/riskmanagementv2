@@ -315,8 +315,9 @@
                             <input type="text" x-model="personal.name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">E-Mail <span class="text-red-500">*</span></label>
-                            <input type="email" x-model="personal.email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">E-Mail</label>
+                            <input type="email" x-model="personal.email" readonly disabled class="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-500 rounded-lg text-sm cursor-not-allowed">
+                            <p class="text-[11px] text-gray-400 mt-1">Die E-Mail-Adresse kann nicht geändert werden. Bitte wenden Sie sich an den Support.</p>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">Telefon</label>

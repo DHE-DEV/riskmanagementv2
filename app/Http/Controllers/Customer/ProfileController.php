@@ -21,7 +21,6 @@ class ProfileController extends Controller
 
             $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:employees,email,' . $employee->id,
                 'phone' => 'nullable|string|max:50',
             ]);
 
@@ -29,23 +28,20 @@ class ProfileController extends Controller
             $employee->update([
                 'first_name' => $nameParts[0] ?? '',
                 'last_name' => $nameParts[1] ?? '',
-                'email' => $request->email,
                 'phone' => $request->phone,
             ]);
 
             session([
                 'logged_in_employee_name' => $employee->first_name . ' ' . $employee->last_name,
-                'logged_in_employee_email' => $employee->email,
             ]);
         } else {
             $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:customers,email,' . auth('customer')->id(),
                 'phone' => 'nullable|string|max:50',
             ]);
 
             $customer = auth('customer')->user();
-            $customer->update($request->only(['name', 'email', 'phone']));
+            $customer->update($request->only(['name', 'phone']));
         }
 
         return response()->json([
