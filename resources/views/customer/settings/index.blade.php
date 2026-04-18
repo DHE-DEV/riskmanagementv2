@@ -302,10 +302,10 @@
                             <p class="font-medium text-gray-900">{{ $customer->created_at?->format('d.m.Y') }}</p>
                         </div>
                         @endif
-                        <div>
+                        {{-- <div>
                             <span class="text-xs text-gray-500">Login via</span>
                             <p class="font-medium text-gray-900">{{ $customer->provider ?: 'E-Mail' }}</p>
-                        </div>
+                        </div> --}}
                     </div>
 
                     {{-- Edit Mode --}}
