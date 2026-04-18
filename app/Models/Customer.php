@@ -22,6 +22,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
 
     protected $attributes = [
         'branch_management_active' => true,
+        'customer_type' => 'business',
     ];
 
     protected $fillable = [

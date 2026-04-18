@@ -292,9 +292,8 @@
                         <div>
                             <span class="text-xs text-gray-500">Kundentyp</span>
                             <p class="font-medium text-gray-900">
-                                @if($customer->customer_type === 'business') Firmenkunde
-                                @elseif($customer->customer_type === 'private') Privatkunde
-                                @else — @endif
+                                @if($customer->customer_type === 'private') Privatkunde
+                                @else Firmenkunde @endif
                             </p>
                         </div>
                         <div>
@@ -1089,7 +1088,7 @@
                     {{-- Kundentyp --}}
                     <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5" x-data="customerTypeManager()">
                         <h4 class="text-sm font-semibold text-gray-900 mb-3">Kundentyp</h4>
-                        <p class="text-xs text-gray-500 mb-4">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p>
+                        {{-- <p class="text-xs text-gray-500 mb-4">Bitte wählen Sie aus, ob Sie Firmenkunde oder Privatkunde sind.</p> --}}
                         <div class="flex gap-3 mb-4">
                             <button @click="updateCustomerType('business')"
                                 :class="customerType === 'business' ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
@@ -6043,7 +6042,7 @@ function settingsManager() {
 
 function customerTypeManager() {
     return {
-        customerType: @json($customer->customer_type ?? ''),
+        customerType: @json($customer->customer_type ?: 'business'),
         businessTypes: @json($customer->business_type ?? []),
         async updateCustomerType(type) {
             this.customerType = type;
