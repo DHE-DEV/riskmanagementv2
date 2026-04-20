@@ -671,6 +671,13 @@
             z-index: auto !important;
         }
 
+        /* Leaflet-Pane-Reihenfolge explizit wiederherstellen, damit Marker nicht von
+           nachladenden Tiles verdeckt werden (verursachte "verschwindende" Events beim Zoom) */
+        .leaflet-tile-pane      { z-index: 200 !important; }
+        .leaflet-overlay-pane   { z-index: 400 !important; }
+        .leaflet-shadow-pane    { z-index: 500 !important; }
+        .leaflet-marker-pane    { z-index: 600 !important; }
+
         .leaflet-top,
         .leaflet-bottom,
         .leaflet-control {
@@ -1776,6 +1783,26 @@ function initializeMap() {
     if (!countryOverlaysLayer) {
         countryOverlaysLayer = L.featureGroup().addTo(map);
     }
+
+    // Auto-Spiderfy: Ab Zoom >= AUTO_SPIDERFY_ZOOM werden alle sichtbaren Cluster
+    // automatisch aufgeklappt (als hätte der Nutzer sie angeklickt). Darunter werden
+    // geöffnete Spiderfys wieder eingeklappt.
+    const AUTO_SPIDERFY_ZOOM = 10;
+    map.on('zoomend', function() {
+        if (!markerClusterGroup) return;
+        if (map.getZoom() >= AUTO_SPIDERFY_ZOOM) {
+            // Kurze Verzögerung, damit die Cluster-Neuberechnung nach Zoom abgeschlossen ist
+            setTimeout(function() {
+                markerClusterGroup._featureGroup.eachLayer(function(layer) {
+                    if (layer.spiderfy && typeof layer.spiderfy === 'function' && !layer._spiderfied) {
+                        layer.spiderfy();
+                    }
+                });
+            }, 50);
+        } else {
+            markerClusterGroup.unspiderfy();
+        }
+    });
 
     // Load GeoJSON data for countries
     loadCountryBoundaries();
@@ -3166,10 +3193,11 @@ function addMarkersToMap() {
     // Neue MarkerCluster-Gruppe erstellen mit angepassten Einstellungen
     markerClusterGroup = L.markerClusterGroup({
         maxClusterRadius: 40,  // Kleinerer Radius für engeres Clustering
-        spiderfyOnMaxZoom: true,  // Cluster bei höchster Zoom-Stufe aufklappen
+        spiderfyOnMaxZoom: true,  // Cluster bei höchster Zoom-Stufe aufklappen (Klick klappt überlappende Events auf)
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,  // Automatisches Zoomen beim Click
-        // Clustering bleibt auf allen Zoom-Stufen aktiv
+        removeOutsideVisibleBounds: false,  // Marker bleiben im DOM (verhindert Verschwinden beim Zoom)
+        chunkedLoading: true,  // Bessere Performance bei vielen Events
         spiderfyDistanceMultiplier: 2.5,  // Größere Distanz beim Spiderfy
         spiderLegPolylineOptions: { weight: 2, color: '#222', opacity: 0.5 },
         animateAddingMarkers: false,  // Deaktiviere Animation beim Hinzufügen
