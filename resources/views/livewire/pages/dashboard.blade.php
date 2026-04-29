@@ -5,7 +5,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passolution Travel Information Platform</title>
+    <title>Global Travel Monitor - Travel Information Platform</title>
 
     {{-- SEO Meta Tags --}}
     <meta name="description" content="Passolution Travel Information Platform – Ihre zentrale Plattform für Reisesicherheit, Einreisebestimmungen, Risiko-Monitoring und Travel Risk Management. Echtzeit-Informationen für über 200 Länder.">

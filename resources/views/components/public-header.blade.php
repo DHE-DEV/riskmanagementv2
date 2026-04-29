@@ -4,9 +4,9 @@
     <div class="flex items-center justify-between h-full px-4">
         <!-- Logo -->
         <div class="flex items-center space-x-4">
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center" style="gap: 30px;">
                 <img src="/logo.png" alt="Global Travel Monitor - Weltweites Reiserisiko-Monitoring und Sicherheitsinformationen" class="h-8 w-auto" style="margin-left:-5px"/>
-                <span class="text-xl font-light tracking-wide text-gray-800" style="margin-left: 30px;">Passolution Travel Information Platform</span>
+                <span class="text-xl font-light tracking-wide text-gray-800">Passolution Travel Information Platform</span>
             </div>
         </div>
 
