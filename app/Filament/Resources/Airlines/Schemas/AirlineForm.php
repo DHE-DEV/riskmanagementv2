@@ -6,6 +6,7 @@ use App\Models\Airline;
 use App\Models\Airport;
 use App\Models\Country;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -315,26 +316,80 @@ class AirlineForm
 
                                         Fieldset::make('In der Kabine')
                                             ->schema([
+                                                Toggle::make('pet_policy.in_cabin.allowed')
+                                                    ->label('Erlaubt')
+                                                    ->default(false)
+                                                    ->columnSpanFull(),
+
                                                 TextInput::make('pet_policy.in_cabin.max_weight')
                                                     ->label('Maximales Gewicht')
-                                                    ->placeholder('z.B. 8kg'),
+                                                    ->placeholder('z.B. 8kg')
+                                                    ->columnSpanFull(),
 
-                                                TextInput::make('pet_policy.in_cabin.carrier_size')
-                                                    ->label('Transportbox-Größe')
-                                                    ->placeholder('z.B. 55x40x23cm'),
+                                                TextInput::make('pet_policy.in_cabin.carrier_length')
+                                                    ->label('Transportbox-Länge (cm)')
+                                                    ->numeric()
+                                                    ->suffix('cm'),
+
+                                                TextInput::make('pet_policy.in_cabin.carrier_width')
+                                                    ->label('Transportbox-Breite (cm)')
+                                                    ->numeric()
+                                                    ->suffix('cm'),
+
+                                                TextInput::make('pet_policy.in_cabin.carrier_height')
+                                                    ->label('Transportbox-Höhe (cm)')
+                                                    ->numeric()
+                                                    ->suffix('cm'),
+
+                                                Toggle::make('pet_policy.in_cabin.advance_notice_required')
+                                                    ->label('Voranmeldung erforderlich')
+                                                    ->default(false)
+                                                    ->columnSpanFull(),
+
+                                                MarkdownEditor::make('pet_policy.in_cabin.notes')
+                                                    ->label('Zusätzliche Hinweise')
+                                                    ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link', 'blockquote'])
+                                                    ->columnSpanFull(),
                                             ])
+                                            ->columns(3)
                                             ->visible(fn ($get) => $get('pet_policy.allowed') ?? false),
 
                                         Fieldset::make('Im Frachtraum')
                                             ->schema([
+                                                Toggle::make('pet_policy.in_hold.allowed')
+                                                    ->label('Erlaubt')
+                                                    ->default(false)
+                                                    ->columnSpanFull(),
+
                                                 TextInput::make('pet_policy.in_hold.max_weight')
                                                     ->label('Maximales Gewicht')
-                                                    ->placeholder('z.B. 75kg'),
+                                                    ->placeholder('z.B. 75kg')
+                                                    ->columnSpanFull(),
 
-                                                Textarea::make('pet_policy.in_hold.notes')
+                                                Toggle::make('pet_policy.in_hold.advance_notice_required')
+                                                    ->label('Voranmeldung erforderlich')
+                                                    ->default(false)
+                                                    ->columnSpanFull(),
+
+                                                MarkdownEditor::make('pet_policy.in_hold.notes')
                                                     ->label('Zusätzliche Hinweise')
-                                                    ->rows(2)
-                                                    ->placeholder('z.B. Nur bestimmte Rassen'),
+                                                    ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link', 'blockquote'])
+                                                    ->columnSpanFull(),
+                                            ])
+                                            ->visible(fn ($get) => $get('pet_policy.allowed') ?? false),
+
+                                        Fieldset::make('Allgemeine Einschränkungen')
+                                            ->schema([
+                                                CheckboxList::make('pet_policy.restrictions')
+                                                    ->label('')
+                                                    ->options([
+                                                        'specific_species' => 'Nur bestimmte Tierarten',
+                                                        'breed_restrictions' => 'Rasseeinschränkungen',
+                                                        'specific_routes' => 'Nur bestimmte Strecken',
+                                                        'temperature_restrictions' => 'Temperaturabhängige Einschränkungen',
+                                                        'service_animals_allowed' => 'Assistenztiere erlaubt',
+                                                    ])
+                                                    ->columns(1),
                                             ])
                                             ->visible(fn ($get) => $get('pet_policy.allowed') ?? false),
 
@@ -344,10 +399,10 @@ class AirlineForm
                                             ->placeholder('https://...')
                                             ->visible(fn ($get) => $get('pet_policy.allowed') ?? false),
 
-                                        Textarea::make('pet_policy.notes')
+                                        MarkdownEditor::make('pet_policy.notes')
                                             ->label('Allgemeine Hinweise')
-                                            ->rows(3)
                                             ->placeholder('Weitere Informationen zur Haustiermitnahme')
+                                            ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link', 'blockquote'])
                                             ->visible(fn ($get) => $get('pet_policy.allowed') ?? false),
                                     ])
                                     ->collapsible()
