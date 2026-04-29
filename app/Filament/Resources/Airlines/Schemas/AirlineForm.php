@@ -326,6 +326,11 @@ class AirlineForm
                                                     ->placeholder('z.B. 8kg')
                                                     ->columnSpanFull(),
 
+                                                Toggle::make('pet_policy.in_cabin.weight_includes_bag')
+                                                    ->label('inklusive Tasche')
+                                                    ->default(false)
+                                                    ->columnSpanFull(),
+
                                                 TextInput::make('pet_policy.in_cabin.carrier_length')
                                                     ->label('Transportbox-Länge (cm)')
                                                     ->numeric()
