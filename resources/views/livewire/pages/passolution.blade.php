@@ -119,7 +119,7 @@
             <!-- Content: Travel Requirements Service -->
             <div class="content-area">
                 <iframe
-                    src="https://web.passolution.de"
+                    src="{{ config('services.passolution.web_url') }}"
                     allow="geolocation; clipboard-write; storage-access"
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-top-navigation-by-user-activation allow-modals"
                     loading="lazy"

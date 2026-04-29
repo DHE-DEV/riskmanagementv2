@@ -56,6 +56,7 @@ return [
         // Scheduled sync settings
         'sync_enabled' => env('PASSOLUTION_SYNC_ENABLED', true),
         'travel_details_link' => env('PASSOLUTION_TRAVEL_DETAILS_LINK', 'https://travel-details.eu'),
+        'web_url' => env('PASSOLUTION_WEB_URL', 'https://web.passolution.de'),
     ],
 
     // PDS API - For SSO token-based API access
