@@ -1220,7 +1220,7 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('currentPastEvents')" style="position: relative; z-index: 2;">
-                        <p class="text-xs text-gray-700 font-medium">Aktuelle Ereignisse</p>
+                        <p class="text-xs text-gray-700 font-medium">Aktuelle Ereignisse (<span id="currentPastEventsCount">0</span>)</p>
                         <svg id="currentPastEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
@@ -3649,20 +3649,17 @@ function updateStatistics() {
     const highRiskEvents = currentEvents.filter(e => e.severity === 'red' || e.severity === 'orange').length;
     const gdacsEvents = currentEvents.filter(e => e.is_gdacs).length;
 
-    // Berechne die Anzahl eindeutiger Events (gleiche Logik wie in renderEvents)
+    // Berechne die Anzahl eindeutiger Events aus dem (gefilterten) currentEvents
+    // — gleiche Logik wie in renderEvents, damit der Header-Count Filter berücksichtigt
     const uniqueEvents = new Set();
-    if (window.allEvents) {
-        window.allEvents.forEach(event => {
-            if (event.source === 'custom' && event.original_event_id) {
-                // Verwende die original_event_id für Multi-Country Events
-                const mainEventId = event.original_event_id.toString().split('_')[0];
-                uniqueEvents.add(mainEventId);
-            } else if (!event.original_event_id) {
-                // Normales Event ohne mehrere Länder
-                uniqueEvents.add(event.id);
-            }
-        });
-    }
+    currentEvents.forEach(event => {
+        if (event.source === 'custom' && event.original_event_id) {
+            const mainEventId = event.original_event_id.toString().split('_')[0];
+            uniqueEvents.add(mainEventId);
+        } else if (!event.original_event_id) {
+            uniqueEvents.add(event.id);
+        }
+    });
     const allEventsCount = uniqueEvents.size > 0 ? uniqueEvents.size : currentEvents.length;
 
     // Alle Elemente mit den gleichen IDs aktualisieren
