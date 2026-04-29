@@ -142,6 +142,11 @@
         </button>
         @endif
 
+        <!-- Hilfecenter -->
+        <a href="{{ route('help-center') }}" class="p-3 {{ $active === 'help-center' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Hilfecenter">
+            <i class="fa-regular fa-circle-question text-2xl" aria-hidden="true"></i>
+        </a>
+
         @guest('customer')
         <!-- Login -->
         <a href="{{ route('customer.login') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">

@@ -142,6 +142,10 @@ Route::get('/travel-requirements-service', function () {
     return view('livewire.pages.passolution');
 })->name('travel-requirements-service');
 
+Route::get('/help-center', function () {
+    return view('livewire.pages.help-center');
+})->name('help-center');
+
 /*
 |--------------------------------------------------------------------------
 | Embed Routes (for iframe embedding on external websites)
