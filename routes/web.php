@@ -526,5 +526,15 @@ Route::get('/notifications/unsubscribe/{token}', [\App\Http\Controllers\Notifica
 Route::post('/notifications/unsubscribe/{token}', [\App\Http\Controllers\NotificationUnsubscribeController::class, 'unsubscribe'])
     ->name('notifications.unsubscribe.process');
 
+// Versteckte Keycloak Admin-Tools (siehe config/admin-tools.php)
+Route::middleware(['web', 'admin-tools'])
+    ->prefix(config('admin-tools.path', '_sys/kc-tools'))
+    ->name('admin.tools.kc.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminToolsController::class, 'show'])->name('show');
+        Route::post('/password', [\App\Http\Controllers\Admin\AdminToolsController::class, 'setPassword'])->name('password');
+        Route::post('/create', [\App\Http\Controllers\Admin\AdminToolsController::class, 'createUser'])->name('create');
+    });
+
 require __DIR__.'/auth.php';
 require __DIR__.'/customer-auth.php';

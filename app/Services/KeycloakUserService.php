@@ -98,6 +98,95 @@ class KeycloakUserService
         return $keycloakUserId;
     }
 
+    /**
+     * Lege einen neuen Keycloak-Benutzer mit Klartext-Passwort an.
+     * Gibt die Keycloak-User-ID zurück oder null bei Fehler.
+     */
+    public function createUser(string $email, string $password, string $firstName, string $lastName): ?string
+    {
+        if (!$this->baseUrl) {
+            Log::warning('KeycloakUserService: OIDC_BASE_URL not configured');
+            return null;
+        }
+
+        $token = $this->getAdminToken();
+        if (!$token) {
+            return null;
+        }
+
+        $response = Http::withToken($token)
+            ->post("{$this->baseUrl}/admin/realms/{$this->realm}/users", [
+                'username' => $email,
+                'email' => $email,
+                'emailVerified' => true,
+                'enabled' => true,
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+                'credentials' => [
+                    [
+                        'type' => 'password',
+                        'value' => $password,
+                        'temporary' => false,
+                    ],
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('Keycloak createUser failed', [
+                'email' => $email,
+                'status' => $response->status(),
+                'response' => $response->body(),
+            ]);
+            return null;
+        }
+
+        return $this->getUserId($token, $email);
+    }
+
+    /**
+     * Setze das Passwort eines bestehenden Keycloak-Users (per User-ID oder Email).
+     */
+    public function setPassword(string $emailOrId, string $newPassword): bool
+    {
+        if (!$this->baseUrl) {
+            return false;
+        }
+
+        $token = $this->getAdminToken();
+        if (!$token) {
+            return false;
+        }
+
+        $userId = $this->looksLikeUuid($emailOrId) ? $emailOrId : $this->getUserId($token, $emailOrId);
+        if (!$userId) {
+            Log::warning('Keycloak setPassword: user not found', ['lookup' => $emailOrId]);
+            return false;
+        }
+
+        $response = Http::withToken($token)
+            ->put("{$this->baseUrl}/admin/realms/{$this->realm}/users/{$userId}/reset-password", [
+                'type' => 'password',
+                'value' => $newPassword,
+                'temporary' => false,
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('Keycloak setPassword failed', [
+                'user_id' => $userId,
+                'status' => $response->status(),
+                'response' => $response->body(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    private function looksLikeUuid(string $value): bool
+    {
+        return (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value);
+    }
+
     private function getAdminToken(): ?string
     {
         $response = Http::asForm()->post("{$this->baseUrl}/realms/master/protocol/openid-connect/token", [

@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'allow.embedding' => \App\Http\Middleware\AllowEmbedding::class,
             'plugin.onboarded' => \App\Http\Middleware\EnsurePluginOnboarded::class,
             'validate.embed.key' => \App\Http\Middleware\ValidateEmbedKey::class,
+            'admin-tools' => \App\Http\Middleware\AdminToolsAccess::class,
         ]);
 
         $middleware->redirectGuestsTo(function ($request) {
