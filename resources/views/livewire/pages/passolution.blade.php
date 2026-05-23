@@ -118,8 +118,19 @@
 
             <!-- Content: Travel Requirements Service -->
             <div class="content-area">
+                @php
+                    $iframeBase = rtrim(config('services.passolution.web_url'), '/').'/auth/sso/check';
+                    $iframeSecret = config('services.passolution.iframe_sso_secret');
+                    $iframeUser = auth('customer')->user();
+                    $iframeSrc = $iframeBase;
+                    if ($iframeUser && $iframeSecret && $iframeUser->email) {
+                        $iframeSrc .= '?token='.urlencode(
+                            \App\Services\IframeAuthToken::create($iframeUser->email, $iframeSecret)
+                        );
+                    }
+                @endphp
                 <iframe
-                    src="{{ rtrim(config('services.passolution.web_url'), '/') }}/auth/sso/check"
+                    src="{{ $iframeSrc }}"
                     allow="geolocation; clipboard-write; storage-access"
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-top-navigation-by-user-activation allow-modals"
                     loading="lazy"

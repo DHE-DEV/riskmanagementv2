@@ -58,6 +58,7 @@ return [
         'travel_details_link' => env('PASSOLUTION_TRAVEL_DETAILS_LINK', 'https://travel-details.eu'),
         'web_url' => env('PASSOLUTION_WEB_URL', 'https://web.passolution.de'),
         'help_center_url' => env('PASSOLUTION_HELP_CENTER_URL', 'https://web.passolution.de/zoho/desk/saml/login'),
+        'iframe_sso_secret' => env('IFRAME_SSO_SECRET'),
     ],
 
     // PDS API - For SSO token-based API access
