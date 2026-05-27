@@ -17,7 +17,9 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Einbindung -->
-    @php($faKit = config('services.fontawesome.kit'))
+    @php
+        $faKit = config('services.fontawesome.kit');
+    @endphp
     @if(!empty($faKit))
         <script src="https://kit.fontawesome.com/{{ e($faKit) }}.js" crossorigin="anonymous" onload="window.__faKitOk=true" onerror="window.__faKitOk=false"></script>
         <script>
