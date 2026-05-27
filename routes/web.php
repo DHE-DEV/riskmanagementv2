@@ -142,6 +142,24 @@ Route::get('/travel-requirements-service', function () {
     return view('livewire.pages.passolution');
 })->name('travel-requirements-service');
 
+// Travel Requirements Service v2 – native rebuild of the pds-homepage search
+Route::middleware('auth:customer')
+    ->prefix('travel-requirements-service-v2')
+    ->name('travel-requirements-service-v2')
+    ->controller(\App\Http\Controllers\Customer\TravelRequirementsServiceV2Controller::class)
+    ->group(function () {
+        Route::get('/', 'index');                          // travel-requirements-service-v2
+        Route::post('/search', 'search')->name('.search');
+        Route::get('/pdf', 'pdf')->name('.pdf');
+        Route::get('/abo/emails', 'aboEmails')->name('.abo.emails');
+        Route::post('/abo/emails/add', 'aboAddEmail')->name('.abo.emails.add');
+        Route::post('/abo/save', 'aboSave')->name('.abo.save');
+        Route::post('/cruise/lines', 'cruiseLines')->name('.cruise.lines');
+        Route::post('/cruise/ships', 'cruiseShips')->name('.cruise.ships');
+        Route::post('/cruise/routes', 'cruiseRoutes')->name('.cruise.routes');
+        Route::post('/cruise/cruises', 'cruiseCruises')->name('.cruise.cruises');
+    });
+
 Route::get('/help-center', function () {
     return view('livewire.pages.help-center');
 })->name('help-center');
