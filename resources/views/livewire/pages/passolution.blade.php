@@ -143,5 +143,26 @@
         <!-- Footer -->
         <x-public-footer />
     </div>
+
+    {{-- iframe-Login-Bridge: pds-homepage signalisiert per postMessage, wenn ein Login gebraucht wird.
+         Parent navigiert dann das Top-Window zur Customer-Login-Seite und kehrt nach erfolgreichem
+         Login hierher zurueck (Keycloak verweigert frame-ancestors, daher kein Login im iframe). --}}
+    <script>
+    (function () {
+        const TRUSTED_ORIGIN = @json(rtrim(config('services.passolution.web_url'), '/'));
+        const LOGIN_URL      = @json(route('customer.login'));
+        const RETURN_URL     = @json(route('travel-requirements-service'));
+
+        window.addEventListener('message', function (event) {
+            if (event.origin !== TRUSTED_ORIGIN) return;
+            const data = event.data;
+            if (!data || typeof data !== 'object') return;
+
+            if (data.type === 'pds-login-required') {
+                window.location.href = LOGIN_URL + '?redirect=' + encodeURIComponent(RETURN_URL);
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
