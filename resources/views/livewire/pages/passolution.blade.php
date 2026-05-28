@@ -124,11 +124,22 @@
                     $iframeBase = rtrim(config('services.passolution.web_url'), '/').'/auth/sso/check';
                     $iframeSecret = config('services.passolution.iframe_sso_secret');
                     $iframeUser = auth('customer')->user();
-                    $iframeSrc = $iframeBase;
+                    $iframeParams = [];
                     if ($iframeUser && $iframeSecret && $iframeUser->email) {
-                        $iframeSrc .= '?token='.urlencode(
-                            \App\Services\IframeAuthToken::create($iframeUser->email, $iframeSecret)
+                        $iframeParams['token'] = \App\Services\IframeAuthToken::create(
+                            $iframeUser->email,
+                            $iframeSecret
                         );
+                    }
+                    $iframeSrc = $iframeBase;
+                    if (! empty($iframeParams)) {
+                        $iframeSrc .= '?'.http_build_query($iframeParams);
+                    }
+                    // Optionale UI-Hide/Locale-Parameter aus PASSOLUTION_IFRAME_UI_PARAMS
+                    // (vorformatierter Query-String, z. B. "menu-hide=gtm,hc,is&ui-hide=is")
+                    $iframeUiParams = ltrim((string) config('services.passolution.iframe_ui_params'), '?&');
+                    if ($iframeUiParams !== '') {
+                        $iframeSrc .= (str_contains($iframeSrc, '?') ? '&' : '?').$iframeUiParams;
                     }
                 @endphp
                 <iframe

@@ -59,6 +59,9 @@ return [
         'web_url' => env('PASSOLUTION_WEB_URL', 'https://web.passolution.de'),
         'help_center_url' => env('PASSOLUTION_HELP_CENTER_URL', 'https://web.passolution.de/zoho/desk/saml/login'),
         'iframe_sso_secret' => env('IFRAME_SSO_SECRET'),
+        // Optionale Query-Parameter für den eingebetteten iframe (z. B. UI-Hide-Flags
+        // der pds-Homepage). Beispiel: "menu-hide=gtm,hc,is&ui-hide=is"
+        'iframe_ui_params' => env('PASSOLUTION_IFRAME_UI_PARAMS'),
     ],
 
     // PDS API - For SSO token-based API access
