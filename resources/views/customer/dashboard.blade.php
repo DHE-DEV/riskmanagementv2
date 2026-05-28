@@ -756,9 +756,27 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Profil
                         </h3>
+                        @php
+                            $customerEmail = auth('customer')->user()->email;
+                            // Echte Anmelde-Mail: SSO-/Employee-Kontext bevorzugen,
+                            // Customer-Mail nur, wenn Anmelder = Customer selbst.
+                            $loginEmail = session('keycloak_email')
+                                ?: session('logged_in_employee_email')
+                                ?: $customerEmail;
+                            $showAccountLine = $loginEmail !== $customerEmail;
+                        @endphp
                         <p class="text-sm text-gray-700">
-                            {{ auth('customer')->user()->email }}
+                            {{ $loginEmail }}
                         </p>
+                        @if($showAccountLine)
+                            <p class="text-xs text-gray-500 mt-1">
+                                im Account:
+                                <span class="font-medium">{{ auth('customer')->user()->company_name ?: $customerEmail }}</span>
+                                @if(auth('customer')->user()->company_name)
+                                    ({{ $customerEmail }})
+                                @endif
+                            </p>
+                        @endif
                         @if(auth('customer')->user()->isSocialLogin())
                             <p class="text-xs text-gray-700 mt-2">
                                 Angemeldet mit: {{ ucfirst(auth('customer')->user()->provider) }}

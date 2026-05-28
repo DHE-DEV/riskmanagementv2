@@ -121,8 +121,13 @@ class KeycloakAuthController extends Controller
 
         Auth::guard('customer')->login($customer, true);
 
-        // Store Keycloak token for clean logout/re-login
-        session(['keycloak_id_token' => $keycloakUser->accessTokenResponseBody['id_token'] ?? null]);
+        // Store Keycloak token for clean logout/re-login plus the actual login email
+        // (Customer im customer-Guard kann die Firma sein – die echte Anmelde-Identität
+        // brauchen z. B. iframe-SSO und Dashboard-Anzeige.)
+        session([
+            'keycloak_id_token' => $keycloakUser->accessTokenResponseBody['id_token'] ?? null,
+            'keycloak_email' => $email,
+        ]);
 
         // Store employee context in session
         if ($employee) {

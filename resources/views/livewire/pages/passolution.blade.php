@@ -123,10 +123,13 @@
                 @php
                     $iframeBase = rtrim(config('services.passolution.web_url'), '/').'/auth/sso/check';
                     $iframeSecret = config('services.passolution.iframe_sso_secret');
-                    // Bei Employee-Login (KeycloakAuthController) ist auth('customer')->user()
-                    // der Firmen-Datensatz; die echte Anmelde-Mail steht in der Session.
-                    // Bevorzuge die Employee-Mail, sonst die Customer-Mail als Fallback.
-                    $iframeEmail = session('logged_in_employee_email')
+                    // auth('customer')->user() kann (bei Employee- oder Provider-ID-Mapping)
+                    // der Firmen-Datensatz sein. Echte Anmelde-Identität ergibt sich aus:
+                    //   1. session('keycloak_email')              – aus KeycloakAuthController
+                    //   2. session('logged_in_employee_email')    – Employee-Pfad
+                    //   3. Customer-Mail                          – Fallback
+                    $iframeEmail = session('keycloak_email')
+                        ?: session('logged_in_employee_email')
                         ?: optional(auth('customer')->user())->email;
                     $iframeParams = [];
                     if ($iframeEmail && $iframeSecret) {
