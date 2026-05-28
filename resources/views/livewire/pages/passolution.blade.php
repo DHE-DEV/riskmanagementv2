@@ -123,11 +123,15 @@
                 @php
                     $iframeBase = rtrim(config('services.passolution.web_url'), '/').'/auth/sso/check';
                     $iframeSecret = config('services.passolution.iframe_sso_secret');
-                    $iframeUser = auth('customer')->user();
+                    // Bei Employee-Login (KeycloakAuthController) ist auth('customer')->user()
+                    // der Firmen-Datensatz; die echte Anmelde-Mail steht in der Session.
+                    // Bevorzuge die Employee-Mail, sonst die Customer-Mail als Fallback.
+                    $iframeEmail = session('logged_in_employee_email')
+                        ?: optional(auth('customer')->user())->email;
                     $iframeParams = [];
-                    if ($iframeUser && $iframeSecret && $iframeUser->email) {
+                    if ($iframeEmail && $iframeSecret) {
                         $iframeParams['token'] = \App\Services\IframeAuthToken::create(
-                            $iframeUser->email,
+                            $iframeEmail,
                             $iframeSecret
                         );
                     }
