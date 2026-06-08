@@ -121,7 +121,7 @@
             <!-- Content: Travel Requirements Service -->
             <div class="content-area">
                 @php
-                    $iframeBase = rtrim(config('services.passolution.web_url'), '/').'/auth/sso/check';
+                    $iframeWebUrl = rtrim(config('services.passolution.web_url'), '/');
                     $iframeSecret = config('services.passolution.iframe_sso_secret');
                     // auth('customer')->user() kann (bei Employee- oder Provider-ID-Mapping)
                     // der Firmen-Datensatz sein. Echte Anmelde-Identität ergibt sich aus:
@@ -131,16 +131,14 @@
                     $iframeEmail = session('keycloak_email')
                         ?: session('logged_in_employee_email')
                         ?: optional(auth('customer')->user())->email;
-                    $iframeParams = [];
+                    // Eingeloggter Plattform-User -> SSO-Handshake via signiertem Token.
+                    // Anonym (kein Email/Secret) -> oeffentlicher Startbildschirm der
+                    // pds-homepage statt /auth/sso/check, das sonst den Login-Prompt zeigt.
                     if ($iframeEmail && $iframeSecret) {
-                        $iframeParams['token'] = \App\Services\IframeAuthToken::create(
-                            $iframeEmail,
-                            $iframeSecret
-                        );
-                    }
-                    $iframeSrc = $iframeBase;
-                    if (! empty($iframeParams)) {
-                        $iframeSrc .= '?'.http_build_query($iframeParams);
+                        $token = \App\Services\IframeAuthToken::create($iframeEmail, $iframeSecret);
+                        $iframeSrc = $iframeWebUrl.'/auth/sso/check?'.http_build_query(['token' => $token]);
+                    } else {
+                        $iframeSrc = $iframeWebUrl;
                     }
                     // Optionale UI-Hide/Locale-Parameter aus PASSOLUTION_IFRAME_UI_PARAMS
                     // (vorformatierter Query-String, z. B. "menu-hide=gtm,hc,is&ui-hide=is")
