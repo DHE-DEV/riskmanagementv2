@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Services\PassolutionApiService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
@@ -17,12 +18,18 @@ class KeycloakAuthController extends Controller
     /**
      * End any existing Keycloak session, then redirect to the actual login.
      */
-    public function redirect(): RedirectResponse
+    public function redirect(Request $request): RedirectResponse
     {
         $realm = config('services.keycloak.realms', 'passolution');
         $baseUrl = config('services.keycloak.base_url');
         $clientId = config('services.keycloak.client_id');
         $idToken = session('keycloak_id_token');
+
+        // Optionales Rücksprungziel über die Session merken (nicht als Query an die
+        // Post-Logout-URI hängen – die muss exakt der Keycloak-Whitelist entsprechen).
+        if ($request->filled('redirect') && str_starts_with($request->query('redirect'), url('/'))) {
+            redirect()->setIntendedUrl($request->query('redirect'));
+        }
 
         // Redirect to Keycloak logout, which redirects back to our startLogin route
         $logoutUrl = $baseUrl . '/realms/' . $realm . '/protocol/openid-connect/logout'
@@ -39,8 +46,14 @@ class KeycloakAuthController extends Controller
     /**
      * Actually start the Keycloak login (called after session was cleared).
      */
-    public function startLogin(): RedirectResponse
+    public function startLogin(Request $request): RedirectResponse
     {
+        // Rücksprungziel (falls lokal) als intended-URL merken, damit der Callback
+        // nach erfolgreichem Login wieder dorthin zurückführt.
+        if ($request->filled('redirect') && str_starts_with($request->query('redirect'), url('/'))) {
+            redirect()->setIntendedUrl($request->query('redirect'));
+        }
+
         return Socialite::driver('keycloak')
             ->setScopes(['openid', 'profile', 'email'])
             ->enablePKCE()

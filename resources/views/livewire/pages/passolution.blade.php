@@ -166,7 +166,7 @@
     <script>
     (function () {
         const TRUSTED_ORIGIN = @json(rtrim(config('services.passolution.web_url'), '/'));
-        const LOGIN_URL      = @json(route('customer.login'));
+        const LOGIN_URL      = @json(route('auth.keycloak.start'));
         const RETURN_URL     = @json(route('travel-requirements-service'));
 
         window.addEventListener('message', function (event) {
