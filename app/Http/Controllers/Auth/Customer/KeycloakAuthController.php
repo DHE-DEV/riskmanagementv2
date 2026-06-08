@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Services\PassolutionApiService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -97,12 +98,43 @@ class KeycloakAuthController extends Controller
             }
         }
 
-        // 4. If still not found, reject login
+        // 4. Kein Kunde/Mitarbeiter gefunden -> automatisch als Kunde anlegen
+        //    (Just-in-Time-Provisioning). Stammdaten werden – falls vorhanden –
+        //    per Service-Key aus der Passolution-API (account/info per E-Mail) gezogen.
+        if (! $customer && $email) {
+            $account = app(PassolutionApiService::class)->fetchAccountByEmail($email);
+
+            $person = trim(($account['first_name'] ?? '').' '.($account['last_name'] ?? ''));
+
+            $customer = Customer::create([
+                'name' => $person !== '' ? $person : ($account['name'] ?? $email),
+                'email' => $email,
+                'provider' => 'keycloak',
+                'provider_id' => $keycloakUser->getId(),
+                'provider_token' => $keycloakUser->token,
+                'provider_refresh_token' => $keycloakUser->refreshToken ?? null,
+                'avatar' => $keycloakUser->getAvatar(),
+                'email_verified_at' => now(),
+                // Stammdaten aus der Passolution-API (nur wenn gefunden)
+                'company_name' => $account['name'] ?? null,
+                'company_street' => $account['address_line_1'] ?? null,
+                'company_postal_code' => $account['zip_code'] ?? null,
+                'company_city' => $account['city'] ?? null,
+                'company_country' => $account['country_code'] ?? null,
+            ]);
+
+            Log::info('Keycloak login: neuer Kunde automatisch angelegt', [
+                'email' => $email,
+                'stammdaten' => $account !== null,
+            ]);
+        }
+
+        // 4b. Ohne E-Mail kein Konto möglich -> ablehnen
         if (! $customer) {
-            Log::warning('Keycloak login: no matching customer or employee', ['email' => $email]);
+            Log::warning('Keycloak login: no email in token, cannot provision', ['email' => $email]);
 
             return redirect()->route('customer.login')
-                ->with('error', 'Kein Konto mit dieser E-Mail-Adresse gefunden.');
+                ->with('error', 'Anmeldung fehlgeschlagen: keine E-Mail-Adresse vom Login-Anbieter erhalten.');
         }
 
         // Update tokens on customer (only set provider_id if this is a direct customer login, not employee)

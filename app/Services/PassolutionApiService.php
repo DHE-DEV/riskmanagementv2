@@ -42,6 +42,51 @@ class PassolutionApiService
     }
 
     /**
+     * Stammdaten eines Kunden über den internen Account-Endpoint abrufen.
+     * Nutzt den Account-Personal-Access-Token und sucht per E-Mail.
+     * Die Login-E-Mail ist i. d. R. die User-E-Mail (WebUser), daher zuerst
+     * `user_email`, ersatzweise `account_email`.
+     * Gibt das `account`-Array zurück oder null (nicht gefunden / Fehler).
+     */
+    public function fetchAccountByEmail(string $email): ?array
+    {
+        // Interne Routen (__internal) brauchen einen Account-Personal-Access-Token,
+        // nicht den allgemeinen API-Key. Fallback auf den API-Key, falls nicht gesetzt.
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token) {
+            Log::warning('Passolution API: Stammdaten-Abruf ohne Token nicht möglich');
+
+            return null;
+        }
+
+        foreach (['user_email', 'account_email'] as $param) {
+            try {
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer '.$token,
+                ])
+                    ->timeout(15)
+                    ->get("{$this->baseUrl}/__internal/account/info", [$param => $email]);
+
+                if ($response->successful() && $response->json('account')) {
+                    return $response->json('account');
+                }
+            } catch (\Exception $e) {
+                Log::error('Passolution API: Stammdaten-Abruf fehlgeschlagen', [
+                    'email' => $email,
+                    'param' => $param,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        Log::info('Passolution API: kein Account zu E-Mail gefunden', ['email' => $email]);
+
+        return null;
+    }
+
+    /**
      * Fetch general infosystem data from Passolution API
      */
     public function fetchGeneralInfo(string $lang = 'de', int $page = 1): array

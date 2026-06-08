@@ -46,6 +46,9 @@ return [
         'api_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
         'api_key' => env('PASSOLUTION_API_KEY'),
         'api_secret' => env('PASSOLUTION_API_SECRET'),
+        // Account-Personal-Access-Token (pds-api) für server-seitige __internal-Aufrufe,
+        // z. B. Stammdaten-Lookup beim Auto-Anlegen neuer Kunden (account/info).
+        'internal_token' => env('PASSOLUTION_INTERNAL_TOKEN'),
         'client_id' => env('PASSOLUTION_OAUTH_CLIENT_ID'),
         'client_secret' => env('PASSOLUTION_OAUTH_CLIENT_SECRET'),
         // OAuth URLs - configurable for different environments
