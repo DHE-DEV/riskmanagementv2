@@ -145,47 +145,45 @@ class RiskOverviewService
      */
     protected function fetchPdsApiTravelers(Customer $customer, string $startDate, string $endDate): array
     {
-        if (! $this->pdsApiService->hasValidToken($customer)) {
-            Log::info('RiskOverviewService: Customer has no valid API token, skipping API fetch', [
-                'customer_id' => $customer->id,
-            ]);
-
-            return [];
-        }
-
         try {
-            $apiRequestBody = [
-                'sort_by' => 'start_date',
-                'sort_order' => 'desc',
-                'page' => 1,
-                'per_page' => 1000,
-                'start_date' => ['<=' => $endDate],
-                'end_date' => ['>=' => $startDate],
-            ];
+            if ($this->pdsApiService->hasValidToken($customer)) {
+                // Per-User-Token vorhanden -> direkter (scope-geschuetzter) Abruf.
+                $apiRequestBody = [
+                    'sort_by' => 'start_date',
+                    'sort_order' => 'desc',
+                    'page' => 1,
+                    'per_page' => 1000,
+                    'start_date' => ['<=' => $endDate],
+                    'end_date' => ['>=' => $startDate],
+                ];
 
-            Log::info('RiskOverviewService: Fetching API travelers (no local data)', [
-                'customer_id' => $customer->id,
-                'request_body' => $apiRequestBody,
-            ]);
+                $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
 
-            $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
+                if (! $response || ! $response->successful()) {
+                    Log::warning('RiskOverviewService: Failed to fetch API travelers', [
+                        'customer_id' => $customer->id,
+                        'status' => $response?->status(),
+                    ]);
 
-            if (! $response || ! $response->successful()) {
-                Log::warning('RiskOverviewService: Failed to fetch API travelers', [
-                    'customer_id' => $customer->id,
-                    'status' => $response?->status(),
-                ]);
+                    return [];
+                }
 
-                return [];
+                $apiTravelers = $response->json('data', []);
+            } else {
+                // Kein per-User-Token: ueber Service-Token / __internal abrufen.
+                // Der SSO-Login genuegt; Aufloesung ueber die echte Login-E-Mail
+                // (gleiche Identitaet wie iframe-SSO). Kein per-User-Token noetig.
+                $ssoEmail = session('keycloak_email')
+                    ?: session('logged_in_employee_email')
+                    ?: $customer->email;
+
+                $apiTravelers = app(PassolutionApiService::class)
+                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate) ?? [];
             }
-
-            $data = $response->json();
-            $apiTravelers = $data['data'] ?? [];
 
             Log::info('RiskOverviewService: Received API travelers', [
                 'customer_id' => $customer->id,
                 'count' => count($apiTravelers),
-                'total_in_api' => $data['meta']['total'] ?? 'unknown',
             ]);
 
             // Pre-load country names for resolving ISO codes

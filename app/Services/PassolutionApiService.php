@@ -89,9 +89,13 @@ class PassolutionApiService
     /**
      * Travel-Details-/Shared-Links eines Accounts über den internen Endpoint
      * abrufen (Service-Token, kein per-User-Token mit TRAVEL_DETAILS-Scope nötig).
-     * Gibt das `travel_details`-Array zurück (leer wenn keine), oder null bei Fehler.
+     * Antwortstruktur entspricht GET /api/v2/travel-details (data[]).
+     * Gibt das `data`-Array zurück (leer wenn keine), oder null bei Fehler.
+     *
+     * @param  string|null  $startDate  optional: nur Reisen mit end_date >= $startDate
+     * @param  string|null  $endDate    optional: nur Reisen mit start_date <= $endDate
      */
-    public function fetchTravelDetailsByEmail(string $email): ?array
+    public function fetchTravelDetailsByEmail(string $email, ?string $startDate = null, ?string $endDate = null): ?array
     {
         $token = config('services.passolution.internal_token') ?: $this->apiKey;
 
@@ -101,20 +105,30 @@ class PassolutionApiService
             return null;
         }
 
+        $query = [
+            'per_page' => 1000,
+            'sort_by' => 'start_date',
+            'sort_order' => 'desc',
+            '__with' => '__cruise-info',
+        ];
+        if ($endDate) {
+            $query['start_date'] = ['<=' => $endDate];
+        }
+        if ($startDate) {
+            $query['end_date'] = ['>=' => $startDate];
+        }
+
         foreach (['user_email', 'account_email'] as $param) {
             try {
                 $response = Http::withHeaders([
                     'Accept' => 'application/json',
                     'Authorization' => 'Bearer '.$token,
                 ])
-                    ->timeout(15)
-                    ->get("{$this->baseUrl}/__internal/account/travel-details", [
-                        $param => $email,
-                        'per_page' => 100,
-                    ]);
+                    ->timeout(20)
+                    ->get("{$this->baseUrl}/__internal/account/travel-details", array_merge([$param => $email], $query));
 
                 if ($response->successful()) {
-                    return $response->json('travel_details', []);
+                    return $response->json('data', []);
                 }
             } catch (\Exception $e) {
                 Log::error('Passolution API: Travel-Details-Abruf fehlgeschlagen', [
