@@ -109,11 +109,8 @@ class TrsV2DataService
      */
     public function tourOperators(?Customer $customer): array
     {
-        if (! $customer || ! $this->pdsApi->hasValidToken($customer)) {
-            return [];
-        }
-
-        $response = $this->pdsApi->get($customer, 'tour-operators');
+        // Globale Liste (account-unabhaengig) -> Service-Token, kein per-User-Token noetig.
+        $response = $this->pdsApi->getWithServiceToken('tour-operators');
         if (! $response || ! $response->successful()) {
             return [];
         }
@@ -189,11 +186,9 @@ class TrsV2DataService
      */
     protected function cruiseLookup(?Customer $customer, string $endpoint, array $body): array
     {
-        if (! $customer || ! $this->pdsApi->hasValidToken($customer)) {
-            return [];
-        }
-
-        $response = $this->pdsApi->post($customer, $endpoint, $body);
+        // Globaler Cruise-Katalog (account-unabhaengig) -> Service-Token gegen
+        // api-internal, kein per-User-Token noetig.
+        $response = $this->pdsApi->postWithServiceToken($endpoint, $body);
         if (! $response || ! $response->successful()) {
             return [];
         }

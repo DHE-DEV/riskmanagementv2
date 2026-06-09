@@ -224,6 +224,52 @@ class PdsApiService
     }
 
     /**
+     * GET gegen pds-api MIT dem Service-Token (statt per-User-Token) gegen den
+     * internen Service (api-internal). Fuer GLOBALE Daten (z. B. tour-operators,
+     * Cruise-Katalog), die keine per-User-Identitaet brauchen -> funktioniert
+     * ohne hinterlegten Kundentoken (SSO-Login genuegt).
+     */
+    public function getWithServiceToken(string $endpoint, array $query = []): ?Response
+    {
+        return $this->serviceTokenRequest('GET', $endpoint, $query);
+    }
+
+    /**
+     * POST-Variante von getWithServiceToken (z. B. Cruise-Lookups).
+     */
+    public function postWithServiceToken(string $endpoint, array $body = []): ?Response
+    {
+        return $this->serviceTokenRequest('POST', $endpoint, $body);
+    }
+
+    protected function serviceTokenRequest(string $method, string $endpoint, array $data): ?Response
+    {
+        $token = config('services.passolution.internal_token');
+        if (! $token) {
+            Log::warning('PdsApiService: kein Service-Token (PASSOLUTION_INTERNAL_TOKEN) gesetzt', ['endpoint' => $endpoint]);
+
+            return null;
+        }
+
+        // Service-Token-Endpunkte liegen auf dem internen Service (api-internal).
+        $base = rtrim((string) (config('services.passolution.internal_api_url') ?: $this->baseUrl), '/');
+        $url = $base . '/' . ltrim($endpoint, '/');
+        $debugStart = microtime(true);
+
+        try {
+            $request = Http::withToken($token)->timeout($this->timeout)->acceptJson();
+            $response = $method === 'POST' ? $request->post($url, $data) : $request->get($url, $data);
+            $this->collectDebug($method, $url, $data, $response, $debugStart);
+
+            return $response;
+        } catch (\Exception $e) {
+            $this->collectDebug($method, $url, $data, null, $debugStart, $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
      * Create an authenticated HTTP client for the customer
      * Uses the best available token (SSO token first, then OAuth token)
      *
