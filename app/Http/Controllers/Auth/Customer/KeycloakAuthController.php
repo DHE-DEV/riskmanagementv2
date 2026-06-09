@@ -151,6 +151,12 @@ class KeycloakAuthController extends Controller
             $updateData['avatar'] = $keycloakUser->getAvatar() ?? $customer->avatar;
         }
 
+        // Keycloak hat die Identitaet (inkl. E-Mail) bereits verifiziert ->
+        // keine erneute E-Mail-Bestaetigung auf der Plattform noetig.
+        if (! $customer->email_verified_at) {
+            $updateData['email_verified_at'] = now();
+        }
+
         $customer->update($updateData);
 
         Auth::guard('customer')->login($customer, true);
