@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Folder\Folder;
+use App\Services\PassolutionApiService;
 use App\Services\PdsApiService;
+use App\Support\ResolvesPdsIdentity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class MyTravelersController extends Controller
 {
+    use ResolvesPdsIdentity;
+
     protected PdsApiService $pdsApiService;
 
     public function __construct(PdsApiService $pdsApiService)
@@ -28,8 +32,9 @@ class MyTravelersController extends Controller
             return redirect()->route('customer.login');
         }
 
-        // Check if customer has valid API token
-        $hasValidToken = $customer->hasAnyActiveToken();
+        // API-Bereich aktiv, wenn ein per-User-Token ODER eine SSO-Identitaet vorliegt
+        // (bei SSO werden die Reisen ueber den Service-Token/__internal abgerufen).
+        $hasValidToken = $customer->hasAnyActiveToken() || $this->hasSsoIdentity();
 
         return view('livewire.pages.my-travelers', [
             'customer' => $customer,
@@ -131,93 +136,119 @@ class MyTravelersController extends Controller
         }
 
         // 2. Load API TRAVELERS (if API token exists)
-        if (in_array($sourceFilter, ['all', 'api']) && $customer->hasAnyActiveToken()) {
+        if (in_array($sourceFilter, ['all', 'api']) && ($this->hasSsoIdentity() || $customer->hasAnyActiveToken())) {
             try {
-                // Build API request body according to Passolution API docs
-                // POST /travel-details with JSON body
-                $apiRequestBody = [
-                    'sort_by' => 'start_date',
-                    'sort_order' => 'desc',
-                    'page' => $page,
-                    'per_page' => $perPage,
-                ];
+                $apiTravelers = [];
 
-                // Date filters
-                if ($dateRange['start'] && $dateRange['end']) {
-                    $apiRequestBody['start_date'] = ['<=' => $dateRange['end']];
-                    $apiRequestBody['end_date'] = ['>=' => $dateRange['start']];
-                } elseif ($dateRange['start']) {
-                    $apiRequestBody['end_date'] = ['>=' => $dateRange['start']];
-                } elseif ($dateRange['end']) {
-                    $apiRequestBody['start_date'] = ['<=' => $dateRange['end']];
-                }
+                if ($this->hasSsoIdentity()) {
+                    // SSO-Vorrang: Abruf ueber die echte Login-E-Mail (Service-Token /
+                    // __internal), unabhaengig von einem (evtl. veralteten) per-User-Token.
+                    // Liefert alle Reisen; Suche + Pagination erfolgen lokal.
+                    $allApi = app(PassolutionApiService::class)
+                        ->fetchTravelDetailsByEmail(
+                            $this->resolveSsoEmail($customer),
+                            $dateRange['start'] ?: null,
+                            $dateRange['end'] ?: null
+                        ) ?? [];
 
-                // Search filter - use trip_name with like operator
-                if ($searchQuery) {
-                    $apiRequestBody['trip_name'] = ['like' => '%' . $searchQuery . '%'];
-                }
-
-                // Use PdsApiService POST to fetch travel-details
-                $response = $this->pdsApiService->post($customer, '/travel-details', $apiRequestBody);
-
-                if ($response && $response->successful()) {
-                    $data = $response->json();
-                    $apiTravelers = $data['data'] ?? [];
-
-                    // Store pagination metadata
-                    if (isset($data['meta'])) {
-                        $apiPagination = [
-                            'current_page' => $data['meta']['current_page'] ?? 1,
-                            'last_page' => $data['meta']['last_page'] ?? 1,
-                            'per_page' => $data['meta']['per_page'] ?? $perPage,
-                            'total' => $data['meta']['total'] ?? 0,
-                            'from' => $data['meta']['from'] ?? 0,
-                            'to' => $data['meta']['to'] ?? 0,
-                        ];
-                        // Store total API count from pagination metadata
-                        $sourceTotals['api'] = $data['meta']['total'] ?? 0;
+                    if ($searchQuery) {
+                        $needle = mb_strtolower($searchQuery);
+                        $allApi = array_values(array_filter(
+                            $allApi,
+                            fn ($t) => str_contains(mb_strtolower((string) ($t['trip_name'] ?? '')), $needle)
+                        ));
                     }
 
-                    // Process API travelers
-                    foreach ($apiTravelers as $traveler) {
-                        $tripId = $traveler['tid'] ?? $traveler['id'] ?? null;
-                        $processedTraveler = [
-                            'id' => 'api-'.($tripId ?? uniqid()),
-                            'trip_id' => $tripId,
-                            'title' => $traveler['trip_name'] ?? null,
-                            'start_date' => $traveler['start_date'] ?? null,
-                            'end_date' => $traveler['end_date'] ?? null,
-                            'countries' => $traveler['countries'] ?? [],
-                            'destination' => $this->extractDestination($traveler),
-                            'travelers_count' => $traveler['travelers_count'] ?? 1,
-                            'status' => $this->getTravelStatus($traveler),
-                            'source' => 'api',
-                            'source_label' => 'PDS API',
-                            'raw_data' => $traveler, // Store raw API response for debugging
-                        ];
+                    $apiTotal = count($allApi);
+                    $apiTravelers = array_slice($allApi, ($page - 1) * $perPage, $perPage);
 
-                        // Apply status filter
-                        if ($statusFilter !== 'all' && $processedTraveler['status'] !== $statusFilter) {
-                            continue;
-                        }
-
-                        $allTravelers[] = $processedTraveler;
-                    }
-
-                    Log::info('MyTravelersController: Loaded API travelers', [
-                        'customer_id' => $customer->id,
-                        'request_body' => $apiRequestBody,
-                        'count' => count($apiTravelers),
-                        'filtered_count' => count(array_filter($allTravelers, fn ($t) => $t['source'] === 'api')),
-                    ]);
+                    $sourceTotals['api'] = $apiTotal;
+                    $apiPagination = [
+                        'current_page' => $page,
+                        'last_page' => max(1, (int) ceil($apiTotal / max(1, $perPage))),
+                        'per_page' => $perPage,
+                        'total' => $apiTotal,
+                        'from' => $apiTotal > 0 ? (($page - 1) * $perPage) + 1 : 0,
+                        'to' => min($page * $perPage, $apiTotal),
+                    ];
                 } else {
-                    Log::warning('MyTravelersController: Failed to fetch API travelers', [
-                        'customer_id' => $customer->id,
-                        'request_body' => $apiRequestBody,
-                        'status' => $response?->status(),
-                        'response_body' => $response?->body(),
-                    ]);
+                    // Kein SSO, aber per-User-Token -> serverseitiger POST /travel-details.
+                    $apiRequestBody = [
+                        'sort_by' => 'start_date',
+                        'sort_order' => 'desc',
+                        'page' => $page,
+                        'per_page' => $perPage,
+                    ];
+
+                    if ($dateRange['start'] && $dateRange['end']) {
+                        $apiRequestBody['start_date'] = ['<=' => $dateRange['end']];
+                        $apiRequestBody['end_date'] = ['>=' => $dateRange['start']];
+                    } elseif ($dateRange['start']) {
+                        $apiRequestBody['end_date'] = ['>=' => $dateRange['start']];
+                    } elseif ($dateRange['end']) {
+                        $apiRequestBody['start_date'] = ['<=' => $dateRange['end']];
+                    }
+
+                    if ($searchQuery) {
+                        $apiRequestBody['trip_name'] = ['like' => '%' . $searchQuery . '%'];
+                    }
+
+                    $response = $this->pdsApiService->post($customer, '/travel-details', $apiRequestBody);
+
+                    if ($response && $response->successful()) {
+                        $data = $response->json();
+                        $apiTravelers = $data['data'] ?? [];
+
+                        if (isset($data['meta'])) {
+                            $apiPagination = [
+                                'current_page' => $data['meta']['current_page'] ?? 1,
+                                'last_page' => $data['meta']['last_page'] ?? 1,
+                                'per_page' => $data['meta']['per_page'] ?? $perPage,
+                                'total' => $data['meta']['total'] ?? 0,
+                                'from' => $data['meta']['from'] ?? 0,
+                                'to' => $data['meta']['to'] ?? 0,
+                            ];
+                            $sourceTotals['api'] = $data['meta']['total'] ?? 0;
+                        }
+                    } else {
+                        Log::warning('MyTravelersController: Failed to fetch API travelers', [
+                            'customer_id' => $customer->id,
+                            'status' => $response?->status(),
+                            'response_body' => $response?->body(),
+                        ]);
+                    }
                 }
+
+                // Gemeinsame Verarbeitung der API-Reisen (beide Quellen).
+                foreach ($apiTravelers as $traveler) {
+                    $tripId = $traveler['tid'] ?? $traveler['id'] ?? null;
+                    $processedTraveler = [
+                        'id' => 'api-'.($tripId ?? uniqid()),
+                        'trip_id' => $tripId,
+                        'title' => $traveler['trip_name'] ?? null,
+                        'start_date' => $traveler['start_date'] ?? null,
+                        'end_date' => $traveler['end_date'] ?? null,
+                        'countries' => $traveler['countries'] ?? [],
+                        'destination' => $this->extractDestination($traveler),
+                        'travelers_count' => $traveler['travelers_count'] ?? 1,
+                        'status' => $this->getTravelStatus($traveler),
+                        'source' => 'api',
+                        'source_label' => 'PDS API',
+                        'raw_data' => $traveler,
+                    ];
+
+                    if ($statusFilter !== 'all' && $processedTraveler['status'] !== $statusFilter) {
+                        continue;
+                    }
+
+                    $allTravelers[] = $processedTraveler;
+                }
+
+                Log::info('MyTravelersController: Loaded API travelers', [
+                    'customer_id' => $customer->id,
+                    'count' => count($apiTravelers),
+                    'filtered_count' => count(array_filter($allTravelers, fn ($t) => ($t['source'] ?? null) === 'api')),
+                ]);
             } catch (\Exception $e) {
                 Log::error('MyTravelersController: Error fetching API travelers', [
                     'customer_id' => $customer->id,

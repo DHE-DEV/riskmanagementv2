@@ -8,12 +8,15 @@ use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Models\TravelDetail\TdTrip;
+use App\Support\ResolvesPdsIdentity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class RiskOverviewService
 {
+    use ResolvesPdsIdentity;
+
     protected GtmEventService $gtmEventService;
 
     protected PdsApiService $pdsApiService;
@@ -146,8 +149,15 @@ class RiskOverviewService
     protected function fetchPdsApiTravelers(Customer $customer, string $startDate, string $endDate): array
     {
         try {
-            if ($this->pdsApiService->hasValidToken($customer)) {
-                // Per-User-Token vorhanden -> direkter (scope-geschuetzter) Abruf.
+            $apiTravelers = null;
+
+            // SSO-Identitaet hat Vorrang vor einem (evtl. veralteten) per-User-Token:
+            // Abruf ueber die echte Login-E-Mail gegen den __internal-Service-Token.
+            if ($this->hasSsoIdentity()) {
+                $apiTravelers = app(PassolutionApiService::class)
+                    ->fetchTravelDetailsByEmail($this->resolveSsoEmail($customer), $startDate, $endDate) ?? [];
+            } elseif ($this->pdsApiService->hasValidToken($customer)) {
+                // Kein SSO, aber per-User-Token -> direkter (scope-geschuetzter) Abruf.
                 $apiRequestBody = [
                     'sort_by' => 'start_date',
                     'sort_order' => 'desc',
@@ -159,27 +169,12 @@ class RiskOverviewService
 
                 $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
 
-                if (! $response || ! $response->successful()) {
-                    Log::warning('RiskOverviewService: Failed to fetch API travelers', [
-                        'customer_id' => $customer->id,
-                        'status' => $response?->status(),
-                    ]);
-
-                    return [];
+                if ($response && $response->successful()) {
+                    $apiTravelers = $response->json('data', []);
                 }
-
-                $apiTravelers = $response->json('data', []);
-            } else {
-                // Kein per-User-Token: ueber Service-Token / __internal abrufen.
-                // Der SSO-Login genuegt; Aufloesung ueber die echte Login-E-Mail
-                // (gleiche Identitaet wie iframe-SSO). Kein per-User-Token noetig.
-                $ssoEmail = session('keycloak_email')
-                    ?: session('logged_in_employee_email')
-                    ?: $customer->email;
-
-                $apiTravelers = app(PassolutionApiService::class)
-                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate) ?? [];
             }
+
+            $apiTravelers = $apiTravelers ?? [];
 
             Log::info('RiskOverviewService: Received API travelers', [
                 'customer_id' => $customer->id,
@@ -1156,8 +1151,15 @@ class RiskOverviewService
         try {
             $apiTravelers = null;
 
-            // 1. Per-User-Token (falls hinterlegt): direkter POST /travel-details.
-            if ($this->pdsApiService->hasValidToken($customer)) {
+            // SSO-Identitaet hat Vorrang vor einem (evtl. veralteten) per-User-Token:
+            // Abruf ueber die echte Login-E-Mail gegen den __internal-Service-Token.
+            if ($this->hasSsoIdentity()) {
+                $ssoEmail = $this->resolveSsoEmail($customer);
+                Log::info('RiskOverview: Reisen via Service-Token (SSO)', ['sso_email' => $ssoEmail]);
+                $apiTravelers = app(PassolutionApiService::class)
+                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate) ?? [];
+            } elseif ($this->pdsApiService->hasValidToken($customer)) {
+                // Kein SSO, aber per-User-Token -> direkter POST /travel-details.
                 $apiRequestBody = [
                     'sort_by' => 'start_date',
                     'sort_order' => 'desc',
@@ -1172,21 +1174,6 @@ class RiskOverviewService
                 if ($response && $response->successful()) {
                     $apiTravelers = $response->json()['data'] ?? [];
                 }
-            }
-
-            // 2. Kein/leerer per-User-Token: Service-Token-Fallback ueber die
-            //    SSO-Identitaet. Der SSO-Login genuegt – es muss kein per-User-Token
-            //    mit TRAVEL_DETAILS-Scope hinterlegt sein. Greift auch, wenn der
-            //    per-User-Token auf einen anderen (leeren) Account zeigt.
-            if (empty($apiTravelers)) {
-                $ssoEmail = session('keycloak_email')
-                    ?: session('logged_in_employee_email')
-                    ?: $customer->email;
-
-                Log::info('RiskOverview: Reisen via Service-Token (SSO)', ['sso_email' => $ssoEmail]);
-
-                $apiTravelers = app(\App\Services\PassolutionApiService::class)
-                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate) ?? [];
             }
 
             if (empty($apiTravelers)) {
