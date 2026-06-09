@@ -105,22 +105,31 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        // Endziel nach komplettem Logout.
         if ($wasKeycloak) {
             $realm = config('services.keycloak.realms', 'passolution');
-            $logoutUrl = config('services.keycloak.base_url')
+            $finalUrl = config('services.keycloak.base_url')
                 . '/realms/' . $realm . '/protocol/openid-connect/logout'
                 . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
                 . '&client_id=' . config('services.keycloak.client_id');
 
             if ($idToken) {
-                $logoutUrl .= '&id_token_hint=' . urlencode($idToken);
+                $finalUrl .= '&id_token_hint=' . urlencode($idToken);
             }
-
-            return redirect($logoutUrl);
+        } else {
+            $finalUrl = route('customer.login');
         }
 
-        return redirect()->route('customer.login')
-            ->with('success', 'Erfolgreich abgemeldet!');
+        // Single-Logout: zuerst die pds-homepage-Session beenden (die per SSO
+        // aufgebaute Session bleibt sonst stehen), dann weiter zum Endziel
+        // (Keycloak-End-Session bzw. Login). Top-Level-Redirect, damit das
+        // Homepage-Cookie (Cross-Site) zuverlaessig mitgesendet wird.
+        $webUrl = rtrim((string) config('services.passolution.web_url'), '/');
+        if ($webUrl !== '') {
+            return redirect($webUrl . '/auth/sso/logout?return_to=' . urlencode($finalUrl));
+        }
+
+        return redirect($finalUrl);
     }
 
     /**
