@@ -1153,28 +1153,45 @@ class RiskOverviewService
      */
     protected function fetchPdsApiTravelersByTrip(Customer $customer, string $startDate, string $endDate): array
     {
-        if (! $this->pdsApiService->hasValidToken($customer)) {
-            return [];
-        }
-
         try {
-            $apiRequestBody = [
-                'sort_by' => 'start_date',
-                'sort_order' => 'desc',
-                'page' => 1,
-                'per_page' => 1000,
-                'start_date' => ['<=' => $endDate],
-                'end_date' => ['>=' => $startDate],
-            ];
+            $apiTravelers = null;
 
-            $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
+            // 1. Per-User-Token (falls hinterlegt): direkter POST /travel-details.
+            if ($this->pdsApiService->hasValidToken($customer)) {
+                $apiRequestBody = [
+                    'sort_by' => 'start_date',
+                    'sort_order' => 'desc',
+                    'page' => 1,
+                    'per_page' => 1000,
+                    'start_date' => ['<=' => $endDate],
+                    'end_date' => ['>=' => $startDate],
+                ];
 
-            if (! $response || ! $response->successful()) {
-                return [];
+                $response = $this->pdsApiService->post($customer, '/travel-details?__with=__cruise-info', $apiRequestBody);
+
+                if ($response && $response->successful()) {
+                    $apiTravelers = $response->json()['data'] ?? [];
+                }
             }
 
-            $data = $response->json();
-            $apiTravelers = $data['data'] ?? [];
+            // 2. Kein/leerer per-User-Token: Service-Token-Fallback ueber die
+            //    SSO-Identitaet. Der SSO-Login genuegt – es muss kein per-User-Token
+            //    mit TRAVEL_DETAILS-Scope hinterlegt sein. Greift auch, wenn der
+            //    per-User-Token auf einen anderen (leeren) Account zeigt.
+            if (empty($apiTravelers)) {
+                $ssoEmail = session('keycloak_email')
+                    ?: session('logged_in_employee_email')
+                    ?: $customer->email;
+
+                Log::info('RiskOverview: Reisen via Service-Token (SSO)', ['sso_email' => $ssoEmail]);
+
+                $apiTravelers = app(\App\Services\PassolutionApiService::class)
+                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate) ?? [];
+            }
+
+            if (empty($apiTravelers)) {
+                return [];
+            }
 
             // Pre-load country names
             $allIsoCodes = collect($apiTravelers)->flatMap(function ($t) {
