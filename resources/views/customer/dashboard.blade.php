@@ -862,9 +862,10 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Mitglied seit:</span>
-                                @if(auth('customer')->user()->customer_type)
+                                @php($mitgliedSeit = ($memberSince ?? null) ?: auth('customer')->user()->created_at)
+                                @if($mitgliedSeit)
                                     <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                        {{ auth('customer')->user()->created_at->format('d.m.Y') }}
+                                        {{ $mitgliedSeit->format('d.m.Y') }}
                                     </span>
                                 @else
                                     <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">

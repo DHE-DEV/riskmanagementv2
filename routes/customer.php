@@ -51,7 +51,28 @@ Route::prefix('customer')->name('customer.')->group(function () {
                 )
                 : null;
 
-            return view('customer.dashboard', ['subscriptionType' => $subscriptionType]);
+            // "Mitglied seit": echtes Account-Anlegedatum aus der API (Service-Token),
+            // statt des Plattform-Datensatz-Datums (das bei JIT-Kunden abweicht).
+            $memberSince = null;
+            if ($ssoEmail) {
+                $account = \Illuminate\Support\Facades\Cache::remember(
+                    'pds_account_'.md5($ssoEmail),
+                    now()->addMinutes(60),
+                    fn () => app(\App\Services\PassolutionApiService::class)->fetchAccountByEmail($ssoEmail)
+                );
+                if (! empty($account['created_at'])) {
+                    try {
+                        $memberSince = \Carbon\Carbon::parse($account['created_at']);
+                    } catch (\Throwable $e) {
+                        $memberSince = null;
+                    }
+                }
+            }
+
+            return view('customer.dashboard', [
+                'subscriptionType' => $subscriptionType,
+                'memberSince' => $memberSince,
+            ]);
         })->name('dashboard');
 
         // Account switching
