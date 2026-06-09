@@ -141,10 +141,15 @@
                     if ($iframeEmail && $iframeSecret) {
                         // Eingeloggter Plattform-User -> SSO-Handshake via signiertem Token.
                         $token = \App\Services\IframeAuthToken::create($iframeEmail, $iframeSecret);
-                        $iframeSrc = $iframeWebUrl.'/auth/sso/check?'.http_build_query(['token' => $token]);
-                        if ($iframeUiParams !== '') {
-                            $iframeSrc .= '&'.$iframeUiParams;
-                        }
+                        // WICHTIG: UI-Parameter (menu-hide/ui-hide) ins return_to legen,
+                        // NICHT direkt an sso/check haengen – sso/check verwirft seine
+                        // eigene Query beim Redirect aufs Ziel. Ueber return_to landen sie
+                        // auf der Zielseite und werden dort ausgewertet (+ in der Session
+                        // gemerkt).
+                        $iframeSrc = $iframeWebUrl.'/auth/sso/check?'.http_build_query([
+                            'token' => $token,
+                            'return_to' => $iframeAnonRoot,
+                        ]);
                     } else {
                         // Anonym (z. B. nach Plattform-Logout): Homepage-Session aktiv beenden –
                         // und zwar HIER im iframe-Kontext, wo das embed-Session-Cookie
