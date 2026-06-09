@@ -106,16 +106,18 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         // Endziel nach komplettem Logout.
-        if ($wasKeycloak) {
+        // Keycloak-End-Session NUR aufrufen, wenn wir die Session per id_token_hint
+        // identifizieren koennen -> dann meldet Keycloak silent ab. Ohne id_token_hint
+        // wuerde Keycloak eine "Wollen Sie sich abmelden?"-Bestaetigungsseite zeigen;
+        // in dem Fall melden wir nur lokal ab (ein evtl. verbleibender Keycloak-SSO-
+        // Login wird beim naechsten Anmelden ohnehin durch prompt=login erneuert).
+        if ($wasKeycloak && $idToken) {
             $realm = config('services.keycloak.realms', 'passolution');
             $finalUrl = config('services.keycloak.base_url')
                 . '/realms/' . $realm . '/protocol/openid-connect/logout'
                 . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
-                . '&client_id=' . config('services.keycloak.client_id');
-
-            if ($idToken) {
-                $finalUrl .= '&id_token_hint=' . urlencode($idToken);
-            }
+                . '&client_id=' . config('services.keycloak.client_id')
+                . '&id_token_hint=' . urlencode($idToken);
         } else {
             $finalUrl = route('customer.login');
         }

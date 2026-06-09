@@ -20,27 +20,12 @@ class KeycloakAuthController extends Controller
      */
     public function redirect(Request $request): RedirectResponse
     {
-        $realm = config('services.keycloak.realms', 'passolution');
-        $baseUrl = config('services.keycloak.base_url');
-        $clientId = config('services.keycloak.client_id');
-        $idToken = session('keycloak_id_token');
-
-        // Optionales Rücksprungziel über die Session merken (nicht als Query an die
-        // Post-Logout-URI hängen – die muss exakt der Keycloak-Whitelist entsprechen).
-        if ($request->filled('redirect') && str_starts_with($request->query('redirect'), url('/'))) {
-            redirect()->setIntendedUrl($request->query('redirect'));
-        }
-
-        // Redirect to Keycloak logout, which redirects back to our startLogin route
-        $logoutUrl = $baseUrl . '/realms/' . $realm . '/protocol/openid-connect/logout'
-            . '?post_logout_redirect_uri=' . urlencode(route('auth.keycloak.start'))
-            . '&client_id=' . $clientId;
-
-        if ($idToken) {
-            $logoutUrl .= '&id_token_hint=' . urlencode($idToken);
-        }
-
-        return redirect($logoutUrl);
+        // Frueher wurde hier ZUERST ein Keycloak-Logout ausgeloest, um einen frischen
+        // Login zu erzwingen. Ohne id_token_hint (z. B. direkt nach dem Abmelden)
+        // zeigt Keycloak dabei aber eine "Wollen Sie sich abmelden?"-Bestaetigungsseite.
+        // Stattdessen erzwingen wir den frischen Login direkt ueber prompt=login
+        // (siehe startLogin) – ohne Logout-Umweg und ohne Bestaetigungsseite.
+        return $this->startLogin($request);
     }
 
     /**
@@ -54,8 +39,12 @@ class KeycloakAuthController extends Controller
             redirect()->setIntendedUrl($request->query('redirect'));
         }
 
+        // prompt=login erzwingt eine frische Authentifizierung (Login-Formular),
+        // auch wenn noch eine Keycloak-SSO-Session besteht – ersetzt den frueheren
+        // Logout-vor-Login-Umweg und vermeidet die Abmelde-Bestaetigungsseite.
         return Socialite::driver('keycloak')
             ->setScopes(['openid', 'profile', 'email'])
+            ->with(['prompt' => 'login'])
             ->enablePKCE()
             ->redirect();
     }
