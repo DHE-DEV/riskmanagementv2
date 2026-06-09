@@ -10,6 +10,8 @@ class PassolutionApiService
 {
     private string $baseUrl;
 
+    private string $internalBaseUrl;
+
     private ?string $apiKey;
 
     private ?string $apiSecret;
@@ -19,6 +21,9 @@ class PassolutionApiService
     public function __construct()
     {
         $this->baseUrl = config('services.passolution.api_url', 'https://api.passolution.eu/api/v2');
+        // __internal-Endpunkte liegen auf dem internen Service (api-internal),
+        // nicht auf der oeffentlichen api.passolution.eu.
+        $this->internalBaseUrl = config('services.passolution.internal_api_url') ?: $this->baseUrl;
         $this->apiKey = config('services.passolution.api_key');
         $this->apiSecret = config('services.passolution.api_secret');
 
@@ -60,7 +65,7 @@ class PassolutionApiService
             return null;
         }
 
-        $url = "{$this->baseUrl}/__internal/account/info";
+        $url = "{$this->internalBaseUrl}/__internal/account/info";
 
         foreach (['user_email', 'account_email'] as $param) {
             $reqParams = [$param => $email];
@@ -125,7 +130,7 @@ class PassolutionApiService
             $query['end_date'] = ['>=' => $startDate];
         }
 
-        $url = "{$this->baseUrl}/__internal/account/travel-details";
+        $url = "{$this->internalBaseUrl}/__internal/account/travel-details";
 
         foreach (['user_email', 'account_email'] as $param) {
             $reqParams = array_merge([$param => $email], $query);

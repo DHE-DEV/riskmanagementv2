@@ -44,6 +44,10 @@ return [
 
     'passolution' => [
         'api_url' => env('PASSOLUTION_API_URL', 'https://api.passolution.eu/api/v2'),
+        // Basis-URL fuer die __internal-Service-Token-Endpunkte. Die liegen auf dem
+        // internen Service (api-internal), nicht auf der oeffentlichen api.passolution.eu.
+        // Fallback: api_url.
+        'internal_api_url' => env('PASSOLUTION_INTERNAL_API_URL', 'https://api-internal-dot-pds-prod-dataservice.appspot.com/api/v2'),
         'api_key' => env('PASSOLUTION_API_KEY'),
         'api_secret' => env('PASSOLUTION_API_SECRET'),
         // Account-Personal-Access-Token (pds-api) für server-seitige __internal-Aufrufe,
