@@ -51,6 +51,16 @@ if [ -z "$FORGE_RELEASE_PATH" ]; then
   php artisan up || true
 fi
 
+# 10) PHP-FPM neu laden -> OPcache zuruecksetzen, damit der frisch deployte
+#     PHP-Code wirklich aktiv wird (sonst laeuft alter Bytecode weiter!).
+echo "♻️  Reloading PHP-FPM (OPcache reset)..."
+if [ -n "$FORGE_PHP_FPM" ]; then
+  ( flock -w 10 9 || exit 1
+    sudo -S service "$FORGE_PHP_FPM" reload ) 9>/tmp/fpmlock || echo "⚠️  FPM-Reload fehlgeschlagen (bitte manuell pruefen)"
+else
+  echo "⚠️  FORGE_PHP_FPM nicht gesetzt – FPM-Reload uebersprungen. Bitte im Forge-Deploy-Skript ergaenzen."
+fi
+
 echo ""
 echo "🎉 Deployment erfolgreich abgeschlossen!"
 echo "📅 Deployed at: $(date)"
