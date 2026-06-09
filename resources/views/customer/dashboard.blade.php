@@ -874,9 +874,13 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Abo:</span>
-                                @if(auth('customer')->user()->hasVerifiedEmail())
-                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                        Kostenloses Abo
+                                @if(($subscriptionType ?? null) === 'premium')
+                                    <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">
+                                        Premium
+                                    </span>
+                                @elseif(($subscriptionType ?? null) === 'standard')
+                                    <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                        Standard
                                     </span>
                                 @else
                                     <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
@@ -886,9 +890,15 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Funktionen:</span>
-                                <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                    Eingeschränkt
-                                </span>
+                                @if(($subscriptionType ?? null) === 'premium')
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        Voller Zugriff
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Eingeschränkt
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>

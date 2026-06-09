@@ -164,6 +164,49 @@ class PassolutionApiService
     }
 
     /**
+     * Abo-Typ eines Accounts ueber den internen Endpunkt abrufen (Service-Token).
+     * Gibt 'standard' | 'premium' zurueck, oder null (kein Abo / nicht gefunden).
+     */
+    public function fetchSubscriptionTypeByEmail(string $email): ?string
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token) {
+            return null;
+        }
+
+        $url = "{$this->internalBaseUrl}/__internal/account/subscription";
+
+        foreach (['user_email', 'account_email'] as $param) {
+            $reqParams = [$param => $email];
+            $t0 = microtime(true);
+            try {
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer '.$token,
+                ])
+                    ->timeout(15)
+                    ->get($url, $reqParams);
+
+                \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
+
+                if ($response->successful() && $response->json('type')) {
+                    return $response->json('type');
+                }
+            } catch (\Exception $e) {
+                \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
+                Log::error('Passolution API: Abo-Abruf fehlgeschlagen', [
+                    'email' => $email,
+                    'param' => $param,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Fetch general infosystem data from Passolution API
      */
     public function fetchGeneralInfo(string $lang = 'de', int $page = 1): array

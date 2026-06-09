@@ -35,7 +35,23 @@ Route::prefix('customer')->name('customer.')->group(function () {
                 $customer->refresh();
             }
 
-            return view('customer.dashboard');
+            // Abo-Typ (standard|premium) ueber den Service-Token anhand der
+            // SSO-Identitaet ermitteln – funktioniert auch ohne hinterlegten
+            // per-User-Token. Kurz gecacht, um die API nicht bei jedem Aufruf
+            // zu treffen.
+            $ssoEmail = session('keycloak_email')
+                ?: session('logged_in_employee_email')
+                ?: $customer->email;
+
+            $subscriptionType = $ssoEmail
+                ? \Illuminate\Support\Facades\Cache::remember(
+                    'pds_sub_type_'.md5($ssoEmail),
+                    now()->addMinutes(15),
+                    fn () => app(\App\Services\PassolutionApiService::class)->fetchSubscriptionTypeByEmail($ssoEmail)
+                )
+                : null;
+
+            return view('customer.dashboard', ['subscriptionType' => $subscriptionType]);
         })->name('dashboard');
 
         // Account switching
