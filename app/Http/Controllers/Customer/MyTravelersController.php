@@ -136,17 +136,19 @@ class MyTravelersController extends Controller
         }
 
         // 2. Load API TRAVELERS (if API token exists)
-        if (in_array($sourceFilter, ['all', 'api']) && ($this->hasSsoIdentity() || $customer->hasAnyActiveToken())) {
+        $ssoEmail = $this->resolveSsoEmail($customer);
+
+        if (in_array($sourceFilter, ['all', 'api']) && ($ssoEmail || $customer->hasAnyActiveToken())) {
             try {
                 $apiTravelers = [];
 
-                if ($this->hasSsoIdentity()) {
-                    // SSO-Vorrang: Abruf ueber die echte Login-E-Mail (Service-Token /
+                if ($ssoEmail) {
+                    // Vorrang: Abruf ueber die Identitaets-E-Mail (Service-Token /
                     // __internal), unabhaengig von einem (evtl. veralteten) per-User-Token.
                     // Liefert alle Reisen; Suche + Pagination erfolgen lokal.
                     $allApi = app(PassolutionApiService::class)
                         ->fetchTravelDetailsByEmail(
-                            $this->resolveSsoEmail($customer),
+                            $ssoEmail,
                             $dateRange['start'] ?: null,
                             $dateRange['end'] ?: null
                         ) ?? [];

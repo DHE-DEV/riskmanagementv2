@@ -150,14 +150,17 @@ class RiskOverviewService
     {
         try {
             $apiTravelers = null;
+            $ssoEmail = $this->resolveSsoEmail($customer);
 
-            // SSO-Identitaet hat Vorrang vor einem (evtl. veralteten) per-User-Token:
-            // Abruf ueber die echte Login-E-Mail gegen den __internal-Service-Token.
-            if ($this->hasSsoIdentity()) {
+            // Service-Token ueber die Identitaets-E-Mail (keycloak ?: employee ?:
+            // customer->email) hat Vorrang -> macht veraltete per-User-Tokens irrelevant.
+            if ($ssoEmail) {
                 $apiTravelers = app(PassolutionApiService::class)
-                    ->fetchTravelDetailsByEmail($this->resolveSsoEmail($customer), $startDate, $endDate) ?? [];
-            } elseif ($this->pdsApiService->hasValidToken($customer)) {
-                // Kein SSO, aber per-User-Token -> direkter (scope-geschuetzter) Abruf.
+                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate);
+            }
+
+            // Fallback: per-User-Token, falls der Service-Token nichts lieferte.
+            if (empty($apiTravelers) && $this->pdsApiService->hasValidToken($customer)) {
                 $apiRequestBody = [
                     'sort_by' => 'start_date',
                     'sort_order' => 'desc',
@@ -1150,16 +1153,18 @@ class RiskOverviewService
     {
         try {
             $apiTravelers = null;
+            $ssoEmail = $this->resolveSsoEmail($customer);
 
-            // SSO-Identitaet hat Vorrang vor einem (evtl. veralteten) per-User-Token:
-            // Abruf ueber die echte Login-E-Mail gegen den __internal-Service-Token.
-            if ($this->hasSsoIdentity()) {
-                $ssoEmail = $this->resolveSsoEmail($customer);
-                Log::info('RiskOverview: Reisen via Service-Token (SSO)', ['sso_email' => $ssoEmail]);
+            // Service-Token ueber die Identitaets-E-Mail (keycloak ?: employee ?:
+            // customer->email) hat Vorrang -> macht veraltete per-User-Tokens irrelevant.
+            if ($ssoEmail) {
+                Log::info('RiskOverview: Reisen via Service-Token', ['sso_email' => $ssoEmail]);
                 $apiTravelers = app(PassolutionApiService::class)
-                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate) ?? [];
-            } elseif ($this->pdsApiService->hasValidToken($customer)) {
-                // Kein SSO, aber per-User-Token -> direkter POST /travel-details.
+                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate);
+            }
+
+            // Fallback: per-User-Token, falls der Service-Token nichts lieferte.
+            if (empty($apiTravelers) && $this->pdsApiService->hasValidToken($customer)) {
                 $apiRequestBody = [
                     'sort_by' => 'start_date',
                     'sort_order' => 'desc',
