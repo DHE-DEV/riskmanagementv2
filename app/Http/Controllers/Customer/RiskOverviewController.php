@@ -13,6 +13,7 @@ use App\Models\Label;
 use App\Notifications\TravelAlertWelcomeNotification;
 use App\Services\CustomerFeatureService;
 use App\Services\KeycloakUserService;
+use App\Services\PassolutionApiService;
 use App\Services\RiskOverviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,9 +51,18 @@ class RiskOverviewController extends Controller
 
         $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
 
+        // Travel-Details-Links des eingeloggten SSO-Kunden abrufen.
+        // Die echte Login-Identitaet ist die SSO-/Employee-Mail (der customer-
+        // Datensatz kann die Firma sein) – gleiche Aufloesung wie beim iframe-SSO.
+        $ssoEmail = session('keycloak_email')
+            ?: session('logged_in_employee_email')
+            ?: $customer->email;
+        $travelDetailLinks = app(PassolutionApiService::class)->fetchTravelDetailsByEmail($ssoEmail) ?? [];
+
         return view('livewire.pages.risk-overview', [
             'customer' => $customer,
             'isDebugUser' => $isDebugUser,
+            'travelDetailLinks' => $travelDetailLinks,
         ]);
     }
 
