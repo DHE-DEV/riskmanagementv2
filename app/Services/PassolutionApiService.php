@@ -87,6 +87,50 @@ class PassolutionApiService
     }
 
     /**
+     * Travel-Details-/Shared-Links eines Accounts über den internen Endpoint
+     * abrufen (Service-Token, kein per-User-Token mit TRAVEL_DETAILS-Scope nötig).
+     * Gibt das `travel_details`-Array zurück (leer wenn keine), oder null bei Fehler.
+     */
+    public function fetchTravelDetailsByEmail(string $email): ?array
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token) {
+            Log::warning('Passolution API: Travel-Details-Abruf ohne Token nicht möglich');
+
+            return null;
+        }
+
+        foreach (['user_email', 'account_email'] as $param) {
+            try {
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer '.$token,
+                ])
+                    ->timeout(15)
+                    ->get("{$this->baseUrl}/__internal/account/travel-details", [
+                        $param => $email,
+                        'per_page' => 100,
+                    ]);
+
+                if ($response->successful()) {
+                    return $response->json('travel_details', []);
+                }
+            } catch (\Exception $e) {
+                Log::error('Passolution API: Travel-Details-Abruf fehlgeschlagen', [
+                    'email' => $email,
+                    'param' => $param,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        Log::info('Passolution API: Travel-Details nicht abrufbar', ['email' => $email]);
+
+        return null;
+    }
+
+    /**
      * Fetch general infosystem data from Passolution API
      */
     public function fetchGeneralInfo(string $lang = 'de', int $page = 1): array
