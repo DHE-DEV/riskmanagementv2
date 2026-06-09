@@ -312,4 +312,11 @@ return [
      * .env: TRAVEL_ALERT_DEBUG=true
      */
     'debug_enabled' => filter_var(env('TRAVEL_ALERT_DEBUG', false), FILTER_VALIDATE_BOOLEAN),
+
+    /**
+     * Globaler Schalter, um den Dashboard-Bereich "Profil vervollstaendigen"
+     * fuer ALLE Nutzer auszublenden (zusaetzlich zum per-Kunde-Flag).
+     * .env: HIDE_PROFILE_COMPLETION=true
+     */
+    'hide_profile_completion' => filter_var(env('HIDE_PROFILE_COMPLETION', false), FILTER_VALIDATE_BOOLEAN),
 ];

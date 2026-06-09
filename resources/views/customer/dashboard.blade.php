@@ -185,7 +185,7 @@
                     </div>
                 @endif
 
-                @if(!auth('customer')->user()->hide_profile_completion)
+                @if(!auth('customer')->user()->hide_profile_completion && !config('feed.hide_profile_completion'))
                 <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200"
                      x-data="{
                          customerType: '{{ auth('customer')->user()->customer_type ?? '' }}',
