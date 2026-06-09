@@ -155,7 +155,18 @@
         <div class="max-w-7xl mx-auto">
             <!-- Karte für Filialen -->
             @if(auth('customer')->user()->branch_management_active)
-            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6" x-data="{ recenterMap() { window.dispatchEvent(new CustomEvent('recenter-map')); } }">
+            {{-- Ist die Branches-Sidebar aktiv, haengt dort die Karten-Komponente
+                 (branchManager) und initialisiert die Karte; dann braucht die Karte
+                 nur den Zentrieren-Dispatcher. Ist die Sidebar deaktiviert, wuerde
+                 die Karte sonst NIE initialisiert -> dann haengt die Karte selbst
+                 branchManager() (genau eine Instanz, kein Doppel-Init). --}}
+            <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200 mb-6"
+                 @if(config('app.customer_dashboard_branches_sidebar_enabled', true) && auth('customer')->user()->branch_management_active)
+                     x-data="{ recenterMap() { window.dispatchEvent(new CustomEvent('recenter-map')); } }"
+                 @else
+                     x-data="branchManager()"
+                 @endif
+            >
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-gray-900">
                         <i class="fa-regular fa-map-location-dot mr-2"></i>
