@@ -94,7 +94,7 @@ class LoginController extends Controller
     /**
      * Destroy an authenticated session
      */
-    public function destroy(Request $request): \Symfony\Component\HttpFoundation\Response
+    public function destroy(Request $request): RedirectResponse
     {
         $customer = Auth::guard('customer')->user();
         $wasKeycloak = $customer && $customer->provider === 'keycloak';
@@ -120,19 +120,13 @@ class LoginController extends Controller
             $finalUrl = route('customer.login');
         }
 
-        // Single-Logout: die pds-homepage-Session MUSS im selben eingebetteten
-        // Kontext beendet werden wie der iframe – ein Top-Level-Redirect sendet
-        // das Cross-Site-Cookie nicht zuverlaessig mit. Daher eine kurze
-        // Bruecken-Seite mit verstecktem iframe auf den Homepage-Logout; danach
-        // weiter zum Endziel (Keycloak-End-Session bzw. Login).
-        $webUrl = rtrim((string) config('services.passolution.web_url'), '/');
-        if ($webUrl !== '') {
-            return response()->view('auth.customer.logout-bridge', [
-                'homepageLogout' => $webUrl . '/auth/sso/logout',
-                'finalUrl' => $finalUrl,
-            ]);
-        }
-
+        // Hinweis Single-Logout: Die pds-homepage liegt auf einer anderen Domain
+        // (getrennter Cookie-Jar) und laesst sich vom Plattform-Logout aus per
+        // Top-Level-Redirect NICHT zuverlaessig ausloggen (Cross-Site-Cookie wird
+        // nicht mitgesendet). Die Homepage-Session wird daher beim naechsten
+        // TRS-Aufruf IM iframe-Kontext beendet (siehe passolution.blade.php:
+        // anonym -> /auth/sso/logout). Hier nur Plattform-Session beenden und zur
+        // Keycloak-End-Session bzw. Login weiterleiten.
         return redirect($finalUrl);
     }
 

@@ -131,20 +131,28 @@
                     $iframeEmail = session('keycloak_email')
                         ?: session('logged_in_employee_email')
                         ?: optional(auth('customer')->user())->email;
-                    // Eingeloggter Plattform-User -> SSO-Handshake via signiertem Token.
-                    // Anonym (kein Email/Secret) -> oeffentlicher Startbildschirm der
-                    // pds-homepage statt /auth/sso/check, das sonst den Login-Prompt zeigt.
-                    if ($iframeEmail && $iframeSecret) {
-                        $token = \App\Services\IframeAuthToken::create($iframeEmail, $iframeSecret);
-                        $iframeSrc = $iframeWebUrl.'/auth/sso/check?'.http_build_query(['token' => $token]);
-                    } else {
-                        $iframeSrc = $iframeWebUrl;
-                    }
+
                     // Optionale UI-Hide/Locale-Parameter aus PASSOLUTION_IFRAME_UI_PARAMS
                     // (vorformatierter Query-String, z. B. "menu-hide=gtm,hc,is&ui-hide=is")
                     $iframeUiParams = ltrim((string) config('services.passolution.iframe_ui_params'), '?&');
-                    if ($iframeUiParams !== '') {
-                        $iframeSrc .= (str_contains($iframeSrc, '?') ? '&' : '?').$iframeUiParams;
+                    // Anonymer Startbildschirm der Homepage (inkl. UI-Parameter).
+                    $iframeAnonRoot = $iframeWebUrl.($iframeUiParams !== '' ? '?'.$iframeUiParams : '');
+
+                    if ($iframeEmail && $iframeSecret) {
+                        // Eingeloggter Plattform-User -> SSO-Handshake via signiertem Token.
+                        $token = \App\Services\IframeAuthToken::create($iframeEmail, $iframeSecret);
+                        $iframeSrc = $iframeWebUrl.'/auth/sso/check?'.http_build_query(['token' => $token]);
+                        if ($iframeUiParams !== '') {
+                            $iframeSrc .= '&'.$iframeUiParams;
+                        }
+                    } else {
+                        // Anonym (z. B. nach Plattform-Logout): Homepage-Session aktiv beenden –
+                        // und zwar HIER im iframe-Kontext, wo das embed-Session-Cookie
+                        // mitgesendet wird (ein Top-Level-Aufruf wuerde es nicht mitsenden,
+                        // da getrennte Domains/Cookie-Jars). Danach zeigt der iframe via
+                        // return_to den anonymen Startbildschirm. So bleibt nach einem
+                        // Plattform-Logout KEINE Homepage-Session im iframe stehen.
+                        $iframeSrc = $iframeWebUrl.'/auth/sso/logout?'.http_build_query(['return_to' => $iframeAnonRoot]);
                     }
                 @endphp
                 <iframe
