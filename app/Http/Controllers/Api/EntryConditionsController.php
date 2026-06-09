@@ -16,7 +16,7 @@ class EntryConditionsController extends Controller
     private function isDebugUser(): bool
     {
         $customer = auth('customer')->user();
-        return $customer && in_array($customer->email, config('feed.debug_emails', []));
+        return $customer && (config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', [])));
     }
 
     /**

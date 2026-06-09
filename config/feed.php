@@ -305,4 +305,11 @@ return [
      * .env: DEBUG_EMAILS=user@example.com,admin@example.com
      */
     'debug_emails' => array_filter(array_map('trim', explode(',', env('DEBUG_EMAILS', '')))),
+
+    /**
+     * Globaler An-/Aus-Schalter fuer das Debug-Panel (fuer ALLE Nutzer),
+     * unabhaengig von debug_emails.
+     * .env: TRAVEL_ALERT_DEBUG=true
+     */
+    'debug_enabled' => filter_var(env('TRAVEL_ALERT_DEBUG', false), FILTER_VALIDATE_BOOLEAN),
 ];

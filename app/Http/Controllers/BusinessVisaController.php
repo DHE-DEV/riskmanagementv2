@@ -32,7 +32,7 @@ class BusinessVisaController extends Controller
         }
 
         $customer = auth('customer')->user();
-        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = $customer && (config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', [])));
 
         return view('livewire.pages.business-visa', [
             'tripReasons' => $tripReasons,
@@ -64,7 +64,7 @@ class BusinessVisaController extends Controller
         $durationMs = round((microtime(true) - $startTime) * 1000, 2);
 
         $customer = auth('customer')->user();
-        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = $customer && (config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', [])));
 
         if ($result['success']) {
             $response = [

@@ -22,7 +22,7 @@ class VisumPointController extends Controller
         $isConfigured = $this->visumPointService->isConfigured();
 
         $customer = auth('customer')->user();
-        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = $customer && (config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', [])));
 
         return view('livewire.pages.visumpoint-check', [
             'countries' => $countries,
@@ -74,7 +74,7 @@ class VisumPointController extends Controller
         $durationMs = round((microtime(true) - $startTime) * 1000, 2);
 
         $customer = auth('customer')->user();
-        $isDebugUser = $customer && in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = $customer && (config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', [])));
 
         if ($result['success']) {
             $response = [

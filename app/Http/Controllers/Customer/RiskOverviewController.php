@@ -48,7 +48,7 @@ class RiskOverviewController extends Controller
                 ->header('Cache-Control', 'no-cache, private');
         }
 
-        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', []));
 
         return view('livewire.pages.risk-overview', [
             'customer' => $customer,
@@ -239,7 +239,7 @@ class RiskOverviewController extends Controller
             abort(404);
         }
 
-        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', []));
 
         if ($isDebugUser) {
             $this->riskOverviewService->enablePdsDebug();
@@ -341,7 +341,7 @@ class RiskOverviewController extends Controller
             abort(404);
         }
 
-        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', []));
 
         if ($isDebugUser) {
             $this->riskOverviewService->enablePdsDebug();
@@ -425,7 +425,7 @@ class RiskOverviewController extends Controller
             abort(404);
         }
 
-        $isDebugUser = in_array($customer->email, config('feed.debug_emails', []));
+        $isDebugUser = config('feed.debug_enabled') || in_array($customer->email, config('feed.debug_emails', []));
 
         if ($isDebugUser) {
             $this->riskOverviewService->enablePdsDebug();
