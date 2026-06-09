@@ -60,19 +60,26 @@ class PassolutionApiService
             return null;
         }
 
+        $url = "{$this->baseUrl}/__internal/account/info";
+
         foreach (['user_email', 'account_email'] as $param) {
+            $reqParams = [$param => $email];
+            $t0 = microtime(true);
             try {
                 $response = Http::withHeaders([
                     'Accept' => 'application/json',
                     'Authorization' => 'Bearer '.$token,
                 ])
                     ->timeout(15)
-                    ->get("{$this->baseUrl}/__internal/account/info", [$param => $email]);
+                    ->get($url, $reqParams);
+
+                \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
 
                 if ($response->successful() && $response->json('account')) {
                     return $response->json('account');
                 }
             } catch (\Exception $e) {
+                \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
                 Log::error('Passolution API: Stammdaten-Abruf fehlgeschlagen', [
                     'email' => $email,
                     'param' => $param,
@@ -118,19 +125,26 @@ class PassolutionApiService
             $query['end_date'] = ['>=' => $startDate];
         }
 
+        $url = "{$this->baseUrl}/__internal/account/travel-details";
+
         foreach (['user_email', 'account_email'] as $param) {
+            $reqParams = array_merge([$param => $email], $query);
+            $t0 = microtime(true);
             try {
                 $response = Http::withHeaders([
                     'Accept' => 'application/json',
                     'Authorization' => 'Bearer '.$token,
                 ])
                     ->timeout(20)
-                    ->get("{$this->baseUrl}/__internal/account/travel-details", array_merge([$param => $email], $query));
+                    ->get($url, $reqParams);
+
+                \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
 
                 if ($response->successful()) {
                     return $response->json('data', []);
                 }
             } catch (\Exception $e) {
+                \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
                 Log::error('Passolution API: Travel-Details-Abruf fehlgeschlagen', [
                     'email' => $email,
                     'param' => $param,

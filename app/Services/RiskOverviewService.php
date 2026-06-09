@@ -33,14 +33,15 @@ class RiskOverviewService
     public function enablePdsDebug(): void
     {
         $this->pdsApiService->enableDebug();
+        \App\Support\PdsDebug::enable();
     }
 
     /**
-     * Get collected PDS API debug log entries.
+     * Get collected PDS API debug log entries (per-User-Token + Service-Token).
      */
     public function getPdsDebugLog(): array
     {
-        return $this->pdsApiService->getDebugLog();
+        return array_merge($this->pdsApiService->getDebugLog(), \App\Support\PdsDebug::all());
     }
 
     /**
