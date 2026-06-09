@@ -168,7 +168,7 @@
                  @endif
             >
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-900">
+                    <h2 class="text-lg font-semibold text-gray-900">
                         <i class="fa-regular fa-map-location-dot mr-2"></i>
                         Standorte auf der Karte
                     </h2>
