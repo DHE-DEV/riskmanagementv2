@@ -94,7 +94,7 @@ class LoginController extends Controller
     /**
      * Destroy an authenticated session
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $customer = Auth::guard('customer')->user();
         $wasKeycloak = $customer && $customer->provider === 'keycloak';
@@ -120,13 +120,17 @@ class LoginController extends Controller
             $finalUrl = route('customer.login');
         }
 
-        // Single-Logout: zuerst die pds-homepage-Session beenden (die per SSO
-        // aufgebaute Session bleibt sonst stehen), dann weiter zum Endziel
-        // (Keycloak-End-Session bzw. Login). Top-Level-Redirect, damit das
-        // Homepage-Cookie (Cross-Site) zuverlaessig mitgesendet wird.
+        // Single-Logout: die pds-homepage-Session MUSS im selben eingebetteten
+        // Kontext beendet werden wie der iframe – ein Top-Level-Redirect sendet
+        // das Cross-Site-Cookie nicht zuverlaessig mit. Daher eine kurze
+        // Bruecken-Seite mit verstecktem iframe auf den Homepage-Logout; danach
+        // weiter zum Endziel (Keycloak-End-Session bzw. Login).
         $webUrl = rtrim((string) config('services.passolution.web_url'), '/');
         if ($webUrl !== '') {
-            return redirect($webUrl . '/auth/sso/logout?return_to=' . urlencode($finalUrl));
+            return response()->view('auth.customer.logout-bridge', [
+                'homepageLogout' => $webUrl . '/auth/sso/logout',
+                'finalUrl' => $finalUrl,
+            ]);
         }
 
         return redirect($finalUrl);
