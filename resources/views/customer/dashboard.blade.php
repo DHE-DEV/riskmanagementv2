@@ -828,6 +828,7 @@
                     </div>
                     -->
 
+                    @if(config('feed.dashboard_status_enabled'))
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Status
@@ -865,6 +866,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <div class="bg-white p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
@@ -900,6 +902,7 @@
                                     </span>
                                 @endif
                             </div>
+                            @if(config('feed.dashboard_konto_funktionen_enabled'))
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Funktionen:</span>
                                 @if(($subscriptionType ?? null) === 'premium')
@@ -912,6 +915,7 @@
                                     </span>
                                 @endif
                             </div>
+                            @endif
                         </div>
                     </div>
 

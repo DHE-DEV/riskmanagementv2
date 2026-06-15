@@ -319,4 +319,11 @@ return [
      * .env: HIDE_PROFILE_COMPLETION=true
      */
     'hide_profile_completion' => filter_var(env('HIDE_PROFILE_COMPLETION', false), FILTER_VALIDATE_BOOLEAN),
+
+    /**
+     * Dashboard-Bloecke ein-/ausblenden (true = anzeigen).
+     * .env: DASHBOARD_STATUS_ENABLED / DASHBOARD_KONTO_FUNKTIONEN_ENABLED
+     */
+    'dashboard_status_enabled' => filter_var(env('DASHBOARD_STATUS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'dashboard_konto_funktionen_enabled' => filter_var(env('DASHBOARD_KONTO_FUNKTIONEN_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 ];
