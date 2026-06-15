@@ -4926,9 +4926,12 @@
                                 <div class="sm:w-1/3">
                                     <img src="{{ asset('images/connected_services/mybakup.png') }}" alt="myBakup" style="height: 50px; width: auto;">
                                 </div>
-                                <div class="sm:w-2/3">
+                                <div class="sm:w-2/3 flex flex-wrap items-center gap-2">
                                     <a href="https://www.app.mybakup.com/traveler/" target="_blank" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
                                         <i class="fas fa-external-link-alt mr-1.5"></i> Website Anbieter
+                                    </a>
+                                    <a href="https://mybakup.com/?utm_source=passolution&utm_medium=iframe&utm_campaign=partenaire" target="_blank" rel="noopener" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100">
+                                        <i class="fas fa-flask mr-1.5"></i> Testen
                                     </a>
                                 </div>
                             </div>
