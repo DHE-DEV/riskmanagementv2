@@ -4910,7 +4910,7 @@
                 </div>
 
                 {{-- Doctors Network --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5" x-data="{ showMybakupTest: false }">
                     <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                         <div class="flex items-center gap-3 sm:block sm:w-8 sm:flex-shrink-0 sm:pt-0.5 sm:text-center">
                             <i class="fas fa-user-doctor text-2xl text-gray-400"></i>
@@ -4930,9 +4930,11 @@
                                     <a href="https://www.app.mybakup.com/traveler/" target="_blank" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100">
                                         <i class="fas fa-external-link-alt mr-1.5"></i> Website Anbieter
                                     </a>
-                                    <a href="https://mybakup.com/?utm_source=passolution&utm_medium=iframe&utm_campaign=partenaire" target="_blank" rel="noopener" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100">
-                                        <i class="fas fa-flask mr-1.5"></i> Testen
-                                    </a>
+                                    <button type="button" @click="showMybakupTest = !showMybakupTest"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100">
+                                        <i class="fas fa-flask mr-1.5"></i>
+                                        <span x-text="showMybakupTest ? 'Test ausblenden' : 'Testen'">Testen</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -4942,6 +4944,20 @@
                             </span>
                         </div>
                     </div>
+
+                    {{-- MyBakup Test-iframe (per "Testen" eingeblendet, laedt erst bei Bedarf) --}}
+                    <template x-if="showMybakupTest">
+                        <div class="mt-4 border-t border-gray-200 pt-4">
+                            <iframe
+                                src="https://mybakup.com/?utm_source=passolution&utm_medium=iframe&utm_campaign=partenaire"
+                                width="100%" height="100%"
+                                style="border: none; min-height: 700px;"
+                                allow="geolocation"
+                                title="MyBakup — Trouvez un médecin en voyage"
+                                loading="lazy"
+                            ></iframe>
+                        </div>
+                    </template>
                 </div>
 
             @elseif($settingsSection === 'travel-information')
