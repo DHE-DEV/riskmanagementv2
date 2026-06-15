@@ -921,6 +921,7 @@
 
                 </div>
 
+                @if(config('feed.dashboard_business_boxes_enabled'))
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6"
                      x-data="{ showBusinessBoxes: '{{ auth('customer')->user()->customer_type ?? '' }}' === 'business' }"
                      x-show="showBusinessBoxes"
@@ -1191,6 +1192,7 @@
                     @endif
 
                 </div>
+                @endif
 
                 {{-- Empfohlene Einstellungen - sichtbar für alle Kunden --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">

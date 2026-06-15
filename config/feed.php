@@ -326,4 +326,11 @@ return [
      */
     'dashboard_status_enabled' => filter_var(env('DASHBOARD_STATUS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     'dashboard_konto_funktionen_enabled' => filter_var(env('DASHBOARD_KONTO_FUNKTIONEN_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
+    /**
+     * Firmen-Boxen auf dem Dashboard (Firmenadresse / Rechnungsadresse /
+     * Filialen & Standorte) – werden ohnehin nur Firmenkunden angezeigt.
+     * .env: DASHBOARD_BUSINESS_BOXES_ENABLED
+     */
+    'dashboard_business_boxes_enabled' => filter_var(env('DASHBOARD_BUSINESS_BOXES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 ];
