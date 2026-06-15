@@ -17,8 +17,22 @@
     $isEmployeeLogin = $loggedInEmployee !== null;
 
     $customerSettingsSections = config('customer_settings.sections', []);
-    if (array_key_exists($settingsSection, $customerSettingsSections) && ! $customerSettingsSections[$settingsSection]) {
-        abort(404);
+    $customerSettingsBlocks = config('customer_settings.blocks', []);
+    $sectionEnabled = fn ($s) => ! array_key_exists($s, $customerSettingsSections) || $customerSettingsSections[$s];
+
+    if (! $sectionEnabled($settingsSection)) {
+        // Direktaufruf einer deaktivierten Section -> 404. Ohne ?section= (Default)
+        // auf die erste aktive Section ausweichen, damit /customer/settings nicht
+        // 404t, wenn "Mein Profil"/general ausgeblendet ist.
+        if (request()->filled('section')) {
+            abort(404);
+        }
+        foreach (['general', 'master-data', 'organization', 'users', 'travel-requirements', 'global-travel-monitor', 'travel-alert', 'travel-data', 'travel-link', 'travel-information', 'connected-services'] as $candidateSection) {
+            if ($sectionEnabled($candidateSection)) {
+                $settingsSection = $candidateSection;
+                break;
+            }
+        }
     }
 @endphp
 
@@ -142,7 +156,7 @@
             </h2>
 
             <nav class="space-y-1">
-                @if(!$isImpersonating)
+                @if(!$isImpersonating && ($customerSettingsSections['general'] ?? true))
                 <div id="settings-nav-general" class="settings-section-title">Allgemein</div>
 
                 <a href="{{ route('customer.settings', ['section' => 'general']) }}"
@@ -155,23 +169,29 @@
                 @if($customer->branch_management_active || $isSuperAdmin)
                 <div id="settings-nav-org" class="settings-section-title mt-2">Organisation</div>
 
+                @if($customerSettingsSections['master-data'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'master-data']) }}"
                    class="settings-nav-item {{ $settingsSection === 'master-data' ? 'active' : '' }}">
                     <i class="fas fa-database"></i>
                     Stammdaten
                 </a>
+                @endif
 
+                @if($customerSettingsSections['organization'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'organization']) }}"
                    class="settings-nav-item {{ $settingsSection === 'organization' ? 'active' : '' }}">
                     <i class="fas fa-sitemap"></i>
                     Organisationsstruktur
                 </a>
+                @endif
 
+                @if($customerSettingsSections['users'] ?? true)
                 <a href="{{ route('customer.settings', ['section' => 'users']) }}"
                    class="settings-nav-item {{ $settingsSection === 'users' ? 'active' : '' }}">
                     <i class="fas fa-users"></i>
                     Benutzerverwaltung
                 </a>
+                @endif
                 @endif
 
                 <div id="settings-nav-tip" class="settings-section-title mt-2">Travel Information Platform</div>
@@ -2411,6 +2431,7 @@
                     $tokenSource = $customer->getActiveTokenSource();
                 @endphp
 
+                @if($customerSettingsBlocks['product_activation'] ?? true)
                 <div class="bg-white rounded-lg border border-gray-200 p-5" x-data="{ showTokenInput: false }">
                     <div class="flex items-start gap-4">
                         <div class="w-8 flex-shrink-0 pt-0.5 text-center">
@@ -2527,6 +2548,7 @@
                         </div>
                     @endif
                 </div>
+                @endif
 
                 {{-- Refresh Button --}}
                 @if($hasActiveToken)

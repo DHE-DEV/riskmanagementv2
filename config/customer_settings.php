@@ -13,6 +13,10 @@ return [
     |
     */
     'sections' => [
+        'general'               => env('CUSTOMER_SETTINGS_GENERAL_ENABLED', true),         // Mein Profil
+        'master-data'           => env('CUSTOMER_SETTINGS_MASTER_DATA_ENABLED', true),     // Stammdaten
+        'organization'          => env('CUSTOMER_SETTINGS_ORGANIZATION_ENABLED', true),    // Organisationsstruktur
+        'users'                 => env('CUSTOMER_SETTINGS_USERS_ENABLED', true),           // Benutzerverwaltung
         'travel-requirements'   => env('CUSTOMER_SETTINGS_TRAVEL_REQUIREMENTS_ENABLED', true),
         'global-travel-monitor' => env('CUSTOMER_SETTINGS_GTM_ENABLED', true),
         'travel-alert'          => env('CUSTOMER_SETTINGS_TRAVEL_ALERT_ENABLED', true),
@@ -24,10 +28,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Einzelne Blöcke auf Section "general" (Mein Profil)
+    | Einzelne Blöcke (innerhalb einer Section)
     |--------------------------------------------------------------------------
     */
     'blocks' => [
-        'password_change' => env('CUSTOMER_SETTINGS_PASSWORD_CHANGE_ENABLED', true),
+        'password_change'    => env('CUSTOMER_SETTINGS_PASSWORD_CHANGE_ENABLED', true),
+        // "Produktaktivierung" im Bereich Travel Requirements Service
+        'product_activation' => env('CUSTOMER_SETTINGS_PRODUCT_ACTIVATION_ENABLED', true),
     ],
 ];
