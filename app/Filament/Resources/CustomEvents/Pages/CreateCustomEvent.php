@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\CustomEvents\Pages;
 
-use App\Filament\Resources\CustomEvents\Concerns\TranslatesEventContent;
 use App\Filament\Resources\CustomEvents\CustomEventResource;
 use App\Models\Country;
 use App\Models\CustomEvent;
@@ -11,16 +10,7 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateCustomEvent extends CreateRecord
 {
-    use TranslatesEventContent;
-
     protected static string $resource = CustomEventResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            $this->getTranslateEventAction(),
-        ];
-    }
 
     public ?string $infosystemSource = null;
     public ?string $infosystemSourceId = null;

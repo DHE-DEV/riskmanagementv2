@@ -9,12 +9,16 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 
 /**
- * Stellt den "Übersetzen"-Header-Button für Create- und Edit-Seiten bereit.
+ * Stellt den "Übersetzen"-Header-Button für die Edit-Seite bereit.
  *
- * Übersetzt Titel und Beschreibung (popup_content) aus der Ausgangssprache in
- * alle konfigurierten Sprachen (per DeepL). Arbeitet ausschließlich auf dem
- * Formular-State ($this->data), sodass die Übersetzungen vor dem Speichern noch
- * manuell angepasst werden können.
+ * Ablauf (bewusst über die Datenbank statt über den Formular-State, da der
+ * RichEditor extern gesetzten State nicht zuverlässig übernimmt und beim
+ * Speichern sonst überschreiben würde):
+ *   1. Aktuellen Formularstand speichern (inkl. Ausgangssprache).
+ *   2. Titel + Beschreibung aus dem gespeicherten Datensatz per DeepL in alle
+ *      konfigurierten Sprachen übersetzen und persistieren.
+ *   3. Edit-Seite neu laden, damit alle Felder (auch die RichEditor) die
+ *      Übersetzungen anzeigen. Danach beliebig manuell editierbar.
  */
 trait TranslatesEventContent
 {
@@ -26,11 +30,11 @@ trait TranslatesEventContent
             ->color('info')
             ->modalHeading('Felder übersetzen')
             ->modalDescription(
-                'Übersetzt Titel und Beschreibung aus der Ausgangssprache ('
+                'Speichert das Event und übersetzt Titel und Beschreibung aus der Ausgangssprache ('
                 . strtoupper(CustomEvent::sourceLocale())
                 . ') per DeepL in alle konfigurierten Sprachen.'
             )
-            ->modalSubmitActionLabel('Jetzt übersetzen')
+            ->modalSubmitActionLabel('Speichern & übersetzen')
             ->schema([
                 Toggle::make('overwrite')
                     ->label('Bereits ausgefüllte Übersetzungen überschreiben')
@@ -57,10 +61,17 @@ trait TranslatesEventContent
             return;
         }
 
+        // 1. Aktuellen Formularstand speichern (ohne Redirect / ohne Standard-Notification).
+        $this->save(shouldRedirect: false, shouldSendSavedNotification: false);
+
+        $record = $this->record->refresh();
         $source = CustomEvent::sourceLocale();
 
-        $sourceTitle = data_get($this->data, "title_translations.$source");
-        $sourcePopup = data_get($this->data, "popup_content_translations.$source");
+        $titleTranslations = $record->title_translations ?? [];
+        $popupTranslations = $record->popup_content_translations ?? [];
+
+        $sourceTitle = $titleTranslations[$source] ?? null;
+        $sourcePopup = $popupTranslations[$source] ?? null;
 
         if (blank($sourceTitle) && blank($sourcePopup)) {
             Notification::make()
@@ -81,25 +92,25 @@ trait TranslatesEventContent
             }
 
             try {
-                if (filled($sourceTitle)) {
-                    $existing = data_get($this->data, "title_translations.$locale");
-                    if ($overwrite || blank($existing)) {
-                        data_set($this->data, "title_translations.$locale", $service->translate($sourceTitle, $locale, $source));
-                        $translatedCount++;
-                    }
+                if (filled($sourceTitle) && ($overwrite || blank($titleTranslations[$locale] ?? null))) {
+                    $titleTranslations[$locale] = $service->translate($sourceTitle, $locale, $source);
+                    $translatedCount++;
                 }
 
-                if (filled($sourcePopup)) {
-                    $existing = data_get($this->data, "popup_content_translations.$locale");
-                    if ($overwrite || blank($existing)) {
-                        data_set($this->data, "popup_content_translations.$locale", $service->translateHtml($sourcePopup, $locale, $source));
-                        $translatedCount++;
-                    }
+                if (filled($sourcePopup) && ($overwrite || blank($popupTranslations[$locale] ?? null))) {
+                    $popupTranslations[$locale] = $service->translateHtml($sourcePopup, $locale, $source);
+                    $translatedCount++;
                 }
             } catch (\Throwable $e) {
                 $errors[] = strtoupper($locale) . ': ' . $e->getMessage();
             }
         }
+
+        // 2. Übersetzungen persistieren.
+        $record->update([
+            'title_translations' => $titleTranslations,
+            'popup_content_translations' => $popupTranslations,
+        ]);
 
         if (! empty($errors)) {
             Notification::make()
@@ -107,16 +118,17 @@ trait TranslatesEventContent
                 ->body(implode("\n", $errors))
                 ->danger()
                 ->send();
-
-            return;
+        } else {
+            Notification::make()
+                ->title($translatedCount > 0 ? 'Übersetzung abgeschlossen' : 'Nichts zu übersetzen')
+                ->body($translatedCount > 0
+                    ? $translatedCount . ' Feld(er) übersetzt.'
+                    : 'Alle Zielsprachen waren bereits ausgefüllt (Überschreiben war deaktiviert).')
+                ->success()
+                ->send();
         }
 
-        Notification::make()
-            ->title($translatedCount > 0 ? 'Übersetzung abgeschlossen' : 'Nichts zu übersetzen')
-            ->body($translatedCount > 0
-                ? $translatedCount . ' Feld(er) übersetzt. Bitte vor dem Speichern prüfen.'
-                : 'Alle Zielsprachen waren bereits ausgefüllt (Überschreiben war deaktiviert).')
-            ->success()
-            ->send();
+        // 3. Edit-Seite neu laden, damit die (RichEditor-)Felder die Übersetzungen zeigen.
+        $this->redirect($this->getResource()::getUrl('edit', ['record' => $record]));
     }
 }

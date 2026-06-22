@@ -79,6 +79,12 @@ class AdminPanelProvider extends PanelProvider
                     .fi-no-notification {
                         max-width: 400px !important;
                     }
+                    /* Höheres Eingabefeld für markierte RichEditor (z.B. Event-Beschreibung) */
+                    .rich-editor-tall .tiptap,
+                    .rich-editor-tall .ProseMirror,
+                    .rich-editor-tall .fi-fo-rich-editor-content {
+                        min-height: 24rem;
+                    }
                 </style>'
             );
     }

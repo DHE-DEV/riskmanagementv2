@@ -449,6 +449,7 @@ class CustomEventForm
 
                     RichEditor::make("popup_content_translations.{$locale}")
                         ->label('Beschreibung')
+                        ->extraAttributes(['class' => 'rich-editor-tall'])
                         ->toolbarButtons([
                             'bold',
                             'italic',
