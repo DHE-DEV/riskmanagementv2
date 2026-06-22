@@ -17,6 +17,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -28,39 +30,19 @@ class CustomEventForm
     {
         return $schema
             ->components([
-                // Hauptinformationen
-                TextInput::make('title')
-                    ->label('Titel')
-                    ->required()
-                    ->maxLength(255)
-                    ->placeholder('z.B. Brandschutzübung Frankfurt')
-                    ->columnSpanFull(),
+                // Mehrsprachige Hauptinformationen (Titel + Beschreibung je Sprache).
+                // Die Sprachen werden über EVENT_LANGUAGES (.env) gesteuert.
+                // Den "Übersetzen"-Button (DeepL) gibt es als Header-Aktion auf der Seite.
+                Tabs::make('translations')
+                    ->columnSpanFull()
+                    ->tabs(self::buildTranslationTabs()),
 
-                // Beschreibung-Feld ausgeblendet
+                // Beschreibung-Feld ausgeblendet (nur für RSS/Atom-Feeds verwendet)
                 Textarea::make('description')
                     ->label('Beschreibung')
                     ->rows(3)
                     ->placeholder('Detaillierte Beschreibung des Events...')
                     ->hidden(),
-
-                // Popup-Inhalt als Beschreibung
-                RichEditor::make('popup_content')
-                    ->label('Beschreibung')
-                    ->toolbarButtons([
-                        'bold',
-                        'italic',
-                        'underline',
-                        'strike',
-                        'link',
-                        'bulletList',
-                        'orderedList',
-                        'h2',
-                        'h3',
-                        'blockquote',
-                        'codeBlock',
-                    ])
-                    ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
-                    ->columnSpanFull(),
 
                 \Filament\Schemas\Components\Grid::make(2)
                     ->schema([
@@ -439,6 +421,53 @@ class CustomEventForm
                     ->hidden(),
 
             ]);
+    }
+
+    /**
+     * Baut für jede konfigurierte Sprache (EVENT_LANGUAGES) einen Tab mit
+     * Titel- und Beschreibungsfeld. Die Felder schreiben in die JSON-Spalten
+     * title_translations / popup_content_translations (Dot-Notation).
+     */
+    private static function buildTranslationTabs(): array
+    {
+        $source = CustomEvent::sourceLocale();
+        $tabs = [];
+
+        foreach (CustomEvent::translationLocales() as $locale) {
+            $isSource = $locale === $source;
+            $label = CustomEvent::localeLabel($locale) . ($isSource ? ' (Ausgangssprache)' : '');
+
+            $tabs[] = Tab::make($locale)
+                ->label($label)
+                ->schema([
+                    TextInput::make("title_translations.{$locale}")
+                        ->label('Titel')
+                        ->required($isSource)
+                        ->maxLength(255)
+                        ->placeholder('z.B. Brandschutzübung Frankfurt')
+                        ->columnSpanFull(),
+
+                    RichEditor::make("popup_content_translations.{$locale}")
+                        ->label('Beschreibung')
+                        ->toolbarButtons([
+                            'bold',
+                            'italic',
+                            'underline',
+                            'strike',
+                            'link',
+                            'bulletList',
+                            'orderedList',
+                            'h2',
+                            'h3',
+                            'blockquote',
+                            'codeBlock',
+                        ])
+                        ->helperText('HTML-Inhalt für die Popup-Anzeige. Unterstützt Formatierung und Links.')
+                        ->columnSpanFull(),
+                ]);
+        }
+
+        return $tabs;
     }
 
     /**

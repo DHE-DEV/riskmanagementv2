@@ -134,6 +134,9 @@
     <!-- Bottom Buttons (fixed) -->
     @if(config('app.navigation_bottom_buttons_enabled', true))
     <div class="flex-shrink-0 flex flex-col items-center space-y-3 pt-4">
+        <!-- Sprachumschalter (per .env aktivierbar) -->
+        <x-language-switcher />
+
         @if($active === 'dashboard' && $featureService->isFeatureEnabled('navigation_center_map_enabled', $customer))
         <button class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors" title="Karte zentrieren" onclick="centerMap()">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="w-6 h-6" fill="currentColor" aria-hidden="true">

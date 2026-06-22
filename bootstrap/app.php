@@ -30,6 +30,21 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin-tools' => \App\Http\Middleware\AdminToolsAccess::class,
         ]);
 
+        // Frontend-Anzeigesprache (mehrsprachige Events) anhand ?lang/Session/Cookie/Browser.
+        // Auf web (Session + Cookie setzen) und api (Cookie lesen, zustandslos).
+        $middleware->web(append: [
+            \App\Http\Middleware\SetEventLocale::class,
+        ]);
+        $middleware->api(append: [
+            \App\Http\Middleware\SetEventLocale::class,
+        ]);
+
+        // app_locale-Cookie unverschlüsselt lassen, damit die zustandslose API
+        // ihn auf derselben Domain lesen kann.
+        $middleware->encryptCookies(except: [
+            \App\Http\Middleware\SetEventLocale::COOKIE,
+        ]);
+
         $middleware->redirectGuestsTo(function ($request) {
             if ($request->is('admin/*')) {
                 return route('filament.admin.auth.login');

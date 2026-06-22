@@ -239,6 +239,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </a>
                 @endif
             @endauth
+
+            <!-- Sprachumschalter (per .env aktivierbar) -->
+            <x-language-switcher-mobile />
         </nav>
 
         <!-- Drawer Footer -->

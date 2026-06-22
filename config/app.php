@@ -154,6 +154,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Event Translations (Mehrsprachige Events)
+    |--------------------------------------------------------------------------
+    |
+    | Steuert, in welche Sprachen Event-Titel und -Beschreibungen übersetzt
+    | werden können. EVENT_LANGUAGES ist eine kommagetrennte Liste von
+    | Sprach-/Länderkürzeln (2-stellige ISO-Codes, z. B. "de,en,nl").
+    | EVENT_SOURCE_LANGUAGE ist die Ausgangssprache, aus der DeepL übersetzt
+    | und auf die alle Anzeigen zurückfallen, wenn keine Übersetzung existiert.
+    |
+    */
+
+    'event_languages' => env('EVENT_LANGUAGES', 'de,en,nl'),
+    'event_source_language' => env('EVENT_SOURCE_LANGUAGE', 'de'),
+
+    // Sichtbarer Sprachumschalter im Frontend-Header (an/aus per .env).
+    'event_language_switcher_enabled' => env('EVENT_LANGUAGE_SWITCHER_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Dashboard Feature Toggles
     |--------------------------------------------------------------------------
     |

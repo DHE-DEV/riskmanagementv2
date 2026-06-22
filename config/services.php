@@ -36,6 +36,14 @@ return [
         'base_url' => env('OPENWEATHERMAP_BASE_URL', 'https://api.openweathermap.org/data/2.5'),
     ],
 
+    // DeepL Translation API (Pro) – used to translate Event titles/descriptions
+    // DeepL Übersetzungs-API (Pro) – übersetzt Event-Titel/-Beschreibungen
+    // Nutzt den vorhandenen DEEPL_KEY (Fallback: DEEPL_API_KEY).
+    'deepl' => [
+        'api_key' => env('DEEPL_KEY', env('DEEPL_API_KEY')),
+        'api_url' => env('DEEPL_API_URL', 'https://api.deepl.com/v2/translate'),
+    ],
+
     // Font Awesome Kit
     'fontawesome' => [
         // Erwartet eine Kit-ID oder Lizenznummer in der .env unter FONT_AWESOME

@@ -370,6 +370,9 @@
                 </a>
                 @endif
             @endauth
+
+            <!-- Sprachumschalter (per .env aktivierbar) -->
+            <x-language-switcher-mobile />
         </nav>
 
         <!-- Drawer Footer -->

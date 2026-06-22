@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ class CustomEvent extends Model implements Feedable
     protected $fillable = [
         'uuid',
         'title',
+        'title_translations',
         'description',
         'event_type',
         'event_type_id',
@@ -32,6 +34,7 @@ class CustomEvent extends Model implements Feedable
         'icon_color',
         'marker_size',
         'popup_content',
+        'popup_content_translations',
         'source',
         'source_show_frontend',
         'source_link_text',
@@ -62,6 +65,8 @@ class CustomEvent extends Model implements Feedable
     ];
 
     protected $casts = [
+        'title_translations' => 'array',
+        'popup_content_translations' => 'array',
         'latitude' => 'decimal:16',
         'longitude' => 'decimal:16',
         'start_date' => 'datetime',
@@ -89,6 +94,161 @@ class CustomEvent extends Model implements Feedable
         'priority' => 'medium',
         'severity' => 'medium',
     ];
+
+    /**
+     * Configured event translation locales (z. B. ['de', 'en', 'nl']).
+     */
+    public static function translationLocales(): array
+    {
+        $raw = (string) config('app.event_languages', 'de,en,nl');
+
+        $locales = array_values(array_filter(array_map(
+            fn ($code) => strtolower(trim($code)),
+            explode(',', $raw)
+        )));
+
+        // Ausgangssprache immer enthalten und an erster Stelle.
+        $source = static::sourceLocale();
+        $locales = array_values(array_unique(array_merge([$source], $locales)));
+
+        return $locales;
+    }
+
+    /**
+     * Ausgangssprache, aus der übersetzt wird und auf die zurückgefallen wird.
+     */
+    public static function sourceLocale(): string
+    {
+        return strtolower((string) config('app.event_source_language', 'de'));
+    }
+
+    /**
+     * Anzeigename für ein Sprachkürzel, optional mit Flaggen-Emoji.
+     * Fallback: Großbuchstaben des Codes.
+     */
+    public static function localeLabel(string $locale, bool $withFlag = true): string
+    {
+        $locale = strtolower(trim($locale));
+
+        $flags = [
+            'de' => '🇩🇪', 'en' => '🇬🇧', 'nl' => '🇳🇱', 'fr' => '🇫🇷',
+            'es' => '🇪🇸', 'it' => '🇮🇹', 'pt' => '🇵🇹', 'pl' => '🇵🇱',
+        ];
+        $names = [
+            'de' => 'Deutsch', 'en' => 'English', 'nl' => 'Nederlands', 'fr' => 'Français',
+            'es' => 'Español', 'it' => 'Italiano', 'pt' => 'Português', 'pl' => 'Polski',
+        ];
+
+        $name = $names[$locale] ?? strtoupper($locale);
+
+        if ($withFlag && isset($flags[$locale])) {
+            return $flags[$locale] . ' ' . $name;
+        }
+
+        return $name;
+    }
+
+    /**
+     * Nur das Flaggen-Emoji für ein Sprachkürzel (leer, wenn unbekannt).
+     */
+    public static function localeFlag(string $locale): string
+    {
+        return [
+            'de' => '🇩🇪', 'en' => '🇬🇧', 'nl' => '🇳🇱', 'fr' => '🇫🇷',
+            'es' => '🇪🇸', 'it' => '🇮🇹', 'pt' => '🇵🇹', 'pl' => '🇵🇱',
+        ][strtolower(trim($locale))] ?? '🌐';
+    }
+
+    /**
+     * Übersetzten Wert für eine Sprache auflösen (mit Fallback-Kette:
+     * gewünschte Sprache -> Ausgangssprache -> erster vorhandener Wert -> Rohwert).
+     */
+    protected function resolveTranslation(?array $translations, ?string $fallback, ?string $locale = null): ?string
+    {
+        $locale = strtolower($locale ?: app()->getLocale());
+        $source = static::sourceLocale();
+
+        if (is_array($translations)) {
+            if (! empty($translations[$locale])) {
+                return $translations[$locale];
+            }
+            if (! empty($translations[$source])) {
+                return $translations[$source];
+            }
+            foreach ($translations as $value) {
+                if (! empty($value)) {
+                    return $value;
+                }
+            }
+        }
+
+        return $fallback;
+    }
+
+    /**
+     * Titel in der aktuellen (oder angegebenen) Sprache.
+     */
+    public function getTitle(?string $locale = null): ?string
+    {
+        return $this->resolveTranslation($this->title_translations, $this->attributes['title'] ?? null, $locale);
+    }
+
+    /**
+     * Beschreibung (popup_content) in der aktuellen (oder angegebenen) Sprache.
+     */
+    public function getPopupContent(?string $locale = null): ?string
+    {
+        return $this->resolveTranslation($this->popup_content_translations, $this->attributes['popup_content'] ?? null, $locale);
+    }
+
+    /**
+     * Locale-bewusster Accessor: $event->title liefert die Übersetzung
+     * passend zur aktiven App-Locale (Fallback auf Ausgangssprache/Rohwert).
+     */
+    protected function title(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $this->resolveTranslation($this->title_translations, $value),
+        );
+    }
+
+    /**
+     * Locale-bewusster Accessor für die Beschreibung (popup_content).
+     */
+    protected function popupContent(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $this->resolveTranslation($this->popup_content_translations, $value),
+        );
+    }
+
+    /**
+     * Hält die JSON-Übersetzungen und die Legacy-Spalten konsistent:
+     * - sind Übersetzungen gesetzt, spiegelt die Spalte die Ausgangssprache;
+     * - wird nur die Spalte beschrieben (Import/API), wandert ihr Wert in die JSON.
+     */
+    protected function syncTranslationColumns(): void
+    {
+        $source = static::sourceLocale();
+
+        foreach ([
+            'title' => 'title_translations',
+            'popup_content' => 'popup_content_translations',
+        ] as $column => $jsonColumn) {
+            $translations = $this->{$jsonColumn};
+            $translations = is_array($translations) ? $translations : [];
+            $rawColumn = $this->attributes[$column] ?? null;
+
+            if (array_key_exists($source, $translations) && filled($translations[$source])) {
+                // Übersetzungen sind führend -> Spalte mit Ausgangssprache spiegeln.
+                $this->attributes[$column] = $translations[$source];
+            } elseif (filled($rawColumn)) {
+                // Legacy-/Direktschreibzugriff -> Ausgangssprache in die JSON übernehmen.
+                $translations[$source] = $rawColumn;
+                $this->{$jsonColumn} = $translations;
+            }
+        }
+    }
 
     /**
      * Country relation (single - for backward compatibility).
@@ -705,6 +865,11 @@ class CustomEvent extends Model implements Feedable
             if (empty($event->uuid)) {
                 $event->uuid = Str::uuid();
             }
+        });
+
+        // Übersetzungs-JSON und Legacy-Spalten (title/popup_content) synchron halten.
+        static::saving(function (CustomEvent $event) {
+            $event->syncTranslationColumns();
         });
 
         // Automatically set archived_at when archiving

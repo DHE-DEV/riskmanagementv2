@@ -2,14 +2,25 @@
 
 namespace App\Filament\Resources\CustomEvents\Pages;
 
+use App\Filament\Resources\CustomEvents\Concerns\TranslatesEventContent;
 use App\Filament\Resources\CustomEvents\CustomEventResource;
 use App\Models\Country;
+use App\Models\CustomEvent;
 use App\Models\EventType;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateCustomEvent extends CreateRecord
 {
+    use TranslatesEventContent;
+
     protected static string $resource = CustomEventResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->getTranslateEventAction(),
+        ];
+    }
 
     public ?string $infosystemSource = null;
     public ?string $infosystemSourceId = null;
@@ -123,16 +134,17 @@ class CreateCustomEvent extends CreateRecord
         }
 
         $data = [];
+        $source = CustomEvent::sourceLocale();
 
-        // Map title from URL parameter
+        // Map title from URL parameter (in die Ausgangssprache schreiben)
         if ($request->has('title') && $request->get('title')) {
-            $data['title'] = $request->get('title');
+            $data['title_translations'][$source] = $request->get('title');
         }
 
-        // Map description to both description and popup_content fields
+        // Map description to feed description and the popup content (Ausgangssprache)
         if ($request->has('description') && $request->get('description')) {
             $data['description'] = $request->get('description');
-            $data['popup_content'] = $request->get('description');
+            $data['popup_content_translations'][$source] = $request->get('description');
         }
 
         // Map country - prioritize country_code over country_name
