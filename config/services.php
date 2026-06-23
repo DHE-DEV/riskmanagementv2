@@ -128,6 +128,10 @@ return [
         'redirect' => env('OIDC_REDIRECT_URI', env('APP_URL') . '/auth/callback'),
         'base_url' => env('OIDC_BASE_URL', 'https://auth.passolution.de'),
         'realms' => env('OIDC_REALM', 'passolution'),
+        // Service-Account-Client für die Admin-REST-API (client_credentials grant).
+        // Benötigt realm-management Rollen manage-users + view-users auf dem Realm.
+        'admin_client_id' => env('KEYCLOAK_ADMIN_CLIENT_ID'),
+        'admin_client_secret' => env('KEYCLOAK_ADMIN_CLIENT_SECRET'),
     ],
 
     // Plugin Demo Key for documentation page

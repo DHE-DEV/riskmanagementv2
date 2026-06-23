@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Customer;
+use App\Services\KeycloakUserService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -34,7 +35,7 @@ class MigrateCustomersToKeycloak extends Command
         // Admin-Token holen
         $this->adminToken = $this->getAdminToken();
         if (!$this->adminToken) {
-            $this->error('Konnte kein Admin-Token von Keycloak holen. Prüfe KEYCLOAK_ADMIN_* Variablen.');
+            $this->error('Konnte kein Admin-Token von Keycloak holen. Prüfe KEYCLOAK_ADMIN_CLIENT_ID / KEYCLOAK_ADMIN_CLIENT_SECRET.');
             return 1;
         }
 
@@ -109,27 +110,7 @@ class MigrateCustomersToKeycloak extends Command
 
     private function getAdminToken(): ?string
     {
-        $adminUser = env('KEYCLOAK_ADMIN_USER', 'admin');
-        $adminPassword = env('KEYCLOAK_ADMIN_PASSWORD');
-
-        if (!$adminPassword) {
-            $this->error('KEYCLOAK_ADMIN_PASSWORD ist nicht in .env gesetzt.');
-            return null;
-        }
-
-        $response = Http::asForm()->post("{$this->baseUrl}/realms/master/protocol/openid-connect/token", [
-            'client_id' => 'admin-cli',
-            'username' => $adminUser,
-            'password' => $adminPassword,
-            'grant_type' => 'password',
-        ]);
-
-        if (!$response->successful()) {
-            $this->error('Keycloak Admin-Login fehlgeschlagen: ' . $response->body());
-            return null;
-        }
-
-        return $response->json('access_token');
+        return KeycloakUserService::requestAdminToken();
     }
 
     private function keycloakUserExists(string $email): bool

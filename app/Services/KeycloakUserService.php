@@ -189,15 +189,46 @@ class KeycloakUserService
 
     private function getAdminToken(): ?string
     {
-        $response = Http::asForm()->post("{$this->baseUrl}/realms/master/protocol/openid-connect/token", [
-            'client_id' => 'admin-cli',
-            'username' => env('KEYCLOAK_ADMIN_USER', 'admin'),
-            'password' => env('KEYCLOAK_ADMIN_PASSWORD'),
-            'grant_type' => 'password',
-        ]);
+        return self::requestAdminToken();
+    }
+
+    /**
+     * Holt ein Admin-Access-Token für die Keycloak-Admin-REST-API über den
+     * Service-Account-Client (grant_type=client_credentials) gegen den Realm.
+     *
+     * Der Service-Account-Client benötigt auf dem Realm die realm-management
+     * Rollen manage-users (+ view-users / query-users).
+     *
+     * Zentrale Quelle der Wahrheit – von Service UND Artisan-Commands genutzt.
+     */
+    public static function requestAdminToken(): ?string
+    {
+        $baseUrl = Config::get('services.keycloak.base_url', '');
+        $realm = Config::get('services.keycloak.realms', 'passolution');
+        $clientId = Config::get('services.keycloak.admin_client_id');
+        $clientSecret = Config::get('services.keycloak.admin_client_secret');
+
+        if (!$baseUrl || !$clientId || !$clientSecret) {
+            Log::error('KeycloakUserService: Service-Account-Client nicht konfiguriert (KEYCLOAK_ADMIN_CLIENT_ID / KEYCLOAK_ADMIN_CLIENT_SECRET).');
+            return null;
+        }
+
+        try {
+            $response = Http::asForm()->timeout(10)->post(
+                "{$baseUrl}/realms/{$realm}/protocol/openid-connect/token",
+                [
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                    'grant_type' => 'client_credentials',
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Keycloak admin token request failed: ' . $e->getMessage());
+            return null;
+        }
 
         if (!$response->successful()) {
-            Log::error('Keycloak admin login failed: ' . $response->body());
+            Log::error('Keycloak admin token request failed: ' . $response->body());
             return null;
         }
 

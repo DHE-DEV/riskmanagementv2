@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\KeycloakUserService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
@@ -115,19 +116,14 @@ class KeycloakDeleteAllUsers extends Command
 
     private function getAdminToken(): ?string
     {
-        $response = Http::asForm()->timeout(10)->post("{$this->baseUrl}/realms/master/protocol/openid-connect/token", [
-            'client_id' => 'admin-cli',
-            'username' => env('KEYCLOAK_ADMIN_USER', 'admin'),
-            'password' => env('KEYCLOAK_ADMIN_PASSWORD'),
-            'grant_type' => 'password',
-        ]);
+        $token = KeycloakUserService::requestAdminToken();
 
-        if (! $response->successful()) {
-            $this->error('Keycloak Admin-Login fehlgeschlagen: ' . $response->body());
+        if (! $token) {
+            $this->error('Keycloak Admin-Login fehlgeschlagen (Service-Account-Token konnte nicht geholt werden).');
             return null;
         }
 
         $this->tokenTime = time();
-        return $response->json('access_token');
+        return $token;
     }
 }

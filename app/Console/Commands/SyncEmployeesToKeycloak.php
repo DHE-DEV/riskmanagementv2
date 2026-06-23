@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Employee;
+use App\Services\KeycloakUserService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -177,20 +178,6 @@ class SyncEmployeesToKeycloak extends Command
 
     private function getAdminToken(): ?string
     {
-        try {
-            $response = Http::asForm()->timeout(10)->post(
-                "{$this->keycloakUrl}/realms/master/protocol/openid-connect/token",
-                [
-                    'client_id' => 'admin-cli',
-                    'username' => env('KEYCLOAK_ADMIN_USER', 'admin'),
-                    'password' => env('KEYCLOAK_ADMIN_PASSWORD'),
-                    'grant_type' => 'password',
-                ]
-            );
-
-            return $response->successful() ? $response->json('access_token') : null;
-        } catch (\Exception $e) {
-            return null;
-        }
+        return KeycloakUserService::requestAdminToken();
     }
 }
