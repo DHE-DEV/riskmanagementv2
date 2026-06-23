@@ -41,8 +41,7 @@ class CustomerForm
                                             ->label('E-Mail')
                                             ->email()
                                             ->required()
-                                            ->maxLength(255)
-                                            ->unique(ignorable: fn ($record) => $record),
+                                            ->maxLength(255),
 
                                         Select::make('customer_type')
                                             ->label('Kundentyp')
