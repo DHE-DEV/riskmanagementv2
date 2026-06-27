@@ -3,19 +3,20 @@
 namespace App\Providers;
 
 use App\Models\Branch;
-use App\Models\CustomEvent;
 use App\Models\Customer;
+use App\Models\CustomEvent;
 use App\Observers\BranchObserver;
-use App\Observers\CustomEventObserver;
 use App\Observers\CustomerObserver;
+use App\Observers\CustomEventObserver;
 use Filament\Support\Facades\FilamentView;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Keycloak\KeycloakExtendSocialite;
+use SocialiteProviders\LaravelPassport\LaravelPassportExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
         // Register SSO Log Service as singleton
         // Registriere SSO Log Service als Singleton
         $this->app->singleton(\App\Services\SsoLogService::class, function ($app) {
-            return new \App\Services\SsoLogService();
+            return new \App\Services\SsoLogService;
         });
     }
 
@@ -41,8 +42,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register Keycloak Socialite driver
+        // Register SSO Socialite driver(s). Beide Treiber werden registriert;
+        // welcher tatsaechlich verwendet wird, steuert config('services.sso.driver').
         Event::listen(SocialiteWasCalled::class, KeycloakExtendSocialite::class);
+        Event::listen(SocialiteWasCalled::class, LaravelPassportExtendSocialite::class);
 
         // Register model observers
         CustomEvent::observe(CustomEventObserver::class);
@@ -66,7 +69,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('plugin-api', function (Request $request) {
             $client = $request->attributes->get('plugin_client');
 
-            return Limit::perMinute(120)->by('plugin:' . ($client?->id ?: $request->ip()));
+            return Limit::perMinute(120)->by('plugin:'.($client?->id ?: $request->ip()));
         });
 
         // API Client Rate Limiter - per API client, configurable rate limit
@@ -74,7 +77,7 @@ class AppServiceProvider extends ServiceProvider
             $apiClient = $request->attributes->get('api_client');
             $limit = $apiClient?->rate_limit ?? 60;
 
-            return Limit::perMinute($limit)->by('api-client:' . ($apiClient?->id ?: $request->ip()));
+            return Limit::perMinute($limit)->by('api-client:'.($apiClient?->id ?: $request->ip()));
         });
     }
 }

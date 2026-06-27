@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth\Customer;
 
+use App\Http\Controllers\Auth\Customer\Concerns\ResolvesSsoLogout;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
@@ -15,13 +16,23 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    use ResolvesSsoLogout;
+
     /**
-     * Display the login view
+     * Display the login view (or redirect straight to SSO).
      */
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
         if ($request->has('redirect') && str_starts_with($request->query('redirect'), url('/'))) {
             redirect()->setIntendedUrl($request->query('redirect'));
+        }
+
+        // SSO als einziger Login-Weg: direkt zum aktiven SSO-Provider weiterleiten,
+        // ohne eigene Login-Seite. Ausnahme: Liegt ein Fehler-Flash vom SSO-Callback
+        // vor, wird die Seite (inkl. Fehlermeldung) gezeigt – sonst entstuende eine
+        // Endlosschleife Login -> SSO -> Callback-Fehler -> Login.
+        if (config('services.sso.force_redirect', true) && ! session()->has('error')) {
+            return redirect()->route('auth.keycloak.redirect', $request->only('redirect'));
         }
 
         return view('auth.customer.login');
@@ -77,7 +88,7 @@ class LoginController extends Controller
 
         $customer = Auth::guard('customer')->user();
 
-        if (!$customer->hasVerifiedEmail()) {
+        if (! $customer->hasVerifiedEmail()) {
             Auth::guard('customer')->logout();
 
             throw ValidationException::withMessages([
@@ -114,12 +125,14 @@ class LoginController extends Controller
         if ($wasKeycloak && $idToken) {
             $realm = config('services.keycloak.realms', 'passolution');
             $finalUrl = config('services.keycloak.base_url')
-                . '/realms/' . $realm . '/protocol/openid-connect/logout'
-                . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
-                . '&client_id=' . config('services.keycloak.client_id')
-                . '&id_token_hint=' . urlencode($idToken);
+                .'/realms/'.$realm.'/protocol/openid-connect/logout'
+                .'?post_logout_redirect_uri='.urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
+                .'&client_id='.config('services.keycloak.client_id')
+                .'&id_token_hint='.urlencode($idToken);
         } else {
-            $finalUrl = route('customer.login');
+            // Nicht-Keycloak (z. B. Laravel Passport): optionaler Provider-Logout
+            // (SSO_LOGOUT_URL), sonst Login-Route (leitet ggf. direkt zu SSO weiter).
+            $finalUrl = $this->ssoLogoutUrl();
         }
 
         // Hinweis Single-Logout: Die pds-homepage liegt auf einer anderen Domain
@@ -137,7 +150,7 @@ class LoginController extends Controller
      */
     protected function ensureIsNotRateLimited(Request $request): void
     {
-        if (!RateLimiter::tooManyAttempts($this->throttleKey($request), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey($request), 5)) {
             return;
         }
 
@@ -156,6 +169,6 @@ class LoginController extends Controller
      */
     protected function throttleKey(Request $request): string
     {
-        return Str::transliterate(Str::lower($request->input('email')) . '|' . $request->ip());
+        return Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
     }
 }

@@ -101,37 +101,72 @@ return [
     'facebook' => [
         'client_id' => env('FACEBOOK_CLIENT_ID'),
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
-        'redirect' => env('APP_URL') . '/customer/auth/facebook/callback',
+        'redirect' => env('APP_URL').'/customer/auth/facebook/callback',
     ],
 
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('APP_URL') . '/customer/auth/google/callback',
+        'redirect' => env('APP_URL').'/customer/auth/google/callback',
     ],
 
     'linkedin' => [
         'client_id' => env('LINKEDIN_CLIENT_ID'),
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
-        'redirect' => env('APP_URL') . '/customer/auth/linkedin/callback',
+        'redirect' => env('APP_URL').'/customer/auth/linkedin/callback',
     ],
 
     'twitter' => [
         'client_id' => env('TWITTER_CLIENT_ID'),
         'client_secret' => env('TWITTER_CLIENT_SECRET'),
-        'redirect' => env('APP_URL') . '/customer/auth/twitter/callback',
+        'redirect' => env('APP_URL').'/customer/auth/twitter/callback',
     ],
 
     'keycloak' => [
         'client_id' => env('OIDC_CLIENT_ID'),
         'client_secret' => env('OIDC_CLIENT_SECRET'),
-        'redirect' => env('OIDC_REDIRECT_URI', env('APP_URL') . '/auth/callback'),
+        'redirect' => env('OIDC_REDIRECT_URI', env('APP_URL').'/auth/callback'),
         'base_url' => env('OIDC_BASE_URL', 'https://auth.passolution.de'),
         'realms' => env('OIDC_REALM', 'passolution'),
         // Service-Account-Client für die Admin-REST-API (client_credentials grant).
         // Benötigt realm-management Rollen manage-users + view-users auf dem Realm.
         'admin_client_id' => env('KEYCLOAK_ADMIN_CLIENT_ID'),
         'admin_client_secret' => env('KEYCLOAK_ADMIN_CLIENT_SECRET'),
+    ],
+
+    // SSO-Treiber-Auswahl: Welcher Socialite-Treiber den Login-Flow abwickelt.
+    // 'keycloak'        = Passolution Keycloak (OIDC)              [Standard]
+    // 'laravelpassport' = Passolution Laravel Passport (OAuth2)
+    // Umschaltbar per .env (SSO_DRIVER). Damit ist Keycloak deaktivierbar und
+    // der Laravel-Passport-Login aktivierbar, ohne Code-Aenderung.
+    'sso' => [
+        'driver' => env('SSO_DRIVER', 'keycloak'),
+        // true  = SSO ist der einzige Login-Weg: /customer/login leitet direkt
+        //         zum SSO-Provider weiter (keine eigene Login-Seite).
+        // false = Login-Seite mit E-Mail/Passwort + SSO-Button anzeigen [Standard].
+        // Default bewusst false, damit ein Deploy das Live-Login nicht aendert –
+        // Direkt-Weiterleitung wird bei Bedarf per .env (SSO_FORCE_REDIRECT=true) aktiviert.
+        'force_redirect' => env('SSO_FORCE_REDIRECT', false),
+        // 'prompt=login' an den Laravel-Passport-Authorize-Endpunkt anhaengen, um
+        // eine frische Anmeldung zu erzwingen (nur wirksam, wenn der Auth-Server den
+        // Parameter unterstuetzt). Keycloak erzwingt das ohnehin separat ueber PKCE.
+        'prompt_login' => env('SSO_PROMPT_LOGIN', true),
+        // Optionaler Logout-/End-Session-Endpunkt des Passport-Auth-Servers. Wenn
+        // gesetzt, wird nach dem lokalen Logout dorthin weitergeleitet (beendet die
+        // Provider-Session), mit angehaengtem ?redirect_uri= auf das Post-Logout-Ziel.
+        'logout_url' => env('SSO_LOGOUT_URL'),
+        // Post-Logout-Ziel fuer Nicht-Keycloak-SSO (Standard: Login-Seite).
+        'logout_redirect' => env('SSO_LOGOUT_REDIRECT_URI'),
+    ],
+
+    // Laravel Passport (Socialite) – alternativer SSO-Provider zu Keycloak.
+    // Siehe https://socialiteproviders.com/Laravel-Passport/
+    // Endpunkte relativ zu host: /oauth/authorize, /oauth/token, /api/user.
+    'laravelpassport' => [
+        'client_id' => env('SSO_CLIENT_ID'),
+        'client_secret' => env('SSO_CLIENT_SECRET'),
+        'redirect' => env('SSO_REDIRECT_URI', env('APP_URL').'/auth/callback'),
+        'host' => env('SSO_HOST', 'https://auth.homepage-test.passolution.de'),
     ],
 
     // Plugin Demo Key for documentation page
