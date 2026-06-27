@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth\Customer;
 
+use App\Http\Controllers\Auth\Customer\Concerns\ResolvesSsoLogout;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Employee;
@@ -13,10 +14,32 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
+/**
+ * Wickelt den SSO-Login der Kunden ab.
+ *
+ * Der konkrete Socialite-Treiber ist ueber config('services.sso.driver')
+ * (ENV: SSO_DRIVER) umschaltbar:
+ *   - 'keycloak'        : Passolution Keycloak (OIDC)               [Standard]
+ *   - 'laravelpassport' : Passolution Laravel Passport (OAuth2)
+ *
+ * Damit laesst sich Keycloak per .env deaktivieren und der Laravel-Passport-
+ * Login aktivieren, ohne Code-Aenderungen. Die Routen-Namen (auth.keycloak.*)
+ * bleiben aus Kompatibilitaetsgruenden erhalten.
+ */
 class KeycloakAuthController extends Controller
 {
+    use ResolvesSsoLogout;
+
     /**
-     * End any existing Keycloak session, then redirect to the actual login.
+     * Aktiver SSO-Treiber laut Konfiguration.
+     */
+    protected function ssoDriver(): string
+    {
+        return config('services.sso.driver', 'keycloak');
+    }
+
+    /**
+     * End any existing session, then redirect to the actual login.
      */
     public function redirect(Request $request): RedirectResponse
     {
@@ -29,7 +52,7 @@ class KeycloakAuthController extends Controller
     }
 
     /**
-     * Actually start the Keycloak login (called after session was cleared).
+     * Actually start the SSO login (called after session was cleared).
      */
     public function startLogin(Request $request): RedirectResponse
     {
@@ -39,37 +62,62 @@ class KeycloakAuthController extends Controller
             redirect()->setIntendedUrl($request->query('redirect'));
         }
 
-        // prompt=login erzwingt eine frische Authentifizierung (Login-Formular),
-        // auch wenn noch eine Keycloak-SSO-Session besteht – ersetzt den frueheren
-        // Logout-vor-Login-Umweg und vermeidet die Abmelde-Bestaetigungsseite.
-        return Socialite::driver('keycloak')
-            ->setScopes(['openid', 'profile', 'email'])
-            ->with(['prompt' => 'login'])
-            ->enablePKCE()
-            ->redirect();
+        $driver = $this->ssoDriver();
+
+        if ($driver === 'keycloak') {
+            // prompt=login erzwingt eine frische Authentifizierung (Login-Formular),
+            // auch wenn noch eine Keycloak-SSO-Session besteht – ersetzt den frueheren
+            // Logout-vor-Login-Umweg und vermeidet die Abmelde-Bestaetigungsseite.
+            return Socialite::driver('keycloak')
+                ->setScopes(['openid', 'profile', 'email'])
+                ->with(['prompt' => 'login'])
+                ->enablePKCE()
+                ->redirect();
+        }
+
+        // Laravel Passport (Passolution) – Standard-OAuth2 Authorization-Code-Flow.
+        // Optional prompt=login, um eine frische Anmeldung zu erzwingen (damit ein
+        // Logout nicht durch eine bestehende Provider-Session sofort wieder
+        // ueberschrieben wird) – wirkt nur, wenn der Auth-Server den Parameter kennt.
+        $passport = Socialite::driver($driver);
+
+        if (config('services.sso.prompt_login')) {
+            $passport->with(['prompt' => 'login']);
+        }
+
+        return $passport->redirect();
     }
 
     /**
-     * Handle callback from Keycloak.
+     * Handle callback from the SSO provider.
      */
     public function callback(): RedirectResponse
     {
+        $driver = $this->ssoDriver();
+
         try {
-            $keycloakUser = Socialite::driver('keycloak')->enablePKCE()->user();
+            $socialite = Socialite::driver($driver);
+
+            // Keycloak-Flow nutzt PKCE; der Laravel-Passport-Treiber nicht.
+            if ($driver === 'keycloak') {
+                $socialite = $socialite->enablePKCE();
+            }
+
+            $ssoUser = $socialite->user();
         } catch (Exception $e) {
-            Log::error('Keycloak login failed', ['error' => $e->getMessage()]);
+            Log::error('SSO login failed', ['driver' => $driver, 'error' => $e->getMessage()]);
 
             return redirect()->route('customer.login')
-                ->with('error', 'Anmeldung über Keycloak fehlgeschlagen: ' . $e->getMessage());
+                ->with('error', 'Anmeldung fehlgeschlagen: '.$e->getMessage());
         }
 
-        $email = $keycloakUser->getEmail();
+        $email = $ssoUser->getEmail();
         $customer = null;
         $employee = null;
 
-        // 1. Try to find customer by keycloak provider_id
-        $customer = Customer::where('provider', 'keycloak')
-            ->where('provider_id', $keycloakUser->getId())
+        // 1. Try to find customer by SSO provider_id
+        $customer = Customer::where('provider', $driver)
+            ->where('provider_id', $ssoUser->getId())
             ->first();
 
         // 2. If not found by provider_id, try by email as customer
@@ -78,11 +126,11 @@ class KeycloakAuthController extends Controller
 
             if ($existing) {
                 $existing->update([
-                    'provider' => 'keycloak',
-                    'provider_id' => $keycloakUser->getId(),
-                    'provider_token' => $keycloakUser->token,
-                    'provider_refresh_token' => $keycloakUser->refreshToken ?? null,
-                    'avatar' => $keycloakUser->getAvatar() ?? $existing->avatar,
+                    'provider' => $driver,
+                    'provider_id' => $ssoUser->getId(),
+                    'provider_token' => $ssoUser->token,
+                    'provider_refresh_token' => $ssoUser->refreshToken ?? null,
+                    'avatar' => $ssoUser->getAvatar() ?? $existing->avatar,
                     'email_verified_at' => $existing->email_verified_at ?? now(),
                 ]);
                 $customer = $existing;
@@ -111,11 +159,11 @@ class KeycloakAuthController extends Controller
             $customer = Customer::create([
                 'name' => $person !== '' ? $person : ($account['name'] ?? $email),
                 'email' => $email,
-                'provider' => 'keycloak',
-                'provider_id' => $keycloakUser->getId(),
-                'provider_token' => $keycloakUser->token,
-                'provider_refresh_token' => $keycloakUser->refreshToken ?? null,
-                'avatar' => $keycloakUser->getAvatar(),
+                'provider' => $driver,
+                'provider_id' => $ssoUser->getId(),
+                'provider_token' => $ssoUser->token,
+                'provider_refresh_token' => $ssoUser->refreshToken ?? null,
+                'avatar' => $ssoUser->getAvatar(),
                 'email_verified_at' => now(),
                 // Stammdaten aus der Passolution-API (nur wenn gefunden)
                 'company_name' => $account['name'] ?? null,
@@ -125,7 +173,8 @@ class KeycloakAuthController extends Controller
                 'company_country' => $account['country_code'] ?? null,
             ]);
 
-            Log::info('Keycloak login: neuer Kunde automatisch angelegt', [
+            Log::info('SSO login: neuer Kunde automatisch angelegt', [
+                'driver' => $driver,
                 'email' => $email,
                 'stammdaten' => $account !== null,
             ]);
@@ -133,7 +182,7 @@ class KeycloakAuthController extends Controller
 
         // 4b. Ohne E-Mail kein Konto möglich -> ablehnen
         if (! $customer) {
-            Log::warning('Keycloak login: no email in token, cannot provision', ['email' => $email]);
+            Log::warning('SSO login: no email in token, cannot provision', ['driver' => $driver, 'email' => $email]);
 
             return redirect()->route('customer.login')
                 ->with('error', 'Anmeldung fehlgeschlagen: keine E-Mail-Adresse vom Login-Anbieter erhalten.');
@@ -141,17 +190,17 @@ class KeycloakAuthController extends Controller
 
         // Update tokens on customer (only set provider_id if this is a direct customer login, not employee)
         $updateData = [
-            'provider' => 'keycloak',
-            'provider_token' => $keycloakUser->token,
-            'provider_refresh_token' => $keycloakUser->refreshToken ?? $customer->provider_refresh_token,
+            'provider' => $driver,
+            'provider_token' => $ssoUser->token,
+            'provider_refresh_token' => $ssoUser->refreshToken ?? $customer->provider_refresh_token,
         ];
 
         if (! $employee) {
-            $updateData['provider_id'] = $keycloakUser->getId();
-            $updateData['avatar'] = $keycloakUser->getAvatar() ?? $customer->avatar;
+            $updateData['provider_id'] = $ssoUser->getId();
+            $updateData['avatar'] = $ssoUser->getAvatar() ?? $customer->avatar;
         }
 
-        // Keycloak hat die Identitaet (inkl. E-Mail) bereits verifiziert ->
+        // Der SSO-Anbieter hat die Identitaet (inkl. E-Mail) bereits verifiziert ->
         // keine erneute E-Mail-Bestaetigung auf der Plattform noetig.
         if (! $customer->email_verified_at) {
             $updateData['email_verified_at'] = now();
@@ -161,11 +210,13 @@ class KeycloakAuthController extends Controller
 
         Auth::guard('customer')->login($customer, true);
 
-        // Store Keycloak token for clean logout/re-login plus the actual login email
-        // (Customer im customer-Guard kann die Firma sein – die echte Anmelde-Identität
-        // brauchen z. B. iframe-SSO und Dashboard-Anzeige.)
+        // Store SSO id_token (falls vorhanden, z. B. Keycloak OIDC) fuer sauberes
+        // Logout/Re-Login plus die tatsaechliche Anmelde-E-Mail. (Customer im
+        // customer-Guard kann die Firma sein – die echte Anmelde-Identität brauchen
+        // z. B. iframe-SSO und Dashboard-Anzeige.) Die Session-Keys bleiben aus
+        // Kompatibilitaetsgruenden mit 'keycloak_'-Praefix erhalten.
         session([
-            'keycloak_id_token' => $keycloakUser->accessTokenResponseBody['id_token'] ?? null,
+            'keycloak_id_token' => $ssoUser->accessTokenResponseBody['id_token'] ?? null,
             'keycloak_email' => $email,
         ]);
 
@@ -173,11 +224,12 @@ class KeycloakAuthController extends Controller
         if ($employee) {
             session([
                 'logged_in_employee_id' => $employee->id,
-                'logged_in_employee_name' => $employee->first_name . ' ' . $employee->last_name,
+                'logged_in_employee_name' => $employee->first_name.' '.$employee->last_name,
                 'logged_in_employee_email' => $employee->email,
             ]);
 
-            Log::info('Employee logged in via Keycloak', [
+            Log::info('Employee logged in via SSO', [
+                'driver' => $driver,
                 'employee_id' => $employee->id,
                 'email' => $employee->email,
                 'customer_id' => $customer->id,
@@ -189,20 +241,37 @@ class KeycloakAuthController extends Controller
     }
 
     /**
-     * Logout from Keycloak (OIDC end session).
+     * Logout from the SSO provider.
+     *
+     * Keycloak: OIDC end-session (beendet auch die Keycloak-Session).
+     * Laravel Passport: lokaler Logout + Rueckleitung zur Login-Seite
+     * (kein OIDC-End-Session-Endpunkt).
      */
     public function logout(): RedirectResponse
     {
-        $realm = config('services.keycloak.realms', 'passolution');
-        $logoutRedirect = config('services.keycloak.base_url')
-            . '/realms/' . $realm . '/protocol/openid-connect/logout'
-            . '?post_logout_redirect_uri=' . urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
-            . '&client_id=' . config('services.keycloak.client_id');
+        $driver = $this->ssoDriver();
 
+        if ($driver === 'keycloak') {
+            $realm = config('services.keycloak.realms', 'passolution');
+            $logoutRedirect = config('services.keycloak.base_url')
+                .'/realms/'.$realm.'/protocol/openid-connect/logout'
+                .'?post_logout_redirect_uri='.urlencode(env('OIDC_LOGOUT_REDIRECT_URI', config('app.url')))
+                .'&client_id='.config('services.keycloak.client_id');
+
+            Auth::guard('customer')->logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect($logoutRedirect);
+        }
+
+        // Laravel Passport: lokal abmelden. Ist ein Provider-Logout-Endpunkt
+        // (SSO_LOGOUT_URL) konfiguriert, wird dorthin weitergeleitet, sonst zur
+        // Login-Seite (bzw. SSO_LOGOUT_REDIRECT_URI).
         Auth::guard('customer')->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        return redirect($logoutRedirect);
+        return redirect($this->ssoLogoutUrl());
     }
 }
