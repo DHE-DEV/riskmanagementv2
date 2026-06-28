@@ -7,6 +7,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Http\Responses\LoginResponse;
+use App\Http\Responses\LogoutResponse;
 use App\Http\Responses\PasswordResetResponse;
 use App\Http\Responses\RegisterResponse;
 use App\Models\Customer;
@@ -18,6 +19,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
 use Laravel\Fortify\Contracts\PasswordResetResponse as PasswordResetResponseContract;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Fortify;
@@ -34,6 +36,7 @@ class FortifyServiceProvider extends ServiceProvider
 
         $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
+        $this->app->singleton(LogoutResponseContract::class, LogoutResponse::class);
         $this->app->singleton(PasswordResetResponseContract::class, PasswordResetResponse::class);
     }
 
@@ -62,6 +65,7 @@ class FortifyServiceProvider extends ServiceProvider
                 if ($customer->legacy_password_md5) {
                     $customer->update(['legacy_password_md5' => null]);
                 }
+
                 return $customer;
             }
 
@@ -74,6 +78,7 @@ class FortifyServiceProvider extends ServiceProvider
                         'password' => Hash::make($request->input('password')),
                         'legacy_password_md5' => null,
                     ]);
+
                     return $customer;
                 }
             }
