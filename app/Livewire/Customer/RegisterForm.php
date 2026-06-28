@@ -12,25 +12,36 @@ use Livewire\Component;
 class RegisterForm extends Component
 {
     public int $step = 1;
+
     public int $totalSteps = 3;
 
     // Step 1: Konto
     public string $name = '';
+
     public string $email = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
+
     public bool $terms = false;
 
     // Step 2: Kundentyp
     public string $customer_type = '';
+
     public array $business_type = [];
 
     // Step 3: Firma/Adresse
     public string $company_name = '';
+
     public string $company_street = '';
+
     public string $company_house_number = '';
+
     public string $company_postal_code = '';
+
     public string $company_city = '';
+
     public string $company_country = 'DE';
 
     public bool $success = false;
@@ -90,6 +101,13 @@ class RegisterForm extends Component
 
     public function submit(): void
     {
+        // Self-Registrierung deaktiviert: keine Konto-Erstellung zulassen.
+        if (! config('app.customer_registration_enabled')) {
+            $this->redirectRoute('customer.login', navigate: true);
+
+            return;
+        }
+
         $this->validateStep();
 
         try {
@@ -162,7 +180,7 @@ class RegisterForm extends Component
 
         if ($this->customer_type === 'business') {
             $rules['business_type'] = ['required', 'array', 'min:1'];
-            $rules['business_type.*'] = ['in:' . implode(',', array_keys(self::BUSINESS_TYPES))];
+            $rules['business_type.*'] = ['in:'.implode(',', array_keys(self::BUSINESS_TYPES))];
         }
 
         return $rules;

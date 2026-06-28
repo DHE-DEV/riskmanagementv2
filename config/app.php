@@ -195,7 +195,9 @@ return [
     |
     */
 
-    'customer_registration_enabled' => env('CUSTOMER_REGISTRATION_ENABLED', true),
+    // Self-Registrierung standardmaessig deaktiviert: Kunden entstehen ueber SSO
+    // (JIT-Provisioning). Per CUSTOMER_REGISTRATION_ENABLED=true reaktivierbar.
+    'customer_registration_enabled' => env('CUSTOMER_REGISTRATION_ENABLED', false),
     'customer_login_enabled' => env('CUSTOMER_LOGIN_ENABLED', true),
 
     /*

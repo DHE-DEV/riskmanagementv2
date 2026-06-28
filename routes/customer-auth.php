@@ -3,7 +3,6 @@
 use App\Http\Controllers\Auth\Customer\KeycloakAuthController;
 use App\Http\Controllers\Auth\Customer\LoginController;
 use App\Http\Controllers\Auth\Customer\MagicLoginController;
-use App\Http\Controllers\Auth\Customer\RegisterController;
 use App\Http\Controllers\Auth\Customer\SocialAuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,9 +27,9 @@ Route::middleware('guest:customer')->prefix('customer')->name('customer.')->grou
     Route::post('magic-login', [MagicLoginController::class, 'send'])->name('magic-login.send');
     Route::post('magic-login/verify-code', [MagicLoginController::class, 'verifyCode'])->name('magic-login.verify-code');
 
-    // Standard Registration
-    Route::get('register', [RegisterController::class, 'create'])->name('register');
-    Route::post('register', [RegisterController::class, 'store']);
+    // Registrierung wird zentral ueber Fortify gesteuert (siehe routes/customer.php,
+    // Features::registration()). Hier KEINE eigenen Register-Routen definieren, sonst
+    // entstehen doppelte customer.register-Eintraege.
 
     // Social Authentication
     Route::prefix('auth')->name('auth.')->group(function () {

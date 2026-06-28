@@ -166,12 +166,14 @@
                 </div>
 
                 <!-- Register Link -->
+                @if(config('app.customer_registration_enabled', true))
                 <div class="text-center text-sm text-stone-600">
                     Sie haben noch kein Konto?
                     <a href="{{ route('customer.register') }}" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                         Konto erstellen
                     </a>
                 </div>
+                @endif
             </div>
         </div>
     </div>

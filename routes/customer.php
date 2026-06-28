@@ -6,7 +6,6 @@ use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\ConfirmablePasswordController;
 use Laravel\Fortify\Http\Controllers\ConfirmedPasswordStatusController;
 use Laravel\Fortify\Http\Controllers\EmailVerificationNotificationController;
-use Laravel\Fortify\Http\Controllers\EmailVerificationPromptController;
 use Laravel\Fortify\Http\Controllers\NewPasswordController;
 use Laravel\Fortify\Http\Controllers\PasswordController;
 use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
@@ -17,7 +16,6 @@ use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
 use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
-use Laravel\Fortify\Http\Controllers\VerifyEmailController;
 
 Route::prefix('customer')->name('customer.')->group(function () {
     $enableViews = config('fortify.views', true);
@@ -152,6 +150,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
         // Customer Events (eigene Ereignisse)
         Route::get('/events', function () {
             $hasEvents = \App\Models\CustomEvent::where('customer_id', auth('customer')->id())->exists();
+
             return view('customer.events.index', compact('hasEvents'));
         })->name('events');
 
@@ -244,12 +243,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::post('/settings/sync-features', function () {
             $customer = auth('customer')->user();
-            if (!$customer->hasActivePassolution()) {
+            if (! $customer->hasActivePassolution()) {
                 return response()->json(['success' => false, 'message' => 'Keine aktive Verbindung.']);
             }
             $passolutionService = app(\App\Services\PassolutionService::class);
             $result = $passolutionService->updateSubscription($customer);
             $customer->refresh();
+
             return response()->json([
                 'success' => $result,
                 'message' => $result ? 'Features erfolgreich aktualisiert.' : 'Fehler beim Aktualisieren.',
@@ -340,8 +340,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
     });
 
     // Registration Routes
+    // EnsureCustomerRegistrationEnabled sperrt die Self-Registrierung zur Laufzeit,
+    // wenn config('app.customer_registration_enabled') = false (Redirect -> Login).
+    // Routennamen bleiben erhalten, damit route('customer.register') nicht bricht.
     if (Features::enabled(Features::registration())) {
-        Route::middleware(['guest:'.config('fortify.guard')])->group(function () use ($enableViews) {
+        Route::middleware([
+            'guest:'.config('fortify.guard'),
+            \App\Http\Middleware\EnsureCustomerRegistrationEnabled::class,
+        ])->group(function () use ($enableViews) {
             if ($enableViews) {
                 Route::get('/register', [RegisteredUserController::class, 'create'])
                     ->name('register');

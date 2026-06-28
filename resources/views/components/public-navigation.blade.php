@@ -156,9 +156,11 @@
             <i class="fa-regular fa-right-to-bracket text-2xl" aria-hidden="true"></i>
         </button>
         <!-- Registrieren -->
+        @if(config('app.customer_registration_enabled', true))
         <a href="{{ route('customer.register') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Registrieren">
             <i class="fa-regular fa-user-plus text-2xl" aria-hidden="true"></i>
         </a>
+        @endif
         @endguest
     </div>
     @endif
