@@ -128,7 +128,7 @@ test('Logout eines Passport-Kunden leitet zu SSO_LOGOUT_URL', function () {
         ->post(route('customer.logout'));
 
     $response->assertRedirectContains('auth.example.test/logout');
-    $response->assertRedirectContains('redirect_uri=');
+    $response->assertRedirectContains('return_to=');
     $this->assertGuest('customer');
 });
 

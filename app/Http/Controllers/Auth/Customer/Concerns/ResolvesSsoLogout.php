@@ -9,8 +9,11 @@ trait ResolvesSsoLogout
      *
      * Ist ein Provider-Logout-Endpunkt (services.sso.logout_url / SSO_LOGOUT_URL)
      * konfiguriert, wird dorthin weitergeleitet, um auch die Provider-Session zu
-     * beenden – mit angehaengtem redirect_uri auf das Post-Logout-Ziel. Sonst wird
-     * direkt auf das Post-Logout-Ziel (Standard: Login-Seite) weitergeleitet.
+     * beenden – mit angehaengtem return_to auf das Post-Logout-Ziel. Da der Auth-Host
+     * (pds-homepage SSO, /auth/sso/logout) die geteilte pds_sso_session beendet, wird
+     * damit auch die im iframe eingebettete Homepage ueberall ausgeloggt
+     * (Single-Logout). Sonst wird direkt auf das Post-Logout-Ziel (Standard:
+     * Login-Seite) weitergeleitet.
      */
     protected function ssoLogoutUrl(): string
     {
@@ -21,7 +24,7 @@ trait ResolvesSsoLogout
         if ($logoutUrl) {
             $separator = str_contains($logoutUrl, '?') ? '&' : '?';
 
-            return $logoutUrl.$separator.'redirect_uri='.urlencode($postLogout);
+            return $logoutUrl.$separator.'return_to='.urlencode($postLogout);
         }
 
         return $postLogout;
