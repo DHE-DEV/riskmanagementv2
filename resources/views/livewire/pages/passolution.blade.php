@@ -139,7 +139,11 @@
                     $iframeAnonRoot = $iframeWebUrl.($iframeUiParams !== '' ? '?'.$iframeUiParams : '');
 
                     if ($iframeEmail && $iframeSecret) {
-                        // Eingeloggter Plattform-User -> SSO-Handshake via signiertem Token.
+                        // Optionaler SSO-Handshake: nur wenn ein IFRAME_SSO_SECRET gesetzt
+                        // ist UND die Gegenseite (pds-homepage) denselben Wert kennt, wird
+                        // der eingeloggte Plattform-User per signiertem Token in den iframe
+                        // durchgereicht. Ist KEIN Secret gesetzt, gilt die Cookie-Loesung
+                        // unten (Standard).
                         $token = \App\Services\IframeAuthToken::create($iframeEmail, $iframeSecret);
                         // WICHTIG: UI-Parameter (menu-hide/ui-hide) ins return_to legen,
                         // NICHT direkt an sso/check haengen – sso/check verwirft seine
@@ -151,13 +155,13 @@
                             'return_to' => $iframeAnonRoot,
                         ]);
                     } else {
-                        // Anonym (z. B. nach Plattform-Logout): Homepage-Session aktiv beenden –
-                        // und zwar HIER im iframe-Kontext, wo das embed-Session-Cookie
-                        // mitgesendet wird (ein Top-Level-Aufruf wuerde es nicht mitsenden,
-                        // da getrennte Domains/Cookie-Jars). Danach zeigt der iframe via
-                        // return_to den anonymen Startbildschirm. So bleibt nach einem
-                        // Plattform-Logout KEINE Homepage-Session im iframe stehen.
-                        $iframeSrc = $iframeWebUrl.'/auth/sso/logout?'.http_build_query(['return_to' => $iframeAnonRoot]);
+                        // Standard (ohne IFRAME_SSO_SECRET): Homepage DIREKT einbetten.
+                        // embed.<homepage> teilt sich die Session-Cookies mit der homepage-
+                        // Domain; der iframe loggt den User also selbst ein bzw. zeigt ihn
+                        // anonym – je nach vorhandenem Homepage-Cookie. KEIN aktives
+                        // /auth/sso/logout mehr, das wuerde diese geteilte Session bei jedem
+                        // Seitenaufruf wieder beenden.
+                        $iframeSrc = $iframeAnonRoot;
                     }
                 @endphp
                 <iframe
