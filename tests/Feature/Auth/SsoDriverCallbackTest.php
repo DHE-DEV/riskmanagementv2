@@ -132,6 +132,44 @@ test('Logout eines Passport-Kunden leitet zu SSO_LOGOUT_URL', function () {
     $this->assertGuest('customer');
 });
 
+test('redirect mit from=iframe merkt sich den iframe-Login in der Session', function () {
+    config([
+        'services.sso.driver' => 'laravelpassport',
+        'services.laravelpassport.host' => 'https://auth.example.test',
+    ]);
+
+    $this->get(route('auth.keycloak.redirect', ['from' => 'iframe']))
+        ->assertRedirectContains('auth.example.test/oauth/authorize');
+
+    expect(session('sso_iframe_login'))->toBeTrue();
+});
+
+test('iframe-Login leitet nach erfolgreichem Callback auf die Done-Seite', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-iframe', 'iframe@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->withSession(['sso_iframe_login' => true])
+        ->get('/auth/callback')
+        ->assertRedirect(route('auth.keycloak.iframe-done'));
+
+    $this->assertAuthenticated('customer');
+    // Flag wurde verbraucht (pull), damit Folge-Logins normal aufs Dashboard gehen.
+    expect(session('sso_iframe_login'))->toBeNull();
+});
+
+test('normaler (Nicht-iframe) Login leitet weiterhin aufs Dashboard', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-top', 'top@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+});
+
 test('Callback ohne E-Mail vom Anbieter wird abgelehnt', function () {
     config(['services.sso.driver' => 'laravelpassport']);
 

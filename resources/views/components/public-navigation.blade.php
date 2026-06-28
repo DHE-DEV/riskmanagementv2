@@ -151,10 +151,10 @@
         </a>
 
         @guest('customer')
-        <!-- Login: direkt zum SSO (wie "Weiter zur Anmeldung"), ohne Zwischen-Login-Seite -->
-        <a href="{{ route('auth.keycloak.redirect') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">
+        <!-- Login: oeffnet das SSO-Login im Modal-iframe, ohne die Plattform zu verlassen -->
+        <button type="button" onclick="openSsoLoginModal()" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">
             <i class="fa-regular fa-right-to-bracket text-2xl" aria-hidden="true"></i>
-        </a>
+        </button>
         <!-- Registrieren -->
         <a href="{{ route('customer.register') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Registrieren">
             <i class="fa-regular fa-user-plus text-2xl" aria-hidden="true"></i>
@@ -163,3 +163,55 @@
     </div>
     @endif
 </nav>
+
+@guest('customer')
+{{-- SSO-Login im Modal-iframe: laedt den Login der Auth-Domain ein, ohne die
+     Plattform zu verlassen. Nach erfolgreichem Login meldet die Done-Seite
+     (auth.keycloak.iframe-done) per postMessage zurueck -> Seite laedt neu. --}}
+<div id="sso-login-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/60 p-4">
+    <div class="relative w-full max-w-md h-[640px] max-h-[92vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+        <button type="button" onclick="closeSsoLoginModal()" aria-label="Schließen"
+                class="absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-600 shadow hover:bg-white hover:text-gray-900">
+            <i class="fa-regular fa-xmark text-lg" aria-hidden="true"></i>
+        </button>
+        <iframe id="sso-login-iframe" src="" title="Anmelden" loading="lazy"
+                class="h-full w-full border-0"></iframe>
+    </div>
+</div>
+<script>
+    (function () {
+        var ssoUrl = @json(route('auth.keycloak.redirect', ['from' => 'iframe']));
+        var expectedOrigin = window.location.origin;
+
+        window.openSsoLoginModal = function () {
+            var modal = document.getElementById('sso-login-modal');
+            var frame = document.getElementById('sso-login-iframe');
+            if (!modal || !frame) { return; }
+            // src erst beim Oeffnen setzen (keine SSO-Session im Hintergrund pro Seitenaufruf).
+            if (frame.getAttribute('src') !== ssoUrl) { frame.setAttribute('src', ssoUrl); }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeSsoLoginModal = function () {
+            var modal = document.getElementById('sso-login-modal');
+            if (!modal) { return; }
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        // Esc schliesst das Modal.
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { window.closeSsoLoginModal(); }
+        });
+
+        // Erfolgsmeldung der Done-Seite (same-origin) -> Seite neu laden.
+        window.addEventListener('message', function (e) {
+            if (e.origin !== expectedOrigin) { return; }
+            if (e.data && e.data.type === 'pds-platform-login-success') {
+                window.location.reload();
+            }
+        });
+    })();
+</script>
+@endguest

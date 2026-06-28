@@ -29,18 +29,30 @@ it('embeds the homepage directly when no iframe sso secret is configured', funct
     $response->assertDontSee('/auth/sso/check', false);
 });
 
-it('links the sidebar login icon directly to the sso redirect for guests', function () {
-    // Der "Anmelden"-Button in der linken schwarzen Leiste soll – wie
-    // "Weiter zur Anmeldung" – direkt zum SSO fuehren, nicht zur Login-Seite.
+it('opens the sso login in a modal iframe from the sidebar for guests', function () {
+    // Der "Anmelden"-Button in der linken schwarzen Leiste oeffnet das SSO-Login
+    // im Modal-iframe (?from=iframe), ohne die Plattform zu verlassen.
     config(['services.passolution.iframe_sso_secret' => null]);
 
     $response = get(route('travel-requirements-service'));
 
     $response->assertOk();
-    $response->assertSee(
-        'href="'.route('auth.keycloak.redirect').'" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden"',
-        false,
-    );
+    $response->assertSee('onclick="openSsoLoginModal()"', false);
+    $response->assertSee('title="Anmelden"', false);
+    $response->assertSee('id="sso-login-modal"', false);
+    // Modal-iframe laedt den SSO-Login mit from=iframe. (Slash-frei pruefen, da
+    // die URL in @json mit escapten Slashes ausgegeben wird: https:\/\/...)
+    $response->assertSee('keycloak?from=iframe', false);
+});
+
+it('iframe-done page notifies the parent window of a successful login', function () {
+    // Nach erfolgreichem iframe-Login meldet diese Mini-Seite dem Parent-Fenster
+    // per postMessage den Login -> Parent laedt neu.
+    $response = get(route('auth.keycloak.iframe-done'));
+
+    $response->assertOk();
+    $response->assertSee('pds-platform-login-success', false);
+    $response->assertSee('postMessage', false);
 });
 
 it('uses the signed sso check handshake when a secret and an email are present', function () {

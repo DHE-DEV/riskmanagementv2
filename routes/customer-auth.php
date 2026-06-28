@@ -55,6 +55,12 @@ Route::get('auth/login/keycloak', [KeycloakAuthController::class, 'redirect'])->
 Route::get('auth/login/keycloak/start', [KeycloakAuthController::class, 'startLogin'])->name('auth.keycloak.start');
 Route::get('auth/callback', [KeycloakAuthController::class, 'callback'])->name('auth.keycloak.callback');
 
+// Iframe-Login: Wird der SSO-Login im iframe (Modal) gestartet (?from=iframe),
+// leitet der Callback nach Erfolg hierher. Diese Mini-Seite meldet dem Parent-
+// Fenster per postMessage den erfolgreichen Login -> Parent laedt neu.
+Route::get('auth/login/iframe-done', fn () => view('auth.iframe-login-done'))
+    ->name('auth.keycloak.iframe-done');
+
 // Authenticated customer routes
 Route::middleware('auth:customer')->prefix('customer')->name('customer.')->group(function () {
 
@@ -72,7 +78,7 @@ Route::middleware('auth:customer')->prefix('customer')->name('customer.')->group
 Route::middleware('auth:customer')->post('/customer/broadcasting/auth', function (\Illuminate\Http\Request $request) {
     $customer = auth('customer')->user();
 
-    if (!$customer) {
+    if (! $customer) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 

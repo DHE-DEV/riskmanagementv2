@@ -62,6 +62,13 @@ class KeycloakAuthController extends Controller
             redirect()->setIntendedUrl($request->query('redirect'));
         }
 
+        // Wurde der Login aus dem eingebetteten iframe-Modal gestartet, merken wir
+        // das in der Session. Der Callback leitet dann statt aufs Dashboard auf eine
+        // Mini-Seite, die das Parent-Fenster per postMessage benachrichtigt.
+        if ($request->query('from') === 'iframe') {
+            $request->session()->put('sso_iframe_login', true);
+        }
+
         $driver = $this->ssoDriver();
 
         if ($driver === 'keycloak') {
@@ -234,6 +241,12 @@ class KeycloakAuthController extends Controller
                 'email' => $employee->email,
                 'customer_id' => $customer->id,
             ]);
+        }
+
+        // iframe-Login: nicht aufs Dashboard im iframe leiten, sondern auf die
+        // Done-Seite, die das Parent-Fenster benachrichtigt (Parent laedt dann neu).
+        if (session()->pull('sso_iframe_login')) {
+            return redirect()->route('auth.keycloak.iframe-done');
         }
 
         return redirect()->intended('/customer/dashboard')
