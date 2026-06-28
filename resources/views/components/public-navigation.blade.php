@@ -151,8 +151,8 @@
         </a>
 
         @guest('customer')
-        <!-- Login -->
-        <a href="{{ route('customer.login') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">
+        <!-- Login: direkt zum SSO (wie "Weiter zur Anmeldung"), ohne Zwischen-Login-Seite -->
+        <a href="{{ route('auth.keycloak.redirect') }}" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">
             <i class="fa-regular fa-right-to-bracket text-2xl" aria-hidden="true"></i>
         </a>
         <!-- Registrieren -->

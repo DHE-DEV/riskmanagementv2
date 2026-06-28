@@ -29,6 +29,20 @@ it('embeds the homepage directly when no iframe sso secret is configured', funct
     $response->assertDontSee('/auth/sso/check', false);
 });
 
+it('links the sidebar login icon directly to the sso redirect for guests', function () {
+    // Der "Anmelden"-Button in der linken schwarzen Leiste soll – wie
+    // "Weiter zur Anmeldung" – direkt zum SSO fuehren, nicht zur Login-Seite.
+    config(['services.passolution.iframe_sso_secret' => null]);
+
+    $response = get(route('travel-requirements-service'));
+
+    $response->assertOk();
+    $response->assertSee(
+        'href="'.route('auth.keycloak.redirect').'" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden"',
+        false,
+    );
+});
+
 it('uses the signed sso check handshake when a secret and an email are present', function () {
     // Optionaler Handshake: nur mit gesetztem IFRAME_SSO_SECRET wird der eingeloggte
     // User per signiertem Token an /auth/sso/check durchgereicht.
