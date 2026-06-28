@@ -12,6 +12,7 @@ beforeEach(function () {
     config([
         'services.passolution.web_url' => 'https://embed.example.test',
         'services.passolution.iframe_ui_params' => 'menu-hide=gtm,hc,is&ui-hide=is',
+        'services.passolution.iframe_locale' => 'de',
     ]);
 });
 
@@ -23,8 +24,9 @@ it('embeds the homepage directly when no iframe sso secret is configured', funct
     $response = get(route('travel-requirements-service'));
 
     $response->assertOk();
+    // Locale im Pfad (verhindert den query-verwerfenden /->/de-Redirect der Homepage);
     // & wird im Blade als &amp; escaped – Start der src-URL genuegt als Nachweis.
-    $response->assertSee('src="https://embed.example.test?menu-hide=gtm,hc,is', false);
+    $response->assertSee('src="https://embed.example.test/de?menu-hide=gtm,hc,is', false);
     $response->assertDontSee('/auth/sso/logout', false);
     $response->assertDontSee('/auth/sso/check', false);
 });

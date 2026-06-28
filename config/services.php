@@ -77,6 +77,11 @@ return [
         // Optionale Query-Parameter für den eingebetteten iframe (z. B. UI-Hide-Flags
         // der pds-Homepage). Beispiel: "menu-hide=gtm,hc,is&ui-hide=is"
         'iframe_ui_params' => env('PASSOLUTION_IFRAME_UI_PARAMS'),
+        // Locale-Segment fuer die iframe-URL. Die Homepage leitet "/" per 302 auf
+        // "/<locale>" um und verwirft dabei die Query (menu-hide/ui-hide). Daher die
+        // Locale direkt in die URL legen, damit ohne Redirect gerendert wird und die
+        // UI-Parameter greifen. Leer = App-Locale.
+        'iframe_locale' => env('PASSOLUTION_IFRAME_LOCALE'),
     ],
 
     // PDS API - For SSO token-based API access

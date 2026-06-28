@@ -135,8 +135,14 @@
                     // Optionale UI-Hide/Locale-Parameter aus PASSOLUTION_IFRAME_UI_PARAMS
                     // (vorformatierter Query-String, z. B. "menu-hide=gtm,hc,is&ui-hide=is")
                     $iframeUiParams = ltrim((string) config('services.passolution.iframe_ui_params'), '?&');
-                    // Anonymer Startbildschirm der Homepage (inkl. UI-Parameter).
-                    $iframeAnonRoot = $iframeWebUrl.($iframeUiParams !== '' ? '?'.$iframeUiParams : '');
+                    // Locale ins Pfad-Segment legen: Die Homepage leitet "/" per 302 auf
+                    // "/<locale>" um und verwirft dabei die Query – dann gehen menu-hide/
+                    // ui-hide verloren (UI::configure laeuft nur beim Rendern, nicht beim
+                    // Redirect). Mit "/<locale>" rendert die Homepage direkt (200) und die
+                    // UI-Parameter greifen.
+                    $iframeLocale = trim((string) config('services.passolution.iframe_locale'), '/') ?: app()->getLocale();
+                    // Anonymer Startbildschirm der Homepage (lokalisiert, inkl. UI-Parameter).
+                    $iframeAnonRoot = $iframeWebUrl.'/'.$iframeLocale.($iframeUiParams !== '' ? '?'.$iframeUiParams : '');
 
                     if ($iframeEmail && $iframeSecret) {
                         // Optionaler SSO-Handshake: nur wenn ein IFRAME_SSO_SECRET gesetzt
