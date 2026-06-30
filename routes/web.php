@@ -209,6 +209,40 @@ Route::prefix('embed')->name('embed.')->middleware(['allow.embedding', 'validate
 
 /*
 |--------------------------------------------------------------------------
+| Iframe Chrome Routes (Header / Sidebar / Footer als Einzel-Fragmente)
+|--------------------------------------------------------------------------
+|
+| Liefern jeweils nur ein Chrome-Element der Plattform als eigenstaendiges
+| HTML-Dokument, damit der platform.passolution.de-Dienst sie per iframe
+| einbetten kann. Die Fragmente uebernehmen den Auth-Zustand der Session
+| (eingeloggt vs. Gast); ohne Session wird die Gast-Variante gerendert.
+|
+| Nutzung:
+|   <iframe src="https://global-travel-monitor.eu/iframe/header" style="width:100%;height:64px;border:0"></iframe>
+|   <iframe src="https://global-travel-monitor.eu/iframe/sidebar?active=dashboard" style="width:64px;height:100%;border:0"></iframe>
+|   <iframe src="https://global-travel-monitor.eu/iframe/footer" style="width:100%;height:56px;border:0"></iframe>
+|
+| Optionale Parameter:
+|   ?lang=de|en   - Sprache (Default: App-Locale)
+|   ?active=...   - nur /iframe/sidebar: hebt den aktiven Navigationspunkt hervor
+|
+*/
+Route::prefix('iframe')->name('iframe.')->middleware(['allow.embedding'])->group(function () {
+    Route::get('/header', function () {
+        return view('iframe.header');
+    })->name('header');
+
+    Route::get('/sidebar', function () {
+        return view('iframe.sidebar');
+    })->name('sidebar');
+
+    Route::get('/footer', function () {
+        return view('iframe.footer');
+    })->name('footer');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Embed Risk-Overview Routes (with embedded login)
 |--------------------------------------------------------------------------
 |
