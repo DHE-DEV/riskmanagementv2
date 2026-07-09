@@ -30,6 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin-tools' => \App\Http\Middleware\AdminToolsAccess::class,
         ]);
 
+        // Login-Status mit platform.passolution.de abgleichen (?user-state=...).
+        // Muss vor der Anzeige laufen, damit Single-Logout/-Login sofort greift.
+        $middleware->web(append: [
+            \App\Http\Middleware\SyncPlatformUserState::class,
+        ]);
+
         // Frontend-Anzeigesprache (mehrsprachige Events) anhand ?lang/Session/Cookie/Browser.
         // Auf web (Session + Cookie setzen) und api (Cookie lesen, zustandslos).
         $middleware->web(append: [
