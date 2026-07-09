@@ -211,6 +211,10 @@ return [
     */
 
     'navigation_hamburger_enabled' => env('NAVIGATION_HAMBURGER_ENABLED', true),
+    // Optionale externe URL fuer das 1. Symbol (Travel Requirements Service).
+    // Wenn gesetzt, oeffnet das Symbol diese URL in einem neuen Tab (_blank),
+    // sonst wird die interne Route travel-requirements-service verwendet.
+    'navigation_trs_external_url' => env('NAVIGATION_TRS_EXTERNAL_URL'),
     'navigation_events_enabled' => env('NAVIGATION_EVENTS_ENABLED', true),
     'navigation_entry_conditions_enabled' => env('NAVIGATION_ENTRY_CONDITIONS_ENABLED', true),
     'navigation_booking_enabled' => env('NAVIGATION_BOOKING_ENABLED', true),
