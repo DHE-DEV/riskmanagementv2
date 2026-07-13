@@ -128,7 +128,9 @@ class KeycloakAuthController extends Controller
         $raw = method_exists($ssoUser, 'getRaw') ? (array) $ssoUser->getRaw() : (array) ($ssoUser->user ?? []);
         $ssoName = isset($raw['name']) && trim((string) $raw['name']) !== '' ? trim((string) $raw['name']) : null;
         $ssoUsername = $raw['username'] ?? null;
-        $ssoAccountId = $raw['account_id'] ?? null;
+        // Top-level account_id; faellt auf das verschachtelte account.id zurueck
+        // (selbe Account-ID, neuer userinfo-Response mit account-Objekt).
+        $ssoAccountId = $raw['account_id'] ?? data_get($raw, 'account.id');
 
         $customer = null;
         $employee = null;
@@ -237,6 +239,19 @@ class KeycloakAuthController extends Controller
                 'pds_username' => $ssoUsername,
                 'pds_email' => $raw['email'] ?? null,
                 'pds_account_id' => $ssoAccountId,
+                // Verschachteltes account-Objekt flach ablegen.
+                'pds_account_type' => data_get($raw, 'account.type'),
+                'pds_account_name' => data_get($raw, 'account.name'),
+                'pds_account_first_name' => data_get($raw, 'account.first_name'),
+                'pds_account_last_name' => data_get($raw, 'account.last_name'),
+                'pds_account_email' => data_get($raw, 'account.email'),
+                'pds_account_phone' => data_get($raw, 'account.phone'),
+                'pds_account_address_line_1' => data_get($raw, 'account.address_line_1'),
+                'pds_account_zip_code' => data_get($raw, 'account.zip_code'),
+                'pds_account_city' => data_get($raw, 'account.city'),
+                'pds_account_state' => data_get($raw, 'account.state'),
+                'pds_account_country' => data_get($raw, 'account.country'),
+                'pds_account_subscription_type' => data_get($raw, 'account.subscription.type'),
             ];
             foreach ($ssoRawFields as $ssoColumn => $ssoValue) {
                 if ($ssoValue !== null && Schema::hasColumn('customers', $ssoColumn)) {
