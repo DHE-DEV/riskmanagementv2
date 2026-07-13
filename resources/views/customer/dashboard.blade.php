@@ -798,11 +798,6 @@
                                 @endif
                             </p>
                         @endif
-                        @if(auth('customer')->user()->isSocialLogin())
-                            <p class="text-xs text-gray-700 mt-2">
-                                Angemeldet mit: {{ ucfirst(auth('customer')->user()->provider) }}
-                            </p>
-                        @endif
                         <div class="flex flex-wrap gap-2 mt-4">
                             <template x-for="label in businessTypeLabels" :key="label">
                                 <span
