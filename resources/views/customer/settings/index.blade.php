@@ -2592,6 +2592,11 @@
                     $featureKeyAliases = [
                         'customer.send_emails' => 'customer.travel_detail_link.email_subscriptions',
                     ];
+                    // Karten, bei denen (wenn inaktiv) der Hinweis "In Premium enthalten"
+                    // erscheint – inkl. der Premium-Karten und zusaetzlicher Promo-Karten.
+                    $premiumHintFeatures = array_merge($premiumOnlyFeatures, [
+                        'content.country',
+                    ]);
                     $featureCards = [
                         'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],
                         'content.cruise' => ['icon' => 'fa-ship', 'label' => 'Kreuzfahrt-Inhalte', 'desc' => 'Informationen zu Kreuzfahrtrouten, Häfen, Einreisebestimmungen für Kreuzfahrtreisende und hafenbezogene Sicherheitshinweise.'],
@@ -2629,7 +2634,7 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-700">{{ $card['label'] }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ $card['desc'] }}</p>
-                                    @if(in_array($featureKey, $premiumOnlyFeatures) && !$isPremium)
+                                    @if(!$isActive && in_array($featureKey, $premiumHintFeatures))
                                         <p class="text-xs font-medium text-purple-600 mt-1">
                                             <i class="fas fa-crown mr-1"></i>In Premium enthalten
                                         </p>
