@@ -68,6 +68,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
             ]);
         })->name('dashboard');
 
+        // Manueller Neu-Abruf der Account-Stammdaten (umgeht die 5-Min-Drosselung).
+        Route::post('/account/sync-pds', function () {
+            auth('customer')->user()->syncPdsAccountData(0);
+
+            return back()->with('success', 'Account-Daten wurden neu synchronisiert.');
+        })->name('account.sync-pds');
+
         // Account switching
         Route::get('/account/accessible', [\App\Http\Controllers\Customer\AccountSwitchController::class, 'accessible'])
             ->name('account.accessible');

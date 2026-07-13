@@ -923,6 +923,29 @@
                                 @endif
                             </div>
                             @endif
+                            @php
+                                $lastSync = auth('customer')->user()->pds_last_synced_at;
+                            @endphp
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Zuletzt synchronisiert:</span>
+                                <div class="flex items-center gap-2">
+                                    @if($lastSync)
+                                        <span class="px-2 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded border border-gray-200" title="{{ $lastSync->format('d.m.Y H:i:s') }}">
+                                            {{ $lastSync->diffForHumans() }}
+                                        </span>
+                                    @else
+                                        <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                            Noch nie
+                                        </span>
+                                    @endif
+                                    <form method="POST" action="{{ route('customer.account.sync-pds') }}" class="inline-flex">
+                                        @csrf
+                                        <button type="submit" class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Jetzt aktualisieren">
+                                            <i class="fa-regular fa-arrows-rotate text-sm" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
