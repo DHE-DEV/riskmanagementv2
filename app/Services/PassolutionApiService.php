@@ -271,6 +271,46 @@ class PassolutionApiService
     }
 
     /**
+     * Abo + freigeschaltete Features mit dem EIGENEN Token des Kunden abrufen.
+     * /account/subscription liefert type + features des Token-Inhabers – mit dem
+     * Kunden-Token also dessen Werte (der Service-Token liefert dagegen die des
+     * Service-Accounts und ignoriert account_id). Rueckgabe: Array {type, features}
+     * oder null bei Fehler / ungueltigem/abgelaufenem Token.
+     */
+    public function fetchSubscriptionWithToken(?string $token): ?array
+    {
+        if (! $token) {
+            return null;
+        }
+
+        $base = config('services.passolution.subscription_api_url') ?: $this->baseUrl;
+        $url = "{$base}/account/subscription";
+        $t0 = microtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer '.$token,
+            ])
+                ->timeout(15)
+                ->get($url);
+
+            \App\Support\PdsDebug::record('GET', $url, [], $response->status(), $t0, $response->json());
+
+            if ($response->successful() && $response->json('type')) {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            \App\Support\PdsDebug::record('GET', $url, [], null, $t0, null, $e->getMessage());
+            Log::error('Passolution API: Abo/Features per Kunden-Token fehlgeschlagen', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
      * Fetch general infosystem data from Passolution API
      */
     public function fetchGeneralInfo(string $lang = 'de', int $page = 1): array
