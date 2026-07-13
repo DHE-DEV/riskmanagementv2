@@ -804,11 +804,6 @@
                             </p>
                         @endif
                         <div class="flex flex-wrap gap-2 mt-4">
-                            <span
-                                x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
-                                x-text="customerTypeLabel"
-                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
-                            </span>
                             <template x-for="label in businessTypeLabels" :key="label">
                                 <span
                                     x-text="label"
@@ -822,7 +817,11 @@
                     @php
                         $officeUser = auth('customer')->user();
                     @endphp
-                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200"
+                         x-data="{
+                             customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
+                         }"
+                         @customer-type-updated.window="customerTypeLabel = $event.detail.label">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
                             Büro
                         </h3>
@@ -835,6 +834,13 @@
                         @if($officeUser->pds_account_zip_code || $officeUser->pds_account_city)
                             <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_zip_code ?? '').' '.($officeUser->pds_account_city ?? '')) }}</p>
                         @endif
+                        <div class="flex flex-wrap gap-2 mt-4">
+                            <span
+                                x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
+                                x-text="customerTypeLabel"
+                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                            </span>
+                        </div>
                     </div>
 
                     <!--
