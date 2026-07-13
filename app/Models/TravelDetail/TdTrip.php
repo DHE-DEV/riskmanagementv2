@@ -3,11 +3,11 @@
 namespace App\Models\TravelDetail;
 
 use App\Models\Customer;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class TdTrip extends Model
 {
@@ -17,6 +17,7 @@ class TdTrip extends Model
 
     protected $fillable = [
         'customer_id',
+        'pds_account_id',
         'provider_id',
         'external_trip_id',
         'provider_name',
@@ -75,6 +76,23 @@ class TdTrip extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Scope: Trips eines pds-Accounts (Zuordnung des globalen Syncs).
+     * Nach Login mit der pds_account_id aus Keycloak nutzbar.
+     */
+    public function scopeForAccount(Builder $query, int $pdsAccountId): Builder
+    {
+        return $query->where('pds_account_id', $pdsAccountId);
+    }
+
+    /**
+     * Scope: nur laufende/zukuenftige Reisen.
+     */
+    public function scopeFuture(Builder $query): Builder
+    {
+        return $query->where('computed_end_at', '>=', now());
     }
 
     /**
@@ -237,7 +255,7 @@ class TdTrip extends Model
      */
     public function getDurationDaysAttribute(): ?int
     {
-        if (!$this->computed_start_at || !$this->computed_end_at) {
+        if (! $this->computed_start_at || ! $this->computed_end_at) {
             return null;
         }
 

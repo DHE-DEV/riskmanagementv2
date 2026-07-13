@@ -71,7 +71,7 @@ class SyncPdsTrips extends Command
                 $log->trips_unchanged,
                 $log->trips_total_api ?? '-',
                 $log->pages_fetched,
-                $log->duration_ms ? ($log->duration_ms . 'ms') : '-',
+                $log->duration_ms ? ($log->duration_ms.'ms') : '-',
             ]]
         );
 
@@ -97,6 +97,7 @@ class SyncPdsTrips extends Command
 
             if ($this->option('dry-run')) {
                 $this->line('    [DRY-RUN] Übersprungen');
+
                 continue;
             }
 
@@ -121,7 +122,9 @@ class SyncPdsTrips extends Command
         }
 
         if ($this->option('delta') && $customer->pds_last_synced_at) {
-            return $customer->pds_last_synced_at;
+            // Ueberlappungsfenster gegen Lag des pds-queue-Jobs und die Sync-Laufzeit:
+            // lieber wenige Saetze doppelt holen (Upsert ist idempotent) als Aenderungen verpassen.
+            return $customer->pds_last_synced_at->copy()->subMinutes(10);
         }
 
         return null;

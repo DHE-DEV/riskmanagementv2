@@ -3,8 +3,10 @@
 namespace App\Services\TravelDetail;
 
 use App\Models\Customer;
+use App\Models\TravelDetail\PdsGlobalSyncState;
 use App\Models\TravelDetail\TdPdsSyncLog;
 use App\Models\TravelDetail\TdTrip;
+use App\Services\PassolutionApiService;
 use App\Services\PdsApiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -13,13 +15,74 @@ class PdsTripSyncService
 {
     protected PdsApiService $pdsApi;
 
+    protected PassolutionApiService $passolutionApi;
+
     protected int $perPage = 100;
 
     protected int $maxPages = 100;
 
-    public function __construct(PdsApiService $pdsApi)
+    public function __construct(PdsApiService $pdsApi, PassolutionApiService $passolutionApi)
     {
         $this->pdsApi = $pdsApi;
+        $this->passolutionApi = $passolutionApi;
+    }
+
+    /**
+     * Account-uebergreifender Delta-Sync ueber den internen Bulk-Endpoint
+     * (Service-Token). Holt alle Links mit last_change_at > Wasserstand und
+     * end_date >= jetzt, Keyset-paginiert, und upsertet sie nach pds_account_id.
+     *
+     * Der Cursor (last_change_at, id) wird persistent in pds_global_sync_states
+     * gehalten und nach jeder Seite fortgeschrieben (resumierbar).
+     *
+     * @return array{fetched:int,created:int,updated:int,unchanged:int,pages:int}
+     */
+    public function syncAllChanges(int $perPage = 1000, ?int $maxPages = null): array
+    {
+        $state = PdsGlobalSyncState::forKey(PdsGlobalSyncState::KEY_TRAVEL_DETAILS);
+
+        $cursor = $state->cursor_last_change_at
+            ? ['last_change_at' => $state->cursor_last_change_at->format('Y-m-d H:i:s'), 'id' => $state->cursor_id]
+            : null;
+
+        $stats = ['fetched' => 0, 'created' => 0, 'updated' => 0, 'unchanged' => 0, 'pages' => 0];
+        $page = 0;
+
+        do {
+            $response = $this->passolutionApi->fetchTravelDetailChanges(null, $cursor, $perPage);
+
+            if ($response === null) {
+                Log::error('PdsTripSyncService: Globaler Delta-Abruf fehlgeschlagen, Abbruch', [
+                    'page' => $page,
+                ]);
+                break;
+            }
+
+            foreach (($response['data'] ?? []) as $tripData) {
+                [$result] = $this->upsertTrip(null, $tripData);
+                $stats['fetched']++;
+                $stats[$result]++;
+            }
+
+            $page++;
+            $stats['pages'] = $page;
+
+            $meta = $response['meta'] ?? [];
+            $next = $meta['next_cursor'] ?? null;
+
+            if ($next && ! empty($next['last_change_at']) && isset($next['id'])) {
+                $cursor = ['last_change_at' => $next['last_change_at'], 'id' => $next['id']];
+                $state->update([
+                    'cursor_last_change_at' => $next['last_change_at'],
+                    'cursor_id' => $next['id'],
+                    'last_run_at' => now(),
+                ]);
+            }
+
+            $hasMore = (bool) ($meta['has_more'] ?? false);
+        } while ($hasMore && (! $maxPages || $page < $maxPages));
+
+        return $stats;
     }
 
     /**
@@ -52,21 +115,26 @@ class PdsTripSyncService
 
             do {
                 $requestBody = [
-                    'sort_by' => $updatedSince ? 'created_at' : 'start_date',
+                    'sort_by' => $updatedSince ? 'last_change_at' : 'start_date',
                     'sort_order' => $updatedSince ? 'asc' : 'desc',
                     'page' => $page,
                     'per_page' => $this->perPage,
+                    // riskmanagement interessiert nur laufende/zukuenftige Reisen
+                    'end_date' => ['>=' => now()->format('Y-m-d H:i:s')],
                 ];
 
                 if ($updatedSince) {
-                    $requestBody['updated_at'] = ['>' => $updatedSince->format('Y-m-d')];
+                    // Delta ueber die generierte Spalte last_change_at = GREATEST(updated_at, important_change_at):
+                    // faengt sowohl Datenaenderungen (updated_at) als auch wichtige Aenderungen
+                    // (important_change_at) in EINEM Filter ab - volle Datums-/Zeit-Granularitaet (nicht nur Tag).
+                    $requestBody['last_change_at'] = ['>' => $updatedSince->format('Y-m-d H:i:s')];
                 }
 
                 $response = $this->pdsApi->post($customer, '/travel-details?__with=__cruise-info', $requestBody);
 
                 if (! $response || ! $response->successful()) {
                     $syncLog->markFailed(
-                        'API-Fehler: ' . ($response ? $response->status() . ' ' . $response->body() : 'Keine Antwort'),
+                        'API-Fehler: '.($response ? $response->status().' '.$response->body() : 'Keine Antwort'),
                         $stats
                     );
 
@@ -116,13 +184,16 @@ class PdsTripSyncService
      *
      * @return array [string $result, int|null $tripId]
      */
-    protected function upsertTrip(Customer $customer, array $tripData): array
+    protected function upsertTrip(?Customer $customer, array $tripData): array
     {
         $pdsTid = $tripData['tid'] ?? $tripData['id'] ?? null;
 
         if (! $pdsTid) {
             return ['unchanged', null];
         }
+
+        // Account-Zuordnung: aus dem Bulk-Feed (account_id) oder vom Customer.
+        $accountId = $tripData['account_id'] ?? $customer?->pds_account_id ?? null;
 
         $providerId = 'pds-api';
         $externalTripId = $pdsTid;
@@ -140,7 +211,6 @@ class PdsTripSyncService
         }
 
         $attributes = [
-            'customer_id' => $customer->id,
             'provider_name' => 'Passolution PDS',
             'provider_sent_at' => now(),
             'booking_reference' => $tripData['reference_id'] ?? $tripData['booking_reference'] ?? null,
@@ -166,6 +236,18 @@ class PdsTripSyncService
             'pds_share_created_at' => isset($tripData['created_at']) ? Carbon::parse($tripData['created_at'])->setTimezone(config('app.timezone')) : null,
             'raw_payload' => $tripData,
         ];
+
+        // pds_account_id ist der Zuordnungsschluessel des globalen Syncs.
+        // Nur setzen, wenn bekannt - eine bestehende Zuordnung nie mit null ueberschreiben.
+        if ($accountId !== null) {
+            $attributes['pds_account_id'] = $accountId;
+        }
+
+        // customer_id nur setzen, wenn ein lokaler Customer-Kontext vorliegt
+        // (per-Customer-Sync); der globale Sync laesst sie unangetastet.
+        if ($customer) {
+            $attributes['customer_id'] = $customer->id;
+        }
 
         $existing = TdTrip::where('provider_id', $providerId)
             ->where('external_trip_id', $externalTripId)
@@ -207,6 +289,11 @@ class PdsTripSyncService
                 $existing->update($attributes);
 
                 return ['updated', $existing->id];
+            }
+
+            // Inhalt unveraendert: nur die Account-Zuordnung nachziehen, falls noch leer.
+            if ($accountId !== null && $existing->pds_account_id !== $accountId) {
+                $existing->update(['pds_account_id' => $accountId]);
             }
 
             return ['unchanged', $existing->id];

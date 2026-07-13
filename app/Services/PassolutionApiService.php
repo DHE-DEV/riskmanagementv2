@@ -105,7 +105,7 @@ class PassolutionApiService
      * Gibt das `data`-Array zurück (leer wenn keine), oder null bei Fehler.
      *
      * @param  string|null  $startDate  optional: nur Reisen mit end_date >= $startDate
-     * @param  string|null  $endDate    optional: nur Reisen mit start_date <= $endDate
+     * @param  string|null  $endDate  optional: nur Reisen mit start_date <= $endDate
      */
     public function fetchTravelDetailsByEmail(string $email, ?string $startDate = null, ?string $endDate = null): ?array
     {
@@ -159,6 +159,68 @@ class PassolutionApiService
         }
 
         Log::info('Passolution API: Travel-Details nicht abrufbar', ['email' => $email]);
+
+        return null;
+    }
+
+    /**
+     * Account-uebergreifender Delta-Feed der Travel-Detail-Links ueber den
+     * internen Endpoint /__internal/travel-details/changes (Service-Token).
+     *
+     * Liefert alle Links mit last_change_at > $since und end_date >= jetzt,
+     * Keyset-paginiert ueber (last_change_at, id).
+     *
+     * @param  string|null  $since  Wasserstand (Y-m-d H:i:s); null = von Anfang
+     * @param  array|null  $cursor  ['last_change_at' => ..., 'id' => ...] der letzten Seite
+     * @return array{data: array, meta: array}|null null bei Fehler
+     */
+    public function fetchTravelDetailChanges(?string $since, ?array $cursor = null, int $perPage = 1000): ?array
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token) {
+            Log::warning('Passolution API: Delta-Abruf ohne Token nicht möglich');
+
+            return null;
+        }
+
+        $query = ['per_page' => $perPage];
+        if ($since) {
+            $query['since'] = $since;
+        }
+        if (! empty($cursor['last_change_at']) && isset($cursor['id'])) {
+            $query['cursor_last_change_at'] = $cursor['last_change_at'];
+            $query['cursor_id'] = $cursor['id'];
+        }
+
+        $url = "{$this->internalBaseUrl}/__internal/travel-details/changes";
+        $t0 = microtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer '.$token,
+            ])
+                ->timeout(60)
+                ->get($url, $query);
+
+            \App\Support\PdsDebug::record('GET', $url, $query, $response->status(), $t0, $response->json());
+
+            if ($response->successful()) {
+                return [
+                    'data' => $response->json('data', []),
+                    'meta' => $response->json('meta', []),
+                ];
+            }
+
+            Log::error('Passolution API: Delta-Abruf fehlgeschlagen', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+        } catch (\Exception $e) {
+            \App\Support\PdsDebug::record('GET', $url, $query, null, $t0, null, $e->getMessage());
+            Log::error('Passolution API: Delta-Abruf Exception', ['message' => $e->getMessage()]);
+        }
 
         return null;
     }
