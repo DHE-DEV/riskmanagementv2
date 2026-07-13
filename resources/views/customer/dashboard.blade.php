@@ -906,21 +906,6 @@
                             Konto
                         </h3>
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Mitglied seit:</span>
-                                @php
-                                    $mitgliedSeit = ($memberSince ?? null) ?: auth('customer')->user()->created_at;
-                                @endphp
-                                @if($mitgliedSeit)
-                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
-                                        {{ $mitgliedSeit->format('d.m.Y') }}
-                                    </span>
-                                @else
-                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
-                                        Unbekannt
-                                    </span>
-                                @endif
-                            </div>
                             @php
                                 // Aktuelles Abo aus dem per account_id synchronisierten Feld
                                 // (syncPdsAccountData, TTL 5 Min).
@@ -939,6 +924,21 @@
                                 @else
                                     <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
                                         {{ $abo ? ucfirst($abo) : 'Unbekannt' }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Mitglied seit:</span>
+                                @php
+                                    $mitgliedSeit = ($memberSince ?? null) ?: auth('customer')->user()->created_at;
+                                @endphp
+                                @if($mitgliedSeit)
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                        {{ $mitgliedSeit->format('d.m.Y') }}
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Unbekannt
                                     </span>
                                 @endif
                             </div>
