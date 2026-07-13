@@ -933,7 +933,7 @@
                                     $mitgliedSeit = ($memberSince ?? null) ?: auth('customer')->user()->created_at;
                                 @endphp
                                 @if($mitgliedSeit)
-                                    <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                    <span class="px-2 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded border border-gray-200">
                                         {{ $mitgliedSeit->format('d.m.Y') }}
                                     </span>
                                 @else
