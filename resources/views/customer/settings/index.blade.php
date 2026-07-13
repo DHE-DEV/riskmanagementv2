@@ -2624,6 +2624,11 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-700">{{ $card['label'] }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ $card['desc'] }}</p>
+                                    @if(in_array($featureKey, $premiumOnlyFeatures) && !$isPremium)
+                                        <p class="text-xs font-medium text-purple-600 mt-1">
+                                            <i class="fas fa-crown mr-1"></i>In Premium enthalten
+                                        </p>
+                                    @endif
                                 </div>
                                 <div class="w-32 flex-shrink-0 flex justify-end">
                                     @if($isActive)
