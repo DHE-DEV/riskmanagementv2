@@ -921,6 +921,54 @@
 
                 </div>
 
+                {{-- SSO-/Login-Datenaustausch (Debug) – zeigt, welche Informationen beim
+                     SSO-Login vom Anmelde-Server uebernommen wurden. Nur sichtbar, wenn
+                     DASHBOARD_SSO_DEBUG_ENABLED=true (Tokens werden gekuerzt dargestellt). --}}
+                @if(config('feed.dashboard_sso_debug_enabled'))
+                @php
+                    $ssoCustomer = auth('customer')->user();
+
+                    $ssoData = [
+                        'keycloak_email' => session('keycloak_email'),
+                        'keycloak_id_token' => session('keycloak_id_token'),
+                        'logged_in_employee_id' => session('logged_in_employee_id'),
+                        'logged_in_employee_name' => session('logged_in_employee_name'),
+                        'logged_in_employee_email' => session('logged_in_employee_email'),
+                        'provider' => $ssoCustomer->provider,
+                        'provider_id' => $ssoCustomer->provider_id,
+                        'provider_token' => $ssoCustomer->provider_token,
+                        'provider_refresh_token' => $ssoCustomer->provider_refresh_token,
+                        'agent_id' => $ssoCustomer->agent_id,
+                        'service1_customer_id' => $ssoCustomer->service1_customer_id,
+                        'pds_customer_number' => $ssoCustomer->pds_customer_number,
+                        'account_type' => $ssoCustomer->account_type,
+                        'passolution_subscription_type' => $ssoCustomer->passolution_subscription_type,
+                        'passolution_roles' => $ssoCustomer->passolution_roles ? json_encode($ssoCustomer->passolution_roles) : null,
+                        'pds_api_token' => $ssoCustomer->pds_api_token,
+                        'pds_api_token_expires_at' => optional($ssoCustomer->pds_api_token_expires_at)->format('d.m.Y H:i'),
+                        'email' => $ssoCustomer->email,
+                        'company_name' => $ssoCustomer->company_name,
+                        'company_street' => $ssoCustomer->company_street,
+                        'company_house_number' => $ssoCustomer->company_house_number,
+                        'company_postal_code' => $ssoCustomer->company_postal_code,
+                        'company_city' => $ssoCustomer->company_city,
+                        'company_country' => $ssoCustomer->company_country,
+                    ];
+                @endphp
+                <div class="bg-white p-6 rounded-lg border border-gray-200 mt-6">
+                    <table class="w-full text-xs">
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach($ssoData as $ssoKey => $ssoValue)
+                            <tr>
+                                <td class="py-1.5 pr-3 font-mono text-gray-500 align-top whitespace-nowrap">{{ $ssoKey }}</td>
+                                <td class="py-1.5 font-mono text-gray-900 break-all">{{ $ssoValue }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+
                 @if(config('feed.dashboard_business_boxes_enabled'))
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6"
                      x-data="{ showBusinessBoxes: '{{ auth('customer')->user()->customer_type ?? '' }}' === 'business' }"

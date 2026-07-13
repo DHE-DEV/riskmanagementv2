@@ -328,6 +328,14 @@ return [
     'dashboard_konto_funktionen_enabled' => filter_var(env('DASHBOARD_KONTO_FUNKTIONEN_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     /**
+     * SSO-/Login-Debug-Box auf dem Dashboard: zeigt die beim SSO-Login vom
+     * Anmelde-Server uebernommenen Werte (Session + Kundendaten, Tokens gekuerzt).
+     * Standard AUS – nur zur Diagnose aktivieren, da sensible Token-Infos sichtbar.
+     * .env: DASHBOARD_SSO_DEBUG_ENABLED=true
+     */
+    'dashboard_sso_debug_enabled' => filter_var(env('DASHBOARD_SSO_DEBUG_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+
+    /**
      * Firmen-Boxen auf dem Dashboard (Firmenadresse / Rechnungsadresse /
      * Filialen & Standorte) – werden ohnehin nur Firmenkunden angezeigt.
      * .env: DASHBOARD_BUSINESS_BOXES_ENABLED
