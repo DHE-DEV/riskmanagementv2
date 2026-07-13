@@ -2586,6 +2586,7 @@
                         'customer.travel_detail_link.manage',
                         'customer.travel_detail_link.inspiration.manage',
                         'customer.travel_detail_link.media.manage',
+                        'customer.travel_detail_link.email_subscriptions',
                     ];
                     $featureCards = [
                         'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],

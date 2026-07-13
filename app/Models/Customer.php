@@ -288,8 +288,11 @@ class Customer extends Authenticatable implements MustVerifyEmail
         $email = $this->email ?: ($this->pds_username ?: $this->pds_email);
         $account = $email ? $api->fetchAccountByEmail($email) : null;
 
-        // Abo (+ freigeschaltete Features) per account_id.
-        $sub = $this->pds_account_id ? $api->fetchSubscriptionById($this->pds_account_id) : null;
+        // Abo (+ freigeschaltete Features) per account_id. ID bevorzugt aus der
+        // frischen account/info-Antwort, sonst die bereits gespeicherte – damit der
+        // erste Sync nicht ausbleibt, falls pds_account_id noch nicht gesetzt war.
+        $accountId = data_get($account, 'id') ?: $this->pds_account_id;
+        $sub = $accountId ? $api->fetchSubscriptionById($accountId) : null;
         $subscriptionType = data_get($sub, 'type');
         $features = data_get($sub, 'features');
 
