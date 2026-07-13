@@ -822,9 +822,16 @@
                              customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
                          }"
                          @customer-type-updated.window="customerTypeLabel = $event.detail.label">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Büro
-                        </h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Büro
+                            </h3>
+                            <span
+                                x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
+                                x-text="customerTypeLabel"
+                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                            </span>
+                        </div>
                         @if($officeUser->pds_account_name)
                             <p class="text-sm font-medium text-gray-900">{{ $officeUser->pds_account_name }}</p>
                         @endif
@@ -837,13 +844,6 @@
                         @if($officeUser->pds_account_zip_code || $officeUser->pds_account_city)
                             <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_zip_code ?? '').' '.($officeUser->pds_account_city ?? '')) }}</p>
                         @endif
-                        <div class="flex flex-wrap gap-2 mt-4">
-                            <span
-                                x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
-                                x-text="customerTypeLabel"
-                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
-                            </span>
-                        </div>
                     </div>
 
                     <!--
