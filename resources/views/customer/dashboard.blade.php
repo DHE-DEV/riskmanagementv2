@@ -938,6 +938,8 @@
                         'logged_in_employee_email' => session('logged_in_employee_email'),
                         'provider' => $ssoCustomer->provider,
                         'provider_id' => $ssoCustomer->provider_id,
+                        'username' => $ssoCustomer->username,
+                        'pds_account_id' => $ssoCustomer->pds_account_id,
                         'provider_token' => $ssoCustomer->provider_token,
                         'provider_refresh_token' => $ssoCustomer->provider_refresh_token,
                         'agent_id' => $ssoCustomer->agent_id,

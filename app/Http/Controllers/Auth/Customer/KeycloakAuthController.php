@@ -119,6 +119,16 @@ class KeycloakAuthController extends Controller
         }
 
         $email = $ssoUser->getEmail();
+
+        // Roh-Payload des SSO-userinfo-Response. Laravel Passport liefert hier auch
+        // account_id/username/name, die Socialite NICHT auf das typisierte User-Objekt
+        // mappt (nur id/nickname/name/email/avatar). Keycloak liefert diese Keys nicht,
+        // daher durchweg null-safe ausgelesen.
+        $raw = method_exists($ssoUser, 'getRaw') ? (array) $ssoUser->getRaw() : (array) ($ssoUser->user ?? []);
+        $ssoName = isset($raw['name']) && trim((string) $raw['name']) !== '' ? trim((string) $raw['name']) : null;
+        $ssoUsername = $raw['username'] ?? null;
+        $ssoAccountId = $raw['account_id'] ?? null;
+
         $customer = null;
         $employee = null;
 
@@ -205,6 +215,22 @@ class KeycloakAuthController extends Controller
         if (! $employee) {
             $updateData['provider_id'] = $ssoUser->getId();
             $updateData['avatar'] = $ssoUser->getAvatar() ?? $customer->avatar;
+
+            // Weitere Felder aus dem SSO-Response bei JEDEM Login synchronisieren,
+            // damit Aenderungen auf der Plattform lokal durchschlagen. Nur setzen,
+            // wenn der Anbieter den Wert geliefert hat (sonst bestehenden behalten).
+            if ($ssoName !== null) {
+                $updateData['name'] = $ssoName;
+            }
+            if ($email) {
+                $updateData['email'] = $email;
+            }
+            if ($ssoUsername !== null) {
+                $updateData['username'] = $ssoUsername;
+            }
+            if ($ssoAccountId !== null) {
+                $updateData['pds_account_id'] = $ssoAccountId;
+            }
         }
 
         // Der SSO-Anbieter hat die Identitaet (inkl. E-Mail) bereits verifiziert ->

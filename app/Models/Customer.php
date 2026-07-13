@@ -28,6 +28,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'username',
+        'pds_account_id',
         'password',
         'avatar',
         'provider',
