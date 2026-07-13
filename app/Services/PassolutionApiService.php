@@ -226,10 +226,15 @@ class PassolutionApiService
     }
 
     /**
-     * Abo-Typ eines Accounts ueber den internen Endpunkt per account_id abrufen
-     * (Service-Token). Gibt 'standard' | 'premium' zurueck, oder null.
+     * Abo eines Accounts ueber den internen Endpunkt per account_id abrufen
+     * (Service-Token). Gibt die komplette Antwort als Array zurueck – u. a.:
+     *   - 'type'     : 'standard' | 'premium'
+     *   - 'features' : Array freigeschalteter Berechtigungen (z. B. content.country,
+     *                  customer.travel_detail_link.create), sofern die API sie liefert.
+     * Struktur entspricht der dokumentierten GET /account/subscription
+     * (docs.api.passolution.eu). Rueckgabe null bei Fehler / nicht gefunden.
      */
-    public function fetchSubscriptionTypeById($accountId): ?string
+    public function fetchSubscriptionById($accountId): ?array
     {
         $token = config('services.passolution.internal_token') ?: $this->apiKey;
 
@@ -252,7 +257,7 @@ class PassolutionApiService
             \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
 
             if ($response->successful() && $response->json('type')) {
-                return $response->json('type');
+                return $response->json();
             }
         } catch (\Exception $e) {
             \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());

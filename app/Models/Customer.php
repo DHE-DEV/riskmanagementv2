@@ -288,12 +288,12 @@ class Customer extends Authenticatable implements MustVerifyEmail
         $email = $this->email ?: ($this->pds_username ?: $this->pds_email);
         $account = $email ? $api->fetchAccountByEmail($email) : null;
 
-        // Abo per account_id (dieser Endpunkt unterstuetzt account_id).
-        $subscription = $this->pds_account_id
-            ? $api->fetchSubscriptionTypeById($this->pds_account_id)
-            : null;
+        // Abo (+ freigeschaltete Features) per account_id.
+        $sub = $this->pds_account_id ? $api->fetchSubscriptionById($this->pds_account_id) : null;
+        $subscriptionType = data_get($sub, 'type');
+        $features = data_get($sub, 'features');
 
-        if (! $account && ! $subscription) {
+        if (! $account && ! $sub) {
             $this->forceFill(['pds_last_synced_at' => now()])->saveQuietly();
 
             return;
@@ -317,8 +317,18 @@ class Customer extends Authenticatable implements MustVerifyEmail
             ];
         }
 
-        if ($subscription) {
-            $mapped['pds_account_subscription_type'] = $subscription;
+        if ($subscriptionType) {
+            // pds_account_* (Dashboard) UND die von den Settings genutzten
+            // passolution_*-Felder gleichermassen pflegen.
+            $mapped['pds_account_subscription_type'] = $subscriptionType;
+            $mapped['passolution_subscription_type'] = $subscriptionType;
+            $mapped['passolution_subscription_updated_at'] = now();
+        }
+
+        // Feature-Liste nur uebernehmen, wenn die API sie liefert (Array). Solange
+        // der __internal-Endpunkt keine features schickt, bleibt der Bestand erhalten.
+        if (is_array($features)) {
+            $mapped['passolution_features'] = $features;
         }
 
         $mapped = array_filter($mapped, fn ($value) => $value !== null);
