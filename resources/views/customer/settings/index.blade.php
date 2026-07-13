@@ -2577,6 +2577,16 @@
                 {{-- Freigeschaltete Funktionen als einzelne Sections --}}
                 @php
                     $activeFeatures = $customer->passolution_features ?? [];
+                    // Aktuelles Abo (aus __internal synchronisiert).
+                    $subscriptionType = $customer->passolution_subscription_type ?: $customer->pds_account_subscription_type;
+                    $isPremium = $subscriptionType === 'premium';
+                    // Diese Karten haengen am Premium-Abo statt an der Feature-Liste.
+                    $premiumOnlyFeatures = [
+                        'customer.travel_detail_link.create',
+                        'customer.travel_detail_link.manage',
+                        'customer.travel_detail_link.inspiration.manage',
+                        'customer.travel_detail_link.media.manage',
+                    ];
                     $featureCards = [
                         'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],
                         'content.cruise' => ['icon' => 'fa-ship', 'label' => 'Kreuzfahrt-Inhalte', 'desc' => 'Informationen zu Kreuzfahrtrouten, Häfen, Einreisebestimmungen für Kreuzfahrtreisende und hafenbezogene Sicherheitshinweise.'],
@@ -2596,7 +2606,13 @@
 
                 @foreach($featureCards as $featureKey => $card)
                     @if(!in_array($featureKey, $hiddenFeatures))
-                        @php $isActive = in_array($featureKey, $activeFeatures); @endphp
+                        @php
+                            // Premium-Karten: aktiv bei Premium-Abo. Sonst: aktiv, wenn
+                            // die Berechtigung in der Feature-Liste enthalten ist.
+                            $isActive = in_array($featureKey, $premiumOnlyFeatures)
+                                ? $isPremium
+                                : in_array($featureKey, $activeFeatures);
+                        @endphp
                         <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5">
                             <div class="flex items-start gap-4">
                                 <div class="w-8 flex-shrink-0 pt-0.5 text-center">
