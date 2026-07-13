@@ -269,51 +269,57 @@ class Customer extends Authenticatable implements MustVerifyEmail
      * ueber pds_last_synced_at (TTL). Wird beim Dashboard-Aufruf genutzt, damit z. B.
      * ein Abo-Wechsel ohne erneuten Login sichtbar wird.
      *
-     * - Nur wenn eine pds_account_id vorhanden ist.
-     * - Nur wenn der letzte Sync aelter als $ttlMinutes ist.
-     * - Bei API-Fehler bleibt der letzte Stand erhalten; der Zeitstempel wird
-     *   dennoch gesetzt, um die API bei Ausfall nicht bei jedem Load zu treffen.
-     * - Nur gelieferte (nicht-null) Werte werden uebernommen (keine Teil-Response
-     *   ueberschreibt vorhandene Daten).
+     * Quellen (die __internal-Endpunkte haben unterschiedliche Parameter):
+     * - Stammdaten: /account/info erwartet die Login-/User-E-Mail (KEIN account_id).
+     * - Abo:        /account/subscription unterstuetzt account_id.
+     *
+     * Nur gelieferte (nicht-null) Werte werden uebernommen; bei komplettem Fehlschlag
+     * bleibt der alte Stand erhalten, der Zeitstempel wird dennoch gesetzt (Drosselung).
      */
     public function syncPdsAccountData(int $ttlMinutes = 5): void
     {
-        if (! $this->pds_account_id) {
-            return;
-        }
-
         if ($this->pds_last_synced_at && $this->pds_last_synced_at->gt(now()->subMinutes($ttlMinutes))) {
             return;
         }
 
         $api = app(\App\Services\PassolutionApiService::class);
-        $account = $api->fetchAccountById($this->pds_account_id);
 
-        if (! $account) {
+        // Stammdaten per Login-/User-E-Mail (account/info unterstuetzt kein account_id).
+        $email = $this->email ?: ($this->pds_username ?: $this->pds_email);
+        $account = $email ? $api->fetchAccountByEmail($email) : null;
+
+        // Abo per account_id (dieser Endpunkt unterstuetzt account_id).
+        $subscription = $this->pds_account_id
+            ? $api->fetchSubscriptionTypeById($this->pds_account_id)
+            : null;
+
+        if (! $account && ! $subscription) {
             $this->forceFill(['pds_last_synced_at' => now()])->saveQuietly();
 
             return;
         }
 
-        // Abo bevorzugt aus der Account-Antwort, sonst ueber den dedizierten Endpunkt.
-        $subscription = data_get($account, 'subscription.type')
-            ?: data_get($account, 'subscription_type')
-            ?: $api->fetchSubscriptionTypeById($this->pds_account_id);
+        $mapped = [];
 
-        $mapped = [
-            'pds_account_type' => data_get($account, 'type'),
-            'pds_account_name' => data_get($account, 'name'),
-            'pds_account_first_name' => data_get($account, 'first_name'),
-            'pds_account_last_name' => data_get($account, 'last_name'),
-            'pds_account_email' => data_get($account, 'email'),
-            'pds_account_phone' => data_get($account, 'phone'),
-            'pds_account_address_line_1' => data_get($account, 'address_line_1'),
-            'pds_account_zip_code' => data_get($account, 'zip_code'),
-            'pds_account_city' => data_get($account, 'city'),
-            'pds_account_state' => data_get($account, 'state'),
-            'pds_account_country' => data_get($account, 'country_code') ?? data_get($account, 'country'),
-            'pds_account_subscription_type' => $subscription,
-        ];
+        if ($account) {
+            $mapped = [
+                'pds_account_id' => data_get($account, 'id'),
+                'pds_account_name' => data_get($account, 'name'),
+                'pds_account_first_name' => data_get($account, 'first_name'),
+                'pds_account_last_name' => data_get($account, 'last_name'),
+                'pds_account_email' => data_get($account, 'email'),
+                'pds_account_phone' => data_get($account, 'phone'),
+                'pds_account_address_line_1' => data_get($account, 'address_line_1'),
+                'pds_account_zip_code' => data_get($account, 'zip_code'),
+                'pds_account_city' => data_get($account, 'city'),
+                'pds_account_state' => data_get($account, 'state'),
+                'pds_account_country' => data_get($account, 'country_code'),
+            ];
+        }
+
+        if ($subscription) {
+            $mapped['pds_account_subscription_type'] = $subscription;
+        }
 
         $mapped = array_filter($mapped, fn ($value) => $value !== null);
         $mapped['pds_last_synced_at'] = now();
