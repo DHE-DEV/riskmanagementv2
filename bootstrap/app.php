@@ -36,6 +36,16 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SyncPlatformUserState::class,
         ]);
 
+        // WICHTIG: vor der Authenticate-Middleware einordnen. Sonst wirft auth:customer
+        // einen noch nicht lokal angemeldeten Nutzer (mit ?user-state=logged-in) sofort
+        // auf /customer/login, BEVOR der stille SSO-Login angestossen werden kann.
+        // (StartSession/ShareErrors stehen in der Priority-Liste vor AuthenticatesRequests,
+        // die Session ist also verfuegbar.)
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\SyncPlatformUserState::class,
+        );
+
         // Frontend-Anzeigesprache (mehrsprachige Events) anhand ?lang/Session/Cookie/Browser.
         // Auf web (Session + Cookie setzen) und api (Cookie lesen, zustandslos).
         $middleware->web(append: [
