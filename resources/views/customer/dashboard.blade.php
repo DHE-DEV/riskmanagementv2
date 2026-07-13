@@ -191,7 +191,11 @@
                 </div>
 
                 @if(session('success'))
-                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    <div x-data="{ show: true }"
+                         x-show="show"
+                         x-init="setTimeout(() => show = false, 15000)"
+                         x-transition.opacity.duration.500ms
+                         class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                         {{ session('success') }}
                     </div>
                 @endif
@@ -775,7 +779,13 @@
                                 ?: session('logged_in_employee_email')
                                 ?: $customerEmail;
                             $showAccountLine = $loginEmail !== $customerEmail;
+                            $pdsName = auth('customer')->user()->pds_name;
                         @endphp
+                        @if($pdsName)
+                            <p class="text-sm font-semibold text-gray-900 mb-1">
+                                {{ $pdsName }}
+                            </p>
+                        @endif
                         <p class="text-sm text-gray-700">
                             {{ $loginEmail }}
                         </p>
@@ -806,6 +816,25 @@
                                 </span>
                             </template>
                         </div>
+                    </div>
+
+                    {{-- Büro: Account-Stammdaten aus pds_account_* --}}
+                    @php
+                        $officeUser = auth('customer')->user();
+                    @endphp
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                            Büro
+                        </h3>
+                        @if($officeUser->pds_account_name)
+                            <p class="text-sm font-medium text-gray-900">{{ $officeUser->pds_account_name }}</p>
+                        @endif
+                        @if($officeUser->pds_account_address_line_1)
+                            <p class="text-sm text-gray-700 mt-1">{{ $officeUser->pds_account_address_line_1 }}</p>
+                        @endif
+                        @if($officeUser->pds_account_zip_code || $officeUser->pds_account_city)
+                            <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_zip_code ?? '').' '.($officeUser->pds_account_city ?? '')) }}</p>
+                        @endif
                     </div>
 
                     <!--
@@ -932,9 +961,24 @@
                                     @csrf
                                     @if($lastSync)
                                         <button type="submit"
+                                                x-data="{
+                                                    ts: {{ $lastSync->timestamp }},
+                                                    now: Math.floor(Date.now() / 1000),
+                                                    get label() {
+                                                        const diff = Math.max(0, this.now - this.ts);
+                                                        if (diff < 60) return 'gerade eben';
+                                                        const m = Math.floor(diff / 60);
+                                                        if (m < 60) return 'vor ' + m + ' Minute' + (m === 1 ? '' : 'n');
+                                                        const h = Math.floor(m / 60);
+                                                        if (h < 24) return 'vor ' + h + ' Stunde' + (h === 1 ? '' : 'n');
+                                                        const d = Math.floor(h / 24);
+                                                        return 'vor ' + d + ' Tag' + (d === 1 ? '' : 'en');
+                                                    }
+                                                }"
+                                                x-init="setInterval(() => now = Math.floor(Date.now() / 1000), 30000)"
                                                 title="Stand: {{ $lastSync->format('d.m.Y H:i:s') }} · klicken zum Aktualisieren"
                                                 class="px-2 py-1 bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 text-xs font-medium rounded border border-gray-200 transition-colors cursor-pointer">
-                                            {{ $lastSync->diffForHumans() }}
+                                            <span x-text="label"></span>
                                         </button>
                                     @else
                                         <button type="submit"
