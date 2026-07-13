@@ -226,14 +226,22 @@ class KeycloakAuthController extends Controller
             if ($email) {
                 $updateData['email'] = $email;
             }
-            // username/pds_account_id NUR schreiben, wenn die Spalte existiert. Sonst
-            // wuerde ein noch nicht deployter Migration-Stand den kompletten Login
-            // brechen (update() auf unbekannte Spalte -> SQL-Fehler -> keine Auth).
-            if ($ssoUsername !== null && Schema::hasColumn('customers', 'username')) {
-                $updateData['username'] = $ssoUsername;
-            }
-            if ($ssoAccountId !== null && Schema::hasColumn('customers', 'pds_account_id')) {
-                $updateData['pds_account_id'] = $ssoAccountId;
+            // Rohwerte des userinfo-Response zusaetzlich 1:1 in dedizierten Spalten
+            // ablegen (username + pds_*). NUR schreiben, wenn die Spalte existiert –
+            // sonst wuerde ein noch nicht deployter Migration-Stand den kompletten
+            // Login brechen (update() auf unbekannte Spalte -> SQL-Fehler -> keine Auth).
+            $ssoRawFields = [
+                'username' => $ssoUsername,
+                'pds_id' => $raw['id'] ?? $ssoUser->getId(),
+                'pds_name' => $raw['name'] ?? null,
+                'pds_username' => $ssoUsername,
+                'pds_email' => $raw['email'] ?? null,
+                'pds_account_id' => $ssoAccountId,
+            ];
+            foreach ($ssoRawFields as $ssoColumn => $ssoValue) {
+                if ($ssoValue !== null && Schema::hasColumn('customers', $ssoColumn)) {
+                    $updateData[$ssoColumn] = $ssoValue;
+                }
             }
         }
 
