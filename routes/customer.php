@@ -229,6 +229,11 @@ Route::prefix('customer')->name('customer.')->group(function () {
         // Customer Settings
         Route::get('/settings', function () {
             $customer = auth('customer')->user();
+
+            // Vor dem Anzeigen der Einstellungen IMMER die aktuellen Account-Daten
+            // aus der pds-api (__internal) ziehen (TTL 0 = kein Throttling).
+            $customer->syncPdsAccountData(0);
+
             $section = request()->query('section');
 
             // Auto-sync Passolution features when visiting travel-requirements
