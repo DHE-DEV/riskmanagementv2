@@ -39,3 +39,17 @@ folder_import_curl.sh
 
 # Screenshots
 myjack*.png
+Screenshot *.png
+
+# .env-Kopien (enthalten Secrets – .env wird oben schon ignoriert)
+* - Kopie.env
+* - Kopie.env:Zone.Identifier
+*:Zone.Identifier
+
+# Lokale DB-Dumps / Datenexporte (nicht ins Repo)
+/*.sql
+/*.csv
+
+# Sensible Exporte / lokale Testdaten
+/storage/keycloak-realm-export.json
+/trip-dh-mallorca.json
