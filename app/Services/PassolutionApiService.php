@@ -269,6 +269,87 @@ class PassolutionApiService
     }
 
     /**
+     * Stammdaten eines Accounts ueber den internen Endpoint per account_id abrufen
+     * (Service-Token). Gibt das `account`-Objekt zurueck, oder null bei Fehler /
+     * nicht gefunden. Pendant zu fetchAccountByEmail() fuer den ID-basierten Sync.
+     */
+    public function fetchAccountById($accountId): ?array
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token || ! $accountId) {
+            return null;
+        }
+
+        $url = "{$this->internalBaseUrl}/__internal/account/info";
+        $reqParams = ['account_id' => $accountId];
+        $t0 = microtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer '.$token,
+            ])
+                ->timeout(15)
+                ->get($url, $reqParams);
+
+            \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
+
+            if ($response->successful() && $response->json('account')) {
+                return $response->json('account');
+            }
+        } catch (\Exception $e) {
+            \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
+            Log::error('Passolution API: Stammdaten-Abruf per account_id fehlgeschlagen', [
+                'account_id' => $accountId,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Abo-Typ eines Accounts ueber den internen Endpunkt per account_id abrufen
+     * (Service-Token). Gibt 'standard' | 'premium' zurueck, oder null.
+     */
+    public function fetchSubscriptionTypeById($accountId): ?string
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token || ! $accountId) {
+            return null;
+        }
+
+        $url = "{$this->internalBaseUrl}/__internal/account/subscription";
+        $reqParams = ['account_id' => $accountId];
+        $t0 = microtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer '.$token,
+            ])
+                ->timeout(15)
+                ->get($url, $reqParams);
+
+            \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
+
+            if ($response->successful() && $response->json('type')) {
+                return $response->json('type');
+            }
+        } catch (\Exception $e) {
+            \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
+            Log::error('Passolution API: Abo-Abruf per account_id fehlgeschlagen', [
+                'account_id' => $accountId,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
      * Fetch general infosystem data from Passolution API
      */
     public function fetchGeneralInfo(string $lang = 'de', int $page = 1): array

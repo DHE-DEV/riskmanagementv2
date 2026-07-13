@@ -24,6 +24,12 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::middleware(['auth:'.config('fortify.guard')])->group(function () {
         Route::get('/dashboard', function () {
             $customer = auth('customer')->user();
+
+            // Account-Stammdaten (pds_account_*) per pds-api gegen die aktuellen
+            // Werte abgleichen – anhand pds_account_id, gedrosselt auf 5 Min.
+            // Damit greift z. B. ein Abo-Wechsel ohne erneuten Login.
+            $customer->syncPdsAccountData(5);
+
             $passolutionService = app(\App\Services\PassolutionService::class);
 
             // Update subscription if Passolution is active and data is stale

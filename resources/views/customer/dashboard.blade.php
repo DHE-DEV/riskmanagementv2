@@ -888,26 +888,31 @@
                                     </span>
                                 @endif
                             </div>
+                            @php
+                                // Aktuelles Abo primaer aus dem beim SSO-Login synchronisierten
+                                // pds_account_subscription_type; Fallback auf altes $subscriptionType.
+                                $abo = auth('customer')->user()->pds_account_subscription_type ?: ($subscriptionType ?? null);
+                            @endphp
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Abo:</span>
-                                @if(($subscriptionType ?? null) === 'premium')
+                                @if($abo === 'premium')
                                     <span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded border border-purple-200">
                                         Premium
                                     </span>
-                                @elseif(($subscriptionType ?? null) === 'standard')
+                                @elseif($abo === 'standard')
                                     <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
                                         Standard
                                     </span>
                                 @else
                                     <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
-                                        Unbekannt
+                                        {{ $abo ? ucfirst($abo) : 'Unbekannt' }}
                                     </span>
                                 @endif
                             </div>
                             @if(config('feed.dashboard_konto_funktionen_enabled'))
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Funktionen:</span>
-                                @if(($subscriptionType ?? null) === 'premium')
+                                @if($abo === 'premium')
                                     <span class="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
                                         Voller Zugriff
                                     </span>
