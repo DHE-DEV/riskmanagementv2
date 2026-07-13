@@ -769,7 +769,7 @@
                              businessTypeLabels = $event.detail.labels;
                          ">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            Profil
+                            Benutzer
                         </h3>
                         @php
                             $customerEmail = auth('customer')->user()->email;
@@ -827,6 +827,9 @@
                         </h3>
                         @if($officeUser->pds_account_name)
                             <p class="text-sm font-medium text-gray-900">{{ $officeUser->pds_account_name }}</p>
+                        @endif
+                        @if($officeUser->pds_account_first_name || $officeUser->pds_account_last_name)
+                            <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_first_name ?? '').' '.($officeUser->pds_account_last_name ?? '')) }}</p>
                         @endif
                         @if($officeUser->pds_account_address_line_1)
                             <p class="text-sm text-gray-700 mt-1">{{ $officeUser->pds_account_address_line_1 }}</p>
