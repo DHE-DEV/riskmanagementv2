@@ -2588,6 +2588,11 @@
                         'customer.travel_detail_link.media.manage',
                         'customer.travel_detail_link.email_subscriptions',
                     ];
+                    // Karten, deren Aktiv-Status an einer ANDEREN Berechtigung haengt
+                    // als am eigenen Karten-Key.
+                    $featureKeyAliases = [
+                        'customer.send_emails' => 'customer.travel_detail_link.email_subscriptions',
+                    ];
                     $featureCards = [
                         'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],
                         'content.cruise' => ['icon' => 'fa-ship', 'label' => 'Kreuzfahrt-Inhalte', 'desc' => 'Informationen zu Kreuzfahrtrouten, Häfen, Einreisebestimmungen für Kreuzfahrtreisende und hafenbezogene Sicherheitshinweise.'],
@@ -2611,10 +2616,11 @@
                     @if(!in_array($featureKey, $hiddenFeatures) && ($featureCardsVisible[$featureKey] ?? true))
                         @php
                             // Premium-Karten: aktiv bei Premium-Abo. Sonst: aktiv, wenn
-                            // die Berechtigung in der Feature-Liste enthalten ist.
+                            // die (ggf. per Alias gemappte) Berechtigung vorhanden ist.
+                            $checkKey = $featureKeyAliases[$featureKey] ?? $featureKey;
                             $isActive = in_array($featureKey, $premiumOnlyFeatures)
                                 ? $isPremium
-                                : in_array($featureKey, $activeFeatures);
+                                : in_array($checkKey, $activeFeatures);
                         @endphp
                         <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5">
                             <div class="flex items-start gap-4">
