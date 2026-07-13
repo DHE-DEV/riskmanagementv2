@@ -62,10 +62,13 @@ class SyncPlatformUserState
         // Plattform angemeldet -> lokal sicherstellen, dass jemand angemeldet ist.
         if ($state === 'logged-in') {
             if (! $guard->check()) {
-                // SSO-Login anstossen; danach auf die urspruengliche Seite
-                // (ohne user-state-Parameter) zurueckfuehren.
+                // SSO-Login STILL anstossen (silent=1): kein prompt=login, damit die
+                // bereits bestehende SSO-Session genutzt wird und der Nutzer nicht auf
+                // der Login-Seite landet. Danach zurueck auf die urspruengliche Seite
+                // (ohne user-state-Parameter).
                 return redirect()->route('auth.keycloak.redirect', [
                     'redirect' => $this->urlWithoutState($request),
+                    'silent' => 1,
                 ]);
             }
 

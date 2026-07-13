@@ -70,26 +70,36 @@ class KeycloakAuthController extends Controller
             $request->session()->put('sso_iframe_login', true);
         }
 
+        // Stiller Login (silent=1): NICHT prompt=login erzwingen, damit eine bereits
+        // bestehende SSO-Session genutzt wird und der Nutzer ohne Login-Formular
+        // zurueckkommt. Wird vom Plattform-Status-Sync (user-state=logged-in) gesetzt.
+        $silent = $request->boolean('silent');
+
         $driver = $this->ssoDriver();
 
         if ($driver === 'keycloak') {
             // prompt=login erzwingt eine frische Authentifizierung (Login-Formular),
-            // auch wenn noch eine Keycloak-SSO-Session besteht – ersetzt den frueheren
-            // Logout-vor-Login-Umweg und vermeidet die Abmelde-Bestaetigungsseite.
-            return Socialite::driver('keycloak')
+            // auch wenn noch eine Keycloak-SSO-Session besteht. Beim stillen Login
+            // bewusst weglassen, damit die bestehende Session greift.
+            $keycloak = Socialite::driver('keycloak')
                 ->setScopes(['openid', 'profile', 'email'])
-                ->with(['prompt' => 'login'])
-                ->enablePKCE()
-                ->redirect();
+                ->enablePKCE();
+
+            if (! $silent) {
+                $keycloak->with(['prompt' => 'login']);
+            }
+
+            return $keycloak->redirect();
         }
 
         // Laravel Passport (Passolution) – Standard-OAuth2 Authorization-Code-Flow.
         // Optional prompt=login, um eine frische Anmeldung zu erzwingen (damit ein
         // Logout nicht durch eine bestehende Provider-Session sofort wieder
         // ueberschrieben wird) – wirkt nur, wenn der Auth-Server den Parameter kennt.
+        // Beim stillen Login (silent) weglassen.
         $passport = Socialite::driver($driver);
 
-        if (config('services.sso.prompt_login')) {
+        if (config('services.sso.prompt_login') && ! $silent) {
             $passport->with(['prompt' => 'login']);
         }
 
