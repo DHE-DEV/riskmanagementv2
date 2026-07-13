@@ -2603,10 +2603,12 @@
                         'subscription' => ['icon' => 'fa-credit-card', 'label' => 'Abonnement', 'desc' => 'Verwaltung Ihres Abonnements mit Lizenzdetails, Laufzeit und verfügbaren Erweiterungen.'],
                     ];
                     $hiddenFeatures = ['embed.corona', 'content.infosystem', 'content.cruise_operator'];
+                    // Per .env ein-/ausblendbare Karten (Default sichtbar).
+                    $featureCardsVisible = config('customer_settings.feature_cards', []);
                 @endphp
 
                 @foreach($featureCards as $featureKey => $card)
-                    @if(!in_array($featureKey, $hiddenFeatures))
+                    @if(!in_array($featureKey, $hiddenFeatures) && ($featureCardsVisible[$featureKey] ?? true))
                         @php
                             // Premium-Karten: aktiv bei Premium-Abo. Sonst: aktiv, wenn
                             // die Berechtigung in der Feature-Liste enthalten ist.

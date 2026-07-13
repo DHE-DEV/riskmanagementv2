@@ -36,4 +36,18 @@ return [
         // "Produktaktivierung" im Bereich Travel Requirements Service
         'product_activation' => env('CUSTOMER_SETTINGS_PRODUCT_ACTIVATION_ENABLED', true),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Einzelne Feature-Karten im Bereich Travel Requirements Service
+    |--------------------------------------------------------------------------
+    |
+    | Pro Karte per ENV ein-/ausblendbar (Default: true = sichtbar). Keys, die
+    | hier nicht stehen, sind immer sichtbar.
+    |
+    */
+    'feature_cards' => [
+        'customer.travel_detail_link.advert.manage' => env('CUSTOMER_SETTINGS_TRS_ADVERT_ENABLED', true), // Werbung verwalten
+        'subscription'                              => env('CUSTOMER_SETTINGS_TRS_SUBSCRIPTION_ENABLED', true), // Abonnement
+    ],
 ];
