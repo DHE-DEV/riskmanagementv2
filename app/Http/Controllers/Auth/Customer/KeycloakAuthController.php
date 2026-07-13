@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -225,10 +226,13 @@ class KeycloakAuthController extends Controller
             if ($email) {
                 $updateData['email'] = $email;
             }
-            if ($ssoUsername !== null) {
+            // username/pds_account_id NUR schreiben, wenn die Spalte existiert. Sonst
+            // wuerde ein noch nicht deployter Migration-Stand den kompletten Login
+            // brechen (update() auf unbekannte Spalte -> SQL-Fehler -> keine Auth).
+            if ($ssoUsername !== null && Schema::hasColumn('customers', 'username')) {
                 $updateData['username'] = $ssoUsername;
             }
-            if ($ssoAccountId !== null) {
+            if ($ssoAccountId !== null && Schema::hasColumn('customers', 'pds_account_id')) {
                 $updateData['pds_account_id'] = $ssoAccountId;
             }
         }
