@@ -31,7 +31,6 @@
         <!-- Travel Requirements Service -->
         @php($trsExternalUrl = config('app.navigation_trs_external_url'))
         <a href="{{ $trsExternalUrl ?: route('travel-requirements-service') }}"
-           @if($trsExternalUrl) target="_blank" rel="noopener noreferrer" @endif
            class="p-3 {{ $active === 'travel-requirements-service' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Requirements Service">
             <i class="fa-regular fa-browser text-2xl" aria-hidden="true"></i>
         </a>
