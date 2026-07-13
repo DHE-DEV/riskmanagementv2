@@ -39,21 +39,11 @@ Route::prefix('customer')->name('customer.')->group(function () {
                 $customer->refresh();
             }
 
-            // Abo-Typ (standard|premium) ueber den Service-Token anhand der
-            // SSO-Identitaet ermitteln – funktioniert auch ohne hinterlegten
-            // per-User-Token. Kurz gecacht, um die API nicht bei jedem Aufruf
-            // zu treffen.
+            // SSO-Identitaet fuer den "Mitglied seit"-Lookup. Das Abo kommt jetzt
+            // ausschliesslich aus pds_account_subscription_type (via syncPdsAccountData).
             $ssoEmail = session('keycloak_email')
                 ?: session('logged_in_employee_email')
                 ?: $customer->email;
-
-            $subscriptionType = $ssoEmail
-                ? \Illuminate\Support\Facades\Cache::remember(
-                    'pds_sub_type_'.md5($ssoEmail),
-                    now()->addMinutes(15),
-                    fn () => app(\App\Services\PassolutionApiService::class)->fetchSubscriptionTypeByEmail($ssoEmail)
-                )
-                : null;
 
             // "Mitglied seit": echtes Account-Anlegedatum aus der API (Service-Token),
             // statt des Plattform-Datensatz-Datums (das bei JIT-Kunden abweicht).
@@ -74,7 +64,6 @@ Route::prefix('customer')->name('customer.')->group(function () {
             }
 
             return view('customer.dashboard', [
-                'subscriptionType' => $subscriptionType,
                 'memberSince' => $memberSince,
             ]);
         })->name('dashboard');

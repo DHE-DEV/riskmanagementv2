@@ -889,9 +889,9 @@
                                 @endif
                             </div>
                             @php
-                                // Aktuelles Abo primaer aus dem beim SSO-Login synchronisierten
-                                // pds_account_subscription_type; Fallback auf altes $subscriptionType.
-                                $abo = auth('customer')->user()->pds_account_subscription_type ?: ($subscriptionType ?? null);
+                                // Aktuelles Abo aus dem per account_id synchronisierten Feld
+                                // (syncPdsAccountData, TTL 5 Min).
+                                $abo = auth('customer')->user()->pds_account_subscription_type;
                             @endphp
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Abo:</span>
