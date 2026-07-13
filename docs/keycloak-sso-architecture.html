@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keycloak SSO Architektur - Passolution</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 40px;
+            color: #1e293b;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #0f172a;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+        .diagram {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 20px;
+        }
+        .box {
+            border-radius: 12px;
+            padding: 18px 24px;
+            text-align: center;
+            min-width: 180px;
+            position: relative;
+        }
+        .user-box {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+        }
+        .keycloak-box {
+            background: #065f46;
+            border: 2px solid #047857;
+            color: white;
+            min-width: 500px;
+            padding: 24px 32px;
+        }
+        .app-box {
+            background: white;
+            border: 2px solid #6366f1;
+            min-width: 190px;
+        }
+        .app-box-external {
+            background: #fdf2f8;
+            border: 2px dashed #ec4899;
+            min-width: 190px;
+        }
+        .db-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            min-width: 150px;
+        }
+        .box-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .box-subtitle {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        .box-detail {
+            font-size: 10px;
+            margin-top: 6px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+        .arrow-container {
+            display: flex;
+            justify-content: center;
+            margin: 8px 0;
+        }
+        .arrow-down {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            font-size: 11px;
+        }
+        .arrow-down .line {
+            width: 2px;
+            height: 20px;
+            background: #94a3b8;
+        }
+        .arrow-down .head {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #94a3b8;
+        }
+        .arrow-label {
+            font-size: 10px;
+            color: #64748b;
+            margin: 3px 0;
+            font-style: italic;
+        }
+        .arrow-split-4 {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 8px 0;
+            position: relative;
+        }
+        .arrow-split-4::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: calc(50% - 310px);
+            width: 620px;
+            height: 2px;
+            background: #94a3b8;
+        }
+        .sso-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+        .role-badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .feature-tag {
+            font-size: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .section-label {
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 20px 0 10px;
+        }
+        .db-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+        .legend {
+            max-width: 1100px;
+            margin: 40px auto 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .legend h3 {
+            font-size: 14px;
+            margin: 0 0 12px;
+        }
+        .legend-items {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .legend-section {
+            margin-top: 16px;
+        }
+        .legend-section h4 {
+            font-size: 12px;
+            margin: 0 0 8px;
+            color: #64748b;
+        }
+        .legend-colors {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-color-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+        .legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+        .plus-box {
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            min-width: 190px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .plus-icon {
+            font-size: 28px;
+            color: #94a3b8;
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body>
+    <h1>Keycloak SSO Architektur - Passolution</h1>
+    <div class="subtitle">Zentrale Benutzerverwaltung mit Single Sign-On fur alle Anwendungen</div>
+
+    <div class="diagram">
+        <!-- User -->
+        <div class="row">
+            <div class="box user-box">
+                <div class="box-title">Benutzer</div>
+                <div class="box-subtitle">Browser / App</div>
+                <div class="box-detail">1x Login = Zugang zu allen Apps</div>
+            </div>
+        </div>
+
+        <!-- Arrow down -->
+        <div class="arrow-container">
+            <div class="arrow-down">
+                <div class="arrow-label">Login-Anfrage</div>
+                <div class="line"></div>
+                <div class="head"></div>
+            </div>
+        </div>
+
+        <!-- Keycloak -->
+        <div class="row">
+            <div class="box keycloak-box">
+                <div class="box-title">Keycloak - Identity Provider</div>
+                <div class="box-subtitle">auth.passolution.de</div>
+                <div class="sso-badge">SINGLE SIGN-ON</div>
+                <div class="role-badge">ROLLEN &amp; ZUGRIFFSSTEUERUNG</div>
+                <div class="features">
+                    <span class="feature-tag">Benutzer &amp; Passworter</span>
+                    <span class="feature-tag">OIDC / OAuth 2.0</span>
+                    <span class="feature-tag">PKCE</span>
+                    <span class="feature-tag">Admin API</span>
+                </div>
+                <div class="box-detail">
+                    Realm: passolution | Zentrale User-Datenbank<br>
+                    User in einer App anlegen = automatisch in allen Apps verfugbar
+                </div>
+            </div>
+        </div>
+
+        <!-- Split arrows to 4 apps -->
+        <div class="arrow-container">
+            <div class="arrow-down">
+                <div class="arrow-label">Access Token + Refresh Token</div>
+                <div class="line"></div>
+            </div>
+        </div>
+        <div class="arrow-split-4">
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+                <div class="arrow-label">web-passolution</div>
+            </div>
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+                <div class="arrow-label">platform-passolution</div>
+            </div>
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+                <div class="arrow-label">partner-portal-xyz</div>
+            </div>
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+                <div class="arrow-label">Neuer Client</div>
+            </div>
+        </div>
+
+        <!-- Apps Row -->
+        <div class="row">
+            <div class="box app-box">
+                <div class="box-title">web.passolution.de</div>
+                <div class="box-subtitle">Bestandssystem</div>
+                <div class="box-detail">
+                    Client: web-passolution<br>
+                    Reisedaten, Legacy-Funktionen
+                </div>
+            </div>
+            <div class="box app-box">
+                <div class="box-title">platform.passolution.de</div>
+                <div class="box-subtitle">Travel Information Platform</div>
+                <div class="box-detail">
+                    Client: platform-passolution<br>
+                    GTM, TravelAlert, Einreise
+                </div>
+            </div>
+            <div class="box app-box-external">
+                <div class="box-title">Partner-Portal</div>
+                <div class="box-subtitle">Externer Anbieter</div>
+                <div class="box-detail">
+                    Eigener Client in Keycloak<br>
+                    Gleiche User, gleiche Passworter
+                </div>
+            </div>
+            <div class="box plus-box">
+                <div class="plus-icon">+</div>
+                <div class="box-subtitle">Weitere App</div>
+                <div class="box-detail">Beliebig erweiterbar</div>
+            </div>
+        </div>
+
+        <!-- Databases -->
+        <div class="section-label">App-spezifische Daten (je App eigene Datenbank)</div>
+        <div class="db-row">
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+            </div>
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+            </div>
+            <div class="arrow-down">
+                <div class="line"></div>
+                <div class="head"></div>
+            </div>
+            <div class="arrow-down" style="visibility:hidden;">
+                <div class="line"></div>
+                <div class="head"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="box db-box">
+                <div class="box-title">MySQL</div>
+                <div class="box-subtitle">webold_usersweb</div>
+                <div class="box-detail">Profile, Reisedaten,<br>Einstellungen</div>
+            </div>
+            <div class="box db-box">
+                <div class="box-title">PostgreSQL</div>
+                <div class="box-subtitle">customers</div>
+                <div class="box-detail">Customer-Profile, Events,<br>Branches, Employees</div>
+            </div>
+            <div class="box db-box">
+                <div class="box-title">Eigene DB</div>
+                <div class="box-subtitle">Partner-Daten</div>
+                <div class="box-detail">Vom Partner verwaltet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <h3>Ablauf</h3>
+        <div class="legend-items">
+            <div class="legend-item"><span style="font-weight:700;">1.</span> User klickt "Login" in einer beliebigen App</div>
+            <div class="legend-item"><span style="font-weight:700;">2.</span> App leitet zu Keycloak weiter</div>
+            <div class="legend-item"><span style="font-weight:700;">3.</span> User gibt Passwort bei Keycloak ein</div>
+            <div class="legend-item"><span style="font-weight:700;">4.</span> Keycloak gibt Token an App zuruck</div>
+            <div class="legend-item"><span style="font-weight:700;">5.</span> User ist eingeloggt - auch in allen anderen Apps (SSO)</div>
+        </div>
+
+        <div class="legend-section">
+            <h4>Externen Anbieter anbinden</h4>
+            <div class="legend-items">
+                <div class="legend-item"><span style="font-weight:700;">1.</span> Neuen Client in Keycloak anlegen</div>
+                <div class="legend-item"><span style="font-weight:700;">2.</span> Client-ID + Secret an Partner geben</div>
+                <div class="legend-item"><span style="font-weight:700;">3.</span> Partner implementiert OIDC-Login</div>
+                <div class="legend-item"><span style="font-weight:700;">4.</span> Alle bestehenden User konnen sich sofort einloggen</div>
+            </div>
+        </div>
+
+        <div class="legend-section">
+            <h4>Zugriffssteuerung</h4>
+            <div class="legend-items">
+                <div class="legend-item">Uber Keycloak-Rollen und Client-Scopes kann pro App gesteuert werden, welche User Zugriff haben</div>
+            </div>
+        </div>
+
+        <div class="legend-section">
+            <h4>Farblegende</h4>
+            <div class="legend-colors">
+                <div class="legend-color-item"><div class="legend-swatch" style="background:#dbeafe;border:2px solid #3b82f6;"></div> Benutzer</div>
+                <div class="legend-color-item"><div class="legend-swatch" style="background:#065f46;border:2px solid #047857;"></div> Keycloak (zentral)</div>
+                <div class="legend-color-item"><div class="legend-swatch" style="background:white;border:2px solid #6366f1;"></div> Eigene Apps</div>
+                <div class="legend-color-item"><div class="legend-swatch" style="background:#fdf2f8;border:2px dashed #ec4899;"></div> Externe Partner</div>
+                <div class="legend-color-item"><div class="legend-swatch" style="background:#fef3c7;border:2px solid #f59e0b;"></div> Datenbanken</div>
+                <div class="legend-color-item"><div class="legend-swatch" style="background:#f1f5f9;border:2px dashed #94a3b8;"></div> Erweiterbar</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
