@@ -960,7 +960,7 @@
                                 $lastSync = auth('customer')->user()->pds_last_synced_at;
                             @endphp
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-700">Zuletzt synchronisiert:</span>
+                                <span class="text-sm text-gray-700">Aktualisiert:</span>
                                 <form method="POST" action="{{ route('customer.account.sync-pds') }}" class="inline-flex">
                                     @csrf
                                     @if($lastSync)
