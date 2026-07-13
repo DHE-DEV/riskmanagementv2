@@ -2582,7 +2582,6 @@
                     $isPremium = $subscriptionType === 'premium';
                     // Diese Karten haengen am Premium-Abo statt an der Feature-Liste.
                     $premiumOnlyFeatures = [
-                        'customer.travel_detail_link.create',
                         'customer.travel_detail_link.manage',
                         'customer.travel_detail_link.inspiration.manage',
                         'customer.travel_detail_link.media.manage',
