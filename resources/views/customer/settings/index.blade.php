@@ -2606,6 +2606,10 @@
                     $premiumHintFeatures = array_merge($premiumOnlyFeatures, [
                         'content.country',
                     ]);
+                    // Karten mit Hinweis "Optional zubuchbar" (statt Premium-Hinweis).
+                    $optionalFeatures = [
+                        'content.tour_operator',
+                    ];
                     $featureCards = [
                         'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],
                         'content.cruise' => ['icon' => 'fa-ship', 'label' => 'Kreuzfahrt-Inhalte', 'desc' => 'Informationen zu Kreuzfahrtrouten, Häfen, Einreisebestimmungen für Kreuzfahrtreisende und hafenbezogene Sicherheitshinweise.'],
@@ -2651,6 +2655,10 @@
                                     @if(!$isActive && in_array($featureKey, $premiumHintFeatures))
                                         <p class="text-xs font-medium text-purple-600 mt-1">
                                             <i class="fas fa-crown mr-1"></i>In Premium enthalten
+                                        </p>
+                                    @elseif(!$isActive && in_array($featureKey, $optionalFeatures))
+                                        <p class="text-xs font-medium text-amber-600 mt-1">
+                                            <i class="fas fa-cart-plus mr-1"></i>Optional zubuchbar
                                         </p>
                                     @endif
                                 </div>
