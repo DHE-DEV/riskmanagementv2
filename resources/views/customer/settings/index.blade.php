@@ -2588,6 +2588,11 @@
                         'customer.travel_detail_link.media.manage',
                         'customer.travel_detail_link.email_subscriptions',
                     ];
+                    // Karten, die bereits im Standard-Abo (und Premium) aktiv sind –
+                    // unabhaengig von der Feature-Liste.
+                    $standardFeatures = [
+                        'customer.travel_detail_link.create',
+                    ];
                     // Karten, deren Aktiv-Status an einer ANDEREN Berechtigung haengt
                     // als am eigenen Karten-Key.
                     $featureKeyAliases = [
@@ -2624,9 +2629,13 @@
                             // Premium-Karten: aktiv bei Premium-Abo. Sonst: aktiv, wenn
                             // die (ggf. per Alias gemappte) Berechtigung vorhanden ist.
                             $checkKey = $featureKeyAliases[$featureKey] ?? $featureKey;
-                            $isActive = in_array($featureKey, $premiumOnlyFeatures)
-                                ? $isPremium
-                                : in_array($checkKey, $activeFeatures);
+                            if (in_array($featureKey, $premiumOnlyFeatures)) {
+                                $isActive = $isPremium;
+                            } elseif (in_array($featureKey, $standardFeatures)) {
+                                $isActive = in_array($subscriptionType, ['standard', 'premium'], true);
+                            } else {
+                                $isActive = in_array($checkKey, $activeFeatures);
+                            }
                         @endphp
                         <div class="bg-white rounded-lg border border-gray-200 p-5 mt-5">
                             <div class="flex items-start gap-4">
