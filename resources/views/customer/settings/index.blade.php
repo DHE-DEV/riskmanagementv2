@@ -2582,6 +2582,7 @@
                     $isPremium = $subscriptionType === 'premium';
                     // Diese Karten haengen am Premium-Abo statt an der Feature-Liste.
                     $premiumOnlyFeatures = [
+                        'customer.travel_detail_link.create_external',
                         'customer.travel_detail_link.manage',
                         'customer.travel_detail_link.inspiration.manage',
                         'customer.travel_detail_link.media.manage',
@@ -2603,7 +2604,8 @@
                         'content.individual' => ['icon' => 'fa-user-pen', 'label' => 'Individuelle Inhalte', 'desc' => 'Erstellung und Verwaltung eigener Inhalte und Informationen, die individuell für Ihre Reisenden bereitgestellt werden.'],
                         'content.tour_operator' => ['icon' => 'fa-building', 'label' => 'Veranstalter-Inhalte', 'desc' => 'Zugriff auf veranstalterspezifische Inhalte mit Pauschalreise-Informationen, Hoteldetails und Zielgebietsbeschreibungen.'],
                         'customer.send_emails' => ['icon' => 'fa-envelope', 'label' => 'E-Mail Abo für Endkunden', 'desc' => 'Versand von E-Mails mit Reiseinformationen, Einreisebestimmungen und Sicherheitshinweisen direkt an Ihre Reisenden.'],
-                        'customer.travel_detail_link.create' => ['icon' => 'fa-link', 'label' => 'Reisedetail-Links erstellen', 'desc' => 'Erstellung personalisierter Reisedetail-Links mit individuellen Einreisebestimmungen und Informationen für jeden Reisenden.'],
+                        'customer.travel_detail_link.create' => ['icon' => 'fa-link', 'label' => 'Reisedetail-Links erstellen', 'desc' => 'Erstellung personalisierter Reisedetail-Links mit individuellen Einreisebestimmungen und Informationen für jeden Reisenden – direkt im Travel Requirements Service.'],
+                        'customer.travel_detail_link.create_external' => ['icon' => 'fa-plug', 'label' => 'Reisedetail-Links in externen Programmen erstellen', 'desc' => 'Erstellung von Reisedetail-Links direkt aus externen Systemen wie Backoffice-, Frontoffice- und weiteren Drittanbieter-Programmen über unsere Schnittstelle.'],
                         'customer.travel_detail_link.manage' => ['icon' => 'fa-sliders', 'label' => 'Reisedetail-Links verwalten', 'desc' => 'Verwaltung, Bearbeitung und Überwachung bestehender Reisedetail-Links mit Zugriffsstatistiken und Konfigurationsoptionen.'],
                         'customer.travel_detail_link.advert.manage' => ['icon' => 'fa-bullhorn', 'label' => 'Werbung verwalten', 'desc' => 'Integration und Verwaltung von Werbeinhalten und Partnerbannern in Ihren Reisedetail-Links.'],
                         'customer.travel_detail_link.email_subscriptions' => ['icon' => 'fa-bell', 'label' => 'Benachrichtigungssystem', 'desc' => 'Hinterlegen Sie E-Mail-Adressen und wählen Sie, ob Sie über Änderungen der Einreisebestimmungen und relevante Ereignisse für alle oder ausgewählte Länder informiert werden möchten.'],
