@@ -2583,6 +2583,8 @@
                     // Diese Karten haengen am Premium-Abo statt an der Feature-Liste.
                     $premiumOnlyFeatures = [
                         'content.cruise',
+                        'content.individual',
+                        'customer.send_emails',
                         'customer.travel_detail_link.create_external',
                         'customer.travel_detail_link.manage',
                         'customer.travel_detail_link.inspiration.manage',
