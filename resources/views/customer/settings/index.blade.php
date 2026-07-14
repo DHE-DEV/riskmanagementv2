@@ -2594,6 +2594,7 @@
                     // Karten, die bereits im Standard-Abo (und Premium) aktiv sind –
                     // unabhaengig von der Feature-Liste.
                     $standardFeatures = [
+                        'content.tour_operator',
                         'customer.travel_detail_link.create',
                     ];
                     // Karten, deren Aktiv-Status an einer ANDEREN Berechtigung haengt
@@ -2607,9 +2608,7 @@
                         'content.country',
                     ]);
                     // Karten mit Hinweis "Optional zubuchbar" (statt Premium-Hinweis).
-                    $optionalFeatures = [
-                        'content.tour_operator',
-                    ];
+                    $optionalFeatures = [];
                     $featureCards = [
                         'content.country' => ['icon' => 'fa-earth-americas', 'label' => 'Länder-Inhalte', 'desc' => 'Zugriff auf umfassende Länderinformationen mit Einreisebestimmungen, Visaanforderungen, Gesundheitshinweisen und Sicherheitsbewertungen.'],
                         'content.cruise' => ['icon' => 'fa-ship', 'label' => 'Kreuzfahrt-Inhalte', 'desc' => 'Informationen zu Kreuzfahrtrouten, Häfen, Einreisebestimmungen für Kreuzfahrtreisende und hafenbezogene Sicherheitshinweise.'],
