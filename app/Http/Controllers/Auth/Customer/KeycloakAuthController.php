@@ -144,6 +144,9 @@ class KeycloakAuthController extends Controller
 
         $customer = null;
         $employee = null;
+        // Bei der Neuanlage werden die Stammdaten bereits frisch geholt – der
+        // Abgleich weiter unten wuerde denselben Request nur wiederholen.
+        $justProvisioned = false;
 
         // 1. Try to find customer by SSO provider_id
         $customer = Customer::where('provider', $driver)
@@ -195,13 +198,18 @@ class KeycloakAuthController extends Controller
                 'provider_refresh_token' => $ssoUser->refreshToken ?? null,
                 'avatar' => $ssoUser->getAvatar(),
                 'email_verified_at' => now(),
-                // Stammdaten aus der Passolution-API (nur wenn gefunden)
+                // Stammdaten aus der Passolution-API (nur wenn gefunden).
+                // address_line_1 enthaelt Strasse + Hausnummer und wird aufgeteilt,
+                // damit die company_*-Spalten wie im Admin-Formular belegt sind.
                 'company_name' => $account['name'] ?? null,
-                'company_street' => $account['address_line_1'] ?? null,
+                'company_street' => Customer::parseStreet($account['address_line_1'] ?? null),
+                'company_house_number' => Customer::parseHouseNumber($account['address_line_1'] ?? null),
                 'company_postal_code' => $account['zip_code'] ?? null,
                 'company_city' => $account['city'] ?? null,
                 'company_country' => $account['country_code'] ?? null,
             ]);
+
+            $justProvisioned = true;
 
             Log::info('SSO login: neuer Kunde automatisch angelegt', [
                 'driver' => $driver,
@@ -277,6 +285,21 @@ class KeycloakAuthController extends Controller
         }
 
         $customer->update($updateData);
+
+        // Stammdaten (inkl. Firmenadresse) bei JEDEM Login frisch gegen die
+        // Passolution-API abgleichen – eine Adressaenderung auf der Plattform
+        // schlaegt damit sofort im /admin-Datensatz durch. Ein Fehlschlag darf
+        // die Anmeldung nicht blockieren.
+        if (! $justProvisioned) {
+            try {
+                $customer->syncPdsAccountData(0);
+            } catch (\Throwable $e) {
+                Log::warning('SSO login: Stammdaten-Abgleich fehlgeschlagen', [
+                    'customer_id' => $customer->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         Auth::guard('customer')->login($customer, true);
 

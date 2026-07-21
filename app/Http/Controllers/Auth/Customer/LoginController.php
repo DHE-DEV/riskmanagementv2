@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -97,6 +98,18 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
+
+        // Stammdaten (inkl. Firmenadresse) gegen die Passolution-API abgleichen,
+        // damit eine dort geaenderte Adresse im Kundendatensatz ankommt. Ein
+        // Fehlschlag darf die Anmeldung nicht blockieren.
+        try {
+            $customer->syncPdsAccountData(0);
+        } catch (\Throwable $e) {
+            Log::warning('Login: Stammdaten-Abgleich fehlgeschlagen', [
+                'customer_id' => $customer->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->intended(route('customer.dashboard'))
             ->with('success', 'Erfolgreich angemeldet!');

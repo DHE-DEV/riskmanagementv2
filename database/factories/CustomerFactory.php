@@ -63,7 +63,9 @@ class CustomerFactory extends Factory
             'service1_customer_id' => null,
             'phone' => null,
             'address' => null,
-            'account_type' => null,
+            // Spalte ist NOT NULL (Default 'standard') – explizites null bricht
+            // jeden Factory-Insert mit einem Integrity-Constraint-Fehler.
+            'account_type' => 'standard',
         ];
     }
 

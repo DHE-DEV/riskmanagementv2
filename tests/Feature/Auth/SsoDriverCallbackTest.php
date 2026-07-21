@@ -25,12 +25,24 @@ function fakeSsoUser(string $id, string $email): SocialiteUser
     return $user;
 }
 
-beforeEach(function () {
-    // JIT-Provisioning ruft den PDS-Stammdaten-Lookup auf – im Test stubben,
-    // damit kein externer HTTP-Request rausgeht.
+/**
+ * Bindet einen gestubbten PassolutionApiService, der die angegebenen Stammdaten
+ * liefert (oder null). Verhindert externe HTTP-Requests im Test.
+ *
+ * @param  array<string, mixed>|null  $account
+ */
+function fakePassolutionApi(?array $account = null): void
+{
     $service = Mockery::mock(PassolutionApiService::class);
-    $service->shouldReceive('fetchAccountByEmail')->andReturn(null);
+    $service->shouldReceive('fetchAccountByEmail')->andReturn($account);
+    $service->shouldReceive('fetchSubscriptionWithToken')->andReturn(null);
+    $service->shouldReceive('fetchSubscriptionById')->andReturn(null);
     app()->instance(PassolutionApiService::class, $service);
+}
+
+beforeEach(function () {
+    // JIT-Provisioning und der Stammdaten-Abgleich rufen die PDS-API auf.
+    fakePassolutionApi();
 });
 
 test('laravelpassport-Treiber legt neuen Kunden mit provider=laravelpassport an', function () {
@@ -168,6 +180,93 @@ test('normaler (Nicht-iframe) Login leitet weiterhin aufs Dashboard', function (
     Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
 
     $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+});
+
+test('JIT-Provisioning splittet address_line_1 in Strasse und Hausnummer', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    fakePassolutionApi([
+        'name' => 'Reisebuero Muster GmbH',
+        'address_line_1' => 'Musterweg 12a',
+        'zip_code' => '80331',
+        'city' => 'Muenchen',
+        'country_code' => 'DE',
+    ]);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-neu', 'neu@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    $customer = Customer::where('email', 'neu@example.com')->first();
+    expect($customer->company_name)->toBe('Reisebuero Muster GmbH');
+    expect($customer->company_street)->toBe('Musterweg');
+    expect($customer->company_house_number)->toBe('12a');
+    expect($customer->company_postal_code)->toBe('80331');
+    expect($customer->company_city)->toBe('Muenchen');
+    expect($customer->company_country)->toBe('DE');
+});
+
+test('geaenderte Adresse wird beim naechsten Login in den Kundendatensatz uebernommen', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    $customer = Customer::factory()->create([
+        'email' => 'umzug@example.com',
+        'provider' => 'laravelpassport',
+        'provider_id' => 'lp-umzug',
+        'company_name' => 'Reisebuero Alt',
+        'company_street' => 'Altstrasse',
+        'company_house_number' => '1',
+        'company_postal_code' => '10115',
+        'company_city' => 'Berlin',
+        'company_country' => 'DE',
+        'pds_last_synced_at' => now(),
+    ]);
+
+    // Auf der Plattform ist die Adresse inzwischen eine andere.
+    fakePassolutionApi([
+        'name' => 'Reisebuero Neu',
+        'address_line_1' => 'Neuegasse 7',
+        'zip_code' => '20095',
+        'city' => 'Hamburg',
+        'country_code' => 'DE',
+    ]);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-umzug', 'umzug@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    $customer->refresh();
+    expect($customer->company_name)->toBe('Reisebuero Neu');
+    expect($customer->company_street)->toBe('Neuegasse');
+    expect($customer->company_house_number)->toBe('7');
+    expect($customer->company_postal_code)->toBe('20095');
+    expect($customer->company_city)->toBe('Hamburg');
+});
+
+test('Adresszeile ohne Hausnummer leert die alte Hausnummer', function () {
+    $customer = Customer::factory()->create([
+        'email' => 'ohne-nr@example.com',
+        'company_street' => 'Altstrasse',
+        'company_house_number' => '1',
+    ]);
+
+    fakePassolutionApi([
+        'name' => 'Reisebuero Ohne Nummer',
+        'address_line_1' => 'Am Hauptbahnhof',
+        'zip_code' => '50667',
+        'city' => 'Koeln',
+        'country_code' => 'DE',
+    ]);
+
+    $customer->syncPdsAccountData(0);
+
+    $customer->refresh();
+    expect($customer->company_street)->toBe('Am Hauptbahnhof');
+    expect($customer->company_house_number)->toBeNull();
 });
 
 test('Callback ohne E-Mail vom Anbieter wird abgelehnt', function () {

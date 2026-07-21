@@ -20,6 +20,21 @@ class Customer extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
+    /**
+     * Firmenadress-Spalten, die im /admin-Datensatz gepflegt werden und deren
+     * Aenderung den CustomerObserver (BookingLocation/Geocoding) ausloesen muss.
+     *
+     * @var list<string>
+     */
+    public const COMPANY_ADDRESS_FIELDS = [
+        'company_name',
+        'company_street',
+        'company_house_number',
+        'company_postal_code',
+        'company_city',
+        'company_country',
+    ];
+
     protected $attributes = [
         'branch_management_active' => true,
         'customer_type' => 'business',
@@ -327,6 +342,14 @@ class Customer extends Authenticatable implements MustVerifyEmail
             ];
         }
 
+        // Firmen-Stammdaten (company_*) mitziehen – das sind die Felder, die im
+        // /admin-Datensatz und in der BookingLocation angezeigt werden. Ohne diesen
+        // Abgleich wuerde eine Adressaenderung auf der Plattform nur in den
+        // pds_account_*-Spiegelspalten landen und im Admin veralten.
+        if ($account) {
+            $mapped = array_merge($mapped, $this->mapAccountToCompanyFields($account));
+        }
+
         if ($subscriptionType) {
             // pds_account_* (Dashboard) UND die von den Settings genutzten
             // passolution_*-Felder gleichermassen pflegen.
@@ -342,9 +365,78 @@ class Customer extends Authenticatable implements MustVerifyEmail
         }
 
         $mapped = array_filter($mapped, fn ($value) => $value !== null);
+
+        // Sonderfall Hausnummer: Liefert die API eine Strasse OHNE Nummer, muss die
+        // alte Nummer geleert werden – sonst bliebe sie an der neuen Strasse haengen.
+        if ($account && data_get($account, 'address_line_1') !== null) {
+            $mapped['company_house_number'] = self::parseHouseNumber(data_get($account, 'address_line_1'));
+        }
+
         $mapped['pds_last_synced_at'] = now();
 
-        $this->forceFill($mapped)->saveQuietly();
+        $this->forceFill($mapped);
+
+        // Aendert sich die Firmenadresse, muss der CustomerObserver laufen
+        // (BookingLocation/Geocoding). Reine pds_*-Spiegelungen bleiben still.
+        if ($this->isDirty(self::COMPANY_ADDRESS_FIELDS)) {
+            $this->save();
+
+            return;
+        }
+
+        $this->saveQuietly();
+    }
+
+    /**
+     * Firmen-Stammdaten aus einer account/info-Antwort auf die company_*-Spalten
+     * abbilden. `address_line_1` enthaelt Strasse und Hausnummer zusammen und wird
+     * hier – wie beim Import – aufgeteilt.
+     *
+     * @param  array<string, mixed>  $account
+     * @return array<string, string|null>
+     */
+    protected function mapAccountToCompanyFields(array $account): array
+    {
+        return [
+            'company_name' => data_get($account, 'name'),
+            'company_street' => self::parseStreet(data_get($account, 'address_line_1')),
+            'company_house_number' => self::parseHouseNumber(data_get($account, 'address_line_1')),
+            'company_postal_code' => data_get($account, 'zip_code'),
+            'company_city' => data_get($account, 'city'),
+            'company_country' => data_get($account, 'country_code') ?: data_get($account, 'country'),
+        ];
+    }
+
+    /**
+     * Strassenname aus einer kombinierten Adresszeile ("Musterweg 12a").
+     */
+    public static function parseStreet(?string $addressLine): ?string
+    {
+        if (empty($addressLine)) {
+            return null;
+        }
+
+        if (preg_match('/^(.+?)\s+(\d+.*)$/u', trim($addressLine), $matches)) {
+            return trim($matches[1]);
+        }
+
+        return trim($addressLine);
+    }
+
+    /**
+     * Hausnummer aus einer kombinierten Adresszeile ("Musterweg 12a").
+     */
+    public static function parseHouseNumber(?string $addressLine): ?string
+    {
+        if (empty($addressLine)) {
+            return null;
+        }
+
+        if (preg_match('/^.+?\s+(\d+.*)$/u', trim($addressLine), $matches)) {
+            return trim($matches[1]);
+        }
+
+        return null;
     }
 
     /**
