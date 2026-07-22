@@ -201,7 +201,9 @@ class KeycloakAuthController extends Controller
                 // Stammdaten aus der Passolution-API (nur wenn gefunden).
                 // address_line_1 enthaelt Strasse + Hausnummer und wird aufgeteilt,
                 // damit die company_*-Spalten wie im Admin-Formular belegt sind.
-                'company_name' => $account['name'] ?? null,
+                'company_name' => is_array($account) ? Customer::resolveCompanyName($account) : null,
+                // Kontaktperson (Vor-/Nachname) als Zusatz.
+                'company_additional' => is_array($account) ? Customer::resolveContactName($account) : null,
                 'company_street' => Customer::parseStreet($account['address_line_1'] ?? null),
                 'company_house_number' => Customer::parseHouseNumber($account['address_line_1'] ?? null),
                 'company_postal_code' => $account['zip_code'] ?? null,

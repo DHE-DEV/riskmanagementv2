@@ -187,6 +187,8 @@ test('JIT-Provisioning splittet address_line_1 in Strasse und Hausnummer', funct
 
     fakePassolutionApi([
         'name' => 'Reisebuero Muster GmbH',
+        'first_name' => 'Max',
+        'last_name' => 'Mustermann',
         'address_line_1' => 'Musterweg 12a',
         'zip_code' => '80331',
         'city' => 'Muenchen',
@@ -201,11 +203,79 @@ test('JIT-Provisioning splittet address_line_1 in Strasse und Hausnummer', funct
 
     $customer = Customer::where('email', 'neu@example.com')->first();
     expect($customer->company_name)->toBe('Reisebuero Muster GmbH');
+    expect($customer->company_additional)->toBe('Max Mustermann');
     expect($customer->company_street)->toBe('Musterweg');
     expect($customer->company_house_number)->toBe('12a');
     expect($customer->company_postal_code)->toBe('80331');
     expect($customer->company_city)->toBe('Muenchen');
     expect($customer->company_country)->toBe('DE');
+});
+
+test('Vor- und Nachname der Kontaktperson landen im Zusatz (company_additional)', function () {
+    $account = ['first_name' => 'Erika', 'last_name' => 'Beispiel'];
+    expect(Customer::resolveContactName($account))->toBe('Erika Beispiel');
+    expect(Customer::resolveContactName(['first_name' => 'Nur-Vorname']))->toBe('Nur-Vorname');
+    expect(Customer::resolveContactName(['last_name' => 'Nur-Nachname']))->toBe('Nur-Nachname');
+    expect(Customer::resolveContactName([]))->toBeNull();
+    expect(Customer::resolveContactName(['first_name' => '  ', 'last_name' => '']))->toBeNull();
+});
+
+test('fehlender Name ueberschreibt bestehenden Zusatz nicht', function () {
+    $customer = Customer::factory()->create([
+        'email' => 'zusatz@example.com',
+        'company_additional' => 'Bestehender Zusatz',
+    ]);
+
+    fakePassolutionApi([
+        'name' => 'Firma ohne Kontaktperson',
+        'address_line_1' => 'Weg 3',
+        'zip_code' => '10115',
+        'city' => 'Berlin',
+        'country_code' => 'DE',
+    ]);
+
+    $customer->syncPdsAccountData(0);
+
+    $customer->refresh();
+    expect($customer->company_additional)->toBe('Bestehender Zusatz');
+});
+
+test('Firmenname wird aus dem company-Feld gezogen, nicht aus dem ueberladenen name-Feld', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    // In der PDS-API ist `name` oft die Login-E-Mail o. ae.; der Firmenname
+    // steht im dedizierten company-/company_name-Feld.
+    fakePassolutionApi([
+        'name' => 'sso-login@example.com',
+        'company' => 'Reisebuero Sonnenschein GmbH',
+        'address_line_1' => 'Sonnenallee 5',
+        'zip_code' => '12045',
+        'city' => 'Berlin',
+        'country_code' => 'DE',
+    ]);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-firma', 'sso-login@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    $customer = Customer::where('email', 'sso-login@example.com')->first();
+    expect($customer->company_name)->toBe('Reisebuero Sonnenschein GmbH');
+});
+
+test('company_name hat Vorrang vor company und name', function () {
+    $account = [
+        'company_name' => 'Primaer GmbH',
+        'company' => 'Sekundaer GmbH',
+        'name' => 'tertiaer@example.com',
+    ];
+
+    expect(Customer::resolveCompanyName($account))->toBe('Primaer GmbH');
+    expect(Customer::resolveCompanyName(['company' => 'Nur company GmbH']))->toBe('Nur company GmbH');
+    expect(Customer::resolveCompanyName(['name' => 'Nur name GmbH']))->toBe('Nur name GmbH');
+    expect(Customer::resolveCompanyName(['name' => '   ']))->toBeNull();
+    expect(Customer::resolveCompanyName([]))->toBeNull();
 });
 
 test('geaenderte Adresse wird beim naechsten Login in den Kundendatensatz uebernommen', function () {

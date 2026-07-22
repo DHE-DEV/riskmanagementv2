@@ -398,13 +398,51 @@ class Customer extends Authenticatable implements MustVerifyEmail
     protected function mapAccountToCompanyFields(array $account): array
     {
         return [
-            'company_name' => data_get($account, 'name'),
+            'company_name' => self::resolveCompanyName($account),
+            'company_additional' => self::resolveContactName($account),
             'company_street' => self::parseStreet(data_get($account, 'address_line_1')),
             'company_house_number' => self::parseHouseNumber(data_get($account, 'address_line_1')),
             'company_postal_code' => data_get($account, 'zip_code'),
             'company_city' => data_get($account, 'city'),
             'company_country' => data_get($account, 'country_code') ?: data_get($account, 'country'),
         ];
+    }
+
+    /**
+     * Kontaktperson (Vor- und Nachname) aus einer account/info-Antwort zu einem
+     * Namen zusammensetzen – wird als Zusatz (company_additional) gefuehrt.
+     * Gibt null zurueck, wenn kein Name geliefert wird, damit ein bestehender
+     * Zusatz nicht durch einen leeren Wert ueberschrieben wird.
+     *
+     * @param  array<string, mixed>  $account
+     */
+    public static function resolveContactName(array $account): ?string
+    {
+        $name = trim(
+            (string) (data_get($account, 'first_name') ?? '').' '.
+            (string) (data_get($account, 'last_name') ?? '')
+        );
+
+        return $name !== '' ? $name : null;
+    }
+
+    /**
+     * Firmenname aus einer account/info-Antwort ermitteln. Das `name`-Feld ist in
+     * der PDS-API ueberladen (mal Firma, mal E-Mail, mal Abo-/Filialname), daher
+     * zuerst die dedizierten Firmen-Felder und nur ersatzweise `name`.
+     *
+     * @param  array<string, mixed>  $account
+     */
+    public static function resolveCompanyName(array $account): ?string
+    {
+        foreach (['company_name', 'company', 'name'] as $key) {
+            $value = data_get($account, $key);
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
+            }
+        }
+
+        return null;
     }
 
     /**
