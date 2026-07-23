@@ -20,12 +20,12 @@
         <p style="margin: 0 0 16px 0; font-size: 14px; color: #1e40af;">
             Ohne diese Bestätigung wird der Zugang nicht eingerichtet.
         </p>
-        <div style="text-align: center;">
+        <div style="text-align: left;">
             <a href="{{ $confirmationUrl }}" style="display: inline-block; background: #002742; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 700; font-size: 15px;">
                 Bestellung jetzt bestätigen
             </a>
         </div>
-        <p style="margin: 16px 0 0 0; font-size: 13px; color: #1e40af; text-align: center;">
+        <p style="margin: 16px 0 0 0; font-size: 13px; color: #1e40af; text-align: left;">
             Der Link ist bis zum {{ $expiresAt->format('d.m.Y, H:i') }} Uhr gültig.
         </p>
     </div>

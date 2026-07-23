@@ -32,7 +32,7 @@
         @endif
 
         <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; {{ $isNewCustomer ? 'background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46;' : 'background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af;' }}">
-            <strong>{{ $isNewCustomer ? '🆕 Neukunde' : '👤 Bestandskunde' }}:</strong>
+            <strong>{{ $isNewCustomer ? 'Neukunde' : 'Bestandskunde' }}:</strong>
             {{ $isNewCustomer ? 'Es wurde ein neues Kundenkonto in der Passolution Travel Information Platform angelegt.' : 'Die Bestellung wurde für einen bestehenden Kunden durchgeführt.' }}
             @if($customerUrl)
                 <br><a href="{{ $customerUrl }}" style="color: inherit; font-weight: bold;">→ Kunde im Admin-Bereich öffnen</a>
