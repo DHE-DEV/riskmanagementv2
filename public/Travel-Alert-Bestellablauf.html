@@ -221,12 +221,6 @@
     <code>.env</code> ein.
 </p>
 
-<div class="box info">
-    <span class="bt">Die eine Stellschraube</span>
-    <code>TRAVEL_ALERT_AUTO_ACTIVATION</code> entscheidet, was nach der Bestätigung passiert:
-    <strong>true</strong> = sofort freigeschaltet, <strong>false</strong> = ein Mitarbeiter schaltet frei.
-</div>
-
 <h2>Der Ablauf im Überblick</h2>
 <div class="diagram">
     <div class="dnode">Kunde füllt das Bestellformular aus</div>
@@ -380,6 +374,12 @@
     Einmalig <code>php artisan migrate</code> ausführen. Alle Bestellungen, die es vorher schon gab,
     gelten dabei automatisch als bestätigt und freigeschaltet – es ändert sich für Bestandskunden
     also nichts.
+</div>
+
+<div class="box info">
+    <span class="bt">Einstellung</span>
+    <code>TRAVEL_ALERT_AUTO_ACTIVATION</code> entscheidet, was nach der Bestätigung passiert:
+    <strong>true</strong> = sofort freigeschaltet, <strong>false</strong> = ein Mitarbeiter schaltet frei.
 </div>
 
 </body>
