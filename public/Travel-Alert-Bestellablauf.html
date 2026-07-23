@@ -23,6 +23,10 @@
         margin: 0 auto;
         padding: 40px 32px;
     }
+    /* Im PDF regeln die @page-Raender die Abstaende – Screen-Padding zuruecksetzen. */
+    @media print {
+        body { max-width: none; margin: 0; padding: 0; }
+    }
     h1, h2, h3 { color: #002742; line-height: 1.2; }
     h2 {
         font-size: 15pt;
