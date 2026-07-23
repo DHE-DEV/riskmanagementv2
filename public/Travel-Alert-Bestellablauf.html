@@ -351,7 +351,16 @@
     einzelne Bestellung darf keinem Kunden den vorhandenen Zugang entziehen.
 </div>
 
-<h2>Konfiguration in der .env</h2>
+<h2>Wer bekommt welche E-Mail</h2>
+<table>
+    <tr><th>Zeitpunkt</th><th>An den Kunden</th><th>An Passolution</th></tr>
+    <tr><td>Bestellung abgesendet</td><td>Bitte bestätigen Sie Ihre Bestellung</td><td>Neue Bestellung (wartet auf Bestätigung)</td></tr>
+    <tr><td>Kunde bestätigt (Modus true)</td><td>Ihr Zugang ist freigeschaltet</td><td>Bestellung bestätigt</td></tr>
+    <tr><td>Kunde bestätigt (Modus false)</td><td>Ihre Bestellung wird geprüft</td><td>Wartet auf Freischaltung</td></tr>
+    <tr><td>Mitarbeiter schaltet frei</td><td>Ihr Zugang ist freigeschaltet</td><td>—</td></tr>
+</table>
+
+<h2>Konfiguration in der .env <span style="font-weight:400;font-size:11pt;color:#6b7280;">(interne technische Informationen)</span></h2>
 <div class="envblock">
 <span class="c"># Kunde bestätigt jede Bestellung per Mail. Danach:</span><br>
 <span class="c"># true  = Zugang sofort frei &nbsp;·&nbsp; false = Mitarbeiter schaltet frei</span><br>
@@ -368,15 +377,6 @@
     gelten dabei automatisch als bestätigt und freigeschaltet – es ändert sich für Bestandskunden
     also nichts.
 </div>
-
-<h2>Wer bekommt welche E-Mail</h2>
-<table>
-    <tr><th>Zeitpunkt</th><th>An den Kunden</th><th>An Passolution</th></tr>
-    <tr><td>Bestellung abgesendet</td><td>Bitte bestätigen Sie Ihre Bestellung</td><td>Neue Bestellung (wartet auf Bestätigung)</td></tr>
-    <tr><td>Kunde bestätigt (Modus true)</td><td>Ihr Zugang ist freigeschaltet</td><td>Bestellung bestätigt</td></tr>
-    <tr><td>Kunde bestätigt (Modus false)</td><td>Ihre Bestellung wird geprüft</td><td>Wartet auf Freischaltung</td></tr>
-    <tr><td>Mitarbeiter schaltet frei</td><td>Ihr Zugang ist freigeschaltet</td><td>—</td></tr>
-</table>
 
 </body>
 </html>
