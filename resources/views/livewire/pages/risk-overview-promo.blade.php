@@ -94,13 +94,15 @@ $version = '1.2.0';
         "description": "Reisesicherheits-Monitoring für Unternehmen. Automatische Zuordnung von Sicherheitsereignissen zu Reisen in über 200 Ländern.",
         "url": "https://global-travel-monitor.eu/travel-alert",
         "offers": [
+@if($priceNoticePlain !== '')
             {
                 "@@type": "Offer",
                 "price": "0",
                 "priceCurrency": "EUR",
-                "description": "Kostenlos bis 30.06.2026",
+                "description": {!! json_encode($priceNoticePlain, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
                 "validThrough": "2026-06-30"
             },
+@endif
             {
                 "@@type": "Offer",
                 "price": "5.00",
@@ -182,7 +184,7 @@ $version = '1.2.0';
                 "name": "Was kostet TravelAlert?",
                 "acceptedAnswer": {
                     "@@type": "Answer",
-                    "text": "TravelAlert ist bis zum 30.06.2026 kostenlos. Ab dem 01.07.2026 beträgt das monatliche Entgelt für Reisebüros 7,00 EUR (ohne Kooperation/Kette) bzw. 5,00 EUR (mit Kooperation/Kette). Für Reiseveranstalter und OTAs gelten individuelle Konditionen."
+                    "text": {!! json_encode(trim(($priceNoticePlain !== '' ? $priceNoticePlain.' ' : '').'Ab dem 01.07.2026 beträgt das monatliche Entgelt für Reisebüros 7,00 EUR (ohne Kooperation/Kette) bzw. 5,00 EUR (mit Kooperation/Kette). Für Reiseveranstalter und OTAs gelten individuelle Konditionen.'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
                 }
             },
             {
@@ -765,10 +767,9 @@ $version = '1.2.0';
                                             <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
                                             <span class="text-sm font-semibold" style="color: #002742;">Preisinformationen</span>
                                         </div>
-                                        <p class="text-sm text-gray-700 mb-3">
-                                            Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an
-                                            <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.
-                                        </p>
+                                        @if($priceNotice !== '')
+                                            <p class="text-sm text-gray-700 mb-3">{!! $priceNotice !!}</p>
+                                        @endif
                                         <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
                                         <div class="space-y-2 ml-1">
                                             <div>
@@ -1029,9 +1030,9 @@ $version = '1.2.0';
                                             <i class="fa-regular fa-tag text-sm" style="color: #002742;"></i>
                                             <span class="text-sm font-semibold" style="color: #002742;">Preis</span>
                                         </div>
-                                        <p class="text-sm text-gray-700 mb-2">
-                                            <strong>Bis 30.06.2026 kostenlos</strong>, danach:
-                                        </p>
+                                        @if($priceNotice !== '')
+                                            <p class="text-sm text-gray-700 mb-2">{!! $priceNotice !!}</p>
+                                        @endif
                                         <ul class="text-sm text-gray-600 ml-4 list-disc">
                                             <li><strong>7,00 EUR/Monat</strong> ohne Kooperation/Kette</li>
                                             <li><strong>5,00 EUR/Monat</strong> mit Kooperation/Kette</li>

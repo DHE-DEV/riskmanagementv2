@@ -234,6 +234,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | TravelAlert Preishinweis
+    |--------------------------------------------------------------------------
+    |
+    | Hinweis zur Gratisphase auf der TravelAlert-Promoseite (Bestellmodal,
+    | Zusammenfassung und Structured Data). Einfaches HTML ist erlaubt.
+    | Ist der Wert leer, entfaellt der Hinweis komplett – ohne Leerzeile und
+    | ohne Kostenlos-Angebot in den Structured Data. Die Preisangaben selbst
+    | bleiben davon unberuehrt.
+    |
+    */
+
+    'travel_alert_price_notice' => env('TRAVEL_ALERT_PRICE_NOTICE', 'Die Zusatzleistung Travel<span class="text-[#cee741]">Alert</span> wird <strong>bis zum 30.06.2026 kostenlos</strong> zur Verfügung gestellt. In diesem Zeitraum kann jederzeit per Mail an <a href="mailto:info@passolution.de" class="text-blue-600 underline">info@passolution.de</a> der Vertrag gekündigt werden.'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Customer Dashboard Feature Visibility
     |--------------------------------------------------------------------------
     |

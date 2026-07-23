@@ -7,9 +7,9 @@ use App\Mail\TravelAlertOrderMail;
 use App\Models\Customer;
 use App\Models\CustomerFeatureOverride;
 use App\Models\CustomEvent;
-use App\Models\TravelAlertOrder;
 use App\Models\Folder\Folder;
 use App\Models\Label;
+use App\Models\TravelAlertOrder;
 use App\Notifications\TravelAlertWelcomeNotification;
 use App\Services\CustomerFeatureService;
 use App\Services\KeycloakUserService;
@@ -43,8 +43,14 @@ class RiskOverviewController extends Controller
 
         // Show promo page if not logged in or feature not enabled
         if (! $customer || ! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
+            $priceNotice = trim((string) config('app.travel_alert_price_notice'));
+
             return response()
-                ->view('livewire.pages.risk-overview-promo', ['isLoggedIn' => $isLoggedIn])
+                ->view('livewire.pages.risk-overview-promo', [
+                    'isLoggedIn' => $isLoggedIn,
+                    'priceNotice' => $priceNotice,
+                    'priceNoticePlain' => $this->toPlainText($priceNotice),
+                ])
                 ->header('Cache-Control', 'no-cache, private');
         }
 
@@ -54,6 +60,21 @@ class RiskOverviewController extends Controller
             'customer' => $customer,
             'isDebugUser' => $isDebugUser,
         ]);
+    }
+
+    /**
+     * Strip markup from the configured price notice so it can be used inside
+     * the JSON-LD structured data, where only plain text is valid.
+     */
+    protected function toPlainText(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace('/\s+/u', ' ', $text));
     }
 
     /**
