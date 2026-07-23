@@ -36,15 +36,6 @@ class PluginDomain extends Model
         'is_active' => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function (PluginDomain $domain) {
-            if (empty($domain->uuid)) {
-                $domain->uuid = Str::uuid()->toString();
-            }
-        });
-    }
-
     public function pluginClient(): BelongsTo
     {
         return $this->belongsTo(PluginClient::class);
