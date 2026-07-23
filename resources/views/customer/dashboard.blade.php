@@ -910,7 +910,21 @@
                                 // Aktuelles Abo aus dem per account_id synchronisierten Feld
                                 // (syncPdsAccountData, TTL 5 Min).
                                 $abo = auth('customer')->user()->pds_account_subscription_type;
+                                // Kundennummer aus dem SSO-Login (JWT-Claim pds_customer_number).
+                                $kundennummer = auth('customer')->user()->pds_customer_number;
                             @endphp
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-700">Kundennummer:</span>
+                                @if($kundennummer)
+                                    <span class="px-2 py-1 bg-gray-50 text-gray-600 text-xs font-medium font-mono rounded border border-gray-200">
+                                        {{ $kundennummer }}
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded border border-yellow-200">
+                                        Unbekannt
+                                    </span>
+                                @endif
+                            </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Abo:</span>
                                 @if($abo === 'premium')
