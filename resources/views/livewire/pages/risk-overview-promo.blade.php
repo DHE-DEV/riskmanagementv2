@@ -625,14 +625,15 @@ $version = '1.2.0';
                         <p class="text-gray-700 text-center text-lg mb-8">Sind Sie bereits Kunde der<br><strong>Passolution Travel Information Platform</strong>?</p>
 
                         <div class="flex flex-col gap-3">
-                            <!-- Existing customer → Login -->
-                            <a href="{{ route('customer.login', ['redirect' => url('/travel-alert')]) }}"
-                               class="flex items-center justify-center gap-2 w-full px-6 py-3.5 font-semibold rounded-xl transition-all text-white"
-                               style="background: #002742;"
-                               onmouseover="this.style.background='#043451'" onmouseout="this.style.background='#002742'">
+                            <!-- Existing customer → gleiches SSO-Login-Modal wie in der Navigationsleiste -->
+                            <button type="button"
+                                    @click="openSsoLogin()"
+                                    class="flex items-center justify-center gap-2 w-full px-6 py-3.5 font-semibold rounded-xl transition-all text-white cursor-pointer"
+                                    style="background: #002742;"
+                                    onmouseover="this.style.background='#043451'" onmouseout="this.style.background='#002742'">
                                 <i class="fa-regular fa-right-to-bracket"></i>
                                 Ja, ich möchte mich einloggen
-                            </a>
+                            </button>
 
                             <!-- New customer → Order form -->
                             <button @click="showCustomerCheck = false; document.dispatchEvent(new CustomEvent('open-order-form'))"
@@ -1146,6 +1147,21 @@ $version = '1.2.0';
                     document.addEventListener('open-order-modal', () => {
                         this.showCustomerCheck = true;
                     });
+                },
+                // Bestandskunde: dasselbe SSO-Login-Modal wie der Login-Button in
+                // der Navigationsleiste (<x-public-navigation>) oeffnen. Erst nach
+                // der Leave-Transition (200ms), sonst liegt das SSO-Modal (z-9999)
+                // hinter dem noch ausblendenden Backdrop hier (z-20000).
+                openSsoLogin() {
+                    this.showCustomerCheck = false;
+
+                    if (typeof window.openSsoLoginModal !== 'function') {
+                        // Navigation nicht gerendert -> klassische Login-Seite.
+                        window.location.href = @json(route('customer.login', ['redirect' => url('/travel-alert')]));
+                        return;
+                    }
+
+                    setTimeout(() => window.openSsoLoginModal(), 200);
                 }
             };
         }
