@@ -910,8 +910,9 @@
                                 // Aktuelles Abo aus dem per account_id synchronisierten Feld
                                 // (syncPdsAccountData, TTL 5 Min).
                                 $abo = auth('customer')->user()->pds_account_subscription_type;
-                                // Kundennummer aus dem SSO-Login (JWT-Claim pds_customer_number).
-                                $kundennummer = auth('customer')->user()->pds_customer_number;
+                                // Kundennummer = Account-ID aus dem SSO-userinfo-Response
+                                // (account_id bzw. account.id, beim Login gespeichert).
+                                $kundennummer = auth('customer')->user()->pds_account_id;
                             @endphp
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-700">Kundennummer:</span>
