@@ -36,6 +36,17 @@ jobs:
       - name: Run Pint
         run: vendor/bin/pint
 
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      # Faengt Blade-Templates, die sich erst zur Laufzeit als 500er zeigen –
+      # etwa ein "<x-...>"-Tag ohne Gegenstueck, auch in einem JS-Kommentar.
+      - name: Lint Blade Views
+        run: php artisan blade:lint
+
       # - name: Commit Changes
       #   uses: stefanzweifel/git-auto-commit-action@v5
       #   with:
