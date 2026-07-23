@@ -1155,6 +1155,9 @@ $version = '1.2.0';
             };
         }
 
+        // Stammdaten des eingeloggten Kunden – wird ins Bestellformular vorbefuellt.
+        window.__travelAlertPrefill = @json($orderPrefill ?? null);
+
         function orderForm() {
             return {
                 open: false,
@@ -1193,6 +1196,12 @@ $version = '1.2.0';
                 },
 
                 init() {
+                    // Eingeloggter Kunde: Formular mit seinen Stammdaten vorbefuellen,
+                    // damit er nichts erneut eintippen muss.
+                    if (window.__travelAlertPrefill) {
+                        this.applyPrefill();
+                    }
+
                     const openHandler = () => {
                         this.open = true;
                         this.step = 1;
@@ -1200,6 +1209,10 @@ $version = '1.2.0';
                         this.accountCreated = false;
                         this.errorMessage = '';
                         this.errors = {};
+                        // Falls nach einer vorherigen Bestellung geleert: erneut vorbefuellen.
+                        if (window.__travelAlertPrefill) {
+                            this.applyPrefill();
+                        }
                     };
 
                     // Guests: only open via 'open-order-form' (after customer check dialog)
@@ -1209,6 +1222,16 @@ $version = '1.2.0';
                     @auth('customer')
                         document.addEventListener('open-order-modal', openHandler);
                     @endauth
+                },
+
+                applyPrefill() {
+                    const p = window.__travelAlertPrefill;
+                    if (!p) return;
+                    Object.keys(this.form).forEach((key) => {
+                        if (p[key] === undefined || p[key] === null) return;
+                        // Bestehende Auswahl (z.B. Abrechnung/Bemerkung) nicht ueberschreiben.
+                        this.form[key] = Array.isArray(p[key]) ? [...p[key]] : p[key];
+                    });
                 },
 
                 nextStep() {

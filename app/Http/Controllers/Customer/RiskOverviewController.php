@@ -55,6 +55,7 @@ class RiskOverviewController extends Controller
                     'isLoggedIn' => $isLoggedIn,
                     'priceNotice' => $priceNotice,
                     'priceNoticePlain' => $this->toPlainText($priceNotice),
+                    'orderPrefill' => $customer ? $this->orderPrefill($customer) : null,
                 ])
                 ->header('Cache-Control', 'no-cache, private');
         }
@@ -65,6 +66,47 @@ class RiskOverviewController extends Controller
             'customer' => $customer,
             'isDebugUser' => $isDebugUser,
         ]);
+    }
+
+    /**
+     * Stammdaten des eingeloggten Kunden fuer das Bestellformular.
+     *
+     * Ein bereits angemeldeter Kunde soll die Daten nicht erneut eintippen –
+     * das Formular wird damit vorbefuellt. Leere Felder bleiben leer, damit
+     * der Kunde sie ergaenzen kann.
+     */
+    protected function orderPrefill(Customer $customer): array
+    {
+        $street = trim(($customer->company_street ?? '').' '.($customer->company_house_number ?? ''));
+
+        $firstName = $customer->pds_account_first_name;
+        $lastName = $customer->pds_account_last_name;
+
+        // Fallback: Anzeigename aufteilen, wenn keine SSO-Vor-/Nachnamen da sind.
+        if (! $firstName && ! $lastName && $customer->name) {
+            $parts = explode(' ', trim($customer->name), 2);
+            $firstName = $parts[0] ?? '';
+            $lastName = $parts[1] ?? '';
+        }
+
+        $businessType = $customer->business_type;
+        if (! is_array($businessType)) {
+            $businessType = [];
+        }
+
+        return [
+            'customer_type' => $customer->customer_type ?: 'business',
+            'business_type' => array_values($businessType),
+            'company' => $customer->company_name ?: ($customer->billing_company_name ?? ''),
+            'first_name' => $firstName ?: '',
+            'last_name' => $lastName ?: '',
+            'email' => $customer->email ?? '',
+            'phone' => $customer->phone ?: ($customer->pds_account_phone ?? ''),
+            'street' => $street,
+            'postal_code' => $customer->company_postal_code ?? '',
+            'city' => $customer->company_city ?? '',
+            'country' => $customer->company_country ?: 'Deutschland',
+        ];
     }
 
     /**
