@@ -1149,9 +1149,11 @@ $version = '1.2.0';
                     });
                 },
                 // Bestandskunde: dasselbe SSO-Login-Modal wie der Login-Button in
-                // der Navigationsleiste (<x-public-navigation>) oeffnen. Erst nach
-                // der Leave-Transition (200ms), sonst liegt das SSO-Modal (z-9999)
-                // hinter dem noch ausblendenden Backdrop hier (z-20000).
+                // der Navigationsleiste (Komponente public-navigation) oeffnen.
+                // Hinweis: hier keine spitzen Klammern um Komponentennamen – Blade
+                // kompiliert x-Tags auch innerhalb von script-Bloecken.
+                // Erst nach der Leave-Transition (200ms) oeffnen, sonst liegt das
+                // SSO-Modal (z-9999) hinter dem ausblendenden Backdrop (z-20000).
                 openSsoLogin() {
                     this.showCustomerCheck = false;
 
