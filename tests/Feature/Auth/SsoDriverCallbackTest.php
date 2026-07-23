@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Customer;
+use App\Models\CustomerFeatureOverride;
+use App\Services\CustomerFeatureService;
 use App\Services\PassolutionApiService;
 use Laravel\Socialite\Facades\Socialite;
 use SocialiteProviders\Manager\OAuth2\User as SocialiteUser;
@@ -273,6 +275,63 @@ test('in /admin geloeschter Kunde wird beim Login wiederhergestellt statt dupliz
     expect($restored)->not->toBeNull();
     expect($restored->id)->toBe($customer->id);
     expect($restored->trashed())->toBeFalse();
+});
+
+test('wiederhergestellter Kunde bekommt Travel Alert beim Login deaktiviert', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+    // Ohne Override wuerde die .env entscheiden – auf true, damit der Test
+    // wirklich das explizite Deaktivieren prueft, nicht den Default.
+    config(['app.navigation_risk_overview_enabled' => true]);
+
+    $customer = Customer::factory()->create([
+        'email' => 'weg@example.com',
+        'provider' => 'laravelpassport',
+        'provider_id' => 'lp-ta',
+    ]);
+    // Kunde hatte Travel Alert freigeschaltet.
+    CustomerFeatureOverride::create([
+        'customer_id' => $customer->id,
+        'navigation_risk_overview_enabled' => true,
+    ]);
+    $customer->delete();
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-ta', 'weg@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    $restored = Customer::where('email', 'weg@example.com')->firstOrFail();
+
+    app(CustomerFeatureService::class)->clearCache($restored->id);
+    expect(app(CustomerFeatureService::class)
+        ->isFeatureEnabled('navigation_risk_overview_enabled', $restored))->toBeFalse();
+
+    expect(CustomerFeatureOverride::where('customer_id', $restored->id)
+        ->first()->navigation_risk_overview_enabled)->toBeFalse();
+});
+
+test('normaler Login eines nicht geloeschten Kunden laesst Travel Alert unberuehrt', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    $customer = Customer::factory()->create([
+        'email' => 'aktiv@example.com',
+        'provider' => 'laravelpassport',
+        'provider_id' => 'lp-active',
+    ]);
+    CustomerFeatureOverride::create([
+        'customer_id' => $customer->id,
+        'navigation_risk_overview_enabled' => true,
+    ]);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-active', 'aktiv@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    expect(CustomerFeatureOverride::where('customer_id', $customer->id)
+        ->first()->navigation_risk_overview_enabled)->toBeTrue();
 });
 
 test('in /admin geloeschter Kunde wird auch per E-Mail-Lookup wiederhergestellt', function () {

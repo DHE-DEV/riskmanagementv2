@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Services\PassolutionApiService;
+use App\Services\TravelAlertOrderService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -186,10 +187,15 @@ class KeycloakAuthController extends Controller
 
         // 3b. Gefundenen, aber in /admin geloeschten Kunden wiederherstellen –
         //     der Login reaktiviert den Datensatz statt einen neuen anzulegen.
+        //     Travel Alert wird dabei bewusst deaktiviert: der Zugang soll nach
+        //     einer Loeschung nicht von selbst wieder aufleben, sondern erst
+        //     nach einer neuen Bestellung/Freischaltung.
         if ($customer && method_exists($customer, 'trashed') && $customer->trashed()) {
             $customer->restore();
 
-            Log::info('SSO login: geloeschter Kunde wiederhergestellt', [
+            app(TravelAlertOrderService::class)->disableFeature($customer);
+
+            Log::info('SSO login: geloeschter Kunde wiederhergestellt, Travel Alert deaktiviert', [
                 'driver' => $driver,
                 'customer_id' => $customer->id,
                 'email' => $email,

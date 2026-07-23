@@ -129,6 +129,28 @@ class TravelAlertOrderService
     }
 
     /**
+     * Travel Alert fuer den Kunden explizit deaktivieren.
+     *
+     * Wird beim Reaktivieren eines geloeschten Kunden ueber den SSO-Login
+     * genutzt: der Zugang soll nicht automatisch wieder aufleben, sondern
+     * erst nach einer neuen Bestellung/Freischaltung.
+     */
+    public function disableFeature(Customer $customer): void
+    {
+        $override = CustomerFeatureOverride::firstOrNew(['customer_id' => $customer->id]);
+
+        if ($override->exists && $override->navigation_risk_overview_enabled === false) {
+            return;
+        }
+
+        $override->customer_id = $customer->id;
+        $override->navigation_risk_overview_enabled = false;
+        $override->save();
+
+        $this->featureService->clearCache($customer->id);
+    }
+
+    /**
      * Interne Bestellmail an Passolution.
      *
      * $stage 'received' geht beim Absenden raus, 'confirmed' nach der
