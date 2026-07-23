@@ -210,7 +210,7 @@
 </div>
 <div class="meta">
     <span>Passolution Travel Information Platform</span>
-    <span>Stand: 23.07.2026 &middot; Branch platform-2026-07</span>
+    <span>Stand: 24.07.2026 &middot; Branch platform-2026-07</span>
 </div>
 
 <h2>Worum es geht</h2>
@@ -223,7 +223,21 @@
 
 <h2>Der Ablauf im Überblick</h2>
 <div class="diagram">
-    <div class="dnode">Kunde füllt das Bestellformular aus</div>
+    <div class="dnode decision">Bereits Kunde?</div>
+    <div class="dsplit">
+        <div class="dcol">
+            <div class="dlabel">Ja &middot; einloggen</div>
+            <div class="dconn">&darr;</div>
+            <div class="dnode">Anmeldung mit bestehendem Account<br><span style="font-weight:400;font-size:8.5pt;">Formular ist mit den Stammdaten vorbefüllt</span></div>
+        </div>
+        <div class="dcol">
+            <div class="dlabel">Nein &middot; Neukunde</div>
+            <div class="dconn">&darr;</div>
+            <div class="dnode">Daten im Formular erfassen<br><span style="font-weight:400;font-size:8.5pt;">neues Konto wird angelegt</span></div>
+        </div>
+    </div>
+    <div class="dconn">&darr;</div>
+    <div class="dnode">Kunde sendet das Bestellformular ab</div>
     <div class="dconn">&darr;</div>
     <div class="dnode">Bestätigungsmail an den Kunden &middot; Eingangsmail an Passolution<br><span style="font-weight:400;font-size:8.5pt;">Zugang noch <u>nicht</u> aktiv</span></div>
     <div class="dconn">&darr;</div>
@@ -256,20 +270,41 @@
     <div class="step actor-customer">
         <div class="num">1</div>
         <div class="body">
-            <span class="st-title">Bestellung absenden</span><span class="actor">Kunde</span>
-            <p>Über „Jetzt bestellen“ öffnet sich das Formular (bei Gästen nach der Frage
-            „Sind Sie bereits Kunde?“ &rarr; „Nein, ich bin Neukunde“). In vier Schritten gibt der
-            Kunde Kundentyp, Kontakt- und Adressdaten sowie die Abrechnungsfrage an und sendet ab.</p>
+            <span class="st-title">Einstieg: „Jetzt bestellen“</span><span class="actor">Kunde</span>
+            <p>Ein Gast wird zuerst gefragt: <strong>„Sind Sie bereits Kunde?“</strong> – daraus
+            ergeben sich zwei Wege. Ein bereits eingeloggter Kunde überspringt diese Frage und
+            landet direkt bei Schritt&nbsp;1a.</p>
+        </div>
+    </div>
+
+    <div class="step actor-customer">
+        <div class="num">1a</div>
+        <div class="body">
+            <span class="st-title">Bestehender Account &rarr; einloggen</span><span class="actor">Kunde</span>
+            <p>„Ja, ich möchte mich einloggen“ öffnet den SSO-Login. Nach der Anmeldung ist das
+            Bestellformular <strong>bereits mit den Stammdaten des Kontos vorbefüllt</strong>
+            (Firma, Kontakt, Adresse, Kundentyp) – kein erneutes Eintippen. Der Kunde prüft die
+            Daten und sendet ab. Ein neues Konto wird nicht angelegt.</p>
+        </div>
+    </div>
+
+    <div class="step actor-customer">
+        <div class="num">1b</div>
+        <div class="body">
+            <span class="st-title">Neuer Account &rarr; Daten erfassen</span><span class="actor">Kunde</span>
+            <p>„Nein, ich bin Neukunde“ öffnet das leere Formular. In vier Schritten gibt der Kunde
+            Kundentyp, Kontakt- und Adressdaten sowie die Abrechnungsfrage an und sendet ab.</p>
         </div>
     </div>
 
     <div class="step actor-system">
         <div class="num">2</div>
         <div class="body">
-            <span class="st-title">Bestellung & Konto anlegen – ohne Freischaltung</span><span class="actor">System</span>
-            <p>Die Bestellung wird gespeichert und, falls noch keins existiert, ein Kundenkonto
-            angelegt. <strong>Der Zugang bleibt bewusst inaktiv.</strong> Der Kunde sieht den Hinweis,
-            dass er die Bestellung erst per E-Mail bestätigen muss.</p>
+            <span class="st-title">Bestellung & ggf. Konto anlegen – ohne Freischaltung</span><span class="actor">System</span>
+            <p>Die Bestellung wird gespeichert. Für einen Neukunden wird zusätzlich ein Kundenkonto
+            angelegt; bei einem bestehenden Account entfällt das. <strong>Der Zugang bleibt in beiden
+            Fällen bewusst inaktiv.</strong> Der Kunde sieht den Hinweis, dass er die Bestellung erst
+            per E-Mail bestätigen muss.</p>
         </div>
     </div>
 
