@@ -465,7 +465,13 @@ Route::get('/travel-alert', [\App\Http\Controllers\Customer\RiskOverviewControll
     ->name('risk-overview');
 
 Route::post('/travel-alert/order', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'submitOrder'])
+    ->middleware('throttle:10,60')
     ->name('risk-overview.order');
+
+// Double-Opt-in-Link aus der Bestaetigungsmail
+Route::get('/travel-alert/order/confirm/{token}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'confirmOrder'])
+    ->middleware('throttle:30,60')
+    ->name('risk-overview.order.confirm');
 
 Route::get('/travel-alert/data', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'getData'])
     ->middleware('auth:customer')

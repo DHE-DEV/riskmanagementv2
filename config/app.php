@@ -249,6 +249,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | TravelAlert Bestellfreigabe
+    |--------------------------------------------------------------------------
+    |
+    | Jede Bestellung muss der Kunde per Mail bestaetigen. Was danach passiert,
+    | steuert TRAVEL_ALERT_AUTO_ACTIVATION:
+    |
+    |   true  – der Zugang ist mit der Bestaetigung sofort freigeschaltet
+    |   false – ein Mitarbeiter schaltet die Bestellung im Backend frei
+    |
+    | TRAVEL_ALERT_CONFIRMATION_EXPIRE_DAYS bestimmt, wie lange der Link aus
+    | der Bestaetigungsmail gueltig bleibt.
+    |
+    */
+
+    'travel_alert_auto_activation' => env('TRAVEL_ALERT_AUTO_ACTIVATION', true),
+    'travel_alert_confirmation_expire_days' => env('TRAVEL_ALERT_CONFIRMATION_EXPIRE_DAYS', 7),
+
+    /*
+    |--------------------------------------------------------------------------
     | Customer Dashboard Feature Visibility
     |--------------------------------------------------------------------------
     |

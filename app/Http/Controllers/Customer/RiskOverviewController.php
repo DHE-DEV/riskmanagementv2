@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Mail\TravelAlertOrderMail;
+use App\Mail\TravelAlertOrderConfirmationMail;
 use App\Models\Customer;
-use App\Models\CustomerFeatureOverride;
 use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Models\TravelAlertOrder;
-use App\Notifications\TravelAlertWelcomeNotification;
 use App\Services\CustomerFeatureService;
 use App\Services\KeycloakUserService;
 use App\Services\RiskOverviewService;
+use App\Services\TravelAlertOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,10 +26,16 @@ class RiskOverviewController extends Controller
 
     protected CustomerFeatureService $featureService;
 
-    public function __construct(RiskOverviewService $riskOverviewService, CustomerFeatureService $featureService)
-    {
+    protected TravelAlertOrderService $orderService;
+
+    public function __construct(
+        RiskOverviewService $riskOverviewService,
+        CustomerFeatureService $featureService,
+        TravelAlertOrderService $orderService,
+    ) {
         $this->riskOverviewService = $riskOverviewService;
         $this->featureService = $featureService;
+        $this->orderService = $orderService;
     }
 
     /**
@@ -59,6 +64,52 @@ class RiskOverviewController extends Controller
         return view('livewire.pages.risk-overview', [
             'customer' => $customer,
             'isDebugUser' => $isDebugUser,
+        ]);
+    }
+
+    /**
+     * Bestaetigungslink aus der Mail (Double Opt-in).
+     *
+     * Bewusst ohne Auth: der Kunde klickt den Link im Zweifel in einem
+     * Browser, in dem er nicht angemeldet ist.
+     */
+    public function confirmOrder(string $token)
+    {
+        $order = TravelAlertOrder::where('confirmation_token', $token)->first();
+
+        if (! $order) {
+            return response()
+                ->view('livewire.pages.travel-alert-order-confirmed', ['state' => 'invalid'], 404);
+        }
+
+        if ($order->isRejected()) {
+            return response()->view('livewire.pages.travel-alert-order-confirmed', [
+                'state' => 'rejected',
+                'order' => $order,
+            ]);
+        }
+
+        if ($order->isConfirmed()) {
+            return response()->view('livewire.pages.travel-alert-order-confirmed', [
+                'state' => $order->isApproved() ? 'already_active' : 'already_pending',
+                'order' => $order,
+            ]);
+        }
+
+        if ($order->confirmationHasExpired()) {
+            return response()->view('livewire.pages.travel-alert-order-confirmed', [
+                'state' => 'expired',
+                'order' => $order,
+            ]);
+        }
+
+        $this->orderService->confirm($order);
+
+        Log::info('TravelAlert order confirmed', ['order_id' => $order->id, 'email' => $order->email]);
+
+        return response()->view('livewire.pages.travel-alert-order-confirmed', [
+            'state' => $order->fresh()->isApproved() ? 'activated' : 'pending_approval',
+            'order' => $order,
         ]);
     }
 
@@ -100,7 +151,9 @@ class RiskOverviewController extends Controller
         ]);
 
         try {
-            TravelAlertOrder::create($validated);
+            $order = TravelAlertOrder::create($validated + [
+                'confirmation_token' => $this->orderService->generateConfirmationToken(),
+            ]);
 
             // Create customer account if none exists for this email
             $existingCustomer = Customer::where('email', $validated['email'])->first();
@@ -131,12 +184,6 @@ class RiskOverviewController extends Controller
 
                 $customer = Customer::create($customerData);
 
-                // Auto-enable TravelAlert feature for the new customer
-                CustomerFeatureOverride::create([
-                    'customer_id' => $customer->id,
-                    'navigation_risk_overview_enabled' => true,
-                ]);
-
                 // Sync new customer to Keycloak
                 try {
                     app(KeycloakUserService::class)->syncCustomer($customer);
@@ -147,32 +194,21 @@ class RiskOverviewController extends Controller
                     ]);
                 }
 
-                // Send welcome email with verification link and order details
-                $customer->notify(new TravelAlertWelcomeNotification($validated));
-
                 $accountCreated = true;
                 Log::info('Customer account created from TravelAlert order', ['customer_id' => $customer->id, 'email' => $customer->email]);
             } else {
                 $customer = $existingCustomer;
 
-                // Auto-enable TravelAlert feature for existing customer if not already enabled
-                CustomerFeatureOverride::firstOrCreate(
-                    ['customer_id' => $customer->id],
-                    ['navigation_risk_overview_enabled' => true]
-                );
-
-                // Ensure navigation_risk_overview_enabled is true even if override already existed
-                CustomerFeatureOverride::where('customer_id', $customer->id)
-                    ->update(['navigation_risk_overview_enabled' => true]);
-
                 Log::info('TravelAlert order for existing customer', ['customer_id' => $customer->id, 'email' => $customer->email]);
             }
 
-            $recipient = config('mail.order_recipient', 'info@passolution.de');
+            // Der Zugang wird bewusst noch nicht freigeschaltet – das passiert
+            // erst, wenn der Kunde die Bestellung per Mail bestaetigt hat.
+            $order->forceFill(['customer_id' => $customer->id])->save();
 
-            Mail::to($recipient)
-                ->bcc(['info@passolution.de', 'info@dhe.de'])
-                ->send(new TravelAlertOrderMail($validated, $accountCreated, $customer->id));
+            Mail::to($order->email)->send(new TravelAlertOrderConfirmationMail($order));
+
+            $this->orderService->notifyStaff($order, 'received');
 
             Log::info('TravelAlert order submitted', ['company' => $validated['company'], 'email' => $validated['email']]);
 
@@ -180,6 +216,7 @@ class RiskOverviewController extends Controller
                 'success' => true,
                 'message' => 'Bestellung erfolgreich eingereicht.',
                 'account_created' => $accountCreated,
+                'confirmation_required' => true,
             ]);
         } catch (\Exception $e) {
             Log::error('TravelAlert order failed: '.$e->getMessage(), ['data' => $validated]);

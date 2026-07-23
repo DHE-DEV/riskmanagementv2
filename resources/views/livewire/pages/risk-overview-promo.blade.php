@@ -676,7 +676,7 @@ $version = '1.2.0';
                             </div>
                             <div>
                                 <h2 class="text-lg font-bold text-white" style="font-family: Archivo, sans-serif;">Travel <span class="text-[#cee741]">Alert</span> bestellen</h2>
-                                <p x-show="!submitted" class="text-xs" style="color: rgba(255,255,255,0.6);">Füllen Sie das Formular aus - Ihr Zugang wird sofort freigeschaltet.</p>
+                                <p x-show="!submitted" class="text-xs" style="color: rgba(255,255,255,0.6);">Füllen Sie das Formular aus - anschließend bestätigen Sie die Bestellung per E-Mail.</p>
                             </div>
                         </div>
                         <button @click="open = false" class="p-2 rounded-lg transition-colors text-white/60 hover:text-white hover:bg-white/10">
@@ -691,29 +691,17 @@ $version = '1.2.0';
                         </div>
                         <h3 class="text-2xl font-bold mb-3 text-gray-900" style="font-family: Archivo, sans-serif;">Bestellung eingegangen!</h3>
 
-                        <!-- New account created -->
-                        <template x-if="accountCreated">
-                            <div>
-                                <p class="mb-4 max-w-md mx-auto text-gray-500">
-                                    Vielen Dank für Ihre Bestellung. Ihr Travel Alert-Zugang wurde automatisch freigeschaltet.
-                                </p>
-                                <div class="mb-6 mx-auto max-w-md rounded-xl border border-blue-200 bg-blue-50 p-4 text-left">
-                                    <p class="text-sm font-semibold text-blue-800 mb-2">
-                                        <i class="fa-regular fa-envelope mr-1"></i> E-Mail-Bestätigung erforderlich
-                                    </p>
-                                    <p class="text-sm text-blue-700">
-                                        Wir haben Ihnen eine E-Mail mit einer Bestellübersicht gesendet. Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link in der E-Mail, um Ihren Account zu aktivieren.
-                                    </p>
-                                </div>
-                            </div>
-                        </template>
-
-                        <!-- Existing account -->
-                        <template x-if="!accountCreated">
-                            <p class="mb-6 max-w-md mx-auto text-gray-500">
-                                Vielen Dank für Ihre Bestellung. Ihr Travel Alert-Zugang wurde automatisch freigeschaltet. Sie können Travel Alert ab sofort nutzen.
+                        <p class="mb-4 max-w-md mx-auto text-gray-500">
+                            Vielen Dank für Ihre Bestellung. Ein letzter Schritt fehlt noch.
+                        </p>
+                        <div class="mb-6 mx-auto max-w-md rounded-xl border border-blue-200 bg-blue-50 p-4 text-left">
+                            <p class="text-sm font-semibold text-blue-800 mb-2">
+                                <i class="fa-regular fa-envelope mr-1"></i> Bitte bestätigen Sie Ihre Bestellung
                             </p>
-                        </template>
+                            <p class="text-sm text-blue-700">
+                                Wir haben Ihnen eine E-Mail mit einer Bestellübersicht gesendet. Klicken Sie darin auf den Bestätigungslink – erst danach richten wir Ihren Travel Alert-Zugang ein.
+                            </p>
+                        </div>
 
                         <button @click="open = false" class="inline-flex items-center px-6 py-2.5 font-semibold rounded-xl transition-all"
                                 style="background: #002742; color: white;">

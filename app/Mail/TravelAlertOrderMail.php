@@ -8,6 +8,12 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Interne Bestellinfo an Passolution.
+ *
+ * Geht zweimal raus: beim Absenden des Formulars ($stage 'received') und
+ * nachdem der Kunde die Bestellung per Mail bestaetigt hat ('confirmed').
+ */
 class TravelAlertOrderMail extends Mailable
 {
     use Queueable, SerializesModels;
@@ -16,14 +22,22 @@ class TravelAlertOrderMail extends Mailable
         public array $orderData,
         public bool $isNewCustomer = false,
         public ?int $customerId = null,
+        public string $stage = 'received',
+        public bool $awaitsApproval = false,
     ) {}
 
     public function envelope(): Envelope
     {
         $status = $this->isNewCustomer ? 'Neukunde' : 'Bestandskunde';
 
+        $subject = match (true) {
+            $this->stage === 'confirmed' && $this->awaitsApproval => "Travel Alert-Bestellung wartet auf Freischaltung ({$status}): ",
+            $this->stage === 'confirmed' => "Travel Alert-Bestellung bestätigt ({$status}): ",
+            default => "Neue Travel Alert-Bestellung ({$status}): ",
+        };
+
         return new Envelope(
-            subject: "Neue Travel Alert-Bestellung ({$status}): " . $this->orderData['company'],
+            subject: $subject.$this->orderData['company'],
         );
     }
 
@@ -38,6 +52,8 @@ class TravelAlertOrderMail extends Mailable
             with: [
                 'isNewCustomer' => $this->isNewCustomer,
                 'customerUrl' => $customerUrl,
+                'stage' => $this->stage,
+                'awaitsApproval' => $this->awaitsApproval,
             ],
         );
     }

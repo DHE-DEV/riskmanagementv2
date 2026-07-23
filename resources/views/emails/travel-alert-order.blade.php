@@ -1,10 +1,35 @@
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: #002742; color: white; padding: 20px 30px; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 22px;">Neue Travel Alert-Bestellung</h1>
+        <h1 style="margin: 0; font-size: 22px;">
+            @if($stage === 'confirmed')
+                {{ $awaitsApproval ? 'Bestellung wartet auf Freischaltung' : 'Travel Alert-Bestellung bestätigt' }}
+            @else
+                Neue Travel Alert-Bestellung
+            @endif
+        </h1>
     </div>
 
     <div style="background: #f8f9fa; padding: 25px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+
+        @if($stage === 'confirmed' && $awaitsApproval)
+            <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; background: #fef3c7; border: 1px solid #fcd34d; color: #92400e;">
+                <strong>⏳ Freischaltung erforderlich:</strong>
+                Der Kunde hat die Bestellung bestätigt. Der Zugang ist noch nicht aktiv –
+                bitte die Bestellung im Admin-Bereich freischalten.
+            </div>
+        @elseif($stage === 'confirmed')
+            <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46;">
+                <strong>✅ Bestätigt:</strong>
+                Der Kunde hat die Bestellung bestätigt, der Zugang wurde automatisch freigeschaltet.
+            </div>
+        @else
+            <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; background: #e5e7eb; border: 1px solid #d1d5db; color: #374151;">
+                <strong>✉️ Wartet auf Bestätigung:</strong>
+                Der Kunde hat eine Bestätigungsmail erhalten. Der Zugang wird erst nach dem
+                Klick auf den Bestätigungslink eingerichtet.
+            </div>
+        @endif
 
         <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; {{ $isNewCustomer ? 'background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46;' : 'background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af;' }}">
             <strong>{{ $isNewCustomer ? '🆕 Neukunde' : '👤 Bestandskunde' }}:</strong>
