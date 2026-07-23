@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Customers;
 
-use App\Filament\Resources\Customers\Pages\CreateCustomer;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Schemas\CustomerForm;
@@ -19,6 +18,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class CustomerResource extends Resource
 {
     protected static ?string $model = Customer::class;
+
+    /**
+     * Titel/Breadcrumb (oben links auf der Edit-Seite) und globale Suche zeigen
+     * den Kundennamen statt des generischen Modell-Labels.
+     */
+    protected static ?string $recordTitleAttribute = 'name';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 

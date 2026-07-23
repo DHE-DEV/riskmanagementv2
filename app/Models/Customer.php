@@ -348,6 +348,12 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // pds_account_*-Spiegelspalten landen und im Admin veralten.
         if ($account) {
             $mapped = array_merge($mapped, $this->mapAccountToCompanyFields($account));
+
+            // Auch das allgemeine Name-Feld (/admin) mitfuehren – wie bei der
+            // Neuanlage: Kontaktperson, ersatzweise Firmenname. Liefert die API
+            // keines von beidem, bleibt der bestehende Name erhalten (null wird
+            // unten herausgefiltert).
+            $mapped['name'] = self::resolveContactName($account) ?? self::resolveCompanyName($account);
         }
 
         if ($subscriptionType) {

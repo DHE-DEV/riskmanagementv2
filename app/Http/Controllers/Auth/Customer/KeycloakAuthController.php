@@ -148,14 +148,17 @@ class KeycloakAuthController extends Controller
         // Abgleich weiter unten wuerde denselben Request nur wiederholen.
         $justProvisioned = false;
 
-        // 1. Try to find customer by SSO provider_id
-        $customer = Customer::where('provider', $driver)
+        // 1. Try to find customer by SSO provider_id.
+        //    withTrashed(): ein in /admin geloeschter Kunde soll beim erneuten
+        //    Login wiederhergestellt werden, nicht als Duplikat neu entstehen.
+        $customer = Customer::withTrashed()
+            ->where('provider', $driver)
             ->where('provider_id', $ssoUser->getId())
             ->first();
 
         // 2. If not found by provider_id, try by email as customer
         if (! $customer && $email) {
-            $existing = Customer::where('email', $email)->first();
+            $existing = Customer::withTrashed()->where('email', $email)->first();
 
             if ($existing) {
                 $existing->update([
@@ -181,16 +184,30 @@ class KeycloakAuthController extends Controller
             }
         }
 
+        // 3b. Gefundenen, aber in /admin geloeschten Kunden wiederherstellen –
+        //     der Login reaktiviert den Datensatz statt einen neuen anzulegen.
+        if ($customer && method_exists($customer, 'trashed') && $customer->trashed()) {
+            $customer->restore();
+
+            Log::info('SSO login: geloeschter Kunde wiederhergestellt', [
+                'driver' => $driver,
+                'customer_id' => $customer->id,
+                'email' => $email,
+            ]);
+        }
+
         // 4. Kein Kunde/Mitarbeiter gefunden -> automatisch als Kunde anlegen
         //    (Just-in-Time-Provisioning). Stammdaten werden – falls vorhanden –
         //    per Service-Key aus der Passolution-API (account/info per E-Mail) gezogen.
         if (! $customer && $email) {
             $account = app(PassolutionApiService::class)->fetchAccountByEmail($email);
 
-            $person = trim(($account['first_name'] ?? '').' '.($account['last_name'] ?? ''));
+            $contactOrCompany = is_array($account)
+                ? (Customer::resolveContactName($account) ?? Customer::resolveCompanyName($account))
+                : null;
 
             $customer = Customer::create([
-                'name' => $person !== '' ? $person : ($account['name'] ?? $email),
+                'name' => $contactOrCompany ?? $email,
                 'email' => $email,
                 'provider' => $driver,
                 'provider_id' => $ssoUser->getId(),

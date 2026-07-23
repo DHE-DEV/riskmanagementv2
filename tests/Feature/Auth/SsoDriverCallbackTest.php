@@ -202,6 +202,7 @@ test('JIT-Provisioning splittet address_line_1 in Strasse und Hausnummer', funct
     $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
 
     $customer = Customer::where('email', 'neu@example.com')->first();
+    expect($customer->name)->toBe('Max Mustermann');
     expect($customer->company_name)->toBe('Reisebuero Muster GmbH');
     expect($customer->company_additional)->toBe('Max Mustermann');
     expect($customer->company_street)->toBe('Musterweg');
@@ -218,6 +219,83 @@ test('Vor- und Nachname der Kontaktperson landen im Zusatz (company_additional)'
     expect(Customer::resolveContactName(['last_name' => 'Nur-Nachname']))->toBe('Nur-Nachname');
     expect(Customer::resolveContactName([]))->toBeNull();
     expect(Customer::resolveContactName(['first_name' => '  ', 'last_name' => '']))->toBeNull();
+});
+
+test('geaenderter Name der Kontaktperson wird beim Login ins Name-Feld uebernommen', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    $customer = Customer::factory()->create([
+        'email' => 'namechange@example.com',
+        'provider' => 'laravelpassport',
+        'provider_id' => 'lp-name',
+        'name' => 'Alter Name',
+        'pds_last_synced_at' => now(),
+    ]);
+
+    fakePassolutionApi([
+        'name' => 'namechange@example.com',
+        'first_name' => 'Neuer',
+        'last_name' => 'Kontakt',
+        'company' => 'Firma GmbH',
+    ]);
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-name', 'namechange@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    $customer->refresh();
+    expect($customer->name)->toBe('Neuer Kontakt');
+});
+
+test('in /admin geloeschter Kunde wird beim Login wiederhergestellt statt dupliziert', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    $customer = Customer::factory()->create([
+        'email' => 'geloescht@example.com',
+        'provider' => 'laravelpassport',
+        'provider_id' => 'lp-deleted',
+    ]);
+    $customer->delete();
+    expect($customer->fresh()->trashed())->toBeTrue();
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('lp-deleted', 'geloescht@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+    $this->assertAuthenticated('customer');
+
+    // Kein Duplikat, und der urspruengliche Datensatz ist wiederhergestellt.
+    expect(Customer::withTrashed()->where('email', 'geloescht@example.com')->count())->toBe(1);
+    $restored = Customer::where('email', 'geloescht@example.com')->first();
+    expect($restored)->not->toBeNull();
+    expect($restored->id)->toBe($customer->id);
+    expect($restored->trashed())->toBeFalse();
+});
+
+test('in /admin geloeschter Kunde wird auch per E-Mail-Lookup wiederhergestellt', function () {
+    config(['services.sso.driver' => 'laravelpassport']);
+
+    // Anderer provider_id -> Treffer nur ueber die E-Mail.
+    $customer = Customer::factory()->create([
+        'email' => 'mail-lookup@example.com',
+        'provider' => 'laravelpassport',
+        'provider_id' => 'alt-id',
+    ]);
+    $customer->delete();
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn(fakeSsoUser('neue-id', 'mail-lookup@example.com'));
+    Socialite::shouldReceive('driver')->with('laravelpassport')->andReturn($provider);
+
+    $this->get('/auth/callback')->assertRedirect('/customer/dashboard');
+
+    expect(Customer::withTrashed()->where('email', 'mail-lookup@example.com')->count())->toBe(1);
+    $restored = Customer::where('email', 'mail-lookup@example.com')->first();
+    expect($restored->id)->toBe($customer->id);
+    expect($restored->trashed())->toBeFalse();
 });
 
 test('fehlender Name ueberschreibt bestehenden Zusatz nicht', function () {
