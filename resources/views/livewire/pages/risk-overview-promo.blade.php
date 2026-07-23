@@ -99,15 +99,14 @@ $version = '1.2.0';
                 "@@type": "Offer",
                 "price": "0",
                 "priceCurrency": "EUR",
-                "description": {!! json_encode($priceNoticePlain, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
-                "validThrough": "2026-06-30"
+                "description": {!! json_encode($priceNoticePlain, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
             },
 @endif
             {
                 "@@type": "Offer",
                 "price": "5.00",
                 "priceCurrency": "EUR",
-                "description": "Ab 01.07.2026 – Monatliches Entgelt für Reisebüros mit Kooperation/Kette",
+                "description": "Monatliches Entgelt für Reisebüros mit Kooperation/Kette",
                 "priceValidUntil": "2027-12-31"
             }
         ],
@@ -184,7 +183,7 @@ $version = '1.2.0';
                 "name": "Was kostet TravelAlert?",
                 "acceptedAnswer": {
                     "@@type": "Answer",
-                    "text": {!! json_encode(trim(($priceNoticePlain !== '' ? $priceNoticePlain.' ' : '').'Ab dem 01.07.2026 beträgt das monatliche Entgelt für Reisebüros 7,00 EUR (ohne Kooperation/Kette) bzw. 5,00 EUR (mit Kooperation/Kette). Für Reiseveranstalter und OTAs gelten individuelle Konditionen.'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+                    "text": {!! json_encode(trim(($priceNoticePlain !== '' ? $priceNoticePlain.' ' : '').'Das monatliche Entgelt für Reisebüros beträgt 7,00 EUR (ohne Kooperation/Kette) bzw. 5,00 EUR (mit Kooperation/Kette). Für Reiseveranstalter und OTAs gelten individuelle Konditionen.'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
                 }
             },
             {
@@ -770,7 +769,6 @@ $version = '1.2.0';
                                         @if($priceNotice !== '')
                                             <p class="text-sm text-gray-700 mb-3">{!! $priceNotice !!}</p>
                                         @endif
-                                        <p class="text-sm text-gray-700 font-medium mb-2">Ab dem 01.07.2026:</p>
                                         <div class="space-y-2 ml-1">
                                             <div>
                                                 <p class="text-sm font-semibold text-gray-800">Für Reisebüros:</p>

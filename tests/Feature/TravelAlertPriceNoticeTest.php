@@ -93,5 +93,20 @@ test('die FAQ-Antwort zum Preis kommt ohne Hinweis aus', function () {
     $faq = collect(json_decode($blocks[2], true)['mainEntity'])
         ->firstWhere('name', 'Was kostet TravelAlert?');
 
-    expect($faq['acceptedAnswer']['text'])->toStartWith('Ab dem 01.07.2026 beträgt');
+    expect($faq['acceptedAnswer']['text'])->toStartWith('Das monatliche Entgelt');
 });
+
+test('das Startdatum der Bezahlphase steht nirgends mehr fest im Markup', function (string $notice) {
+    config(['app.travel_alert_price_notice' => $notice]);
+
+    $html = $this->get('/travel-alert')->assertOk()->getContent();
+
+    // Nur der konfigurierte Hinweis darf noch Datumsangaben enthalten.
+    $withoutNotice = str_replace($notice, '', $html);
+
+    expect($withoutNotice)->not->toContain('01.07.2026')
+        ->and($withoutNotice)->not->toContain('2026-06-30');
+})->with([
+    'mit Hinweis' => 'Bis 31.12.2026 kostenlos.',
+    'ohne Hinweis' => '',
+]);
