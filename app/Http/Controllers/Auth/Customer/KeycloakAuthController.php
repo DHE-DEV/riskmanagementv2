@@ -8,7 +8,6 @@ use App\Models\Customer;
 use App\Models\Employee;
 use App\Services\PassolutionApiService;
 use App\Services\TravelAlertOrderService;
-use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -123,13 +122,33 @@ class KeycloakAuthController extends Controller
             }
 
             $ssoUser = $socialite->user();
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('SSO login failed', ['driver' => $driver, 'error' => $e->getMessage()]);
 
             return redirect()->route('customer.login')
                 ->with('error', 'Anmeldung fehlgeschlagen: '.$e->getMessage());
         }
 
+        // Provisioning + Anmeldung kapseln: schlaegt hier etwas fehl (z. B. ein
+        // Schema-Drift nach einem Daten-Import), soll das eine saubere Fehlermeldung
+        // ergeben statt eines nackten 500.
+        try {
+            return $this->finishSsoLogin($ssoUser, $driver);
+        } catch (\Throwable $e) {
+            Log::error('SSO provisioning failed', ['driver' => $driver, 'error' => $e->getMessage()]);
+
+            return redirect()->route('customer.login')
+                ->with('error', 'Anmeldung fehlgeschlagen. Bitte versuchen Sie es spaeter erneut.');
+        }
+    }
+
+    /**
+     * Legt den Kunden aus dem SSO-Response an bzw. aktualisiert ihn und meldet
+     * ihn an. Aus callback() ausgelagert, damit dieser Teil vollstaendig in
+     * try/catch gekapselt werden kann (kein nackter 500 bei Schema-Drift o. Ae.).
+     */
+    private function finishSsoLogin($ssoUser, string $driver): RedirectResponse
+    {
         $email = $ssoUser->getEmail();
 
         // Roh-Payload des SSO-userinfo-Response. Laravel Passport liefert hier auch
