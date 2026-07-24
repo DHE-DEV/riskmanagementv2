@@ -266,6 +266,14 @@ return [
     'travel_alert_auto_activation' => env('TRAVEL_ALERT_AUTO_ACTIVATION', true),
     'travel_alert_confirmation_expire_days' => env('TRAVEL_ALERT_CONFIRMATION_EXPIRE_DAYS', 7),
 
+    // Ziel des "Kunde im Admin-Bereich oeffnen"-Links in der internen Bestellmail.
+    // Leer  -> lokaler Filament-Bereich (url('/admin/customers/{id}')).
+    // Gesetzt: entweder eine Basis-URL (die Kunden-ID wird angehaengt) oder eine
+    // Vorlage mit dem Platzhalter {id}, z. B.
+    //   TRAVEL_ALERT_ADMIN_CUSTOMER_URL=https://admin.example.com/customers
+    //   TRAVEL_ALERT_ADMIN_CUSTOMER_URL=https://admin.example.com/kunde?id={id}
+    'travel_alert_admin_customer_url' => env('TRAVEL_ALERT_ADMIN_CUSTOMER_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Customer Dashboard Feature Visibility

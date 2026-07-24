@@ -44,7 +44,7 @@ class TravelAlertOrderMail extends Mailable
     public function content(): Content
     {
         $customerUrl = $this->customerId
-            ? url("/admin/customers/{$this->customerId}")
+            ? $this->buildCustomerUrl($this->customerId)
             : null;
 
         return new Content(
@@ -56,5 +56,27 @@ class TravelAlertOrderMail extends Mailable
                 'awaitsApproval' => $this->awaitsApproval,
             ],
         );
+    }
+
+    /**
+     * Baut den "Kunde im Admin-Bereich oeffnen"-Link.
+     *
+     * Ohne TRAVEL_ALERT_ADMIN_CUSTOMER_URL wird der lokale Filament-Bereich
+     * verwendet. Ist die Env gesetzt, wird sie als Vorlage (Platzhalter {id})
+     * oder als Basis-URL (Kunden-ID wird angehaengt) interpretiert.
+     */
+    private function buildCustomerUrl(int $customerId): string
+    {
+        $configured = config('app.travel_alert_admin_customer_url');
+
+        if (! $configured) {
+            return url("/admin/customers/{$customerId}");
+        }
+
+        if (str_contains($configured, '{id}')) {
+            return str_replace('{id}', (string) $customerId, $configured);
+        }
+
+        return rtrim($configured, '/').'/'.$customerId;
     }
 }
