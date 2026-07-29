@@ -1063,6 +1063,18 @@
                         'company_postal_code' => $ssoCustomer->company_postal_code,
                         'company_city' => $ssoCustomer->company_city,
                         'company_country' => $ssoCustomer->company_country,
+                        'gtm_old_customer_id' => session('gtm_old_customer_id'),
+                        'gtm_old_customer_name' => session('gtm_old_customer_name'),
+                        'gtm_old_customer_email' => session('gtm_old_customer_email'),
+                        'gtm_old_customer_provider' => session('gtm_old_customer_provider'),
+                        'gtm_old_customer_created_at' => session('gtm_old_customer_created_at'),
+                        'gtm_old_matches_count_customers' => session('gtm_old_matches_count_customers'),
+                        'gtm_old_employee_id' => session('gtm_old_employee_id'),
+                        'gtm_old_employee_name' => session('gtm_old_employee_name'),
+                        'gtm_old_employee_email' => session('gtm_old_employee_email'),
+                        'gtm_old_employee_customer_id' => session('gtm_old_employee_customer_id'),
+                        'gtm_old_employee_created_at' => session('gtm_old_employee_created_at'),
+                        'gtm_old_matches_count_employees' => session('gtm_old_matches_count_employees'),
                     ];
                 @endphp
                 <div class="bg-white p-6 rounded-lg border border-gray-200 mt-6">

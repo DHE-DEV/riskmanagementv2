@@ -429,6 +429,12 @@ class KeycloakAuthController extends Controller
             ]);
         }
 
+        // Zusaetzlich: pruefen, ob es zur SSO-E-Mail lokale Alt-Datensaetze gibt
+        // (Customer/Employee), damit im Frontend nachvollziehbar ist, welchen
+        // lokalen Stand der SSO-Login "geerbt" hat. Rein informativ; die Auth-
+        // Entscheidung ist zu diesem Zeitpunkt bereits gefallen.
+        $this->storeLegacyLocalMatchesInSession($email);
+
         // iframe-Login: nicht aufs Dashboard im iframe leiten, sondern auf die
         // Done-Seite, die das Parent-Fenster benachrichtigt (Parent laedt dann neu).
         if (session()->pull('sso_iframe_login')) {
@@ -437,6 +443,72 @@ class KeycloakAuthController extends Controller
 
         return redirect()->intended('/customer/dashboard')
             ->with('success', 'Erfolgreich angemeldet!');
+    }
+
+    /**
+     * Legt fuer Debug/Anzeige alle lokalen Alt-Datensaetze (Customer + Employee)
+     * mit der SSO-Anmelde-E-Mail in `gtm_old_*`-Session-Keys ab. Bei mehreren
+     * Treffern pro Typ wird der erste (nach ID) genommen; die Gesamtzahl steht
+     * in `gtm_old_matches_count_*`, damit Kollisionen erkennbar bleiben.
+     * Bewusst NULL-Reset, damit alte Werte aus vorherigen Logins nicht kleben.
+     */
+    private function storeLegacyLocalMatchesInSession(?string $email): void
+    {
+        $keys = [
+            'gtm_old_customer_id', 'gtm_old_customer_name', 'gtm_old_customer_email',
+            'gtm_old_customer_provider', 'gtm_old_customer_created_at',
+            'gtm_old_employee_id', 'gtm_old_employee_name', 'gtm_old_employee_email',
+            'gtm_old_employee_customer_id', 'gtm_old_employee_created_at',
+            'gtm_old_matches_count_customers', 'gtm_old_matches_count_employees',
+        ];
+        foreach ($keys as $key) {
+            session()->forget($key);
+        }
+
+        if (! $email) {
+            return;
+        }
+
+        try {
+            $customers = Customer::withTrashed()
+                ->where('email', $email)
+                ->orderBy('id')
+                ->get(['id', 'name', 'email', 'provider', 'created_at']);
+
+            if ($customers->isNotEmpty()) {
+                $first = $customers->first();
+                session([
+                    'gtm_old_customer_id' => $first->id,
+                    'gtm_old_customer_name' => $first->name,
+                    'gtm_old_customer_email' => $first->email,
+                    'gtm_old_customer_provider' => $first->provider,
+                    'gtm_old_customer_created_at' => optional($first->created_at)->toDateTimeString(),
+                    'gtm_old_matches_count_customers' => $customers->count(),
+                ]);
+            }
+
+            $employees = Employee::where('email', $email)
+                ->orderBy('id')
+                ->get(['id', 'first_name', 'last_name', 'email', 'customer_id', 'created_at']);
+
+            if ($employees->isNotEmpty()) {
+                $first = $employees->first();
+                session([
+                    'gtm_old_employee_id' => $first->id,
+                    'gtm_old_employee_name' => trim($first->first_name.' '.$first->last_name),
+                    'gtm_old_employee_email' => $first->email,
+                    'gtm_old_employee_customer_id' => $first->customer_id,
+                    'gtm_old_employee_created_at' => optional($first->created_at)->toDateTimeString(),
+                    'gtm_old_matches_count_employees' => $employees->count(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Fehlgeschlagene Debug-Info darf den Login niemals blockieren.
+            Log::warning('SSO login: gtm_old_* Session-Info nicht ermittelbar', [
+                'email' => $email,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
