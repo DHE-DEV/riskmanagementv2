@@ -32,7 +32,6 @@ class CustomEventForm
             ->components([
                 // Mehrsprachige Hauptinformationen (Titel + Beschreibung je Sprache).
                 // Die Sprachen werden über EVENT_LANGUAGES (.env) gesteuert.
-                // Den "Übersetzen"-Button (DeepL) gibt es als Header-Aktion auf der Seite.
                 Tabs::make('translations')
                     ->columnSpanFull()
                     ->tabs(self::buildTranslationTabs()),

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\CustomEvents\Pages;
 
-use App\Filament\Resources\CustomEvents\Concerns\TranslatesEventContent;
 use App\Filament\Resources\CustomEvents\CustomEventResource;
 use App\Filament\Widgets\CustomEventStatsOverview;
 use Filament\Actions\Action;
@@ -13,8 +12,6 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditCustomEvent extends EditRecord
 {
-    use TranslatesEventContent;
-
     protected static string $resource = CustomEventResource::class;
 
     protected ?array $locationCountries = null;
@@ -94,8 +91,6 @@ class EditCustomEvent extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getTranslateEventAction(),
-
             Action::make('ai_assistant')
                 ->label('KI-Assistent')
                 ->icon('heroicon-o-sparkles')
