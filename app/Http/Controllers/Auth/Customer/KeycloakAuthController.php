@@ -193,11 +193,67 @@ class KeycloakAuthController extends Controller
             }
         }
 
-        // 3. If not a customer, try to find as employee
+        // 3. If not a customer, try to find as employee.
+        //
+        //    Matching-Strategie (deterministisch, kollisionsarm):
+        //      a) Zuerst per (provider, provider_id) – das ist die unveraenderliche
+        //         SSO-Identitaet und kann NICHT mit fremden Personen kollidieren.
+        //      b) Fallback per E-Mail nur wenn:
+        //         - GENAU EIN aktiver Employee mit dieser Mail existiert,
+        //         - und dieser Employee noch KEINE provider_id gesetzt hat.
+        //         Wird der Fallback akzeptiert, verankern wir provider/provider_id
+        //         am Employee, sodass er kuenftig nur noch ueber Schritt (a) matcht.
+        //      c) Sonst: Nicht matchen (fall-safe). Beim Erstlogin landet der
+        //         Nutzer dann in Schritt 4 (Neuanlage als Kunde) – Kollisionen
+        //         werden geloggt, damit Admins nachziehen koennen.
         if (! $customer && $email) {
-            $employee = Employee::where('email', $email)
-                ->where('is_active', true)
-                ->first();
+            $providerIdColumnExists = Schema::hasColumn('employees', 'provider_id');
+
+            if ($providerIdColumnExists) {
+                $employee = Employee::where('provider', $driver)
+                    ->where('provider_id', $ssoUser->getId())
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            if (! $employee) {
+                $emailMatches = Employee::where('email', $email)
+                    ->where('is_active', true)
+                    ->get();
+
+                if ($emailMatches->count() === 1) {
+                    $candidate = $emailMatches->first();
+                    $existingProviderId = $providerIdColumnExists ? $candidate->provider_id : null;
+
+                    if ($existingProviderId === null || $existingProviderId === '') {
+                        $employee = $candidate;
+
+                        // Provider/Provider-ID am Employee festnageln, damit kuenftige
+                        // Logins deterministisch ueber Schritt (a) laufen.
+                        if ($providerIdColumnExists) {
+                            $employee->forceFill([
+                                'provider' => $driver,
+                                'provider_id' => $ssoUser->getId(),
+                            ])->save();
+                        }
+                    } else {
+                        Log::warning('SSO login: Employee-E-Mail-Match uebersprungen, provider_id gehoert bereits einem anderen SSO-User', [
+                            'driver' => $driver,
+                            'sso_provider_id' => $ssoUser->getId(),
+                            'employee_id' => $candidate->id,
+                            'existing_provider_id' => $existingProviderId,
+                            'email' => $email,
+                        ]);
+                    }
+                } elseif ($emailMatches->count() > 1) {
+                    Log::warning('SSO login: mehrere aktive Employees mit derselben E-Mail – E-Mail-Fallback deaktiviert, Admin-Review noetig', [
+                        'driver' => $driver,
+                        'sso_provider_id' => $ssoUser->getId(),
+                        'email' => $email,
+                        'employee_ids' => $emailMatches->pluck('id')->all(),
+                    ]);
+                }
+            }
 
             if ($employee && $employee->isCurrentlyActive() && $employee->customer) {
                 $customer = $employee->customer;

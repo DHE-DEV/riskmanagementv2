@@ -22,6 +22,8 @@ class Employee extends Model
         'department',
         'department_id',
         'personnel_number',
+        'provider',
+        'provider_id',
         'is_active',
         'active_from',
         'active_until',

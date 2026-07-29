@@ -39,6 +39,12 @@ class ResetMigrationsAfterRestore extends Command
             'table'     => 'custom_events',
             'column'    => 'title_translations',
         ],
+        [
+            'migration' => '2026_07_29_130000_add_provider_id_to_employees_table',
+            'kind'      => 'column',
+            'table'     => 'employees',
+            'column'    => 'provider_id',
+        ],
     ];
 
     public function handle(): int
