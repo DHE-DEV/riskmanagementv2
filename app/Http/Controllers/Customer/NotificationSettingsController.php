@@ -180,18 +180,24 @@ class NotificationSettingsController extends Controller
 
         $source = request()->query('source');
         if ($source) {
-            $query->where(function ($q) use ($source) {
-                $q->whereHas('notificationRule', fn ($r) => $r->where('source', $source))
-                  ->orWhere(function ($q2) use ($source) {
-                      // Test-Mails ohne Rule: über template_name filtern
-                      $q2->whereNull('notification_rule_id')
-                         ->whereExists(function ($sub) use ($source) {
-                             $sub->select(\DB::raw(1))
-                                 ->from('notification_templates')
-                                 ->whereColumn('notification_templates.name', 'notification_logs.template_name')
-                                 ->where('notification_templates.source', $source);
-                         });
-                  });
+            // Test-Mails ohne Rule werden ueber den Vorlagennamen zugeordnet.
+            // Die Namen werden bewusst vorab geladen statt per Unterabfrage mit
+            // whereColumn verglichen: notification_logs.template_name und
+            // notification_templates.name haben unterschiedliche Kollationen
+            // (utf8mb4_general_ci vs. utf8mb4_unicode_ci), woran MySQL einen
+            // Spalten-zu-Spalten-Vergleich mit Fehler 1267 abbricht.
+            $templateNames = NotificationTemplate::where('source', $source)
+                ->pluck('name')
+                ->all();
+
+            $query->where(function ($q) use ($source, $templateNames) {
+                $q->whereHas('notificationRule', fn ($r) => $r->where('source', $source));
+
+                if ($templateNames !== []) {
+                    $q->orWhere(fn ($q2) => $q2
+                        ->whereNull('notification_rule_id')
+                        ->whereIn('template_name', $templateNames));
+                }
             });
         }
 
