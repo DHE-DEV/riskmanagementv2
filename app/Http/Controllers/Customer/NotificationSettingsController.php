@@ -6,22 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\NotificationLog;
 use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
-use App\Services\CustomerFeatureService;
 use Illuminate\Http\Request;
 
+/**
+ * Bewusst ohne Feature-Gate: Diese Endpunkte bedienen sowohl Travel Alert als
+ * auch den Global Travel Monitor. Frueher pruefte ein Teil der Methoden
+ * navigation_risk_overview_enabled – das Flag von Travel Alert –, wodurch das
+ * Deaktivieren von Travel Alert auch die GTM-Benachrichtigungen lahmlegte:
+ * Regeln und Protokoll luden (dort gab es nie ein Gate), die Vorlagenliste
+ * antwortete dagegen mit 403 und blieb leer.
+ *
+ * Der Zugriff ist weiterhin durch den customer-Guard geschuetzt, und jede
+ * Methode arbeitet ausschliesslich auf den Daten des angemeldeten Kunden.
+ */
 class NotificationSettingsController extends Controller
 {
-    public function __construct(
-        protected CustomerFeatureService $featureService,
-    ) {}
 
     public function index()
     {
         $customer = auth('customer')->user();
-
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
 
         $rules = $customer->notificationRules()
             ->with(['recipients', 'template'])
@@ -45,10 +48,6 @@ class NotificationSettingsController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
-
         $logs = NotificationLog::where('customer_id', $customer->id)
             ->with('notificationRule')
             ->orderBy('created_at', 'desc')
@@ -60,10 +59,6 @@ class NotificationSettingsController extends Controller
     public function toggleNotifications(Request $request)
     {
         $customer = auth('customer')->user();
-
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
 
         $customer->update([
             'notifications_enabled' => ! $customer->notifications_enabled,
@@ -79,10 +74,6 @@ class NotificationSettingsController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            return response()->json(['error' => 'Nicht berechtigt'], 403);
-        }
-
         return response()->json([
             'notifications_enabled' => $customer->notifications_enabled,
             'rules_count' => $customer->notificationRules()->count(),
@@ -95,10 +86,6 @@ class NotificationSettingsController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
-
         return view('customer.notification-settings.rules.form', [
             'rule' => null,
         ]);
@@ -107,10 +94,6 @@ class NotificationSettingsController extends Controller
     public function editRule(int $id)
     {
         $customer = auth('customer')->user();
-
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
 
         $rule = $customer->notificationRules()->with('recipients')->findOrFail($id);
 
@@ -122,10 +105,6 @@ class NotificationSettingsController extends Controller
     public function templateIndex()
     {
         $customer = auth('customer')->user();
-
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
 
         $source = request()->query('source');
         $templates = NotificationTemplate::forCustomer($customer->id, $source)
@@ -143,10 +122,6 @@ class NotificationSettingsController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
-
         return view('customer.notification-settings.templates.form', [
             'template' => null,
         ]);
@@ -155,10 +130,6 @@ class NotificationSettingsController extends Controller
     public function editTemplate(int $id)
     {
         $customer = auth('customer')->user();
-
-        if (! $this->featureService->isFeatureEnabled('navigation_risk_overview_enabled', $customer)) {
-            abort(403);
-        }
 
         $template = NotificationTemplate::forCustomer($customer->id)->findOrFail($id);
 
