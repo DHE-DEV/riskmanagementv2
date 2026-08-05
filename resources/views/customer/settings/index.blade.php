@@ -3150,7 +3150,11 @@
                 @elseif($gtmTab === 'notifications')
                 {{-- Benachrichtigungen Tab --}}
                 <p class="text-sm text-gray-500 mb-5"><b>Bleiben Sie automatisch über für Sie relevante Ereignisse informiert.</b><br>Erstellen Sie Regeln basierend auf Kriterien wie Land, Risikostufe oder Ereignistyp und erhalten Sie passende Benachrichtigungen per E-Mail.</p>
-                    @if(auth('customer')->user()->isFeatureEnabled('navigation_risk_overview_enabled'))
+                    {{-- Kein Feature-Gate: die GTM-Benachrichtigungen laufen
+                         unabhaengig von Travel Alert. Hier stand frueher
+                         navigation_risk_overview_enabled, wodurch das
+                         Deaktivieren von Travel Alert faelschlich auch diesen
+                         Tab abgeschaltet hat. --}}
                     @php
                         $notifCustomer = auth('customer')->user();
                         $notifTemplateCount = \App\Models\NotificationTemplate::forCustomer($notifCustomer->id)->count();
@@ -3507,13 +3511,6 @@
                             <button @click="visible = false" class="text-gray-400 hover:text-gray-600 text-xs"><i class="fas fa-times"></i></button>
                         </div>
                     </div>
-
-                    @else
-                    <div class="bg-white rounded-lg border border-gray-200 p-5 text-center">
-                        <i class="fas fa-shield-exclamation text-3xl text-gray-300 mb-2"></i>
-                        <p class="text-xs text-gray-500">TravelAlert ist nicht aktiviert.</p>
-                    </div>
-                    @endif
                 @endif
 
             @elseif($settingsSection === 'travel-alert')
