@@ -24,6 +24,63 @@ class NotificationRuleService
     private const RATE_LIMIT_PER_HOUR = 50;
 
     /**
+     * Sammelt pro Regel die Versand-Entscheidung samt Begruendung.
+     * Wird nur im Dry-Run befuellt (siehe collectDecisions()), damit der
+     * Normalbetrieb unveraendert und ohne Zusatzaufwand laeuft.
+     *
+     * @var array<int, array{rule_id: int, rule_name: string, customer_id: int, event_id: int, outcome: string, reason: string, recipient: string|null}>
+     */
+    private array $decisions = [];
+
+    private bool $collectDecisions = false;
+
+    /**
+     * Aktiviert das Mitschreiben der Versand-Entscheidungen (Dry-Run).
+     */
+    public function collectDecisions(bool $enabled = true): static
+    {
+        $this->collectDecisions = $enabled;
+        $this->decisions = [];
+
+        return $this;
+    }
+
+    /**
+     * Liefert die mitgeschriebenen Entscheidungen des letzten Laufs.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getDecisions(): array
+    {
+        return $this->decisions;
+    }
+
+    /**
+     * Haelt eine Versand-Entscheidung fest (nur wenn collectDecisions aktiv).
+     */
+    private function decide(
+        NotificationRule $rule,
+        int $eventId,
+        string $outcome,
+        string $reason,
+        ?string $recipient = null,
+    ): void {
+        if (! $this->collectDecisions) {
+            return;
+        }
+
+        $this->decisions[] = [
+            'rule_id' => $rule->id,
+            'rule_name' => $rule->name,
+            'customer_id' => $rule->customer_id,
+            'event_id' => $eventId,
+            'outcome' => $outcome,
+            'reason' => $reason,
+            'recipient' => $recipient,
+        ];
+    }
+
+    /**
      * Versende Benachrichtigungen für ein neues CustomEvent.
      */
     public function processCustomEvent(CustomEvent $event, bool $force = false, ?string $sourceFilter = null): int
@@ -260,6 +317,7 @@ class NotificationRuleService
 
             if (!$this->ruleMatches($rule, $riskLevel, $categories, $countryIds)) {
                 Log::info('sendMatchingNotifications: Regel matcht NICHT', ['rule_id' => $rule->id]);
+                $this->decide($rule, $eventId, 'skipped', 'Regel matcht nicht (Risiko/Kategorie/Land)');
                 continue;
             }
 
@@ -271,6 +329,7 @@ class NotificationRuleService
                     'rule_id' => $rule->id,
                     'customer_id' => $rule->customer_id,
                 ]);
+                $this->decide($rule, $eventId, 'skipped', 'Rate-Limit erreicht ('.self::RATE_LIMIT_PER_HOUR.'/Stunde)');
                 continue;
             }
 
@@ -299,6 +358,8 @@ class NotificationRuleService
                 // Travel Alert: Keine Mail senden wenn keine Reisen betroffen sind
                 if ($affectedTrips->isEmpty()) {
                     Log::info('Travel Alert: Keine betroffenen Reisen, überspringe', ['rule_id' => $rule->id]);
+                    $this->decide($rule, $eventId, 'skipped', 'keine betroffenen Reisen'
+                        .(empty($eventCountryIsos) ? ' (Event hat keine Laender)' : ''));
                     continue;
                 }
 
@@ -319,6 +380,8 @@ class NotificationRuleService
                                 'previous_trips' => $previousCount,
                                 'current_trips' => $affectedTrips->count(),
                             ]);
+                            $this->decide($rule, $eventId, 'skipped',
+                                "keine neuen Reisen (vorher {$previousCount}, jetzt {$affectedTrips->count()})");
                             continue;
                         }
                         Log::info('Travel Alert: Neue Reisen betroffen, sende erneut', [
@@ -336,6 +399,7 @@ class NotificationRuleService
                         'rule_id' => $rule->id,
                         'event_id' => $eventId,
                     ]);
+                    $this->decide($rule, $eventId, 'skipped', 'bereits versendet');
                     continue;
                 }
                 $rulePlaceholders['{affected_trips}'] = '';
@@ -437,6 +501,7 @@ class NotificationRuleService
 
         if (!$template) {
             Log::warning('Kein Template gefunden für Notification Rule', ['rule_id' => $rule->id]);
+            $this->decide($rule, $eventId, 'skipped', 'keine E-Mail-Vorlage gefunden');
             return false;
         }
 
@@ -444,6 +509,7 @@ class NotificationRuleService
 
         if (!$toRecipient) {
             Log::warning('Kein TO-Empfänger für Notification Rule', ['rule_id' => $rule->id]);
+            $this->decide($rule, $eventId, 'skipped', 'kein TO-Empfaenger hinterlegt');
             return false;
         }
 
@@ -457,6 +523,7 @@ class NotificationRuleService
                 'email' => $recipientEmail,
                 'event_id' => $eventId,
             ]);
+            $this->decide($rule, $eventId, 'skipped', 'Empfaenger hat fuer dieses Event bereits eine Mail', $recipientEmail);
             return false;
         }
 
@@ -466,6 +533,7 @@ class NotificationRuleService
                 'rule_id' => $rule->id,
                 'email' => $recipientEmail,
             ]);
+            $this->decide($rule, $eventId, 'skipped', 'Empfaenger hat sich abgemeldet', $recipientEmail);
             return false;
         }
 
@@ -510,6 +578,8 @@ class NotificationRuleService
             // Track for deduplication
             $sentEmails[] = $deduplicationKey;
 
+            $this->decide($rule, $eventId, 'sent', $subject !== '' ? $subject : 'versendet', $recipientEmail);
+
             return true;
         } catch (\Exception $e) {
             Log::error('Fehler beim Versenden der Risk-Event Benachrichtigung', [
@@ -528,6 +598,8 @@ class NotificationRuleService
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
             ]);
+
+            $this->decide($rule, $eventId, 'failed', $e->getMessage(), $recipientEmail);
 
             return false;
         }

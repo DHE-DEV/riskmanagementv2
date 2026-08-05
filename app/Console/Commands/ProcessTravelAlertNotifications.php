@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\RunsNotificationDryRun;
 use App\Models\NotificationQueueLog;
 use App\Models\NotificationRule;
 use App\Services\NotificationRuleService;
@@ -9,13 +10,20 @@ use Illuminate\Console\Command;
 
 class ProcessTravelAlertNotifications extends Command
 {
-    protected $signature = 'notifications:process-travel-alert';
+    use RunsNotificationDryRun;
+
+    protected $signature = 'notifications:process-travel-alert
+        {--dry-run : Zeigt nur an, wer eine Mail bekaeme – versendet nichts und speichert nichts}';
 
     protected $description = 'Verarbeitet die Travel-Alert-Benachrichtigungsqueue';
 
     public function handle(NotificationRuleService $service): int
     {
         $queueName = 'travel-alert-notifications';
+
+        if ($this->option('dry-run')) {
+            return $this->runDryRun($service, NotificationRule::SOURCE_TRAVEL_ALERT, $queueName);
+        }
 
         $log = NotificationQueueLog::create([
             'queue_name' => $queueName,

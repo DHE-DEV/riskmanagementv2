@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\RunsNotificationDryRun;
 use App\Models\NotificationQueueLog;
 use App\Models\NotificationRule;
 use App\Services\NotificationRuleService;
@@ -9,13 +10,20 @@ use Illuminate\Console\Command;
 
 class ProcessGtmNotifications extends Command
 {
-    protected $signature = 'notifications:process-gtm';
+    use RunsNotificationDryRun;
+
+    protected $signature = 'notifications:process-gtm
+        {--dry-run : Zeigt nur an, wer eine Mail bekaeme – versendet nichts und speichert nichts}';
 
     protected $description = 'Verarbeitet die GTM-Benachrichtigungsqueue (Global Travel Monitor)';
 
     public function handle(NotificationRuleService $service): int
     {
         $queueName = 'gtm-notifications';
+
+        if ($this->option('dry-run')) {
+            return $this->runDryRun($service, NotificationRule::SOURCE_GLOBAL_TRAVEL_MONITOR, $queueName);
+        }
 
         $log = NotificationQueueLog::create([
             'queue_name' => $queueName,
