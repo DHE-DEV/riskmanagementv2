@@ -269,7 +269,7 @@ $orderUrl = config('app.travel_alert_order_url');
                                     Jetzt bestellen
                                 </button>
                             @endif
-                            @if($isLoggedIn)
+                            @if($isLoggedIn && ! $orderUrl)
                                 <a href="{{ route('customer.dashboard') }}"
                                    class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
                                    style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
@@ -606,7 +606,7 @@ $orderUrl = config('app.travel_alert_order_url');
                                         Jetzt bestellen
                                     </button>
                                 @endif
-                                @if($isLoggedIn)
+                                @if($isLoggedIn && ! $orderUrl)
                                     <a href="{{ route('customer.dashboard') }}"
                                        class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
                                    style="background: #91daf2; color: #043451; box-shadow: 0 10px 25px -5px rgba(145, 218, 242, 0.3);"
