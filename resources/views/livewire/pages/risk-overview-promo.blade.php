@@ -1,6 +1,10 @@
 @php
 $active = 'travel-alert';
 $version = '1.2.0';
+// Ziel der "Jetzt bestellen"-Buttons: ohne TRAVEL_ALERT_ORDER_URL wird das
+// eingebaute Bestell-Popup geoeffnet, mit gesetzter Env die URL in einem
+// neuen Tab.
+$orderUrl = config('app.travel_alert_order_url');
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -240,16 +244,31 @@ $version = '1.2.0';
 
                         <!-- CTA Buttons -->
                         <div class="animate-fade-up-delay-3 flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                            <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
-                               class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
-                               style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
-                               onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
-                               onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
-                               aria-label="TravelAlert jetzt bestellen – Bestellformular öffnen"
-                            >
-                                <i class="fa-regular fa-cart-shopping mr-2"></i>
-                                Jetzt bestellen
-                            </button>
+                            @if($orderUrl)
+                                <a href="{{ $orderUrl }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
+                                   style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
+                                   onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
+                                   onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                                   aria-label="TravelAlert jetzt bestellen – öffnet in neuem Tab"
+                                >
+                                    <i class="fa-regular fa-cart-shopping mr-2"></i>
+                                    Jetzt bestellen
+                                </a>
+                            @else
+                                <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
+                                   class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
+                                   style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
+                                   onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
+                                   onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                                   aria-label="TravelAlert jetzt bestellen – Bestellformular öffnen"
+                                >
+                                    <i class="fa-regular fa-cart-shopping mr-2"></i>
+                                    Jetzt bestellen
+                                </button>
+                            @endif
                             @if($isLoggedIn)
                                 <a href="{{ route('customer.dashboard') }}"
                                    class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"
@@ -562,16 +581,31 @@ $version = '1.2.0';
                                 Schützen Sie Ihre Reisenden mit Sicherheitsinformationen per E-Mail und automatischem Reise-Monitoring.
                             </p>-->
                             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
-                                   class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
-                                   style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
-                                   onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
-                                   onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
-                                   aria-label="TravelAlert jetzt bestellen – Bestellformular öffnen"
-                                >
-                                    <i class="fa-regular fa-cart-shopping mr-2"></i>
-                                    Jetzt bestellen
-                                </button>
+                                @if($orderUrl)
+                                    <a href="{{ $orderUrl }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
+                                       style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
+                                       onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
+                                       onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                                       aria-label="TravelAlert jetzt bestellen – öffnet in neuem Tab"
+                                    >
+                                        <i class="fa-regular fa-cart-shopping mr-2"></i>
+                                        Jetzt bestellen
+                                    </a>
+                                @else
+                                    <button onclick="document.dispatchEvent(new CustomEvent('open-order-modal'))"
+                                       class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg cursor-pointer"
+                                       style="background: #CEE741; color: #002742; box-shadow: 0 10px 25px -5px rgba(206, 231, 65, 0.3);"
+                                       onmouseover="this.style.opacity='0.9'; this.style.boxShadow='0 10px 30px -5px rgba(206, 231, 65, 0.5)'"
+                                       onmouseout="this.style.opacity='1'; this.style.boxShadow='0 10px 25px -5px rgba(206, 231, 65, 0.3)'"
+                                       aria-label="TravelAlert jetzt bestellen – Bestellformular öffnen"
+                                    >
+                                        <i class="fa-regular fa-cart-shopping mr-2"></i>
+                                        Jetzt bestellen
+                                    </button>
+                                @endif
                                 @if($isLoggedIn)
                                     <a href="{{ route('customer.dashboard') }}"
                                        class="inline-flex items-center px-8 py-3.5 font-semibold rounded-xl transition-all shadow-lg"

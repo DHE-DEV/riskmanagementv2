@@ -274,6 +274,12 @@ return [
     //   TRAVEL_ALERT_ADMIN_CUSTOMER_URL=https://admin.example.com/kunde?id={id}
     'travel_alert_admin_customer_url' => env('TRAVEL_ALERT_ADMIN_CUSTOMER_URL'),
 
+    // Ziel der "Jetzt bestellen"-Buttons auf der TravelAlert-Promoseite.
+    // Leer     -> das eingebaute Bestell-Popup wird geoeffnet (Standard).
+    // Gesetzt  -> die URL wird stattdessen in einem neuen Tab geoeffnet, z. B.
+    //   TRAVEL_ALERT_ORDER_URL=https://platform.passolution.de/travel-alert?user-state=logged-in
+    'travel_alert_order_url' => env('TRAVEL_ALERT_ORDER_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Customer Dashboard Feature Visibility
