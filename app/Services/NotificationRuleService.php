@@ -202,11 +202,7 @@ class NotificationRuleService
         $errors = 0;
 
         // CustomEvents verarbeiten (für beide Quellen: Travel Alert und GTM)
-        $customEvents = CustomEvent::where('is_active', true)
-            ->where('review_status', 'approved')
-            ->whereNull('customer_id')
-            ->where('created_at', '>=', $since)
-            ->get();
+        $customEvents = $this->unnotifiedCustomEventsQuery($since)->get();
 
         foreach ($customEvents as $event) {
             try {
@@ -226,7 +222,7 @@ class NotificationRuleService
         }
 
         // DisasterEvents verarbeiten (für beide Quellen)
-        $disasterEvents = DisasterEvent::where('created_at', '>=', $since)->get();
+        $disasterEvents = $this->unnotifiedDisasterEventsQuery($since)->get();
 
         foreach ($disasterEvents as $event) {
             try {
@@ -249,6 +245,56 @@ class NotificationRuleService
             'events_processed' => $eventsProcessed,
             'notifications_sent' => $notificationsSent,
             'errors' => $errors,
+        ];
+    }
+
+    /**
+     * Events, die ein Queue-Lauf betrachtet. Bewusst als eigene Methoden,
+     * damit die Diagnose in scopeSummary() nicht von der Verarbeitung
+     * abweichen kann.
+     */
+    private function unnotifiedCustomEventsQuery(\DateTimeInterface $since): \Illuminate\Database\Eloquent\Builder
+    {
+        return CustomEvent::where('is_active', true)
+            ->where('review_status', 'approved')
+            ->whereNull('customer_id')
+            ->where('created_at', '>=', $since);
+    }
+
+    private function unnotifiedDisasterEventsQuery(\DateTimeInterface $since): \Illuminate\Database\Eloquent\Builder
+    {
+        return DisasterEvent::where('created_at', '>=', $since);
+    }
+
+    /**
+     * Zaehlt die Voraussetzungen eines Queue-Laufs, damit ein Dry-Run ohne
+     * Ergebnis konkret benennen kann, woran es liegt: fehlen die Events,
+     * die Regeln, oder ist der Benachrichtigungs-Schalter der Kunden aus?
+     *
+     * @return array{lookback_hours: int, custom_events: int, disaster_events: int, rules_total: int, rules_active: int, rules_effective: int, customers_enabled: int}
+     */
+    public function scopeSummary(string $source): array
+    {
+        $lookbackHours = (int) config('notifications.lookback_hours', 24);
+        $since = now()->subHours($lookbackHours);
+
+        $enabledCustomers = Customer::where('notifications_enabled', true)->pluck('id');
+
+        $rulesForSource = NotificationRule::query()
+            ->when(
+                \Schema::hasColumn('notification_rules', 'source'),
+                fn ($q) => $q->where('source', $source),
+            );
+
+        return [
+            'lookback_hours' => $lookbackHours,
+            'custom_events' => $this->unnotifiedCustomEventsQuery($since)->count(),
+            'disaster_events' => $this->unnotifiedDisasterEventsQuery($since)->count(),
+            'rules_total' => (clone $rulesForSource)->count(),
+            'rules_active' => (clone $rulesForSource)->where('is_active', true)->count(),
+            'rules_effective' => (clone $rulesForSource)->where('is_active', true)
+                ->whereIn('customer_id', $enabledCustomers)->count(),
+            'customers_enabled' => $enabledCustomers->count(),
         ];
     }
 

@@ -31,10 +31,11 @@ trait RunsNotificationDryRun
         DB::beginTransaction();
 
         try {
+            $summary = $service->scopeSummary($source);
             $service->collectDecisions();
             $result = $service->processUnnotifiedEvents($source);
 
-            $this->renderDecisions($service->getDecisions());
+            $this->renderDecisions($service->getDecisions(), $summary);
             $renderErrors = $this->renderMailables();
 
             $this->newLine();
@@ -65,10 +66,10 @@ trait RunsNotificationDryRun
      *
      * @param  array<int, array<string, mixed>>  $decisions
      */
-    private function renderDecisions(array $decisions): void
+    private function renderDecisions(array $decisions, array $summary): void
     {
         if ($decisions === []) {
-            $this->line('Keine Regel wurde ausgewertet – es gab keine passenden Events oder keine aktiven Regeln.');
+            $this->explainEmptyRun($summary);
 
             return;
         }
@@ -88,6 +89,61 @@ trait RunsNotificationDryRun
                 $d['reason'],
             ], $decisions),
         );
+    }
+
+    /**
+     * Benennt bei einem Lauf ohne einzige Regel-Auswertung konkret die
+     * fehlende Voraussetzung, statt beide Moeglichkeiten offenzulassen.
+     *
+     * @param  array<string, int>  $summary
+     */
+    private function explainEmptyRun(array $summary): void
+    {
+        $events = $summary['custom_events'] + $summary['disaster_events'];
+
+        $this->line(sprintf(
+            'Events im Fenster (%dh): %d (%d CustomEvents, %d DisasterEvents)',
+            $summary['lookback_hours'],
+            $events,
+            $summary['custom_events'],
+            $summary['disaster_events'],
+        ));
+        $this->line(sprintf(
+            'Regeln dieser Quelle    : %d gesamt, %d aktiv, %d davon bei Kunden mit aktiviertem Versand',
+            $summary['rules_total'],
+            $summary['rules_active'],
+            $summary['rules_effective'],
+        ));
+        $this->newLine();
+
+        if ($events === 0) {
+            $this->warn('Keine Regel ausgewertet: Es liegen keine Events im Lookback-Fenster.');
+            $this->line('  -> NOTIFICATION_LOOKBACK_HOURS pruefen, oder es wurden schlicht keine Events angelegt.');
+
+            return;
+        }
+
+        if ($summary['rules_total'] === 0) {
+            $this->warn('Keine Regel ausgewertet: Fuer diese Quelle existiert keine einzige Regel.');
+            $this->line('  -> Im Kundenbereich unter Einstellungen eine Benachrichtigungsregel anlegen.');
+
+            return;
+        }
+
+        if ($summary['rules_active'] === 0) {
+            $this->warn('Keine Regel ausgewertet: Alle Regeln dieser Quelle sind inaktiv (is_active = 0).');
+
+            return;
+        }
+
+        if ($summary['rules_effective'] === 0) {
+            $this->warn('Keine Regel ausgewertet: Die aktiven Regeln gehoeren zu Kunden mit deaktiviertem Versand.');
+            $this->line('  -> Toggle "Automatische Benachrichtigungen" beim Kunden einschalten (customers.notifications_enabled).');
+
+            return;
+        }
+
+        $this->warn('Keine Regel ausgewertet, obwohl Events und Regeln vorhanden sind – bitte Log pruefen.');
     }
 
     /**
