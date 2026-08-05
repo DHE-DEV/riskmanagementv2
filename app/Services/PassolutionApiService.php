@@ -164,6 +164,73 @@ class PassolutionApiService
     }
 
     /**
+     * Travel-Details eines Accounts ueber die pds_account_id.
+     *
+     * Gegenstueck zu fetchTravelDetailsByEmail(): liefert nachweislich dieselben
+     * Datensaetze, kommt aber ohne E-Mail-Identitaet aus. Das ist der Weg fuer
+     * server-seitige Laeufe (Scheduler), wo keine Session und damit keine
+     * SSO-E-Mail zur Verfuegung steht.
+     *
+     * @return array<int, array<string, mixed>>|null null bei Fehler
+     */
+    public function fetchTravelDetailsByAccountId(int $accountId, ?string $startDate = null, ?string $endDate = null): ?array
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token) {
+            Log::warning('Passolution API: Travel-Details-Abruf ohne Token nicht möglich');
+
+            return null;
+        }
+
+        $reqParams = [
+            'account_id' => $accountId,
+            // Der Endpoint verlangt mindestens 10.
+            'per_page' => 1000,
+            'sort_by' => 'start_date',
+            'sort_order' => 'desc',
+            '__with' => '__cruise-info',
+        ];
+        if ($endDate) {
+            $reqParams['start_date'] = ['<=' => $endDate];
+        }
+        if ($startDate) {
+            $reqParams['end_date'] = ['>=' => $startDate];
+        }
+
+        $url = "{$this->internalBaseUrl}/__internal/account/travel-details";
+        $t0 = microtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer '.$token,
+            ])
+                ->timeout(20)
+                ->get($url, $reqParams);
+
+            \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
+
+            if ($response->successful()) {
+                return $response->json('data', []);
+            }
+
+            Log::warning('Passolution API: Travel-Details-Abruf nicht erfolgreich', [
+                'account_id' => $accountId,
+                'status' => $response->status(),
+            ]);
+        } catch (\Exception $e) {
+            \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
+            Log::error('Passolution API: Travel-Details-Abruf fehlgeschlagen', [
+                'account_id' => $accountId,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
      * Account-uebergreifender Delta-Feed der Travel-Detail-Links ueber den
      * internen Endpoint /__internal/travel-details/changes (Service-Token).
      *

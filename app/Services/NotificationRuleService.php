@@ -12,6 +12,7 @@ use App\Models\NotificationRule;
 use App\Models\NotificationTemplate;
 use App\Models\NotificationUnsubscribeToken;
 use App\Models\TravelDetail\TdTrip;
+use App\Services\PassolutionApiService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -33,6 +34,25 @@ class NotificationRuleService
     private array $decisions = [];
 
     private bool $collectDecisions = false;
+
+    /**
+     * PDS-Reisen je Kunde, einmal pro Lauf geholt.
+     *
+     * @var array<int, Collection<int, TdTrip>>
+     */
+    private array $pdsTripCache = [];
+
+    /**
+     * Ist in diesem Lauf mindestens ein PDS-Abruf fehlgeschlagen? Wird vom
+     * Dry-Run ausgewertet, damit ein API-Ausfall nicht wie "keine betroffenen
+     * Reisen" aussieht.
+     */
+    private bool $pdsApiFailed = false;
+
+    public function pdsApiFailed(): bool
+    {
+        return $this->pdsApiFailed;
+    }
 
     /**
      * Aktiviert das Mitschreiben der Versand-Entscheidungen (Dry-Run).
@@ -692,6 +712,13 @@ class NotificationRuleService
 
         $trips = $query->with('travellers')->get();
 
+        // Fallback wie in der Reisen-Ansicht: liegen lokal keine Reisen vor,
+        // direkt bei PDS nachfragen. Ohne das bleiben Kunden aussen vor, deren
+        // Reisen nie nach td_trips synchronisiert wurden.
+        if ($trips->isEmpty()) {
+            $trips = $this->fetchPdsTrips($customerId, $eventStartDate, $eventEndDate);
+        }
+
         Log::info('findAffectedTrips: Reisen im Zeitraum', [
             'count' => $trips->count(),
             'trips' => $trips->map(fn ($t) => [
@@ -718,6 +745,116 @@ class NotificationRuleService
                     array_map('strtoupper', $countryIsoCodes),
                 ));
             });
+    }
+
+    /**
+     * Holt die Reisen eines Kunden direkt bei PDS – derselbe Endpunkt, den auch
+     * die Reisen-Ansicht nutzt. Schluessel ist die pds_account_id des Kunden;
+     * sie steht fest in der Datenbank und funktioniert damit auch im Scheduler,
+     * wo es keine Session und keine SSO-Identitaet gibt.
+     *
+     * Ergebnis sind NICHT gespeicherte TdTrip-Instanzen, damit der weitere
+     * Ablauf (Laenderfilter, Mail-Baustein) unveraendert damit arbeiten kann.
+     *
+     * @return Collection<int, TdTrip>
+     */
+    private function fetchPdsTrips(int $customerId, ?\DateTimeInterface $from, ?\DateTimeInterface $to): Collection
+    {
+        // Pro Lauf nur einmal abfragen: findAffectedTrips() wird je Regel UND
+        // je Event aufgerufen, sonst entstuenden dutzende HTTP-Calls.
+        if (array_key_exists($customerId, $this->pdsTripCache)) {
+            return $this->pdsTripCache[$customerId];
+        }
+
+        $accountId = Customer::whereKey($customerId)->value('pds_account_id');
+
+        if (! $accountId) {
+            Log::info('findAffectedTrips: Kunde ohne pds_account_id, kein PDS-Abruf', [
+                'customer_id' => $customerId,
+            ]);
+
+            return $this->pdsTripCache[$customerId] = collect();
+        }
+
+        try {
+            $rows = app(PassolutionApiService::class)->fetchTravelDetailsByAccountId(
+                (int) $accountId,
+                $from?->format('Y-m-d'),
+                $to?->format('Y-m-d'),
+            );
+        } catch (\Throwable $e) {
+            // Ein API-Ausfall darf nicht als "keine betroffenen Reisen"
+            // durchgehen – sonst bleibt ein Totalausfall unbemerkt.
+            Log::error('findAffectedTrips: PDS-Abruf fehlgeschlagen', [
+                'customer_id' => $customerId,
+                'pds_account_id' => $accountId,
+                'error' => $e->getMessage(),
+            ]);
+            $this->pdsApiFailed = true;
+
+            return $this->pdsTripCache[$customerId] = collect();
+        }
+
+        if ($rows === null) {
+            Log::warning('findAffectedTrips: PDS lieferte keine Antwort', [
+                'customer_id' => $customerId,
+                'pds_account_id' => $accountId,
+            ]);
+            $this->pdsApiFailed = true;
+
+            return $this->pdsTripCache[$customerId] = collect();
+        }
+
+        $trips = collect($rows)->map(function (array $row) use ($customerId) {
+            $tid = $row['tid'] ?? $row['id'] ?? null;
+
+            $trip = new TdTrip([
+                'customer_id' => $customerId,
+                'trip_name' => $row['trip_name'] ?? null,
+                'booking_reference' => $row['reference_id'] ?? null,
+                'external_trip_id' => $tid,
+                'pds_tid' => $tid,
+                'status' => 'active',
+                'computed_start_at' => $row['start_date'] ?? null,
+                'computed_end_at' => $row['end_date'] ?? null,
+                'countries_visited' => $this->extractPdsCountryCodes($row),
+            ]);
+
+            // Nicht persistiert: die Reise existiert nur im Fremdsystem.
+            $trip->exists = false;
+
+            return $trip;
+        });
+
+        Log::info('findAffectedTrips: Reisen von PDS geholt', [
+            'customer_id' => $customerId,
+            'pds_account_id' => $accountId,
+            'count' => $trips->count(),
+        ]);
+
+        return $this->pdsTripCache[$customerId] = $trips;
+    }
+
+    /**
+     * Laendercodes einer PDS-Reise: normale Ziele, bei Kreuzfahrten zusaetzlich
+     * die Haefen. Gleiche Logik wie in der Reisen-Ansicht.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<int, string>
+     */
+    private function extractPdsCountryCodes(array $row): array
+    {
+        $codes = array_map('strtoupper', $row['destinations'] ?? []);
+
+        if (! empty($row['cruise']['port_calls']) && is_array($row['cruise']['port_calls'])) {
+            foreach ($row['cruise']['port_calls'] as $portCall) {
+                if ($code = ($portCall['port']['country']['code'] ?? null)) {
+                    $codes[] = strtoupper($code);
+                }
+            }
+        }
+
+        return array_values(array_unique($codes));
     }
 
     /**

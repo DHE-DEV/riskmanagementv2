@@ -44,6 +44,13 @@ trait RunsNotificationDryRun
             $this->line("Fehler im Lauf      : {$result['errors']}");
             $this->line('Template-Fehler     : '.count($renderErrors));
 
+            if ($service->pdsApiFailed()) {
+                $this->newLine();
+                $this->error('ACHTUNG: Mindestens ein PDS-Abruf ist fehlgeschlagen.');
+                $this->line('  -> "keine betroffenen Reisen" ist hier NICHT aussagekraeftig,');
+                $this->line('     die Reisedaten konnten gar nicht geladen werden. Siehe laravel.log.');
+            }
+
             foreach ($renderErrors as $error) {
                 $this->error("  Template konnte nicht gerendert werden: {$error}");
             }
