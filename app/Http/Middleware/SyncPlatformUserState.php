@@ -36,9 +36,15 @@ class SyncPlatformUserState
         // Nur GET-Navigationen tragen den Plattform-Status. Der Admin-/Filament-
         // Bereich (eigener Guard) und die Auth-Routen selbst bleiben unberuehrt,
         // damit der Login-/Logout-Flow nicht unterbrochen wird.
+        //
+        // embed/* ist ebenfalls ausgenommen: diese Routen laufen in Kunden-iframes
+        // auf fremden Seiten und authentifizieren sich ueber den ?key=pk_live_*
+        // Plugin-Key, nicht ueber den customer-Guard. Ein SSO-Redirect wuerde dort
+        // ins Leere laufen, weil Keycloak die Einbettung per X-Frame-Options
+        // verweigert - der Kunde saehe ein leeres iframe.
         if (! $request->isMethod('GET')
             || ! $request->has(self::PARAM)
-            || $request->is('admin', 'admin/*', 'auth/*', 'customer/auth/*', 'customer/logout*')
+            || $request->is('admin', 'admin/*', 'auth/*', 'customer/auth/*', 'customer/logout*', 'embed', 'embed/*')
         ) {
             return $next($request);
         }
