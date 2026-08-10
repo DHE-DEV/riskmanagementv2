@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\Customer\Concerns\ResolvesSsoLogout;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Services\CustomerFeaturePreauthorizationService;
 use App\Services\PassolutionApiService;
 use App\Services\TravelAlertOrderService;
 use Illuminate\Http\RedirectResponse;
@@ -385,6 +386,21 @@ class KeycloakAuthController extends Controller
         }
 
         $customer->update($updateData);
+
+        // Vorgemerkte Feature-Freischaltungen einloesen. Sie haengen an der
+        // pds_account_id und koennen deshalb schon gesetzt sein, bevor sich der
+        // Account jemals eingeloggt hat. Bereits im Admin gesetzte Werte bleiben
+        // unangetastet; ein Fehlschlag darf die Anmeldung nicht blockieren.
+        try {
+            app(CustomerFeaturePreauthorizationService::class)
+                ->applyForCustomer($customer, $ssoAccountId);
+        } catch (\Throwable $e) {
+            Log::warning('SSO login: Feature-Vormerkung konnte nicht angewendet werden', [
+                'customer_id' => $customer->id,
+                'pds_account_id' => $customer->pds_account_id,
+                'message' => $e->getMessage(),
+            ]);
+        }
 
         // Stammdaten (inkl. Firmenadresse) bei JEDEM Login frisch gegen die
         // Passolution-API abgleichen – eine Adressaenderung auf der Plattform
