@@ -134,6 +134,131 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  /events/nearby:
+    get:
+      tags: [Events]
+      summary: Events im Umkreis von Koordinaten auflisten
+      description: |
+        Gibt die Events zurück, die innerhalb eines Radius um einen Mittelpunkt liegen.
+        Der Mittelpunkt wird entweder direkt über `latitude`/`longitude` angegeben oder über
+        `code` (3-stelliger IATA-Code), der serverseitig in Koordinaten aufgelöst wird.
+        Einer der beiden Wege ist Pflicht, `radius` ist immer erforderlich.
+
+        Die Sichtbarkeit entspricht der von `GET /events`: standardmäßig nur eigene Events,
+        über `scope` zusätzlich Global-Travel-Monitor- oder Gruppen-Events.
+
+        Die Entfernung wird per Haversine-Formel gegen die Event-Koordinate berechnet. Diese
+        wird über dieselbe Kaskade ermittelt wie in der Event-Antwort: Stadt → Region →
+        Hauptstadt → Ländermittelpunkt, bzw. abweichende Koordinaten am Event. **Wichtig:**
+        Events, die nur einem Land ohne genauere Ortsangabe zugeordnet sind, liegen damit auf
+        der Hauptstadt bzw. dem Ländermittelpunkt – ein kleiner Radius kann solche Events also
+        verfehlen. Events ohne auflösbare Koordinaten werden nicht zurückgegeben.
+
+        Das Ergebnis ist nach Erstelldatum absteigend sortiert (nicht nach Entfernung);
+        die Distanz selbst wird nicht mit ausgegeben.
+      parameters:
+        - name: latitude
+          in: query
+          schema:
+            type: number
+            format: float
+            minimum: -90
+            maximum: 90
+          description: "Breitengrad des Mittelpunkts – erforderlich, wenn kein `code` angegeben ist"
+          example: 13.7563
+        - name: longitude
+          in: query
+          schema:
+            type: number
+            format: float
+            minimum: -180
+            maximum: 180
+          description: "Längengrad des Mittelpunkts – erforderlich, wenn kein `code` angegeben ist"
+          example: 100.5018
+        - name: code
+          in: query
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 3
+          description: |
+            3-stelliger IATA-Code als Mittelpunkt (Alternative zu `latitude`/`longitude`).
+            Unbekannte Codes führen zu einem 404.
+          example: BKK
+        - name: radius
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: 1
+            maximum: 20000
+          description: Suchradius in Kilometern
+          example: 100
+        - name: scope
+          in: query
+          schema:
+            type: string
+            default: own
+          description: |
+            Wie bei `GET /events`: kommagetrennte Liste von Scope-Werten
+            (`own`, `passolution`, `all` oder Gruppen-Slugs).
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+          description: Einträge pro Seite
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Seitennummer
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  location:
+                    $ref: '#/components/schemas/NearbyLocation'
+                  meta:
+                    $ref: '#/components/schemas/NearbyMeta'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Unbekannter 3-stelliger Code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unknown 3-letter code: XXX"
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
   /events/{uuid}:
     parameters:
       - name: uuid
@@ -550,6 +675,48 @@ components:
         next:
           type: string
           nullable: true
+
+    NearbyLocation:
+      type: object
+      description: Der aufgelöste Suchmittelpunkt der Umkreissuche
+      properties:
+        code:
+          type: string
+          description: "Nur vorhanden, wenn die Suche über `code` erfolgte"
+          example: BKK
+        name:
+          type: string
+          description: "Nur vorhanden, wenn die Suche über `code` erfolgte"
+          example: Suvarnabhumi Airport
+        latitude:
+          type: number
+          format: float
+          example: 13.681108
+        longitude:
+          type: number
+          format: float
+          example: 100.747283
+        radius_km:
+          type: number
+          format: float
+          example: 100
+
+    NearbyMeta:
+      type: object
+      description: Paginierung der Umkreissuche (ohne links/from/to)
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 25
+        total:
+          type: integer
+          example: 7
+        last_page:
+          type: integer
+          example: 1
 
     PaginationMeta:
       type: object
