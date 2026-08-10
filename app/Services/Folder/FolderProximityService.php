@@ -178,8 +178,10 @@ class FolderProximityService
             ->groupBy('folder_id')
             ->get()
             ->map(function ($result) {
-                $folder = \App\Models\Folder\Folder::withoutGlobalScope('customer')
-                    ->find($result->folder_id);
+                // Keep the customer scope: the grouped query above already restricts
+                // the ids to the current customer, so bypassing it here could only
+                // ever widen the result.
+                $folder = \App\Models\Folder\Folder::find($result->folder_id);
 
                 return [
                     'folder_id' => $result->folder_id,

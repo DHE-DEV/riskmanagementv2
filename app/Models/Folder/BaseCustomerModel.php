@@ -2,6 +2,7 @@
 
 namespace App\Models\Folder;
 
+use App\Models\Customer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -17,17 +18,39 @@ abstract class BaseCustomerModel extends Model
     {
         // Automatically set customer_id on creation
         static::creating(function ($model) {
-            if (auth('customer')->check() && ! $model->customer_id) {
-                $model->customer_id = auth('customer')->id();
+            if (! $model->customer_id && $customerId = static::currentCustomerId()) {
+                $model->customer_id = $customerId;
             }
         });
 
         // Global Scope: Only show records belonging to authenticated customer
         static::addGlobalScope('customer', function (Builder $builder) {
-            if (auth('customer')->check()) {
-                $builder->where($builder->getModel()->getTable().'.customer_id', auth('customer')->id());
+            if ($customerId = static::currentCustomerId()) {
+                $builder->where($builder->getModel()->getTable().'.customer_id', $customerId);
             }
         });
+    }
+
+    /**
+     * Resolve the customer the current request acts on behalf of.
+     *
+     * The customer guard uses the session driver, so it never applies to API
+     * requests. Those authenticate through a Sanctum token instead, and without
+     * this fallback the global scope below would silently be skipped - exposing
+     * every customer's records to any valid token.
+     *
+     * Returns null for admins and for unauthenticated contexts such as queued
+     * jobs and console commands, which keeps their unscoped access intact.
+     */
+    protected static function currentCustomerId(): int|string|null
+    {
+        if (auth('customer')->check()) {
+            return auth('customer')->id();
+        }
+
+        $tokenOwner = auth('sanctum')->user();
+
+        return $tokenOwner instanceof Customer ? $tokenOwner->getKey() : null;
     }
 
     /**

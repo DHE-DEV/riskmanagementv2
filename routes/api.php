@@ -305,10 +305,12 @@ Route::prefix('v1/customer')->middleware(['auth:sanctum'])->group(function () {
 | Protected by customer authentication.
 |
 */
-Route::prefix('v1/folders')->middleware(['auth:sanctum'])->group(function () {
-    // Folder CRUD
+Route::prefix('v1/folders')->middleware([
+    'auth:sanctum',
+    \App\Http\Middleware\EnsureCustomerApiToken::class,
+])->group(function () {
+    // Folder CRUD ({id} is registered last so it cannot shadow the literal routes below)
     Route::get('/', [\App\Http\Controllers\Api\FolderApiController::class, 'index'])->name('customer.folders.index');
-    Route::get('/{id}', [\App\Http\Controllers\Api\FolderApiController::class, 'show'])->name('customer.folders.show');
 
     // Map locations
     Route::get('/map-locations', [\App\Http\Controllers\Api\FolderApiController::class, 'getMapLocations'])->name('customer.folders.map-locations');
@@ -323,6 +325,9 @@ Route::prefix('v1/folders')->middleware(['auth:sanctum'])->group(function () {
     Route::post('/import', [\App\Http\Controllers\Api\FolderImportController::class, 'import'])->name('customer.folders.import');
     Route::get('/imports', [\App\Http\Controllers\Api\FolderImportController::class, 'listImports'])->name('customer.folders.imports.list');
     Route::get('/imports/{logId}/status', [\App\Http\Controllers\Api\FolderImportController::class, 'getImportStatus'])->name('customer.folders.imports.status');
+
+    // Wildcard last: everything above would otherwise be swallowed by /{id}
+    Route::get('/{id}', [\App\Http\Controllers\Api\FolderApiController::class, 'show'])->name('customer.folders.show');
 });
 
 /*
