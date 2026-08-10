@@ -263,7 +263,7 @@ tr.alt td { background: #FAFCFD; }
       <h1 class="mt2">Travel Alert<br>freischalten.</h1>
       <div class="rule mt3"></div>
       <p class="cover-sub mt3">
-        Wie Sie einzelne Kunden freischalten, ganze Account-Listen auf einmal importieren –
+        Wie du einzelne Kunden freischaltest, ganze Account-Listen auf einmal importierst –
         und was dabei im Hintergrund passiert. Ohne Technikkenntnisse nachvollziehbar.
       </p>
     </div>
@@ -302,14 +302,14 @@ tr.alt td { background: #FAFCFD; }
       <div class="card">
         <h3>Der Kunde hat sich schon einmal angemeldet</h3>
         <p class="mt1">
-          Dann gibt es ihn unter <span class="ui">Kunden</span> im Admin. Sie setzen die
+          Dann gibt es ihn unter <span class="ui">Kunden</span> im Admin. Du setzt die
           Freischaltung direkt in seinem Datensatz. Das ist <b>Weg A</b> ab Seite 5.
         </p>
       </div>
       <div class="card">
         <h3>Der Account war noch nie angemeldet</h3>
         <p class="mt1">
-          Dann existiert im Admin nichts, wo Sie etwas eintragen könnten. Sie merken die
+          Dann existiert im Admin nichts, wo du etwas eintragen könntest. Du merkst die
           Freischaltung an der Account-ID vor. Das ist <b>Weg B</b> ab Seite 6.
         </p>
       </div>
@@ -341,9 +341,9 @@ tr.alt td { background: #FAFCFD; }
     <div class="note mt5">
       <span class="head">Die wichtigste Regel</span>
       Eine Vormerkung überschreibt <b>niemals</b> etwas, das im Kundendatensatz bereits steht.
-      Haben Sie einen Kunden von Hand auf <span class="ui">Aktiviert</span> oder
+      Hast du einen Kunden von Hand auf <span class="ui">Aktiviert</span> oder
       <span class="ui">Deaktiviert</span> gesetzt, bleibt dieser Wert erhalten – auch wenn derselbe
-      Account später in einer Import-Liste auftaucht. Sie können also gefahrlos importieren,
+      Account später in einer Import-Liste auftaucht. Du kannst also gefahrlos importieren,
       ohne bestehende Einstellungen zu zerstören.
     </div>
   </div>
@@ -354,16 +354,16 @@ tr.alt td { background: #FAFCFD; }
 <section class="page">
   <div class="frame">
     <div class="kicker">02 · Voraussetzungen</div>
-    <h2 class="mt2">Das brauchen Sie,<br>bevor Sie loslegen.</h2>
+    <h2 class="mt2">Das brauchst du,<br>bevor du loslegst.</h2>
 
     <ul class="checks mt4">
       <li>
         <b>Zugang zum Admin-Backend.</b>
-        Sie melden sich wie gewohnt unter <span class="mono">/admin</span> an. Ein besonderes
+        Du meldest dich wie gewohnt unter <span class="mono">/admin</span> an. Ein besonderes
         Recht ist nicht nötig – wer Kunden bearbeiten darf, kann auch freischalten.
       </li>
       <li>
-        <b>Die Account-IDs liegen Ihnen vor.</b>
+        <b>Die Account-IDs liegen dir vor.</b>
         Als Liste, Tabelle oder Textdatei – Hauptsache die reinen Nummern. Wie sie formatiert
         sind, spielt keine Rolle: untereinander, mit Komma oder gemischt. Alles, was keine Zahl
         ist, wird beim Import automatisch ignoriert.
@@ -371,8 +371,8 @@ tr.alt td { background: #FAFCFD; }
       <li>
         <b>Die Funktion ist auf dem Server eingerichtet.</b>
         Erkennbar daran, dass im Admin-Menü unter <span class="ui">Benutzerverwaltung</span>
-        der Punkt <span class="ui">Feature-Vormerkungen</span> auftaucht. Fehlt er, wenden Sie
-        sich an die Technik – dann steht noch ein Einrichtungsschritt aus.
+        der Punkt <span class="ui">Feature-Vormerkungen</span> auftaucht. Fehlt er, wende dich
+        an die Technik – dann steht noch ein Einrichtungsschritt aus.
       </li>
       <li>
         <b>Die globale Einstellung steht richtig.</b>
@@ -381,10 +381,10 @@ tr.alt td { background: #FAFCFD; }
     </ul>
 
     <div class="stop mt4">
-      <span class="head">Bitte einmal lesen, bevor Sie anfangen</span>
+      <span class="head">Bitte einmal lesen, bevor du anfängst</span>
       <p>
         Travel Alert kann <b>global für alle</b> eingeschaltet sein. Dann sieht jeder angemeldete
-        Kunde die Funktion – unabhängig davon, was Sie eintragen. Eine Freischaltung bewirkt in
+        Kunde die Funktion – unabhängig davon, was du einträgst. Eine Freischaltung bewirkt in
         diesem Zustand schlicht nichts, weil ohnehin schon alle Zugriff haben.
       </p>
       <p class="mt2">
@@ -394,25 +394,25 @@ tr.alt td { background: #FAFCFD; }
       <p class="mt2">
         <b>Die Reihenfolge ist dabei entscheidend:</b> In dem Moment, in dem global ausgeschaltet
         wird, verlieren <b>alle</b> Kunden ohne ausdrückliches <span class="ui">Aktiviert</span>
-        sofort den Zugang. Tragen Sie deshalb erst alle Accounts ein, die Travel Alert behalten
-        oder bekommen sollen – und lassen Sie erst danach umstellen.
+        sofort den Zugang. Trag deshalb erst alle Accounts ein, die Travel Alert behalten
+        oder bekommen sollen – und lass erst danach umstellen.
       </p>
     </div>
 
     <div class="warn mt4">
       <span class="head">Woher bekomme ich die Account-IDs?</span>
       <p>
-        Die IDs stammen von der Passolution-Plattform und werden Ihnen als Liste bereitgestellt.
-        Sie können sie dort auch selbst nachschlagen – im Backend unter
+        Die IDs stammen von der Passolution-Plattform und werden dir als Liste bereitgestellt.
+        Du kannst sie dort auch selbst nachschlagen – im Backend unter
         <span class="mono">backend.passolution.eu/client/accounts</span>. In der Kontenliste
         steht die Nummer in der Spalte <span class="ui">ID</span>.
       </p>
       <p class="mt2">
-        Für einen einzelnen Kunden können Sie die ID auch im Admin nachschlagen: Kunden öffnen,
+        Für einen einzelnen Kunden kannst du die ID auch im Admin nachschlagen: Kunden öffnen,
         Abschnitt <span class="ui">Passolution Integration</span> – dort steht sie unter
         <span class="ui">PDS Account-ID</span>. Umgekehrt geht es genauso: In der Kundenliste
-        blenden Sie über <span class="ui">Spalten</span> die Spalte
-        <span class="ui">PDS Account-ID</span> ein und können dann über das Suchfeld direkt nach
+        blendest du über <span class="ui">Spalten</span> die Spalte
+        <span class="ui">PDS Account-ID</span> ein und kannst dann über das Suchfeld direkt nach
         einer Nummer suchen.
       </p>
       <p class="mt2">
@@ -456,7 +456,7 @@ tr.alt td { background: #FAFCFD; }
 
       <!-- Schritt 1 -->
       <rect x="250" y="10" width="500" height="92" rx="12" fill="#002742" filter="url(#sh)"/>
-      <text class="tw" x="500" y="48" text-anchor="middle">Sie tragen die Account-IDs ein</text>
+      <text class="tw" x="500" y="48" text-anchor="middle">Du trägst die Account-IDs ein</text>
       <text class="tw2" x="500" y="74" text-anchor="middle">Import-Liste oder einzeln</text>
 
       <path d="M 500 108 L 500 148" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#a-ink)"/>
@@ -526,7 +526,7 @@ tr.alt td { background: #FAFCFD; }
         <div class="step-n">1</div>
         <div>
           <h3>Kunden öffnen</h3>
-          <p>Im Admin links auf <span class="ui">Kunden</span>. Über das Suchfeld oben finden Sie
+          <p>Im Admin links auf <span class="ui">Kunden</span>. Über das Suchfeld oben findest du
              den Kunden am schnellsten über seine E-Mail-Adresse oder den Firmennamen. Dann auf
              <span class="ui">Bearbeiten</span>.</p>
         </div>
@@ -602,7 +602,7 @@ tr.alt td { background: #FAFCFD; }
         <div>
           <h3>Liste öffnen</h3>
           <p>Im Admin-Menü unter <span class="ui">Benutzerverwaltung</span> auf
-             <span class="ui">Feature-Vormerkungen</span>. Oben rechts finden Sie die Schaltfläche
+             <span class="ui">Feature-Vormerkungen</span>. Oben rechts findest du die Schaltfläche
              <span class="ui-btn">IDs importieren</span>.</p>
         </div>
       </div>
@@ -621,7 +621,7 @@ tr.alt td { background: #FAFCFD; }
         <div class="step-n">3</div>
         <div>
           <h3>Die vier Einstellungen darunter prüfen</h3>
-          <p>Sie sind so vorbelegt, dass der Normalfall – Travel Alert freischalten – ohne
+          <p>Vorbelegt sind sie so, dass der Normalfall – Travel Alert freischalten – ohne
              Änderung passt. Was sie bedeuten, steht unten auf dieser Seite.</p>
         </div>
       </div>
@@ -632,7 +632,7 @@ tr.alt td { background: #FAFCFD; }
           <h3>Auf <span class="ui-btn">Vormerken</span> klicken</h3>
           <p>Danach erscheint oben rechts eine Meldung mit dem Ergebnis: wie viele IDs vorgemerkt
              wurden, wie viele davon schon ein Konto haben und wie viele Konten sofort angepasst
-             wurden. Diese Meldung bleibt stehen, bis Sie sie schließen – lesen Sie sie in Ruhe.</p>
+             wurden. Diese Meldung bleibt stehen, bis du sie schließt – lies sie in Ruhe.</p>
         </div>
       </div>
     </div>
@@ -641,7 +641,7 @@ tr.alt td { background: #FAFCFD; }
     <ul class="fields mt1">
       <li>
         <span class="name">Account-IDs</span>
-        Ihre Liste. Pflichtfeld.
+        Deine Liste. Pflichtfeld.
       </li>
       <li>
         <span class="name">Feature <span class="small muted">— vorbelegt mit „Travel Alert“</span></span>
@@ -650,7 +650,7 @@ tr.alt td { background: #FAFCFD; }
       </li>
       <li>
         <span class="name">Freischalten <span class="small muted">— vorbelegt: an</span></span>
-        Angeschaltet bedeutet freischalten. Schalten Sie es aus, wird für diese Accounts eine
+        Angeschaltet bedeutet freischalten. Schaltest du es aus, wird für diese Accounts eine
         <b>Sperre</b> vorgemerkt statt einer Freischaltung.
       </li>
       <li>
@@ -678,12 +678,12 @@ tr.alt td { background: #FAFCFD; }
       <div class="card">
         <h3>Einzelne ID vormerken</h3>
         <p class="mt1">
-          Für eine einzige Account-ID lohnt das Import-Fenster nicht. Nutzen Sie oben rechts
+          Für eine einzige Account-ID lohnt das Import-Fenster nicht. Nutz oben rechts
           <span class="ui-btn">Einzeln vormerken</span>.
         </p>
         <p class="mt2">
-          Sobald Sie die Account-ID eingetippt haben, erscheint direkt daneben ein Hinweis, ob es
-          dazu schon Konten gibt – Sie wissen also sofort, ob die Freischaltung gleich greift oder
+          Sobald du die Account-ID eingetippt hast, erscheint direkt daneben ein Hinweis, ob es
+          dazu schon Konten gibt – du weißt also sofort, ob die Freischaltung gleich greift oder
           auf den ersten Login wartet.
         </p>
         <p class="mt2">
@@ -695,13 +695,13 @@ tr.alt td { background: #FAFCFD; }
       <div class="card">
         <h3>Nachzügler nachholen</h3>
         <p class="mt1">
-          Haben Sie beim Import den Schalter „sofort anwenden“ ausgeschaltet, oder wurden
-          Vormerkungen früher per Datei eingespielt, holen Sie das mit
+          Hast du beim Import den Schalter „sofort anwenden“ ausgeschaltet, oder wurden
+          Vormerkungen früher per Datei eingespielt, holst du das mit
           <span class="ui-btn">Offene anwenden</span> oben rechts nach.
         </p>
         <p class="mt2">
           Die Schaltfläche geht alle offenen Vormerkungen durch und setzt sie überall dort, wo
-          inzwischen ein Konto existiert. Sie können sie jederzeit und beliebig oft drücken –
+          inzwischen ein Konto existiert. Du kannst sie jederzeit und beliebig oft drücken –
           bereits gesetzte Werte bleiben unangetastet.
         </p>
         <p class="mt2">
@@ -713,9 +713,9 @@ tr.alt td { background: #FAFCFD; }
 
     <h3 class="mt5">Mehrere Zeilen gleichzeitig behandeln</h3>
     <p class="mt1" style="max-width:155mm">
-      In der Übersicht können Sie links Zeilen ankreuzen. Über das Auswahlmenü, das dann oben
+      In der Übersicht kannst du links Zeilen ankreuzen. Über das Auswahlmenü, das dann oben
       erscheint, lassen sich die markierten Vormerkungen gemeinsam anwenden oder löschen.
-      Bei einzelnen Zeilen finden Sie rechts außerdem <span class="ui">Jetzt anwenden</span> –
+      Bei einzelnen Zeilen findest du rechts außerdem <span class="ui">Jetzt anwenden</span> –
       diese Schaltfläche erscheint nur, wenn es zu der Account-ID auch tatsächlich schon ein
       Konto gibt. Fehlt sie, ist das kein Fehler, sondern bedeutet schlicht: hier gibt es noch
       nichts anzuwenden.
@@ -723,9 +723,9 @@ tr.alt td { background: #FAFCFD; }
 
     <div class="warn mt5">
       <span class="head">Ein Import ist beliebig wiederholbar</span>
-      Sie können dieselbe Liste mehrfach einspielen, ohne etwas kaputt zu machen. Bereits
+      Du kannst dieselbe Liste mehrfach einspielen, ohne etwas kaputt zu machen. Bereits
       vorhandene IDs werden aktualisiert statt doppelt angelegt, und bestehende Freischaltungen
-      bleiben unangetastet. Wenn Sie unsicher sind, ob ein Import durchgelaufen ist:
+      bleiben unangetastet. Wenn du unsicher bist, ob ein Import durchgelaufen ist:
       einfach noch einmal machen.
     </div>
   </div>
@@ -736,7 +736,7 @@ tr.alt td { background: #FAFCFD; }
 <section class="page">
   <div class="frame">
     <div class="kicker">06 · Kontrolle</div>
-    <h2 class="mt2">Woran Sie sehen,<br>dass es geklappt hat.</h2>
+    <h2 class="mt2">Woran du siehst,<br>dass es geklappt hat.</h2>
 
     <p class="lead mt3" style="max-width:150mm">
       Die Übersicht <span class="ui">Feature-Vormerkungen</span> beantwortet das ohne Umwege.
@@ -745,7 +745,7 @@ tr.alt td { background: #FAFCFD; }
 
     <table class="mt4">
       <thead>
-        <tr><th style="width:28%">Spalte</th><th>Was sie Ihnen sagt</th></tr>
+        <tr><th style="width:28%">Spalte</th><th>Was du daran erkennst</th></tr>
       </thead>
       <tbody>
         <tr>
@@ -754,7 +754,7 @@ tr.alt td { background: #FAFCFD; }
             Wie viele Kundenkonten es zu dieser Account-ID gibt. Steht hier
             <span class="ui">noch keins</span>, hat sich der Account nie angemeldet – die
             Vormerkung wartet. Eine Zahl bedeutet, dass die ID getroffen hat.
-            <b>Prüfen Sie diese Spalte nach jedem Import:</b> Wenn dort bei Accounts, die längst
+            <b>Prüf diese Spalte nach jedem Import:</b> Wenn dort bei Accounts, die längst
             aktiv sind, „noch keins“ steht, stimmt vermutlich die ID nicht.
           </td>
         </tr>
@@ -770,7 +770,7 @@ tr.alt td { background: #FAFCFD; }
 
     <h3 class="mt5">Schneller filtern</h3>
     <p class="mt1" style="max-width:155mm">
-      Über <span class="ui">Filter</span> oberhalb der Tabelle grenzen Sie die Ansicht ein –
+      Über <span class="ui">Filter</span> oberhalb der Tabelle grenzt du die Ansicht ein –
       etwa auf <span class="ui">Nur offene</span> oder <span class="ui">Ohne Kundenkonto</span>.
       Die Suche oben rechts findet eine einzelne Account-ID direkt.
     </p>
@@ -787,14 +787,14 @@ tr.alt td { background: #FAFCFD; }
       <div class="card">
         <h3>Gegenprobe beim Kunden</h3>
         <p class="mt1">
-          Wollen Sie es ganz genau wissen, öffnen Sie den Kunden unter
-          <span class="ui">Kunden</span> und schauen im Abschnitt
+          Willst du es ganz genau wissen, öffne den Kunden unter
+          <span class="ui">Kunden</span> und schau im Abschnitt
           <span class="ui">Feature-Überschreibungen</span> nach. Steht dort bei Travel Alert
           <span class="ui">Aktiviert</span>, ist alles erledigt.
         </p>
         <p class="mt2">
-          Den passenden Kunden zu einer Account-ID finden Sie, indem Sie die Nummer in der
-          Kundenliste ins Suchfeld eingeben.
+          Den passenden Kunden zu einer Account-ID findest du, indem du die Nummer in der
+          Kundenliste ins Suchfeld eingibst.
         </p>
       </div>
     </div>
@@ -822,10 +822,10 @@ tr.alt td { background: #FAFCFD; }
       Eigenleben. Löschen entfernt nur den Merkzettel, nicht die Wirkung.
     </div>
 
-    <h3 class="mt5">Was Sie in welcher Situation tun</h3>
+    <h3 class="mt5">Was du in welcher Situation tust</h3>
     <table class="mt2">
       <thead>
-        <tr><th style="width:44%">Ihre Situation</th><th>So gehen Sie vor</th></tr>
+        <tr><th style="width:44%">Deine Situation</th><th>So gehst du vor</th></tr>
       </thead>
       <tbody>
         <tr>
@@ -862,8 +862,8 @@ tr.alt td { background: #FAFCFD; }
     <div class="note mt5">
       <span class="head">Wenn eine Vormerkung nichts bewirkt hat</span>
       Das ist meistens kein Fehler, sondern die Schutzregel bei der Arbeit: Im Kundendatensatz
-      stand bereits ein Wert, und der wird nie überschrieben. Prüfen Sie den Kunden direkt –
-      steht dort <span class="ui">Deaktiviert</span>, müssen Sie das dort von Hand ändern.
+      stand bereits ein Wert, und der wird nie überschrieben. Prüf den Kunden direkt –
+      steht dort <span class="ui">Deaktiviert</span>, musst du das dort von Hand ändern.
     </div>
   </div>
   <div class="foot"><span><b>Travel Alert</b> · Korrigieren</span><span>09</span></div>
@@ -888,14 +888,14 @@ tr.alt td { background: #FAFCFD; }
         </tr>
         <tr class="alt">
           <td>Alle Kunden sehen Travel Alert, obwohl ich nur wenige freigeschaltet habe</td>
-          <td>Dann ist die Funktion noch global für alle eingeschaltet. Ihre Einträge sind
+          <td>Dann ist die Funktion noch global für alle eingeschaltet. Deine Einträge sind
               trotzdem korrekt gespeichert und wirken, sobald die Technik umstellt. Siehe Seite 3.</td>
         </tr>
         <tr>
           <td>Nach dem Import steht bei fast allen Zeilen „noch keins“</td>
           <td>Vermutlich sind es nicht die PDS Account-IDs, sondern Nummern aus einem anderen
-              System. Gegenprobe: Nehmen Sie einen Kunden, von dem Sie wissen, dass er aktiv ist,
-              und vergleichen Sie seine <span class="ui">PDS Account-ID</span> mit Ihrer Liste.</td>
+              System. Gegenprobe: Nimm einen Kunden, von dem du weißt, dass er aktiv ist,
+              und vergleiche seine <span class="ui">PDS Account-ID</span> mit deiner Liste.</td>
         </tr>
         <tr class="alt">
           <td>Die Meldung sagt „Keine gültigen IDs erkannt“</td>
@@ -974,8 +974,8 @@ tr.alt td { background: #FAFCFD; }
     <div class="grid2 mt5">
       <div class="back-card">
         <h4>Vor dem ersten Import</h4>
-        <p>Eine Stichprobe aus der Liste prüfen: Gehört die ID wirklich zu dem Kunden, den Sie
-           erwarten? Nach dem Import zeigt die Spalte „Konten“, ob es gepasst hat.</p>
+        <p>Eine Stichprobe aus der Liste prüfen: Gehört die ID wirklich zu dem Kunden, den du
+           erwartest? Nach dem Import zeigt die Spalte „Konten“, ob es gepasst hat.</p>
       </div>
       <div class="back-card">
         <h4>Vor der globalen Umstellung</h4>
