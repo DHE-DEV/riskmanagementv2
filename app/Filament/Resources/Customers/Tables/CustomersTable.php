@@ -15,6 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema;
 
 class CustomersTable
 {
@@ -32,6 +33,19 @@ class CustomersTable
                     ->searchable()
                     ->sortable()
                     ->copyable(),
+
+                // Standardmaessig ausgeblendet: nur relevant, wenn man eine Account-ID
+                // aus einer Freischaltungsliste einem Kunden zuordnen will. searchable()
+                // macht die Liste damit ueber die reine ID durchsuchbar.
+                ...(self::hasPdsAccountId() ? [
+                    TextColumn::make('pds_account_id')
+                        ->label('PDS Account-ID')
+                        ->searchable()
+                        ->sortable()
+                        ->copyable()
+                        ->placeholder('noch nie angemeldet')
+                        ->toggleable(isToggledHiddenByDefault: true),
+                ] : []),
 
                 TextColumn::make('customer_type')
                     ->label('Kundentyp')
@@ -165,5 +179,17 @@ class CustomersTable
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('Keine Kunden')
             ->emptyStateDescription('Es wurden noch keine Kunden registriert.');
+    }
+
+    /**
+     * Faengt einen Stand ab, auf dem die Spalte noch fehlt - eine searchable()-Spalte
+     * auf einer unbekannten Spalte wuerde die Kundenliste beim Suchen zerlegen.
+     * Das Ergebnis wird gemerkt, damit nicht jedes Rendern information_schema abfragt.
+     */
+    private static function hasPdsAccountId(): bool
+    {
+        static $exists = null;
+
+        return $exists ??= Schema::hasColumn('customers', 'pds_account_id');
     }
 }

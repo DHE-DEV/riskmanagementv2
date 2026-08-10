@@ -11,6 +11,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use App\Models\Country;
 
 class CustomerForm
@@ -228,6 +229,19 @@ class CustomerForm
                             Section::make('Passolution Integration')
                                 ->schema([
                                     Grid::make(2)->schema([
+                                        // Kommt beim SSO-Login mit und ist der Schluessel fuer
+                                        // Feature-Vormerkungen. Nur lesend: gesetzt wird der Wert
+                                        // ausschliesslich beim Login.
+                                        TextInput::make('pds_account_id')
+                                            ->label('PDS Account-ID')
+                                            ->helperText('Wird beim Login gesetzt. Diese Nummer wird für Feature-Vormerkungen verwendet.')
+                                            ->placeholder('noch nicht angemeldet')
+                                            ->disabled()
+                                            ->columnSpanFull()
+                                            // Faengt einen Stand ab, auf dem die Spalte noch fehlt -
+                                            // sonst bricht das gesamte Kundenformular.
+                                            ->visible(fn (): bool => self::hasPdsAccountId()),
+
                                         TextInput::make('passolution_subscription_type')
                                             ->label('Abo-Typ')
                                             ->disabled(),
@@ -322,5 +336,17 @@ class CustomerForm
                         ]),
                 ]),
             ]);
+    }
+
+    /**
+     * Faengt einen Stand ab, auf dem die Spalte noch fehlt - ein Feld auf einer
+     * unbekannten Spalte wuerde sonst das gesamte Kundenformular brechen.
+     * Das Ergebnis wird gemerkt, damit nicht jedes Rendern information_schema abfragt.
+     */
+    private static function hasPdsAccountId(): bool
+    {
+        static $exists = null;
+
+        return $exists ??= DatabaseSchema::hasColumn('customers', 'pds_account_id');
     }
 }
