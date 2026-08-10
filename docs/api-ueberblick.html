@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Passolution APIs – Überblick</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --mist-2:   #E4EDF1;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+
+@media screen {
+  .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); }
+}
+
+/* ---------- shared type ---------- */
+.kicker {
+  font-size: 7.6pt;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; letter-spacing: -.005em; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p  { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); font-weight: 400; }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+  letter-spacing: -.01em;
+}
+
+/* ---------- content frame ---------- */
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute;
+  left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD;
+  border-top: .6pt solid var(--line);
+  padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+
+/* ---------- cover ---------- */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 44pt; line-height: 1.02; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 13pt; line-height: 1.45; color: #A9C3D2; max-width: 118mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.cover-strip {
+  display: flex; gap: 3mm; margin-top: auto;
+}
+.cover-chip {
+  flex: 1;
+  border: .6pt solid rgba(206,231,65,.35);
+  border-radius: 2.4mm;
+  padding: 3.6mm 3mm;
+  background: rgba(255,255,255,.04);
+}
+.cover-chip .n { font-size: 8pt; font-weight: 800; color: var(--lime); letter-spacing: .08em; }
+.cover-chip .t { font-size: 8.4pt; font-weight: 600; color: #fff; margin-top: 1.2mm; line-height: 1.3; }
+
+/* ---------- generic blocks ---------- */
+.section-head { display: flex; align-items: flex-start; gap: 6mm; }
+.bignum {
+  font-size: 40pt; font-weight: 800; line-height: .82;
+  color: transparent;
+  -webkit-text-stroke: .9pt var(--lime-2);
+  letter-spacing: -.04em;
+  flex: 0 0 auto;
+}
+.badge {
+  display: inline-block;
+  padding: 1mm 2.6mm;
+  border-radius: 10mm;
+  font-size: 7.4pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+}
+.badge-read  { background: #E7F3FA; color: #0E5578; }
+.badge-write { background: #F4FAD8; color: var(--lime-ink); }
+.badge-open  { background: #E6F7EE; color: #12664A; }
+.badge-admin { background: #FDF0E4; color: #8A4B12; }
+
+.promise {
+  font-size: 13pt; font-weight: 600; line-height: 1.38; letter-spacing: -.015em;
+  color: var(--ink);
+}
+
+.cols { display: flex; gap: 7mm; }
+.col-main { flex: 1 1 auto; }
+.col-side { flex: 0 0 62mm; }
+
+.ticks { list-style: none; }
+.ticks li {
+  position: relative;
+  padding-left: 6.4mm;
+  margin-bottom: 2.4mm;
+  font-size: 9.6pt;
+  line-height: 1.45;
+}
+.ticks li::before {
+  content: '';
+  position: absolute; left: 0; top: 1.35mm;
+  width: 3.6mm; height: 3.6mm; border-radius: 50%;
+  background: var(--lime);
+}
+.ticks li::after {
+  content: '';
+  position: absolute; left: 1.15mm; top: 2.35mm;
+  width: 1.5mm; height: .75mm;
+  border-left: .55mm solid var(--ink); border-bottom: .55mm solid var(--ink);
+  transform: rotate(-45deg);
+}
+.ticks b { font-weight: 700; }
+
+.factbox {
+  background: var(--ink);
+  color: #fff;
+  border-radius: 3mm;
+  padding: 5mm;
+}
+.factbox h4 { color: var(--lime); letter-spacing: .14em; text-transform: uppercase; font-size: 7.4pt; }
+.factbox dl { margin-top: 3mm; }
+.factbox dt {
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #86A7BA; margin-top: 3mm;
+}
+.factbox dt:first-of-type { margin-top: 0; }
+.factbox dd { font-size: 9pt; font-weight: 600; line-height: 1.35; margin-top: .6mm; }
+.factbox dd.mono { font-weight: 500; font-size: 8pt; color: #DCEAF2; }
+
+.example {
+  border: .6pt solid var(--line);
+  border-left: 1.6mm solid var(--lime);
+  border-radius: 0 2.4mm 2.4mm 0;
+  background: var(--mist);
+  padding: 4.4mm 4.6mm;
+}
+.example h4 { text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; color: var(--lime-ink); }
+.example p { font-size: 9.2pt; line-height: 1.5; margin-top: 1.8mm; }
+
+.note {
+  background: #FFF8E8;
+  border: .6pt solid #F0DFB8;
+  border-radius: 2.4mm;
+  padding: 3.4mm 4mm;
+  font-size: 8.8pt;
+  line-height: 1.45;
+  color: #6B4E12;
+}
+.note b { color: #4A360A; }
+
+.techstrip {
+  border-top: .6pt solid var(--line);
+  padding-top: 3.4mm;
+}
+.techstrip h4 { font-size: 7.4pt; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 1.6mm; margin-top: 2.4mm; }
+.chip {
+  border: .6pt solid var(--line);
+  background: #FBFDFE;
+  border-radius: 1.6mm;
+  padding: 1.1mm 2.2mm;
+  white-space: nowrap;
+}
+.chip .verb {
+  font-weight: 700; font-size: 7pt; letter-spacing: .06em;
+  margin-right: 1.4mm; color: var(--ink-3);
+}
+.chip .verb.post { color: #1F7A4C; }
+.chip .verb.put  { color: #9A6208; }
+.chip .verb.del  { color: #A93226; }
+
+/* ---------- tables ---------- */
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 3mm 2.2mm 0;
+  border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm 2.8mm 0;
+  border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt;
+  vertical-align: top;
+  line-height: 1.4;
+}
+td b { font-weight: 700; }
+tr.alt td { background: #FAFCFD; }
+
+/* ---------- misc layout helpers ---------- */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.card {
+  border: .6pt solid var(--line);
+  border-radius: 2.6mm;
+  padding: 4.4mm;
+  background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+.card-icon {
+  width: 9mm; height: 9mm;
+  border-radius: 2mm;
+  background: var(--lime);
+  display: flex; align-items: center; justify-content: center;
+}
+.card-icon svg { width: 5.4mm; height: 5.4mm; }
+
+.step { display: flex; gap: 4mm; align-items: flex-start; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1mm; }
+.step p { font-size: 9.2pt; color: var(--ink-2); }
+
+dl.glossary dt {
+  font-weight: 700; font-size: 9.6pt;
+  margin-top: 3.6mm;
+}
+dl.glossary dt:first-child { margin-top: 0; }
+dl.glossary dd { font-size: 8.8pt; line-height: 1.45; color: var(--ink-2); margin-top: .4mm; }
+
+.hr { height: .6pt; background: var(--line); }
+
+/* ---------- back cover ---------- */
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back h2 { color: #fff; }
+.back .lead { color: #A9C3D2; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18);
+  border-radius: 3mm;
+  padding: 5mm;
+  background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+/* spacing utilities */
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb1{margin-bottom:2mm}.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}.mb4{margin-bottom:8mm}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".30"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity="0"/>
+          <stop offset="45%" stop-color="#CEE741" stop-opacity=".85"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="700" cy="300" r="330" fill="url(#glow)"/>
+
+      <!-- globe grid -->
+      <g transform="translate(568,332)" fill="none" stroke="#5E8FA8" stroke-opacity=".38" stroke-width="1">
+        <circle r="216"/>
+        <ellipse rx="216" ry="74"/>
+        <ellipse rx="216" ry="146"/>
+        <ellipse rx="74" ry="216"/>
+        <ellipse rx="146" ry="216"/>
+        <line x1="-216" y1="0" x2="216" y2="0"/>
+      </g>
+      <!-- orbit arcs -->
+      <g fill="none" stroke="url(#arc)" stroke-width="2.2">
+        <path d="M 250 470 C 380 300, 700 250, 860 400"/>
+        <path d="M 180 590 C 360 470, 760 430, 900 560"/>
+      </g>
+      <!-- event pins -->
+      <g>
+        <circle cx="470" cy="268" r="5.5" fill="#CEE741"/>
+        <circle cx="470" cy="268" r="13" fill="none" stroke="#CEE741" stroke-opacity=".45" stroke-width="1.4"/>
+        <circle cx="672" cy="214" r="4" fill="#7FD4FF"/>
+        <circle cx="672" cy="214" r="10.5" fill="none" stroke="#7FD4FF" stroke-opacity=".4" stroke-width="1.2"/>
+        <circle cx="742" cy="428" r="4.5" fill="#CEE741"/>
+        <circle cx="742" cy="428" r="11.5" fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="1.2"/>
+        <circle cx="556" cy="500" r="3.6" fill="#FFB27F"/>
+        <circle cx="556" cy="500" r="9.5" fill="none" stroke="#FFB27F" stroke-opacity=".4" stroke-width="1.2"/>
+      </g>
+      <!-- bottom lime swoosh -->
+      <path d="M 0 1123 L 0 1006 C 180 1052, 340 1016, 470 942 C 620 856, 720 838, 794 852 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1006 C 180 1052, 340 1016, 470 942 C 620 856, 720 838, 794 852"
+            fill="none" stroke="#CEE741" stroke-opacity=".55" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:34mm">
+      <div class="kicker" style="color:#CEE741">Schnittstellen im Überblick</div>
+      <h1 class="mt2">Was unsere<br>APIs für Sie<br>tun können.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Fünf Schnittstellen, mit denen Sie Reisewarnungen, Ereignisse und Reisedaten
+        in Ihre eigenen Systeme holen – oder eigene Meldungen einspielen.
+        Verständlich erklärt, ohne Technik-Vorkenntnisse.
+      </p>
+    </div>
+
+    <div class="cover-strip">
+      <div class="cover-chip"><div class="n">01</div><div class="t">Events API</div></div>
+      <div class="cover-chip"><div class="n">02</div><div class="t">Custom Events API</div></div>
+      <div class="cover-chip"><div class="n">03</div><div class="t">Folder Import API</div></div>
+      <div class="cover-chip"><div class="n">04</div><div class="t">Feed API</div></div>
+      <div class="cover-chip"><div class="n">05</div><div class="t">Plugin Domain API</div></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Stand: August 2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 · EINSTIEG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">Zum Einstieg</div>
+    <h2 class="mt2">Eine API ist eine Steckdose<br>für Daten.</h2>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <p class="lead">
+          Sie müssen nicht wissen, wie ein Kraftwerk funktioniert, um eine Lampe anzuschließen.
+          Genauso ist es hier: Unsere APIs sind fertige Anschlüsse. Ihr System steckt sich an –
+          und bekommt genau die Daten, die es braucht.
+        </p>
+
+        <p class="mt3">
+          Hinter allem steht ein redaktionell gepflegter Datenbestand: aktuelle Ereignisse rund um
+          Sicherheit, Einreise, Gesundheit, Umwelt und Reiseverkehr – weltweit, nach Ländern und
+          Regionen sortiert, mit Risikostufe und Zeitraum. Dazu Stammdaten wie Länder, Kontinente,
+          Regionen und Ereignis-Kategorien.
+        </p>
+
+        <p class="mt2">
+          Was Sie damit machen, entscheiden Sie. Manche Kunden holen sich die Daten in ihr eigenes
+          Dashboard. Andere binden einen fertigen Nachrichten-Feed ins Intranet ein. Wieder andere
+          liefern uns ihre Reisedaten und lassen automatisch prüfen, welche Reisenden von einem
+          Ereignis betroffen sind.
+        </p>
+
+        <p class="mt2">
+          Alles beruht auf demselben Datenbestand. Sie entscheiden nur, welchen Anschluss Sie
+          nutzen – und können jederzeit einen weiteren dazunehmen.
+        </p>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Drei Begriffe genügen</h4>
+          <dl>
+            <dt>Endpunkt</dt>
+            <dd>Eine feste Internet-Adresse, an der eine bestimmte Information liegt.</dd>
+            <dt>Token</dt>
+            <dd>Ihr persönlicher Schlüssel. Er weist Ihr System als berechtigt aus.</dd>
+            <dt>JSON</dt>
+            <dd>Das Format der Antwort. Für Menschen lesbar, für Software direkt verwertbar.</dd>
+          </dl>
+        </div>
+
+        <div class="example mt3">
+          <h4>Kurz gesagt</h4>
+          <p>Ihre IT braucht typischerweise einen halben Tag, um die erste Abfrage produktiv laufen
+             zu lassen. Alles Weitere ist Feinschliff.</p>
+        </div>
+
+        <div class="note mt3">
+          <b>Ohne eigene Entwicklung?</b> Geht auch. Die Feed API (Nr. 04) liefert einen fertigen
+          Nachrichten-Feed, den viele Intranets und CMS ohne Programmierung einbinden können.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid3 mt5">
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#002742" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12H8"/><path d="M13 7l-5 5 5 5"/><rect x="2" y="4" width="4" height="16" rx="1.2"/>
+          </svg>
+        </div>
+        <h3 class="mt2">Sie holen Daten</h3>
+        <p class="mt1">Ereignisse und Stammdaten fließen in Ihr System – gefiltert nach Land,
+           Risikostufe, Kategorie oder Umkreis.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#002742" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12h13"/><path d="M11 7l5 5-5 5"/><rect x="18" y="4" width="4" height="16" rx="1.2"/>
+          </svg>
+        </div>
+        <h3 class="mt2">Sie liefern Daten</h3>
+        <p class="mt1">Eigene Meldungen oder Ihre Reisevorgänge geben Sie an die Plattform – und
+           profitieren von der Auswertung.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#002742" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="10.5" width="18" height="11" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/><circle cx="12" cy="16" r="1.4"/>
+          </svg>
+        </div>
+        <h3 class="mt2">Sie steuern Zugriff</h3>
+        <p class="mt1">Welche Ihrer Websites das Plugin einbetten dürfen, verwalten Sie selbst –
+           auch für hunderte Domains.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · APIs im Überblick</span><span>02</span></div>
+</section>
+
+<!-- ============================================================ 3 · GRAFIK -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">Das Zusammenspiel</div>
+    <h2 class="mt2">Wo die Daten herkommen –<br>und wohin sie gehen.</h2>
+
+    <svg class="mt3" width="100%" viewBox="0 0 1000 1130" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ar-lime" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#B6D22E"/>
+        </marker>
+        <marker id="ar-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0E5578"/>
+        </marker>
+        <marker id="ar-dash" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#8AA5B4"/>
+        </marker>
+        <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#08405F"/>
+          <stop offset="100%" stop-color="#002742"/>
+        </linearGradient>
+        <filter id="sh" x="-8%" y="-8%" width="116%" height="124%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#002742" flood-opacity=".13"/>
+        </filter>
+      </defs>
+
+      <style>
+        .cap  { font: 700 17px 'InterVar', sans-serif; fill: #002742; letter-spacing: -.2px; }
+        .capw { font: 700 17px 'InterVar', sans-serif; fill: #FFFFFF; letter-spacing: -.2px; }
+        .sub  { font: 400 13.5px 'InterVar', sans-serif; fill: #5C7688; }
+        .subw { font: 400 13.5px 'InterVar', sans-serif; fill: #9FBECE; }
+        .tag  { font: 800 12px 'InterVar', sans-serif; letter-spacing: 1.2px; }
+        .band { font: 800 13px 'InterVar', sans-serif; letter-spacing: 2px; }
+        .lbl  { font: 600 13px 'InterVar', sans-serif; fill: #7B93A2; letter-spacing: .3px; }
+      </style>
+
+      <!-- ============ BAND 1 · herein ============ -->
+      <text class="band" x="20" y="22" fill="#8FA82A">1 — DATEN KOMMEN HEREIN</text>
+      <line x1="20" y1="38" x2="980" y2="38" stroke="#D4E1E8" stroke-width="1.4"/>
+
+      <g filter="url(#sh)">
+        <rect x="20"  y="64" width="228" height="156" rx="12" fill="#fff"    stroke="#D4E1E8"/>
+        <rect x="264" y="64" width="228" height="156" rx="12" fill="#fff"    stroke="#D4E1E8"/>
+        <rect x="508" y="64" width="228" height="156" rx="12" fill="#FBFDF2" stroke="#CEE741" stroke-width="1.8"/>
+        <rect x="752" y="64" width="228" height="156" rx="12" fill="#FBFDF2" stroke="#CEE741" stroke-width="1.8"/>
+      </g>
+      <rect x="20"  y="64" width="228" height="6" rx="3" fill="#8AA5B4"/>
+      <rect x="264" y="64" width="228" height="6" rx="3" fill="#8AA5B4"/>
+      <rect x="508" y="64" width="228" height="6" rx="3" fill="#CEE741"/>
+      <rect x="752" y="64" width="228" height="6" rx="3" fill="#CEE741"/>
+
+      <text class="cap" x="44" y="106">Passolution</text>
+      <text class="cap" x="44" y="128">Redaktion</text>
+      <text class="sub" x="44" y="158">Recherchierte und</text>
+      <text class="sub" x="44" y="178">geprüfte Meldungen</text>
+
+      <text class="cap" x="288" y="106">Passolution</text>
+      <text class="cap" x="288" y="128">Infosystem</text>
+      <text class="sub" x="288" y="158">Einreise-, Visa- und</text>
+      <text class="sub" x="288" y="178">Gesundheitsdaten</text>
+
+      <circle cx="952" cy="96" r="17" fill="#CEE741" transform="translate(-244,0)"/>
+      <text class="tag" x="708" y="101" text-anchor="middle" fill="#002742">02</text>
+      <text class="cap" x="532" y="106">Ihre eigenen</text>
+      <text class="cap" x="532" y="128">Meldungen</text>
+      <text class="sub" x="532" y="158" font-weight="600" fill="#002742">Custom Events API</text>
+      <text class="sub" x="532" y="178">nach Freigabe im Bestand</text>
+
+      <circle cx="952" cy="96" r="17" fill="#CEE741"/>
+      <text class="tag" x="952" y="101" text-anchor="middle" fill="#002742">03</text>
+      <text class="cap" x="776" y="106">Ihre Reise-</text>
+      <text class="cap" x="776" y="128">vorgänge</text>
+      <text class="sub" x="776" y="158" font-weight="600" fill="#002742">Folder Import API</text>
+      <text class="sub" x="776" y="178">Hotels, Flüge, Schiffe</text>
+
+      <g fill="none" stroke="#B6D22E" stroke-width="2.6" marker-end="url(#ar-lime)">
+        <path d="M 134 226 C 134 262, 220 262, 250 292"/>
+        <path d="M 378 226 C 378 262, 402 268, 416 292"/>
+        <path d="M 622 226 C 622 262, 598 268, 584 292"/>
+        <path d="M 866 226 C 866 262, 780 262, 750 292"/>
+      </g>
+
+      <!-- ============ BAND 2 · Plattform ============ -->
+      <rect x="100" y="300" width="800" height="300" rx="20" fill="url(#core)" filter="url(#sh)"/>
+      <text class="capw" x="500" y="348" text-anchor="middle" font-size="24">Passolution Plattform</text>
+      <line x1="462" y1="366" x2="538" y2="366" stroke="#CEE741" stroke-width="3.4" stroke-linecap="round"/>
+
+      <g>
+        <rect x="130" y="392" width="245" height="112" rx="12" fill="#FFFFFF" fill-opacity=".08" stroke="#CEE741" stroke-opacity=".35"/>
+        <text class="capw" x="152" y="426" font-size="17">Ereignisse</text>
+        <text class="subw" x="152" y="452">Risikostufe · Kategorie</text>
+        <text class="subw" x="152" y="474">Zeitraum · Ort</text>
+
+        <rect x="392" y="392" width="245" height="112" rx="12" fill="#FFFFFF" fill-opacity=".08" stroke="#CEE741" stroke-opacity=".35"/>
+        <text class="capw" x="414" y="426" font-size="17">Länder &amp; Regionen</text>
+        <text class="subw" x="414" y="452">Stammdaten · Kontinente</text>
+        <text class="subw" x="414" y="474">EU · Schengen</text>
+
+        <rect x="654" y="392" width="245" height="112" rx="12" fill="#FFFFFF" fill-opacity=".08" stroke="#CEE741" stroke-opacity=".35"/>
+        <text class="capw" x="676" y="426" font-size="17">Reisen &amp; Reisende</text>
+        <text class="subw" x="676" y="452">Timeline · Koordinaten</text>
+        <text class="subw" x="676" y="474">Betroffenheit</text>
+      </g>
+
+      <text class="subw" x="500" y="548" text-anchor="middle">Zusammenführen · Prüfen · Verorten · Freigeben · Aktuell halten</text>
+
+      <!-- ============ BAND 3 · hinaus ============ -->
+      <text class="band" x="20" y="634" fill="#0E5578">2 — DATEN GEHEN HINAUS</text>
+      <line x1="272" y1="628" x2="980" y2="628" stroke="#D4E1E8" stroke-width="1.4"/>
+
+      <g fill="none" stroke="#0E5578" stroke-width="2.6" marker-end="url(#ar-ink)">
+        <path d="M 250 648 C 250 670, 190 662, 173 686"/>
+        <path d="M 500 648 C 500 670, 500 664, 500 686"/>
+        <path d="M 750 648 C 750 670, 844 662, 861 686"/>
+      </g>
+
+      <g filter="url(#sh)">
+        <rect x="20"  y="700" width="306" height="180" rx="12" fill="#F5FAFD" stroke="#0E5578" stroke-width="1.8"/>
+        <rect x="347" y="700" width="306" height="180" rx="12" fill="#F5FAFD" stroke="#0E5578" stroke-width="1.8"/>
+        <rect x="674" y="700" width="306" height="180" rx="12" fill="#F5FAFD" stroke="#0E5578" stroke-width="1.8"/>
+      </g>
+      <rect x="20"  y="874" width="306" height="6" rx="3" fill="#0E5578"/>
+      <rect x="347" y="874" width="306" height="6" rx="3" fill="#0E5578"/>
+      <rect x="674" y="874" width="306" height="6" rx="3" fill="#0E5578"/>
+
+      <circle cx="72" cy="740" r="17" fill="#0E5578"/>
+      <text class="tag" x="72" y="745" text-anchor="middle" fill="#fff">01</text>
+      <text class="cap" x="100" y="746">Events API</text>
+      <text class="sub" x="44" y="790">Ereignisse in Ihrem eigenen</text>
+      <text class="sub" x="44" y="812">System – gefiltert, im Umkreis</text>
+      <text class="sub" x="44" y="834">und als Länder-Übersicht</text>
+
+      <circle cx="399" cy="740" r="17" fill="#0E5578"/>
+      <text class="tag" x="399" y="745" text-anchor="middle" fill="#fff">04</text>
+      <text class="cap" x="427" y="746">Feed API</text>
+      <text class="sub" x="371" y="790">Fertiger Nachrichten-Feed für</text>
+      <text class="sub" x="371" y="812">Intranet, CMS und Feed-Reader</text>
+      <text class="sub" x="371" y="834">– ganz ohne Zugangsdaten</text>
+
+      <circle cx="726" cy="740" r="17" fill="#0E5578"/>
+      <text class="tag" x="726" y="745" text-anchor="middle" fill="#fff">05</text>
+      <text class="cap" x="754" y="746">Plugin auf Ihrer Website</text>
+      <text class="sub" x="698" y="790">Fertige Anzeige zum Einbetten</text>
+      <text class="sub" x="698" y="812">per iframe – freigeschaltet für</text>
+      <text class="sub" x="698" y="834">Ihre eigenen Domains</text>
+
+      <!-- plugin domain api steuert -->
+      <path d="M 827 954 L 827 892" fill="none" stroke="#8AA5B4" stroke-width="2.2" stroke-dasharray="6 5" marker-end="url(#ar-dash)"/>
+      <text class="lbl" x="843" y="930">steuert</text>
+      <rect x="674" y="954" width="306" height="96" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#sh)"/>
+      <text class="cap" x="698" y="994">Plugin Domain API</text>
+      <text class="sub" x="698" y="1020">Welche Websites einbetten dürfen</text>
+
+      <!-- ============ legend ============ -->
+      <line x1="20" y1="962" x2="640" y2="962" stroke="#D4E1E8" stroke-width="1.4"/>
+      <g>
+        <line x1="20" y1="998" x2="66" y2="998" stroke="#B6D22E" stroke-width="2.8" marker-end="url(#ar-lime)"/>
+        <text class="sub" x="80" y="1003">Daten, die Sie liefern</text>
+
+        <line x1="330" y1="998" x2="376" y2="998" stroke="#0E5578" stroke-width="2.8" marker-end="url(#ar-ink)"/>
+        <text class="sub" x="390" y="1003">Daten, die Sie beziehen</text>
+
+        <line x1="20" y1="1044" x2="66" y2="1044" stroke="#8AA5B4" stroke-width="2.2" stroke-dasharray="6 5" marker-end="url(#ar-dash)"/>
+        <text class="sub" x="80" y="1049">steuert den Zugriff</text>
+
+        <circle cx="343" cy="1044" r="15" fill="#EDF3F6"/>
+        <text class="tag" x="343" y="1049" text-anchor="middle" fill="#0E5578">01</text>
+        <text class="sub" x="366" y="1049">Kapitelnummer in dieser Broschüre</text>
+      </g>
+    </svg>
+
+    <p class="small muted mt3">
+      Alle fünf Schnittstellen arbeiten auf demselben Datenbestand. Sie können einzeln genutzt
+      werden – oder kombiniert: Wer Reisevorgänge liefert (03) und Ereignisse bezieht (01),
+      erhält automatisch die Verbindung zwischen beidem.
+    </p>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · APIs im Überblick</span><span>03</span></div>
+</section>
+
+<!-- ============================================================ 4 · EVENTS API -->
+<section class="page">
+  <div class="frame">
+    <div class="section-head">
+      <div class="bignum">01</div>
+      <div>
+        <span class="badge badge-read">Daten beziehen · lesend</span>
+        <h2 class="mt1">Events API</h2>
+      </div>
+    </div>
+
+    <p class="promise mt3">
+      Alle aktuellen Reisewarnungen und Ereignisse – automatisch in Ihrem eigenen System,
+      statt in einem weiteren Portal, in das sich niemand einloggt.
+    </p>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <h3>Was sie macht</h3>
+        <p class="mt1">
+          Die Events API liefert alle aktiven, freigegebenen Ereignismeldungen: von unserer Redaktion
+          erstellte Meldungen, Meldungen unserer API-Partner und automatisch übernommene Informationen
+          aus dem Passolution Infosystem. Jede Meldung trägt eine Risikostufe, einen Zeitraum, eine
+          oder mehrere Kategorien und die betroffenen Länder. Sie lesen nur – verändern können Sie
+          über diese Schnittstelle nichts.
+        </p>
+
+        <h3 class="mt3">Das können Sie damit</h3>
+        <ul class="ticks mt1">
+          <li><b>Gezielt filtern</b> nach Risikostufe, Land, Kategorie, Region, Zeitraum – und nach
+              der Quelle, also z.&nbsp;B. nur Meldungen eines bestimmten Partners.</li>
+          <li><b>Im Umkreis suchen:</b> alle Ereignisse in einem Radius um einen Ort – wahlweise über
+              Koordinaten oder einfach über den dreistelligen Flughafen-Code, etwa 250&nbsp;km um MUC.</li>
+          <li><b>Länder-Übersicht abrufen</b> mit der Anzahl aktiver Ereignisse je Land – ideal für
+              eine Ampel- oder Kartendarstellung.</li>
+          <li><b>Stammdaten mitnehmen:</b> Kontinente, Länder, Regionen und alle gültigen
+              Ereignis-Kategorien, damit Ihre Auswahllisten immer aktuell bleiben.</li>
+          <li><b>Seitenweise abholen</b> – bis zu 100 Meldungen pro Abruf, mit Angabe der Gesamtzahl.</li>
+        </ul>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Auf einen Blick</h4>
+          <dl>
+            <dt>Für wen</dt>
+            <dd>Kunden mit eigenem System</dd>
+            <dt>Zugang</dt>
+            <dd>Token von Ihrem Ansprechpartner</dd>
+            <dt>Richtung</dt>
+            <dd>Nur lesend</dd>
+            <dt>Format</dt>
+            <dd>JSON</dd>
+            <dt>Tempo</dt>
+            <dd>60 Abrufe pro Minute<br><span class="small" style="font-weight:400;color:#86A7BA">individuell erhöhbar</span></dd>
+            <dt>Adresse</dt>
+            <dd class="mono">api.global-travel-monitor.de/v1</dd>
+          </dl>
+        </div>
+
+        <div class="example mt3">
+          <h4>Praxisbeispiel</h4>
+          <p>Ein Reisebüro zeigt in seiner Buchungsmaske zu jedem Vorgang automatisch alle Ereignisse
+             im Umkreis von 100&nbsp;km um den Zielflughafen an – ohne dass die Mitarbeiterin ein
+             zweites Programm öffnen muss.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="techstrip mt4">
+      <h4>Für Ihre IT: die Endpunkte</h4>
+      <div class="chips">
+        <span class="chip mono"><span class="verb">GET</span>/v1/events</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/events/nearby</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/events/{uuid}</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/events/countries</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/continents</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/countries</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/regions</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/event-categories</span>
+      </div>
+      <p class="small muted mt2">
+        Vollständige technische Beschreibung: <span class="mono">gtm-api-openapi.yaml</span> und
+        die Kundenanleitung <span class="mono">gtm-api-guide.md</span>.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · 01 Events API</span><span>04</span></div>
+</section>
+
+<!-- ============================================================ 5 · CUSTOM EVENTS -->
+<section class="page">
+  <div class="frame">
+    <div class="section-head">
+      <div class="bignum">02</div>
+      <div>
+        <span class="badge badge-write">Daten liefern · schreibend</span>
+        <h2 class="mt1">Custom Events API</h2>
+      </div>
+    </div>
+
+    <p class="promise mt3">
+      Ihre eigenen Meldungen – im selben Format, in derselben Qualität und über dieselben
+      Kanäle wie unsere redaktionellen Meldungen.
+    </p>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <h3>Was sie macht</h3>
+        <p class="mt1">
+          Mit dieser Schnittstelle stellen Partner eigene Ereignisse ein: Streiks, Sperrungen,
+          Hausmitteilungen, regionale Hinweise. Sie legen Meldungen an, ändern sie und löschen sie
+          wieder. Angelegt wird mit Titel, Zeitraum, Risikostufe, Kategorie und betroffenen Ländern –
+          Koordinaten, Stichworte und eine eigene Referenznummer sind optional.
+        </p>
+
+        <h3 class="mt3">Das können Sie damit</h3>
+        <ul class="ticks mt1">
+          <li><b>Eigene Meldungen veröffentlichen</b> – manuell oder automatisch aus Ihrem
+              Redaktionssystem heraus.</li>
+          <li><b>Bestehende Meldungen pflegen:</b> Zeitraum verlängern, Risikostufe herabstufen,
+              Meldung zurückziehen.</li>
+          <li><b>Sichtbarkeit wählen:</b> Standardmäßig sehen Sie nur Ihre eigenen Meldungen. Auf
+              Wunsch lesen Sie zusätzlich die Passolution-Meldungen oder die Meldungen einer
+              Partner-Gruppe, der Sie angehören.</li>
+          <li><b>Im Umkreis suchen</b> – wie bei der Events API, ebenfalls über Koordinaten oder
+              Flughafen-Code.</li>
+          <li><b>Referenzdaten abrufen:</b> gültige Kategorien und Ländercodes, damit Ihre Meldungen
+              beim Anlegen nicht abgelehnt werden.</li>
+        </ul>
+
+        <div class="note mt3">
+          <b>Zwei Dinge vorab:</b> Das Anlegen, Ändern und Löschen muss für Ihren Zugang
+          freigeschaltet sein – ohne Freischaltung können Sie nur lesen. Und je nach Vereinbarung
+          erscheint eine neue Meldung sofort oder erst nach redaktioneller Prüfung.
+        </div>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Auf einen Blick</h4>
+          <dl>
+            <dt>Für wen</dt>
+            <dd>API-Partner mit eigenen Meldungen</dd>
+            <dt>Zugang</dt>
+            <dd>Partner-Token, Freischaltung zum Schreiben</dd>
+            <dt>Richtung</dt>
+            <dd>Lesen und schreiben</dd>
+            <dt>Format</dt>
+            <dd>JSON</dd>
+            <dt>Tempo</dt>
+            <dd>60 Abrufe pro Minute<br><span class="small" style="font-weight:400;color:#86A7BA">je Zugang konfigurierbar</span></dd>
+            <dt>Adresse</dt>
+            <dd class="mono">api.global-travel-monitor.de/v1/custom</dd>
+          </dl>
+        </div>
+
+        <div class="example mt3">
+          <h4>Praxisbeispiel</h4>
+          <p>Ein Veranstalter spielt jede Nacht seine eigenen Zielgebiets-Hinweise ein. Nach der
+             Freigabe erscheinen sie mit seinem Namen als Quelle – auch bei den Abnehmern der
+             Events API. Reichweite ohne zusätzlichen Aufwand.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="techstrip mt3">
+      <h4>Für Ihre IT: die Endpunkte</h4>
+      <div class="chips">
+        <span class="chip mono"><span class="verb">GET</span>/v1/custom/events</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/custom/events/nearby</span>
+        <span class="chip mono"><span class="verb post">POST</span>/v1/custom/events</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/custom/events/{uuid}</span>
+        <span class="chip mono"><span class="verb put">PUT</span>/v1/custom/events/{uuid}</span>
+        <span class="chip mono"><span class="verb del">DELETE</span>/v1/custom/events/{uuid}</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/custom/event-categories</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/custom/countries</span>
+      </div>
+      <p class="small muted mt2">
+        Vollständige technische Beschreibung: <span class="mono">event-api-openapi.yaml</span> und
+        die Partneranleitung <span class="mono">event-api-guide.md</span>.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · 02 Custom Events API</span><span>05</span></div>
+</section>
+
+<!-- ============================================================ 6 · FOLDER IMPORT -->
+<section class="page">
+  <div class="frame">
+    <div class="section-head">
+      <div class="bignum">03</div>
+      <div>
+        <span class="badge badge-write">Daten liefern · schreibend</span>
+        <h2 class="mt1">Folder Import API</h2>
+      </div>
+    </div>
+
+    <p class="promise mt3">
+      Damit eine Warnung nicht irgendwo landet, sondern bei den Menschen, die gerade dort sind:
+      Ihre Reisevorgänge in der Plattform.
+    </p>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <h3>Was sie macht</h3>
+        <p class="mt1">
+          Sie übergeben komplette Vorgänge – Kundendaten, Reiseteilnehmer und alle Leistungen:
+          Hotels, Flüge, Kreuzfahrten und Mietwagen. Die Plattform nimmt den Vorgang sofort an und
+          verarbeitet ihn im Hintergrund. Sie erhalten unmittelbar eine Vorgangsnummer, mit der Sie
+          den Stand jederzeit abfragen können: wartend, in Arbeit, fertig oder fehlgeschlagen.
+        </p>
+
+        <h3 class="mt3">Was dabei automatisch passiert</h3>
+        <ul class="ticks mt1">
+          <li><b>Flughäfen werden aufgelöst:</b> aus „MUC“ wird der vollständige Flughafen samt
+              Koordinaten und Land.</li>
+          <li><b>Länder werden zugeordnet</b> und geprüft.</li>
+          <li><b>Eine Reise-Timeline entsteht</b> aus Flügen, Hotels, Schiffen und Mietwagen – der
+              zeitliche Ablauf der Reise.</li>
+          <li><b>Orte werden verortet:</b> Hoteladressen erhalten Koordinaten für die
+              Kartendarstellung.</li>
+        </ul>
+
+        <h3 class="mt3">Und dann?</h3>
+        <p class="mt1">
+          Sobald Ihre Reisen in der Plattform liegen, lässt sich die entscheidende Frage beantworten:
+          <b>Wer ist betroffen?</b> Sie können Reisende in einem Umkreis um einen Punkt abfragen,
+          alle Reisenden in einem bestimmten Land ermitteln oder direkt die Vorgänge im Umfeld eines
+          Ereignisses abrufen – dazu gibt es Kennzahlen über die aktuell verreisten Personen.
+        </p>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Auf einen Blick</h4>
+          <dl>
+            <dt>Für wen</dt>
+            <dd>Reisebüros, Veranstalter, Firmenreise&shy;stellen</dd>
+            <dt>Zugang</dt>
+            <dd>Token, selbst erzeugt im Kundenbereich</dd>
+            <dt>Richtung</dt>
+            <dd>Liefern und auswerten</dd>
+            <dt>Verarbeitung</dt>
+            <dd>Im Hintergrund, mit Status&shy;abfrage</dd>
+            <dt>Format</dt>
+            <dd>JSON</dd>
+            <dt>Adresse</dt>
+            <dd class="mono">api.global-travel-monitor.de</dd>
+          </dl>
+        </div>
+
+        <div class="example mt3">
+          <h4>Praxisbeispiel</h4>
+          <p>Ein Veranstalter überträgt jede Nacht die Vorgänge der kommenden vier Wochen. Als in
+             einer Zielregion ein Erdbeben gemeldet wird, steht die Liste der betroffenen Vorgänge
+             in Sekunden bereit – statt in Stunden manueller Recherche.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="techstrip mt3">
+      <h4>Für Ihre IT: die Endpunkte</h4>
+      <div class="chips">
+        <span class="chip mono"><span class="verb post">POST</span>/v1/folders/import</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/folders/imports</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/folders/imports/{id}/status</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/folders</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/folders/{id}</span>
+        <span class="chip mono"><span class="verb post">POST</span>/v1/folders/near-point</span>
+        <span class="chip mono"><span class="verb post">POST</span>/v1/folders/in-country</span>
+        <span class="chip mono"><span class="verb post">POST</span>/v1/folders/affected-folders</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/folders/statistics</span>
+      </div>
+      <p class="small muted mt2">
+        Vollständige technische Beschreibung: <span class="mono">folder-import-api-openapi.yaml</span>
+        und die Kundenanleitung <span class="mono">folder-import-api-guide.md</span>.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · 03 Folder Import API</span><span>06</span></div>
+</section>
+
+<!-- ============================================================ 7 · FEED API -->
+<section class="page">
+  <div class="frame">
+    <div class="section-head">
+      <div class="bignum">04</div>
+      <div>
+        <span class="badge badge-open">Öffentlich · ohne Anmeldung</span>
+        <h2 class="mt1">Feed API</h2>
+      </div>
+    </div>
+
+    <p class="promise mt3">
+      Die einfachste Art, aktuelle Meldungen anzuzeigen – ganz ohne Programmierung
+      und ohne Zugangsdaten.
+    </p>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <h3>Was sie macht</h3>
+        <p class="mt1">
+          Die Feed API stellt die aktuellen Ereignisse als Nachrichten-Feed bereit – im selben Format,
+          das auch Nachrichtenseiten für ihre Schlagzeilen verwenden (RSS und Atom). Die meisten
+          Intranet-Portale, Redaktionssysteme und Feed-Reader binden solche Feeds ohne
+          Entwicklungsaufwand ein. Ein Zugangstoken ist nicht nötig.
+        </p>
+
+        <h3 class="mt2">Diese Feeds gibt es</h3>
+        <div class="grid2 mt2">
+          <div class="card">
+            <h3>Ereignisse</h3>
+            <p>Alle aktiven Meldungen – oder gezielt nur eine Risikostufe, ein Land, eine Kategorie
+               oder eine Region.</p>
+          </div>
+          <div class="card">
+            <h3>Länderlisten</h3>
+            <p>Alle Länder, Länder eines Kontinents, die EU-Mitgliedsstaaten oder die
+               Schengen-Staaten.</p>
+          </div>
+        </div>
+
+        <h3 class="mt3">Gut zu wissen</h3>
+        <ul class="ticks mt1">
+          <li><b>Mehr als nur Text:</b> Jede Meldung enthält zusätzlich strukturierte Angaben wie
+              Risikostufe, Zeitraum, Kategorie und die betroffenen Länder – auswertbar, wenn Ihr
+              System das nutzen möchte.</li>
+          <li><b>Aktuell und übersichtlich:</b> Die Feeds werden zwischengespeichert und bei neuen
+              Meldungen automatisch erneuert – maximal 100 Meldungen je Feed, die neuesten zuerst.</li>
+        </ul>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Auf einen Blick</h4>
+          <dl>
+            <dt>Für wen</dt>
+            <dd>Alle – auch ohne eigene Entwicklung</dd>
+            <dt>Zugang</dt>
+            <dd>Keiner. Öffentlich abrufbar</dd>
+            <dt>Richtung</dt>
+            <dd>Nur lesend</dd>
+            <dt>Format</dt>
+            <dd>RSS 2.0, Atom 1.0, JSON</dd>
+            <dt>Aktualisierung</dt>
+            <dd>Stündlich, bei Änderungen sofort</dd>
+            <dt>Adresse</dt>
+            <dd class="mono">global-travel-monitor.eu/feed</dd>
+          </dl>
+        </div>
+
+        <div class="example mt3">
+          <h4>Praxisbeispiel</h4>
+          <p>Eine Reisebürokette bindet den Feed der Hochrisiko-Meldungen auf der Startseite ihres
+             Intranets ein. Die Mitarbeitenden sehen morgens die relevanten Meldungen – eingerichtet
+             an einem Vormittag, ohne eine Zeile Code.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="techstrip mt2">
+      <h4>Für Ihre IT: die Adressen</h4>
+      <div class="chips">
+        <span class="chip mono"><span class="verb">GET</span>/feed/events/all.xml · all.atom</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/events/priority/{stufe}.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/events/countries/{code}.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/events/types/{typ}.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/events/regions/{region}.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/events/meta.json</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/countries/names/all.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/countries/continent/{code}.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/countries/eu.xml</span>
+        <span class="chip mono"><span class="verb">GET</span>/feed/countries/schengen.xml</span>
+      </div>
+      <p class="small muted mt2">
+        Vollständige technische Beschreibung: <span class="mono">feed-api-openapi.yaml</span> und
+        die Kundenanleitung <span class="mono">feed-api-guide.md</span>.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · 04 Feed API</span><span>07</span></div>
+</section>
+
+<!-- ============================================================ 8 · PLUGIN DOMAIN -->
+<section class="page">
+  <div class="frame">
+    <div class="section-head">
+      <div class="bignum">05</div>
+      <div>
+        <span class="badge badge-admin">Verwaltung · schreibend</span>
+        <h2 class="mt1">Plugin Domain API</h2>
+      </div>
+    </div>
+
+    <p class="promise mt3">
+      Sie bestimmen selbst, welche Websites Ihr Plugin einbetten dürfen –
+      auch wenn es hunderte sind.
+    </p>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <h3>Was sie macht</h3>
+        <p class="mt1">
+          Wenn Sie das Passolution Plugin auf Ihren Websites einbinden, muss hinterlegt sein, welche
+          Adressen das dürfen – aus Sicherheitsgründen funktioniert die Einbettung nur auf
+          freigegebenen Domains. Genau diese Liste verwalten Sie mit dieser Schnittstelle:
+          hinzufügen, ändern, deaktivieren, löschen. Für einzelne Domains ebenso wie für ganze
+          Listen auf einen Schlag.
+        </p>
+
+        <h3 class="mt3">Das können Sie damit</h3>
+        <ul class="ticks mt1">
+          <li><b>Massenimport:</b> bis zu 1.000 Domains in einem einzigen Aufruf – statt hunderter
+              Klicks im Dashboard.</li>
+          <li><b>Abgleich statt Pflege:</b> Bestand abrufen, nicht mehr benötigte Adressen entfernen,
+              neue nachziehen – ideal für einen nächtlichen Automatismus.</li>
+          <li><b>Vorübergehend abschalten:</b> Eine Domain lässt sich deaktivieren, ohne sie zu
+              löschen – etwa während eines Relaunches.</li>
+          <li><b>Schreibweise egal:</b> Adressen werden automatisch vereinheitlicht –
+              <span class="mono">https://</span>, <span class="mono">www.</span>, Pfade, Portangaben
+              und Großschreibung werden entfernt.</li>
+        </ul>
+
+        <div class="note mt3">
+          <b>Ihr Schlüssel ist derselbe</b> wie für die Einbettung des Plugins. Sie finden ihn in
+          Ihrem Plugin-Dashboard – ein zusätzlicher Zugang ist nicht nötig.
+        </div>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Auf einen Blick</h4>
+          <dl>
+            <dt>Für wen</dt>
+            <dd>Plugin-Kunden mit mehreren Websites</dd>
+            <dt>Zugang</dt>
+            <dd>Ihr Plugin-Key</dd>
+            <dt>Richtung</dt>
+            <dd>Verwalten</dd>
+            <dt>Format</dt>
+            <dd>JSON</dd>
+            <dt>Tempo</dt>
+            <dd>120 Abrufe pro Minute</dd>
+            <dt>Massenbetrieb</dt>
+            <dd>Bis zu 1.000 Domains je Aufruf</dd>
+            <dt>Adresse</dt>
+            <dd class="mono">api.global-travel-monitor.de/v1/plugin</dd>
+          </dl>
+        </div>
+
+        <div class="example mt3">
+          <h4>Praxisbeispiel</h4>
+          <p>Eine Franchise-Organisation mit 400 Agentur-Websites gleicht ihre Domainliste jede Nacht
+             automatisch mit dem eigenen Partnerverzeichnis ab. Neue Agenturen sind sofort
+             freigeschaltet, ausgeschiedene sofort gesperrt.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="techstrip mt3">
+      <h4>Für Ihre IT: die Endpunkte</h4>
+      <div class="chips">
+        <span class="chip mono"><span class="verb">GET</span>/v1/plugin/gtm/domains</span>
+        <span class="chip mono"><span class="verb post">POST</span>/v1/plugin/gtm/domains</span>
+        <span class="chip mono"><span class="verb post">POST</span>/v1/plugin/gtm/domains/bulk</span>
+        <span class="chip mono"><span class="verb del">DELETE</span>/v1/plugin/gtm/domains/bulk</span>
+        <span class="chip mono"><span class="verb">GET</span>/v1/plugin/gtm/domains/{uuid}</span>
+        <span class="chip mono"><span class="verb put">PUT</span>/v1/plugin/gtm/domains/{uuid}</span>
+        <span class="chip mono"><span class="verb del">DELETE</span>/v1/plugin/gtm/domains/{uuid}</span>
+      </div>
+      <p class="small muted mt2">
+        Vollständige technische Beschreibung: <span class="mono">plugin-domain-api-openapi.yaml</span>
+        und die Anleitung <span class="mono">plugin-domain-api-guide.md</span>.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · 05 Plugin Domain API</span><span>08</span></div>
+</section>
+
+<!-- ============================================================ 9 · AUSWAHL -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">Entscheidungshilfe</div>
+    <h2 class="mt2">Welche Schnittstelle<br>brauche ich?</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Suchen Sie links Ihr Ziel – rechts steht, welche Schnittstelle es löst und
+      wie viel Aufwand dahinter steckt.
+    </p>
+
+    <table class="mt4">
+      <thead>
+        <tr>
+          <th style="width:47%">Ihr Ziel</th>
+          <th style="width:30%">Diese Schnittstelle</th>
+          <th style="width:23%">Aufwand</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Aktuelle Meldungen im Intranet oder auf einer Website anzeigen</td>
+          <td><b>04 Feed API</b></td>
+          <td>Sehr gering<br><span class="small muted">keine Entwicklung nötig</span></td>
+        </tr>
+        <tr class="alt">
+          <td>Ereignisse in das eigene Buchungs- oder Beratungssystem holen</td>
+          <td><b>01 Events API</b></td>
+          <td>Gering<br><span class="small muted">Standard-Abfragen</span></td>
+        </tr>
+        <tr>
+          <td>Zu einem Zielort alle Ereignisse im Umkreis anzeigen</td>
+          <td><b>01 Events API</b><br><span class="small muted">Umkreissuche</span></td>
+          <td>Gering</td>
+        </tr>
+        <tr class="alt">
+          <td>Eine Länder-Ampel oder Risikokarte aufbauen</td>
+          <td><b>01 Events API</b><br><span class="small muted">Länder-Übersicht</span></td>
+          <td>Gering</td>
+        </tr>
+        <tr>
+          <td>Eigene Meldungen veröffentlichen und pflegen</td>
+          <td><b>02 Custom Events API</b></td>
+          <td>Mittel<br><span class="small muted">Freischaltung nötig</span></td>
+        </tr>
+        <tr class="alt">
+          <td>Meldungen einer Partner-Gruppe mitlesen</td>
+          <td><b>02 Custom Events API</b></td>
+          <td>Gering</td>
+        </tr>
+        <tr>
+          <td>Wissen, welche Reisenden von einem Ereignis betroffen sind</td>
+          <td><b>03 Folder Import API</b></td>
+          <td>Höher<br><span class="small muted">Datenlieferung einrichten</span></td>
+        </tr>
+        <tr class="alt">
+          <td>Reisen auf einer Karte darstellen</td>
+          <td><b>03 Folder Import API</b></td>
+          <td>Höher</td>
+        </tr>
+        <tr>
+          <td>Viele Websites für die Plugin-Einbettung freischalten</td>
+          <td><b>05 Plugin Domain API</b></td>
+          <td>Gering</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="grid2 mt5">
+      <div class="card">
+        <h3>Kombinieren lohnt sich</h3>
+        <p class="mt1">
+          Der größte Nutzen entsteht im Zusammenspiel: Wer seine Reisevorgänge liefert (03) und
+          gleichzeitig Ereignisse bezieht (01), bekommt aus zwei Datenbeständen eine Antwort –
+          nämlich wer jetzt gerade Aufmerksamkeit braucht.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Klein anfangen ist erlaubt</h3>
+        <p class="mt1">
+          Viele Kunden starten mit dem Feed (04), holen sich später die Ereignisse als Daten (01)
+          und liefern erst danach eigene Reisedaten (03). Jede Stufe funktioniert für sich.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · Entscheidungshilfe</span><span>09</span></div>
+</section>
+
+<!-- ============================================================ 10 · START -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">Der Weg zur ersten Abfrage</div>
+    <h2 class="mt2">In vier Schritten<br>angebunden.</h2>
+
+    <div class="mt4" style="display:flex; flex-direction:column; gap:6mm">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Ziel festlegen</h3>
+          <p>Klären Sie zuerst, was Sie erreichen wollen – anzeigen, auswerten oder liefern.
+             Die Tabelle auf der vorherigen Seite führt Sie in einer Minute zur passenden
+             Schnittstelle.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Zugang anfordern</h3>
+          <p>Ihren Zugangsschlüssel erhalten Sie von Ihrem Ansprechpartner. Für die Folder Import API
+             erzeugen Sie ihn selbst im Kundenbereich, für das Plugin verwenden Sie den vorhandenen
+             Plugin-Key. Nur die Feed API braucht überhaupt keinen Zugang.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Testabfrage machen</h3>
+          <p>Ihre IT ruft einmal die gewünschte Adresse auf und sieht sofort, was zurückkommt. Für
+             jede Schnittstelle liegt eine technische Beschreibung bereit, die gängige
+             Entwicklungswerkzeuge direkt einlesen können.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Produktiv gehen</h3>
+          <p>Legen Sie fest, wie oft abgefragt wird – meist genügt ein Abruf alle 15 bis 60 Minuten –
+             und wo die Daten in Ihrer Oberfläche erscheinen. Fertig.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hr mt5"></div>
+
+    <div class="cols mt4">
+      <div class="col-main">
+        <h3>Wenn etwas nicht klappt</h3>
+        <p class="small muted mt1">Diese Rückmeldungen sind die häufigsten – und fast immer schnell gelöst.</p>
+        <table class="mt2">
+          <thead>
+            <tr><th style="width:18%">Code</th><th style="width:38%">Bedeutung</th><th style="width:44%">Was zu tun ist</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">401</td><td>Schlüssel fehlt oder ist ungültig</td><td>Token prüfen, ggf. neu anfordern</td></tr>
+            <tr class="alt"><td class="mono">403</td><td>Nicht freigeschaltet</td><td>Freischaltung beim Ansprechpartner erfragen</td></tr>
+            <tr><td class="mono">404</td><td>Nicht gefunden</td><td>Kennung oder Adresse prüfen</td></tr>
+            <tr class="alt"><td class="mono">422</td><td>Angaben unvollständig oder unzulässig</td><td>Fehlerliste in der Antwort lesen</td></tr>
+            <tr><td class="mono">429</td><td>Zu viele Anfragen</td><td>Wartezeit aus der Antwort abwarten</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="col-side">
+        <div class="factbox">
+          <h4>Drei Regeln</h4>
+          <dl>
+            <dt>Schlüssel schützen</dt>
+            <dd>Nie in einer Website oder App hinterlegen, die im Browser läuft.</dd>
+            <dt>Maß halten</dt>
+            <dd>Regelmäßig abfragen statt im Sekundentakt. Die Daten ändern sich nicht minütlich.</dd>
+            <dt>Zwischenspeichern</dt>
+            <dd>Antworten kurz vorhalten. Das schont beide Seiten und macht Ihre Oberfläche schneller.</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · Erste Schritte</span><span>10</span></div>
+</section>
+
+<!-- ============================================================ 11 · GLOSSAR -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">Nachschlagen</div>
+    <h2 class="mt2">Die zwölf Begriffe,<br>die immer vorkommen.</h2>
+
+    <div class="grid2 mt4">
+      <dl class="glossary">
+        <dt>API</dt>
+        <dd>Eine Schnittstelle, über die zwei Programme Daten austauschen – ohne dass ein Mensch
+            etwas abtippt.</dd>
+
+        <dt>Endpunkt</dt>
+        <dd>Eine feste Adresse innerhalb der Schnittstelle, hinter der eine bestimmte Information
+            liegt, etwa die Liste der Ereignisse.</dd>
+
+        <dt>Token / Schlüssel</dt>
+        <dd>Ihr persönlicher Ausweis gegenüber der Schnittstelle. Er gehört wie ein Passwort
+            behandelt.</dd>
+
+        <dt>JSON</dt>
+        <dd>Ein Textformat für strukturierte Daten. Software kann es direkt weiterverarbeiten,
+            Menschen können es lesen.</dd>
+
+        <dt>RSS und Atom</dt>
+        <dd>Zwei verbreitete Formate für Nachrichten-Feeds. Viele Intranets und Redaktionssysteme
+            können sie ohne Zusatzsoftware anzeigen.</dd>
+
+        <dt>Risikostufe</dt>
+        <dd>Die Einstufung einer Meldung: hoch, mittel, niedrig oder rein informativ.</dd>
+      </dl>
+
+      <dl class="glossary">
+        <dt>Kategorie</dt>
+        <dd>Das Thema einer Meldung – etwa Sicherheit, Gesundheit, Umwelt, Reiseverkehr,
+            Einreisebestimmungen oder Allgemeines.</dd>
+
+        <dt>Umkreissuche</dt>
+        <dd>Die Abfrage „Was liegt im Umkreis von X Kilometern um diesen Ort?“ – über Koordinaten
+            oder über einen dreistelligen Flughafen-Code.</dd>
+
+        <dt>Koordinaten</dt>
+        <dd>Zwei Zahlen, die einen Punkt auf der Erde beschreiben: Breitengrad und Längengrad.</dd>
+
+        <dt>Seitenweise Abruf</dt>
+        <dd>Große Ergebnismengen kommen in Portionen. Sie fragen Seite für Seite ab und erfahren
+            dabei, wie viele Einträge es insgesamt gibt.</dd>
+
+        <dt>Abruf-Limit</dt>
+        <dd>Die Höchstzahl an Anfragen pro Minute. Sie schützt die Plattform vor Überlastung und
+            lässt sich bei Bedarf anheben.</dd>
+
+        <dt>Vorgang / Folder</dt>
+        <dd>Eine komplette Reise mit allem, was dazugehört: Kunde, Teilnehmer, Flüge, Hotels,
+            Schiffe und Mietwagen.</dd>
+      </dl>
+    </div>
+
+    <div class="hr mt5"></div>
+
+    <h3 class="mt4">Wo die technischen Unterlagen liegen</h3>
+    <p class="small muted mt1">
+      Zu jeder Schnittstelle gehören eine Anleitung in verständlicher Form und eine maschinenlesbare
+      Beschreibung, die Entwicklungswerkzeuge direkt einlesen können.
+    </p>
+    <table class="mt2">
+      <thead>
+        <tr><th style="width:34%">Schnittstelle</th><th style="width:33%">Anleitung</th><th style="width:33%">Technische Beschreibung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>01 Events API</td><td class="mono">gtm-api-guide.md</td><td class="mono">gtm-api-openapi.yaml</td></tr>
+        <tr class="alt"><td>02 Custom Events API</td><td class="mono">event-api-guide.md</td><td class="mono">event-api-openapi.yaml</td></tr>
+        <tr><td>03 Folder Import API</td><td class="mono">folder-import-api-guide.md</td><td class="mono">folder-import-api-openapi.yaml</td></tr>
+        <tr class="alt"><td>04 Feed API</td><td class="mono">feed-api-guide.md</td><td class="mono">feed-api-openapi.yaml</td></tr>
+        <tr><td>05 Plugin Domain API</td><td class="mono">plugin-domain-api-guide.md</td><td class="mono">plugin-domain-api-openapi.yaml</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot"><span><b>Passolution</b> · Glossar</span><span>11</span></div>
+</section>
+
+<!-- ============================================================ 12 · RÜCKSEITE -->
+<section class="page back">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#bg2)"/>
+      <circle cx="120" cy="980" r="380" fill="url(#glow2)"/>
+      <path d="M 794 0 L 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630 L 0 0 Z"
+            fill="#CEE741" fill-opacity=".05"/>
+      <path d="M 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630"
+            fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <div class="kicker" style="color:#CEE741">Nächster Schritt</div>
+    <h2 class="mt2">Sprechen Sie mit uns,<br>bevor Sie entwickeln.</h2>
+    <div class="rule mt3"></div>
+    <p class="lead mt3" style="max-width:120mm">
+      Ein kurzes Gespräch spart erfahrungsgemäß Tage: Wir schauen uns gemeinsam an, was Sie vorhaben,
+      und sagen Ihnen, welche Schnittstelle das mit dem geringsten Aufwand löst.
+    </p>
+
+    <div class="grid2 mt5">
+      <div class="back-card">
+        <h4>Zugang &amp; Freischaltung</h4>
+        <p>Zugangsschlüssel, Freischaltung zum Schreiben und ein höheres Abruf-Limit erhalten Sie
+           über Ihren persönlichen Ansprechpartner.</p>
+      </div>
+      <div class="back-card">
+        <h4>Technische Unterlagen</h4>
+        <p>Anleitungen und maschinenlesbare Beschreibungen zu allen Schnittstellen finden Sie in
+           unserem API-Portal.</p>
+        <p class="mono" style="color:#CEE741">api.global-travel-monitor.de</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <img src="assets/passolution-logo-white.png" alt="Passolution" style="width:40mm">
+      <p class="small mt3" style="color:#7A9BAE">
+        Passolution GmbH · Stand: August 2026<br>
+        Dieses Dokument beschreibt den Funktionsumfang in verständlicher Form. Maßgeblich für die
+        Umsetzung sind die technischen Beschreibungen der jeweiligen Schnittstelle.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

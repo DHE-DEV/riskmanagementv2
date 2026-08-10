@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Travel Alert freischalten – Anleitung</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+/* UI-Elemente, die in der Oberflaeche so heissen */
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+.ui-btn {
+  display: inline-block;
+  background: var(--ink); color: #fff;
+  border-radius: 1.4mm;
+  padding: .4mm 2mm;
+  font-weight: 600; font-size: 8.8pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.4mm 0;
+  font-size: 9.4pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 5mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.8mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 5mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+</style>
+</head>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".26"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="660" cy="360" r="320" fill="url(#glow)"/>
+
+      <!-- Schluessel-Motiv: Liste -> Schloss -->
+      <g stroke="#5E8FA8" stroke-opacity=".35" fill="none" stroke-width="1.2">
+        <rect x="452" y="214" width="150" height="196" rx="10"/>
+        <line x1="476" y1="252" x2="578" y2="252"/>
+        <line x1="476" y1="286" x2="578" y2="286"/>
+        <line x1="476" y1="320" x2="546" y2="320"/>
+        <line x1="476" y1="354" x2="562" y2="354"/>
+      </g>
+      <g fill="none" stroke="#CEE741" stroke-opacity=".75" stroke-width="2.2">
+        <path d="M 602 312 C 660 312, 668 380, 690 420"/>
+      </g>
+      <g transform="translate(646,432)">
+        <rect x="0" y="34" width="96" height="72" rx="10" fill="#CEE741" fill-opacity=".16" stroke="#CEE741" stroke-opacity=".7" stroke-width="2"/>
+        <path d="M 24 34 V 20 a 24 24 0 0 1 48 0 V 34" fill="none" stroke="#CEE741" stroke-opacity=".7" stroke-width="2"/>
+        <circle cx="48" cy="66" r="7" fill="#CEE741"/>
+      </g>
+
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:28mm">
+      <div class="kicker" style="color:#CEE741">Anleitung für das Admin-Backend</div>
+      <h1 class="mt2">Travel Alert<br>freischalten.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Wie Sie einzelne Kunden freischalten, ganze Account-Listen auf einmal importieren –
+        und was dabei im Hintergrund passiert. Ohne Technikkenntnisse nachvollziehbar.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Wie die Freischaltung funktioniert</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Voraussetzungen prüfen</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Was nach dem Eintragen passiert</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Weg A: einzelnen Kunden freischalten</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">Weg B: Account-Liste importieren</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Kontrollieren, ob es geklappt hat</span></div>
+      <div class="toc-row"><span class="n">07</span><span class="t">Korrigieren, sperren, zurücknehmen</span></div>
+      <div class="toc-row"><span class="n">08</span><span class="t">Wenn etwas nicht stimmt</span></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Stand: August 2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · GRUNDLAGE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Grundlage</div>
+    <h2 class="mt2">Zwei Situationen –<br>zwei Wege.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Travel Alert wird pro Kundenkonto freigeschaltet. Der Haken: ein Konto entsteht erst,
+      wenn sich jemand zum ersten Mal anmeldet. Für Accounts, die das noch nie getan haben,
+      gibt es deshalb die <b>Vormerkung</b>.
+    </p>
+
+    <div class="grid2 mt4">
+      <div class="card">
+        <h3>Der Kunde hat sich schon einmal angemeldet</h3>
+        <p class="mt1">
+          Dann gibt es ihn unter <span class="ui">Kunden</span> im Admin. Sie setzen die
+          Freischaltung direkt in seinem Datensatz. Das ist <b>Weg A</b> ab Seite 5.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Der Account war noch nie angemeldet</h3>
+        <p class="mt1">
+          Dann existiert im Admin nichts, wo Sie etwas eintragen könnten. Sie merken die
+          Freischaltung an der Account-ID vor. Das ist <b>Weg B</b> ab Seite 6.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="mt5">Drei Begriffe, die immer wieder vorkommen</h3>
+    <table class="mt2">
+      <tbody>
+        <tr>
+          <td style="width:34%"><b>PDS Account-ID</b></td>
+          <td>Die Nummer, unter der ein Kunde auf der Passolution-Plattform geführt wird –
+              zum Beispiel <span class="mono">20028</span>. Sie kommt beim Anmelden mit und ist
+              die einzige Angabe, die für eine Vormerkung nötig ist. Nicht zu verwechseln mit
+              der E-Mail-Adresse oder einer Kundennummer aus einem anderen System.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Vormerkung</b></td>
+          <td>Ein Eintrag der Form „Account 20028 soll Travel Alert bekommen“. Er wartet, bis
+              es ein Konto dazu gibt, und wird dann automatisch eingelöst.</td>
+        </tr>
+        <tr>
+          <td><b>Freischaltung</b></td>
+          <td>Der tatsächlich gesetzte Wert im Kundendatensatz: <span class="ui">Aktiviert</span>
+              oder <span class="ui">Deaktiviert</span>. Erst der entscheidet, ob jemand Travel Alert sieht.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note mt5">
+      <span class="head">Die wichtigste Regel</span>
+      Eine Vormerkung überschreibt <b>niemals</b> etwas, das im Kundendatensatz bereits steht.
+      Haben Sie einen Kunden von Hand auf <span class="ui">Aktiviert</span> oder
+      <span class="ui">Deaktiviert</span> gesetzt, bleibt dieser Wert erhalten – auch wenn derselbe
+      Account später in einer Import-Liste auftaucht. Sie können also gefahrlos importieren,
+      ohne bestehende Einstellungen zu zerstören.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Freischaltung</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · VORAUSSETZUNGEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Voraussetzungen</div>
+    <h2 class="mt2">Das brauchen Sie,<br>bevor Sie loslegen.</h2>
+
+    <ul class="checks mt4">
+      <li>
+        <b>Zugang zum Admin-Backend.</b>
+        Sie melden sich wie gewohnt unter <span class="mono">/admin</span> an. Ein besonderes
+        Recht ist nicht nötig – wer Kunden bearbeiten darf, kann auch freischalten.
+      </li>
+      <li>
+        <b>Die Account-IDs liegen Ihnen vor.</b>
+        Als Liste, Tabelle oder Textdatei – Hauptsache die reinen Nummern. Wie sie formatiert
+        sind, spielt keine Rolle: untereinander, mit Komma oder gemischt. Alles, was keine Zahl
+        ist, wird beim Import automatisch ignoriert.
+      </li>
+      <li>
+        <b>Die Funktion ist auf dem Server eingerichtet.</b>
+        Erkennbar daran, dass im Admin-Menü unter <span class="ui">Benutzerverwaltung</span>
+        der Punkt <span class="ui">Feature-Vormerkungen</span> auftaucht. Fehlt er, wenden Sie
+        sich an die Technik – dann steht noch ein Einrichtungsschritt aus.
+      </li>
+      <li>
+        <b>Die globale Einstellung steht richtig.</b>
+        Das ist der Punkt, der am häufigsten übersehen wird – er ist direkt darunter erklärt.
+      </li>
+    </ul>
+
+    <div class="stop mt4">
+      <span class="head">Bitte einmal lesen, bevor Sie anfangen</span>
+      <p>
+        Travel Alert kann <b>global für alle</b> eingeschaltet sein. Dann sieht jeder angemeldete
+        Kunde die Funktion – unabhängig davon, was Sie eintragen. Eine Freischaltung bewirkt in
+        diesem Zustand schlicht nichts, weil ohnehin schon alle Zugriff haben.
+      </p>
+      <p class="mt2">
+        Erst wenn die globale Einstellung <b>ausgeschaltet</b> ist, entscheidet der Wert pro Kunde.
+        Diese Umstellung nimmt die Technik einmalig vor.
+      </p>
+      <p class="mt2">
+        <b>Die Reihenfolge ist dabei entscheidend:</b> In dem Moment, in dem global ausgeschaltet
+        wird, verlieren <b>alle</b> Kunden ohne ausdrückliches <span class="ui">Aktiviert</span>
+        sofort den Zugang. Tragen Sie deshalb erst alle Accounts ein, die Travel Alert behalten
+        oder bekommen sollen – und lassen Sie erst danach umstellen.
+      </p>
+    </div>
+
+    <div class="warn mt4">
+      <span class="head">Woher bekomme ich die Account-IDs?</span>
+      <p>
+        Die IDs stammen von der Passolution-Plattform und werden Ihnen als Liste bereitgestellt.
+      </p>
+      <p class="mt2">
+        Für einen einzelnen Kunden können Sie die ID auch im Admin nachschlagen: Kunden öffnen,
+        Abschnitt <span class="ui">Passolution Integration</span> – dort steht sie unter
+        <span class="ui">PDS Account-ID</span>. Umgekehrt geht es genauso: In der Kundenliste
+        blenden Sie über <span class="ui">Spalten</span> die Spalte
+        <span class="ui">PDS Account-ID</span> ein und können dann über das Suchfeld direkt nach
+        einer Nummer suchen.
+      </p>
+      <p class="mt2">
+        Bleibt das Feld leer, hat sich der Kunde noch nie über die Plattform angemeldet – für ihn
+        ist Weg&nbsp;B der richtige.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Voraussetzungen</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · ABLAUF-GRAFIK -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Was im Hintergrund passiert</div>
+    <h2 class="mt2">Von der Liste<br>zur Freischaltung.</h2>
+
+    <svg class="mt3" width="100%" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0E5578"/>
+        </marker>
+        <marker id="a-lime" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#B6D22E"/>
+        </marker>
+        <marker id="a-gray" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#8AA5B4"/>
+        </marker>
+        <filter id="sh" x="-8%" y="-8%" width="116%" height="126%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#002742" flood-opacity=".13"/>
+        </filter>
+      </defs>
+      <style>
+        .t1 { font: 700 18px 'InterVar', sans-serif; fill: #002742; }
+        .t2 { font: 400 14px 'InterVar', sans-serif; fill: #5C7688; }
+        .tw { font: 700 18px 'InterVar', sans-serif; fill: #fff; }
+        .tw2{ font: 400 14px 'InterVar', sans-serif; fill: #A9C3D2; }
+        .q  { font: 700 16px 'InterVar', sans-serif; fill: #002742; }
+        .lb { font: 700 13px 'InterVar', sans-serif; fill: #5C7688; letter-spacing: .6px; }
+      </style>
+
+      <!-- Schritt 1 -->
+      <rect x="250" y="10" width="500" height="92" rx="12" fill="#002742" filter="url(#sh)"/>
+      <text class="tw" x="500" y="48" text-anchor="middle">Sie tragen die Account-IDs ein</text>
+      <text class="tw2" x="500" y="74" text-anchor="middle">Import-Liste oder einzeln</text>
+
+      <path d="M 500 108 L 500 148" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#a-ink)"/>
+
+      <!-- Frage -->
+      <path d="M 500 160 L 760 250 L 500 340 L 240 250 Z" fill="#FBFDF2" stroke="#CEE741" stroke-width="2"/>
+      <text class="q" x="500" y="244" text-anchor="middle">Gibt es zu dieser ID</text>
+      <text class="q" x="500" y="266" text-anchor="middle">schon ein Kundenkonto?</text>
+
+      <!-- Ja -->
+      <path d="M 240 250 L 130 250 L 130 380" stroke="#B6D22E" stroke-width="2.6" fill="none" marker-end="url(#a-lime)"/>
+      <text class="lb" x="150" y="238">JA</text>
+      <rect x="20" y="392" width="360" height="150" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#sh)"/>
+      <rect x="20" y="392" width="360" height="6" rx="3" fill="#CEE741"/>
+      <text class="t1" x="46" y="436">Sofort freigeschaltet</text>
+      <text class="t2" x="46" y="464">Der Kunde sieht Travel Alert,</text>
+      <text class="t2" x="46" y="486">sobald er die Seite neu lädt.</text>
+      <text class="t2" x="46" y="514">Spätestens nach 5 Minuten.</text>
+
+      <!-- Nein -->
+      <path d="M 760 250 L 870 250 L 870 380" stroke="#8AA5B4" stroke-width="2.6" fill="none" marker-end="url(#a-gray)"/>
+      <text class="lb" x="800" y="238">NEIN</text>
+      <rect x="620" y="392" width="360" height="150" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#sh)"/>
+      <rect x="620" y="392" width="360" height="6" rx="3" fill="#8AA5B4"/>
+      <text class="t1" x="646" y="436">Die Vormerkung wartet</text>
+      <text class="t2" x="646" y="464">In der Liste steht bei</text>
+      <text class="t2" x="646" y="486">„Eingelöst“ noch <tspan font-style="italic">offen</tspan>.</text>
+      <text class="t2" x="646" y="514">Es ist nichts zu tun.</text>
+
+      <path d="M 800 552 L 800 604" stroke="#8AA5B4" stroke-width="2.6" fill="none" marker-end="url(#a-gray)"/>
+      <rect x="620" y="616" width="360" height="120" rx="12" fill="#F5FAFD" stroke="#0E5578" stroke-width="1.8" filter="url(#sh)"/>
+      <text class="t1" x="646" y="660">Der Account meldet sich an</text>
+      <text class="t2" x="646" y="688">Beim ersten Login entsteht das</text>
+      <text class="t2" x="646" y="710">Konto – und mit ihm die Freischaltung.</text>
+
+      <path d="M 800 746 L 800 786 L 500 786 L 500 826" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#a-ink)"/>
+      <path d="M 200 552 L 200 786 L 500 786" stroke="#B6D22E" stroke-width="2.6" fill="none"/>
+
+      <!-- Ergebnis -->
+      <rect x="250" y="838" width="500" height="104" rx="12" fill="#002742" filter="url(#sh)"/>
+      <text class="tw" x="500" y="882" text-anchor="middle">Travel Alert ist freigeschaltet</text>
+      <text class="tw2" x="500" y="910" text-anchor="middle">Im Kundendatensatz steht jetzt „Aktiviert“</text>
+    </svg>
+
+    <div class="note mt3">
+      <span class="head">Und wenn im Kunden schon etwas eingetragen ist?</span>
+      Dann passiert an dieser Stelle nichts – der vorhandene Wert bleibt unverändert stehen,
+      egal ob <span class="ui">Aktiviert</span> oder <span class="ui">Deaktiviert</span>.
+      Die Vormerkung gilt damit als erledigt und wird nicht erneut versucht.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Ablauf</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · WEG A -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Weg A</div>
+    <h2 class="mt2">Einen einzelnen Kunden<br>freischalten.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Der schnellste Weg, wenn es um einen bestimmten Kunden geht, den es im Admin bereits gibt.
+    </p>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Kunden öffnen</h3>
+          <p>Im Admin links auf <span class="ui">Kunden</span>. Über das Suchfeld oben finden Sie
+             den Kunden am schnellsten über seine E-Mail-Adresse oder den Firmennamen. Dann auf
+             <span class="ui">Bearbeiten</span>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Abschnitt „Feature-Überschreibungen“ aufklappen</h3>
+          <p>Er sitzt in der linken Spalte des Formulars, unterhalb der API-Einstellungen.
+             Dort steht für jede Funktion ein eigenes Auswahlfeld.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Bei „Travel Alert“ auf <span class="ui">Aktiviert</span> stellen</h3>
+          <p>Zur Auswahl stehen drei Zustände. Was sie bedeuten, steht in der Tabelle unten.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Speichern</h3>
+          <p>Die Änderung greift sofort. Ist der Kunde gerade angemeldet, sieht er Travel Alert
+             nach dem nächsten Seitenaufruf, spätestens nach fünf Minuten.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="mt3">Die drei Zustände im Auswahlfeld</h3>
+    <table class="mt2">
+      <thead>
+        <tr><th style="width:32%">Auswahl</th><th>Bedeutung</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="ui">Aktiviert</span></td>
+          <td>Dieser Kunde sieht Travel Alert – auch dann, wenn die Funktion global ausgeschaltet ist.</td>
+        </tr>
+        <tr class="alt">
+          <td><span class="ui">Deaktiviert</span></td>
+          <td>Dieser Kunde sieht Travel Alert nicht – auch dann nicht, wenn die Funktion global
+              eingeschaltet ist. Eine ausdrückliche Sperre.</td>
+        </tr>
+        <tr>
+          <td><span class="ui">Standard (.env)</span><br><span class="small muted">= Feld leer lassen</span></td>
+          <td>Keine eigene Entscheidung für diesen Kunden. Es gilt, was global eingestellt ist.
+              <b>Nur in diesem Zustand</b> kann eine Vormerkung später noch etwas setzen.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Weg A</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · WEG B -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Weg B</div>
+    <h2 class="mt2">Eine ganze Liste<br>auf einmal importieren.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Der Weg für viele Accounts gleichzeitig – und der einzige Weg für Accounts, die sich noch
+      nie angemeldet haben.
+    </p>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Liste öffnen</h3>
+          <p>Im Admin-Menü unter <span class="ui">Benutzerverwaltung</span> auf
+             <span class="ui">Feature-Vormerkungen</span>. Oben rechts finden Sie die Schaltfläche
+             <span class="ui-btn">IDs importieren</span>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Account-IDs einfügen</h3>
+          <p>In das große Textfeld kopieren – untereinander oder durch Komma getrennt, beides
+             funktioniert. Überschriften, leere Zeilen oder Text dazwischen stören nicht, alles
+             ohne Ziffern wird ignoriert. Doppelte IDs werden automatisch zusammengefasst.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Die vier Einstellungen darunter prüfen</h3>
+          <p>Sie sind so vorbelegt, dass der Normalfall – Travel Alert freischalten – ohne
+             Änderung passt. Was sie bedeuten, steht unten auf dieser Seite.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Auf <span class="ui-btn">Vormerken</span> klicken</h3>
+          <p>Danach erscheint oben rechts eine Meldung mit dem Ergebnis: wie viele IDs vorgemerkt
+             wurden, wie viele davon schon ein Konto haben und wie viele Konten sofort angepasst
+             wurden. Diese Meldung bleibt stehen, bis Sie sie schließen – lesen Sie sie in Ruhe.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="mt3">Die Felder im Import-Fenster</h3>
+    <ul class="fields mt1">
+      <li>
+        <span class="name">Account-IDs</span>
+        Ihre Liste. Pflichtfeld.
+      </li>
+      <li>
+        <span class="name">Feature <span class="small muted">— vorbelegt mit „Travel Alert“</span></span>
+        Über dasselbe Fenster lassen sich auch andere Funktionen vormerken, etwa Kreuzfahrten
+        oder Eigene Ereignisse. Für Travel Alert einfach stehen lassen.
+      </li>
+      <li>
+        <span class="name">Freischalten <span class="small muted">— vorbelegt: an</span></span>
+        Angeschaltet bedeutet freischalten. Schalten Sie es aus, wird für diese Accounts eine
+        <b>Sperre</b> vorgemerkt statt einer Freischaltung.
+      </li>
+      <li>
+        <span class="name">Notiz <span class="small muted">— optional</span></span>
+        Woher die Liste stammt, etwa „Travel-Alert-Liste August 2026“. Sehr zu empfehlen: In der
+        Übersicht ist später sonst nicht mehr erkennbar, warum eine ID eingetragen wurde.
+      </li>
+      <li>
+        <span class="name">Auf bestehende Konten sofort anwenden <span class="small muted">— vorbelegt: an</span></span>
+        Angeschaltet werden alle Accounts der Liste, die es schon gibt, unmittelbar freigeschaltet.
+        Ausgeschaltet passiert das erst beim jeweils nächsten Login. Im Zweifel angeschaltet lassen.
+      </li>
+    </ul>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Weg B</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · EINZELN + OFFENE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Weg B, Fortsetzung</div>
+    <h2 class="mt2">Einzelne Vormerkung<br>und Nachzügler.</h2>
+
+    <div class="grid2 mt4">
+      <div class="card">
+        <h3>Einzelne ID vormerken</h3>
+        <p class="mt1">
+          Für eine einzige Account-ID lohnt das Import-Fenster nicht. Nutzen Sie oben rechts
+          <span class="ui-btn">Einzeln vormerken</span>.
+        </p>
+        <p class="mt2">
+          Sobald Sie die Account-ID eingetippt haben, erscheint direkt daneben ein Hinweis, ob es
+          dazu schon Konten gibt – Sie wissen also sofort, ob die Freischaltung gleich greift oder
+          auf den ersten Login wartet.
+        </p>
+        <p class="mt2">
+          Nach dem Speichern meldet das System entweder <b>„Sofort angewendet“</b> mit der Zahl der
+          angepassten Konten oder <b>„Vorgemerkt“</b> mit dem Hinweis, dass es beim ersten Login greift.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Nachzügler nachholen</h3>
+        <p class="mt1">
+          Haben Sie beim Import den Schalter „sofort anwenden“ ausgeschaltet, oder wurden
+          Vormerkungen früher per Datei eingespielt, holen Sie das mit
+          <span class="ui-btn">Offene anwenden</span> oben rechts nach.
+        </p>
+        <p class="mt2">
+          Die Schaltfläche geht alle offenen Vormerkungen durch und setzt sie überall dort, wo
+          inzwischen ein Konto existiert. Sie können sie jederzeit und beliebig oft drücken –
+          bereits gesetzte Werte bleiben unangetastet.
+        </p>
+        <p class="mt2">
+          Nötig ist das nicht: Auch ohne diesen Klick greift jede Vormerkung spätestens beim
+          nächsten Login von selbst.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="mt5">Mehrere Zeilen gleichzeitig behandeln</h3>
+    <p class="mt1" style="max-width:155mm">
+      In der Übersicht können Sie links Zeilen ankreuzen. Über das Auswahlmenü, das dann oben
+      erscheint, lassen sich die markierten Vormerkungen gemeinsam anwenden oder löschen.
+      Bei einzelnen Zeilen finden Sie rechts außerdem <span class="ui">Jetzt anwenden</span> –
+      diese Schaltfläche erscheint nur, wenn es zu der Account-ID auch tatsächlich schon ein
+      Konto gibt. Fehlt sie, ist das kein Fehler, sondern bedeutet schlicht: hier gibt es noch
+      nichts anzuwenden.
+    </p>
+
+    <div class="warn mt5">
+      <span class="head">Ein Import ist beliebig wiederholbar</span>
+      Sie können dieselbe Liste mehrfach einspielen, ohne etwas kaputt zu machen. Bereits
+      vorhandene IDs werden aktualisiert statt doppelt angelegt, und bestehende Freischaltungen
+      bleiben unangetastet. Wenn Sie unsicher sind, ob ein Import durchgelaufen ist:
+      einfach noch einmal machen.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Weg B</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · KONTROLLE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Kontrolle</div>
+    <h2 class="mt2">Woran Sie sehen,<br>dass es geklappt hat.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Die Übersicht <span class="ui">Feature-Vormerkungen</span> beantwortet das ohne Umwege.
+      Zwei Spalten sind dafür entscheidend.
+    </p>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:28%">Spalte</th><th>Was sie Ihnen sagt</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Konten</b></td>
+          <td>
+            Wie viele Kundenkonten es zu dieser Account-ID gibt. Steht hier
+            <span class="ui">noch keins</span>, hat sich der Account nie angemeldet – die
+            Vormerkung wartet. Eine Zahl bedeutet, dass die ID getroffen hat.
+            <b>Prüfen Sie diese Spalte nach jedem Import:</b> Wenn dort bei Accounts, die längst
+            aktiv sind, „noch keins“ steht, stimmt vermutlich die ID nicht.
+          </td>
+        </tr>
+        <tr class="alt">
+          <td><b>Eingelöst</b></td>
+          <td>
+            Datum und Uhrzeit, zu der die Vormerkung in eine echte Freischaltung übersetzt wurde.
+            <span class="ui">offen</span> heißt: noch nicht passiert.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">Schneller filtern</h3>
+    <p class="mt1" style="max-width:155mm">
+      Über <span class="ui">Filter</span> oberhalb der Tabelle grenzen Sie die Ansicht ein –
+      etwa auf <span class="ui">Nur offene</span> oder <span class="ui">Ohne Kundenkonto</span>.
+      Die Suche oben rechts findet eine einzelne Account-ID direkt.
+    </p>
+
+    <div class="grid2 mt4">
+      <div class="card">
+        <h3>Die Zahl am Menüpunkt</h3>
+        <p class="mt1">
+          Neben <span class="ui">Feature-Vormerkungen</span> steht im Menü eine orange Zahl. Sie
+          zeigt, wie viele Vormerkungen noch auf ihren ersten Login warten. Sie sinkt von selbst,
+          sobald sich die betreffenden Accounts anmelden – sie muss <b>nicht</b> auf null kommen.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Gegenprobe beim Kunden</h3>
+        <p class="mt1">
+          Wollen Sie es ganz genau wissen, öffnen Sie den Kunden unter
+          <span class="ui">Kunden</span> und schauen im Abschnitt
+          <span class="ui">Feature-Überschreibungen</span> nach. Steht dort bei Travel Alert
+          <span class="ui">Aktiviert</span>, ist alles erledigt.
+        </p>
+        <p class="mt2">
+          Den passenden Kunden zu einer Account-ID finden Sie, indem Sie die Nummer in der
+          Kundenliste ins Suchfeld eingeben.
+        </p>
+      </div>
+    </div>
+
+    <div class="note mt4">
+      <span class="head">Wie schnell wirkt eine Freischaltung?</span>
+      Praktisch sofort. Ein bereits angemeldeter Kunde sieht die Änderung nach dem nächsten
+      Seitenaufruf, spätestens nach fünf Minuten – so lange kann die Anzeige noch zwischen­gespeichert
+      sein. Abmelden und neu anmelden ist nicht nötig.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Kontrolle</span><span>08</span></div>
+</section>
+
+<!-- ======================================================== 9 · KORRIGIEREN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">07 · Korrigieren</div>
+    <h2 class="mt2">Zurücknehmen,<br>sperren, aufräumen.</h2>
+
+    <div class="stop mt4">
+      <span class="head">Der häufigste Irrtum</span>
+      Eine Vormerkung zu <b>löschen, nimmt eine bereits erteilte Freischaltung nicht zurück.</b>
+      Sobald sie einmal eingelöst wurde, steht der Wert im Kundendatensatz und führt dort ein
+      Eigenleben. Löschen entfernt nur den Merkzettel, nicht die Wirkung.
+    </div>
+
+    <h3 class="mt5">Was Sie in welcher Situation tun</h3>
+    <table class="mt2">
+      <thead>
+        <tr><th style="width:44%">Ihre Situation</th><th>So gehen Sie vor</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ein Kunde soll Travel Alert doch nicht mehr sehen</td>
+          <td>Beim Kunden unter <span class="ui">Feature-Überschreibungen</span> auf
+              <span class="ui">Deaktiviert</span> stellen und speichern. Das ist der einzige Weg,
+              der wirklich sperrt.</td>
+        </tr>
+        <tr class="alt">
+          <td>Eine ID stand versehentlich in der Import-Liste, der Account hat sich noch nie angemeldet</td>
+          <td>Die Zeile in <span class="ui">Feature-Vormerkungen</span> löschen. Da noch nichts
+              eingelöst wurde, ist damit alles erledigt.</td>
+        </tr>
+        <tr>
+          <td>Eine ID stand versehentlich drin und wurde bereits eingelöst</td>
+          <td>Zwei Schritte: die Vormerkung löschen <b>und</b> beim betroffenen Kunden auf
+              <span class="ui">Deaktiviert</span> stellen. Welcher Kunde betroffen ist, verrät
+              die Spalte <span class="ui">Konten</span>.</td>
+        </tr>
+        <tr class="alt">
+          <td>Eine Gruppe von Accounts soll ausdrücklich gesperrt werden</td>
+          <td>Importieren wie gewohnt, aber im Import-Fenster den Schalter
+              <span class="ui">Freischalten</span> ausschalten. Dann wird für diese IDs eine
+              Sperre vorgemerkt.</td>
+        </tr>
+        <tr>
+          <td>Ich habe die falsche Funktion erwischt</td>
+          <td>Die Zeile bearbeiten und das Feld <span class="ui">Feature</span> ändern – oder
+              löschen und neu importieren.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note mt5">
+      <span class="head">Wenn eine Vormerkung nichts bewirkt hat</span>
+      Das ist meistens kein Fehler, sondern die Schutzregel bei der Arbeit: Im Kundendatensatz
+      stand bereits ein Wert, und der wird nie überschrieben. Prüfen Sie den Kunden direkt –
+      steht dort <span class="ui">Deaktiviert</span>, müssen Sie das dort von Hand ändern.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Korrigieren</span><span>09</span></div>
+</section>
+
+<!-- ======================================================== 10 · FAQ -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">08 · Wenn etwas nicht stimmt</div>
+    <h2 class="mt2">Die häufigsten Fälle.</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:46%">Beobachtung</th><th>Ursache und Lösung</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ich habe freigeschaltet, aber der Kunde sieht Travel Alert nicht</td>
+          <td>Zuerst fünf Minuten warten und die Seite neu laden. Ändert sich nichts, im
+              Kundendatensatz nachsehen – steht dort <span class="ui">Deaktiviert</span>, war das
+              eine frühere ausdrückliche Sperre und muss von Hand geändert werden.</td>
+        </tr>
+        <tr class="alt">
+          <td>Alle Kunden sehen Travel Alert, obwohl ich nur wenige freigeschaltet habe</td>
+          <td>Dann ist die Funktion noch global für alle eingeschaltet. Ihre Einträge sind
+              trotzdem korrekt gespeichert und wirken, sobald die Technik umstellt. Siehe Seite 3.</td>
+        </tr>
+        <tr>
+          <td>Nach dem Import steht bei fast allen Zeilen „noch keins“</td>
+          <td>Vermutlich sind es nicht die PDS Account-IDs, sondern Nummern aus einem anderen
+              System. Gegenprobe: Nehmen Sie einen Kunden, von dem Sie wissen, dass er aktiv ist,
+              und vergleichen Sie seine <span class="ui">PDS Account-ID</span> mit Ihrer Liste.</td>
+        </tr>
+        <tr class="alt">
+          <td>Die Meldung sagt „Keine gültigen IDs erkannt“</td>
+          <td>Im Textfeld stand keine einzige Zahl. Häufig passiert das, wenn eine Tabellenspalte
+              mit kopiert wurde, in der die IDs als Text mit Zusätzen stehen. Nur die reinen
+              Nummern einfügen.</td>
+        </tr>
+        <tr>
+          <td>Die Meldung sagt „Nichts zu tun“</td>
+          <td>Es gab nichts anzuwenden: Entweder existieren zu den IDs noch keine Konten, oder in
+              allen betroffenen Kunden steht bereits ein Wert. Beides ist unkritisch.</td>
+        </tr>
+        <tr class="alt">
+          <td>Der Menüpunkt „Feature-Vormerkungen“ fehlt</td>
+          <td>Die Funktion ist auf diesem Server noch nicht eingerichtet. Bitte an die Technik
+              wenden – bis dahin funktioniert Weg A für bestehende Kunden ganz normal.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">Die Kurzfassung auf einen Blick</h3>
+    <div class="grid3 mt2">
+      <div class="card">
+        <h3>Bestehender Kunde</h3>
+        <p class="mt1">Kunden → Bearbeiten → Feature-Überschreibungen → Travel Alert auf
+           <span class="ui">Aktiviert</span> → Speichern.</p>
+      </div>
+      <div class="card">
+        <h3>Ganze Liste</h3>
+        <p class="mt1">Feature-Vormerkungen → <span class="ui-btn">IDs importieren</span> →
+           IDs einfügen → <span class="ui-btn">Vormerken</span>.</p>
+      </div>
+      <div class="card">
+        <h3>Kontrolle</h3>
+        <p class="mt1">Spalte <span class="ui">Konten</span> prüfen. „noch keins“ = wartet auf den
+           ersten Login.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Fehlerbilder</span><span>10</span></div>
+</section>
+
+<!-- ======================================================== 11 · RÜCKSEITE -->
+<section class="page back">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#bg2)"/>
+      <circle cx="120" cy="980" r="380" fill="url(#glow2)"/>
+      <path d="M 794 0 L 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630 L 0 0 Z"
+            fill="#CEE741" fill-opacity=".05"/>
+      <path d="M 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630"
+            fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <div class="kicker" style="color:#CEE741">Im Zweifel</div>
+    <h2 class="mt2" style="color:#fff">Lieber einmal fragen<br>als zweimal korrigieren.</h2>
+    <div class="rule mt3"></div>
+    <p class="lead mt3" style="max-width:120mm; color:#A9C3D2">
+      Zwei Dinge lassen sich im Nachhinein nur mit Aufwand geraderücken: eine falsche
+      Account-Liste und die globale Umstellung zur falschen Zeit. Beides einmal kurz
+      abstimmen kostet fünf Minuten.
+    </p>
+
+    <div class="grid2 mt5">
+      <div class="back-card">
+        <h4>Vor dem ersten Import</h4>
+        <p>Eine Stichprobe aus der Liste prüfen: Gehört die ID wirklich zu dem Kunden, den Sie
+           erwarten? Nach dem Import zeigt die Spalte „Konten“, ob es gepasst hat.</p>
+      </div>
+      <div class="back-card">
+        <h4>Vor der globalen Umstellung</h4>
+        <p>Erst alle Accounts eintragen, die Travel Alert behalten sollen. Danach umstellen
+           lassen – nie umgekehrt.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <img src="assets/passolution-logo-white.png" alt="Passolution" style="width:40mm">
+      <p class="small mt3" style="color:#7A9BAE">
+        Passolution GmbH · Stand: August 2026<br>
+        Diese Anleitung beschreibt die Bedienung im Admin-Backend. Bezeichnungen können sich mit
+        künftigen Versionen ändern.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
