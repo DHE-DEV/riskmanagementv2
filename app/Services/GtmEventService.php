@@ -140,8 +140,17 @@ class GtmEventService
      */
     public function getEventsNearbyCoordinates(float $latitude, float $longitude, float $radiusKm): Collection
     {
-        $events = $this->getBaseEvents();
+        return $this->filterEventsByRadius($this->getBaseEvents(), $latitude, $longitude, $radiusKm);
+    }
 
+    /**
+     * Filter an already scoped event collection down to those within a radius (km) of given coordinates.
+     *
+     * Events without resolvable coordinates are dropped. The `countries` relation should be
+     * eager loaded (including `capital`) so the coordinate cascade does not hit the database per event.
+     */
+    public function filterEventsByRadius(Collection $events, float $latitude, float $longitude, float $radiusKm): Collection
+    {
         return $events->filter(function (CustomEvent $event) use ($latitude, $longitude, $radiusKm) {
             $coordinates = $this->resolveEventCoordinates($event);
 

@@ -12,6 +12,7 @@ use App\Models\CustomEvent;
 use App\Models\EventGroup;
 use App\Models\EventType;
 use App\Services\GtmEventService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,6 +29,21 @@ class EventApiController extends Controller
      * List events belonging to the authenticated API client.
      */
     public function index(Request $request): AnonymousResourceCollection
+    {
+        $events = $this->scopedEventQuery($request)
+            ->with(['eventTypes', 'countries'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($request->input('per_page', 25));
+
+        return EventApiResource::collection($events);
+    }
+
+    /**
+     * Build a query restricted to the events the authenticated API client may see.
+     *
+     * Honours the `scope` parameter: own (default), passolution, all, or event group slugs.
+     */
+    private function scopedEventQuery(Request $request): Builder
     {
         $apiClient = $request->attributes->get('api_client');
         $scopeInput = $request->input('scope', 'own');
@@ -55,7 +71,7 @@ class EventApiController extends Controller
             }
         }
 
-        $query = CustomEvent::with(['eventTypes', 'countries']);
+        $query = CustomEvent::query();
 
         $query->where(function ($q) use ($scopes, $apiClient, $eventGroups) {
             $includeOwn = in_array('own', $scopes) || in_array('all', $scopes);
@@ -95,10 +111,7 @@ class EventApiController extends Controller
             }
         });
 
-        $events = $query->orderBy('created_at', 'desc')
-            ->paginate($request->input('per_page', 25));
-
-        return EventApiResource::collection($events);
+        return $query;
     }
 
     /**
@@ -358,6 +371,7 @@ class EventApiController extends Controller
             'latitude' => 'nullable|required_without:code|numeric|between:-90,90',
             'longitude' => 'nullable|required_without:code|numeric|between:-180,180',
             'radius' => 'required|numeric|min:1|max:20000',
+            'scope' => 'nullable|string|max:255',
             'per_page' => 'nullable|integer|min:1|max:100',
             'page' => 'nullable|integer|min:1',
         ]);
@@ -393,7 +407,13 @@ class EventApiController extends Controller
             ];
         }
 
-        $events = $this->eventService->getEventsNearbyCoordinates(
+        $scopedEvents = $this->scopedEventQuery($request)
+            ->with(['eventTypes', 'countries.capital'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $events = $this->eventService->filterEventsByRadius(
+            events: $scopedEvents,
             latitude: $centerLat,
             longitude: $centerLng,
             radiusKm: (float) $request->input('radius'),
