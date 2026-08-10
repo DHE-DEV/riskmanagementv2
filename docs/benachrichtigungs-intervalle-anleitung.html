@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Benachrichtigungen – Was die Zeit-Einstellungen bewirken</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+/* UI-Elemente, die in der Oberflaeche so heissen */
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+.ui-btn {
+  display: inline-block;
+  background: var(--ink); color: #fff;
+  border-radius: 1.4mm;
+  padding: .4mm 2mm;
+  font-weight: 600; font-size: 8.8pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.4mm 0;
+  font-size: 9.4pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 5mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.8mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 5mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+/* Befehlszeilen: bewusst dunkel, damit sie als "abtippen" erkennbar sind */
+.cmd {
+  background: var(--ink);
+  color: #DCEAF2;
+  border-radius: 2mm;
+  padding: 3mm 3.6mm;
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.6pt;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cmd .p { color: var(--lime); }
+
+/* Werte-Kacheln fuer die aktuellen Einstellungen */
+.value {
+  border: .6pt solid var(--line);
+  border-left: 1.6mm solid var(--lime);
+  border-radius: 0 2.4mm 2.4mm 0;
+  padding: 3.6mm 4mm;
+  background: #fff;
+}
+.value .k {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 7.8pt; color: var(--muted);
+  display: block; margin-bottom: 1.4mm;
+}
+.value .v { font-size: 15pt; font-weight: 800; letter-spacing: -.02em; }
+.value .v span { font-size: 9.5pt; font-weight: 600; color: var(--muted); }
+.value .d { font-size: 8.4pt; line-height: 1.4; color: var(--ink-2); margin-top: 1.2mm; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+</style>
+</head>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".26"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="640" cy="350" r="310" fill="url(#glow)"/>
+
+      <!-- Zifferblatt als Motiv -->
+      <g transform="translate(600,330)">
+        <circle r="176" fill="none" stroke="#5E8FA8" stroke-opacity=".32" stroke-width="1.4"/>
+        <circle r="140" fill="none" stroke="#5E8FA8" stroke-opacity=".22" stroke-width="1"/>
+        <g stroke="#CEE741" stroke-opacity=".65" stroke-width="2.4" stroke-linecap="round">
+          <line x1="0" y1="-176" x2="0" y2="-156"/>
+          <line x1="176" y1="0" x2="156" y2="0"/>
+          <line x1="0" y1="176" x2="0" y2="156"/>
+          <line x1="-176" y1="0" x2="-156" y2="0"/>
+        </g>
+        <g stroke="#5E8FA8" stroke-opacity=".4" stroke-width="1.6" stroke-linecap="round">
+          <line x1="88" y1="-152" x2="78" y2="-135"/>
+          <line x1="152" y1="-88" x2="135" y2="-78"/>
+          <line x1="152" y1="88" x2="135" y2="78"/>
+          <line x1="88" y1="152" x2="78" y2="135"/>
+          <line x1="-88" y1="152" x2="-78" y2="135"/>
+          <line x1="-152" y1="88" x2="-135" y2="78"/>
+          <line x1="-152" y1="-88" x2="-135" y2="-78"/>
+          <line x1="-88" y1="-152" x2="-78" y2="-135"/>
+        </g>
+        <!-- Fuenf-Minuten-Segment -->
+        <path d="M 0 0 L 0 -140 A 140 140 0 0 1 72.8 -119.6 Z" fill="#CEE741" fill-opacity=".18"/>
+        <line x1="0" y1="0" x2="0" y2="-116" stroke="#fff" stroke-opacity=".8" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="62" y2="-46" stroke="#CEE741" stroke-width="3" stroke-linecap="round"/>
+        <circle r="7" fill="#CEE741"/>
+      </g>
+
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:26mm">
+      <div class="kicker" style="color:#CEE741">Benachrichtigungen verstehen</div>
+      <h1 class="mt2">Was die<br>Zeit-Einstellungen<br>bewirken.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Wie Global Travel Monitor und Travel Alert entscheiden, <i>wann</i> eine
+        Benachrichtigung herausgeht – und warum daraus trotzdem keine Mail-Flut wird.
+        Ohne technische Vorkenntnisse.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Das Grundprinzip: Wecker und Rückblick</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Die vier Einstellungen im Einzelnen</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Ein Durchgang von innen</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Bekommt jetzt jeder 288 Mails am Tag?</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">So erfasst du ein Event richtig</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Wenn du die Werte veränderst</span></div>
+      <div class="toc-row"><span class="n">07</span><span class="t">Prüfen, dass alles läuft</span></div>
+      <div class="toc-row"><span class="n">08</span><span class="t">Wenn nichts ankommt</span></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Stand: August 2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · GRUNDPRINZIP -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Grundprinzip</div>
+    <h2 class="mt2">Ein Wecker,<br>und ein Rückblick.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Man stellt sich das System leicht so vor, dass es pausenlos danebensitzt und in dem
+      Moment losschickt, in dem irgendwo etwas passiert. So arbeitet es aber nicht.
+      Es schläft – und wird von einem Wecker geweckt.
+    </p>
+
+    <p class="mt3" style="max-width:152mm">
+      Bei jedem Aufwachen sieht es nach, ob etwas zu tun ist, erledigt das, und legt sich
+      wieder hin. Ein passendes Bild ist ein Pförtner, der nicht dauernd am Fenster steht,
+      sondern in festem Takt seinen Rundgang macht. Zwei Dinge bestimmen sein Verhalten –
+      und genau diese zwei Dinge stellst du mit den Werten auf dieser Seite ein.
+    </p>
+
+    <div class="grid2 mt4">
+      <div class="card">
+        <h3>Der Takt</h3>
+        <p class="mt1">
+          Wie oft der Pförtner losgeht. Bei uns: alle <b>5 Minuten</b> für Benachrichtigungen,
+          alle <b>30 Minuten</b> für das Abholen der Reisedaten.
+        </p>
+        <p class="mt2"><b>Er bestimmt, wie schnell etwas bemerkt wird.</b></p>
+      </div>
+      <div class="card">
+        <h3>Der Rückblick</h3>
+        <p class="mt1">
+          Wie weit er ins Eingangsbuch zurückblättert, wenn er es aufschlägt. Bei uns:
+          <b>24 Stunden</b>.
+        </p>
+        <p class="mt2"><b>Er bestimmt, wie sicher nichts übersehen wird.</b></p>
+      </div>
+    </div>
+
+    <p class="mt4" style="max-width:152mm">
+      Beide zusammen ergeben ein System, das zügig reagiert und trotzdem verzeiht, wenn
+      einmal etwas dazwischenkommt.
+    </p>
+
+    <h3 class="mt5">Die vier Werte, die aktuell eingestellt sind</h3>
+    <div class="grid2 mt2" style="gap:4mm">
+      <div class="value">
+        <span class="k">GTM_NOTIFICATION_INTERVAL</span>
+        <div class="v">5 <span>Minuten</span></div>
+        <div class="d">Takt der Global-Travel-Monitor-Benachrichtigungen</div>
+      </div>
+      <div class="value">
+        <span class="k">TRAVEL_ALERT_NOTIFICATION_INTERVAL</span>
+        <div class="v">5 <span>Minuten</span></div>
+        <div class="d">Takt der Travel-Alert-Benachrichtigungen</div>
+      </div>
+      <div class="value">
+        <span class="k">TRAVEL_LINKS_SYNC_INTERVAL</span>
+        <div class="v">30 <span>Minuten</span></div>
+        <div class="d">Takt, in dem Reisedaten von Passolution abgeholt werden</div>
+      </div>
+      <div class="value">
+        <span class="k">NOTIFICATION_LOOKBACK_HOURS</span>
+        <div class="v">24 <span>Stunden</span></div>
+        <div class="d">Wie weit das System bei jedem Durchgang zurückblickt</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Grundprinzip</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · EINSTELLUNGEN I -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Die vier Einstellungen</div>
+    <h2 class="mt2">Was jeder Wert<br>tatsächlich tut.</h2>
+
+    <h3 class="mt4"><span class="mono" style="font-size:10pt">GTM_NOTIFICATION_INTERVAL</span> = 5 Minuten</h3>
+    <p class="mt1" style="max-width:152mm">
+      Alle fünf Minuten sieht das System nach, ob neue Ereignisse eingetroffen sind –
+      Naturkatastrophen, Unruhen, Streiks, redaktionell gepflegte Hinweise – und ob eines davon
+      zu einer der hinterlegten Benachrichtigungsregeln passt. Passt es, geht eine E-Mail heraus.
+    </p>
+    <div class="note mt2">
+      <b>Wie es sich auswirkt:</b> Zwischen dem Moment, in dem ein Ereignis im System steht, und
+      der E-Mail beim Kunden liegen höchstens fünf Minuten. Im Schnitt sind es zweieinhalb.
+    </div>
+
+    <h3 class="mt4"><span class="mono" style="font-size:10pt">TRAVEL_ALERT_NOTIFICATION_INTERVAL</span> = 5 Minuten</h3>
+    <p class="mt1" style="max-width:152mm">
+      Derselbe Takt, aber für Travel Alert. Der Unterschied liegt darin, was dabei geprüft wird:
+      Travel Alert verschickt nicht schon dann, wenn ein Ereignis auf eine Regel passt, sondern
+      erst, wenn zusätzlich <b>tatsächlich Reisen betroffen</b> sind. Das System gleicht dazu die
+      hinterlegten Reisen der Kunden gegen die Länder des Ereignisses ab.
+    </p>
+    <div class="note mt2">
+      <b>Wie es sich auswirkt:</b> Ebenfalls höchstens fünf Minuten Verzögerung – aber nur für die
+      Kunden, deren Reisende wirklich in der betroffenen Region unterwegs sind. Alle anderen
+      bekommen bewusst nichts.
+    </div>
+
+    <h3 class="mt4"><span class="mono" style="font-size:10pt">TRAVEL_LINKS_SYNC_INTERVAL</span> = 30 Minuten</h3>
+    <p class="mt1" style="max-width:152mm">
+      Halbstündlich holt das System für jeden Kunden, bei dem die Funktion eingeschaltet ist, die
+      aktuellen Reisedaten von Passolution ab. Das ist die Grundlage, auf der Travel Alert später
+      entscheidet, wer betroffen ist.
+    </p>
+    <p class="mt2" style="max-width:152mm">
+      Dieser Wert steht bewusst höher als die anderen beiden: Das System fragt dabei für
+      <b>jeden einzelnen Kunden</b> ein fremdes System an. Ein Fünf-Minuten-Takt würde das rund
+      288-mal am Tag tun statt 48-mal – ohne erkennbaren Gewinn, denn Reisen werden nicht im
+      Minutentakt gebucht.
+    </p>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Einstellungen</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · EINSTELLUNGEN II -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Die vier Einstellungen</div>
+    <h2 class="mt2">Der Rückblick –<br>die wichtigste Sicherung.</h2>
+
+    <div class="warn mt4">
+      <span class="head">Ein Zusammenhang, den man kennen sollte</span>
+      Die beiden Takte hängen aneinander. Eine ganz frisch gebuchte Reise ist dem System erst
+      nach spätestens 30 Minuten bekannt. Travel Alert kann sie also frühestens danach
+      berücksichtigen – selbst wenn es alle fünf Minuten nachsieht. Im ungünstigsten Fall
+      vergehen somit rund <b>35 Minuten</b> zwischen einer neuen Buchung und der ersten Warnung,
+      die diese Reise einbezieht.
+    </div>
+
+    <h3 class="mt5"><span class="mono" style="font-size:10pt">NOTIFICATION_LOOKBACK_HOURS</span> = 24 Stunden</h3>
+    <p class="mt1" style="max-width:152mm">
+      Bei jedem Durchgang betrachtet das System nicht nur, was seit dem letzten Mal passiert ist,
+      sondern alles aus den vergangenen 24 Stunden. Das klingt zunächst nach unnötiger Arbeit,
+      ist aber die wichtigste Absicherung im ganzen Aufbau.
+    </p>
+    <p class="mt3" style="max-width:152mm">
+      Würde nur „seit dem letzten Durchgang“ geprüft, ginge alles verloren, was in eine Lücke
+      fällt: ein Server-Neustart, eine Wartung, ein Durchgang der wegen einer Störung
+      übersprungen wurde, oder ein Ereignis, das erst nachträglich von der Redaktion freigegeben
+      wurde. Mit einem Rückblick von 24 Stunden holt der nächste erfolgreiche Durchgang all das
+      von selbst nach.
+    </p>
+
+    <div class="note mt3">
+      <b>Wie es sich auswirkt:</b> Selbst wenn die Benachrichtigungen eine ganze Nacht lang
+      stillstehen, geht nichts verloren. Sobald das System wieder läuft, arbeitet es das
+      Versäumte im nächsten Durchgang ab.
+    </div>
+
+    <div class="grid2 mt5">
+      <div class="card">
+        <h3>Der Takt bestimmt Tempo</h3>
+        <p class="mt1">
+          Wie schnell etwas bemerkt wird. Kleiner Takt = schneller, aber mehr Last.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Der Rückblick bestimmt Sicherheit</h3>
+        <p class="mt1">
+          Wie viel ein Ausfall kostet. Großer Rückblick = mehr Nachholvermögen, kaum Mehrkosten.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Einstellungen</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · DURCHGANG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Ein Durchgang von innen</div>
+    <h2 class="mt2">Was alle fünf Minuten<br>wirklich passiert.</h2>
+
+    <svg class="mt3" width="100%" viewBox="0 0 1000 960" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="n-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0E5578"/>
+        </marker>
+        <marker id="n-gray" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#8AA5B4"/>
+        </marker>
+        <filter id="nsh" x="-8%" y="-8%" width="116%" height="126%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#002742" flood-opacity=".13"/>
+        </filter>
+      </defs>
+      <style>
+        .n1 { font: 700 18px 'InterVar', sans-serif; fill: #002742; }
+        .n2 { font: 400 14px 'InterVar', sans-serif; fill: #5C7688; }
+        .nw { font: 700 18px 'InterVar', sans-serif; fill: #fff; }
+        .nw2{ font: 400 14px 'InterVar', sans-serif; fill: #A9C3D2; }
+        .nq { font: 700 15px 'InterVar', sans-serif; fill: #002742; }
+        .nl { font: 700 13px 'InterVar', sans-serif; fill: #7B93A2; letter-spacing: .6px; }
+      </style>
+
+      <!-- Wecker -->
+      <rect x="270" y="8" width="460" height="86" rx="12" fill="#002742" filter="url(#nsh)"/>
+      <text class="nw" x="500" y="44" text-anchor="middle">Der Wecker klingelt</text>
+      <text class="nw2" x="500" y="70" text-anchor="middle">alle 5 Minuten</text>
+      <path d="M 500 100 L 500 138" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#n-ink)"/>
+
+      <!-- Rueckblick -->
+      <rect x="230" y="150" width="540" height="104" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#nsh)"/>
+      <rect x="230" y="150" width="540" height="6" rx="3" fill="#CEE741"/>
+      <text class="n1" x="260" y="192">Rückblick: die letzten 24 Stunden</text>
+      <text class="n2" x="260" y="220">Nicht nur seit dem letzten Durchgang – deshalb</text>
+      <text class="n2" x="260" y="240">geht auch nach einem Ausfall nichts verloren.</text>
+      <path d="M 500 260 L 500 298" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#n-ink)"/>
+
+      <!-- Regeln -->
+      <rect x="230" y="310" width="540" height="104" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#nsh)"/>
+      <rect x="230" y="310" width="540" height="6" rx="3" fill="#8AA5B4"/>
+      <text class="n1" x="260" y="352">Passt ein Ereignis auf eine Regel?</text>
+      <text class="n2" x="260" y="380">Bei Travel Alert zusätzlich: sind auch</text>
+      <text class="n2" x="260" y="400">tatsächlich Reisen betroffen?</text>
+
+      <path d="M 230 362 L 120 362 L 120 448" stroke="#8AA5B4" stroke-width="2.6" fill="none" marker-end="url(#n-gray)"/>
+      <text class="nl" x="136" y="350">NEIN</text>
+      <rect x="20" y="460" width="196" height="76" rx="12" fill="#F7FAFC" stroke="#D4E1E8"/>
+      <text class="n1" x="44" y="498" font-size="16">Nichts passiert</text>
+      <text class="n2" x="44" y="520">bis zum nächsten Mal</text>
+
+      <path d="M 500 420 L 500 458" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#n-ink)"/>
+      <text class="nl" x="516" y="446">JA</text>
+
+      <!-- Gedaechtnis -->
+      <path d="M 500 470 L 790 560 L 500 650 L 210 560 Z" fill="#FBFDF2" stroke="#CEE741" stroke-width="2"/>
+      <text class="nq" x="500" y="552" text-anchor="middle">Steht im Versandprotokoll,</text>
+      <text class="nq" x="500" y="574" text-anchor="middle">dass dazu schon gesendet wurde?</text>
+
+      <path d="M 210 560 L 120 560 L 120 646" stroke="#8AA5B4" stroke-width="2.6" fill="none" marker-end="url(#n-gray)"/>
+      <text class="nl" x="136" y="590">JA</text>
+      <rect x="20" y="658" width="196" height="96" rx="12" fill="#F7FAFC" stroke="#D4E1E8"/>
+      <text class="n1" x="44" y="696" font-size="16">Übersprungen</text>
+      <text class="n2" x="44" y="718">Deshalb wird dasselbe</text>
+      <text class="n2" x="44" y="738">Ereignis nie doppelt</text>
+
+      <path d="M 500 656 L 500 700" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#n-ink)"/>
+      <text class="nl" x="516" y="688">NEIN</text>
+
+      <!-- Bremsen -->
+      <rect x="230" y="712" width="540" height="90" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#nsh)"/>
+      <rect x="230" y="712" width="540" height="6" rx="3" fill="#8AA5B4"/>
+      <text class="n1" x="260" y="752">Bremsen prüfen</text>
+      <text class="n2" x="260" y="780">Stundenlimit, Abmeldungen, doppelte Adressen</text>
+      <path d="M 500 808 L 500 846" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#n-ink)"/>
+
+      <!-- Versand -->
+      <rect x="270" y="858" width="460" height="92" rx="12" fill="#002742" filter="url(#nsh)"/>
+      <text class="nw" x="500" y="898" text-anchor="middle">E-Mail geht heraus</text>
+      <text class="nw2" x="500" y="924" text-anchor="middle">und wird im Protokoll vermerkt</text>
+    </svg>
+
+    <p class="small muted mt2">
+      Der Vermerk am Ende ist der Grund, warum aus 288 Durchgängen pro Tag trotzdem nur eine
+      einzige E-Mail je Ereignis und Regel wird.
+    </p>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Ablauf</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · 288 MAILS -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Die häufigste Sorge</div>
+    <h2 class="mt2">Bekommt jetzt jeder<br>288 E-Mails am Tag?</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Nein. Diese Frage kommt fast immer, und sie ist berechtigt – denn wenn das System alle
+      fünf Minuten die letzten 24 Stunden durchsieht, begegnet ihm dasselbe Ereignis
+      rechnerisch 288-mal. Verschickt wird es trotzdem genau einmal.
+    </p>
+
+    <p class="mt3" style="max-width:152mm">
+      Der Grund ist ein Gedächtnis: Jede verschickte Benachrichtigung wird protokolliert. Vor
+      jedem Versand sieht das System in diesem Protokoll nach, ob für <b>diese Regel</b> und
+      <b>dieses Ereignis</b> bereits etwas herausgegangen ist. Wenn ja, überspringt es den Fall
+      stillschweigend.
+    </p>
+
+    <div class="note mt4">
+      <span class="head">Der Merksatz</span>
+      Takt und Rückblick bestimmen ausschließlich, <b>wann und wie gründlich geschaut wird</b> –
+      niemals, <b>wie oft gesendet wird</b>. Wer diese beiden Werte verändert, verändert die
+      Reaktionszeit und die Ausfallsicherheit, nicht die Menge der E-Mails.
+    </div>
+
+    <h3 class="mt5">Weitere eingebaute Bremsen</h3>
+    <p class="small muted mt1">
+      Über das Gedächtnis hinaus sind mehrere Sicherungen eingebaut, die verhindern, dass
+      Empfänger überschüttet werden.
+    </p>
+    <table class="mt2">
+      <thead>
+        <tr><th style="width:38%">Sicherung</th><th>Was sie bewirkt</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Stundenlimit pro Kunde</b></td>
+          <td>Höchstens 50 E-Mails je Kunde und Stunde. Wird die Grenze erreicht, pausiert der
+              Versand für diesen Kunden und wird protokolliert.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Abmeldungen</b></td>
+          <td>Wer sich über den Abmeldelink ausgetragen hat, wird dauerhaft übersprungen.</td>
+        </tr>
+        <tr>
+          <td><b>Doppelte Adressen</b></td>
+          <td>Steht dieselbe E-Mail-Adresse in mehreren Verteilern, erhält sie zu einem Ereignis
+              trotzdem nur eine Nachricht.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Travel Alert: keine Reise, keine Mail</b></td>
+          <td>Ist kein Reisender betroffen, wird nichts verschickt – auch wenn das Ereignis
+              inhaltlich zur Regel passt.</td>
+        </tr>
+        <tr>
+          <td><b>Travel Alert: Nachmeldung nur bei Zuwachs</b></td>
+          <td>Eine zweite Mail zum selben Ereignis geht nur heraus, wenn inzwischen <b>mehr</b>
+              Reisen betroffen sind als beim letzten Versand. Bleibt die Zahl gleich oder sinkt
+              sie, passiert nichts.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Mengen</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · EVENT ERFASSEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Für die tägliche Arbeit</div>
+    <h2 class="mt2">So erfasst du<br>ein Event richtig.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Dieser Abschnitt ist der wichtigste für die tägliche Arbeit – und er hat mit den
+      Zeitwerten weniger zu tun, als man vermutet.
+    </p>
+
+    <h3 class="mt4">Das Problem, das man kennen muss</h3>
+    <p class="mt1" style="max-width:152mm">
+      Ein neu angelegtes Event ist <b>im Moment des Speicherns bereits versandbereit</b>. Es
+      braucht keine gesonderte Freigabe: Der Schalter <span class="ui">Aktiv</span> steht beim
+      Anlegen auf <b>an</b>, und der interne Prüfstatus steht ab Werk auf <b>freigegeben</b>.
+      Beim nächsten Durchgang – also innerhalb von fünf Minuten – kann die Benachrichtigung
+      damit bereits herausgehen.
+    </p>
+    <p class="mt2" style="max-width:152mm">
+      Wer also speichert, um anschließend noch am Text zu feilen, arbeitet gegen die Uhr. Und
+      dieses Rennen solltest du nicht verlieren, denn:
+    </p>
+
+    <div class="stop mt3">
+      <span class="head">Eine einmal verschickte Benachrichtigung lässt sich nicht korrigieren</span>
+      Das System merkt sich, dass es zu diesem Event bereits gesendet hat, und verschickt zu
+      derselben Regel kein zweites Mal. Wird der Text danach überarbeitet, bleibt die Korrektur
+      bei den Empfängern <b>ohne Wirkung</b> – sie haben die vorläufige Fassung erhalten und
+      bekommen keine zweite Mail.
+    </div>
+
+    <h3 class="mt5">Die Lösung: das Rennen gar nicht erst starten</h3>
+    <p class="mt1" style="max-width:152mm">
+      Sie besteht nicht darin, den Takt zu vergrößern – dann hättest du nur mehr Zeit im selben
+      Rennen. Der Schalter <span class="ui">Aktiv</span> ist dein Freigabeknopf: Solange er aus
+      ist, passiert nichts, und du bestimmst selbst den Moment des Versands.
+    </p>
+
+    <div class="note mt4">
+      <span class="head">Der Vorteil</span>
+      Der Zeitpunkt des Versands hängt nicht mehr davon ab, wie schnell du tippst, sondern
+      allein davon, wann du den Schalter umlegst.
+    </div>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Events erfassen</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · ABLAUF -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Der empfohlene Ablauf</div>
+    <h2 class="mt2">Vier Schritte,<br>kein Zeitdruck.</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr>
+          <th style="width:8%"></th>
+          <th style="width:46%">Was du tust</th>
+          <th>Was das System tut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>1</b></td>
+          <td>Event anlegen und den Schalter <span class="ui">Aktiv</span> <b>ausschalten</b>,
+              bevor du speicherst.</td>
+          <td>Nimmt das Event entgegen, verschickt aber nichts. Es erscheint auch noch nicht
+              auf der Karte.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>2</b></td>
+          <td>Titel, Beschreibung, betroffene Länder und Zeitraum in Ruhe fertigstellen.
+              Zwischenspeichern so oft du möchtest.</td>
+          <td>Bleibt still. Es gibt keinen Zeitdruck und keine Frist.</td>
+        </tr>
+        <tr>
+          <td><b>3</b></td>
+          <td>Alles gegenlesen – besonders die Länderzuordnung, denn sie entscheidet, wer
+              benachrichtigt wird.</td>
+          <td>Bleibt still.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>4</b></td>
+          <td>Schalter <span class="ui">Aktiv</span> <b>einschalten</b> und speichern.</td>
+          <td>Beim nächsten Durchgang – längstens fünf Minuten später – geht die
+              Benachrichtigung mit der fertigen Fassung heraus. Das Event erscheint zugleich
+              auf der Karte.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="stop mt4">
+      <span class="head">Wichtig: innerhalb von 24 Stunden freischalten</span>
+      <p>
+        Das System betrachtet bei jedem Durchgang die Events der letzten 24 Stunden – gerechnet
+        ab dem Zeitpunkt, an dem das Event <b>angelegt</b> wurde, nicht ab der Freischaltung.
+      </p>
+      <p class="mt2">
+        Wird ein Event heute angelegt und erst übermorgen auf <span class="ui">Aktiv</span>
+        gestellt, ist es aus diesem Fenster herausgefallen: <b>Es erscheint dann zwar auf der
+        Karte, aber es geht keine Benachrichtigung mehr heraus</b> – ohne Fehlermeldung und ohne
+        Hinweis.
+      </p>
+      <p class="mt2">
+        Für die übliche Arbeitsweise „anlegen, überarbeiten, freigeben“ innerhalb eines
+        Arbeitstages ist das unproblematisch. Wer ein Event längerfristig vorbereiten möchte,
+        legt es besser erst dann an, wenn es auch veröffentlicht werden soll.
+      </p>
+    </div>
+
+    <h3 class="mt3">Kurz gefasst</h3>
+    <table class="mt2">
+      <thead>
+        <tr><th style="width:50%">Besser nicht</th><th>Stattdessen</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Event vollständig ausfüllen, speichern, dann noch Kleinigkeiten nachbessern.</td>
+          <td>Mit <span class="ui">Aktiv</span> = aus anlegen, fertigstellen, dann einschalten.</td>
+        </tr>
+        <tr class="alt">
+          <td>Ein Event „schon mal anlegen“ und Tage später scharfschalten.</td>
+          <td>Erst anlegen, wenn es innerhalb von 24 Stunden freigegeben wird.</td>
+        </tr>
+        <tr>
+          <td>Nach dem Versand den Text korrigieren und hoffen, dass die Korrektur ankommt.</td>
+          <td>Vor dem Einschalten gegenlesen – danach ist keine Korrektur mehr zustellbar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Events erfassen</span><span>08</span></div>
+</section>
+
+<!-- ======================================================== 9 · WERTE AENDERN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Werte verändern</div>
+    <h2 class="mt2">Was du dir damit<br>einhandelst.</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr>
+          <th style="width:26%">Änderung</th>
+          <th style="width:32%">Erwünschte Wirkung</th>
+          <th>Preis dafür</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Takt <b>kleiner</b><br><span class="small muted">z. B. 5 → 2 Minuten</span></td>
+          <td>Benachrichtigungen gehen schneller heraus.</td>
+          <td>Deutlich mehr Durchgänge und damit mehr Last. Der Gewinn ist gering, weil die
+              Ereignisse selbst nicht schneller eintreffen.</td>
+        </tr>
+        <tr class="alt">
+          <td>Takt <b>größer</b><br><span class="small muted">z. B. 5 → 15 Minuten</span></td>
+          <td>Spürbar weniger Systemlast.</td>
+          <td>Kunden erfahren später von Ereignissen. Bei sicherheitsrelevanten Meldungen ist
+              das der falsche Hebel.</td>
+        </tr>
+        <tr>
+          <td>Rückblick <b>kleiner</b><br><span class="small muted">z. B. 24 → 2 Stunden</span></td>
+          <td>Jeder Durchgang wird etwas schneller.</td>
+          <td><b>Riskant.</b> Fällt das System länger als zwei Stunden aus, gehen die
+              Benachrichtigungen aus dieser Zeit ersatzlos verloren.</td>
+        </tr>
+        <tr class="alt">
+          <td>Rückblick <b>größer</b><br><span class="small muted">z. B. 24 → 72 Stunden</span></td>
+          <td>Noch mehr Sicherheit gegen längere Ausfälle.</td>
+          <td>Jeder Durchgang prüft mehr Datensätze. Bei den heutigen Mengen unkritisch, aber
+              ohne echten Zusatznutzen.</td>
+        </tr>
+        <tr>
+          <td>Reisedaten-Takt <b>kleiner</b><br><span class="small muted">30 → 5 Minuten</span></td>
+          <td>Neue Buchungen sind schneller bekannt.</td>
+          <td>Sechsfache Anzahl an Anfragen an Passolution – für jeden Kunden einzeln. Nur zum
+              Testen sinnvoll.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">Regeln für zulässige Werte</h3>
+    <ul class="checks mt2">
+      <li>
+        <b>Nur Teiler von 60 verwenden.</b>
+        Sinnvoll sind <b>5, 10, 15, 20 und 30</b>. Ein Wert wie 7 führt dazu, dass das System zu
+        den Minuten 0, 7, 14 … 56 läuft und dann zur vollen Stunde zurückspringt – der Abstand
+        zwischen vorletztem und letztem Durchgang beträgt dann nur 4 statt 7 Minuten. Das ist
+        nicht kaputt, aber unnötig ungleichmäßig.
+      </li>
+      <li>
+        <b>Der Rückblick muss deutlich größer sein als der Takt.</b>
+        Ein Rückblick von 5 Minuten bei einem Takt von 5 Minuten hätte keinerlei
+        Sicherheitsreserve. Die 24 Stunden sind bewusst großzügig gewählt.
+      </li>
+      <li>
+        <b>Nach jeder Änderung muss die Konfiguration neu erzeugt werden.</b>
+        Sonst arbeitet das System weiter mit den alten Werten – die Änderung in der
+        Einstellungsdatei allein genügt nicht.
+      </li>
+    </ul>
+
+    <div class="cmd mt2"><span class="p">$</span> php artisan config:cache</div>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Werte ändern</span><span>09</span></div>
+</section>
+
+<!-- ======================================================== 10 · PRUEFEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">07 · Kontrolle</div>
+    <h2 class="mt2">Prüfen, dass<br>alles läuft.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Drei Handgriffe, die keine Änderungen vornehmen und deshalb gefahrlos sind. Wenn du
+      keinen Serverzugang hast, gib sie an die Technik weiter.
+    </p>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Was ist eingeplant?</h3>
+          <p>Zeigt, mit welchem Takt die drei Aufgaben registriert sind.</p>
+          <div class="cmd mt1"><span class="p">$</span> php artisan schedule:list</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Läuft es auch wirklich?</h3>
+          <p>Die vorige Ausgabe zeigt nur, was eingeplant <i>ist</i>. Ob es tatsächlich
+             ausgeführt wird, verraten die Zeitstempel der Protokolldateien – sie müssen
+             innerhalb des eingestellten Takts liegen.</p>
+          <div class="cmd mt1"><span class="p">$</span> ls -la --time-style=full-iso storage/logs/gtm-notifications.log \
+     storage/logs/travel-alert-notifications.log \
+     storage/logs/travel-links-sync.log</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Wer bekäme jetzt eine Mail?</h3>
+          <p>Der Probelauf zeigt vollständig an, was passieren würde – verschickt aber nichts
+             und speichert nichts. Bleibt das Ergebnis leer, benennt er die fehlende
+             Voraussetzung konkret.</p>
+          <div class="cmd mt1"><span class="p">$</span> php artisan notifications:process-gtm --dry-run
+<span class="p">$</span> php artisan notifications:process-travel-alert --dry-run
+<span class="p">$</span> php artisan notifications:rules</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Kontrolle</span><span>10</span></div>
+</section>
+
+<!-- ======================================================== 11 · FEHLERSUCHE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">08 · Fehlersuche</div>
+    <h2 class="mt2">Wenn keine<br>Benachrichtigungen ankommen.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Die Zeit-Einstellungen sind erfahrungsgemäß selten die Ursache. Diese Reihenfolge führt
+      am schnellsten zum Ziel.
+    </p>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:8%"></th><th style="width:44%">Prüfen</th><th>Wenn das die Ursache ist</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>1</b></td>
+          <td>Werden die Protokolldateien überhaupt fortgeschrieben?</td>
+          <td>Der Zeitplaner läuft nicht. Dann ist jede Intervall-Einstellung wirkungslos.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>2</b></td>
+          <td>Gibt es aktive Regeln?<br><span class="mono">notifications:rules</span></td>
+          <td>Ohne passende Regel wird nichts verschickt, egal wie viele Ereignisse eintreffen.</td>
+        </tr>
+        <tr>
+          <td><b>3</b></td>
+          <td>Ist der Benachrichtigungs-Schalter beim Kunden eingeschaltet?</td>
+          <td>Der Probelauf weist genau darauf hin, wenn es daran liegt.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>4</b></td>
+          <td>Bei Travel Alert: Liegen überhaupt Reisedaten vor?</td>
+          <td>Ohne abgeglichene Reisen findet Travel Alert keine Betroffenen und schweigt –
+              korrekt, aber leicht misszuverstehen.</td>
+        </tr>
+        <tr>
+          <td><b>5</b></td>
+          <td>Wurde zum selben Ereignis schon einmal versendet?</td>
+          <td>Dann greift das Gedächtnis aus Abschnitt 4. Das ist gewolltes Verhalten, kein
+              Fehler.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note mt5">
+      <span class="head">Zusammengefasst</span>
+      Mit den aktuellen Werten erfahren Kunden innerhalb von <b>fünf Minuten</b> von einem neuen
+      Ereignis, frisch gebuchte Reisen fließen spätestens nach einer <b>halben Stunde</b> in die
+      Bewertung ein, und ein Ausfall von bis zu <b>24 Stunden</b> wird beim nächsten
+      erfolgreichen Durchgang vollständig nachgeholt. Das ist eine konservative, gut
+      abgesicherte Einstellung – es gibt keinen Anlass, daran etwas zu ändern.
+    </div>
+  </div>
+  <div class="foot"><span><b>Benachrichtigungen</b> · Fehlersuche</span><span>11</span></div>
+</section>
+
+<!-- ======================================================== 12 · RÜCKSEITE -->
+<section class="page back">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#bg2)"/>
+      <circle cx="120" cy="980" r="380" fill="url(#glow2)"/>
+      <path d="M 794 0 L 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630 L 0 0 Z"
+            fill="#CEE741" fill-opacity=".05"/>
+      <path d="M 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630"
+            fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <div class="kicker" style="color:#CEE741">Das Wichtigste</div>
+    <h2 class="mt2" style="color:#fff">Zwei Sätze,<br>die alles tragen.</h2>
+    <div class="rule mt3"></div>
+
+    <div class="grid2 mt5">
+      <div class="back-card">
+        <h4>Zu den Zeitwerten</h4>
+        <p>Takt und Rückblick bestimmen, <b>wann</b> und <b>wie gründlich</b> geschaut wird –
+           niemals, wie oft gesendet wird. Wer sie verändert, verändert Reaktionszeit und
+           Ausfallsicherheit, nicht die Menge der E-Mails.</p>
+      </div>
+      <div class="back-card">
+        <h4>Zur täglichen Arbeit</h4>
+        <p>Events mit ausgeschaltetem <b>Aktiv</b>-Schalter anlegen, in Ruhe fertigstellen,
+           gegenlesen, dann einschalten. Und innerhalb von 24 Stunden freigeben, sonst geht
+           keine Benachrichtigung mehr heraus.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <img src="assets/passolution-logo-white.png" alt="Passolution" style="width:40mm">
+      <p class="small mt3" style="color:#7A9BAE">
+        Passolution Travel Information Platform · Interne Dokumentation · Stand: August 2026<br>
+        Beschreibt den Stand der Einstellungen <span class="mono" style="color:#9FBECE">GTM_NOTIFICATION_INTERVAL</span>,
+        <span class="mono" style="color:#9FBECE">TRAVEL_ALERT_NOTIFICATION_INTERVAL</span>,
+        <span class="mono" style="color:#9FBECE">TRAVEL_LINKS_SYNC_INTERVAL</span> und
+        <span class="mono" style="color:#9FBECE">NOTIFICATION_LOOKBACK_HOURS</span>.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
