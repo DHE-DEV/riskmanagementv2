@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Der Ablauf Schritt für Schritt erklärt</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.1mm 0;
+  font-size: 9.2pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 5mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.8mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+
+/* Stationskarte: eine Station des Ablaufs */
+.station {
+  border: .6pt solid var(--line);
+  border-left: 1.6mm solid var(--lime);
+  border-radius: 0 2.4mm 2.4mm 0;
+  padding: 3.8mm 4.2mm;
+  background: #fff;
+}
+.station.grey { border-left-color: #8AA5B4; }
+.station.dark { border-left-color: var(--ink); }
+.station .t {
+  font-size: 7.4pt; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700; display: block; margin-bottom: 1.2mm;
+}
+.station h3 { margin-bottom: 1.4mm; }
+.station p { font-size: 9.1pt; line-height: 1.45; color: var(--ink-2); }
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 3.6mm 4.4mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9pt; color: #C6DAE5; margin-top: 1.4mm; line-height: 1.45; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+</style>
+</head>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".24"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="640" cy="360" r="300" fill="url(#glow)"/>
+
+      <!-- Ablauf-Motiv: Stationen an einem Strang -->
+      <g transform="translate(470,150)">
+        <path d="M 130 0 L 130 420" stroke="#5E8FA8" stroke-opacity=".3" stroke-width="2"/>
+        <path d="M 130 60 L 40 130 L 40 250" stroke="#5E8FA8" stroke-opacity=".2" stroke-width="2" fill="none"/>
+        <path d="M 130 60 L 226 130 L 226 250" stroke="#5E8FA8" stroke-opacity=".2" stroke-width="2" fill="none"/>
+
+        <rect x="66" y="-16" width="128" height="46" rx="10" fill="#CEE741" fill-opacity=".16" stroke="#CEE741" stroke-opacity=".5"/>
+        <rect x="0" y="246" width="80" height="34" rx="9" fill="#0E5578" fill-opacity=".4" stroke="#5E8FA8" stroke-opacity=".35"/>
+        <rect x="186" y="246" width="80" height="34" rx="9" fill="#0E5578" fill-opacity=".4" stroke="#5E8FA8" stroke-opacity=".35"/>
+        <rect x="76" y="188" width="108" height="40" rx="10" fill="#0E5578" fill-opacity=".55" stroke="#5E8FA8" stroke-opacity=".4"/>
+        <rect x="60" y="392" width="140" height="46" rx="10" fill="#CEE741" fill-opacity=".2" stroke="#CEE741" stroke-opacity=".55"/>
+
+        <circle cx="130" cy="120" r="9" fill="#CEE741" fill-opacity=".9"/>
+        <circle cx="130" cy="310" r="9" fill="#CEE741" fill-opacity=".55"/>
+      </g>
+
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:24mm">
+      <div class="kicker" style="color:#CEE741">Das System verstehen</div>
+      <h1 class="mt2">Der Ablauf,<br>Station für<br>Station erklärt.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Vom Moment, in dem irgendwo auf der Welt etwas passiert, bis zur E-Mail beim
+        richtigen Empfänger. Jede Station des Ablaufplans in normaler Sprache –
+        ohne technische Vorkenntnisse.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Das Gesamtbild: vier Abschnitte</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Wo Ereignisse herkommen</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Die Quellen, aus denen nichts entsteht</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Die Freigabe – die Ampel</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">Direkt danach: der Aushang</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Die Reisedaten</span></div>
+      <div class="toc-row"><span class="n">07</span><span class="t">Die beiden Postboten</span></div>
+      <div class="toc-row"><span class="n">08</span><span class="t">Die Prüfkette</span></div>
+      <div class="toc-row"><span class="n">09</span><span class="t">Der Versand</span></div>
+      <div class="toc-row"><span class="n">10</span><span class="t">Wo das Ergebnis sichtbar wird</span></div>
+      <div class="toc-row"><span class="n">11</span><span class="t">Alle Begriffe in einem Satz</span></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Stand: August 2026</span>
+      <span>Passolution GmbH</span>
+      <span>Begleitend zu flowchart.pdf</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · GESAMTBILD -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Das Gesamtbild</div>
+    <h2 class="mt2">Vier Abschnitte,<br>immer in dieser Reihenfolge.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Der Ablaufplan sieht auf den ersten Blick verzweigt aus. Dahinter steckt aber eine
+      einfache Kette, die immer gleich läuft. Wenn du diese vier Abschnitte im Kopf hast,
+      lässt sich jeder einzelne Kasten im Plan zuordnen.
+    </p>
+
+    <div class="note mt2">
+      <span class="head">Der Ablaufplan zum Danebenlegen</span>
+      Der Plan selbst liegt als eigenes Dokument daneben: <b>flowchart.pdf</b> im Ordner
+      <span class="mono">docs</span>. Es lohnt sich, ihn beim Lesen offen zu haben – jeder
+      Abschnitt hier beschreibt einen Bereich daraus.
+    </div>
+
+    <svg class="mt4" width="100%" viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0E5578"/>
+        </marker>
+        <filter id="ash" x="-8%" y="-8%" width="116%" height="130%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#002742" flood-opacity=".13"/>
+        </filter>
+      </defs>
+      <style>
+        .a1 { font: 700 19px 'InterVar', sans-serif; fill: #002742; }
+        .a2 { font: 400 14px 'InterVar', sans-serif; fill: #5C7688; }
+        .an { font: 800 15px 'InterVar', sans-serif; fill: #5C6B12; }
+      </style>
+
+      <rect x="4" y="60" width="220" height="140" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#ash)"/>
+      <rect x="4" y="60" width="220" height="6" rx="3" fill="#CEE741"/>
+      <text class="an" x="28" y="96">01</text>
+      <text class="a1" x="28" y="126">Eingang</text>
+      <text class="a2" x="28" y="152">Ein Ereignis entsteht</text>
+      <text class="a2" x="28" y="172">im System.</text>
+
+      <path d="M 232 130 L 262 130" stroke="#0E5578" stroke-width="2.6" marker-end="url(#a-ink)"/>
+
+      <rect x="270" y="60" width="220" height="140" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#ash)"/>
+      <rect x="270" y="60" width="220" height="6" rx="3" fill="#CEE741"/>
+      <text class="an" x="294" y="96">02</text>
+      <text class="a1" x="294" y="126">Freigabe</text>
+      <text class="a2" x="294" y="152">Es wird auf Grün</text>
+      <text class="a2" x="294" y="172">gestellt.</text>
+
+      <path d="M 498 130 L 528 130" stroke="#0E5578" stroke-width="2.6" marker-end="url(#a-ink)"/>
+
+      <rect x="536" y="60" width="220" height="140" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#ash)"/>
+      <rect x="536" y="60" width="220" height="6" rx="3" fill="#CEE741"/>
+      <text class="an" x="560" y="96">03</text>
+      <text class="a1" x="560" y="126">Benachrichtigung</text>
+      <text class="a2" x="560" y="152">Wen betrifft es –</text>
+      <text class="a2" x="560" y="172">und wer bekommt Post?</text>
+
+      <path d="M 764 130 L 794 130" stroke="#0E5578" stroke-width="2.6" marker-end="url(#a-ink)"/>
+
+      <rect x="802" y="60" width="194" height="140" rx="12" fill="#002742" filter="url(#ash)"/>
+      <text class="an" x="826" y="96" style="fill:#CEE741">04</text>
+      <text class="a1" x="826" y="126" style="fill:#fff">Ausgabe</text>
+      <text class="a2" x="826" y="152" style="fill:#A9C3D2">Karte, Listen,</text>
+      <text class="a2" x="826" y="172" style="fill:#A9C3D2">Schnittstellen.</text>
+
+      <text class="a2" x="4" y="248">Abschnitt 3 und 4 sind voneinander unabhängig: Ein Ereignis erscheint sofort auf der Karte,</text>
+      <text class="a2" x="4" y="270">auch wenn dazu nie eine einzige E-Mail herausgeht.</text>
+    </svg>
+
+    <div class="note mt4">
+      <span class="head">Der wichtigste Satz vorweg</span>
+      Das System sitzt <b>nicht</b> pausenlos daneben und schickt in dem Moment los, in dem
+      etwas eingetragen wird. Es arbeitet in festem Takt: Alle fünf Minuten wacht es auf,
+      sieht nach, was zu tun ist, erledigt es und legt sich wieder hin. Das erklärt fast
+      alle Rückfragen, die zum Thema Benachrichtigung aufkommen.
+    </div>
+
+    <h3 class="mt5">Ein Beispiel, das durch alle vier Abschnitte läuft</h3>
+    <p class="mt1" style="max-width:152mm">
+      In Athen wird ein Streik der Fluglotsen angekündigt. Eine Kollegin trägt das als
+      Ereignis ein und ordnet es Griechenland zu <b>(Eingang)</b>. Mit dem Veröffentlichen
+      ist es im Betrieb <b>(Freigabe)</b>. Wenige Minuten später sieht der nächste
+      Durchgang nach, ob es dazu überhaupt eine <b>aktive Benachrichtigungsregel</b> gibt,
+      auf die dieses Ereignis passt. Solche Regeln werden für <b>Global Travel Monitor</b>
+      und <b>Travel Alert</b> getrennt angelegt und auch getrennt versendet: Beim Monitor
+      genügt es, dass die Regel passt – bei Travel Alert wird zusätzlich geprüft, welcher
+      Kunde wirklich Reisende in Griechenland hat. Nur wer das jeweils erfüllt, bekommt
+      eine E-Mail <b>(Benachrichtigung)</b>. Unabhängig davon erscheint der Streik ab
+      sofort auf der Weltkarte, in den Listen und in allen Schnittstellen
+      <b>(Ausgabe)</b> – auch bei denen, die keine E-Mail bekommen haben. Warum das zwei
+      getrennte Wege sind, steht in Abschnitt 07.
+    </p>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Gesamtbild</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · EINGANG I -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Wo Ereignisse herkommen</div>
+    <h2 class="mt2">Vier Wege hinein –<br>der erste und der zweite.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      Oben im Ablaufplan stehen mehrere Kästen nebeneinander. Das sind die Eingänge:
+      die Wege, auf denen ein Ereignis überhaupt erst ins System kommt. Sie unterscheiden
+      sich darin, <i>wer</i> es einträgt und ob noch jemand daraufschaut.
+    </p>
+
+    <div class="station mt4">
+      <span class="t">Eingang 1 · Von Hand</span>
+      <h3>Die Redaktion legt ein Ereignis an</h3>
+      <p class="mt1">
+        Im internen Verwaltungsbereich – dem Admin Panel – erfasst eine Mitarbeiterin oder ein
+        Mitarbeiter ein Ereignis selbst. Dabei werden die Angaben gesetzt, nach denen später
+        alles Weitere entschieden wird: um <b>welche Art</b> von Ereignis es geht, welcher
+        <b>Kategorie</b> es zuzuordnen ist, welche <b>Länder</b> betroffen sind, wie
+        <b>dringend</b> es ist und in welchem <b>Zeitraum</b> es gilt. Auch Übersetzungen in
+        andere Sprachen werden hier gepflegt.
+      </p>
+      <p class="mt2">
+        Zum Schluss wird der Schalter <span class="ui">Veröffentlichen</span> umgelegt. Erst
+        dann ist das Ereignis mehr als ein Entwurf.
+      </p>
+    </div>
+
+    <div class="note mt3">
+      <b>Warum die Angaben so wichtig sind:</b> Fehlt die Länderzuordnung, kann später niemand
+      feststellen, wen das Ereignis betrifft. Bei Travel Alert bedeutet das schlicht: Es geht
+      keine einzige E-Mail heraus. Die Sorgfalt an dieser Stelle entscheidet über alles, was
+      danach kommt.
+    </div>
+
+    <div class="station mt4">
+      <span class="t">Eingang 2 · Vollautomatisch</span>
+      <h3>Naturkatastrophen von GDACS</h3>
+      <p class="mt1">
+        GDACS ist ein internationaler Warndienst für Naturkatastrophen, betrieben von den
+        Vereinten Nationen und der Europäischen Kommission. Einmal pro Stunde fragt unser
+        System dort nach, was es Neues gibt – Erdbeben, Wirbelstürme, Überschwemmungen,
+        Vulkanausbrüche, Waldbrände.
+      </p>
+      <p class="mt2">
+        Diese Meldungen werden als eigene Art von Ereignis abgelegt. Sie durchlaufen
+        <b>keine Freigabe</b>: Sie stammen aus einer offiziellen Quelle, niemand muss sie
+        gegenlesen, sie werden sofort mitverarbeitet.
+      </p>
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Derzeit abgeschaltet</span>
+      Dieser Eingang ist momentan <b>deaktiviert</b>: Die stündliche Abfrage bei GDACS läuft
+      nicht, es kommen also keine neuen Naturkatastrophen ins System. Der Weg ist im
+      Ablaufplan trotzdem eingezeichnet, weil er jederzeit wieder eingeschaltet werden kann –
+      dann greift er genau so, wie hier beschrieben. Bereits vorhandene Meldungen aus der
+      Zeit davor bleiben erhalten.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Eingänge</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · EINGANG II -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Wo Ereignisse herkommen</div>
+    <h2 class="mt2">Der dritte und<br>der vierte Weg.</h2>
+
+    <div class="station mt4">
+      <span class="t">Eingang 3 · Über die Schnittstelle</span>
+      <h3>Ein Partner meldet ein Ereignis</h3>
+      <p class="mt1">
+        Manche Kunden und Partner haben ein eigenes System und schicken uns Ereignisse
+        automatisch zu – über eine Schnittstelle, also einen technischen Briefkasten,
+        an den ihre Software Meldungen zustellt.
+      </p>
+      <p class="mt2">
+        Jeder Zugang hat einen Schalter, der entscheidet, wie viel Vertrauen wir dem
+        Absender entgegenbringen:
+      </p>
+      <ul class="checks mt2" style="font-size:9.1pt">
+        <li><b>Mit Vertrauensvorschuss:</b> Die Meldung geht sofort in den Betrieb und
+            wird behandelt wie ein von uns selbst gepflegtes Ereignis.</li>
+        <li><b>Ohne Vertrauensvorschuss:</b> Die Meldung landet in einer Warteschlange
+            und liegt dort still, bis jemand aus der Redaktion sie ansieht.</li>
+      </ul>
+    </div>
+
+    <div class="station grey mt4">
+      <span class="t">Eingang 4 · Der Kunde selbst</span>
+      <h3>Ein Kunde trägt ein eigenes Ereignis ein</h3>
+      <p class="mt1">
+        Kunden können in ihrem eigenen Konto Ereignisse anlegen – etwa einen internen
+        Hinweis für ihre Reisenden, der nur sie selbst betrifft. Solche Einträge sind
+        von Anfang an freigegeben, aber sie bleiben ausschließlich im Konto dieses
+        Kunden sichtbar.
+      </p>
+      <p class="mt2">
+        Wichtig: Aus solchen Einträgen wird <b>nie</b> eine Benachrichtigung verschickt –
+        weder an den Kunden selbst noch an irgendjemand anderen.
+      </p>
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Warum das so gebaut ist</span>
+      Ein kundeneigener Eintrag ist eine Notiz, keine Warnung. Würde das System daraus
+      E-Mails erzeugen, bekäme der Kunde eine Benachrichtigung über etwas, das er selbst
+      gerade eingetippt hat. Der Ablaufplan zeigt diesen Weg deshalb als Sackgasse: Er
+      führt in die Anzeige, aber nicht in den Versand.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Eingänge</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · QUELLEN OHNE EVENT -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Quellen, aus denen nichts entsteht</div>
+    <h2 class="mt2">Die Presseschau –<br>und warum sie<br>nichts auslöst.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Zwei Kästen im Ablaufplan enden bewusst im Nichts. Sie sind trotzdem drin, weil
+      genau diese Stelle immer wieder falsch verstanden wird.
+    </p>
+
+    <div class="station grey mt4">
+      <span class="t">Stündlich</span>
+      <h3>Nachrichtenquellen einsammeln</h3>
+      <p class="mt1">
+        Einmal pro Stunde holt das System Nachrichten von externen Stellen ab – zum Beispiel
+        vom Auswärtigen Amt, vom britischen Außenministerium, von der
+        Weltgesundheitsorganisation. Diese Meldungen werden als <b>Feed-Einträge</b>
+        gespeichert und sind im Verwaltungsbereich als Liste einsehbar.
+      </p>
+      <p class="mt2">
+        Man kann sie dort öffnen, als <span class="ui">geprüft</span> markieren oder
+        <span class="ui">ignorieren</span>. Mehr passiert damit nicht.
+      </p>
+    </div>
+
+    <div class="station grey mt3">
+      <span class="t">Stündlich</span>
+      <h3>Länderinformationen von Passolution</h3>
+      <p class="mt1">
+        Parallel dazu werden die Länderinformationen aus dem Passolution-Infosystem
+        abgeglichen – Einreisebestimmungen, Gesundheitshinweise und Ähnliches. Auch das
+        ist reine Nachschlage-Information für die Anzeige.
+      </p>
+    </div>
+
+    <div class="stop mt4">
+      <span class="head">Das häufigste Missverständnis</span>
+      Aus diesen Meldungen entsteht <b>kein</b> Ereignis und damit auch keine
+      Benachrichtigung. Es ist eine Presseschau: ein Stapel Zeitungsausschnitte auf dem
+      Schreibtisch. Wenn eine dieser Meldungen relevant ist, muss jemand aus der Redaktion
+      daraufhin <b>von Hand ein Ereignis anlegen</b> – über Eingang 1.
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Achtung bei einem Schalter</span>
+      An jeder Nachrichtenquelle gibt es eine Einstellung namens
+      <span class="ui">Auto-Import</span>. Der Name legt nahe, dass daraus automatisch
+      Ereignisse werden. Das tut er nicht: Er setzt lediglich einen anderen Haken an den
+      eingesammelten Einträgen, damit man sie in der Liste auseinanderhalten kann.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Nachrichtenquellen</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · FREIGABE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Die Freigabe</div>
+    <h2 class="mt2">Die Ampel in<br>der Mitte des Plans.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      In der Mitte des Ablaufplans steht ein grüner Knoten, in den alle Wege
+      hineinlaufen. Er ist der Dreh- und Angelpunkt: Was ihn erreicht, ist im Betrieb.
+      Was ihn nicht erreicht, existiert für den Rest des Systems nicht.
+    </p>
+
+    <div class="grid3 mt4">
+      <div class="card" style="border-left:1.6mm solid #16a34a">
+        <h3>Freigegeben</h3>
+        <p class="mt1">Das Ereignis ist im Betrieb. Es erscheint in der Anzeige und wird
+        beim nächsten Durchgang für Benachrichtigungen geprüft.</p>
+      </div>
+      <div class="card" style="border-left:1.6mm solid #ca8a04">
+        <h3>Wartet auf Prüfung</h3>
+        <p class="mt1">Es liegt in der Warteschlange und ist nirgends sichtbar. Es passiert
+        nichts, bis jemand aus der Redaktion entscheidet.</p>
+      </div>
+      <div class="card" style="border-left:1.6mm solid #8E3122">
+        <h3>Abgelehnt</h3>
+        <p class="mt1">Der Eintrag bleibt zur Nachvollziehbarkeit erhalten, wird aber
+        nirgends angezeigt und löst nichts aus.</p>
+      </div>
+    </div>
+
+    <h3 class="mt5">Drei Bedingungen müssen zusammenkommen</h3>
+    <p class="mt1" style="max-width:152mm">
+      Damit ein Ereignis überhaupt für den Versand in Frage kommt, müssen alle drei Punkte
+      gleichzeitig zutreffen. Fehlt einer, wird es beim Durchgang stillschweigend übergangen –
+      das ist die häufigste Ursache, wenn eine erwartete E-Mail ausbleibt.
+    </p>
+
+    <ul class="checks mt3">
+      <li><b>Es ist veröffentlicht.</b> Der Schalter im Erfassungsformular ist umgelegt,
+          es ist kein Entwurf mehr.</li>
+      <li><b>Es ist freigegeben.</b> Entweder direkt beim Anlegen, oder später durch die
+          Redaktion.</li>
+      <li><b>Es gehört keinem einzelnen Kunden.</b> Es ist also ein allgemeines Ereignis
+          und keine kundeneigene Notiz.</li>
+    </ul>
+
+    <div class="note mt4">
+      <b>Naturkatastrophen sind hier die Ausnahme:</b> Sie brauchen keine dieser drei
+      Bedingungen. Sie kommen aus einer offiziellen Quelle und gehen direkt in die
+      Verarbeitung.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Freigabe</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · AUSHANG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Direkt nach der Freigabe</div>
+    <h2 class="mt2">Der Aushang wird<br>neu gedruckt.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Unmittelbar nach dem Speichern passiert genau eine Sache – und es ist nicht die,
+      die die meisten vermuten.
+    </p>
+
+    <p class="mt3" style="max-width:152mm">
+      Damit die Weltkarte, die Event-Listen und die Schnittstellen schnell antworten,
+      hält das System fertige Antworten bereit, statt jede Anfrage neu zu berechnen. Das
+      ist wie ein Aushang im Schaukasten: Wer vorbeikommt, liest den Aushang, statt jedes
+      Mal in den Aktenschrank zu greifen. Das ist deutlich schneller – hat aber den
+      Nachteil, dass der Aushang veraltet, sobald sich etwas ändert.
+    </p>
+
+    <p class="mt3" style="max-width:152mm">
+      Genau dafür ist dieser Schritt da: Sobald ein Ereignis gespeichert oder gelöscht
+      wird, wird der alte Aushang abgehängt. Der nächste Besucher bekommt einen frisch
+      gedruckten – mit dem neuen Ereignis darauf.
+    </p>
+
+    <div class="grid2 mt4">
+      <div class="card">
+        <h3>Was hier passiert</h3>
+        <p class="mt1">
+          Die zwischengespeicherten Antworten für Karte, Listen, Schnittstellen und
+          Nachrichten-Feeds werden verworfen. Außerdem wird das Symbol gesetzt, mit dem
+          das Ereignis auf der Karte erscheint.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Was hier <i>nicht</i> passiert</h3>
+        <p class="mt1">
+          Es wird <b>keine</b> E-Mail ausgelöst und auch nichts für den Versand vorgemerkt.
+          Der Versand ist ein vollständig eigener Vorgang, der nach der Uhr läuft.
+        </p>
+      </div>
+    </div>
+
+    <div class="warn mt4">
+      <span class="head">Ein Unterschied, den man im Alltag merkt</span>
+      Auf der <b>Karte</b> erscheint ein neues Ereignis praktisch sofort – Aushang neu,
+      fertig. Die <b>E-Mail</b> dagegen kommt erst beim nächsten Durchgang, also innerhalb
+      von fünf Minuten. Wer beides gleichzeitig erwartet und die Mail nicht sofort sieht,
+      hält das leicht für einen Fehler. Es ist keiner.
+    </div>
+
+    <div class="note mt3">
+      <b>Es gibt einen Notausgang:</b> Im Verwaltungsbereich lässt sich an einem Ereignis
+      die Aktion <span class="ui">Benachrichtigungen senden</span> auslösen. Damit wird der
+      Versand sofort angestoßen, ohne auf den nächsten Durchgang zu warten – und ohne die
+      übliche Sperre gegen Doppelversand. Sie ist für Ausnahmefälle gedacht.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Zwischenspeicher</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · REISEDATEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Die Reisedaten</div>
+    <h2 class="mt2">Der zweite Strang:<br>Wer ist wo unterwegs?</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Links im Ablaufplan läuft ein eigener Strang, der mit Ereignissen zunächst gar nichts
+      zu tun hat. Er beschafft die andere Hälfte der Information: die Reisen.
+    </p>
+
+    <p class="mt3" style="max-width:152mm">
+      Denn um zu entscheiden, ob ein Erdbeben in Chile jemanden betrifft, reicht es nicht,
+      das Erdbeben zu kennen. Man muss auch wissen, wer gerade in Chile ist. Diese Angaben
+      liegen bei Passolution, nicht bei uns – also müssen sie regelmäßig abgeholt werden.
+    </p>
+
+    <div class="station mt4">
+      <span class="t">Alle 30 Minuten</span>
+      <h3>Reisen abholen</h3>
+      <p class="mt1">
+        Für jeden Kunden, bei dem diese Funktion eingeschaltet ist, fragt das System bei
+        Passolution nach den aktuellen Reisen und legt sie in einer eigenen Liste ab.
+        Festgehalten wird vor allem, <b>welche Länder</b> auf der Reise besucht werden und
+        <b>von wann bis wann</b> sie dauert. Genau diese zwei Angaben braucht der Abgleich
+        später.
+      </p>
+    </div>
+
+    <div class="note mt3">
+      <b>Warum halbstündlich und nicht alle fünf Minuten?</b> Bei jedem Durchgang wird für
+      jeden einzelnen Kunden die <b>Passolution-API</b> angefragt – der Datenservice, in dem
+      die Reisen liegen. Das ist mindestens eine Anfrage je Kunde, bei vielen Reisen auch
+      mehrere. Ein Fünf-Minuten-Takt würde das rund 288-mal am Tag tun statt 48-mal – ohne
+      erkennbaren Gewinn, denn Reisen werden nicht im Minutentakt gebucht.
+    </div>
+
+    <div class="station grey mt4">
+      <span class="t">Sicherheitsnetz</span>
+      <h3>Wenn die Liste leer ist</h3>
+      <p class="mt1">
+        Findet das System zu einem Kunden gar keine gespeicherten Reisen, fragt es im
+        Bedarfsfall direkt bei Passolution nach, statt den Kunden einfach zu übergehen.
+        Das ist die Absicherung für Kunden, deren Reisen aus irgendeinem Grund noch nie
+        übertragen wurden.
+      </p>
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Ein Zusammenhang, den man kennen sollte</span>
+      Eine ganz frisch gebuchte Reise ist dem System erst nach spätestens 30 Minuten
+      bekannt. Im ungünstigsten Fall vergehen also rund <b>35 Minuten</b> zwischen einer
+      neuen Buchung und der ersten Warnung, die diese Reise einbezieht.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Reisedaten</span><span>08</span></div>
+</section>
+
+<!-- ======================================================== 9 · POSTBOTEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">07 · Die beiden Postboten</div>
+    <h2 class="mt2">Zwei Durchgänge,<br>die nichts voneinander wissen.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      Im Ablaufplan zweigen unterhalb der Ereignisse zwei Kästen ab. Das sind die beiden
+      Versand-Durchgänge. Sie laufen unabhängig voneinander, jeder mit eigener Uhr und
+      eigenem Regelsatz – und jeder kennt nur seine eigenen Regeln.
+    </p>
+
+    <table class="mt4">
+      <tr>
+        <th style="width:32%">Durchgang</th>
+        <th style="width:16%">Takt</th>
+        <th>Verschickt an</th>
+      </tr>
+      <tr>
+        <td><b>Global Travel Monitor</b></td>
+        <td>alle 5 Min.</td>
+        <td>Alle, deren Regel auf das Ereignis passt – unabhängig davon, ob jemand vor Ort ist.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Travel Alert</b></td>
+        <td>alle 5 Min.</td>
+        <td>Nur die, bei denen zusätzlich tatsächlich eine Reise betroffen ist.</td>
+      </tr>
+    </table>
+
+    <div class="note mt3">
+      <b>Warum getrennt?</b> Es sind zwei verschiedene Produkte mit unterschiedlichem
+      Versprechen. Der Monitor informiert breit über die Lage, Travel Alert warnt gezielt
+      bei eigener Betroffenheit. Deshalb hat jede Benachrichtigungsregel eine feste
+      Zuordnung zu einem der beiden – und der jeweils andere Durchgang sieht sie nie an.
+    </div>
+
+    <h3 class="mt5">Der Rückblick über 24 Stunden</h3>
+    <p class="mt1" style="max-width:152mm">
+      Bei jedem Aufwachen sieht das System nicht nur nach, was seit dem letzten Mal
+      passiert ist, sondern betrachtet alle Ereignisse der vergangenen 24 Stunden. Das
+      klingt nach unnötiger Arbeit, ist aber die wichtigste Absicherung im ganzen Aufbau.
+    </p>
+    <p class="mt2" style="max-width:152mm">
+      Würde nur „seit dem letzten Durchgang“ geprüft, ginge alles verloren, was in eine
+      Lücke fällt: ein Neustart, eine Wartung, eine Störung – oder ein Ereignis, das erst
+      nachträglich freigegeben wurde. Mit dem Rückblick holt der nächste erfolgreiche
+      Durchgang all das von selbst nach.
+    </p>
+
+    <div class="station dark mt4">
+      <span class="t">Laufprotokoll</span>
+      <h3>Jeder Durchgang schreibt mit</h3>
+      <p class="mt1">
+        Start, Ende, Anzahl der betrachteten Ereignisse, Anzahl der verschickten
+        Nachrichten und aufgetretene Fehler werden festgehalten. Daran lässt sich später
+        nachvollziehen, ob das System überhaupt gelaufen ist – die erste Frage, wenn
+        etwas fehlt.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Versand-Durchgänge</span><span>09</span></div>
+</section>
+
+<!-- ======================================================== 10 · PRUEFKETTE I -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">08 · Die Prüfkette</div>
+    <h2 class="mt2">Die Reihe von<br>Fragen vor dem Versand.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      Der untere Teil des Ablaufplans besteht aus lauter Rauten – das sind Entscheidungen.
+      Jede davon ist eine Frage, die mit Ja oder Nein beantwortet wird, und bei jedem Nein
+      endet der Weg. Nur wer alle Fragen übersteht, bekommt am Ende eine E-Mail.
+    </p>
+
+    <div class="step mt4">
+      <div class="step-n">1</div>
+      <div>
+        <h3>Welche Regeln werden überhaupt angesehen?</h3>
+        <p class="mt1">
+          Eine Regel wird nur betrachtet, wenn sie <b>eingeschaltet</b> ist, wenn beim
+          zugehörigen Kunden Benachrichtigungen <b>grundsätzlich aktiviert</b> sind und
+          wenn sie zum <b>laufenden Durchgang</b> gehört. Alle anderen bleiben unbeachtet.
+        </p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">2</div>
+      <div>
+        <h3>Passt die Regel zu diesem Ereignis?</h3>
+        <p class="mt1">
+          Verglichen werden <b>Dringlichkeit</b>, <b>Kategorie</b> und – nur beim Global
+          Travel Monitor – die <b>Länderauswahl</b> der Regel. Bei Travel Alert wird die
+          Länderfrage bewusst später geklärt, nämlich über die Reisen selbst.
+        </p>
+      </div>
+    </div>
+
+    <div class="note" style="margin-left:12.4mm">
+      <b>Eine Falle, die oft übersehen wird:</b> Ein <i>leer gelassenes</i> Feld in der Regel
+      bedeutet nicht „nichts“, sondern „alles“. Wer bei Kategorie nichts auswählt, filtert
+      nicht nach Kategorie – die Regel passt dann auf jede. Das ist der häufigste Grund für
+      unerwartet <i>viele</i> Benachrichtigungen.
+    </div>
+
+    <div class="step mt4">
+      <div class="step-n">3</div>
+      <div>
+        <h3>Ist das Stundenlimit erreicht?</h3>
+        <p class="mt1">
+          Pro Kunde werden höchstens <b>50 E-Mails je Stunde</b> verschickt. Diese Bremse
+          greift, wenn ausnahmsweise sehr viele Ereignisse auf einmal hereinkommen. Sie
+          schützt davor, dass ein Postfach unbrauchbar wird und dass unsere Absenderadresse
+          bei den Mail-Anbietern in Verruf gerät.
+        </p>
+      </div>
+    </div>
+
+    <div class="note mt2">
+      <b>Zu jedem Nein gibt es einen Grund.</b> Für jede übersprungene Regel hält das System
+      fest, an welcher Frage es gescheitert ist. Diese Begründungen lassen sich im
+      Verwaltungsbereich abrufen – man muss also nicht raten, warum eine E-Mail ausblieb.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Prüfkette</span><span>10</span></div>
+</section>
+
+<!-- ======================================================== 11 · PRUEFKETTE II -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">08 · Die Prüfkette</div>
+    <h2 class="mt2">Hier trennen sich<br>die beiden Wege.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      An dieser Stelle gabelt sich der Ablaufplan. Beide Zweige stellen eine Frage, die
+      verhindern soll, dass dieselbe Nachricht mehrfach herausgeht – aber sie stellen sie
+      unterschiedlich.
+    </p>
+
+    <div class="station mt4">
+      <span class="t">Zweig A · Global Travel Monitor</span>
+      <h3>Wurde dazu schon einmal gesendet?</h3>
+      <p class="mt1">
+        Die einfache Variante. Das System sieht im Versandprotokoll nach, ob zu genau
+        dieser Regel und genau diesem Ereignis bereits eine E-Mail hinausgegangen ist.
+        Wenn ja, ist hier Schluss.
+      </p>
+      <p class="mt2">
+        Das ist der Grund, warum aus 288 Durchgängen pro Tag trotzdem nur <b>eine</b>
+        E-Mail je Ereignis und Regel wird.
+      </p>
+    </div>
+
+    <div class="station mt4">
+      <span class="t">Zweig B · Travel Alert</span>
+      <h3>Sind überhaupt Reisen betroffen?</h3>
+      <p class="mt1">
+        Hier kommt der zweite Strang ins Spiel. Das System nimmt die Länder des Ereignisses
+        und den Zeitraum, in dem es gilt, und sucht in den abgeholten Reisen des Kunden
+        nach Überschneidungen: Reist jemand in eines dieser Länder, und fällt die Reise in
+        diesen Zeitraum?
+      </p>
+      <p class="mt2">
+        <b>Keine betroffene Reise – keine E-Mail.</b> Ohne Ausnahme. Das ist der wesentliche
+        Unterschied zum Monitor.
+      </p>
+    </div>
+
+    <div class="note mt3">
+      <span class="head">Und wenn sich die Lage ändert?</span>
+      Bei Travel Alert wäre eine einmalige Nachricht zu wenig. Ein Streik dauert an, und
+      inzwischen sind vielleicht weitere Reisende hinzugekommen. Deshalb merkt sich das
+      System, <b>wie viele</b> Reisen beim letzten Versand betroffen waren. Sind es jetzt
+      mehr, geht eine aktualisierte Nachricht heraus. Sind es gleich viele oder weniger,
+      bleibt es still.
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Woran es in der Praxis am häufigsten scheitert</span>
+      Ein Ereignis ohne Länderzuordnung. Für den Monitor ist das verkraftbar – dort greift
+      die Länderauswahl aus der Regel. Für Travel Alert ist es das Aus: Ohne Land gibt es
+      nichts, womit sich die Reisen abgleichen ließen, und es geht garantiert keine
+      einzige E-Mail heraus.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Prüfkette</span><span>11</span></div>
+</section>
+
+<!-- ======================================================== 12 · VERSAND -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">09 · Der Versand</div>
+    <h2 class="mt2">Die letzten Schritte<br>vor dem Postfach.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      Alle Fragen sind mit Ja beantwortet – jetzt wird die Nachricht gebaut. Auch hier gibt
+      es noch drei Gründe, warum sie im letzten Moment doch nicht herausgeht.
+    </p>
+
+    <div class="step mt4">
+      <div class="step-n">1</div>
+      <div>
+        <h3>Vorlage füllen</h3>
+        <p class="mt1">
+          Jede Regel hat eine E-Mail-Vorlage. Darin stehen Platzhalter, die jetzt durch die
+          echten Angaben ersetzt werden: Titel des Ereignisses, betroffenes Land,
+          Dringlichkeit, Kategorie, Beschreibung, Datum. Bei Travel Alert kommt eine Liste
+          der betroffenen Reisen hinzu.
+        </p>
+        <p class="mt2 small muted">
+          Ist keine Vorlage hinterlegt, wird eine allgemeine verwendet. Findet sich auch
+          die nicht, endet der Vorgang hier.
+        </p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">2</div>
+      <div>
+        <h3>Empfänger bestimmen</h3>
+        <p class="mt1">
+          Zu jeder Regel gehören Empfängeradressen in drei Rollen: <b>An</b> als
+          Hauptempfänger, <b>Kopie</b> für Mitleser und <b>Blindkopie</b> für Mitleser,
+          die die anderen nicht sehen sollen.
+        </p>
+        <p class="mt2 small muted">
+          Ohne mindestens einen Hauptempfänger geht nichts heraus – das System hat dann
+          niemanden zum Anschreiben.
+        </p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">3</div>
+      <div>
+        <h3>Zwei letzte Prüfungen</h3>
+        <p class="mt1">
+          Hat diese Adresse zu diesem Ereignis in diesem Durchgang <b>schon</b> eine
+          Nachricht bekommen – etwa weil zwei Regeln sich überschneiden? Dann bekommt sie
+          keine zweite. Und: Hat sich der Empfänger <b>abgemeldet</b>? Dann wird
+          übersprungen.
+        </p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">4</div>
+      <div>
+        <h3>Abschicken und mitschreiben</h3>
+        <p class="mt1">
+          Die E-Mail geht heraus – mit einem persönlichen Abmelde-Link am Ende, über den
+          sich jeder Empfänger selbst austragen kann. Anschließend wird der Versand im
+          Protokoll vermerkt: Empfänger, Betreff, Status und bei Travel Alert die Anzahl
+          der betroffenen Reisen.
+        </p>
+      </div>
+    </div>
+
+    <div class="note mt3">
+      <b>Der Eintrag im Protokoll ist mehr als Buchhaltung.</b> Er ist das Gedächtnis des
+      Systems: Genau daran erkennt der nächste Durchgang, dass hier bereits gesendet wurde.
+      Auch fehlgeschlagene Versuche werden mit Fehlermeldung festgehalten.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Versand</span><span>12</span></div>
+</section>
+
+<!-- ======================================================== 13 · AUSGABE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">10 · Die Ausgabe</div>
+    <h2 class="mt2">Wo dasselbe Ereignis<br>überall auftaucht.</h2>
+
+    <p class="mt3" style="max-width:152mm">
+      Rechts im Ablaufplan fächert sich alles auf. Diese Wege haben mit dem Versand nichts
+      zu tun: Sie laufen über den Aushang aus Abschnitt 05 und zeigen dasselbe Ereignis in
+      unterschiedlicher Verpackung. Ein Ereignis erscheint hier auch dann, wenn dazu nie
+      eine E-Mail herausgeht.
+    </p>
+
+    <ul class="fields mt4">
+      <li>
+        <span class="name">Weltkarte und Event-Liste</span>
+        Die öffentliche Übersicht mit allen Ereignissen auf einer Karte, dazu die Liste
+        daneben. Für jeden zugänglich.
+      </li>
+      <li>
+        <span class="name">Travel Alert</span>
+        Der geschützte Bereich für angemeldete Kunden: Risiko-Übersicht je Land, verknüpft
+        mit den eigenen Reisen. Hier verwaltet der Kunde auch seine
+        Benachrichtigungsregeln, Vorlagen und Empfänger – die Einstellungen, nach denen die
+        Prüfkette später entscheidet.
+      </li>
+      <li>
+        <span class="name">Einbettung auf fremden Websites</span>
+        Karte, Event-Liste oder Übersicht lassen sich als Fenster in die Website eines
+        Kunden einsetzen, im dortigen Layout und ohne unsere Navigation.
+      </li>
+      <li>
+        <span class="name">Schnittstellen für Kundensysteme</span>
+        Zwei getrennte Zugänge: einer für die allgemeinen Ereignisse und Länderübersichten,
+        ein zweiter für Kunden, die auch eigene Ereignisse einliefern und verwalten. Damit
+        holt sich fremde Software die Daten in ihre eigene Oberfläche.
+      </li>
+      <li>
+        <span class="name">Nachrichten-Feeds</span>
+        Automatisch erzeugte Nachrichtenkanäle, die sich abonnieren lassen – gebündelt nach
+        Dringlichkeit, Land, Art des Ereignisses oder Region. Wer sie abonniert, bekommt
+        neue Einträge in seinem Nachrichtenprogramm.
+      </li>
+    </ul>
+
+    <div class="note mt4">
+      <b>Alle Wege zeigen denselben Stand.</b> Deshalb ist der Schritt „Aushang neu drucken“
+      aus Abschnitt 05 so wichtig: Er sorgt dafür, dass Karte, Einbettung, Schnittstellen
+      und Feeds nicht auseinanderlaufen.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Ausgabe</span><span>13</span></div>
+</section>
+
+<!-- ======================================================== 14 · GLOSSAR -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">11 · Begriffe</div>
+    <h2 class="mt2">Alles, was im Plan steht –<br>in je einem Satz.</h2>
+
+    <table class="mt4">
+      <tr>
+        <th style="width:38%">Im Ablaufplan</th>
+        <th>Was es bedeutet</th>
+      </tr>
+      <tr>
+        <td><b>Ereignis</b></td>
+        <td>Ein Vorfall mit Reisebezug: Streik, Unwetter, Unruhen, geänderte Einreiseregel.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Naturkatastrophe</b></td>
+        <td>Eine Meldung des internationalen Warndienstes GDACS. Braucht keine Freigabe –
+            die Zufuhr ist derzeit abgeschaltet.</td>
+      </tr>
+      <tr>
+        <td><b>Freigegeben</b></td>
+        <td>Der Zustand, ab dem ein Ereignis sichtbar ist und verschickt werden darf.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Wartet auf Prüfung</b></td>
+        <td>Eingegangen, aber noch von niemandem angesehen. Passiert nichts damit.</td>
+      </tr>
+      <tr>
+        <td><b>Feed-Eintrag</b></td>
+        <td>Eine eingesammelte Nachrichtenmeldung. Reine Lesehilfe, wird nie zum Ereignis.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Zwischenspeicher</b></td>
+        <td>Fertige Antworten für Karte und Schnittstellen, damit sie schnell erscheinen.</td>
+      </tr>
+      <tr>
+        <td><b>Durchgang</b></td>
+        <td>Ein Aufwachen des Systems nach der Uhr, bei dem geprüft und verschickt wird.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Rückblick</b></td>
+        <td>Wie weit ein Durchgang zurücksieht: 24 Stunden. Die Absicherung gegen Ausfälle.</td>
+      </tr>
+      <tr>
+        <td><b>Regel</b></td>
+        <td>Die Vorgabe eines Kunden, worüber er informiert werden will und wer die Post bekommt.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Betroffene Reisen</b></td>
+        <td>Reisen, die zeitlich und örtlich mit dem Ereignis zusammenfallen.</td>
+      </tr>
+      <tr>
+        <td><b>Versandprotokoll</b></td>
+        <td>Das Gedächtnis: Wer hat wann wozu Post bekommen – und was ist fehlgeschlagen.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Laufprotokoll</b></td>
+        <td>Der Nachweis, dass ein Durchgang stattgefunden hat und wie er ausging.</td>
+      </tr>
+    </table>
+
+    <div class="note mt4">
+      <span class="head">Die drei Sätze, die fast alles erklären</span>
+      <b>Erstens:</b> Anzeige und Versand sind zwei getrennte Vorgänge – auf der Karte
+      sofort, per E-Mail innerhalb von fünf Minuten.<br>
+      <b>Zweitens:</b> Ein leeres Filterfeld in einer Regel bedeutet „alles“, nicht „nichts“.<br>
+      <b>Drittens:</b> Ohne Länderzuordnung am Ereignis kann Travel Alert nichts verschicken.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Begriffe</span><span>14</span></div>
+</section>
+
+<!-- ======================================================== 15 · RUECKSEITE -->
+<section class="page back">
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:13mm">
+      <div class="kicker" style="color:#CEE741">Zum Mitnehmen</div>
+      <h2 class="mt2" style="font-size:23pt">Der ganze Ablauf<br>in sieben Sätzen.</h2>
+      <div class="rule mt2"></div>
+    </div>
+
+    <div class="mt3" style="display:flex; flex-direction:column; gap:2.4mm">
+      <div class="back-card">
+        <h4>01 · Eingang</h4>
+        <p>Ein Ereignis entsteht – von Hand durch die Redaktion oder über die Schnittstelle
+        eines Partners. Der Katastrophen-Warndienst ist derzeit abgeschaltet.</p>
+      </div>
+      <div class="back-card">
+        <h4>02 · Freigabe</h4>
+        <p>Es wird auf Grün gestellt: veröffentlicht, freigegeben, und kein kundeneigener
+        Eintrag. Erst dann zählt es für den Rest des Systems.</p>
+      </div>
+      <div class="back-card">
+        <h4>03 · Aushang</h4>
+        <p>Karte, Listen und Schnittstellen werden sofort aufgefrischt. Eine E-Mail löst
+        dieser Schritt ausdrücklich nicht aus.</p>
+      </div>
+      <div class="back-card">
+        <h4>04 · Reisedaten</h4>
+        <p>Getrennt davon werden halbstündlich die Reisen der Kunden abgeholt – die
+        Grundlage dafür, Betroffenheit überhaupt feststellen zu können.</p>
+      </div>
+      <div class="back-card">
+        <h4>05 · Durchgang</h4>
+        <p>Alle fünf Minuten sieht das System die Ereignisse der letzten 24 Stunden durch
+        und vergleicht sie mit den hinterlegten Regeln.</p>
+      </div>
+      <div class="back-card">
+        <h4>06 · Prüfkette</h4>
+        <p>Passt die Regel? Ist das Stundenlimit frei? Wurde schon gesendet? Und bei Travel
+        Alert: Ist überhaupt eine Reise betroffen?</p>
+      </div>
+      <div class="back-card">
+        <h4>07 · Versand</h4>
+        <p>Die Vorlage wird gefüllt, die E-Mail geht an die hinterlegten Empfänger – und
+        der Versand wird protokolliert, damit er sich nicht wiederholt.</p>
+      </div>
+    </div>
+
+    <div class="cover-meta" style="margin-top:auto">
+      <span>Stand: August 2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
