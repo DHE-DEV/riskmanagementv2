@@ -24,6 +24,10 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
     <!-- Font Awesome -->
     @php($faKit = config('services.fontawesome.kit'))
     @if(!empty($faKit))
@@ -222,7 +226,6 @@
                                         </div>
                                         <div class="flex-shrink-0 ml-2 text-right">
                                             <span class="inline-block bg-blue-100 text-blue-800 text-xs font-mono px-2 py-0.5 rounded" x-text="airport.iata_code || '-'"></span>
-                                            <span class="block text-xs text-gray-400 mt-0.5 font-mono" x-text="airport.icao_code || '-'"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -274,16 +277,13 @@
                                 <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs font-mono px-2 py-1 rounded">
                                     IATA: <span class="ml-1 font-bold" x-text="selectedAirport?.iata_code || '-'"></span>
                                 </span>
-                                <span class="inline-flex items-center bg-gray-100 text-gray-700 text-xs font-mono px-2 py-1 rounded">
-                                    ICAO: <span class="ml-1" x-text="selectedAirport?.icao_code || '-'"></span>
-                                </span>
                                 <span x-show="selectedAirport?.operates_24h"
                                       class="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                    <i class="fa-regular fa-clock text-[10px]"></i> 24h
+                                    <i class="fa-regular fa-clock text-[10px]"></i> 24/7 - Betrieb
                                 </span>
                                 <span x-show="selectedAirport && !selectedAirport?.operates_24h"
                                       class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded">
-                                    <i class="fa-regular fa-clock text-[10px]"></i> Eingeschränkt
+                                    <i class="fa-regular fa-clock text-[10px]"></i> Eingeschränkte Betriebszeit
                                 </span>
                             </div>
                             <div class="flex flex-wrap items-center gap-3 mt-2">
@@ -293,7 +293,7 @@
                                 </a>
                                 <a x-show="selectedAirport?.security_timeslot_url" :href="selectedAirport?.security_timeslot_url" target="_blank" rel="noopener"
                                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors">
-                                    <i class="fa-regular fa-shield-check text-[10px]"></i> Sicherheitskontrolle
+                                    <i class="fa-regular fa-shield-check text-[10px]"></i> Slot für Sicherheitskontrolle buchen
                                 </a>
                             </div>
                         </div>
@@ -494,7 +494,8 @@
                     </div>
                 </div>
 
-                <!-- Mobility Accordion -->
+                <!-- Mobility Accordion (per AIRPORTS_MOBILITY_ENABLED abschaltbar) -->
+                @if(config('app.airports_mobility_enabled', false))
                 <div class="border-t border-gray-100">
                     <button @click="mobilityOpen = !mobilityOpen"
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
@@ -628,6 +629,7 @@
                         </template>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
@@ -638,6 +640,9 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
 function airportsApp() {
@@ -650,6 +655,7 @@ function airportsApp() {
         loading: false,
         map: null,
         markers: [],
+        markerCluster: null,
         airportAirlines: [],
         airlinesOpen: false,
         airlinesLoading: false,
@@ -662,6 +668,8 @@ function airportsApp() {
             this.$nextTick(() => {
                 this.initMap();
                 this.loadCountries();
+                // Ohne Sucheingabe den kompletten Bestand zeigen
+                this.search();
             });
         },
 
@@ -677,6 +685,40 @@ function airportsApp() {
                 maxZoom: 19
             }).addTo(this.map);
 
+            // Marker werden gebuendelt, sonst ueberdecken sich bei voller Liste
+            // die Flughaefen in Ballungsraeumen gegenseitig
+            this.markerCluster = L.markerClusterGroup({
+                chunkedLoading: true,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                maxClusterRadius: 50,
+                disableClusteringAtZoom: 9,
+                // Marker bleiben im DOM. Ohne das verschwinden sie beim schnellen
+                // Rein-/Rauszoomen, weil das Plugin sie waehrend der Animation
+                // entfernt und dabei auf einen null-Kartenbezug laeuft.
+                removeOutsideVisibleBounds: false,
+                animateAddingMarkers: false,
+                // Gleiche Darstellung wie die Cluster auf der Weltkarte des
+                // Global Travel Monitor (siehe dashboard.blade.php)
+                iconCreateFunction: function (cluster) {
+                    const childCount = cluster.getChildCount();
+                    let size = 40;
+                    if (childCount < 10) {
+                        size = 35;
+                    } else if (childCount >= 100) {
+                        size = 45;
+                    }
+
+                    return new L.DivIcon({
+                        html: '<div style="background: #3B4154; color: white; border-radius: 50%; width: ' + size + 'px; height: ' + size + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"><span>' + childCount + '</span></div>',
+                        className: 'custom-cluster-icon',
+                        iconSize: new L.Point(size, size)
+                    });
+                }
+            });
+            this.map.addLayer(this.markerCluster);
+
             setTimeout(() => this.map.invalidateSize(), 100);
         },
 
@@ -691,11 +733,8 @@ function airportsApp() {
         },
 
         async search() {
-            if (this.searchQuery.length === 0 && !this.countryFilter) {
-                this.airports = [];
-                this.clearMarkers();
-                return;
-            }
+            // Weder Suchbegriff noch Landfilter: kompletten Bestand anzeigen
+            const showAll = this.searchQuery.length === 0 && !this.countryFilter;
 
             this.loading = true;
 
@@ -703,21 +742,29 @@ function airportsApp() {
                 const params = new URLSearchParams();
                 if (this.searchQuery) params.append('q', this.searchQuery);
                 if (this.countryFilter) params.append('country_id', this.countryFilter);
+                if (showAll) params.append('all', '1');
 
                 const response = await fetch(`/api/airports/search?${params.toString()}`);
                 const data = await response.json();
                 this.airports = data.data || [];
-                this.updateMarkers();
             } catch (e) {
                 console.error('Error searching airports:', e);
                 this.airports = [];
             } finally {
                 this.loading = false;
             }
+
+            // Bewusst ausserhalb des try: ein Fehler beim Zeichnen der Karte
+            // darf die bereits geladene Trefferliste nicht wieder leeren.
+            try {
+                this.updateMarkers();
+            } catch (e) {
+                console.error('Error updating airport markers:', e);
+            }
         },
 
         clearMarkers() {
-            this.markers.forEach(m => this.map.removeLayer(m));
+            if (this.markerCluster) this.markerCluster.clearLayers();
             this.markers = [];
         },
 
@@ -736,10 +783,10 @@ function airportsApp() {
                     });
 
                     const marker = L.marker([airport.latitude, airport.longitude], { icon })
-                        .addTo(this.map)
                         .bindTooltip(`${airport.name} (${airport.iata_code || airport.icao_code})`, { direction: 'top' })
                         .on('click', () => this.selectAirport(airport));
 
+                    this.markerCluster.addLayer(marker);
                     this.markers.push(marker);
                     bounds.push([airport.latitude, airport.longitude]);
                 }

@@ -24,7 +24,12 @@ class AirportSearchController extends Controller
         $searchIata = $request->boolean('iata', false);
         $searchIcao = $request->boolean('icao', false);
 
-        if ($query === '' && $countryFilter === '' && $continentFilter === '' && $countryId === 0) {
+        // Opt-in: kompletter Bestand ohne Suchbegriff. Ohne dieses Flag bleibt es
+        // bei der leeren Antwort, damit Autocomplete-Felder bei leerer Eingabe
+        // nicht den gesamten Datenbestand ziehen.
+        $showAll = $request->boolean('all', false);
+
+        if (! $showAll && $query === '' && $countryFilter === '' && $continentFilter === '' && $countryId === 0) {
             return response()->json([
                 'data' => [],
             ]);
@@ -137,6 +142,10 @@ class AirportSearchController extends Controller
         $limit = 20;
         if ($query === '' && ($countryFilter !== '' || $continentFilter !== '' || $countryId !== 0)) {
             $limit = 200;
+        }
+        if ($showAll) {
+            // Deutlich ueber dem aktuellen Bestand, aber kein unbegrenztes Ergebnis
+            $limit = 2000;
         }
         $airportsQuery->limit($limit);
 
