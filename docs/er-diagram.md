@@ -1,8 +1,17 @@
 # ER-Diagramm - Risk Management v2
 
 > Dieses Diagramm kann im [Mermaid Live Editor](https://mermaid.live) visualisiert werden.
+>
+> **Version 1.0 · 11.08.2026.** Die Version steht als Titelzeile im Diagramm selbst und ist
+> damit auch in `er-diagram.pdf` und `er-diagram.png` sichtbar. Beim Aendern hier **und** im
+> `title:` des Mermaid-Blocks hochziehen, dann in [anleitungen.md](anleitungen.md) eintragen.
 
 ```mermaid
+---
+title: "ER-Diagramm Risk Management v2   ·   Version 1.0   ·   11.08.2026"
+config:
+  themeCSS: ".titleText { font-size: 32px; font-weight: 700; fill: #002742; }"
+---
 erDiagram
     %% ============ GEO ============
     Continent ||--o{ Country : "has"

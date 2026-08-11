@@ -14,12 +14,19 @@ Tabelle unten.
 | Travel Alert – Freischaltung | 1.0 | 11.08.2026 | [travel-alert-freischaltung-anleitung.pdf](travel-alert-freischaltung-anleitung.pdf) |
 | Passolution APIs im Überblick | 1.0 | 11.08.2026 | [api-ueberblick.pdf](api-ueberblick.pdf) |
 
-Alle vier starten bei 1.0: Das ist der Zeitpunkt, ab dem überhaupt versioniert wird.
-Ältere Ausdrucke tragen keine Version und sind damit in jedem Fall veraltet.
+## Diagramme
 
-Nicht in dieser Übersicht: [flowchart.pdf](flowchart.pdf) und [er-diagram.pdf](er-diagram.pdf).
-Das sind generierte Diagramme, keine Anleitungen – sie werden aus ihrer jeweiligen
-`.md`-Datei neu gerendert.
+| Diagramm | Version | Datum | Datei |
+|---|---|---|---|
+| Flowchart Risk Management | 1.0 | 11.08.2026 | [flowchart.pdf](flowchart.pdf) · [.png](flowchart.png) · [Quelle](flowchart.md) |
+| ER-Diagramm Risk Management v2 | 1.0 | 11.08.2026 | [er-diagram.pdf](er-diagram.pdf) · [.png](er-diagram.png) · [Quelle](er-diagram.md) |
+
+Bei den Diagrammen steht die Version als **Titelzeile im Diagramm selbst** – gesetzt über
+`title:` im Frontmatter des Mermaid-Blocks. Sie erscheint dadurch automatisch in PDF und
+PNG, ohne dass es eine Fußzeile bräuchte.
+
+Alles startet bei 1.0: Das ist der Zeitpunkt, ab dem überhaupt versioniert wird.
+Ältere Ausdrucke tragen keine Version und sind damit in jedem Fall veraltet.
 
 ## Wann welche Nummer
 
@@ -28,6 +35,13 @@ Das sind generierte Diagramme, keine Anleitungen – sie werden aus ihrer jeweil
 - **Erste Stelle** (1.x → 2.0) bei Neuaufsetzung: Dokument neu strukturiert oder
   gestalterisch neu gebaut, sodass Seitenverweise aus der Vorfassung nicht mehr passen.
 - Reine Tippfehlerkorrekturen ohne inhaltliche Folge brauchen keine neue Nummer.
+
+## Beim Ändern eines Diagramms
+
+1. In der `.md`-Datei die Version an **zwei** Stellen hochziehen: im Hinweis über dem
+   Diagramm und im `title:` des Mermaid-Frontmatters.
+2. PDF und PNG neu rendern (siehe unten).
+3. Zeile in der Diagramm-Tabelle oben aktualisieren.
 
 ## Beim Ändern einer Anleitung
 
@@ -73,6 +87,32 @@ node topdf.cjs "$PWD/docs/ablauf-erklaert-anleitung.html" "$PWD/docs/ablauf-erkl
 Meldet Playwright einen fehlenden Browser, hilft `npx playwright install chromium` –
 oder der Pfad zu einem vorhandenen Chromium per
 `chromium.launch({ executablePath: '…' })`.
+
+## Diagramme rendern
+
+Die Diagramme entstehen aus dem Mermaid-Block der jeweiligen `.md`-Datei. Block
+herauslösen, dann PDF und PNG erzeugen:
+
+```bash
+cd docs
+sed -n '/^```mermaid$/,/^```$/p' flowchart.md | sed '1d;$d' > /tmp/fc.mmd
+
+npx @mermaid-js/mermaid-cli@11 -i /tmp/fc.mmd -o flowchart.pdf -b white --pdfFit
+npx @mermaid-js/mermaid-cli@11 -i /tmp/fc.mmd -o flowchart.png -b white -s 3
+```
+
+**Beim ER-Diagramm die Breite mitgeben** – es ist sehr breit, und ohne `-w` staucht
+mermaid-cli es auf die Standardbreite zusammen, wodurch die Beschriftungen unlesbar werden:
+
+```bash
+sed -n '/^```mermaid$/,/^```$/p' er-diagram.md | sed '1d;$d' > /tmp/er.mmd
+
+npx @mermaid-js/mermaid-cli@11 -i /tmp/er.mmd -o er-diagram.pdf -b white --pdfFit
+npx @mermaid-js/mermaid-cli@11 -i /tmp/er.mmd -o er-diagram.png -b white -w 6640 -s 3
+```
+
+Kontrolle: `er-diagram.png` muss rund 19.900 Pixel breit und etwa 3 MB groß sein.
+Landet sie bei ~2.400 Pixeln, wurde `-w` vergessen.
 
 ## Gestaltung
 

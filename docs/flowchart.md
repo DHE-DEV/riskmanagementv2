@@ -6,9 +6,16 @@
 > [ablauf-erklaert-anleitung.pdf](ablauf-erklaert-anleitung.pdf) in nicht-technischer
 > Sprache beschrieben – gedacht fuer Kolleginnen und Kollegen ohne technischen Hintergrund.
 >
-> Stand: 11.08.2026
+> **Version 1.0 · 11.08.2026.** Die Version steht als Titelzeile im Diagramm selbst und ist
+> damit auch in `flowchart.pdf` und `flowchart.png` sichtbar. Beim Aendern hier **und** im
+> `title:` des Mermaid-Blocks hochziehen, dann in [anleitungen.md](anleitungen.md) eintragen.
 
 ```mermaid
+---
+title: "Flowchart Risk Management   ·   Version 1.0   ·   11.08.2026"
+config:
+  themeCSS: ".titleText { font-size: 32px; font-weight: 700; fill: #002742; }"
+---
 flowchart TD
     classDef admin fill:#4338ca,color:#fff,stroke:#3730a3
     classDef system fill:#0f766e,color:#fff,stroke:#0d9488
