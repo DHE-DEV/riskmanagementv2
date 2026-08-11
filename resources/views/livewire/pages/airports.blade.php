@@ -694,10 +694,12 @@ function airportsApp() {
                 zoomToBoundsOnClick: true,
                 maxClusterRadius: 50,
                 disableClusteringAtZoom: 9,
-                // Marker bleiben im DOM. Ohne das verschwinden sie beim schnellen
-                // Rein-/Rauszoomen, weil das Plugin sie waehrend der Animation
-                // entfernt und dabei auf einen null-Kartenbezug laeuft.
-                removeOutsideVisibleBounds: false,
+                // Ohne Animation. Beim schnellen Rein-/Rauszoomen wurde die
+                // Zoom-Animation des Plugins abgebrochen: Marker behielten ihre
+                // alte Pixelposition (sassen also am falschen Ort) und liefen
+                // dabei auf einen null-Kartenbezug (_latLngToNewLayerPoint).
+                // Ohne Animation werden die Positionen synchron neu gesetzt.
+                animate: false,
                 animateAddingMarkers: false,
                 // Gleiche Darstellung wie die Cluster auf der Weltkarte des
                 // Global Travel Monitor (siehe dashboard.blade.php)
