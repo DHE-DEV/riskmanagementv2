@@ -1197,7 +1197,7 @@
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 cursor-pointer" onclick="toggleSection('currentEvents')">
                     <h3 class="font-semibold text-gray-800 flex items-center gap-2">
                         <i class="fa-regular fa-brake-warning"></i>
-                        <span>Ereignisse (<span id="currentEventsCount">0</span>)</span>
+                        <span>Ereignisse</span>
                     </h3>
                     <!--
                     <button class="text-gray-500 hover:text-gray-700" onclick="event.stopPropagation(); toggleSection('currentEvents')">
@@ -1220,13 +1220,24 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('currentPastEvents')" style="position: relative; z-index: 2;">
-                        <p class="text-xs text-gray-700 font-medium">Aktuelle Ereignisse (<span id="currentPastEventsCount">0</span>)</p>
-                        <svg id="currentPastEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                        <p class="text-xs text-gray-700 font-medium">Laufende Ereignisse (<span id="currentPastEventsCount">0</span>)</p>
+                        <svg id="currentPastEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(0deg);">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </div>
-                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 60px; margin-bottom: 60px; padding-top: 10px; display: block;">
+                    <div id="eventsList" class="space-y-2" style="position: relative; z-index: 1; padding-bottom: 20px; margin-bottom: 20px; padding-top: 10px; display: none;">
                         <!-- Aktuelle/vergangene Events werden hier dynamisch eingefügt -->
+                    </div>
+                    <div id="newestEventsSection" style="display: none;">
+                        <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('newestEvents')" style="position: relative; z-index: 2;">
+                            <p class="text-xs text-gray-700 font-medium">Neuste Ereignisse (<span id="newestEventsCount">0</span>)</p>
+                            <svg id="newestEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="newestEventsList" class="space-y-2" style="position: relative; z-index: 1; padding-top: 10px; padding-bottom: 20px; margin-bottom: 20px; display: block;">
+                            <!-- Events der letzten 7 Tage (neu oder geändert) werden hier dynamisch eingefügt -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1527,6 +1538,9 @@ function safeGetElement(id) {
         return null;
     }
 }
+
+// Anzeige-Schalter aus der .env (DASHBOARD_EVENT_DATE_BADGE_ENABLED)
+const SHOW_EVENT_DATE_BADGE = @json((bool) config('app.dashboard_event_date_badge_enabled', true));
 
 // Globale Variablen
 let map;
@@ -4072,9 +4086,12 @@ function renderEvents() {
     const eventsList = document.getElementById('eventsList');
     const futureEventsList = document.getElementById('futureEventsList');
     const futureEventsSection = document.getElementById('futureEventsSection');
+    const newestEventsList = document.getElementById('newestEventsList');
+    const newestEventsSection = document.getElementById('newestEventsSection');
 
     eventsList.innerHTML = '';
     futureEventsList.innerHTML = '';
+    if (newestEventsList) newestEventsList.innerHTML = '';
 
     // Gruppiere Events nach ihrer Original-ID oder ihrer eigenen ID
     const uniqueEvents = new Map();
@@ -4162,6 +4179,86 @@ function renderEvents() {
         const eventElement = createEventElement(event);
         eventsList.appendChild(eventElement);
     });
+
+    renderNewestEvents(uniqueEvents, newestEventsSection, newestEventsList);
+}
+
+// "Neuste Ereignisse": in den letzten 7 Tagen angelegt ODER geaendert.
+// Bewusst quer zu den anderen beiden Sektionen - ein Event kann hier und
+// gleichzeitig unter "Laufende" bzw. "Zukuenftige" auftauchen.
+const NEWEST_EVENTS_DAYS = 7;
+
+// Juengster Zeitstempel eines Events (angelegt oder zuletzt geaendert)
+function eventRecency(event) {
+    const stamps = [event.created_at, event.updated_at]
+        .filter(Boolean)
+        .map(value => new Date(value))
+        .filter(date => !isNaN(date));
+
+    return stamps.length ? new Date(Math.max(...stamps.map(date => date.getTime()))) : null;
+}
+
+function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
+    if (!sectionEl || !listEl) return;
+
+    // Kalendertage, nicht 7*24h: "letzte 7 Tage" schliesst den heutigen Tag ganz ein
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - NEWEST_EVENTS_DAYS);
+
+    const newestEvents = [];
+    uniqueEvents.forEach(event => {
+        const recency = eventRecency(event);
+        if (recency && recency >= cutoff) {
+            newestEvents.push(event);
+        }
+    });
+
+    // Zuletzt angelegt/geaendert zuerst
+    newestEvents.sort((a, b) => eventRecency(b) - eventRecency(a));
+
+    if (newestEvents.length === 0) {
+        sectionEl.style.display = 'none';
+        return;
+    }
+
+    sectionEl.style.display = 'block';
+
+    const countEl = document.getElementById('newestEventsCount');
+    if (countEl) countEl.textContent = newestEvents.length;
+
+    newestEvents.forEach(event => listEl.appendChild(createEventElement(event)));
+}
+
+// Fusszeile der Event-Karte: wann wurde das Event zuletzt angefasst.
+// Wurde es seit dem Anlegen nie geaendert, zeigen wir das Anlagedatum -
+// "Aktualisiert" waere dann irrefuehrend.
+function eventTimestampLine(event) {
+    const valid = date => date && !Number.isNaN(date.getTime());
+    const created = event.created_at ? new Date(event.created_at) : null;
+    const updated = event.updated_at ? new Date(event.updated_at) : null;
+
+    let label = null;
+    let stamp = null;
+
+    // Toleranz von einer Sekunde: beim Anlegen setzt Laravel beide Zeitstempel,
+    // sie koennen sich um Sekundenbruchteile unterscheiden.
+    if (valid(updated) && (!valid(created) || updated.getTime() - created.getTime() > 1000)) {
+        label = 'Aktualisiert';
+        stamp = updated;
+    } else if (valid(created)) {
+        label = 'Angelegt';
+        stamp = created;
+    } else {
+        return '';
+    }
+
+    // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(stamp).
+    const datum = new Intl.DateTimeFormat('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+    }).format(stamp);
+
+    return `<p class="text-[11px] text-gray-500 mt-1.5">${label}: ${datum}</p>`;
 }
 
 // Event-Element erstellen
@@ -4221,6 +4318,25 @@ function createEventElement(event) {
         ? (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : ''))
         : (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date_iso ? new Date(event.date_iso).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : '')));
 
+    // Kategorie(n) des Events - jede bekommt ein eigenes Badge
+    const typeLabels = (event.event_types && event.event_types.length > 0
+        ? event.event_types
+        : [mapEventType(event.event_type, event.event_type_name)]
+    ).filter(Boolean);
+
+    // Nur das Startdatum. Fuer eine Spanne stattdessen:
+    // startLabel + ' – ' + asDate(event.end_date), sofern abweichend.
+    const asDate = (value) => {
+        if (!value) return '';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('de-DE');
+    };
+    const startLabel = displayDate || asDate(event.date);
+
+    const badge = (text) => text
+        ? `<span class="inline-flex items-center bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[11px] text-gray-700 whitespace-nowrap">${text}</span>`
+        : '';
+
     // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel
     // Ansonsten sammle alle Länder für die Anzeige
     let countryDisplay = event.country || event.country_name || 'ALLGEMEIN';
@@ -4255,14 +4371,13 @@ function createEventElement(event) {
                 </div>
                 <p class="text-[11px] ${severityTextClass} mt-0.5">${sev.label}</p>
                 <p class="text-sm font-medium text-gray-800 mt-1">${event.title}</p>
-                <p class="text-xs text-gray-600 mt-1">
-                    ${event.event_types && event.event_types.length > 0
-                        ? event.event_types.join(', ')
-                        : mapEventType(event.event_type, event.event_type_name)
-                    } • ${displayDate || (event.date || 'Unbekannt')}
-                    ${event.magnitude ? ` • Magnitude: ${event.magnitude}` : ''}
-                </p>
+                <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                    ${typeLabels.map(label => badge(label)).join('')}
+                    ${SHOW_EVENT_DATE_BADGE ? badge(startLabel || 'Unbekannt') : ''}
+                    ${event.magnitude ? badge(`Magnitude: ${event.magnitude}`) : ''}
+                </div>
                 ${event.affected_population ? `<p class="text-xs text-gray-500 mt-1">${event.affected_population}</p>` : ''}
+                ${eventTimestampLine(event)}
             </div>
         </div>
     `;
@@ -4780,11 +4895,15 @@ function toggleSection(sectionId) {
 }
 
 function toggleEventSection(sectionId) {
-    const listId = sectionId === 'futureEvents' ? 'futureEventsList' : 'eventsList';
-    const iconId = sectionId === 'futureEvents' ? 'futureEventsToggleIcon' : 'currentPastEventsToggleIcon';
+    const sections = {
+        futureEvents:      { list: 'futureEventsList', icon: 'futureEventsToggleIcon' },
+        currentPastEvents: { list: 'eventsList',       icon: 'currentPastEventsToggleIcon' },
+        newestEvents:      { list: 'newestEventsList', icon: 'newestEventsToggleIcon' },
+    };
+    const section = sections[sectionId] || sections.currentPastEvents;
 
-    const list = document.getElementById(listId);
-    const icon = document.getElementById(iconId);
+    const list = document.getElementById(section.list);
+    const icon = document.getElementById(section.icon);
 
     if (!list || !icon) return;
 
@@ -4803,15 +4922,17 @@ function toggleEventSection(sectionId) {
 function adjustEventContainerPadding() {
     const futureEventsList = document.getElementById('futureEventsList');
     const eventsList = document.getElementById('eventsList');
+    const newestEventsList = document.getElementById('newestEventsList');
     const currentEventsContainer = document.getElementById('currentEvents');
 
     if (!futureEventsList || !eventsList || !currentEventsContainer) return;
 
     const isFutureOpen = futureEventsList.style.display !== 'none';
     const isCurrentOpen = eventsList.style.display !== 'none';
+    const isNewestOpen = newestEventsList ? newestEventsList.style.display !== 'none' : false;
 
-    // Wenn beide zugeklappt sind, weniger Padding
-    if (!isFutureOpen && !isCurrentOpen) {
+    // Wenn alle zugeklappt sind, weniger Padding
+    if (!isFutureOpen && !isCurrentOpen && !isNewestOpen) {
         currentEventsContainer.style.paddingBottom = '30px';
     } else {
         currentEventsContainer.style.paddingBottom = '170px';
