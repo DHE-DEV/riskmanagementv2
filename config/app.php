@@ -181,6 +181,16 @@ return [
     */
 
     'dashboard_airports_enabled' => env('DASHBOARD_AIRPORTS_ENABLED', true),
+
+    // Abschnitt "Mobilität & Transport" im Flughafen-Detailfenster (/airports)
+    'airports_mobility_enabled' => env('AIRPORTS_MOBILITY_ENABLED', false),
+
+    // Doctors Network (myBakup) in der linken Navigationsleiste
+    'navigation_doctors_network_enabled' => env('NAVIGATION_DOCTORS_NETWORK_ENABLED', true),
+
+    // Datums-Badge auf den Event-Karten in der Sidebar des Global Travel Monitor
+    'dashboard_event_date_badge_enabled' => env('DASHBOARD_EVENT_DATE_BADGE_ENABLED', true),
+
     'dashboard_booking_enabled' => env('DASHBOARD_BOOKING_ENABLED', true),
     'business_visa_enabled' => env('BUSINESS_VISA_ENABLED', true),
     'visumpoint_enabled' => env('VISUMPOINT_ENABLED', true),

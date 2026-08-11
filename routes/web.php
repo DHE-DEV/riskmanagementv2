@@ -378,6 +378,15 @@ Route::get('/airports', function () {
     return view('livewire.pages.airports');
 })->name('airports');
 
+// Doctors Network (myBakup) - eingebettete Arztsuche
+Route::get('/doctors-network', function () {
+    if (! config('app.navigation_doctors_network_enabled', true)) {
+        abort(404);
+    }
+
+    return view('livewire.pages.doctors-network');
+})->name('doctors-network');
+
 Route::get('/business-visa', function () {
     $featureService = app(\App\Services\CustomerFeatureService::class);
     if (! $featureService->isFeatureEnabled('navigation_business_visa_enabled')) {

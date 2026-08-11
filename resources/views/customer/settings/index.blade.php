@@ -5001,7 +5001,7 @@
                     <template x-if="showMybakupTest">
                         <div class="mt-4 border-t border-gray-200 pt-4">
                             <iframe
-                                src="https://mybakup.com/?utm_source=passolution&utm_medium=iframe&utm_campaign=partenaire"
+                                src="{{ config('services.mybakup.iframe_url') }}"
                                 width="100%" height="100%"
                                 style="border: none; min-height: 700px;"
                                 allow="geolocation"

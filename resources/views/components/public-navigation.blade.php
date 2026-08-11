@@ -54,6 +54,13 @@
             <i class="fas fa-triangle-exclamation text-2xl" aria-hidden="true"></i>
         </a>
 
+        <!-- Doctors Network -->
+        @if(config('app.navigation_doctors_network_enabled', true))
+        <a href="{{ route('doctors-network') }}" class="p-3 {{ $active === 'doctors-network' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Doctors Network">
+            <i class="fa-solid fa-stethoscope text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
+
         <!-- Travel Data -->
         @if(config('app.navigation_travel_data_enabled', true) && auth('customer')->check())
         <a href="{{ route('customer.travel-data') }}" class="p-3 {{ $active === 'travel-data' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Travel Data">

@@ -44,6 +44,14 @@ return [
         'api_url' => env('DEEPL_API_URL', 'https://api.deepl.com/v2/translate'),
     ],
 
+    // Doctors Network (myBakup) - eingebettete Arztsuche
+    'mybakup' => [
+        'iframe_url' => env(
+            'MYBAKUP_IFRAME_URL',
+            'https://mybakup.com/?utm_source=passolution&utm_medium=iframe&utm_campaign=partenaire',
+        ),
+    ],
+
     // Font Awesome Kit
     'fontawesome' => [
         // Erwartet eine Kit-ID oder Lizenznummer in der .env unter FONT_AWESOME
