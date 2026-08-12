@@ -261,7 +261,7 @@
                                 class="text-gray-400 hover:text-blue-600 transition-colors" :title="allSectionsOpen ? 'Alle zuklappen' : 'Alle aufklappen'">
                             <i class="fa-regular text-sm" :class="allSectionsOpen ? 'fa-compress' : 'fa-expand'"></i>
                         </button>
-                        <button @click="selectedAirport = null; airportAirlines = []; airlinesOpen = false; hotelsOpen = false; loungesOpen = false; mobilityOpen = false;" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <button @click="closeAirportDetails()" class="text-gray-400 hover:text-gray-600 transition-colors">
                             <i class="fa-regular fa-xmark text-lg"></i>
                         </button>
                     </div>
@@ -307,9 +307,9 @@
                         <span class="flex items-center gap-2">
                             <i class="fa-regular fa-buildings text-blue-500"></i>
                             Airlines am Flughafen
-                            <span x-show="airportAirlines.length > 0"
+                            <span x-show="airlineCount() > 0"
                                   class="inline-flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5"
-                                  x-text="airportAirlines.length"></span>
+                                  x-text="airlineCount()"></span>
                         </span>
                         <i class="fa-regular fa-chevron-down text-gray-400 transition-transform duration-200"
                            :class="{ 'rotate-180': airlinesOpen }"></i>
@@ -659,6 +659,7 @@ function airportsApp() {
         airportAirlines: [],
         airlinesOpen: false,
         airlinesLoading: false,
+        airlinesLoaded: false,
         hotelsOpen: false,
         loungesOpen: false,
         mobilityOpen: false,
@@ -735,6 +736,10 @@ function airportsApp() {
         },
 
         async search() {
+            // Neue Suche: Detail-Layer schliessen, der Flughafen ist im neuen
+            // Ergebnis womoeglich gar nicht mehr enthalten
+            this.closeAirportDetails();
+
             // Weder Suchbegriff noch Landfilter: kompletten Bestand anzeigen
             const showAll = this.searchQuery.length === 0 && !this.countryFilter;
 
@@ -800,34 +805,72 @@ function airportsApp() {
         },
 
         selectAirport(airport) {
+            this.resetAirportDetails();
             this.selectedAirport = airport;
-            this.airportAirlines = [];
-            this.airlinesOpen = false;
-            this.airlinesLoading = false;
-            this.hotelsOpen = false;
-            this.loungesOpen = false;
-            this.mobilityOpen = false;
 
             if (airport.latitude && airport.longitude) {
                 this.map.setView([airport.latitude, airport.longitude], 10);
             }
         },
 
+        closeAirportDetails() {
+            this.selectedAirport = null;
+            this.resetAirportDetails();
+        },
+
+        // Alle Accordion-Zustaende und die nachgeladenen Airlines zuruecksetzen,
+        // damit beim naechsten Flughafen keine Daten des vorherigen stehen bleiben
+        resetAirportDetails() {
+            this.airportAirlines = [];
+            this.airlinesOpen = false;
+            this.airlinesLoading = false;
+            this.airlinesLoaded = false;
+            this.hotelsOpen = false;
+            this.loungesOpen = false;
+            this.mobilityOpen = false;
+            this.allSectionsOpen = false;
+        },
+
         async toggleAirlines() {
             this.airlinesOpen = !this.airlinesOpen;
 
-            if (this.airlinesOpen && this.airportAirlines.length === 0 && this.selectedAirport) {
-                this.airlinesLoading = true;
-                try {
-                    const response = await fetch(`/api/airports/${this.selectedAirport.id}/airlines`);
-                    const data = await response.json();
-                    this.airportAirlines = data.data || [];
-                } catch (e) {
-                    console.error('Error loading airlines:', e);
-                } finally {
+            if (this.airlinesOpen) {
+                await this.loadAirlines();
+            }
+        },
+
+        async loadAirlines() {
+            if (this.airlinesLoaded || this.airlinesLoading || ! this.selectedAirport) return;
+
+            // Merken, fuer welchen Flughafen geladen wurde: bei schnellen
+            // Klicks darf eine spaete Antwort nicht die neue Auswahl ueberschreiben
+            const airportId = this.selectedAirport.id;
+            this.airlinesLoading = true;
+
+            try {
+                const response = await fetch(`/api/airports/${airportId}/airlines`);
+                const data = await response.json();
+
+                if (this.selectedAirport?.id !== airportId) return;
+
+                this.airportAirlines = data.data || [];
+                this.airlinesLoaded = true;
+            } catch (e) {
+                console.error('Error loading airlines:', e);
+            } finally {
+                if (this.selectedAirport?.id === airportId) {
                     this.airlinesLoading = false;
                 }
             }
+        },
+
+        // Vor dem Nachladen der Liste steht der Zaehler schon aus der Suche bereit
+        airlineCount() {
+            if (this.airlinesLoaded) {
+                return this.airportAirlines.length;
+            }
+
+            return this.selectedAirport?.airlines_count ?? 0;
         },
 
         hasMobilityOptions() {
@@ -842,17 +885,8 @@ function airportsApp() {
             this.loungesOpen = open;
             this.mobilityOpen = open;
 
-            if (open && this.airportAirlines.length === 0 && this.selectedAirport) {
-                this.airlinesLoading = true;
-                try {
-                    const response = await fetch(`/api/airports/${this.selectedAirport.id}/airlines`);
-                    const data = await response.json();
-                    this.airportAirlines = data.data || [];
-                } catch (e) {
-                    console.error('Error loading airlines:', e);
-                } finally {
-                    this.airlinesLoading = false;
-                }
+            if (open) {
+                await this.loadAirlines();
             }
         },
 

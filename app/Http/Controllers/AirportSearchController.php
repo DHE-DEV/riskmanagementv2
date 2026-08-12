@@ -65,6 +65,12 @@ class AirportSearchController extends Controller
 
         $airportsQuery = Airport::query()->withoutGlobalScopes()
             ->select($selectColumns)
+            // Anzahl der Airlines gleich mitliefern, damit das Detail-Layer den
+            // Zaehler zeigen kann, bevor die Airline-Liste nachgeladen wird.
+            // Gleicher Filter wie in airlines(), sonst weichen Zaehler und Liste ab.
+            ->withCount(['airlines' => function ($q) {
+                $q->where('airlines.is_active', true);
+            }])
             ->leftJoin('countries', $airportTable.'.country_id', '=', 'countries.id')
             ->when($continentFilter !== '', function ($q) {
                 $q->leftJoin('continents', 'countries.continent_id', '=', 'continents.id');
@@ -195,6 +201,7 @@ class AirportSearchController extends Controller
                 'latitude' => $airport->latitude ?? null,
                 'longitude' => $airport->longitude ?? null,
                 'country' => $country,
+                'airlines_count' => (int) $airport->airlines_count,
                 'nearby_hotels' => $decodeJson($airport->nearby_hotels),
                 'lounges' => $decodeJson($airport->lounges),
                 'mobility_options' => $decodeJson($airport->mobility_options),
