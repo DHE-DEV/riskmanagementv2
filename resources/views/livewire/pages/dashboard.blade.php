@@ -1542,6 +1542,9 @@ function safeGetElement(id) {
 // Anzeige-Schalter aus der .env (DASHBOARD_EVENT_DATE_BADGE_ENABLED)
 const SHOW_EVENT_DATE_BADGE = @json((bool) config('app.dashboard_event_date_badge_enabled', true));
 
+// Anzeige-Schalter aus der .env (DASHBOARD_EVENT_CREATED_LINE_ENABLED)
+const SHOW_EVENT_CREATED_LINE = @json((bool) config('app.dashboard_event_created_line_enabled', true));
+
 // Globale Variablen
 let map;
 let markers = [];
@@ -4247,6 +4250,10 @@ function eventTimestampLine(event) {
         label = 'Aktualisiert';
         stamp = updated;
     } else if (valid(created)) {
+        // Per .env abschaltbar. Betrifft nur "Angelegt" - "Aktualisiert" oben
+        // bleibt in jedem Fall stehen.
+        if (! SHOW_EVENT_CREATED_LINE) return '';
+
         label = 'Angelegt';
         stamp = created;
     } else {
