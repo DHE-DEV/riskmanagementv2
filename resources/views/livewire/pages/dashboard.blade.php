@@ -4233,6 +4233,14 @@ function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
     newestEvents.forEach(event => listEl.appendChild(createEventElement(event)));
 }
 
+// Startdatum als eigene Textzeile, gleiche Optik wie "Angelegt"/"Aktualisiert".
+// Per .env abschaltbar (DASHBOARD_EVENT_DATE_BADGE_ENABLED).
+function eventStartDateLine(startLabel) {
+    if (! SHOW_EVENT_DATE_BADGE) return '';
+
+    return `<p class="text-[11px] text-gray-500 mt-1.5">Startdatum: ${startLabel || 'Unbekannt'}</p>`;
+}
+
 // Fusszeile der Event-Karte: wann wurde das Event zuletzt angefasst.
 // Wurde es seit dem Anlegen nie geaendert, zeigen wir das Anlagedatum -
 // "Aktualisiert" waere dann irrefuehrend.
@@ -4344,6 +4352,11 @@ function createEventElement(event) {
         ? `<span class="inline-flex items-center bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[11px] text-gray-700 whitespace-nowrap">${text}</span>`
         : '';
 
+    // Ohne Datums-Badge kann die Reihe komplett leer bleiben - dann entfaellt
+    // sie ganz, sonst bliebe ein Abstand ohne Inhalt stehen
+    const badgesHtml = typeLabels.map(label => badge(label)).join('')
+        + (event.magnitude ? badge(`Magnitude: ${event.magnitude}`) : '');
+
     // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel
     // Ansonsten sammle alle Länder für die Anzeige
     let countryDisplay = event.country || event.country_name || 'ALLGEMEIN';
@@ -4378,12 +4391,9 @@ function createEventElement(event) {
                 </div>
                 <p class="text-[11px] ${severityTextClass} mt-0.5">${sev.label}</p>
                 <p class="text-sm font-medium text-gray-800 mt-1">${event.title}</p>
-                <div class="flex flex-wrap items-center gap-1 mt-1.5">
-                    ${typeLabels.map(label => badge(label)).join('')}
-                    ${SHOW_EVENT_DATE_BADGE ? badge(startLabel || 'Unbekannt') : ''}
-                    ${event.magnitude ? badge(`Magnitude: ${event.magnitude}`) : ''}
-                </div>
+                ${badgesHtml ? `<div class="flex flex-wrap items-center gap-1 mt-1.5">${badgesHtml}</div>` : ''}
                 ${event.affected_population ? `<p class="text-xs text-gray-500 mt-1">${event.affected_population}</p>` : ''}
+                ${eventStartDateLine(startLabel)}
                 ${eventTimestampLine(event)}
             </div>
         </div>
