@@ -4216,6 +4216,26 @@ function eventRecency(event) {
     return stamps.length ? new Date(Math.max(...stamps.map(date => date.getTime()))) : null;
 }
 
+// Hat der Nutzer "Laufende Ereignisse" selbst auf- oder zugeklappt, bleibt es
+// dabei - die Voreinstellung unten greift nur bis zum ersten eigenen Klick.
+let currentPastSectionTouched = false;
+
+// Ohne die Sektion "Heute" stuende die Sidebar sonst komplett zugeklappt da,
+// deshalb sind die laufenden Ereignisse dann von vornherein offen.
+function applyCurrentPastDefaultState(hasTodayEvents) {
+    if (currentPastSectionTouched) return;
+
+    const list = document.getElementById('eventsList');
+    const icon = document.getElementById('currentPastEventsToggleIcon');
+    if (!list || !icon) return;
+
+    const open = !hasTodayEvents;
+    list.style.display = open ? 'block' : 'none';
+    icon.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+
+    adjustEventContainerPadding();
+}
+
 function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
     if (!sectionEl || !listEl) return;
 
@@ -4239,10 +4259,12 @@ function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
 
     if (newestEvents.length === 0) {
         sectionEl.style.display = 'none';
+        applyCurrentPastDefaultState(false);
         return;
     }
 
     sectionEl.style.display = 'block';
+    applyCurrentPastDefaultState(true);
 
     const countEl = document.getElementById('newestEventsCount');
     if (countEl) countEl.textContent = newestEvents.length;
@@ -4940,6 +4962,11 @@ function toggleEventSection(sectionId) {
     const icon = document.getElementById(section.icon);
 
     if (!list || !icon) return;
+
+    // Ab jetzt entscheidet der Nutzer ueber diese Sektion, nicht die Voreinstellung
+    if (section === sections.currentPastEvents) {
+        currentPastSectionTouched = true;
+    }
 
     if (list.style.display === 'none') {
         list.style.display = 'block';
