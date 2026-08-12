@@ -1230,7 +1230,7 @@
                     </div>
                     <div id="newestEventsSection" style="display: none;">
                         <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('newestEvents')" style="position: relative; z-index: 2;">
-                            <p class="text-xs text-gray-700 font-medium">Neuste Ereignisse (<span id="newestEventsCount">0</span>)</p>
+                            <p class="text-xs text-gray-700 font-medium">Heute (<span id="newestEventsCount">0</span>)</p>
                             <svg id="newestEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
@@ -4186,10 +4186,25 @@ function renderEvents() {
     renderNewestEvents(uniqueEvents, newestEventsSection, newestEventsList);
 }
 
-// "Neuste Ereignisse": in den letzten 7 Tagen angelegt ODER geaendert.
+// "Heute": Startdatum ist heute ODER heute angelegt ODER heute geaendert.
 // Bewusst quer zu den anderen beiden Sektionen - ein Event kann hier und
-// gleichzeitig unter "Laufende" bzw. "Zukuenftige" auftauchen.
-const NEWEST_EVENTS_DAYS = 7;
+// gleichzeitig unter "Laufende" bzw. "Zukuenftige" auftauchen. Zukuenftige
+// Events wandern dadurch an ihrem Starttag automatisch hier mit hinein.
+
+// Faellt der Zeitstempel auf den heutigen Kalendertag?
+// Verglichen wird der Tag, nicht 24h-Fenster.
+function isToday(value) {
+    if (!value) return false;
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return false;
+
+    const today = new Date();
+
+    return date.getFullYear() === today.getFullYear()
+        && date.getMonth() === today.getMonth()
+        && date.getDate() === today.getDate();
+}
 
 // Juengster Zeitstempel eines Events (angelegt oder zuletzt geaendert)
 function eventRecency(event) {
@@ -4204,21 +4219,23 @@ function eventRecency(event) {
 function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
     if (!sectionEl || !listEl) return;
 
-    // Kalendertage, nicht 7*24h: "letzte 7 Tage" schliesst den heutigen Tag ganz ein
-    const cutoff = new Date();
-    cutoff.setHours(0, 0, 0, 0);
-    cutoff.setDate(cutoff.getDate() - NEWEST_EVENTS_DAYS);
-
     const newestEvents = [];
     uniqueEvents.forEach(event => {
-        const recency = eventRecency(event);
-        if (recency && recency >= cutoff) {
+        const startDate = event.start_date || event.date_iso || event.date || event.event_date;
+
+        if (isToday(startDate) || isToday(event.created_at) || isToday(event.updated_at)) {
             newestEvents.push(event);
         }
     });
 
-    // Zuletzt angelegt/geaendert zuerst
-    newestEvents.sort((a, b) => eventRecency(b) - eventRecency(a));
+    // Zuletzt angelegt/geaendert zuerst. Events, die nur wegen ihres
+    // Startdatums hier stehen, haben keinen Zeitstempel und landen hinten.
+    newestEvents.sort((a, b) => {
+        const recencyA = eventRecency(a);
+        const recencyB = eventRecency(b);
+
+        return (recencyB ? recencyB.getTime() : 0) - (recencyA ? recencyA.getTime() : 0);
+    });
 
     if (newestEvents.length === 0) {
         sectionEl.style.display = 'none';
