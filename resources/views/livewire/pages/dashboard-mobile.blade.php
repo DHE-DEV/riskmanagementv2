@@ -254,7 +254,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="flex justify-between">
                 <span>© 2026 Passolution GmbH</span>
-                <span>Version 1.1.0</span>
+                <span>Version 1.2.0</span>
             </div>
         </div>
     </div>
