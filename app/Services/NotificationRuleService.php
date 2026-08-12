@@ -120,34 +120,27 @@ class NotificationRuleService
         $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->implode(', ')
             ?: ($event->country?->getName('de') ?? '');
 
-        // Kategorien aus eventTypes ableiten (category-Feld ist oft NULL)
-        // Mapping EventType code → NotificationRule category key
-        $codeToRuleCategory = [
-            'environment' => 'environment',
-            'travel' => 'traffic',
-            'safety' => 'security',
-            'entry' => 'entry',
-            'health' => 'health',
-            'general' => 'general',
-        ];
-
+        // Kategorien aus eventTypes ableiten (category-Feld ist oft NULL).
+        // Massgeblich ist der Code des Event-Typs - der Abgleich mit den Regeln
+        // laeuft in ruleMatches() ueber dieselben Codes.
         $categories = [];
         $categoryLabel = '';
         if ($event->eventTypes->isNotEmpty()) {
             $categoryLabel = $event->eventTypes->pluck('name')->implode(', ');
             $categories = $event->eventTypes
-                ->map(fn ($et) => $codeToRuleCategory[$et->code] ?? $et->code)
+                ->pluck('code')
                 ->unique()
                 ->values()
                 ->toArray();
         }
         // Fallback auf das category-Feld des Events
         if (empty($categories) && $event->category) {
-            $categories = [$event->category];
+            $categories = [NotificationRule::normalizeCategory($event->category)];
         }
         if (!$categoryLabel) {
+            $options = NotificationRule::categoryOptions();
             $categoryLabel = collect($categories)
-                ->map(fn ($c) => NotificationRule::CATEGORIES[$c] ?? $c)
+                ->map(fn ($c) => $options[$c] ?? NotificationRule::CATEGORIES[$c] ?? $c)
                 ->implode(', ');
         }
 
@@ -189,7 +182,8 @@ class NotificationRuleService
             '{event_title}' => $event->title,
             '{country_name}' => $event->country?->name ?? ($event->gdacs_country ?? ''),
             '{risk_level}' => NotificationRule::RISK_LEVELS[$riskLevel] ?? $riskLevel,
-            '{category}' => NotificationRule::CATEGORIES['environment'] ?? 'Umweltereignisse',
+            '{category}' => NotificationRule::categoryOptions()['environment']
+                ?? NotificationRule::CATEGORIES['environment'],
             '{description}' => $event->description ?? '',
             '{event_date}' => $event->event_date?->format('d.m.Y') ?? now()->format('d.m.Y'),
         ];
@@ -496,9 +490,14 @@ class NotificationRuleService
         }
 
         // Category Filter: leer = alle Kategorien matchen
-        // Event kann mehrere Kategorien haben, mindestens eine muss übereinstimmen
+        // Event kann mehrere Kategorien haben, mindestens eine muss übereinstimmen.
+        // Beide Seiten werden auf die Event-Typ-Codes normalisiert, damit auch
+        // Regeln mit den alten Schluesseln (traffic/security) weiter greifen.
         if (!empty($rule->categories)) {
-            if (empty($eventCategories) || empty(array_intersect($rule->categories, $eventCategories))) {
+            $ruleCategories = NotificationRule::normalizeCategories($rule->categories);
+            $eventCategories = NotificationRule::normalizeCategories($eventCategories);
+
+            if (empty($eventCategories) || empty(array_intersect($ruleCategories, $eventCategories))) {
                 return false;
             }
         }

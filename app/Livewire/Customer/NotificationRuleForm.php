@@ -40,7 +40,9 @@ class NotificationRuleForm extends Component
             $this->isActive = $rule->is_active;
             $this->source = $rule->source ?? 'travel-alert';
             $this->riskLevels = $rule->risk_levels ?? [];
-            $this->categories = $rule->categories ?? [];
+            // Alte Schluessel auf die Event-Typ-Codes umschreiben, sonst bleiben
+            // die zugehoerigen Haken beim Bearbeiten leer
+            $this->categories = NotificationRule::normalizeCategories($rule->categories);
             $this->notificationTemplateId = $rule->notification_template_id;
 
             // Load countries
@@ -101,7 +103,7 @@ class NotificationRuleForm extends Component
             $this->isActive = $rule->is_active;
             $this->source = $rule->source ?? $this->source;
             $this->riskLevels = $rule->risk_levels ?? [];
-            $this->categories = $rule->categories ?? [];
+            $this->categories = NotificationRule::normalizeCategories($rule->categories);
             $this->notificationTemplateId = $rule->notification_template_id;
             if ($rule->country_ids) {
                 $countries = Country::whereIn('id', $rule->country_ids)->get();
@@ -164,7 +166,12 @@ class NotificationRuleForm extends Component
             'riskLevels' => 'array',
             'riskLevels.*' => 'in:' . implode(',', array_keys(NotificationRule::RISK_LEVELS)),
             'categories' => 'array',
-            'categories.*' => 'in:' . implode(',', array_keys(NotificationRule::CATEGORIES)),
+            // Erlaubt sind die aktiven Event-Typen; die alten Schluessel bleiben
+            // zulaessig, damit unveraendert uebernommene Regeln weiter speichern
+            'categories.*' => 'in:' . implode(',', array_merge(
+                array_keys(NotificationRule::categoryOptions()),
+                array_keys(NotificationRule::LEGACY_CATEGORY_ALIASES),
+            )),
             'recipients' => 'required|array|min:1',
             'recipients.*.email' => 'required|email',
             'recipients.*.type' => 'required|in:to,cc,bcc',
@@ -183,7 +190,9 @@ class NotificationRuleForm extends Component
             'name' => $this->name,
             'is_active' => $this->isActive,
             'risk_levels' => ! empty($this->riskLevels) ? $this->riskLevels : null,
-            'categories' => ! empty($this->categories) ? $this->categories : null,
+            'categories' => ! empty($this->categories)
+                ? NotificationRule::normalizeCategories($this->categories)
+                : null,
             'country_ids' => $this->source === 'travel-alert'
                 ? null
                 : (! empty($this->selectedCountries)
@@ -300,7 +309,7 @@ class NotificationRuleForm extends Component
         return view('livewire.customer.notification-rule-form', [
             'templates' => $templates,
             'availableRiskLevels' => NotificationRule::RISK_LEVELS,
-            'availableCategories' => NotificationRule::CATEGORIES,
+            'availableCategories' => NotificationRule::categoryOptions(),
         ]);
     }
 }
