@@ -107,7 +107,10 @@ class GdacsController extends Controller
                         'latitude' => $event->lat,
                         'longitude' => $event->lng,
                         'icon' => $eventTypeIcon ?? $this->getEventIcon($event->event_type, $event->severity),
-                        'iconColor' => $this->getPriorityColorFromSeverity($event->severity)
+                        'iconColor' => $this->getPriorityColorFromSeverity($event->severity),
+                        // Sortierung und Fusszeile der Sidebar-Karten arbeiten damit
+                        'created_at' => $event->created_at,
+                        'updated_at' => $event->updated_at,
                     ];
                 });
 

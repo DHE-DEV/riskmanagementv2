@@ -4156,12 +4156,8 @@ function renderEvents() {
         }
     });
 
-    // Sortiere zukünftige Events (älteste zuerst = nächste zuerst)
-    futureEvents.sort((a, b) => {
-        const dateA = new Date(a.start_date || a.date_iso || a.date || a.event_date);
-        const dateB = new Date(b.start_date || b.date_iso || b.date || b.event_date);
-        return dateA - dateB;
-    });
+    // Sortierung in allen Rubriken einheitlich: zuletzt geaendert zuerst
+    futureEvents.sort(byUpdatedAtDesc);
 
     // Rendere zukünftige Events
     if (futureEvents.length > 0) {
@@ -4175,7 +4171,8 @@ function renderEvents() {
         futureEventsSection.style.display = 'none';
     }
 
-    // Rendere aktuelle/vergangene Events (bereits nach Datum sortiert durch currentEvents)
+    // Rendere aktuelle/vergangene Events
+    currentPastEvents.sort(byUpdatedAtDesc);
     const currentPastEventsCountEl = document.getElementById('currentPastEventsCount');
     if (currentPastEventsCountEl) currentPastEventsCountEl.textContent = currentPastEvents.length;
     currentPastEvents.forEach(event => {
@@ -4184,6 +4181,24 @@ function renderEvents() {
     });
 
     renderNewestEvents(uniqueEvents, newestEventsSection, newestEventsList);
+}
+
+// Sortierschluessel der Sidebar-Rubriken: wann wurde der Datensatz zuletzt
+// angefasst. Ohne updated_at faellt es auf created_at zurueck - Events ganz
+// ohne Zeitstempel landen am Ende der Liste.
+function eventUpdatedAtMs(event) {
+    let value = event?.updated_at || event?.created_at;
+    if (!value) return 0;
+    if (typeof value === 'string') {
+        value = value.replace(' ', 'T');
+    }
+    const ms = Date.parse(value);
+    return isNaN(ms) ? 0 : ms;
+}
+
+// Neuste zuerst
+function byUpdatedAtDesc(a, b) {
+    return eventUpdatedAtMs(b) - eventUpdatedAtMs(a);
 }
 
 // "Heute": Startdatum ist heute ODER heute angelegt ODER heute geaendert.
@@ -4204,16 +4219,6 @@ function isToday(value) {
     return date.getFullYear() === today.getFullYear()
         && date.getMonth() === today.getMonth()
         && date.getDate() === today.getDate();
-}
-
-// Juengster Zeitstempel eines Events (angelegt oder zuletzt geaendert)
-function eventRecency(event) {
-    const stamps = [event.created_at, event.updated_at]
-        .filter(Boolean)
-        .map(value => new Date(value))
-        .filter(date => !isNaN(date));
-
-    return stamps.length ? new Date(Math.max(...stamps.map(date => date.getTime()))) : null;
 }
 
 // Hat der Nutzer "Laufende Ereignisse" selbst auf- oder zugeklappt, bleibt es
@@ -4248,14 +4253,10 @@ function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
         }
     });
 
-    // Zuletzt angelegt/geaendert zuerst. Events, die nur wegen ihres
-    // Startdatums hier stehen, haben keinen Zeitstempel und landen hinten.
-    newestEvents.sort((a, b) => {
-        const recencyA = eventRecency(a);
-        const recencyB = eventRecency(b);
-
-        return (recencyB ? recencyB.getTime() : 0) - (recencyA ? recencyA.getTime() : 0);
-    });
+    // Reihenfolge wie in den anderen Rubriken nach updated_at. Events, die nur
+    // wegen ihres Startdatums hier stehen, haben keinen Zeitstempel und landen
+    // hinten.
+    newestEvents.sort(byUpdatedAtDesc);
 
     if (newestEvents.length === 0) {
         sectionEl.style.display = 'none';
