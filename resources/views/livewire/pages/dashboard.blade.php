@@ -1230,7 +1230,7 @@
                     </div>
                     <div id="newestEventsSection" style="display: none;">
                         <div class="flex items-center justify-between px-2 py-2 mb-2 cursor-pointer bg-gray-200 rounded" onclick="toggleEventSection('newestEvents')" style="position: relative; z-index: 2;">
-                            <p class="text-xs text-gray-700 font-medium">Heute (<span id="newestEventsCount">0</span>)</p>
+                            <p class="text-xs text-gray-700 font-medium">Heute angelegt/aktualisiert (<span id="newestEventsCount">0</span>)</p>
                             <svg id="newestEventsToggleIcon" class="w-4 h-4 text-gray-700 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
