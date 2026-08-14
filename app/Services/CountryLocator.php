@@ -93,21 +93,49 @@ class CountryLocator
     {
         $key = round($latitude, 4) . ',' . round($longitude, 4);
 
-        return $this->cache[$key] ??= $this->resolveCoordinates($latitude, $longitude);
+        return $this->cache[$key] ??= $this->resolveCoordinates($latitude, $longitude)['country_id'];
     }
 
-    private function resolveCoordinates(float $latitude, float $longitude): ?int
+    /**
+     * Wie countryIdForCoordinates(), liefert aber zusaetzlich, ueber welche Stufe
+     * der Kaskade das Ergebnis zustande kam. Fuer das Admin-Werkzeug und zur
+     * Fehlersuche - im Normalbetrieb genuegt countryIdForCoordinates().
+     *
+     * @return array{country_id: ?int, method: ?string, distance_km: ?float, rejected_country_id: ?int}
+     */
+    public function describeCoordinates(float $latitude, float $longitude): array
     {
-        $exact = $this->boundaryCountryId($latitude, $longitude)
-            ?? $this->nearestBoundaryCountryId($latitude, $longitude);
+        return $this->resolveCoordinates($latitude, $longitude);
+    }
 
-        if ($exact !== null) {
-            return $exact;
+    /**
+     * @return array{country_id: ?int, method: ?string, distance_km: ?float, rejected_country_id: ?int}
+     */
+    private function resolveCoordinates(float $latitude, float $longitude): array
+    {
+        if ($countryId = $this->boundaryCountryId($latitude, $longitude)) {
+            return $this->result($countryId, 'boundary', 0.0);
         }
 
-        $approximate = $this->nearestAirportCountryId($latitude, $longitude)
-            ?? $this->nearestCityCountryId($latitude, $longitude)
-            ?? $this->nearestCountryCentroidId($latitude, $longitude);
+        $nearby = $this->nearestBoundary($latitude, $longitude);
+
+        if ($nearby !== null) {
+            return $this->result((int) $nearby->country_id, 'boundary_nearby', ((float) $nearby->distance_m) / 1000);
+        }
+
+        $approximate = null;
+        $method = null;
+
+        if ($countryId = $this->nearestAirportCountryId($latitude, $longitude)) {
+            $approximate = $countryId;
+            $method = 'airport';
+        } elseif ($countryId = $this->nearestCityCountryId($latitude, $longitude)) {
+            $approximate = $countryId;
+            $method = 'city';
+        } elseif ($countryId = $this->nearestCountryCentroidId($latitude, $longitude)) {
+            $approximate = $countryId;
+            $method = 'centroid';
+        }
 
         // Liegt fuer das genaeherte Land eine Grenze vor, ist sie massgeblich: sie hat
         // den Punkt oben nicht enthalten, also liegt er nicht in diesem Land. Ohne diese
@@ -115,10 +143,28 @@ class CountryLocator
         // faelschlich einem Land zugeordnet. Die Naeherung bleibt damit genau das, was
         // sie sein soll - eine Luecke fuer die Laender ohne Grenzdaten.
         if ($approximate !== null && $this->countryHasBoundary($approximate)) {
-            return null;
+            return [
+                'country_id' => null,
+                'method' => 'outside_all_boundaries',
+                'distance_km' => null,
+                'rejected_country_id' => $approximate,
+            ];
         }
 
-        return $approximate;
+        return $this->result($approximate, $method, null);
+    }
+
+    /**
+     * @return array{country_id: ?int, method: ?string, distance_km: ?float, rejected_country_id: ?int}
+     */
+    private function result(?int $countryId, ?string $method, ?float $distanceKm): array
+    {
+        return [
+            'country_id' => $countryId,
+            'method' => $countryId !== null ? $method : null,
+            'distance_km' => $distanceKm,
+            'rejected_country_id' => null,
+        ];
     }
 
     private function countryHasBoundary(int $countryId): bool
@@ -175,7 +221,7 @@ class CountryLocator
      * knapp ausserhalb des Polygons (Nuuk z.B. rund 0,6 km). Der Bounding-Box-Vorfilter
      * begrenzt die teure Distanzrechnung auf wenige Kandidaten.
      */
-    private function nearestBoundaryCountryId(float $latitude, float $longitude): ?int
+    private function nearestBoundary(float $latitude, float $longitude): ?object
     {
         if (! $this->boundariesAvailable()) {
             return null;
@@ -213,7 +259,7 @@ class CountryLocator
             }
         }
 
-        return $best ? (int) $best->country_id : null;
+        return $best;
     }
 
     /**
