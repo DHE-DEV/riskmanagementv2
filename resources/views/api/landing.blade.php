@@ -930,6 +930,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
                         <tr><td><code>end_date</code></td><td>datetime / null</td><td>Enddatum (null = andauernd)</td></tr>
                         <tr><td><code>latitude</code></td><td>number / null</td><td>Breitengrad</td></tr>
                         <tr><td><code>longitude</code></td><td>number / null</td><td>Längengrad</td></tr>
+                        <tr><td><code>is_nationwide</code></td><td>boolean</td><td>Landesweite Geltung. Bei <code>true</code> liefert <code>/events/nearby</code> das Event unabhängig vom Radius, sobald der Abfragepunkt in einem der unter <code>countries</code> genannten Länder liegt.</td></tr>
                         <tr><td><code>event_categories</code></td><td>array</td><td>Liste der zugewiesenen Event-Typen</td></tr>
                         <tr><td><code>countries</code></td><td>array</td><td>Liste betroffener Länder</td></tr>
                         <tr><td><code>source</code></td><td>object</td><td>Herkunft des Events</td></tr>

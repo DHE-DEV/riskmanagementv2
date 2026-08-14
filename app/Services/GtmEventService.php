@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Cache;
 
 class GtmEventService
 {
+    public function __construct(
+        private readonly CountryLocator $countryLocator = new CountryLocator(),
+    ) {}
+
     /**
      * Get the base active events query result from cache.
      */
@@ -138,9 +142,24 @@ class GtmEventService
     /**
      * Get active events within a radius (km) of given coordinates.
      */
-    public function getEventsNearbyCoordinates(float $latitude, float $longitude, float $radiusKm): Collection
-    {
-        return $this->filterEventsByRadius($this->getBaseEvents(), $latitude, $longitude, $radiusKm);
+    /**
+     * @param  ?int  $queryCountryId  Land des Abfragepunkts. Wird es nicht uebergeben,
+     *                                bestimmt der CountryLocator es aus den Koordinaten.
+     *                                Landesweite Ereignisse dieses Landes greifen unabhaengig vom Radius.
+     */
+    public function getEventsNearbyCoordinates(
+        float $latitude,
+        float $longitude,
+        float $radiusKm,
+        ?int $queryCountryId = null,
+    ): Collection {
+        return $this->filterEventsByRadius(
+            $this->getBaseEvents(),
+            $latitude,
+            $longitude,
+            $radiusKm,
+            $queryCountryId,
+        );
     }
 
     /**
@@ -149,9 +168,27 @@ class GtmEventService
      * Events without resolvable coordinates are dropped. The `countries` relation should be
      * eager loaded (including `capital`) so the coordinate cascade does not hit the database per event.
      */
-    public function filterEventsByRadius(Collection $events, float $latitude, float $longitude, float $radiusKm): Collection
-    {
-        return $events->filter(function (CustomEvent $event) use ($latitude, $longitude, $radiusKm) {
+    public function filterEventsByRadius(
+        Collection $events,
+        float $latitude,
+        float $longitude,
+        float $radiusKm,
+        ?int $queryCountryId = null,
+    ): Collection {
+        // Land des Abfragepunkts nur bestimmen, wenn ueberhaupt landesweite Ereignisse dabei sind.
+        $hasNationwide = $events->contains(fn (CustomEvent $event) => (bool) $event->is_nationwide);
+
+        if ($hasNationwide && $queryCountryId === null) {
+            $queryCountryId = $this->countryLocator->countryIdForCoordinates($latitude, $longitude);
+        }
+
+        return $events->filter(function (CustomEvent $event) use ($latitude, $longitude, $radiusKm, $queryCountryId) {
+            // Landesweite Ereignisse gelten im gesamten Land - der Radius spielt keine Rolle,
+            // solange der Abfragepunkt in einem der Laender des Ereignisses liegt.
+            if ($event->is_nationwide && $queryCountryId !== null && $event->coversCountry($queryCountryId)) {
+                return true;
+            }
+
             $coordinates = $this->resolveEventCoordinates($event);
 
             if ($coordinates === null) {

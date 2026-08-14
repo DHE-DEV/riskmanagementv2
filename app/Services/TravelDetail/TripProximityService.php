@@ -69,14 +69,19 @@ class TripProximityService
      */
     public function getTripsAffectedByCustomEvent(CustomEvent $event, ?float $radiusKm = null): Collection
     {
+        $startTime = $event->start_date ? Carbon::parse($event->start_date) : now()->subDays(1);
+        $endTime = $event->end_date ? Carbon::parse($event->end_date) : now()->addDays(7);
+
+        // Landesweit: alle Reisen in den Laendern des Ereignisses, ohne Radius.
+        if ($event->is_nationwide) {
+            return $this->tripsInEventCountries($event, $startTime, $endTime);
+        }
+
         if (!$event->latitude || !$event->longitude) {
             return collect();
         }
 
         $radiusKm = $radiusKm ?? $this->defaultRadiusKm;
-
-        $startTime = $event->start_date ? Carbon::parse($event->start_date) : now()->subDays(1);
-        $endTime = $event->end_date ? Carbon::parse($event->end_date) : now()->addDays(7);
 
         $locations = $this->findTravelersNearPoint(
             $event->latitude,
@@ -91,6 +96,40 @@ class TripProximityService
                 ->info('Proximity query for custom event', [
                     'event_id' => $event->id,
                     'radius_km' => $radiusKm,
+                    'affected_trips' => $locations->pluck('trip_id')->unique()->count(),
+                ]);
+        }
+
+        return $locations;
+    }
+
+    /**
+     * Alle Reisen in den Laendern eines landesweiten Ereignisses.
+     */
+    private function tripsInEventCountries(CustomEvent $event, Carbon $startTime, Carbon $endTime): Collection
+    {
+        $event->loadMissing('countries');
+
+        $isoCodes = $event->countries->pluck('iso_code')->filter();
+
+        if ($isoCodes->isEmpty() && $event->country) {
+            $isoCodes = collect([$event->country->iso_code])->filter();
+        }
+
+        if ($isoCodes->isEmpty()) {
+            return collect();
+        }
+
+        $locations = $isoCodes
+            ->flatMap(fn (string $isoCode) => $this->getTripsInCountry($isoCode, $startTime, $endTime))
+            ->unique(fn ($location) => $location->id)
+            ->values();
+
+        if (config('travel_detail.logging.enabled')) {
+            Log::channel(config('travel_detail.logging.channel'))
+                ->info('Nationwide query for custom event', [
+                    'event_id' => $event->id,
+                    'countries' => $isoCodes->values()->all(),
                     'affected_trips' => $locations->pluck('trip_id')->unique()->count(),
                 ]);
         }

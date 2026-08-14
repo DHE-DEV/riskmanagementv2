@@ -264,6 +264,7 @@ class NotificationRuleForm extends Component
         $placeholders = [
             '{event_title}' => 'Test-Ereignis',
             '{country_name}' => 'Deutschland',
+            '{locations}' => 'Deutschland – Bayern – München',
             '{risk_level}' => 'Hoch',
             '{category}' => 'Allgemein',
             '{description}' => 'Dies ist eine Test-Benachrichtigung um den E-Mail-Versand zu prüfen.',

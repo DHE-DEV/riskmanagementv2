@@ -25,6 +25,9 @@ class StoreEventRequest extends FormRequest
             'country_codes.*' => ['string', 'size:2'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            // Landesweit: Ereignis gilt im gesamten Land und wird bei Radius-/Code-Abfragen
+            // unabhaengig von der Entfernung gefunden.
+            'is_nationwide' => ['nullable', 'boolean'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:50'],
             'external_id' => ['nullable', 'string', 'max:255'],

@@ -10,6 +10,7 @@ use App\Models\EventType;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\CheckboxList;
@@ -43,35 +44,49 @@ class CustomEventForm
                     ->placeholder('Detaillierte Beschreibung des Events...')
                     ->hidden(),
 
-                \Filament\Schemas\Components\Grid::make(2)
-                    ->schema([
-                        TextInput::make('source')
-                            ->label('Quelle')
-                            ->maxLength(255)
-                            ->placeholder('z.B. Auswärtiges Amt, BBC News, interne Meldung')
-                            ->helperText('Woher stammt die Information?'),
+                // Quelle-Freitextfeld ausgeblendet - die Quellenangabe läuft über die Liste unten.
+                TextInput::make('source')
+                    ->label('Quelle')
+                    ->maxLength(255)
+                    ->hidden(),
 
-                        Toggle::make('source_show_frontend')
+                // Beliebig viele Quellenangaben. Anzeige-Schalter, Link-Text und Link-URL
+                // gehören jeweils zu einer Zeile zusammen.
+                Repeater::make('source_links')
+                    ->label('Quellen-Informationen')
+                    ->columnSpanFull()
+                    ->schema([
+                        Toggle::make('show_frontend')
                             ->label('Quelle im Frontend anzeigen')
                             ->default(true)
-                            ->helperText('Quellenangabe in der Event-Detailansicht anzeigen'),
-                    ]),
+                            ->inline(false)
+                            ->helperText('Quellenangabe in der Event-Detailansicht anzeigen')
+                            ->columnSpan(['default' => 1, 'md' => 2]),
 
-                \Filament\Schemas\Components\Grid::make(2)
-                    ->schema([
-                        TextInput::make('source_link_text')
+                        TextInput::make('link_text')
                             ->label('Link-Text')
                             ->maxLength(255)
                             ->placeholder('z.B. Zum Artikel')
-                            ->helperText('Text für den Quellen-Link'),
+                            ->helperText('Text für den Quellen-Link')
+                            ->columnSpan(['default' => 1, 'md' => 2]),
 
-                        TextInput::make('source_link_url')
+                        TextInput::make('link_url')
                             ->label('Link-URL')
                             ->url()
                             ->maxLength(2048)
                             ->placeholder('https://...')
-                            ->helperText('URL der Quelle'),
-                    ]),
+                            ->helperText('URL der Quelle')
+                            ->columnSpan(['default' => 1, 'md' => 2]),
+                    ])
+                    ->columns(['default' => 1, 'md' => 6])
+                    ->defaultItems(0)
+                    ->addActionLabel('Quelle hinzufügen')
+                    ->reorderable()
+                    ->collapsible()
+                    ->cloneable()
+                    ->itemLabel(fn (array $state): ?string => $state['link_text']
+                        ?: ($state['link_url'] ?: null))
+                    ->helperText('Beliebig viele Quellen. Anzeige-Schalter, Link-Text und Link-URL gehören je Zeile zusammen.'),
 
                 // Keep single event_type_id for backward compatibility but hide it
                 Select::make('event_type_id')
@@ -191,6 +206,13 @@ class CustomEventForm
                     ->placeholder('tag1, tag2, tag3')
                     ->helperText('Tags durch Kommas getrennt eingeben')
                     ->hidden(),
+
+                // Landesweite Geltung - wirkt auf Radius-/Koordinaten-Abfragen
+                Toggle::make('is_nationwide')
+                    ->label('Landesweit')
+                    ->default(false)
+                    ->columnSpanFull()
+                    ->helperText('Das Ereignis gilt im gesamten Land. Bei Suchen nach Geokoordinaten oder 3-Letter-Code wird es unabhängig von der Entfernung gefunden, sobald der Abfragepunkt in einem der zugeordneten Länder liegt.'),
 
                 // Status - nebeneinander in 2 Spalten
                 \Filament\Schemas\Components\Grid::make(2)

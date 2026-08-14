@@ -2769,13 +2769,13 @@ async function loadEventDetails(event) {
                 ${event.description ? `
                     <div class="event-description mt-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}${event.source_show_frontend !== false && event.source_link_text ? `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">Quelle: ${event.source_link_url ? `<a href="${event.source_link_url}" target="_blank" rel="noopener noreferrer" style="font-style: italic; text-decoration: underline;">${event.source_link_text}</a>` : event.source_link_text}</span></div>` : ''}</div>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}${renderEventSources(event)}</div>
                     </div>
                 ` : ''}
                 ${event.source === 'custom' && event.popup_content ? `
                     <div class="event-description mt-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}${event.source_show_frontend !== false && event.source_link_text ? `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">Quelle: ${event.source_link_url ? `<a href="${event.source_link_url}" target="_blank" rel="noopener noreferrer" style="font-style: italic; text-decoration: underline;">${event.source_link_text}</a>` : event.source_link_text}</span></div>` : ''}</div>
+                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}${renderEventSources(event)}</div>
                     </div>
                 ` : ''}
                 
@@ -2786,6 +2786,7 @@ async function loadEventDetails(event) {
                         <span class="info-value">${event.country_name || event.country}</span>
                     </div>
                     ` : ''}
+                    ${renderEventLocations(event)}
                     <div class="info-item">
                         <span class="info-label">Startdatum:</span>
                         <span class="info-value">${event.start_date ? formatDateTimeDE(event.start_date) : (event.date_iso ? formatDateTimeDE(event.date_iso) : (event.date ? formatDateTimeDE(event.date) : 'Unbekannt'))}</span>
@@ -5863,6 +5864,69 @@ function escapeHtml(str) {
 
 function escapeForAttr(str) {
     return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// Standort-Datensaetze eines Events rendern (Land / Region / Stadt, ggf. mit Notiz).
+// Pro Land sind mehrere Datensaetze moeglich - alle werden aufgelistet.
+function renderEventLocations(event) {
+    const locations = Array.isArray(event.countries) ? event.countries : [];
+
+    const labels = locations.map(loc => {
+        if (!loc) {
+            return null;
+        }
+
+        const label = loc.label || [loc.name, loc.region_name, loc.city_name].filter(Boolean).join(' – ');
+
+        if (!label) {
+            return null;
+        }
+
+        return loc.location_note ? `${label} (${loc.location_note})` : label;
+    }).filter(Boolean);
+
+    if (labels.length === 0) {
+        return '';
+    }
+
+    const unique = [...new Set(labels)];
+
+    return `<div class="info-item">
+        <span class="info-label">${unique.length > 1 ? 'Standorte:' : 'Standort:'}</span>
+        <span class="info-value">${escapeHtml(unique.join(', '))}</span>
+    </div>`;
+}
+
+// Quellenangaben eines Events rendern. Neue Events liefern eine Liste (source_links),
+// aeltere nur die Einzelfelder - beides wird unterstuetzt.
+function renderEventSources(event) {
+    let links = Array.isArray(event.source_links) ? event.source_links : [];
+
+    if (links.length === 0 && event.source_link_text) {
+        links = [{
+            show_frontend: event.source_show_frontend,
+            link_text: event.source_link_text,
+            link_url: event.source_link_url,
+        }];
+    }
+
+    const visible = links.filter(link => link && link.show_frontend !== false && (link.link_text || link.link_url));
+
+    if (visible.length === 0) {
+        return '';
+    }
+
+    const rendered = visible.map(link => {
+        const text = escapeHtml(link.link_text || link.link_url);
+
+        return link.link_url
+            ? `<a href="${escapeHtml(link.link_url)}" target="_blank" rel="noopener noreferrer" style="font-style: italic; text-decoration: underline;">${text}</a>`
+            : text;
+    }).join(', ');
+
+    const label = visible.length > 1 ? 'Quellen' : 'Quelle';
+
+    return `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">${label}: ${rendered}</span></div>`;
 }
 
 // Check if any filters are active (kept for potential future use)

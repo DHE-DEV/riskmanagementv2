@@ -76,6 +76,14 @@ class CustomEventsTable
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
                 
+                TextColumn::make('is_nationwide')
+                    ->label('Landesweit')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
+                    ->badge()
+                    ->color(fn (bool $state): string => $state ? 'info' : 'gray')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('is_active')
                     ->label('Aktiv')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
@@ -205,6 +213,12 @@ class CustomEventsTable
                     ->placeholder('Alle Events')
                     ->trueLabel('Nur archivierte')
                     ->falseLabel('Nur nicht-archivierte'),
+
+                TernaryFilter::make('is_nationwide')
+                    ->label('Landesweite Events')
+                    ->placeholder('Alle Events')
+                    ->trueLabel('Nur landesweite')
+                    ->falseLabel('Nur standortbezogene'),
 
                 SelectFilter::make('review_status')
                     ->label('Review-Status')

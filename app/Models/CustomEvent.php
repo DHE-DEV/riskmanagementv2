@@ -29,6 +29,7 @@ class CustomEvent extends Model implements Feedable
         'country_id',
         'latitude',
         'longitude',
+        'is_nationwide',
         'marker_color',
         'marker_icon',
         'icon_color',
@@ -39,6 +40,7 @@ class CustomEvent extends Model implements Feedable
         'source_show_frontend',
         'source_link_text',
         'source_link_url',
+        'source_links',
         'start_date',
         'end_date',
         'is_active',
@@ -73,7 +75,9 @@ class CustomEvent extends Model implements Feedable
         'end_date' => 'datetime',
         'is_active' => 'boolean',
         'archived' => 'boolean',
+        'is_nationwide' => 'boolean',
         'source_show_frontend' => 'boolean',
+        'source_links' => 'array',
         'archived_at' => 'datetime',
         'tags' => 'array',
         'reviewed_at' => 'datetime',
@@ -251,6 +255,224 @@ class CustomEvent extends Model implements Feedable
     }
 
     /**
+     * Alle Quellen-Links in einheitlicher Form.
+     * Faellt auf die alten Einzelspalten zurueck, solange source_links leer ist.
+     *
+     * @return array<int, array{show_frontend: bool, link_text: ?string, link_url: ?string}>
+     */
+    public function normalizedSourceLinks(): array
+    {
+        $links = is_array($this->source_links) ? $this->source_links : [];
+
+        if (empty($links) && (filled($this->source_link_text) || filled($this->source_link_url))) {
+            $links = [[
+                'show_frontend' => $this->source_show_frontend ?? true,
+                'link_text' => $this->source_link_text,
+                'link_url' => $this->source_link_url,
+            ]];
+        }
+
+        return collect($links)
+            ->filter(fn ($link) => is_array($link))
+            ->map(fn (array $link) => [
+                'show_frontend' => (bool) ($link['show_frontend'] ?? true),
+                'link_text' => $link['link_text'] ?? null,
+                'link_url' => $link['link_url'] ?? null,
+            ])
+            ->filter(fn (array $link) => filled($link['link_text']) || filled($link['link_url']))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Nur die Links, die im Frontend ausgegeben werden duerfen.
+     *
+     * @return array<int, array{show_frontend: bool, link_text: ?string, link_url: ?string}>
+     */
+    public function visibleSourceLinks(): array
+    {
+        return collect($this->normalizedSourceLinks())
+            ->filter(fn (array $link) => $link['show_frontend'])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Alte Einzelspalten aus dem ersten Listeneintrag weiterpflegen, damit
+     * bestehende API-Konsumenten unveraendert weiterlaufen.
+     */
+    protected function syncLegacySourceColumns(): void
+    {
+        if (! array_key_exists('source_links', $this->attributes)) {
+            return;
+        }
+
+        $first = $this->normalizedSourceLinks()[0] ?? null;
+
+        $this->attributes['source_show_frontend'] = $first ? (bool) $first['show_frontend'] : true;
+        $this->attributes['source_link_text'] = $first['link_text'] ?? null;
+        $this->attributes['source_link_url'] = $first['link_url'] ?? null;
+    }
+
+    /**
+     * Prozessweiter Cache fuer Region-/City-Lookups der Standort-Datensaetze.
+     *
+     * @var array<string, array<int, mixed>>
+     */
+    protected static array $locationLookupCache = ['region' => [], 'city' => []];
+
+    protected static function lookupRegion(?int $id): ?Region
+    {
+        if (! $id) {
+            return null;
+        }
+
+        return static::$locationLookupCache['region'][$id] ??= Region::find($id);
+    }
+
+    protected static function lookupCity(?int $id): ?City
+    {
+        if (! $id) {
+            return null;
+        }
+
+        return static::$locationLookupCache['city'][$id] ??= City::find($id);
+    }
+
+    /**
+     * Alle Standort-Datensaetze des Events - eine Zeile je Pivot-Eintrag.
+     * Pro Land sind beliebig viele Datensaetze moeglich (Region, Stadt, Koordinaten, Notiz).
+     *
+     * Koordinaten-Kaskade bei "Standard-Koordinaten": Stadt > Region > Hauptstadt > Land.
+     * Sonst die im Datensatz hinterlegten Koordinaten.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function locationRecords(?string $locale = 'de'): array
+    {
+        $this->loadMissing('countries');
+
+        return $this->countries->map(function (Country $country) use ($locale) {
+            $pivot = $country->pivot;
+
+            $region = static::lookupRegion($pivot?->region_id ? (int) $pivot->region_id : null);
+            $city = static::lookupCity($pivot?->city_id ? (int) $pivot->city_id : null);
+
+            [$lat, $lng] = $this->resolveLocationCoordinates($country, $region, $city);
+
+            $countryName = $country->getName($locale);
+            $labelParts = array_values(array_filter([
+                $countryName,
+                $region?->getName($locale),
+                $city?->getName($locale),
+            ]));
+
+            return [
+                'pivot_id' => $pivot?->id,
+                'country_id' => $country->id,
+                'country_name' => $countryName,
+                'iso_code' => $country->iso_code,
+                'region_id' => $region?->id,
+                'region_name' => $region?->getName($locale),
+                'city_id' => $city?->id,
+                'city_name' => $city?->getName($locale),
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'location_note' => $pivot?->location_note,
+                'use_default_coordinates' => (bool) ($pivot?->use_default_coordinates),
+                // Anzeigefertige Bezeichnung, z.B. "Spanien - Katalonien - Barcelona"
+                'label' => implode(' – ', $labelParts),
+            ];
+        })->all();
+    }
+
+    /**
+     * Koordinaten eines einzelnen Standort-Datensatzes aufloesen.
+     *
+     * @return array{0: ?float, 1: ?float}
+     */
+    protected function resolveLocationCoordinates(Country $country, ?Region $region, ?City $city): array
+    {
+        $pivot = $country->pivot;
+
+        if ($pivot && ! $pivot->use_default_coordinates) {
+            if ($pivot->latitude && $pivot->longitude) {
+                return [(float) $pivot->latitude, (float) $pivot->longitude];
+            }
+        } else {
+            // Standard-Koordinaten: Stadt > Region > Hauptstadt > Land
+            if ($city && $city->lat && $city->lng) {
+                return [(float) $city->lat, (float) $city->lng];
+            }
+
+            if ($region && $region->lat && $region->lng) {
+                return [(float) $region->lat, (float) $region->lng];
+            }
+
+            if ($country->capital && $country->capital->lat && $country->capital->lng) {
+                return [(float) $country->capital->lat, (float) $country->capital->lng];
+            }
+
+            if ($country->lat && $country->lng) {
+                return [(float) $country->lat, (float) $country->lng];
+            }
+        }
+
+        // Letzter Fallback: Event-Koordinaten
+        if ($this->latitude && $this->longitude) {
+            return [(float) $this->latitude, (float) $this->longitude];
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * Kurze Textliste aller Standorte - fuer Benachrichtigungen und Suchergebnisse.
+     * z.B. "Spanien – Katalonien – Barcelona, Frankreich – Paris"
+     */
+    public function locationSummary(?string $locale = 'de'): string
+    {
+        return collect($this->locationRecords($locale))
+            ->pluck('label')
+            ->filter()
+            ->unique()
+            ->implode(', ');
+    }
+
+    /**
+     * Gehoert das Land zu diesem Ereignis? Beruecksichtigt die Mehrfachzuordnung
+     * (countries) und die alte Einzelspalte country_id.
+     */
+    public function coversCountry(int $countryId): bool
+    {
+        if ((int) $this->country_id === $countryId) {
+            return true;
+        }
+
+        $this->loadMissing('countries');
+
+        return $this->countries->contains('id', $countryId);
+    }
+
+    /**
+     * Alle Laender-IDs des Ereignisses (Mehrfachzuordnung plus Einzelspalte).
+     *
+     * @return array<int, int>
+     */
+    public function coveredCountryIds(): array
+    {
+        $this->loadMissing('countries');
+
+        $ids = $this->countries->pluck('id')->all();
+
+        if ($this->country_id) {
+            $ids[] = (int) $this->country_id;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    /**
      * Country relation (single - for backward compatibility).
      */
     public function country(): BelongsTo
@@ -263,8 +485,10 @@ class CustomEvent extends Model implements Feedable
      */
     public function countries()
     {
+        // 'id' im Pivot, damit einzelne Standort-Datensaetze adressierbar sind -
+        // pro Land sind mehrere Zeilen erlaubt.
         return $this->belongsToMany(Country::class, 'country_custom_event')
-            ->withPivot(['latitude', 'longitude', 'location_note', 'use_default_coordinates', 'region_id', 'city_id'])
+            ->withPivot(['id', 'latitude', 'longitude', 'location_note', 'use_default_coordinates', 'region_id', 'city_id'])
             ->withTimestamps();
     }
 
@@ -870,6 +1094,7 @@ class CustomEvent extends Model implements Feedable
         // Übersetzungs-JSON und Legacy-Spalten (title/popup_content) synchron halten.
         static::saving(function (CustomEvent $event) {
             $event->syncTranslationColumns();
+            $event->syncLegacySourceColumns();
         });
 
         // Automatically set archived_at when archiving

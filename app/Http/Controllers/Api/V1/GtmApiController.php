@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\GtmCountryResource;
 use App\Http\Resources\Api\V1\GtmEventResource;
+use App\Services\CountryLocator;
 use App\Services\GtmEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,8 @@ use Illuminate\Http\Request;
 class GtmApiController extends Controller
 {
     public function __construct(
-        private GtmEventService $eventService
+        private GtmEventService $eventService,
+        private CountryLocator $countryLocator,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -89,21 +91,27 @@ class GtmApiController extends Controller
         ]);
 
         $location = [];
+        // Land des Abfragepunkts - landesweite Ereignisse dieses Landes greifen
+        // unabhaengig vom Radius (siehe GtmEventService::filterEventsByRadius).
+        $queryCountryId = null;
 
         if ($request->filled('code')) {
-            $airportCode = \App\Models\AirportCode::where('iata_code', strtoupper($request->input('code')))->first();
+            $code = strtoupper($request->input('code'));
+            $airportCode = \App\Models\AirportCode::where('iata_code', $code)->first();
 
             if (!$airportCode) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unknown 3-letter code: ' . strtoupper($request->input('code')),
+                    'message' => 'Unknown 3-letter code: ' . $code,
                 ], 404);
             }
 
             $centerLat = (float) $airportCode->latitude_deg;
             $centerLng = (float) $airportCode->longitude_deg;
+            // Ueber den Code ist das Land exakt bekannt - keine Geo-Naeherung noetig.
+            $queryCountryId = $this->countryLocator->countryIdForAirportCode($code);
             $location = [
-                'code' => strtoupper($request->input('code')),
+                'code' => $code,
                 'name' => $airportCode->name,
                 'latitude' => $centerLat,
                 'longitude' => $centerLng,
@@ -123,6 +131,7 @@ class GtmApiController extends Controller
             latitude: $centerLat,
             longitude: $centerLng,
             radiusKm: (float) $request->input('radius'),
+            queryCountryId: $queryCountryId,
         );
 
         $perPage = $request->integer('per_page', 25);

@@ -11,6 +11,7 @@ use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\EventGroup;
 use App\Models\EventType;
+use App\Services\CountryLocator;
 use App\Services\GtmEventService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,8 @@ use Illuminate\Support\Str;
 class EventApiController extends Controller
 {
     public function __construct(
-        private GtmEventService $eventService
+        private GtmEventService $eventService,
+        private CountryLocator $countryLocator,
     ) {}
 
     /**
@@ -170,6 +172,7 @@ class EventApiController extends Controller
             'end_date' => $validated['end_date'] ?? null,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
+            'is_nationwide' => (bool) ($validated['is_nationwide'] ?? false),
             'tags' => $validated['tags'] ?? null,
             'data_source' => 'api_client',
             'data_source_id' => $validated['external_id'] ?? null,
@@ -277,6 +280,9 @@ class EventApiController extends Controller
         if (array_key_exists('longitude', $validated)) {
             $updateData['longitude'] = $validated['longitude'];
         }
+        if (array_key_exists('is_nationwide', $validated)) {
+            $updateData['is_nationwide'] = (bool) $validated['is_nationwide'];
+        }
         if (array_key_exists('tags', $validated)) {
             $updateData['tags'] = $validated['tags'];
         }
@@ -377,21 +383,27 @@ class EventApiController extends Controller
         ]);
 
         $location = [];
+        // Land des Abfragepunkts - landesweite Ereignisse dieses Landes greifen
+        // unabhaengig vom Radius (siehe GtmEventService::filterEventsByRadius).
+        $queryCountryId = null;
 
         if ($request->filled('code')) {
-            $airportCode = \App\Models\AirportCode::where('iata_code', strtoupper($request->input('code')))->first();
+            $code = strtoupper($request->input('code'));
+            $airportCode = \App\Models\AirportCode::where('iata_code', $code)->first();
 
             if (!$airportCode) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unknown 3-letter code: ' . strtoupper($request->input('code')),
+                    'message' => 'Unknown 3-letter code: ' . $code,
                 ], 404);
             }
 
             $centerLat = (float) $airportCode->latitude_deg;
             $centerLng = (float) $airportCode->longitude_deg;
+            // Ueber den Code ist das Land exakt bekannt - keine Geo-Naeherung noetig.
+            $queryCountryId = $this->countryLocator->countryIdForAirportCode($code);
             $location = [
-                'code' => strtoupper($request->input('code')),
+                'code' => $code,
                 'name' => $airportCode->name,
                 'latitude' => $centerLat,
                 'longitude' => $centerLng,
@@ -417,6 +429,7 @@ class EventApiController extends Controller
             latitude: $centerLat,
             longitude: $centerLng,
             radiusKm: (float) $request->input('radius'),
+            queryCountryId: $queryCountryId,
         );
 
         $perPage = $request->integer('per_page', 25);

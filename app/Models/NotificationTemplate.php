@@ -28,6 +28,7 @@ class NotificationTemplate extends Model
     public const PLACEHOLDERS = [
         '{event_title}' => 'Titel des Ereignisses',
         '{country_name}' => 'Name des Landes',
+        '{locations}' => 'Standorte inkl. Region und Stadt (z.B. "Spanien – Katalonien – Barcelona")',
         '{risk_level}' => 'Risikostufe',
         '{category}' => 'Kategorie',
         '{description}' => 'Beschreibung des Ereignisses',

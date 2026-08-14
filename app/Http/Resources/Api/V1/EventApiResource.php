@@ -19,6 +19,8 @@ class EventApiResource extends JsonResource
             'title' => $this->title,
             'description' => $this->popup_content ? strip_tags($this->popup_content) : null,
             'risk_level' => $this->priority,
+            // Landesweit: gilt im gesamten Land, unabhaengig vom Abfrage-Radius.
+            'is_nationwide' => (bool) $this->is_nationwide,
             'start_date' => $this->start_date?->toIso8601String(),
             'end_date' => $this->end_date?->toIso8601String(),
             'latitude' => $firstCoords['latitude'],

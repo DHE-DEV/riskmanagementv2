@@ -266,6 +266,12 @@
                     <td>Längengrad (-180 bis 180)</td>
                 </tr>
                 <tr>
+                    <td><code>is_nationwide</code></td>
+                    <td>boolean</td>
+                    <td>Nein</td>
+                    <td>Landesweite Geltung (Standard <code>false</code>). Ist der Wert <code>true</code>, wird das Ereignis bei Abfragen über <code>/events/nearby</code> unabhängig vom Radius gefunden, sobald der Abfragepunkt (Koordinaten oder 3-Letter-Code) in einem der unter <code>country_codes</code> angegebenen Länder liegt.</td>
+                </tr>
+                <tr>
                     <td><code>tags</code></td>
                     <td>array</td>
                     <td>Nein</td>

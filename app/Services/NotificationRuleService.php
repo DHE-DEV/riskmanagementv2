@@ -117,8 +117,12 @@ class NotificationRuleService
             $countryIsoCodes = [$event->country->iso_code];
         }
 
-        $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->implode(', ')
+        // unique(): ein Land kann mehrere Standort-Datensaetze haben und wuerde sonst mehrfach erscheinen.
+        $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->unique()->implode(', ')
             ?: ($event->country?->getName('de') ?? '');
+
+        // Standorte inkl. Region/Stadt - matcht weiterhin auf Laenderebene, dient nur der Anzeige.
+        $locationSummary = $event->locationSummary('de') ?: $countryName;
 
         // Kategorien aus eventTypes ableiten (category-Feld ist oft NULL).
         // Massgeblich ist der Code des Event-Typs - der Abgleich mit den Regeln
@@ -147,6 +151,7 @@ class NotificationRuleService
         $placeholders = [
             '{event_title}' => $event->title,
             '{country_name}' => $countryName,
+            '{locations}' => $locationSummary,
             '{risk_level}' => NotificationRule::RISK_LEVELS[$event->priority] ?? $event->priority,
             '{category}' => $categoryLabel,
             '{description}' => $event->description ?? $event->popup_content ?? '',

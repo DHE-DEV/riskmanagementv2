@@ -3,47 +3,52 @@
 namespace App\Filament\Resources\CustomEvents\Pages;
 
 use App\Filament\Resources\CustomEvents\CustomEventResource;
+use App\Models\City;
 use App\Models\Country;
 use App\Models\CustomEvent;
+use App\Models\Region;
+use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
-use Filament\Actions\Action;
 
 class ManageEventCountries extends Page implements HasForms
 {
     use InteractsWithForms;
+    use InteractsWithRecord;
 
     protected static string $resource = CustomEventResource::class;
 
     protected static ?string $title = 'Länder & Standorte verwalten';
 
-    public CustomEvent $record;
-
     public array $countryLocations = [];
 
-    public function mount($record): void
+    public function mount(int | string $record): void
     {
-        $this->record = CustomEvent::findOrFail($record);
+        // Route-Model-Binding ueber die Resource - $record ist der Schluessel aus der URL.
+        $this->record = $this->resolveRecord($record);
 
-        // Load existing country locations
+        // Alle Standort-Datensaetze laden - pro Land sind beliebig viele moeglich.
         $this->countryLocations = $this->record->countries->map(function ($country) {
             return [
                 'country_id' => $country->id,
+                'region_id' => $country->pivot->region_id,
+                'city_id' => $country->pivot->city_id,
                 'latitude' => $country->pivot->latitude ?? $country->lat,
                 'longitude' => $country->pivot->longitude ?? $country->lng,
                 'location_note' => $country->pivot->location_note,
-                'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                'use_default_coordinates' => (bool) $country->pivot->use_default_coordinates,
             ];
         })->toArray();
 
@@ -56,7 +61,7 @@ class ManageEventCountries extends Page implements HasForms
     {
         return [
             Section::make('Länder und Standorte')
-                ->description('Fügen Sie beliebig viele Länder hinzu. Pro Land können Sie eigene Koordinaten angeben oder die Standard-Koordinaten verwenden.')
+                ->description('Fügen Sie beliebig viele Standort-Datensätze hinzu. Dasselbe Land darf mehrfach vorkommen – so lassen sich mehrere Regionen, Städte oder Koordinaten zu einem Land erfassen.')
                 ->schema([
                     Repeater::make('countryLocations')
                         ->label('')
@@ -76,6 +81,10 @@ class ManageEventCountries extends Page implements HasForms
                                         ->preload()
                                         ->reactive()
                                         ->afterStateUpdated(function (Set $set, ?string $state) {
+                                            // Region und Stadt gehoeren zum Land - beim Wechsel zuruecksetzen.
+                                            $set('region_id', null);
+                                            $set('city_id', null);
+
                                             if ($state) {
                                                 $country = Country::find($state);
                                                 if ($country && $country->lat && $country->lng) {
@@ -86,16 +95,95 @@ class ManageEventCountries extends Page implements HasForms
                                         })
                                         ->columnSpan(2),
 
+                                    Select::make('region_id')
+                                        ->label('Region (optional)')
+                                        ->options(function (Get $get) {
+                                            $countryId = $get('country_id');
+
+                                            if (! $countryId) {
+                                                return [];
+                                            }
+
+                                            return Region::query()
+                                                ->where('country_id', $countryId)
+                                                ->orderBy('name_translations->de')
+                                                ->get()
+                                                ->mapWithKeys(fn (Region $r) => [$r->id => $r->getName('de')])
+                                                ->toArray();
+                                        })
+                                        ->searchable()
+                                        ->preload()
+                                        ->reactive()
+                                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                            // Stadt haengt an der Region - beim Wechsel zuruecksetzen.
+                                            $set('city_id', null);
+
+                                            if ($state && $get('use_default_coordinates')) {
+                                                $region = Region::find($state);
+                                                if ($region && $region->lat && $region->lng) {
+                                                    $set('latitude', $region->lat);
+                                                    $set('longitude', $region->lng);
+                                                }
+                                            }
+                                        })
+                                        ->helperText('Optional: Region des ausgewählten Landes')
+                                        ->columnSpan(1),
+
+                                    Select::make('city_id')
+                                        ->label('Stadt (optional)')
+                                        ->options(function (Get $get) {
+                                            $countryId = $get('country_id');
+
+                                            if (! $countryId) {
+                                                return [];
+                                            }
+
+                                            $query = City::query()->where('country_id', $countryId);
+
+                                            if ($regionId = $get('region_id')) {
+                                                $query->where('region_id', $regionId);
+                                            }
+
+                                            return $query
+                                                ->orderBy('name_translations->de')
+                                                ->limit(500)
+                                                ->get()
+                                                ->mapWithKeys(fn (City $c) => [$c->id => $c->getName('de')])
+                                                ->toArray();
+                                        })
+                                        ->searchable()
+                                        ->preload()
+                                        ->reactive()
+                                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                            if ($state && $get('use_default_coordinates')) {
+                                                $city = City::find($state);
+                                                if ($city && $city->lat && $city->lng) {
+                                                    $set('latitude', $city->lat);
+                                                    $set('longitude', $city->lng);
+                                                }
+                                            }
+                                        })
+                                        ->helperText(fn (Get $get) => $get('region_id')
+                                            ? 'Optional: Stadt der ausgewählten Region'
+                                            : 'Optional: Stadt des ausgewählten Landes')
+                                        ->columnSpan(1),
+
                                     Toggle::make('use_default_coordinates')
-                                        ->label('Standard-Koordinaten der Hauptstadt des Landes verwenden')
+                                        ->label('Standard-Koordinaten verwenden')
+                                        ->helperText('Kaskade: Stadt > Region > Hauptstadt > Land')
                                         ->default(true)
                                         ->reactive()
                                         ->afterStateUpdated(function (Get $get, Set $set, ?bool $state) {
-                                            if ($state && $get('country_id')) {
-                                                $country = Country::find($get('country_id'));
-                                                if ($country && $country->lat && $country->lng) {
-                                                    $set('latitude', $country->lat);
-                                                    $set('longitude', $country->lng);
+                                            if ($state) {
+                                                $coords = self::defaultCoordinatesFor(
+                                                    $get('country_id'),
+                                                    $get('region_id'),
+                                                    $get('city_id'),
+                                                );
+
+                                                if ($coords) {
+                                                    $set('latitude', $coords[0]);
+                                                    $set('longitude', $coords[1]);
                                                 }
                                             }
                                             // Clear Google Maps field when toggling
@@ -168,64 +256,132 @@ class ManageEventCountries extends Page implements HasForms
                         ->addActionLabel('Land/Standort hinzufügen')
                         ->reorderable()
                         ->collapsible()
+                        ->cloneable()
                         ->itemLabel(function (array $state): ?string {
-                            if ($state['country_id'] ?? null) {
-                                $country = Country::find($state['country_id']);
-                                $label = $country ? $country->getName('de') : 'Unbekannt';
-                                if ($state['location_note'] ?? null) {
-                                    $label .= ' - ' . $state['location_note'];
-                                }
-                                return $label;
+                            if (! ($state['country_id'] ?? null)) {
+                                return null;
                             }
-                            return null;
+
+                            $parts = array_filter([
+                                Country::find($state['country_id'])?->getName('de') ?? 'Unbekannt',
+                                ($state['region_id'] ?? null) ? Region::find($state['region_id'])?->getName('de') : null,
+                                ($state['city_id'] ?? null) ? City::find($state['city_id'])?->getName('de') : null,
+                            ]);
+
+                            $label = implode(' – ', $parts);
+
+                            if ($state['location_note'] ?? null) {
+                                $label .= ' (' . $state['location_note'] . ')';
+                            }
+
+                            return $label;
                         })
                         ->columns(1),
                 ]),
         ];
     }
 
-    protected function getActions(): array
-    {
-        return [
-            Action::make('save')
-                ->label('Speichern')
-                ->color('primary')
-                ->action('save'),
+    // Speichern/Abbrechen liegen im Blade-View der Seite (manage-event-countries.blade.php).
 
-            Action::make('cancel')
-                ->label('Abbrechen')
-                ->color('gray')
-                ->url(CustomEventResource::getUrl('edit', ['record' => $this->record])),
-        ];
+    /**
+     * Standard-Koordinaten nach Kaskade Stadt > Region > Hauptstadt > Land.
+     *
+     * @return array{0: float|string, 1: float|string}|null
+     */
+    protected static function defaultCoordinatesFor($countryId, $regionId = null, $cityId = null): ?array
+    {
+        if ($cityId) {
+            $city = City::find($cityId);
+            if ($city && $city->lat && $city->lng) {
+                return [$city->lat, $city->lng];
+            }
+        }
+
+        if ($regionId) {
+            $region = Region::find($regionId);
+            if ($region && $region->lat && $region->lng) {
+                return [$region->lat, $region->lng];
+            }
+        }
+
+        if ($countryId) {
+            $country = Country::with('capital')->find($countryId);
+
+            if ($country?->capital && $country->capital->lat && $country->capital->lng) {
+                return [$country->capital->lat, $country->capital->lng];
+            }
+
+            if ($country && $country->lat && $country->lng) {
+                return [$country->lat, $country->lng];
+            }
+        }
+
+        return null;
     }
 
     public function save(): void
     {
         $data = $this->form->getState();
 
-        // Prepare sync data
-        $syncData = [];
-        foreach ($data['countryLocations'] as $location) {
-            // Use default coordinates if toggle is on
-            if ($location['use_default_coordinates']) {
-                $country = Country::find($location['country_id']);
-                $location['latitude'] = $country->lat;
-                $location['longitude'] = $country->lng;
+        $rows = [];
+        $now = now();
+
+        foreach ($data['countryLocations'] ?? [] as $location) {
+            if (empty($location['country_id'])) {
+                continue;
             }
 
-            $syncData[$location['country_id']] = [
-                'latitude' => $location['latitude'] ?? null,
-                'longitude' => $location['longitude'] ?? null,
+            $useDefault = (bool) ($location['use_default_coordinates'] ?? true);
+            $latitude = $location['latitude'] ?? null;
+            $longitude = $location['longitude'] ?? null;
+
+            if ($useDefault) {
+                $coords = self::defaultCoordinatesFor(
+                    $location['country_id'],
+                    $location['region_id'] ?? null,
+                    $location['city_id'] ?? null,
+                );
+
+                $latitude = $coords[0] ?? null;
+                $longitude = $coords[1] ?? null;
+            }
+
+            $rows[] = [
+                'custom_event_id' => $this->record->id,
+                'country_id' => $location['country_id'],
+                'region_id' => $location['region_id'] ?? null,
+                'city_id' => $location['city_id'] ?? null,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
                 'location_note' => $location['location_note'] ?? null,
-                'use_default_coordinates' => $location['use_default_coordinates'] ?? true,
+                'use_default_coordinates' => $useDefault,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
         }
 
-        // Sync countries with pivot data
-        $this->record->countries()->sync($syncData);
+        // Bewusst kein sync(): sync() ist auf einen Datensatz je Land beschraenkt.
+        // Ein Land darf hier mehrfach vorkommen (mehrere Regionen/Staedte/Koordinaten).
+        DB::transaction(function () use ($rows) {
+            DB::table('country_custom_event')
+                ->where('custom_event_id', $this->record->id)
+                ->delete();
+
+            if (! empty($rows)) {
+                DB::table('country_custom_event')->insert($rows);
+            }
+        });
+
+        $this->record->unsetRelation('countries');
+
+        // Die Inserts oben laufen an Eloquent vorbei - touch() stoesst den Observer an,
+        // damit gtm_all_events und die Feed-Caches sofort verworfen werden.
+        $this->record->touch();
 
         Notification::make()
-            ->title('Länder und Standorte wurden aktualisiert')
+            ->title(count($rows) === 1
+                ? '1 Standort-Datensatz gespeichert'
+                : count($rows) . ' Standort-Datensätze gespeichert')
             ->success()
             ->send();
 

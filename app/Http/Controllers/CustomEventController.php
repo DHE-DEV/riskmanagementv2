@@ -57,6 +57,9 @@ class CustomEventController extends Controller
                     $countriesData = $event->countries->map(function ($country) use ($event) {
                         $coordinates = $this->getCoordinatesForCountry($country, $event);
 
+                        $region = $country->pivot->region_id ? \App\Models\Region::find($country->pivot->region_id) : null;
+                        $city = $country->pivot->city_id ? \App\Models\City::find($country->pivot->city_id) : null;
+
                         return [
                             'id' => $country->id,
                             'name' => $country->getName('de'),
@@ -65,6 +68,17 @@ class CustomEventController extends Controller
                             'longitude' => $coordinates['longitude'],
                             'location_note' => $country->pivot->location_note,
                             'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                            // Standort-Details je Datensatz (pro Land sind mehrere moeglich)
+                            'pivot_id' => $country->pivot->id,
+                            'region_id' => $region?->id,
+                            'region_name' => $region?->getName('de'),
+                            'city_id' => $city?->id,
+                            'city_name' => $city?->getName('de'),
+                            'label' => implode(' – ', array_filter([
+                                $country->getName('de'),
+                                $region?->getName('de'),
+                                $city?->getName('de'),
+                            ])),
                         ];
                     })->toArray();
 
@@ -107,6 +121,7 @@ class CustomEventController extends Controller
                         'source_show_frontend' => $event->source_show_frontend ?? true,
                         'source_link_text' => $event->source_link_text,
                         'source_link_url' => $event->source_link_url,
+                        'source_links' => $event->visibleSourceLinks(),
                     ];
                 });
 
@@ -172,6 +187,9 @@ class CustomEventController extends Controller
                     $countriesData = $event->countries->map(function ($country) use ($event) {
                         $coordinates = $this->getCoordinatesForCountry($country, $event);
 
+                        $region = $country->pivot->region_id ? \App\Models\Region::find($country->pivot->region_id) : null;
+                        $city = $country->pivot->city_id ? \App\Models\City::find($country->pivot->city_id) : null;
+
                         return [
                             'id' => $country->id,
                             'name' => $country->getName('de'),
@@ -180,6 +198,17 @@ class CustomEventController extends Controller
                             'longitude' => $coordinates['longitude'],
                             'location_note' => $country->pivot->location_note,
                             'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                            // Standort-Details je Datensatz (pro Land sind mehrere moeglich)
+                            'pivot_id' => $country->pivot->id,
+                            'region_id' => $region?->id,
+                            'region_name' => $region?->getName('de'),
+                            'city_id' => $city?->id,
+                            'city_name' => $city?->getName('de'),
+                            'label' => implode(' – ', array_filter([
+                                $country->getName('de'),
+                                $region?->getName('de'),
+                                $city?->getName('de'),
+                            ])),
                         ];
                     })->toArray();
 
@@ -216,6 +245,7 @@ class CustomEventController extends Controller
                         'source_show_frontend' => $event->source_show_frontend ?? true,
                         'source_link_text' => $event->source_link_text,
                         'source_link_url' => $event->source_link_url,
+                        'source_links' => $event->visibleSourceLinks(),
                     ];
                 });
 
@@ -499,6 +529,9 @@ class CustomEventController extends Controller
             $countriesData = $event->countries->map(function ($country) use ($event) {
                 $coordinates = $this->getCoordinatesForCountry($country, $event);
 
+                $region = $country->pivot->region_id ? \App\Models\Region::find($country->pivot->region_id) : null;
+                $city = $country->pivot->city_id ? \App\Models\City::find($country->pivot->city_id) : null;
+
                 return [
                     'id' => $country->id,
                     'name' => $country->getName('de'),
@@ -507,6 +540,17 @@ class CustomEventController extends Controller
                     'longitude' => $coordinates['longitude'],
                     'location_note' => $country->pivot->location_note,
                     'use_default_coordinates' => $country->pivot->use_default_coordinates,
+                    // Standort-Details je Datensatz (pro Land sind mehrere moeglich)
+                    'pivot_id' => $country->pivot->id,
+                    'region_id' => $region?->id,
+                    'region_name' => $region?->getName('de'),
+                    'city_id' => $city?->id,
+                    'city_name' => $city?->getName('de'),
+                    'label' => implode(' – ', array_filter([
+                        $country->getName('de'),
+                        $region?->getName('de'),
+                        $city?->getName('de'),
+                    ])),
                 ];
             })->toArray();
 
@@ -549,6 +593,7 @@ class CustomEventController extends Controller
                 'source_show_frontend' => $event->source_show_frontend ?? true,
                 'source_link_text' => $event->source_link_text,
                 'source_link_url' => $event->source_link_url,
+                'source_links' => $event->visibleSourceLinks(),
             ];
 
             return response()->json([
