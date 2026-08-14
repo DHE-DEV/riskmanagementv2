@@ -73,6 +73,18 @@ class ViewCountry extends ViewRecord
                                         ->content(fn ($record) => $record->area_km2 ? number_format($record->area_km2) : 'Nicht verfügbar'),
                                 ]),
                             ]),
+                        // Reine Anzeige - die Grenzdaten werden ausschliesslich vom
+                        // Command countries:import-boundaries geschrieben.
+                        Section::make('Ländergrenze')
+                            ->icon('heroicon-o-map')
+                            ->description('Nur Anzeige – gepflegt über den Import aus Natural Earth')
+                            ->collapsed(fn ($record) => $record->boundary === null)
+                            ->schema([
+                                Placeholder::make('boundary_details')
+                                    ->label('')
+                                    ->content(fn ($record) => new HtmlString(self::renderBoundaryDetails($record))),
+                            ]),
+
                         Section::make('Wirtschaftliche Informationen')
                             ->schema([
                                 Grid::make(2)->schema([
@@ -188,6 +200,81 @@ class ViewCountry extends ViewRecord
         return [
             \Filament\Actions\EditAction::make(),
         ];
+    }
+
+    // ── Ländergrenze ───────────────────────────────────────────────────
+
+    private static function renderBoundaryDetails($record): string
+    {
+        $boundary = $record->boundary;
+
+        if (! $boundary) {
+            return '<p style="color: #9ca3af;">Keine Grenzdaten hinterlegt. '
+                . 'Der Import läuft über <code>php artisan countries:import-boundaries</code>. '
+                . 'Solange keine Grenze vorliegt, wird das Land bei Koordinaten-Abfragen '
+                . 'über den nächstgelegenen Flughafen bzw. die nächste Stadt genähert.</p>';
+        }
+
+        $stats = $boundary->spatialStats();
+
+        $html = '<div>';
+
+        $html .= self::renderDetailRow('Quelle', $boundary->source);
+        $html .= self::renderDetailRow('Bezeichnung in der Quelle', $boundary->name);
+
+        $codes = array_filter([$boundary->iso_a2, $boundary->iso_a3]);
+        $html .= self::renderDetailRow('Codes in der Quelle', $codes ? implode(' / ', $codes) : null);
+
+        if ($boundary->source_features > 1) {
+            $html .= self::renderDetailRow(
+                'Quell-Einheiten',
+                $boundary->source_features . ' zusammengefasst (z.B. Landesteile oder Außengebiete)',
+            );
+        }
+
+        $html .= self::renderDetailRow(
+            'Teilpolygone',
+            $stats['parts'] !== null ? number_format($stats['parts'], 0, ',', '.') : null,
+        );
+
+        // Aus der Geometrie gerechnete Flaeche, zum Vergleich mit dem Stammdatenfeld.
+        if ($stats['area_km2'] !== null) {
+            $area = number_format($stats['area_km2'], 0, ',', '.') . ' km²';
+
+            if ($record->area_km2) {
+                $deviation = (($stats['area_km2'] - $record->area_km2) / $record->area_km2) * 100;
+                $area .= ' <span style="color: #9ca3af;">(Stammdaten: '
+                    . number_format($record->area_km2, 0, ',', '.') . ' km², Abweichung '
+                    . ($deviation >= 0 ? '+' : '') . number_format($deviation, 1, ',', '.') . ' %)</span>';
+            }
+
+            $html .= self::renderDetailRow('Fläche aus dem Polygon', $area);
+        }
+
+        if ($boundary->min_lat !== null) {
+            $html .= self::renderDetailRow(
+                'Bounding-Box',
+                number_format($boundary->min_lat, 4, ',', '.') . ' bis ' . number_format($boundary->max_lat, 4, ',', '.') . ' Breite, '
+                . number_format($boundary->min_lng, 4, ',', '.') . ' bis ' . number_format($boundary->max_lng, 4, ',', '.') . ' Länge',
+            );
+        }
+
+        if ($stats['is_valid'] !== null) {
+            $html .= self::renderDetailRow(
+                'Geometrie',
+                $stats['is_valid'] ? 'gültig' : '<span style="color: #b91c1c;">ungültig</span>',
+            );
+        }
+
+        if ($stats['bytes'] !== null) {
+            $html .= self::renderDetailRow('Datengröße', number_format($stats['bytes'] / 1024, 1, ',', '.') . ' KB');
+        }
+
+        $html .= self::renderDetailRow('Stand', $boundary->updated_at?->format('d.m.Y H:i'));
+
+        $html .= '</div>';
+
+        return $html;
     }
 
     // ── Rendering Helpers ──────────────────────────────────────────────

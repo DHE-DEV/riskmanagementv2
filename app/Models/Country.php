@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Country extends Model
 {
@@ -56,6 +57,15 @@ class Country extends Model
     public function continent(): BelongsTo
     {
         return $this->belongsTo(Continent::class);
+    }
+
+    /**
+     * Hinterlegte Landesgrenze (Polygon aus Natural Earth).
+     * Read-only - die Daten kommen ausschliesslich aus countries:import-boundaries.
+     */
+    public function boundary(): HasOne
+    {
+        return $this->hasOne(CountryBoundary::class);
     }
 
     /**
