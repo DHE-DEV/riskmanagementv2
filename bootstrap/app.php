@@ -23,6 +23,17 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Hinter einem Reverse Proxy (lokal Traefik, live nginx) muss X-Forwarded-Proto
+        // ausgewertet werden, sonst baut Laravel auf einer https-Seite http://-URLs
+        // (Mixed Content). Nur private Netze/Loopback vertrauen - oeffentliche Clients
+        // koennen die Header damit nicht faelschen.
+        $middleware->trustProxies(at: [
+            '127.0.0.1',
+            '10.0.0.0/8',
+            '172.16.0.0/12',
+            '192.168.0.0/16',
+        ]);
+
         $middleware->alias([
             'allow.embedding' => \App\Http\Middleware\AllowEmbedding::class,
             'plugin.onboarded' => \App\Http\Middleware\EnsurePluginOnboarded::class,
