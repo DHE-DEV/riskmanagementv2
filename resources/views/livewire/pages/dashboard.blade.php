@@ -1542,9 +1542,6 @@ function safeGetElement(id) {
 // Anzeige-Schalter aus der .env (DASHBOARD_EVENT_DATE_BADGE_ENABLED)
 const SHOW_EVENT_DATE_BADGE = @json((bool) config('app.dashboard_event_date_badge_enabled', true));
 
-// Anzeige-Schalter aus der .env (DASHBOARD_EVENT_CREATED_LINE_ENABLED)
-const SHOW_EVENT_CREATED_LINE = @json((bool) config('app.dashboard_event_created_line_enabled', true));
-
 // Globale Variablen
 let map;
 let markers = [];
@@ -4355,7 +4352,7 @@ function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
     newestEvents.forEach(event => listEl.appendChild(createEventElement(event)));
 }
 
-// Startdatum als eigene Textzeile, gleiche Optik wie "Angelegt"/"Aktualisiert".
+// Startdatum als eigene Textzeile, gleiche Optik wie "Aktualisiert".
 // Per .env abschaltbar (DASHBOARD_EVENT_DATE_BADGE_ENABLED).
 function eventStartDateLine(startLabel) {
     if (! SHOW_EVENT_DATE_BADGE) return '';
@@ -4363,39 +4360,26 @@ function eventStartDateLine(startLabel) {
     return `<p class="text-[11px] text-gray-500 mt-1.5">Startdatum: ${startLabel || 'Unbekannt'}</p>`;
 }
 
-// Fusszeile der Event-Karte: wann wurde das Event zuletzt angefasst.
-// Wurde es seit dem Anlegen nie geaendert, zeigen wir das Anlagedatum -
-// "Aktualisiert" waere dann irrefuehrend.
+// Fusszeile der Event-Karte: nur fuer Events, die nach dem Anlegen wirklich
+// geaendert wurden. Stimmen created_at und updated_at ueberein, bleibt es beim
+// Startdatum - eine zusaetzliche Datumszeile haette dort keine Aussage.
 function eventTimestampLine(event) {
     const valid = date => date && !Number.isNaN(date.getTime());
     const created = event.created_at ? new Date(event.created_at) : null;
     const updated = event.updated_at ? new Date(event.updated_at) : null;
 
-    let label = null;
-    let stamp = null;
+    if (! valid(updated)) return '';
 
     // Toleranz von einer Sekunde: beim Anlegen setzt Laravel beide Zeitstempel,
     // sie koennen sich um Sekundenbruchteile unterscheiden.
-    if (valid(updated) && (!valid(created) || updated.getTime() - created.getTime() > 1000)) {
-        label = 'Aktualisiert';
-        stamp = updated;
-    } else if (valid(created)) {
-        // Per .env abschaltbar. Betrifft nur "Angelegt" - "Aktualisiert" oben
-        // bleibt in jedem Fall stehen.
-        if (! SHOW_EVENT_CREATED_LINE) return '';
+    if (valid(created) && updated.getTime() - created.getTime() <= 1000) return '';
 
-        label = 'Angelegt';
-        stamp = created;
-    } else {
-        return '';
-    }
-
-    // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(stamp).
+    // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(updated).
     const datum = new Intl.DateTimeFormat('de-DE', {
         day: '2-digit', month: '2-digit', year: 'numeric'
-    }).format(stamp);
+    }).format(updated);
 
-    return `<p class="text-[11px] text-gray-500 mt-1.5">${label}: ${datum}</p>`;
+    return `<p class="text-[11px] text-gray-500 mt-1.5">Aktualisiert: ${datum}</p>`;
 }
 
 // Event-Element erstellen

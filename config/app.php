@@ -191,10 +191,6 @@ return [
     // Datums-Badge auf den Event-Karten in der Sidebar des Global Travel Monitor
     'dashboard_event_date_badge_enabled' => env('DASHBOARD_EVENT_DATE_BADGE_ENABLED', true),
 
-    // Zeile "Angelegt: ..." auf den Event-Karten in der Sidebar des Global
-    // Travel Monitor. "Aktualisiert: ..." bleibt davon unberuehrt.
-    'dashboard_event_created_line_enabled' => env('DASHBOARD_EVENT_CREATED_LINE_ENABLED', true),
-
     'dashboard_booking_enabled' => env('DASHBOARD_BOOKING_ENABLED', true),
     'business_visa_enabled' => env('BUSINESS_VISA_ENABLED', true),
     'visumpoint_enabled' => env('VISUMPOINT_ENABLED', true),
