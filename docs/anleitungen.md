@@ -9,7 +9,8 @@ Tabelle unten.
 
 | Anleitung | Version | Datum | Datei |
 |---|---|---|---|
-| Der Ablauf, Station für Station erklärt | 1.0 | 11.08.2026 | [ablauf-erklaert-anleitung.pdf](ablauf-erklaert-anleitung.pdf) |
+| Ereignisse erfassen und pflegen | 1.0 | 17.08.2026 | [ereignisse-erfassen-anleitung.pdf](ereignisse-erfassen-anleitung.pdf) |
+| Der Ablauf, Station für Station erklärt | 1.1 | 17.08.2026 | [ablauf-erklaert-anleitung.pdf](ablauf-erklaert-anleitung.pdf) |
 | Benachrichtigungen – Was die Zeit-Einstellungen bewirken | 1.0 | 11.08.2026 | [benachrichtigungs-intervalle-anleitung.pdf](benachrichtigungs-intervalle-anleitung.pdf) |
 | Travel Alert – Freischaltung | 1.0 | 11.08.2026 | [travel-alert-freischaltung-anleitung.pdf](travel-alert-freischaltung-anleitung.pdf) |
 | Passolution APIs im Überblick | 1.0 | 11.08.2026 | [api-ueberblick.pdf](api-ueberblick.pdf) |
@@ -18,8 +19,8 @@ Tabelle unten.
 
 | Diagramm | Version | Datum | Datei |
 |---|---|---|---|
-| Flowchart Risk Management | 1.0 | 11.08.2026 | [flowchart.pdf](flowchart.pdf) · [.png](flowchart.png) · [Quelle](flowchart.md) |
-| ER-Diagramm Risk Management v2 | 1.0 | 11.08.2026 | [er-diagram.pdf](er-diagram.pdf) · [.png](er-diagram.png) · [Quelle](er-diagram.md) |
+| Flowchart Risk Management | 1.1 | 17.08.2026 | [flowchart.pdf](flowchart.pdf) · [.png](flowchart.png) · [Quelle](flowchart.md) |
+| ER-Diagramm Risk Management v2 | 1.1 | 17.08.2026 | [er-diagram.pdf](er-diagram.pdf) · [.png](er-diagram.png) · [Quelle](er-diagram.md) |
 
 Bei den Diagrammen steht die Version als **Titelzeile im Diagramm selbst** – gesetzt über
 `title:` im Frontmatter des Mermaid-Blocks. Sie erscheint dadurch automatisch in PDF und
@@ -57,8 +58,13 @@ Kontrolle, dass keine Fußzeile vergessen wurde – die Zahl muss der Seitenzahl
 Titelseite entsprechen:
 
 ```bash
-grep -c 'v1.1 · 12.08.2026' docs/ablauf-erklaert-anleitung.html
+grep -c 'v1.1 · 17.08.2026' docs/ablauf-erklaert-anleitung.html
 ```
+
+Wird eine Seite **eingefügt**, sind zusaetzlich die Seitenzahlen in den Fußzeilen dahinter,
+die Abschnittsnummern in den `kicker`-Zeilen und die Zeilen im Inhaltsverzeichnis der
+Titelseite zu verschieben – am besten absteigend ersetzen, sonst ueberschreiben sich die
+Nummern gegenseitig.
 
 ## PDF rendern
 
@@ -84,9 +90,19 @@ const { chromium } = require('playwright');
 node topdf.cjs "$PWD/docs/ablauf-erklaert-anleitung.html" "$PWD/docs/ablauf-erklaert-anleitung.pdf"
 ```
 
-Meldet Playwright einen fehlenden Browser, hilft `npx playwright install chromium` –
-oder der Pfad zu einem vorhandenen Chromium per
-`chromium.launch({ executablePath: '…' })`.
+Meldet Playwright einen fehlenden Browser, liegt das meist an einer abweichenden
+Build-Nummer: Das npm-Paket erwartet einen bestimmten Chromium-Build, im Cache liegt aber
+ein anderer. Statt neu zu installieren genuegt der Pfad zum vorhandenen Browser:
+
+```bash
+ls ~/.cache/ms-playwright/          # vorhandenen Build ermitteln
+CHROME_PATH=~/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome \
+  node topdf.cjs "$PWD/docs/…​.html" "$PWD/docs/…​.pdf"
+```
+
+Dafuer im Skript `chromium.launch({ executablePath: process.env.CHROME_PATH || undefined })`
+verwenden. Dieselbe Variable braucht mermaid-cli unter dem Namen
+`PUPPETEER_EXECUTABLE_PATH`.
 
 ## Diagramme rendern
 

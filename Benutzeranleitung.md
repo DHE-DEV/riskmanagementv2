@@ -102,30 +102,71 @@ Das Dashboard bietet einen schnellen Überblick über alle wichtigen Information
 
 ### Ereignisverwaltung
 
+Ereignisse werden im Admin-Bereich unter **Event Management → Passolution Events** gepflegt.
+Was dort erfasst wird, steuert zugleich die Kartenanzeige, die Feeds, die Schnittstellen und
+den Versand der Benachrichtigungen.
+
+> **Ausführliche Anleitung:** Der komplette Redaktionsablauf – Feld für Feld, inklusive
+> Versionierung und Entscheidungshilfe „wann mache ich was" – steht in
+> [docs/ereignisse-erfassen-anleitung.pdf](docs/ereignisse-erfassen-anleitung.pdf).
+
 #### Neues Ereignis erstellen
 
-1. Klicken Sie auf "Neues Ereignis" in der Navigationsleiste
-2. Füllen Sie das Formular aus:
-   - **Titel**: Kurze, prägnante Bezeichnung
-   - **Beschreibung**: Detaillierte Informationen
-   - **Kategorie**: Wählen Sie aus vordefinierten Kategorien
-   - **Standort**: Geografische Position (kann auf Karte gewählt werden)
-   - **Priorität**: Niedrig, Mittel, Hoch
-   - **Zeitraum**: Start- und Enddatum
-3. Klicken Sie auf "Speichern"
+1. **Event Management → Passolution Events** öffnen und ein neues Ereignis anlegen
+2. Formular ausfüllen:
+   - **Titel und Beschreibung je Sprache**: Sprach-Reiter ganz oben. Der Reiter mit dem Zusatz
+     *(Ausgangssprache)* ist Pflicht; nicht gefüllte Sprachen fallen auf ihn zurück
+   - **Quellen-Informationen**: beliebig viele Einträge aus Link-Text und Link-URL, je Zeile
+     mit dem Schalter „Quelle im Frontend anzeigen"
+   - **Event-Typen**: Pflicht, Mehrfachauswahl. Bestimmt das Kartensymbol und ist das Merkmal,
+     über das die Benachrichtigungsregeln der Kunden greifen
+   - **Priorität**: Information, Niedrig, Mittel, Hoch – Pflicht
+   - **Landesweit**: einschalten, wenn das Ereignis im gesamten Land gilt
+   - **Aktiv / Archiviert**: steuert die Sichtbarkeit nach außen
+   - **Start- und Enddatum**: Startdatum Pflicht, Enddatum optional (leer = andauernd)
+3. Speichern
+4. **Länder und Standorte ergänzen**: Reiter „Länder & Standorte" → „Standorte verwalten".
+   Pro Land sind beliebig viele Einträge mit Region, Stadt, Koordinaten und Notiz möglich
 
-#### Ereignis bearbeiten
+> **Ohne Länderzuordnung** ist ein Ereignis auf der Karte kaum auffindbar, und Travel Alert
+> verschickt dazu keine einzige E-Mail: Der Abgleich mit den Reisen der Kunden läuft
+> ausschließlich über die zugeordneten Länder.
 
-1. Navigieren Sie zur Ereignisliste
-2. Klicken Sie auf das Bearbeitungssymbol neben dem Ereignis
-3. Nehmen Sie die gewünschten Änderungen vor
-4. Speichern Sie die Änderungen
+#### Ereignis ändern (Versionierung)
 
-#### Ereignis archivieren
+Ein veröffentlichtes Ereignis wird nicht überschrieben. Inhaltliche Änderungen entstehen als
+neue Version desselben Ereignisses:
 
-1. Wählen Sie das Ereignis aus
-2. Klicken Sie auf "Aktionen" → "Archivieren"
-3. Bestätigen Sie die Aktion
+1. Ereignis öffnen, **Duplizieren (neue Version)** – dabei eine kurze Änderungsnotiz eintragen
+2. Die Kopie ist zunächst **inaktiv** und enthält alle Zuordnungen der Vorversion; sie in Ruhe
+   bearbeiten
+3. **Version aktivieren** – die neue Fassung geht live, die vorherige wird automatisch
+   deaktiviert und als abgelöst gekennzeichnet
+4. Alle Fassungen stehen im Reiter **Versionen** am Ereignis. Kunden sehen sie in der
+   Detailansicht unter „Versionshistorie", inklusive Gültigkeitszeitraum und Änderungen
+
+Reine Tippfehlerkorrekturen ohne inhaltliche Folge dürfen direkt gespeichert werden – sie
+lösen dann allerdings auch keine Benachrichtigung aus. Alles, was Bedeutung, Zeitraum, Länder
+oder Priorität berührt, gehört in eine neue Version.
+
+In der Ereignisliste ist der Filter **Nur aktuelle Versionen** voreingestellt. Abgelöste
+Fassungen erreichen Sie über diesen Filter oder über den Reiter „Versionen" – gelöscht wird
+nichts.
+
+#### Ereignis beenden
+
+| Situation | Vorgehen |
+|---|---|
+| Ereignis endet absehbar | Enddatum setzen – es verschwindet danach von selbst |
+| Vorbei, soll als Nachweis sichtbar bleiben | **Archiviert** einschalten. Noch ein Jahr nach dem Enddatum sichtbar |
+| Meldung war falsch oder hat sich erledigt | **Aktiv** ausschalten. Nicht löschen |
+
+#### Fremde Ereignisse freigeben
+
+Ereignisse, die Partner über die Schnittstelle einliefern, können den Status **Ausstehend**
+haben. Sie sind dann noch nicht aktiv und lösen keine Benachrichtigung aus. In der
+Ereignisliste stehen dafür die Aktionen **Freigeben** und **Ablehnen**; die Freigabe schaltet
+das Ereignis zugleich aktiv. Prüfen Sie vorher Länderzuordnung und Priorität.
 
 ### Kartenansicht
 
@@ -424,5 +465,5 @@ Termine und Anmeldung unter: https://info.passolution.eu/schulungen
 
 ---
 
-*Stand: Januar 2025*
+*Stand: August 2026*
 *© 2026 Passolution - Alle Rechte vorbehalten*

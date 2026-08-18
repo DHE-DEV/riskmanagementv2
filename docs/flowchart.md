@@ -6,13 +6,13 @@
 > [ablauf-erklaert-anleitung.pdf](ablauf-erklaert-anleitung.pdf) in nicht-technischer
 > Sprache beschrieben – gedacht fuer Kolleginnen und Kollegen ohne technischen Hintergrund.
 >
-> **Version 1.0 · 11.08.2026.** Die Version steht als Titelzeile im Diagramm selbst und ist
+> **Version 1.1 · 17.08.2026.** Die Version steht als Titelzeile im Diagramm selbst und ist
 > damit auch in `flowchart.pdf` und `flowchart.png` sichtbar. Beim Aendern hier **und** im
 > `title:` des Mermaid-Blocks hochziehen, dann in [anleitungen.md](anleitungen.md) eintragen.
 
 ```mermaid
 ---
-title: "Flowchart Risk Management   ·   Version 1.0   ·   11.08.2026"
+title: "Flowchart Risk Management   ·   Version 1.1   ·   17.08.2026"
 config:
   themeCSS: ".titleText { font-size: 32px; font-weight: 700; fill: #002742; }"
 ---
@@ -42,7 +42,7 @@ flowchart TD
 
     %% === ADMIN FLOW ===
     ADMIN --> META["Metadaten setzen\nTyp, Kategorie, Laender\nPriority, Datum, Sprachen"]:::admin
-    META --> PUBLISH["Veroeffentlichen\nis_active = true"]:::admin
+    META --> PUBLISH["Veroeffentlichen\nis_active = true\nversion = 1, activated_at = jetzt"]:::admin
     PUBLISH --> APPROVED
 
     %% === AUTO IMPORT ===
@@ -73,13 +73,24 @@ flowchart TD
     OBSERVER --> CACHE["Cache invalidiert"]:::system
     APPROVED --> QUEUEIN
 
+    %% === AENDERUNG: NEUE VERSION STATT UEBERSCHREIBEN ===
+    APPROVED --> CHANGE{{"Inhaltliche Aenderung?"}}:::decision
+    CHANGE -->|"Nein (Tippfehler)"| EDIT["Direkt speichern\nkeine neue Version, kein Versand"]:::admin
+    EDIT --> APPROVED
+    CHANGE -->|Ja| DUP["Duplizieren (neue Version)\nvollstaendige Kopie inkl. Zuordnungen\nversion + 1, gleiche version_group_uuid\nis_active = false"]:::admin
+    DUP --> DRAFT["Entwurf bearbeiten\nnicht sichtbar, keine Mails"]:::admin
+    DRAFT --> ACTIVATE["Version aktivieren\nis_active = true\nactivated_at = jetzt"]:::admin
+    ACTIVATE --> APPROVED
+    ACTIVATE --> SUPERSEDE["Vorversion abgeloest\nis_active = false\nsuperseded_by_id gesetzt"]:::data
+    SUPERSEDE --> HISTORY["Versionshistorie (dauerhaft lesbar)\nAdmin: Reiter 'Versionen'\nKunden: GET /api/custom-events/:id/versions"]:::customer
+
     %% === REISEDATEN ===
     TLSYNC["travel-links:sync (alle 30 Min)\nKunden mit travel_links_enabled"]:::cron
     TLSYNC --> PDSSYNC["PdsTripSyncService\nPDS travel-details abrufen"]:::system
     PDSSYNC --> TRIPS[("td_trips\ncountries_visited\ncomputed_start/end_at")]:::data
 
     %% === BENACHRICHTIGUNGS-QUEUES ===
-    QUEUEIN(["Zu verarbeitende Events\nletzte 24 h (lookback_hours)"]):::approved
+    QUEUEIN(["Zu verarbeitende Events\nangelegt ODER aktiviert in den letzten 24 h\n(lookback_hours) - nur aktuelle Version"]):::approved
     QUEUEIN --> QGTM["notifications:process-gtm\n(alle 5 Min, GTM_NOTIFICATION_INTERVAL)"]:::cron
     QUEUEIN --> QTA["notifications:process-travel-alert\n(alle 5 Min, TRAVEL_ALERT_NOTIFICATION_INTERVAL)"]:::cron
     MANUAL["Admin: 'Benachrichtigungen senden'\nSendGtmNotifications / SendTravelAlertNotifications\n(force = true)"]:::admin --> RULES
@@ -147,23 +158,45 @@ Der Versand liegt bei zwei getrennten Cron-Queues:
 
 | Befehl | Quelle (`source`) | Intervall |
 |---|---|---|
-| `notifications:process-gtm` | `global_travel_monitor` | `GTM_NOTIFICATION_INTERVAL` (Standard 5 Min) |
-| `notifications:process-travel-alert` | `travel_alert` | `TRAVEL_ALERT_NOTIFICATION_INTERVAL` (Standard 5 Min) |
+| `notifications:process-gtm` | `global-travel-monitor` | `GTM_NOTIFICATION_INTERVAL` (Standard 5 Min) |
+| `notifications:process-travel-alert` | `travel-alert` | `TRAVEL_ALERT_NOTIFICATION_INTERVAL` (Standard 5 Min) |
 | `travel-links:sync` | Reisedaten fuer Travel Alert | `notifications.travel_links_sync_interval` (Standard 30 Min) |
 
 Jeder Lauf betrachtet Events der letzten `NOTIFICATION_LOOKBACK_HOURS` Stunden (Standard 24)
 und schreibt einen `NotificationQueueLog`-Eintrag.
 
 **Beruecksichtigte Events je Lauf**
-- `CustomEvent`: `is_active = true`, `review_status = approved`, `customer_id IS NULL`
+- `CustomEvent`: `is_active = true`, `review_status = approved`, `customer_id IS NULL`,
+  `superseded_by_id IS NULL` und `created_at >= since OR activated_at >= since`
 - `DisasterEvent`: alle im Lookback-Zeitraum
 - Kundeneigene Events (`customer_id` gesetzt) werden bewusst nicht versendet.
+
+Der Zeitbezug ist bewusst zweigleisig: Ein Entwurf kann tagelang bearbeitet werden, bevor er
+aktiv geschaltet wird. Ohne `activated_at` waere er zu diesem Zeitpunkt bereits aus dem
+Rueckblickfenster gefallen und wuerde nie gemeldet.
+
+**Versionierung: Aenderungen ueberschreiben nicht**
+Eine inhaltliche Aenderung entsteht als neue Zeile mit derselben `version_group_uuid` und
+`version + 1`. Beim Aktivieren setzt das Model `activated_at`, deaktiviert alle uebrigen
+Versionen der Gruppe und traegt dort `superseded_by_id` sowie `superseded_at` ein.
+
+- Ausgabe: Abgeloeste Versionen fallen ueber `is_active` aus Karte, Feeds und API heraus –
+  es kann also nie mehr als eine Fassung gleichzeitig erscheinen.
+- Versand: Jede Version hat eine eigene `id`. Die Duplikatpruefung im `NotificationLog`
+  greift pro `(notification_rule_id, event_id)` – eine neue Version zaehlt damit als eigene
+  Meldung und wird erneut versendet. Ein stilles Ueberschreiben der aktiven Version loest
+  dagegen keinen Versand aus.
+- Historie: `GET /api/custom-events/{id}/versions` liefert alle jemals aktivierten Fassungen
+  samt Gueltigkeitszeitraum und Feld-Diff. Unveroeffentlichte Entwuerfe bleiben intern.
+- API v1: `index` filtert auf die aktuelle Version; `update`/`destroy` loesen eine dem Client
+  bekannte UUID einer abgeloesten Fassung auf die aktuelle Version auf.
 
 **Unterschied der beiden Quellen**
 - *GTM*: Laenderfilter der Regel greift, Duplikatpruefung ueber `NotificationLog`.
 - *Travel Alert*: Laenderfilter der Regel greift nicht; stattdessen Abgleich der
   Event-Laender mit `countries_visited` der Reisen. Ohne betroffene Reise keine Mail.
-  Erneuter Versand nur, wenn mehr Reisen betroffen sind als beim letzten Mal.
+  Erneuter Versand nur, wenn mehr Reisen betroffen sind als beim letzten Mal – dieser
+  Vergleich laeuft je Version, eine neue Version startet also wieder bei null.
   Liegen lokal keine `td_trips` vor, werden die Reisen live ueber die
   `pds_account_id` des Kunden bei PDS geholt.
 

@@ -178,6 +178,11 @@ td {
 }
 td:first-child, th:first-child { padding-left: 0; }
 tr.alt td { background: #FAFCFD; }
+/* Begriffstabelle: engere Zeilen, damit die gewachsene Liste auf eine Seite passt */
+table.tight td { padding: 1.9mm 3mm; }
+/* Rueckseiten-Zusammenfassung: acht Karten statt sieben - etwas kompakter */
+.summary { gap: 1.8mm !important; }
+.summary .back-card { padding: 3.6mm 5mm; }
 
 .fields { list-style: none; }
 .fields li {
@@ -283,17 +288,18 @@ tr.alt td { background: #FAFCFD; }
       <div class="toc-row"><span class="n">03</span><span class="t">Die Quellen, aus denen nichts entsteht</span></div>
       <div class="toc-row"><span class="n">04</span><span class="t">Die Freigabe – die Ampel</span></div>
       <div class="toc-row"><span class="n">05</span><span class="t">Direkt danach: der Aushang</span></div>
-      <div class="toc-row"><span class="n">06</span><span class="t">Die Reisedaten</span></div>
-      <div class="toc-row"><span class="n">07</span><span class="t">Die beiden Postboten</span></div>
-      <div class="toc-row"><span class="n">08</span><span class="t">Die Prüfkette</span></div>
-      <div class="toc-row"><span class="n">09</span><span class="t">Der Versand</span></div>
-      <div class="toc-row"><span class="n">10</span><span class="t">Wo das Ergebnis sichtbar wird</span></div>
-      <div class="toc-row"><span class="n">11</span><span class="t">Alle Begriffe in einem Satz</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Wenn sich etwas ändert</span></div>
+      <div class="toc-row"><span class="n">07</span><span class="t">Die Reisedaten</span></div>
+      <div class="toc-row"><span class="n">08</span><span class="t">Die beiden Postboten</span></div>
+      <div class="toc-row"><span class="n">09</span><span class="t">Die Prüfkette</span></div>
+      <div class="toc-row"><span class="n">10</span><span class="t">Der Versand</span></div>
+      <div class="toc-row"><span class="n">11</span><span class="t">Wo das Ergebnis sichtbar wird</span></div>
+      <div class="toc-row"><span class="n">12</span><span class="t">Alle Begriffe in einem Satz</span></div>
     </div>
 
     <div class="cover-meta mt4">
-      <span>Version 1.0</span>
-      <span>11.08.2026</span>
+      <span>Version 1.1</span>
+      <span>17.08.2026</span>
       <span>Passolution GmbH</span>
       <span>Begleitend zu flowchart.pdf</span>
     </div>
@@ -395,7 +401,7 @@ tr.alt td { background: #FAFCFD; }
       getrennte Wege sind, steht in Abschnitt 07.
     </p>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Gesamtbild</span><span class="ver">v1.0 · 11.08.2026</span><span>02</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Gesamtbild</span><span class="ver">v1.1 · 17.08.2026</span><span>02</span></div>
 </section>
 
 <!-- ======================================================== 3 · EINGANG I -->
@@ -423,7 +429,9 @@ tr.alt td { background: #FAFCFD; }
       </p>
       <p class="mt2">
         Zum Schluss wird der Schalter <span class="ui">Veröffentlichen</span> umgelegt. Erst
-        dann ist das Ereignis mehr als ein Entwurf.
+        dann ist das Ereignis mehr als ein Entwurf – und trägt die Versionsnummer 1.
+        Was passiert, wenn sich später etwas daran ändert, steht in Abschnitt 06 ab
+        Seite&nbsp;8.
       </p>
     </div>
 
@@ -459,7 +467,7 @@ tr.alt td { background: #FAFCFD; }
       Zeit davor bleiben erhalten.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Eingänge</span><span class="ver">v1.0 · 11.08.2026</span><span>03</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Eingänge</span><span class="ver">v1.1 · 17.08.2026</span><span>03</span></div>
 </section>
 
 <!-- ======================================================== 4 · EINGANG II -->
@@ -511,7 +519,7 @@ tr.alt td { background: #FAFCFD; }
       führt in die Anzeige, aber nicht in den Versand.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Eingänge</span><span class="ver">v1.0 · 11.08.2026</span><span>04</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Eingänge</span><span class="ver">v1.1 · 17.08.2026</span><span>04</span></div>
 </section>
 
 <!-- ======================================================== 5 · QUELLEN OHNE EVENT -->
@@ -566,7 +574,7 @@ tr.alt td { background: #FAFCFD; }
       eingesammelten Einträgen, damit man sie in der Liste auseinanderhalten kann.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Nachrichtenquellen</span><span class="ver">v1.0 · 11.08.2026</span><span>05</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Nachrichtenquellen</span><span class="ver">v1.1 · 17.08.2026</span><span>05</span></div>
 </section>
 
 <!-- ======================================================== 6 · FREIGABE -->
@@ -621,7 +629,7 @@ tr.alt td { background: #FAFCFD; }
       Verarbeitung.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Freigabe</span><span class="ver">v1.0 · 11.08.2026</span><span>06</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Freigabe</span><span class="ver">v1.1 · 17.08.2026</span><span>06</span></div>
 </section>
 
 <!-- ======================================================== 7 · AUSHANG -->
@@ -682,13 +690,89 @@ tr.alt td { background: #FAFCFD; }
       übliche Sperre gegen Doppelversand. Sie ist für Ausnahmefälle gedacht.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Zwischenspeicher</span><span class="ver">v1.0 · 11.08.2026</span><span>07</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Zwischenspeicher</span><span class="ver">v1.1 · 17.08.2026</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · AKTUALISIERUNG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Wenn sich etwas ändert</div>
+    <h2 class="mt2">Ein Ereignis wird nie<br>überschrieben.</h2>
+
+    <p class="lead mt3" style="max-width:152mm">
+      Ein Streik wird verlängert, ein Zeitraum korrigiert, ein Land kommt hinzu. Die
+      naheliegende Lösung – den vorhandenen Datensatz ändern – wäre hier die falsche.
+    </p>
+
+    <p class="mt3" style="max-width:152mm">
+      Denn damit ginge zweierlei verloren: der bisherige Stand, auf den sich eine bereits
+      verschickte Nachricht bezog, und der Anlass, überhaupt noch einmal zu benachrichtigen.
+      Deshalb entsteht jede inhaltliche Änderung als <b>neue Version</b> desselben
+      Ereignisses. Man kann sich das wie einen Aktenordner vorstellen: Es wird kein Blatt
+      korrigiert, sondern ein neues eingeheftet – das alte bleibt darunter liegen.
+    </p>
+
+    <div class="grid3 mt4">
+      <div class="card">
+        <h3>1 · Duplizieren</h3>
+        <p class="mt1">
+          Die Redaktion legt eine vollständige Kopie an – mit Ländern, Typen und Quellen.
+          Sie trägt die nächste Versionsnummer und ist zunächst <b>nicht</b> aktiv.
+        </p>
+      </div>
+      <div class="card">
+        <h3>2 · Bearbeiten</h3>
+        <p class="mt1">
+          Der Entwurf wird geändert, so lange es dauert. Nach außen ist davon nichts zu
+          sehen: Die bisherige Version läuft unverändert weiter.
+        </p>
+      </div>
+      <div class="card">
+        <h3>3 · Aktivieren</h3>
+        <p class="mt1">
+          Erst dieser Schritt veröffentlicht die neue Fassung. Die vorherige wird im selben
+          Moment abgeschaltet und als abgelöst gekennzeichnet.
+        </p>
+      </div>
+    </div>
+
+    <div class="note mt4">
+      <span class="head">Was das für die Ausgabe bedeutet</span>
+      Es ist immer genau <b>eine</b> Fassung aktiv. Auf der Karte, in den Listen, in den Feeds
+      und über die Schnittstellen kann ein Ereignis deshalb nie doppelt erscheinen – die
+      abgelöste Version fällt automatisch heraus.
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Was das für den Versand bedeutet</span>
+      <p>
+        Der Postbote weiter hinten in diesem Ablauf merkt sich, zu welchem Ereignis er schon
+        einmal geschrieben hat. Eine neue Version <b>ist</b> für ihn ein eigenes Ereignis –
+        genau deshalb geht zu einer Aktualisierung eine neue Nachricht heraus.
+      </p>
+      <p class="mt2">
+        Umgekehrt gilt: Wird die aktive Fassung still überschrieben, statt eine Version
+        anzulegen, bleibt der Postbote stumm. Für Tippfehler ist das gewollt – für alles
+        Inhaltliche wäre es ein Fehler.
+      </p>
+    </div>
+
+    <div class="note mt3">
+      <span class="head">Wo die Historie sichtbar ist</span>
+      Im Verwaltungsbereich am Ereignis unter <span class="ui">Versionen</span>, mit Status,
+      Gültigkeitszeitraum und Änderungsnotiz. Kunden sehen dieselbe Historie in der
+      Detailansicht des Ereignisses – dort steht zu jeder Fassung zusätzlich, welche Felder
+      sich gegenüber der Vorversion geändert haben. Entwürfe, die nie aktiv waren, bleiben
+      dabei intern.
+    </div>
+  </div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Aktualisierung</span><span class="ver">v1.1 · 17.08.2026</span><span>08</span></div>
 </section>
 
 <!-- ======================================================== 8 · REISEDATEN -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">06 · Die Reisedaten</div>
+    <div class="kicker">07 · Die Reisedaten</div>
     <h2 class="mt2">Der zweite Strang:<br>Wer ist wo unterwegs?</h2>
 
     <p class="lead mt3" style="max-width:152mm">
@@ -740,13 +824,13 @@ tr.alt td { background: #FAFCFD; }
       neuen Buchung und der ersten Warnung, die diese Reise einbezieht.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Reisedaten</span><span class="ver">v1.0 · 11.08.2026</span><span>08</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Reisedaten</span><span class="ver">v1.1 · 17.08.2026</span><span>09</span></div>
 </section>
 
 <!-- ======================================================== 9 · POSTBOTEN -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">07 · Die beiden Postboten</div>
+    <div class="kicker">08 · Die beiden Postboten</div>
     <h2 class="mt2">Zwei Durchgänge,<br>die nichts voneinander wissen.</h2>
 
     <p class="mt3" style="max-width:152mm">
@@ -788,9 +872,16 @@ tr.alt td { background: #FAFCFD; }
     </p>
     <p class="mt2" style="max-width:152mm">
       Würde nur „seit dem letzten Durchgang“ geprüft, ginge alles verloren, was in eine
-      Lücke fällt: ein Neustart, eine Wartung, eine Störung – oder ein Ereignis, das erst
-      nachträglich freigegeben wurde. Mit dem Rückblick holt der nächste erfolgreiche
-      Durchgang all das von selbst nach.
+      Lücke fällt: ein Neustart, eine Wartung, eine Störung. Mit dem Rückblick holt der
+      nächste erfolgreiche Durchgang all das von selbst nach.
+    </p>
+    <p class="mt2" style="max-width:152mm">
+      Die 24 Stunden zählen dabei ab <b>zwei</b> Zeitpunkten: ab dem Anlegen des Ereignisses
+      <b>und</b> ab seiner Freischaltung. Das ist kein Detail, sondern die Voraussetzung
+      dafür, dass Abschnitt 06 funktioniert: Eine neue Version kann tagelang als Entwurf
+      liegen, bevor sie aktiviert wird. Zählte nur das Anlagedatum, wäre sie in dem Moment,
+      in dem sie live geht, längst aus dem Fenster gefallen – und niemand bekäme sie zu
+      sehen.
     </p>
 
     <div class="station dark mt4">
@@ -804,13 +895,13 @@ tr.alt td { background: #FAFCFD; }
       </p>
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Versand-Durchgänge</span><span class="ver">v1.0 · 11.08.2026</span><span>09</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Versand-Durchgänge</span><span class="ver">v1.1 · 17.08.2026</span><span>10</span></div>
 </section>
 
 <!-- ======================================================== 10 · PRUEFKETTE I -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">08 · Die Prüfkette</div>
+    <div class="kicker">09 · Die Prüfkette</div>
     <h2 class="mt2">Die Reihe von<br>Fragen vor dem Versand.</h2>
 
     <p class="mt3" style="max-width:152mm">
@@ -869,13 +960,13 @@ tr.alt td { background: #FAFCFD; }
       Verwaltungsbereich abrufen – man muss also nicht raten, warum eine E-Mail ausblieb.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Prüfkette</span><span class="ver">v1.0 · 11.08.2026</span><span>10</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Prüfkette</span><span class="ver">v1.1 · 17.08.2026</span><span>11</span></div>
 </section>
 
 <!-- ======================================================== 11 · PRUEFKETTE II -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">08 · Die Prüfkette</div>
+    <div class="kicker">09 · Die Prüfkette</div>
     <h2 class="mt2">Hier trennen sich<br>die beiden Wege.</h2>
 
     <p class="mt3" style="max-width:152mm">
@@ -895,6 +986,11 @@ tr.alt td { background: #FAFCFD; }
       <p class="mt2">
         Das ist der Grund, warum aus 288 Durchgängen pro Tag trotzdem nur <b>eine</b>
         E-Mail je Ereignis und Regel wird.
+      </p>
+      <p class="mt2">
+        Wichtig dabei: Als „dieses Ereignis“ zählt die einzelne <b>Version</b>. Eine
+        Aktualisierung nach Abschnitt 06 ist deshalb kein Wiederholungsversand, sondern
+        eine eigene Meldung – und kommt beim Empfänger an.
       </p>
     </div>
 
@@ -930,13 +1026,13 @@ tr.alt td { background: #FAFCFD; }
       einzige E-Mail heraus.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Prüfkette</span><span class="ver">v1.0 · 11.08.2026</span><span>11</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Prüfkette</span><span class="ver">v1.1 · 17.08.2026</span><span>12</span></div>
 </section>
 
 <!-- ======================================================== 12 · VERSAND -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">09 · Der Versand</div>
+    <div class="kicker">10 · Der Versand</div>
     <h2 class="mt2">Die letzten Schritte<br>vor dem Postfach.</h2>
 
     <p class="mt3" style="max-width:152mm">
@@ -1009,13 +1105,13 @@ tr.alt td { background: #FAFCFD; }
       Auch fehlgeschlagene Versuche werden mit Fehlermeldung festgehalten.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Versand</span><span class="ver">v1.0 · 11.08.2026</span><span>12</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Versand</span><span class="ver">v1.1 · 17.08.2026</span><span>13</span></div>
 </section>
 
 <!-- ======================================================== 13 · AUSGABE -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">10 · Die Ausgabe</div>
+    <div class="kicker">11 · Die Ausgabe</div>
     <h2 class="mt2">Wo dasselbe Ereignis<br>überall auftaucht.</h2>
 
     <p class="mt3" style="max-width:152mm">
@@ -1063,16 +1159,16 @@ tr.alt td { background: #FAFCFD; }
       und Feeds nicht auseinanderlaufen.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Ausgabe</span><span class="ver">v1.0 · 11.08.2026</span><span>13</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Ausgabe</span><span class="ver">v1.1 · 17.08.2026</span><span>14</span></div>
 </section>
 
 <!-- ======================================================== 14 · GLOSSAR -->
 <section class="page">
   <div class="frame">
-    <div class="kicker">11 · Begriffe</div>
+    <div class="kicker">12 · Begriffe</div>
     <h2 class="mt2">Alles, was im Plan steht –<br>in je einem Satz.</h2>
 
-    <table class="mt4">
+    <table class="tight mt4">
       <tr>
         <th style="width:38%">Im Ablaufplan</th>
         <th>Was es bedeutet</th>
@@ -1093,6 +1189,14 @@ tr.alt td { background: #FAFCFD; }
       <tr class="alt">
         <td><b>Wartet auf Prüfung</b></td>
         <td>Eingegangen, aber noch von niemandem angesehen. Passiert nichts damit.</td>
+      </tr>
+      <tr>
+        <td><b>Version</b></td>
+        <td>Eine Fassung eines Ereignisses. Aktiv ist immer genau eine.</td>
+      </tr>
+      <tr class="alt">
+        <td><b>Abgelöst</b></td>
+        <td>Eine ersetzte Version. Fällt aus der Ausgabe, bleibt dauerhaft lesbar.</td>
       </tr>
       <tr>
         <td><b>Feed-Eintrag</b></td>
@@ -1136,7 +1240,7 @@ tr.alt td { background: #FAFCFD; }
       <b>Drittens:</b> Ohne Länderzuordnung am Ereignis kann Travel Alert nichts verschicken.
     </div>
   </div>
-  <div class="foot"><span><b>Der Ablauf erklärt</b> · Begriffe</span><span class="ver">v1.0 · 11.08.2026</span><span>14</span></div>
+  <div class="foot"><span><b>Der Ablauf erklärt</b> · Begriffe</span><span class="ver">v1.1 · 17.08.2026</span><span>15</span></div>
 </section>
 
 <!-- ======================================================== 15 · RUECKSEITE -->
@@ -1146,11 +1250,11 @@ tr.alt td { background: #FAFCFD; }
 
     <div style="margin-top:13mm">
       <div class="kicker" style="color:#CEE741">Zum Mitnehmen</div>
-      <h2 class="mt2" style="font-size:23pt">Der ganze Ablauf<br>in sieben Sätzen.</h2>
+      <h2 class="mt2" style="font-size:23pt">Der ganze Ablauf<br>in acht Sätzen.</h2>
       <div class="rule mt2"></div>
     </div>
 
-    <div class="mt3" style="display:flex; flex-direction:column; gap:2.4mm">
+    <div class="summary mt3" style="display:flex; flex-direction:column; gap:2.4mm">
       <div class="back-card">
         <h4>01 · Eingang</h4>
         <p>Ein Ereignis entsteht – von Hand durch die Redaktion oder über die Schnittstelle
@@ -1167,30 +1271,35 @@ tr.alt td { background: #FAFCFD; }
         dieser Schritt ausdrücklich nicht aus.</p>
       </div>
       <div class="back-card">
-        <h4>04 · Reisedaten</h4>
+        <h4>04 · Aktualisierung</h4>
+        <p>Ändert sich etwas inhaltlich, entsteht eine neue Version. Sie löst die bisherige
+        ab – und zählt für den Versand als eigene Meldung.</p>
+      </div>
+      <div class="back-card">
+        <h4>05 · Reisedaten</h4>
         <p>Getrennt davon werden halbstündlich die Reisen der Kunden abgeholt – die
         Grundlage dafür, Betroffenheit überhaupt feststellen zu können.</p>
       </div>
       <div class="back-card">
-        <h4>05 · Durchgang</h4>
+        <h4>06 · Durchgang</h4>
         <p>Alle fünf Minuten sieht das System die Ereignisse der letzten 24 Stunden durch
         und vergleicht sie mit den hinterlegten Regeln.</p>
       </div>
       <div class="back-card">
-        <h4>06 · Prüfkette</h4>
+        <h4>07 · Prüfkette</h4>
         <p>Passt die Regel? Ist das Stundenlimit frei? Wurde schon gesendet? Und bei Travel
         Alert: Ist überhaupt eine Reise betroffen?</p>
       </div>
       <div class="back-card">
-        <h4>07 · Versand</h4>
+        <h4>08 · Versand</h4>
         <p>Die Vorlage wird gefüllt, die E-Mail geht an die hinterlegten Empfänger – und
         der Versand wird protokolliert, damit er sich nicht wiederholt.</p>
       </div>
     </div>
 
     <div class="cover-meta" style="margin-top:auto">
-      <span>Version 1.0</span>
-      <span>11.08.2026</span>
+      <span>Version 1.1</span>
+      <span>17.08.2026</span>
       <span>Passolution GmbH</span>
     </div>
   </div>

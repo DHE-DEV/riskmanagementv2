@@ -2,13 +2,13 @@
 
 > Dieses Diagramm kann im [Mermaid Live Editor](https://mermaid.live) visualisiert werden.
 >
-> **Version 1.0 · 11.08.2026.** Die Version steht als Titelzeile im Diagramm selbst und ist
+> **Version 1.1 · 17.08.2026.** Die Version steht als Titelzeile im Diagramm selbst und ist
 > damit auch in `er-diagram.pdf` und `er-diagram.png` sichtbar. Beim Aendern hier **und** im
 > `title:` des Mermaid-Blocks hochziehen, dann in [anleitungen.md](anleitungen.md) eintragen.
 
 ```mermaid
 ---
-title: "ER-Diagramm Risk Management v2   ·   Version 1.0   ·   11.08.2026"
+title: "ER-Diagramm Risk Management v2   ·   Version 1.1   ·   17.08.2026"
 config:
   themeCSS: ".titleText { font-size: 32px; font-weight: 700; fill: #002742; }"
 ---
@@ -43,6 +43,7 @@ erDiagram
     CustomEvent }o--o{ EventType : "displayed_as"
     CustomEvent }o--o{ Label : "tagged_with"
     CustomEvent ||--o{ EventClick : "has"
+    CustomEvent ||--o{ CustomEvent : "supersedes"
     User ||--o{ CustomEvent : "created"
     User ||--o{ CustomEvent : "updated"
     User ||--o{ EventClick : "clicked"
@@ -203,6 +204,9 @@ erDiagram
         datetime start_date
         datetime end_date
         int api_client_id FK
+        int version
+        string version_group_uuid
+        int superseded_by_id FK
     }
     DisasterEvent {
         int id PK
@@ -395,3 +399,17 @@ erDiagram
         string status
     }
 ```
+
+## Hinweise
+
+**Selbstbeziehung `CustomEvent : supersedes`**
+Ereignisse werden bei inhaltlichen Aenderungen nicht ueberschrieben, sondern versioniert.
+Alle Fassungen eines Ereignisses teilen sich dieselbe `version_group_uuid` und tragen eine
+fortlaufende `version`. Beim Aktivieren einer neuen Fassung wird bei allen uebrigen
+Versionen der Gruppe `superseded_by_id` auf die neue Zeile gesetzt und `is_active` geleert –
+daher die Selbstbeziehung. Die jeweils gueltige Fassung ist die mit
+`superseded_by_id IS NULL`.
+
+Nicht im Diagramm dargestellt, aber Teil derselben Mechanik:
+`version_parent_id` (Herkunft der Kopie), `superseded_at`, `activated_at` (Grundlage des
+Benachrichtigungs-Rueckblicks) und `version_note` (Aenderungsnotiz fuer Admin und Kunden).

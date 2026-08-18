@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Ereignisse erfassen und pflegen – Anleitung</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+.foot .ver { text-transform: none; letter-spacing: .04em; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+/* UI-Elemente, die in der Oberflaeche so heissen */
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+.ui-btn {
+  display: inline-block;
+  background: var(--ink); color: #fff;
+  border-radius: 1.4mm;
+  padding: .4mm 2mm;
+  font-weight: 600; font-size: 8.8pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.1mm 0;
+  font-size: 9.4pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 4.6mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.4mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.6mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+.fields .req {
+  display: inline-block; margin-left: 1.6mm; vertical-align: .3mm;
+  font-size: 7pt; letter-spacing: .1em; text-transform: uppercase;
+  font-weight: 800; color: var(--lime-ink);
+  background: #F6FBDF; border: .6pt solid var(--lime-2);
+  border-radius: 1mm; padding: .1mm 1.2mm;
+}
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 5mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+</style>
+</head>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".26"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="640" cy="352" r="320" fill="url(#glow)"/>
+
+      <!-- Motiv: gestapelte Versionen mit Marker -->
+      <g stroke="#5E8FA8" stroke-opacity=".3" fill="none" stroke-width="1.2">
+        <rect x="486" y="192" width="176" height="106" rx="10"/>
+        <line x1="510" y1="228" x2="620" y2="228"/>
+        <line x1="510" y1="256" x2="586" y2="256"/>
+      </g>
+      <g stroke="#5E8FA8" stroke-opacity=".5" fill="none" stroke-width="1.4">
+        <rect x="468" y="228" width="176" height="106" rx="10"/>
+        <line x1="492" y1="264" x2="602" y2="264"/>
+        <line x1="492" y1="292" x2="568" y2="292"/>
+      </g>
+      <g fill="none" stroke="#CEE741" stroke-opacity=".8" stroke-width="2">
+        <rect x="450" y="264" width="176" height="106" rx="10" fill="#CEE741" fill-opacity=".1"/>
+        <line x1="474" y1="300" x2="584" y2="300"/>
+        <line x1="474" y1="328" x2="550" y2="328"/>
+      </g>
+
+      <path d="M 626 318 C 682 318, 690 386, 706 424" fill="none" stroke="#CEE741" stroke-opacity=".6" stroke-width="2.2"/>
+      <g transform="translate(662,436)">
+        <path d="M 48 0 C 22 0, 2 20, 2 46 C 2 78, 48 116, 48 116 C 48 116, 94 78, 94 46 C 94 20, 74 0, 48 0 Z"
+              fill="#CEE741" fill-opacity=".16" stroke="#CEE741" stroke-opacity=".7" stroke-width="2"/>
+        <circle cx="48" cy="46" r="15" fill="#CEE741"/>
+      </g>
+
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:26mm">
+      <div class="kicker" style="color:#CEE741">Anleitung für die Redaktion</div>
+      <h1 class="mt2">Ereignisse erfassen<br>und pflegen.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Wie du ein Ereignis anlegst, welche Angabe worüber entscheidet – und wann du
+        änderst, duplizierst, archivierst oder abschaltest. Ohne Technikkenntnisse
+        nachvollziehbar.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Was ein Ereignis auslöst</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Bevor du anfängst</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Ein neues Ereignis anlegen</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Die Felder im Einzelnen</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">Länder und Standorte</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Ändern heißt duplizieren</span></div>
+      <div class="toc-row"><span class="n">07</span><span class="t">Wann machst du was</span></div>
+      <div class="toc-row"><span class="n">08</span><span class="t">Was danach von allein passiert</span></div>
+      <div class="toc-row"><span class="n">09</span><span class="t">Fremde Ereignisse freigeben</span></div>
+      <div class="toc-row"><span class="n">10</span><span class="t">Wenn etwas nicht stimmt</span></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Version 1.0</span>
+      <span>17.08.2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · GRUNDLAGE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Grundlage</div>
+    <h2 class="mt2">Ein Ereignis ist mehr<br>als ein Text auf der Karte.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Was du im Admin erfasst, landet nicht nur in der Kartenansicht. Dieselben Angaben
+      entscheiden darüber, wer eine E-Mail bekommt, welche Reise als betroffen gilt und
+      was über die Schnittstellen an Partner ausgeliefert wird.
+    </p>
+
+    <div class="grid3 mt4">
+      <div class="card">
+        <h3>Global Travel Monitor</h3>
+        <p class="mt1">Karte, Listen und Feeds. Zeigt jedes freigegebene, aktive Ereignis –
+          gefiltert nach Land, Typ und Priorität.</p>
+      </div>
+      <div class="card">
+        <h3>Travel Alert</h3>
+        <p class="mt1">Gleicht die Länder des Ereignisses gegen die Reisen der Kunden ab
+          und verschickt Benachrichtigungen an die Betroffenen.</p>
+      </div>
+      <div class="card">
+        <h3>Schnittstellen</h3>
+        <p class="mt1">Partner holen Ereignisse über die API und die Feeds ab. Auch dort
+          zählt nur, was aktiv und freigegeben ist.</p>
+      </div>
+    </div>
+
+    <h3 class="mt5">Vier Begriffe, die in dieser Anleitung immer wiederkommen</h3>
+    <table class="mt2">
+      <tbody>
+        <tr>
+          <td style="width:30%"><b>Aktiv</b></td>
+          <td>Der Schalter, der ein Ereignis nach außen sichtbar macht. Ist er aus, existiert
+              das Ereignis nur intern – keine Karte, keine API, keine E-Mail.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Freigegeben</b></td>
+          <td>Der Prüfstatus. Was du selbst im Admin anlegst, ist von Anfang an freigegeben.
+              Nur Ereignisse, die von Partnern über die Schnittstelle kommen, können auf
+              <span class="ui">Ausstehend</span> stehen.</td>
+        </tr>
+        <tr>
+          <td><b>Version</b></td>
+          <td>Jede inhaltliche Änderung entsteht als neue Fassung desselben Ereignisses –
+              Version 1, 2, 3. Immer genau eine davon ist aktiv.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Abgelöst</b></td>
+          <td>Eine frühere Version, die von einer neueren ersetzt wurde. Sie wird nicht
+              gelöscht, sondern bleibt dauerhaft lesbar – im Admin und für Kunden.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note mt5">
+      <span class="head">Die wichtigste Regel</span>
+      Ein veröffentlichtes Ereignis wird <b>nicht überschrieben</b>. Willst du etwas
+      inhaltlich ändern, legst du über <span class="ui-btn">Duplizieren (neue Version)</span>
+      eine neue Fassung an, bearbeitest sie in Ruhe und schaltest sie erst dann aktiv.
+      Die alte Fassung geht dabei automatisch aus dem Verkehr – und bleibt trotzdem erhalten.
+      Wie das im Einzelnen läuft, steht ab Seite&nbsp;8.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Grundlage</span><span class="ver">v1.0 · 17.08.2026</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · VORAUSSETZUNGEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Bevor du anfängst</div>
+    <h2 class="mt2">Fünf Dinge, die du<br>vorher klären solltest.</h2>
+
+    <ul class="checks mt4">
+      <li>
+        <b>Zugang zum Admin-Backend.</b>
+        Du meldest dich unter <span class="mono">/admin</span> an. Die Ereignisse findest du
+        im Menü unter <span class="ui">Event Management</span> →
+        <span class="ui">Passolution Events</span>.
+      </li>
+      <li>
+        <b>Es gibt das Ereignis noch nicht.</b>
+        Erst in der Liste suchen. Zwei getrennt angelegte Datensätze zum selben Vorfall
+        erscheinen doppelt auf der Karte und lösen doppelte E-Mails aus – das lässt sich
+        nachträglich nur von Hand geraderücken.
+      </li>
+      <li>
+        <b>Du weißt, welche Länder betroffen sind.</b>
+        Das ist die einzige Angabe, ohne die Travel Alert gar nichts tun kann.
+        Details dazu auf Seite&nbsp;7.
+      </li>
+      <li>
+        <b>Du hast eine belastbare Quelle.</b>
+        Sie wird als Link am Ereignis hinterlegt und ist für Kunden sichtbar. Mehrere
+        Quellen sind möglich.
+      </li>
+      <li>
+        <b>Du kennst den Zeitraum.</b>
+        Ein Startdatum ist Pflicht. Ein Enddatum ist optional – ohne Enddatum gilt das
+        Ereignis als andauernd.
+      </li>
+    </ul>
+
+    <div class="warn mt4">
+      <span class="head">Zur Priorität, bevor du sie zum ersten Mal setzt</span>
+      <p>
+        Die Priorität ist keine reine Anzeigefarbe. Kunden stellen ihre Benachrichtigungs­regeln
+        darauf ein – etwa „nur bei <b>Hoch</b> eine E-Mail“. Setzt du zu hoch, entsteht
+        Alarmmüdigkeit; setzt du zu niedrig, erreicht die Meldung niemanden.
+      </p>
+      <p class="mt2">
+        Zur Auswahl stehen <span class="ui">Information</span>, <span class="ui">Niedrig</span>,
+        <span class="ui">Mittel</span> und <span class="ui">Hoch</span>. Im Zweifel gilt die
+        interne Absprache, nicht das Bauchgefühl.
+      </p>
+    </div>
+
+    <div class="stop mt4">
+      <span class="head">Was du nicht tun solltest</span>
+      <p>
+        <b>Ereignisse nicht löschen.</b> Wenn sich eine Meldung als gegenstandslos erweist,
+        schaltest du sie über <span class="ui">Aktiv</span> ab. Sie verschwindet damit sofort
+        aus allen Ausgaben, bleibt aber nachvollziehbar. Gelöschte Datensätze reißen dagegen
+        Lücken in die Historie und in bereits versendete Benachrichtigungen.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Voraussetzungen</span><span class="ver">v1.0 · 17.08.2026</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · ANLEGEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Ein neues Ereignis anlegen</div>
+    <h2 class="mt2">In sechs Schritten<br>veröffentlicht.</h2>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Liste öffnen und neu anlegen</h3>
+          <p><span class="ui">Event Management</span> → <span class="ui">Passolution Events</span>,
+             dann oben rechts die Schaltfläche zum Anlegen. Du landest in einem leeren Formular.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Titel und Beschreibung schreiben</h3>
+          <p>Ganz oben stehen die Sprach-Reiter. Der Reiter mit dem Zusatz
+             <span class="ui">(Ausgangssprache)</span> ist Pflicht – die übrigen Sprachen
+             kannst du sofort oder später füllen. Bleibt eine Sprache leer, wird für sie
+             die Ausgangssprache ausgeliefert.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Quelle hinterlegen</h3>
+          <p>Unter <span class="ui">Quellen-Informationen</span> auf
+             <span class="ui-btn">Quelle hinzufügen</span>. Je Zeile gehören Link-Text und
+             Link-URL zusammen, dazu der Schalter, ob die Quelle für Kunden sichtbar sein soll.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Event-Typen und Priorität wählen</h3>
+          <p>Mindestens ein Event-Typ ist Pflicht; mehrere sind erlaubt. Der Typ bestimmt das
+             Symbol auf der Karte und ist zugleich das Merkmal, über das die Regeln der Kunden
+             greifen. Danach die Priorität setzen.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div>
+          <h3>Zeitraum setzen und speichern</h3>
+          <p>Startdatum ist Pflicht und mit dem aktuellen Zeitpunkt vorbelegt. Enddatum nur,
+             wenn das Ereignis absehbar endet. Dann speichern – jetzt existiert der Datensatz.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">6</div>
+        <div>
+          <h3>Länder und Standorte ergänzen</h3>
+          <p>Die Länderzuordnung läuft über eine eigene Seite und ist erst nach dem ersten
+             Speichern erreichbar: Reiter <span class="ui">Länder &amp; Standorte</span> →
+             <span class="ui-btn">Standorte verwalten</span>. Siehe Seite&nbsp;7.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stop mt3">
+      <span class="head">Der Schritt, der am häufigsten vergessen wird</span>
+      Ein Ereignis ohne Länderzuordnung ist auf der Karte kaum auffindbar – und bei Travel Alert
+      geht dazu <b>keine einzige E-Mail</b> heraus. Der Abgleich mit den Reisen der Kunden läuft
+      ausschließlich über die zugeordneten Länder. Leg das Ereignis also nie „fertig“ weg,
+      bevor Schritt&nbsp;6 erledigt ist.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Anlegen</span><span class="ver">v1.0 · 17.08.2026</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · FELDER I -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Die Felder im Einzelnen</div>
+    <h2 class="mt2">Was jede Angabe<br>bewirkt.</h2>
+
+    <ul class="fields mt3">
+      <li>
+        <span class="name">Titel je Sprache <span class="req">Pflicht in der Ausgangssprache</span></span>
+        Erscheint in der Liste, auf der Karte, im Betreff der Benachrichtigung und in den Feeds.
+        Kurz und eindeutig – „Streik im Nahverkehr Barcelona“ statt „Wichtige Information“.
+      </li>
+      <li>
+        <span class="name">Beschreibung je Sprache</span>
+        Der Fließtext, den Kunden in der Detailansicht sehen. Formatierungen sind möglich.
+        Was hier steht, wird auch in die Benachrichtigungs-E-Mail übernommen.
+      </li>
+      <li>
+        <span class="name">Quellen-Informationen</span>
+        Beliebig viele Einträge aus Link-Text und Link-URL. Der Schalter
+        <span class="ui">Quelle im Frontend anzeigen</span> steuert je Zeile, ob Kunden sie
+        sehen. Ausgeschaltete Quellen bleiben als interner Beleg erhalten.
+      </li>
+      <li>
+        <span class="name">Event-Typen <span class="req">Pflicht</span></span>
+        Mehrfachauswahl. Bestimmt das Kartensymbol und entscheidet mit darüber, ob die
+        Kategorie-Filter der Kunden-Regeln greifen. Sind mehrere Typen gewählt, kann je nach
+        Anzeige-Einstellung zusätzlich das Feld <span class="ui">Anzuzeigendes Icon</span>
+        erscheinen – dort legst du fest, welches Symbol auf der Karte gewinnt.
+      </li>
+      <li>
+        <span class="name">Priorität <span class="req">Pflicht</span></span>
+        <span class="ui">Information</span>, <span class="ui">Niedrig</span>,
+        <span class="ui">Mittel</span>, <span class="ui">Hoch</span>. Färbt den Marker und ist
+        das gebräuchlichste Filterkriterium in den Benachrichtigungsregeln der Kunden.
+      </li>
+      <li>
+        <span class="name">Landesweit</span>
+        Aus, wenn das Ereignis an einem Ort hängt (Streik in einem Hafen). An, wenn es im
+        ganzen Land gilt (landesweiter Ausnahmezustand). Ist der Schalter an, wird das Ereignis
+        bei Suchen über Koordinaten oder Flughafencode unabhängig von der Entfernung gefunden,
+        sobald der Abfragepunkt in einem der zugeordneten Länder liegt.
+      </li>
+      <li>
+        <span class="name">Aktiv</span>
+        Der Sichtbarkeitsschalter. Aus heißt: nirgends sichtbar, keine Benachrichtigungen.
+        Bei einer neuen Version ist er absichtlich zunächst aus.
+      </li>
+    </ul>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Felder</span><span class="ver">v1.0 · 17.08.2026</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · FELDER II -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Die Felder im Einzelnen</div>
+    <h2 class="mt2">Zeitraum, Archiv<br>und Änderungsnotiz.</h2>
+
+    <ul class="fields mt3">
+      <li>
+        <span class="name">Startdatum <span class="req">Pflicht</span></span>
+        Ab wann das Ereignis gilt. Vorbelegt mit dem aktuellen Zeitpunkt. Travel Alert
+        vergleicht diesen Zeitpunkt mit den Reisezeiträumen der Kunden: Nur Reisen, die sich
+        mit dem Ereigniszeitraum überschneiden, gelten als betroffen.
+      </li>
+      <li>
+        <span class="name">Enddatum</span>
+        Optional. Leer bedeutet „dauert an“ – das Ereignis bleibt sichtbar, bis du es
+        abschaltest oder archivierst. Mit Enddatum verschwindet es danach automatisch aus den
+        laufenden Ausgaben.
+      </li>
+      <li>
+        <span class="name">Archiviert</span>
+        Für Ereignisse, die vorbei sind, aber als Nachweis sichtbar bleiben sollen: Archivierte
+        Ereignisse werden noch ein Jahr nach ihrem Enddatum angezeigt und danach ausgeblendet.
+        Das Feld <span class="ui">Archiviert am</span> füllt sich dabei von selbst.
+      </li>
+      <li>
+        <span class="name">Änderungsnotiz</span>
+        Ein bis zwei Sätze, was sich gegenüber der Vorversion ändert – zum Beispiel
+        „Streik bis Freitag verlängert“. Die Notiz steht in der Versionsliste im Admin und
+        wird auch Kunden in der Versionshistorie angezeigt. Bei Version&nbsp;1 bleibt sie leer.
+      </li>
+    </ul>
+
+    <h3 class="mt5">Felder, die du nicht siehst</h3>
+    <p class="mt1" style="max-width:150mm; color:var(--ink-2)">
+      Das Formular blendet einiges aus, was es technisch weiterhin gibt: Marker-Farbe und
+      -Größe, Einzelkoordinaten, Tags, die alte Einfachauswahl für Land und Event-Typ sowie die
+      Datenquelle. Diese Werte werden automatisch gepflegt – das Kartensymbol etwa aus dem
+      ersten Event-Typ, die Koordinaten aus den Standort-Datensätzen. Du musst dich nicht
+      darum kümmern.
+    </p>
+
+    <div class="note mt4">
+      <span class="head">Sprachen</span>
+      Welche Sprach-Reiter erscheinen, ist zentral eingestellt – üblicherweise Deutsch,
+      Englisch und Niederländisch. Deutsch ist die Ausgangssprache: Sie ist Pflicht und dient
+      allen anderen als Rückfallebene. Übersetzt du später nach, musst du dafür
+      <b>keine</b> neue Version anlegen, solange sich am Inhalt der Ausgangssprache nichts
+      ändert – das ist eine Ergänzung, keine inhaltliche Korrektur.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Felder</span><span class="ver">v1.0 · 17.08.2026</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · LAENDER -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Länder und Standorte</div>
+    <h2 class="mt2">Die Angabe, an der<br>alles Weitere hängt.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Die Standorte liegen bewusst auf einer eigenen Seite: Zu einem Ereignis gehören oft
+      mehrere Orte, und zu einem Land dürfen beliebig viele Einträge existieren – etwa drei
+      Städte in Spanien.
+    </p>
+
+    <h3 class="mt4">So kommst du hin</h3>
+    <p class="mt1" style="color:var(--ink-2)">
+      Ereignis öffnen, Reiter <span class="ui">Länder &amp; Standorte</span>, dann
+      <span class="ui-btn">Standorte verwalten</span>. Ist noch nichts erfasst, steht dort
+      derselbe Knopf mitten im leeren Bereich.
+    </p>
+
+    <h3 class="mt4">Was du je Eintrag angibst</h3>
+    <table class="mt2">
+      <tbody>
+        <tr>
+          <td style="width:32%"><b>Land</b> <span class="req">Pflicht</span></td>
+          <td>Das betroffene Land. Beim Auswählen werden seine Koordinaten vorbelegt.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Region</b></td>
+          <td>Optional, zur Eingrenzung – zum Beispiel Katalonien. Die Auswahl zeigt nur
+              Regionen des gewählten Landes.</td>
+        </tr>
+        <tr>
+          <td><b>Stadt</b></td>
+          <td>Optional, die genaueste Stufe – zum Beispiel Barcelona.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Standard-Koordinaten verwenden</b></td>
+          <td>An lassen, solange du keinen exakten Punkt hast. Das System nimmt dann
+              automatisch die genaueste verfügbare Angabe: Stadt vor Region vor Hauptstadt
+              vor Land. Aus schalten nur, wenn du Breiten- und Längengrad selbst einträgst.</td>
+        </tr>
+        <tr>
+          <td><b>Notiz</b></td>
+          <td>Freitext zum Standort, etwa „betrifft nur den Fährhafen“.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="warn mt4">
+      <span class="head">Land, Region, Stadt – wie genau muss es sein?</span>
+      <p>
+        Für Travel Alert zählt <b>ausschließlich das Land</b>. Region und Stadt verfeinern die
+        Darstellung auf der Karte und in den Listen, verändern aber nicht, wer benachrichtigt
+        wird. Ein Ereignis mit Land, aber ohne Stadt funktioniert also vollständig – umgekehrt
+        nicht.
+      </p>
+      <p class="mt2">
+        Trag deshalb im Zweifel lieber das Land allein ein, als die Zuordnung ganz zu lassen,
+        weil dir die genaue Stadt fehlt.
+      </p>
+    </div>
+
+    <div class="note mt3">
+      <span class="head">Mehrere Länder</span>
+      Betrifft ein Ereignis mehrere Länder, legst du je Land einen eigenen Eintrag an. Für
+      Travel Alert gilt dann: Eine Reise ist betroffen, sobald sie <b>eines</b> dieser Länder
+      berührt – bei Kreuzfahrten zählen auch die angelaufenen Häfen mit.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Standorte</span><span class="ver">v1.0 · 17.08.2026</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · VERSIONIERUNG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Ändern heißt duplizieren</div>
+    <h2 class="mt2">Der Weg von Version 1<br>zu Version 2.</h2>
+
+    <svg class="mt3" width="100%" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0E5578"/>
+        </marker>
+        <marker id="a-lime" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#B6D22E"/>
+        </marker>
+        <marker id="a-gray" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#8AA5B4"/>
+        </marker>
+        <filter id="sh" x="-8%" y="-8%" width="116%" height="126%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#002742" flood-opacity=".13"/>
+        </filter>
+      </defs>
+      <style>
+        .t1 { font: 700 18px 'InterVar', sans-serif; fill: #002742; }
+        .t2 { font: 400 14px 'InterVar', sans-serif; fill: #5C7688; }
+        .tw { font: 700 18px 'InterVar', sans-serif; fill: #fff; }
+        .tw2{ font: 400 14px 'InterVar', sans-serif; fill: #A9C3D2; }
+        .lb { font: 700 13px 'InterVar', sans-serif; fill: #5C7688; letter-spacing: .6px; }
+      </style>
+
+      <!-- Ausgangslage -->
+      <rect x="30" y="20" width="380" height="120" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#sh)"/>
+      <rect x="30" y="20" width="380" height="6" rx="3" fill="#CEE741"/>
+      <text class="t1" x="58" y="66">Version 1 · aktiv</text>
+      <text class="t2" x="58" y="94">Steht auf der Karte, wurde per</text>
+      <text class="t2" x="58" y="116">E-Mail gemeldet.</text>
+
+      <path d="M 220 148 L 220 196" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#a-ink)"/>
+      <text class="lb" x="238" y="180">DUPLIZIEREN</text>
+
+      <!-- Entwurf -->
+      <rect x="30" y="208" width="380" height="140" rx="12" fill="#F5FAFD" stroke="#0E5578" stroke-width="1.8" filter="url(#sh)"/>
+      <text class="t1" x="58" y="254">Version 2 · Entwurf</text>
+      <text class="t2" x="58" y="282">Vollständige Kopie samt Ländern,</text>
+      <text class="t2" x="58" y="304">Typen und Quellen – aber inaktiv.</text>
+      <text class="t2" x="58" y="326">Version 1 läuft unverändert weiter.</text>
+
+      <path d="M 220 356 L 220 404" stroke="#0E5578" stroke-width="2.6" fill="none" marker-end="url(#a-ink)"/>
+      <text class="lb" x="238" y="388">BEARBEITEN</text>
+
+      <rect x="30" y="416" width="380" height="120" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#sh)"/>
+      <text class="t1" x="58" y="462">Änderungen eintragen</text>
+      <text class="t2" x="58" y="490">So lange du brauchst. Nach außen</text>
+      <text class="t2" x="58" y="512">ist davon nichts zu sehen.</text>
+
+      <path d="M 220 544 L 220 592" stroke="#B6D22E" stroke-width="2.6" fill="none" marker-end="url(#a-lime)"/>
+      <text class="lb" x="238" y="576">AKTIVIEREN</text>
+
+      <rect x="30" y="604" width="380" height="76" rx="12" fill="#002742" filter="url(#sh)"/>
+      <text class="tw" x="58" y="638">Version 2 ist live</text>
+      <text class="tw2" x="58" y="664">Und löst die E-Mails aus.</text>
+
+      <!-- rechte Spalte: was mit Version 1 passiert -->
+      <path d="M 410 642 L 520 642 L 520 300" stroke="#8AA5B4" stroke-width="2.6" fill="none" marker-end="url(#a-gray)" stroke-dasharray="6 5"/>
+      <rect x="560" y="208" width="410" height="180" rx="12" fill="#fff" stroke="#D4E1E8" filter="url(#sh)"/>
+      <rect x="560" y="208" width="410" height="6" rx="3" fill="#8AA5B4"/>
+      <text class="t1" x="588" y="254">Version 1 wird abgelöst</text>
+      <text class="t2" x="588" y="282">Automatisch deaktiviert – sie</text>
+      <text class="t2" x="588" y="304">verschwindet aus Karte, Feeds</text>
+      <text class="t2" x="588" y="326">und API. Nichts erscheint doppelt.</text>
+      <text class="t2" x="588" y="356">Lesbar bleibt sie für immer.</text>
+
+      <rect x="560" y="420" width="410" height="200" rx="12" fill="#FBFDF2" stroke="#CEE741" stroke-width="2"/>
+      <text class="t1" x="588" y="466">Wo die Historie auftaucht</text>
+      <text class="t2" x="588" y="496">Im Admin: Reiter „Versionen“ am</text>
+      <text class="t2" x="588" y="518">Ereignis.</text>
+      <text class="t2" x="588" y="548">Bei Kunden: Abschnitt „Versions-</text>
+      <text class="t2" x="588" y="570">historie“ in der Detailansicht –</text>
+      <text class="t2" x="588" y="592">mit Gültigkeitszeitraum und einer</text>
+      <text class="t2" x="588" y="614">Liste der Änderungen.</text>
+    </svg>
+
+    <div class="note mt3">
+      <span class="head">Was dir das garantiert</span>
+      Zu jedem Zeitpunkt ist genau <b>eine</b> Fassung aktiv – doppelte Einträge auf der Karte
+      oder doppelte E-Mails kann die Versionierung nicht erzeugen. Und rückwirkend lässt sich
+      jederzeit belegen, welcher Stand wann galt und wer ihn eingetragen hat.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Versionierung</span><span class="ver">v1.0 · 17.08.2026</span><span>08</span></div>
+</section>
+
+<!-- ======================================================== 9 · VERSIONIERUNG BEDIENUNG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Ändern heißt duplizieren</div>
+    <h2 class="mt2">So bedienst du es.</h2>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Ereignis öffnen und duplizieren</h3>
+          <p>Auf der Detailseite des Ereignisses oben
+             <span class="ui-btn">Duplizieren (neue Version)</span>. Es öffnet sich ein kleines
+             Fenster mit dem Feld <span class="ui">Änderungsnotiz</span> – ein Satz genügt.
+             Denselben Knopf gibt es auch in der Zeile der Ereignisliste.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Die Kopie bearbeiten</h3>
+          <p>Du landest direkt im Bearbeiten-Formular der neuen Version. Ganz oben zeigt der
+             Abschnitt <span class="ui">Versionierung</span>, dass es sich um einen Entwurf
+             handelt. Länder, Event-Typen und Quellen sind bereits übernommen – du änderst nur,
+             was sich wirklich ändert.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Prüfen und aktivieren</h3>
+          <p>Wenn alles stimmt: <span class="ui-btn">Version aktivieren</span>. Erst dieser
+             Klick veröffentlicht die Fassung und nimmt die vorherige aus dem Verkehr.
+             Bis dahin sieht kein Kunde etwas davon.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Historie kontrollieren</h3>
+          <p>Auf der Detailseite im Reiter <span class="ui">Versionen</span> stehen alle
+             Fassungen mit Status, Gültigkeitszeitraum und Änderungsnotiz. Über
+             <span class="ui">Ansehen</span> öffnest du jede frühere Fassung im Original.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note mt3">
+      <span class="head">Warum die Liste plötzlich kürzer wirkt</span>
+      In der Ereignisliste ist der Filter <span class="ui">Nur aktuelle Versionen</span>
+      voreingestellt. Abgelöste Fassungen sind damit ausgeblendet – sonst stünde jedes
+      mehrfach geänderte Ereignis mehrmals in der Liste. Schalte den Filter ab, wenn du
+      gezielt nach alten Ständen suchst.
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Eine bereits veröffentlichte Version bearbeiten</span>
+      <p>
+        Technisch ist das weiterhin möglich, und das Formular warnt dich an dieser Stelle
+        ausdrücklich. Gedacht ist es nur für Korrekturen <b>ohne inhaltliche Folge</b> –
+        ein Tippfehler, ein defekter Quellenlink.
+      </p>
+      <p class="mt2">
+        Alles, was Bedeutung, Zeitraum, Länder oder Priorität berührt, gehört in eine neue
+        Version. Sonst geht der bisherige Stand verloren, und Kunden erfahren nicht, dass sich
+        etwas geändert hat – die Änderung löst dann nämlich auch keine Benachrichtigung aus.
+      </p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Versionierung</span><span class="ver">v1.0 · 17.08.2026</span><span>09</span></div>
+</section>
+
+<!-- ======================================================== 10 · ENTSCHEIDUNGSTABELLE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">07 · Wann machst du was</div>
+    <h2 class="mt2">Die Entscheidung<br>auf einen Blick.</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:44%">Deine Situation</th><th>Der richtige Weg</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Neues Ereignis</b><br><span class="muted small">Etwas ist passiert</span></td>
+          <td>Anlegen wie ab Seite 4 beschrieben. Länder nicht vergessen.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Tippfehler im Entwurf</b><br><span class="muted small">Version war nie aktiv</span></td>
+          <td>Direkt bearbeiten. Ein Entwurf war nie draußen, es gibt nichts zu bewahren.</td>
+        </tr>
+        <tr>
+          <td><b>Tippfehler in der aktiven Version</b><br><span class="muted small">Ohne inhaltliche Folge</span></td>
+          <td>Direkt bearbeiten und speichern. Keine neue Version nötig, es geht keine
+              E-Mail raus.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Inhaltliche Änderung</b><br><span class="muted small">Zeitraum, Länder, Priorität,
+              Beschreibung</span></td>
+          <td><span class="ui-btn">Duplizieren (neue Version)</span> → bearbeiten →
+              <span class="ui-btn">Version aktivieren</span>. Kunden werden über die Änderung
+              benachrichtigt.</td>
+        </tr>
+        <tr>
+          <td><b>Übersetzung nachtragen</b></td>
+          <td>Direkt bearbeiten, solange die Ausgangssprache unverändert bleibt. Das ist eine
+              Ergänzung, keine Korrektur.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Ereignis ist absehbar vorbei</b></td>
+          <td>Enddatum setzen – am besten schon beim Anlegen. Es verschwindet danach von
+              selbst.</td>
+        </tr>
+        <tr>
+          <td><b>Ereignis ist vorbei, soll aber<br>als Nachweis sichtbar bleiben</b></td>
+          <td><span class="ui">Archiviert</span> einschalten. Noch ein Jahr nach dem Enddatum
+              sichtbar, danach ausgeblendet.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Meldung war falsch oder<br>hat sich erledigt</b></td>
+          <td><span class="ui">Aktiv</span> ausschalten. Sofort aus allen Ausgaben verschwunden,
+              intern nachvollziehbar. <b>Nicht löschen.</b></td>
+        </tr>
+        <tr>
+          <td><b>Kunden sollen noch einmal<br>benachrichtigt werden</b></td>
+          <td>Nur im Ausnahmefall: <span class="ui-btn">Benachrichtigungen auslösen</span> auf
+              der Detailseite. Umgeht die Dublettensperre – siehe Warnung unten.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Ein Partner-Ereignis wartet<br>auf Prüfung</b></td>
+          <td>In der Liste <span class="ui-btn">Freigeben</span> oder
+              <span class="ui-btn">Ablehnen</span>. Siehe Seite 12.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="stop mt4">
+      <span class="head">„Benachrichtigungen auslösen“ – mit Bedacht</span>
+      Dieser Knopf schickt die Benachrichtigungen erneut los und ignoriert dabei, dass jemand
+      dieselbe Meldung schon einmal bekommen hat. Für den Normalfall ist er nicht gedacht:
+      Eine neue Version löst den Versand ohnehin von allein aus. Nutze ihn nur, wenn ein
+      Versand nachweislich fehlgeschlagen ist.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Entscheidung</span><span class="ver">v1.0 · 17.08.2026</span><span>10</span></div>
+</section>
+
+<!-- ======================================================== 11 · AUTOMATIK -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">08 · Was danach von allein passiert</div>
+    <h2 class="mt2">Nach dem Aktivieren<br>musst du nichts mehr tun.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Sobald eine Version aktiv ist, läuft der Rest automatisch. Zwei Vorgänge arbeiten im
+      Hintergrund: die Auslieferung an Karte, Feeds und API – und der Versand der
+      Benachrichtigungen.
+    </p>
+
+    <h3 class="mt4">Auslieferung</h3>
+    <p class="mt1" style="color:var(--ink-2)">
+      Karte, Listen und Feeds arbeiten mit einem Zwischenspeicher, der beim Speichern geleert
+      wird. In der Regel ist eine Änderung sofort da, spätestens nach wenigen Minuten. Siehst
+      du sie nicht, hilft es, die Seite neu zu laden.
+    </p>
+
+    <h3 class="mt4">Benachrichtigungen</h3>
+    <p class="mt1" style="color:var(--ink-2)">
+      Alle fünf Minuten prüft das System, ob es etwas zu melden gibt. Betrachtet werden
+      Ereignisse aus den letzten 24 Stunden – gerechnet ab Anlage <b>oder</b> ab Aktivierung.
+      Deshalb funktioniert es auch, wenn du eine Version tagelang vorbereitest und erst spät
+      freischaltest.
+    </p>
+
+    <h3 class="mt4">Drei Bedingungen müssen zusammenkommen</h3>
+    <div class="grid3 mt2">
+      <div class="card">
+        <h3>Aktiv</h3>
+        <p class="mt1">Der Schalter <span class="ui">Aktiv</span> steht an – bei genau einer
+          Version des Ereignisses.</p>
+      </div>
+      <div class="card">
+        <h3>Freigegeben</h3>
+        <p class="mt1">Der Prüfstatus steht auf <span class="ui">Freigegeben</span>. Bei eigenen
+          Ereignissen ist das von Haus aus so.</p>
+      </div>
+      <div class="card">
+        <h3>Länder gesetzt</h3>
+        <p class="mt1">Ohne Länderzuordnung findet Travel Alert keine betroffene Reise und
+          verschickt nichts.</p>
+      </div>
+    </div>
+
+    <div class="note mt4">
+      <span class="head">Warum eine neue Version erneut meldet</span>
+      Das System merkt sich je Empfänger und Ereignis, dass bereits eine Mail herausging – so
+      entstehen keine Wiederholungen. Eine neue Version zählt dabei als eigenständige Meldung.
+      Genau deshalb erreicht eine Aktualisierung die Kunden, während ein stilles Überschreiben
+      der aktiven Version es nicht täte.
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Travel Alert schickt nicht an alle</span>
+      Anders als beim Global Travel Monitor bekommt beim Travel Alert nur der eine Mail, dessen
+      Reisen den Ereigniszeitraum und eines der Länder tatsächlich berühren. Kommt bei einem
+      Kunden nichts an, ist das oft schlicht die richtige Antwort – und kein Fehler.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Automatik</span><span class="ver">v1.0 · 17.08.2026</span><span>11</span></div>
+</section>
+
+<!-- ======================================================== 12 · FREIGABE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">09 · Fremde Ereignisse freigeben</div>
+    <h2 class="mt2">Wenn die Meldung<br>nicht von dir stammt.</h2>
+
+    <p class="lead mt3" style="max-width:150mm">
+      Partner können Ereignisse über die Schnittstelle einliefern. Ob so eine Meldung sofort
+      erscheint oder erst geprüft wird, hängt am jeweiligen Partnerzugang.
+    </p>
+
+    <table class="mt4">
+      <tbody>
+        <tr>
+          <td style="width:32%"><b>Freigegeben</b></td>
+          <td>Der Partner ist als vertrauenswürdig hinterlegt. Seine Ereignisse sind sofort
+              aktiv und werden wie eigene behandelt. Du musst nichts tun.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Ausstehend</b></td>
+          <td>Die Meldung wartet auf dich. Sie ist noch nicht aktiv, erscheint nirgends und
+              löst keine Benachrichtigung aus. Im Menü zeigt der Zähler neben
+              <span class="ui">Passolution Events</span>, wie viele offen sind.</td>
+        </tr>
+        <tr>
+          <td><b>Abgelehnt</b></td>
+          <td>Die Meldung bleibt inaktiv und dokumentiert. Sie taucht in keiner Ausgabe auf.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">So prüfst du eine eingegangene Meldung</h3>
+    <ul class="checks mt2">
+      <li>
+        <b>Inhalt und Quelle ansehen.</b>
+        Ist der Titel verständlich, die Beschreibung belastbar, die Quelle nachvollziehbar?
+      </li>
+      <li>
+        <b>Länderzuordnung prüfen.</b>
+        Partner liefern Ländercodes mit, aber oft nur ein einzelnes Land. Ergänze fehlende
+        Länder über <span class="ui-btn">Standorte verwalten</span>, bevor du freigibst.
+      </li>
+      <li>
+        <b>Priorität gegenprüfen.</b>
+        Der Partner setzt sie nach seinem Maßstab. Passt sie nicht zu eurem, korrigiere sie
+        vor der Freigabe.
+      </li>
+      <li>
+        <b>Freigeben oder ablehnen.</b>
+        In der Ereignisliste stehen dafür die Knöpfe <span class="ui-btn">Freigeben</span> und
+        <span class="ui-btn">Ablehnen</span> direkt in der Zeile. Die Freigabe schaltet das
+        Ereignis zugleich aktiv.
+      </li>
+    </ul>
+
+    <div class="note mt4">
+      <span class="head">Nach der Freigabe</span>
+      Ab diesem Moment gilt für Partner-Ereignisse dasselbe wie für eigene: Inhaltliche
+      Änderungen laufen über <span class="ui-btn">Duplizieren (neue Version)</span>. Liefert
+      der Partner später eine Aktualisierung über die Schnittstelle, landet sie automatisch
+      auf der aktuell gültigen Version.
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Freigabe</span><span class="ver">v1.0 · 17.08.2026</span><span>12</span></div>
+</section>
+
+<!-- ======================================================== 13 · FEHLERBILDER -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">10 · Wenn etwas nicht stimmt</div>
+    <h2 class="mt2">Die häufigsten<br>Fehlerbilder.</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:40%">Beobachtung</th><th>Woran es liegt</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Das Ereignis erscheint nicht auf der Karte</td>
+          <td>Meist steht <span class="ui">Aktiv</span> auf aus, der Prüfstatus nicht auf
+              <span class="ui">Freigegeben</span>, oder das Enddatum liegt in der
+              Vergangenheit.</td>
+        </tr>
+        <tr class="alt">
+          <td>Kunden haben keine E-Mail bekommen</td>
+          <td>Erste Prüfung: Sind Länder zugeordnet? Zweite: Berührt überhaupt eine Reise den
+              Zeitraum und eines der Länder? Beides ist die häufigste Ursache – deutlich vor
+              einem technischen Fehler.</td>
+        </tr>
+        <tr>
+          <td>Die Änderung wurde nicht gemeldet</td>
+          <td>Du hast die aktive Version direkt bearbeitet statt eine neue anzulegen. Ein
+              stilles Überschreiben löst keinen Versand aus.</td>
+        </tr>
+        <tr class="alt">
+          <td>Eine ältere Fassung ist aus der Liste verschwunden</td>
+          <td>Sie ist nur ausgeblendet: Filter <span class="ui">Nur aktuelle Versionen</span>
+              abschalten oder den Reiter <span class="ui">Versionen</span> am Ereignis öffnen.
+              Gelöscht wird nichts.</td>
+        </tr>
+        <tr>
+          <td><span class="ui-btn">Version aktivieren</span> fehlt</td>
+          <td>Die geöffnete Version ist bereits aktiv. Der Knopf erscheint nur bei inaktiven
+              Fassungen.</td>
+        </tr>
+        <tr class="alt">
+          <td>Dasselbe Ereignis steht doppelt auf der Karte</td>
+          <td>Zwei Versionen können das nicht sein – dann wurde derselbe Vorfall zweimal
+              separat angelegt. Das inhaltlich schwächere Ereignis über
+              <span class="ui">Aktiv</span> abschalten.</td>
+        </tr>
+        <tr>
+          <td>Eine Änderung ist im Frontend noch nicht zu sehen</td>
+          <td>Zwischenspeicher. Seite neu laden; nach wenigen Minuten ist sie in jedem Fall da.</td>
+        </tr>
+        <tr class="alt">
+          <td>Das Symbol auf der Karte passt nicht</td>
+          <td>Es stammt vom ersten gewählten Event-Typ. Sind mehrere Typen gesetzt, steuerst du
+              es über <span class="ui">Anzuzeigendes Icon</span> – sofern das Feld
+              eingeblendet ist.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">Die Kurzfassung auf einen Blick</h3>
+    <div class="grid3 mt2">
+      <div class="card">
+        <h3>Neu anlegen</h3>
+        <p class="mt1">Titel → Quelle → Typ → Priorität → Zeitraum → speichern →
+           <span class="ui-btn">Standorte verwalten</span>.</p>
+      </div>
+      <div class="card">
+        <h3>Inhaltlich ändern</h3>
+        <p class="mt1"><span class="ui-btn">Duplizieren</span> → bearbeiten →
+           <span class="ui-btn">Version aktivieren</span>.</p>
+      </div>
+      <div class="card">
+        <h3>Beenden</h3>
+        <p class="mt1">Enddatum setzen, archivieren – oder <span class="ui">Aktiv</span>
+           abschalten. Nie löschen.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Ereignisse</b> · Fehlerbilder</span><span class="ver">v1.0 · 17.08.2026</span><span>13</span></div>
+</section>
+
+<!-- ======================================================== 14 · RÜCKSEITE -->
+<section class="page back">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#bg2)"/>
+      <circle cx="120" cy="980" r="380" fill="url(#glow2)"/>
+      <path d="M 794 0 L 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630 L 0 0 Z"
+            fill="#CEE741" fill-opacity=".05"/>
+      <path d="M 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630"
+            fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <div class="kicker" style="color:#CEE741">Im Zweifel</div>
+    <h2 class="mt2" style="color:#fff">Zwei Fragen, die dich<br>fast immer weiterbringen.</h2>
+    <div class="rule mt3"></div>
+    <p class="lead mt3" style="max-width:120mm; color:#A9C3D2">
+      Wenn du beim Erfassen unsicher wirst, hilft es meistens schon, diese beiden Fragen
+      ehrlich zu beantworten.
+    </p>
+
+    <div class="grid2 mt5">
+      <div class="back-card">
+        <h4>Frage 1</h4>
+        <p>Würde ein Kunde diese Änderung erfahren wollen? Ja → neue Version. Nein → direkt
+           korrigieren.</p>
+      </div>
+      <div class="back-card">
+        <h4>Frage 2</h4>
+        <p>Sind die Länder gesetzt? Ohne sie ist das Ereignis für Travel Alert praktisch
+           nicht vorhanden.</p>
+      </div>
+    </div>
+
+    <div class="back-card mt4">
+      <h4>Weiterlesen</h4>
+      <p>Was nach dem Aktivieren im Hintergrund abläuft, ist Station für Station beschrieben in
+         „Der Ablauf, Station für Station erklärt“. Wie Kunden ihre Regeln und Intervalle
+         einstellen, steht in „Benachrichtigungen – Was die Zeit-Einstellungen bewirken“.</p>
+    </div>
+
+    <div style="margin-top:auto">
+      <img src="assets/passolution-logo-white.png" alt="Passolution" style="width:40mm">
+      <p class="small mt3" style="color:#7A9BAE">
+        Passolution GmbH · Stand: August 2026<br>
+        Diese Anleitung beschreibt die Bedienung im Admin-Backend. Bezeichnungen können sich mit
+        künftigen Versionen ändern.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
