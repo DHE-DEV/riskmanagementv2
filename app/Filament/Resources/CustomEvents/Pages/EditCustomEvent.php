@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CustomEvents\Pages;
 
+use App\Filament\Resources\CustomEvents\Concerns\HasVersionActions;
 use App\Filament\Resources\CustomEvents\CustomEventResource;
 use App\Filament\Widgets\CustomEventStatsOverview;
 use Filament\Actions\Action;
@@ -12,6 +13,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditCustomEvent extends EditRecord
 {
+    use HasVersionActions;
+
     protected static string $resource = CustomEventResource::class;
 
     protected ?array $locationCountries = null;
@@ -91,6 +94,9 @@ class EditCustomEvent extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            $this->createVersionAction(),
+            $this->activateVersionAction(),
+
             Action::make('ai_assistant')
                 ->label('KI-Assistent')
                 ->icon('heroicon-o-sparkles')

@@ -35,6 +35,9 @@ class NotificationTemplate extends Model
         '{event_date}' => 'Datum des Ereignisses',
         '{affected_trips}' => 'Betroffene Reisen (HTML-Block, nur Travel Alert)',
         '{affected_trips_count}' => 'Anzahl betroffener Reisen',
+        '{version}' => 'Versionsnummer des Ereignisses',
+        '{version_note}' => 'Änderungsnotiz der Version',
+        '{update_hint}' => 'Hinweis "Aktualisierte Fassung (Version X)" – leer bei Erstversion',
     ];
 
     public function customer(): BelongsTo

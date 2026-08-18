@@ -594,6 +594,17 @@ class CustomEventController extends Controller
                 'source_link_text' => $event->source_link_text,
                 'source_link_url' => $event->source_link_url,
                 'source_links' => $event->visibleSourceLinks(),
+                // Versionierung: der Client kann daran erkennen, ob es eine
+                // Historie gibt und ob gerade eine aeltere Fassung angezeigt wird.
+                'version' => $event->version ?? 1,
+                'version_note' => $event->version_note,
+                'is_current_version' => $event->isCurrentVersion(),
+                'activated_at' => $event->activated_at,
+                'versions_count' => $event->version_group_uuid
+                    ? CustomEvent::where('version_group_uuid', $event->version_group_uuid)
+                        ->whereNotNull('activated_at')
+                        ->count()
+                    : 1,
             ];
 
             return response()->json([
@@ -604,6 +615,81 @@ class CustomEventController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get event: ' . $e->getMessage()
+            ], 404);
+        }
+    }
+
+    /**
+     * Versionshistorie eines Ereignisses.
+     *
+     * Es werden ausschliesslich Versionen ausgeliefert, die mindestens einmal
+     * aktiv geschaltet waren - unveroeffentlichte Entwuerfe bleiben intern.
+     * Zu jeder Version wird mitgeliefert, was sich gegenueber der Vorversion
+     * geaendert hat.
+     */
+    public function getVersions($eventId): JsonResponse
+    {
+        try {
+            $event = CustomEvent::findOrFail($eventId);
+
+            $groupUuid = $event->version_group_uuid ?: $event->uuid;
+
+            $versions = CustomEvent::with(['countries', 'updater'])
+                ->where('version_group_uuid', $groupUuid)
+                ->where(function ($query) use ($event) {
+                    // Veroeffentlichte Staende plus die aktuell ausgelieferte
+                    // Version - Entwuerfe bleiben aussen vor.
+                    $query->whereNotNull('activated_at')
+                        ->orWhere('is_active', true)
+                        ->orWhere('id', $event->getKey());
+                })
+                ->orderBy('version')
+                ->get();
+
+            $diffService = app(\App\Services\CustomEventVersionService::class);
+
+            $previous = null;
+            $items = [];
+
+            foreach ($versions as $version) {
+                $items[] = [
+                    'id' => $version->id,
+                    'version' => $version->version ?? 1,
+                    'title' => $version->title,
+                    // Vollstaendiger Inhalt der Fassung, damit die Historie
+                    // ohne zweiten Abruf lesbar ist.
+                    'content' => $version->popup_content,
+                    'countries' => $version->countries->map(fn ($c) => $c->getName('de'))->unique()->values(),
+                    'priority' => $version->priority,
+                    'start_date' => $version->start_date,
+                    'end_date' => $version->end_date,
+                    'is_active' => (bool) $version->is_active,
+                    'is_current_version' => $version->isCurrentVersion(),
+                    'version_note' => $version->version_note,
+                    'valid_from' => $version->activated_at,
+                    'valid_until' => $version->superseded_at,
+                    'changed_by' => $version->updater?->name,
+                    'changes' => $diffService->diff($previous, $version),
+                ];
+
+                $previous = $version;
+            }
+
+            // Neueste Version zuerst - die Historie liest sich von oben nach unten.
+            $items = array_reverse($items);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'event_id' => $event->id,
+                    'version_group' => $groupUuid,
+                    'versions' => $items,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get versions: ' . $e->getMessage(),
             ], 404);
         }
     }

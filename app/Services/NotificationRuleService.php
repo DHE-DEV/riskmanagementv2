@@ -156,6 +156,13 @@ class NotificationRuleService
             '{category}' => $categoryLabel,
             '{description}' => $event->description ?? $event->popup_content ?? '',
             '{event_date}' => $event->start_date?->format('d.m.Y') ?? now()->format('d.m.Y'),
+            // Versionierung: ab Version 2 handelt es sich um eine Aktualisierung
+            // eines bereits gemeldeten Ereignisses.
+            '{version}' => (string) ($event->version ?? 1),
+            '{version_note}' => (string) ($event->version_note ?? ''),
+            '{update_hint}' => ($event->version ?? 1) > 1
+                ? 'Aktualisierte Fassung (Version ' . $event->version . ')'
+                : '',
         ];
 
         return $this->sendMatchingNotifications(
@@ -191,6 +198,11 @@ class NotificationRuleService
                 ?? NotificationRule::CATEGORIES['environment'],
             '{description}' => $event->description ?? '',
             '{event_date}' => $event->event_date?->format('d.m.Y') ?? now()->format('d.m.Y'),
+            // Katastrophen-Events kennen keine Versionierung - die Platzhalter
+            // werden trotzdem geleert, damit sie nicht roh in der Mail landen.
+            '{version}' => '1',
+            '{version_note}' => '',
+            '{update_hint}' => '',
         ];
 
         return $this->sendMatchingNotifications(
@@ -277,7 +289,16 @@ class NotificationRuleService
         return CustomEvent::where('is_active', true)
             ->where('review_status', 'approved')
             ->whereNull('customer_id')
-            ->where('created_at', '>=', $since);
+            // Abgeloeste Versionen scheiden ohnehin ueber is_active aus; die
+            // Bedingung haelt den Lauf auch bei Altdaten eindeutig.
+            ->whereNull('superseded_by_id')
+            // Neben frisch angelegten Ereignissen auch solche, die erst spaeter
+            // aktiviert wurden - so wird jede neue Version zuverlaessig gemeldet,
+            // selbst wenn ihr Entwurf tagelang bearbeitet wurde.
+            ->where(function ($query) use ($since) {
+                $query->where('created_at', '>=', $since)
+                    ->orWhere('activated_at', '>=', $since);
+            });
     }
 
     private function unnotifiedDisasterEventsQuery(\DateTimeInterface $since): \Illuminate\Database\Eloquent\Builder

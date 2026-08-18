@@ -31,6 +31,29 @@ class CustomEventForm
     {
         return $schema
             ->components([
+                // Versionsstand des Datensatzes. Bearbeitet wird immer nur eine
+                // noch nicht veröffentlichte Version - veröffentlichte Stände
+                // bleiben unverändert erhalten.
+                Section::make('Versionierung')
+                    ->icon('heroicon-o-clock')
+                    ->columnSpanFull()
+                    ->visible(fn (?CustomEvent $record): bool => $record !== null)
+                    ->schema([
+                        Placeholder::make('version_status')
+                            ->label('Status')
+                            ->columnSpanFull()
+                            ->content(fn (?CustomEvent $record): HtmlString => new HtmlString(
+                                self::versionStatusHtml($record)
+                            )),
+
+                        Textarea::make('version_note')
+                            ->label('Änderungsnotiz')
+                            ->rows(2)
+                            ->maxLength(2000)
+                            ->columnSpanFull()
+                            ->helperText('Wird in der Versionshistorie angezeigt – auch für Kunden.'),
+                    ]),
+
                 // Mehrsprachige Hauptinformationen (Titel + Beschreibung je Sprache).
                 // Die Sprachen werden über EVENT_LANGUAGES (.env) gesteuert.
                 Tabs::make('translations')
@@ -442,6 +465,55 @@ class CustomEventForm
                     ->hidden(),
 
             ]);
+    }
+
+    /**
+     * Kurzer Statusblock der Versionierung: welche Version wird bearbeitet,
+     * ist sie aktiv, und wie viele Versionen gibt es insgesamt.
+     */
+    private static function versionStatusHtml(?CustomEvent $record): string
+    {
+        if (! $record) {
+            return '';
+        }
+
+        $badge = function (string $text, string $color): string {
+            return '<span style="display:inline-block;padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:'
+                . $color . '1a;color:' . $color . ';">' . e($text) . '</span>';
+        };
+
+        $status = match (true) {
+            $record->is_active => $badge('Aktiv – wird ausgeliefert', '#16a34a'),
+            $record->superseded_by_id !== null => $badge('Abgelöst von Version ' . ($record->supersededBy?->version ?? '?'), '#d97706'),
+            $record->activated_at !== null => $badge('Inaktiv', '#6b7280'),
+            default => $badge('Entwurf – noch nicht veröffentlicht', '#2563eb'),
+        };
+
+        $total = $record->version_group_uuid
+            ? CustomEvent::where('version_group_uuid', $record->version_group_uuid)->count()
+            : 1;
+
+        $parts = [
+            $badge('Version ' . ($record->version ?? 1), '#4f46e5'),
+            $status,
+            '<span style="font-size:12px;color:#6b7280;">' . $total . ' Version(en) insgesamt</span>',
+        ];
+
+        if ($record->activated_at) {
+            $parts[] = '<span style="font-size:12px;color:#6b7280;">Aktiviert am '
+                . $record->activated_at->format('d.m.Y H:i') . '</span>';
+        }
+
+        $html = '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">' . implode('', $parts) . '</div>';
+
+        if ($record->activated_at !== null) {
+            $html .= '<div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:12px;">'
+                . 'Diese Version wurde bereits veröffentlicht. Für Änderungen bitte über <strong>„Duplizieren (neue Version)“</strong> '
+                . 'eine neue Version anlegen, damit der bisherige Stand revisionssicher erhalten bleibt.'
+                . '</div>';
+        }
+
+        return $html;
     }
 
     /**

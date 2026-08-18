@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Feed\Feedable;
@@ -18,6 +19,13 @@ class CustomEvent extends Model implements Feedable
 
     protected $fillable = [
         'uuid',
+        'version',
+        'version_group_uuid',
+        'version_parent_id',
+        'superseded_by_id',
+        'superseded_at',
+        'activated_at',
+        'version_note',
         'title',
         'title_translations',
         'description',
@@ -67,6 +75,9 @@ class CustomEvent extends Model implements Feedable
     ];
 
     protected $casts = [
+        'version' => 'integer',
+        'superseded_at' => 'datetime',
+        'activated_at' => 'datetime',
         'title_translations' => 'array',
         'popup_content_translations' => 'array',
         'latitude' => 'decimal:16',
@@ -470,6 +481,182 @@ class CustomEvent extends Model implements Feedable
         }
 
         return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    // ------------------------------------------------------------------
+    // Versionierung
+    //
+    // Ereignisse werden nie ueberschrieben: eine Aenderung entsteht als neue
+    // Zeile mit derselben version_group_uuid und der naechsten Versionsnummer.
+    // Wird die neue Version aktiviert, deaktiviert sie ihre Vorgaenger und
+    // markiert sie als abgeloest - lesbar bleiben sie dauerhaft.
+    // ------------------------------------------------------------------
+
+    /**
+     * Alle Versionen desselben Ereignisses - inklusive dieser hier.
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(static::class, 'version_group_uuid', 'version_group_uuid')
+            ->orderByDesc('version');
+    }
+
+    /**
+     * Version, aus der diese hier dupliziert wurde.
+     */
+    public function parentVersion(): BelongsTo
+    {
+        return $this->belongsTo(static::class, 'version_parent_id');
+    }
+
+    /**
+     * Version, die diese hier abgeloest hat.
+     */
+    public function supersededBy(): BelongsTo
+    {
+        return $this->belongsTo(static::class, 'superseded_by_id');
+    }
+
+    /**
+     * Ist das die aktuell gueltige Version der Gruppe?
+     */
+    public function isCurrentVersion(): bool
+    {
+        return $this->superseded_by_id === null;
+    }
+
+    /**
+     * Wurde diese Version jemals aktiv geschaltet? Nur solche Versionen
+     * duerfen Kunden in der Historie sehen - Entwuerfe bleiben intern.
+     */
+    public function isPublishedVersion(): bool
+    {
+        return $this->activated_at !== null;
+    }
+
+    /**
+     * Scope: nur die jeweils aktuellste Version je Gruppe.
+     */
+    public function scopeCurrentVersion($query)
+    {
+        return $query->whereNull('superseded_by_id');
+    }
+
+    /**
+     * Scope: nur abgeloeste (historische) Versionen.
+     */
+    public function scopeSupersededVersion($query)
+    {
+        return $query->whereNotNull('superseded_by_id');
+    }
+
+    /**
+     * Scope: nur Versionen, die mindestens einmal veroeffentlicht waren.
+     */
+    public function scopePublishedVersion($query)
+    {
+        return $query->whereNotNull('activated_at');
+    }
+
+    /**
+     * Historie der Gruppe fuer die Anzeige - neueste Version zuerst.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     */
+    public function versionHistory(bool $onlyPublished = false): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = static::query()
+            ->where('version_group_uuid', $this->version_group_uuid ?: $this->uuid)
+            ->orderByDesc('version')
+            ->orderByDesc('id');
+
+        if ($onlyPublished) {
+            $query->publishedVersion();
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Die aktuell gueltige Version der Gruppe - fuer Zugriffe, die eine
+     * feste Kennung (z. B. eine UUID aus der API) mitbringen und trotzdem
+     * immer den aktuellen Stand treffen sollen.
+     */
+    public function resolveCurrentVersion(): static
+    {
+        if ($this->isCurrentVersion() || ! $this->version_group_uuid) {
+            return $this;
+        }
+
+        return static::query()
+            ->where('version_group_uuid', $this->version_group_uuid)
+            ->currentVersion()
+            ->orderByDesc('version')
+            ->first() ?? $this;
+    }
+
+    /**
+     * Naechste freie Versionsnummer der Gruppe.
+     */
+    public function nextVersionNumber(): int
+    {
+        return (int) static::withTrashed()
+            ->where('version_group_uuid', $this->version_group_uuid)
+            ->max('version') + 1;
+    }
+
+    /**
+     * Diese Version aktivieren: sie wird gueltig, alle Vorgaenger werden
+     * deaktiviert und als abgeloest gekennzeichnet.
+     */
+    public function activateVersion(?int $userId = null): void
+    {
+        $this->forceFill([
+            'is_active' => true,
+            'superseded_by_id' => null,
+            'superseded_at' => null,
+        ]);
+
+        if ($userId) {
+            $this->updated_by = $userId;
+        }
+
+        // activated_at und das Abloesen der Vorgaenger uebernehmen die
+        // Model-Hooks, damit auch ein einfaches Umlegen des "Aktiv"-Schalters
+        // im Formular denselben Weg nimmt.
+        $this->save();
+    }
+
+    /**
+     * Alle uebrigen Versionen der Gruppe deaktivieren und als abgeloest markieren.
+     */
+    public function supersedeOtherVersions(): void
+    {
+        if (! $this->version_group_uuid || ! $this->is_active) {
+            return;
+        }
+
+        $version = (int) $this->version;
+        $id = $this->getKey();
+
+        static::query()
+            ->where('version_group_uuid', $this->version_group_uuid)
+            ->whereKeyNot($id)
+            ->where(function ($query) use ($version) {
+                // Aktive Vorgaenger ebenso wie aeltere, noch nicht abgeloeste
+                // Entwuerfe - danach bleibt genau eine gueltige Version uebrig.
+                $query->where('is_active', true)
+                    ->orWhere(function ($sub) use ($version) {
+                        $sub->where('version', '<', $version)
+                            ->whereNull('superseded_by_id');
+                    });
+            })
+            ->update([
+                'is_active' => false,
+                'superseded_by_id' => $id,
+                'superseded_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 
     /**
@@ -1088,6 +1275,39 @@ class CustomEvent extends Model implements Feedable
         static::creating(function ($event) {
             if (empty($event->uuid)) {
                 $event->uuid = Str::uuid();
+            }
+
+            // Ein neu angelegtes Ereignis eroeffnet seine eigene Versionsgruppe.
+            if (empty($event->version_group_uuid)) {
+                $event->version_group_uuid = $event->uuid;
+            }
+
+            if (empty($event->version)) {
+                $event->version = 1;
+            }
+
+            if ($event->is_active && empty($event->activated_at)) {
+                $event->activated_at = now();
+            }
+        });
+
+        // Aktivierungszeitpunkt festhalten - der Benachrichtigungslauf haengt
+        // daran, damit auch spaeter freigeschaltete Versionen noch versendet werden.
+        static::updating(function (CustomEvent $event) {
+            if ($event->isDirty('is_active') && $event->is_active) {
+                $event->activated_at = now();
+            }
+        });
+
+        // Nach dem Speichern die Vorgaengerversionen abloesen, damit ein
+        // Ereignis nie doppelt erscheint.
+        static::saved(function (CustomEvent $event) {
+            if (! $event->is_active) {
+                return;
+            }
+
+            if ($event->wasRecentlyCreated || $event->wasChanged(['is_active', 'activated_at'])) {
+                $event->supersedeOtherVersions();
             }
         });
 

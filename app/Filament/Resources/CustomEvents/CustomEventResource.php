@@ -51,6 +51,7 @@ class CustomEventResource extends Resource
             CountriesRelationManager::class,
             RelationManagers\RegionsRelationManager::class,
             RelationManagers\CitiesRelationManager::class,
+            RelationManagers\VersionsRelationManager::class,
         ];
     }
 

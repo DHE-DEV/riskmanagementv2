@@ -10,6 +10,10 @@ function riskOverviewApp() {
         countryDetails: null,
         selectedEvent: null,
         showEventModal: false,
+        // Versionshistorie des geoeffneten Ereignisses
+        eventVersions: [],
+        eventVersionsLoading: false,
+        expandedVersionId: null,
         selectedTraveler: null,
         showTravelerModal: false,
         loading: false,
@@ -738,12 +742,64 @@ function riskOverviewApp() {
             this.eventLabelSuggestions = [];
             this.showEventLabelSuggestions = false;
             document.body.style.overflow = 'hidden';
+
+            this.loadEventVersions(event?.id);
         },
 
         closeEventModal() {
             this.showEventModal = false;
             this.selectedEvent = null;
+            this.eventVersions = [];
+            this.expandedVersionId = null;
             document.body.style.overflow = '';
+        },
+
+        /**
+         * Versionshistorie des Ereignisses laden. Ereignisse werden bei
+         * Aenderungen nicht ueberschrieben, sondern als neue Version gefuehrt -
+         * hier koennen Kunden nachvollziehen, was sich wann geaendert hat.
+         */
+        async loadEventVersions(eventId) {
+            this.eventVersions = [];
+            this.expandedVersionId = null;
+            this.eventVersionsLoading = false;
+
+            if (!eventId) {
+                return;
+            }
+
+            this.eventVersionsLoading = true;
+
+            try {
+                const response = await fetch(`/api/custom-events/${eventId}/versions`);
+                const result = await response.json();
+
+                // Erst ab zwei Fassungen ist eine Historie ueberhaupt interessant.
+                if (result.success && (result.data?.versions?.length || 0) > 1) {
+                    this.eventVersions = result.data.versions;
+                }
+            } catch (error) {
+                this.eventVersions = [];
+            } finally {
+                this.eventVersionsLoading = false;
+            }
+        },
+
+        toggleVersion(versionId) {
+            this.expandedVersionId = this.expandedVersionId === versionId ? null : versionId;
+        },
+
+        formatVersionPeriod(version) {
+            const from = version.valid_from ? this.formatDate(version.valid_from) : null;
+            const until = version.valid_until ? this.formatDate(version.valid_until) : null;
+
+            if (from && until) {
+                return `gültig ${from} – ${until}`;
+            }
+            if (from) {
+                return `gültig seit ${from}`;
+            }
+            return 'noch nicht veröffentlicht';
         },
 
         openTravelerModal(traveler) {

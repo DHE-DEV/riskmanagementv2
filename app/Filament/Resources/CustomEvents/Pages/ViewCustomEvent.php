@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CustomEvents\Pages;
 
+use App\Filament\Resources\CustomEvents\Concerns\HasVersionActions;
 use App\Filament\Resources\CustomEvents\CustomEventResource;
 use App\Filament\Widgets\CustomEventStatsOverview;
 use Filament\Actions\Action;
@@ -11,11 +12,16 @@ use Filament\Resources\Pages\ViewRecord;
 
 class ViewCustomEvent extends ViewRecord
 {
+    use HasVersionActions;
+
     protected static string $resource = CustomEventResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            $this->createVersionAction(),
+            $this->activateVersionAction(),
+
             Action::make('trigger_notifications')
                 ->label('Benachrichtigungen auslösen')
                 ->icon('heroicon-o-bell-alert')
@@ -69,6 +75,7 @@ class ViewCustomEvent extends ViewRecord
     {
         return [
             \App\Filament\Resources\CustomEvents\RelationManagers\CountriesRelationManager::class,
+            \App\Filament\Resources\CustomEvents\RelationManagers\VersionsRelationManager::class,
         ];
     }
 }

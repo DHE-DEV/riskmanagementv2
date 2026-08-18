@@ -795,6 +795,10 @@ class RiskOverviewService
             'labels' => $labels,
             'created_at' => $event->created_at?->format('Y-m-d'),
             'updated_at' => $event->updated_at?->format('Y-m-d'),
+            // Versionsstand: ab Version 2 wurde das Ereignis nachtraeglich
+            // aktualisiert - die Historie laedt das Frontend bei Bedarf nach.
+            'version' => $event->version ?? 1,
+            'version_note' => $event->version_note,
         ];
     }
 

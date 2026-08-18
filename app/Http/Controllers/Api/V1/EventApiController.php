@@ -73,7 +73,8 @@ class EventApiController extends Controller
             }
         }
 
-        $query = CustomEvent::query();
+        // Abgeloeste Versionen gehoeren in die Historie, nicht in die Liste.
+        $query = CustomEvent::query()->currentVersion();
 
         $query->where(function ($q) use ($scopes, $apiClient, $eventGroups) {
             $includeOwn = in_array('own', $scopes) || in_array('all', $scopes);
@@ -254,6 +255,11 @@ class EventApiController extends Controller
             ], 404);
         }
 
+        // Wurde das Ereignis inzwischen versioniert, zeigt die dem API-Client
+        // bekannte UUID auf eine abgeloeste Fassung - geschrieben wird immer
+        // auf der aktuell gueltigen Version.
+        $event = $event->resolveCurrentVersion();
+
         // Build update data
         $updateData = [];
 
@@ -356,7 +362,9 @@ class EventApiController extends Controller
             ], 404);
         }
 
-        $event->delete();
+        // Bei versionierten Ereignissen die aktuell gueltige Fassung entfernen -
+        // die Historie bleibt als abgeloeste Version erhalten.
+        $event->resolveCurrentVersion()->delete();
 
         // Invalidate cache
         Cache::forget('gtm_all_events');

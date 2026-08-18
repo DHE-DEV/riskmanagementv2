@@ -2721,6 +2721,79 @@ function increaseSidebarWidth() {
     }
 }
 
+/**
+ * Versionshistorie eines Ereignisses in die Seitenleiste rendern.
+ *
+ * Ereignisse werden bei Änderungen nicht überschrieben, sondern als neue
+ * Version gespeichert. Frühere Fassungen bleiben dauerhaft einsehbar, damit
+ * nachvollziehbar ist, was sich wann geändert hat.
+ */
+async function renderEventVersionHistory(eventId) {
+    const container = document.getElementById('event-version-history');
+    if (!container) return;
+
+    let versions = [];
+
+    try {
+        const response = await fetch(`/api/custom-events/${eventId}/versions`);
+        const result = await response.json();
+        versions = (result.success && result.data && result.data.versions) ? result.data.versions : [];
+    } catch (error) {
+        return;
+    }
+
+    // Erst ab zwei Fassungen gibt es überhaupt etwas nachzuvollziehen.
+    if (versions.length < 2) return;
+
+    const period = (version) => {
+        const from = version.valid_from ? formatDateTimeDE(version.valid_from) : null;
+        const until = version.valid_until ? formatDateTimeDE(version.valid_until) : null;
+        if (from && until) return `gültig ${from} – ${until}`;
+        if (from) return `gültig seit ${from}`;
+        return 'noch nicht veröffentlicht';
+    };
+
+    const rows = versions.map((version) => {
+        const changes = (version.changes || []).map((change) => `
+            <li style="font-size:12px;color:#374151;margin-bottom:2px;">
+                <strong>${escapeHtml(change.label)}:</strong>
+                <span style="text-decoration:line-through;color:#9ca3af;">${escapeHtml(change.old || '—')}</span>
+                <span style="color:#9ca3af;">→</span>
+                <span>${escapeHtml(change.new || '—')}</span>
+            </li>
+        `).join('');
+
+        return `
+            <details style="border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;background:${version.is_current_version ? '#ffffff' : '#f9fafb'};">
+                <summary style="cursor:pointer;padding:10px 12px;list-style:none;">
+                    <span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${version.is_current_version ? '#dcfce7' : '#e5e7eb'};color:${version.is_current_version ? '#15803d' : '#4b5563'};">
+                        Version ${version.version}${version.is_current_version ? ' · aktuell' : ''}
+                    </span>
+                    <span style="font-size:11px;color:#6b7280;margin-left:8px;">${period(version)}</span>
+                    <div style="font-size:12px;color:#374151;margin-top:4px;">${escapeHtml(version.title || '')}</div>
+                    ${version.version_note ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">${escapeHtml(version.version_note)}</div>` : ''}
+                </summary>
+                <div style="padding:0 12px 12px;border-top:1px solid #e5e7eb;">
+                    ${changes ? `<div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;margin:10px 0 4px;">Änderungen gegenüber der Vorversion</div><ul style="margin:0;padding-left:16px;">${changes}</ul>` : ''}
+                    <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;margin:10px 0 4px;">Inhalt dieser Fassung</div>
+                    <div style="font-size:12px;line-height:1.6;color:#374151;">${version.content || '<em style="color:#9ca3af;">Keine Beschreibung hinterlegt</em>'}</div>
+                    ${version.changed_by ? `<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Bearbeitet von ${escapeHtml(version.changed_by)}</div>` : ''}
+                </div>
+            </details>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
+            <h4 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">Versionshistorie</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+                Dieses Ereignis wurde aktualisiert. Frühere Fassungen bleiben dauerhaft einsehbar.
+            </p>
+            ${rows}
+        </div>
+    `;
+}
+
 // Event-Details in die Seitenleiste laden
 async function loadEventDetails(event) {
     const sidebarContent = document.getElementById('sidebarContent');
@@ -2913,9 +2986,17 @@ async function loadEventDetails(event) {
             `;
         }
         
+        detailsHtml += `<div id="event-version-history"></div>`;
+
         detailsHtml += `</div>`;
-        
+
         sidebarContent.innerHTML = detailsHtml;
+
+        // Versionshistorie nachladen: Ereignisse werden bei Änderungen nicht
+        // überschrieben, sondern als neue Version geführt.
+        if (event.source === 'custom' && event.id) {
+            renderEventVersionHistory(event.id);
+        }
 
         // Live-Uhr nur starten wenn Koordinaten vorhanden sind
         if (event.latitude && event.longitude) {

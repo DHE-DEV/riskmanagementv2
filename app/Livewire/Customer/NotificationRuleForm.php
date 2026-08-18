@@ -270,6 +270,9 @@ class NotificationRuleForm extends Component
             '{description}' => 'Dies ist eine Test-Benachrichtigung um den E-Mail-Versand zu prüfen.',
             '{event_date}' => now()->format('d.m.Y'),
             '{unsubscribe_url}' => '#',
+            '{version}' => '2',
+            '{version_note}' => 'Beispiel: Zeitraum angepasst',
+            '{update_hint}' => 'Aktualisierte Fassung (Version 2)',
             '{affected_trips}' => $affectedTripsHtml,
             '{affected_trips_count}' => $affectedTripsCount,
         ];

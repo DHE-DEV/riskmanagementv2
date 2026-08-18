@@ -32,6 +32,20 @@ class CustomEventsTable
                     ->sortable()
                     ->limit(50),
 
+                // Versionsstand: abgeloeste Versionen bleiben erhalten, sind aber
+                // standardmaessig ueber den Filter "Nur aktuelle Versionen" ausgeblendet.
+                TextColumn::make('version')
+                    ->label('Version')
+                    ->badge()
+                    ->formatStateUsing(fn ($state): string => 'v' . ($state ?? 1))
+                    ->color(fn (CustomEvent $record): string => match (true) {
+                        $record->superseded_by_id !== null => 'warning',
+                        $record->is_active => 'success',
+                        default => 'gray',
+                    })
+                    ->description(fn (CustomEvent $record): ?string => $record->superseded_by_id !== null ? 'abgelöst' : null)
+                    ->sortable(),
+
                 TextColumn::make('countries.name_translations')
                     ->label('Länder')
                     ->getStateUsing(function ($record) {
@@ -179,6 +193,13 @@ class CustomEventsTable
                     ->sortable(),
             ])
             ->filters([
+                // Standardmaessig nur die jeweils gueltige Version zeigen -
+                // die Historie ist ueber den Filter und die Detailseite erreichbar.
+                Filter::make('only_current_version')
+                    ->label('Nur aktuelle Versionen')
+                    ->default()
+                    ->query(fn (Builder $query): Builder => $query->whereNull('superseded_by_id')),
+
                 SelectFilter::make('country_id')
                     ->label('Land')
                     ->options(function () {
@@ -361,26 +382,50 @@ class CustomEventsTable
                             ->warning()
                             ->send();
                     }),
+                // Duplizieren erzeugt die naechste Version desselben Ereignisses
+                // (inaktiv), statt einen unabhaengigen zweiten Datensatz anzulegen.
                 Action::make('duplicate')
-                    ->label('Duplizieren')
+                    ->label('Duplizieren (neue Version)')
                     ->icon('heroicon-o-document-duplicate')
-                    ->action(function (CustomEvent $record) {
-                        $newEvent = $record->replicate(['clicks_count']);
-                        $newEvent->title = $record->title . ' (Kopie)';
-                        $newEvent->created_by = auth()->id();
-                        $newEvent->updated_by = auth()->id();
-                        $newEvent->save();
+                    ->schema([
+                        \Filament\Forms\Components\Textarea::make('version_note')
+                            ->label('Änderungsnotiz')
+                            ->rows(3)
+                            ->maxLength(2000)
+                            ->helperText('Kurz beschreiben, was sich gegenüber der Vorversion ändert.'),
+                    ])
+                    ->action(function (CustomEvent $record, array $data) {
+                        $newVersion = app(\App\Services\CustomEventVersionService::class)
+                            ->createNewVersion($record, auth()->id(), $data['version_note'] ?? null);
 
-                        // Copy event types relationship
-                        if ($record->eventTypes()->exists()) {
-                            $newEvent->eventTypes()->sync($record->eventTypes->pluck('id'));
-                        }
+                        Notification::make()
+                            ->title("Version {$newVersion->version} angelegt")
+                            ->body('Die Kopie ist noch inaktiv – nach der Bearbeitung aktivieren.')
+                            ->success()
+                            ->send();
 
-                        return redirect()->route('filament.admin.resources.custom-events.edit', $newEvent);
+                        return redirect()->route('filament.admin.resources.custom-events.edit', $newVersion);
                     })
+                    ->modalHeading('Neue Version anlegen')
+                    ->modalDescription('Es wird eine vollständige Kopie als nächste Version angelegt. Sie ist zunächst inaktiv und löst die aktuelle Version erst beim Aktivieren ab.')
+                    ->modalSubmitActionLabel('Neue Version anlegen'),
+
+                Action::make('activate_version')
+                    ->label('Version aktivieren')
+                    ->icon('heroicon-o-rocket-launch')
+                    ->color('success')
+                    ->visible(fn (CustomEvent $record): bool => ! $record->is_active && $record->version > 1)
                     ->requiresConfirmation()
-                    ->modalHeading('Event duplizieren')
-                    ->modalSubheading('Möchten Sie dieses Event wirklich duplizieren?'),
+                    ->modalHeading('Version aktivieren')
+                    ->modalDescription('Diese Version wird veröffentlicht, die bisherige Version wird deaktiviert und bleibt als Historie erhalten.')
+                    ->action(function (CustomEvent $record) {
+                        $record->activateVersion(auth()->id());
+
+                        Notification::make()
+                            ->title("Version {$record->version} ist aktiv")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
