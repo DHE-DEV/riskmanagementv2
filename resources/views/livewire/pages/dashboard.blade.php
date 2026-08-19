@@ -792,7 +792,6 @@
             background: #CEE741;
             color: #002742;
             font-size: 11px;
-            font-weight: 600;
             white-space: nowrap;
         }
 
