@@ -787,27 +787,22 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 2px 7px;
-            border: 1px solid #e2e8f0;
+            padding: 2px 8px;
             border-radius: 9999px;
-            background: #ffffff;
-            color: #475569;
+            background: #002742;
+            color: #CEE741;
             font-size: 11px;
             font-weight: 600;
             white-space: nowrap;
         }
 
-        .event-version-badge.is-today {
-            border-color: #bfdbfe;
-            background: #eff6ff;
-            color: #1d4ed8;
-        }
-
+        /* Am Tag der Aenderung zusaetzlich ein Punkt - die Farben bleiben
+           gleich, sonst gaebe es zwei konkurrierende Auszeichnungen. */
         .event-version-dot {
             width: 5px;
             height: 5px;
             border-radius: 9999px;
-            background: #2563eb;
+            background: #CEE741;
         }
 
         .version-row { cursor: pointer; }
@@ -4859,8 +4854,7 @@ function createEventElement(event) {
 
     // Ohne Datums-Badge kann die Reihe komplett leer bleiben - dann entfaellt
     // sie ganz, sonst bliebe ein Abstand ohne Inhalt stehen
-    const badgesHtml = eventVersionBadge(event)
-        + typeLabels.map(label => badge(label)).join('')
+    const badgesHtml = typeLabels.map(label => badge(label)).join('')
         + (event.magnitude ? badge(`Magnitude: ${event.magnitude}`) : '');
 
     // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel
@@ -4883,12 +4877,17 @@ function createEventElement(event) {
         }
     }
     
+    // Steht ueber Land und Logo, damit die Aenderung beim Ueberfliegen der
+    // Liste als Erstes ins Auge faellt.
+    const versionBadgeHtml = eventVersionBadge(event);
+
     div.className = `bg-gray-50 rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-100 transition-colors`;
     div.style.borderLeftColor = severityBorderColor;
     div.innerHTML = `
         <div class="flex items-start space-x-2">
             <div class="w-2 h-2 rounded-full mt-2 ${severityColor}"></div>
             <div class="flex-1 min-w-0">
+                ${versionBadgeHtml ? `<div class="mb-1.5">${versionBadgeHtml}</div>` : ''}
                 <div class="flex items-start gap-2">
                     <div class="flex-1 min-w-0" style="max-width: 66.666%;">
                         <span class="text-xs font-medium uppercase text-gray-800 break-words">${countryDisplay}</span>
