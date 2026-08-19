@@ -699,6 +699,51 @@
 
         .event-sidebar.w-2x { width: 800px; right: -800px; }
         .event-sidebar.w-3x { width: 1200px; right: -1200px; }
+
+        /* Versionsvergleich: zwei Fassungen nebeneinander in der breiten Sidebar */
+        .version-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        /* Ohne min-width sprengen lange Titel die Spalte statt umzubrechen */
+        .version-compare-col { min-width: 0; }
+
+        .version-compare-head {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        /* Schmaler als 900px stehen zwei Spalten zu eng - dann untereinander */
+        @media (max-width: 900px) {
+            .version-compare { grid-template-columns: 1fr; }
+        }
+
+        .version-compare-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 8px 10px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        .version-row { cursor: pointer; }
+        .version-row:hover { border-color: #93c5fd; }
+        .version-row.is-compared { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
         
         .event-sidebar.open { right: 0; }
         
@@ -2718,6 +2763,121 @@ function increaseSidebarWidth() {
     }
 }
 
+// Ereignis, das gerade in der Seitenleiste steht - der Versionsvergleich
+// braucht es als linke Spalte und um danach wieder zurueckzukehren.
+let currentDetailEvent = null;
+
+// Version, die derzeit rechts danebensteht (null = kein Vergleich aktiv).
+let comparedVersionId = null;
+
+// Breite vor dem Vergleich - wer die Leiste selbst breiter gezogen hat, soll
+// sie danach nicht auf einfacher Breite wiederfinden.
+let sidebarWidthBeforeComparison = null;
+
+/**
+ * Eine fruehere Fassung neben der aktuellen anzeigen - oder den Vergleich
+ * wieder beenden, wenn dieselbe Version erneut angeklickt wird.
+ */
+function toggleVersionComparison(versionId) {
+    if (comparedVersionId === versionId) {
+        exitVersionComparison();
+        return;
+    }
+
+    renderVersionComparison(versionId);
+}
+
+/**
+ * Zwei Fassungen nebeneinander stellen.
+ *
+ * Beide Spalten werden ueber denselben Endpunkt geladen und mit derselben
+ * Funktion gerendert - nur so stehen wirklich die gleichen Felder auf
+ * gleicher Hoehe. Wetter und Ortszeit entfallen: sie beschreiben das Jetzt,
+ * nicht die Fassung.
+ */
+async function renderVersionComparison(versionId) {
+    const sidebarContent = document.getElementById('sidebarContent');
+    if (!sidebarContent || !currentDetailEvent || !currentDetailEvent.id) return;
+
+    let current = null;
+    let older = null;
+
+    try {
+        const [currentResponse, olderResponse] = await Promise.all([
+            fetch(`/api/custom-events/${currentDetailEvent.id}`),
+            fetch(`/api/custom-events/${versionId}`),
+        ]);
+
+        const currentResult = await currentResponse.json();
+        const olderResult = await olderResponse.json();
+
+        if (currentResult.success) current = currentResult.data;
+        if (olderResult.success) older = olderResult.data;
+    } catch (error) {
+        return;
+    }
+
+    if (!current || !older) return;
+
+    comparedVersionId = versionId;
+
+    // Zwei Spalten brauchen Platz - die Seitenleiste geht auf doppelte Breite.
+    if (sidebarWidthBeforeComparison === null) {
+        sidebarWidthBeforeComparison = currentSidebarWidth;
+    }
+
+    if (currentSidebarWidth < 2) {
+        setSidebarWidth(2);
+    }
+
+    sidebarContent.innerHTML = `
+        <div class="event-details">
+            <div class="version-compare-bar">
+                <span>Versionsvergleich</span>
+                <button type="button" onclick="exitVersionComparison()"
+                        style="border:1px solid #bfdbfe;background:#ffffff;color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">
+                    Vergleich beenden
+                </button>
+            </div>
+
+            <div id="event-version-history"></div>
+
+            <div class="version-compare">
+                <div class="version-compare-col">
+                    <div class="version-compare-head">
+                        Aktuelle Fassung${current.version ? ` · Version ${current.version}` : ''}
+                    </div>
+                    ${buildEventRecordHtml(current, { withVersionHistory: false })}
+                </div>
+                <div class="version-compare-col">
+                    <div class="version-compare-head">
+                        Frühere Fassung${older.version ? ` · Version ${older.version}` : ''}
+                    </div>
+                    ${buildEventRecordHtml(older, { withVersionHistory: false })}
+                </div>
+            </div>
+        </div>
+    `;
+
+    renderEventVersionHistory(currentDetailEvent.id);
+}
+
+/**
+ * Zurueck zur normalen Detailansicht des aktuellen Ereignisses.
+ */
+function exitVersionComparison() {
+    comparedVersionId = null;
+
+    if (sidebarWidthBeforeComparison !== null) {
+        setSidebarWidth(sidebarWidthBeforeComparison);
+        sidebarWidthBeforeComparison = null;
+    }
+
+    if (currentDetailEvent) {
+        loadEventDetails(currentDetailEvent);
+    }
+}
+
 /**
  * Versionshistorie eines Ereignisses in die Seitenleiste rendern.
  *
@@ -2755,13 +2915,21 @@ async function renderEventVersionHistory(eventId) {
         // Leser schwer zu deuten. Ob sich etwas geändert hat, genügt.
         const hasChanges = (version.changes || []).length > 0;
 
+        // Die aktuelle Fassung steht im Vergleich immer links - sie mit sich
+        // selbst zu vergleichen ergibt nichts, also ist sie nicht anklickbar.
+        const isComparable = !version.is_current_version;
+        const isCompared = comparedVersionId === version.id;
+
         return `
-            <div style="border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;padding:10px 12px;background:${version.is_current_version ? '#ffffff' : '#f9fafb'};">
+            <div class="${isComparable ? 'version-row' : ''}${isCompared ? ' is-compared' : ''}"
+                 ${isComparable ? `onclick="toggleVersionComparison(${version.id})" title="Mit der aktuellen Fassung vergleichen"` : ''}
+                 style="border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;padding:10px 12px;background:${version.is_current_version ? '#ffffff' : '#f9fafb'};">
                 <span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${version.is_current_version ? '#dcfce7' : '#e5e7eb'};color:${version.is_current_version ? '#15803d' : '#4b5563'};">
                     Version ${version.version}${version.is_current_version ? ' · aktuell' : ''}
                 </span>
                 <span style="font-size:11px;color:#6b7280;margin-left:8px;">${period(version)}</span>
                 ${hasChanges ? `<div style="font-size:12px;color:#374151;margin-top:4px;">Redaktionelle Änderung</div>` : ''}
+                ${isCompared ? `<div style="font-size:11px;color:#1d4ed8;font-weight:600;margin-top:4px;">Wird rechts angezeigt</div>` : ''}
             </div>
         `;
     }).join('');
@@ -2770,16 +2938,123 @@ async function renderEventVersionHistory(eventId) {
         <div style="margin:12px 0 16px;">
             <h4 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">Versionshistorie</h4>
             <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">
-                Dieses Ereignis wurde aktualisiert. Frühere Fassungen bleiben dauerhaft einsehbar.
+                Dieses Ereignis wurde aktualisiert. Eine frühere Fassung anklicken, um sie
+                neben der aktuellen zu sehen.
             </p>
             ${rows}
         </div>
     `;
 }
 
+/**
+ * Stammdaten eines Ereignisses als HTML - Kopf, Beschreibung, Info-Raster.
+ *
+ * Bewusst eine eigene Funktion: der Versionsvergleich stellt zwei Fassungen
+ * nebeneinander und muss beide gleich aufbauen, sonst laufen die Spalten bei
+ * der naechsten Aenderung auseinander. Wetter und Ortszeit gehoeren nicht
+ * hierher - das sind Live-Daten, keine Eigenschaft einer Fassung.
+ */
+function buildEventRecordHtml(event, options = {}) {
+    const withVersionHistory = options.withVersionHistory !== false;
+
+    return `
+            <div class="event-header">
+                <h2 class="event-title">${event.title}</h2>
+                <div class="event-meta">
+                    ${event.event_types && event.event_types.length > 0
+                        ? event.event_types.map(type => `<span class="event-type">${type}</span>`).join(' ')
+                        : `<span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>`
+                    }
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>
+                    ${event.archived ? '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-warning text-white ml-2" style="background-color: #f59e0b">Archiviert</span>' : ''}
+                </div>
+            </div>
+            ${event.description ? `
+                <div class="event-description mt-3 mb-3">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
+                    <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}${renderEventSources(event)}</div>
+                </div>
+            ` : ''}
+            ${event.source === 'custom' && event.popup_content ? `
+                <div class="event-description mt-3 mb-3">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
+                    <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}${renderEventSources(event)}</div>
+                </div>
+            ` : ''}
+            
+            ${withVersionHistory ? '<div id="event-version-history"></div>' : ''}
+
+            <div class="event-info-grid">
+                ${event.country_name && event.country_name !== 'ALLGEMEIN' || event.country && event.country !== 'ALLGEMEIN' ? `
+                <div class="info-item">
+                    <span class="info-label">Land:</span>
+                    <span class="info-value">${event.country_name || event.country}</span>
+                </div>
+                ` : ''}
+                ${renderEventLocations(event)}
+                <div class="info-item">
+                    <span class="info-label">Startdatum:</span>
+                    <span class="info-value">${event.start_date ? formatDateTimeDE(event.start_date) : (event.date_iso ? formatDateTimeDE(event.date_iso) : (event.date ? formatDateTimeDE(event.date) : 'Unbekannt'))}</span>
+                </div>
+                ${event.gdacs_date_added && event.source === 'gdacs' ? `
+                <div class="info-item">
+                    <span class="info-label">GDACS hinzugefügt:</span>
+                    <span class="info-value">${formatDateTimeDE(event.gdacs_date_added)}</span>
+                </div>
+                ` : ''}
+                ${event.magnitude ? `
+                <div class="info-item">
+                    <span class="info-label">Magnitude:</span>
+                    <span class="info-value">${event.magnitude}</span>
+                </div>
+                ` : ''}
+                ${event.affected_population ? `
+                <div class="info-item">
+                    <span class="info-label">Betroffene:</span>
+                    <span class="info-value">${event.affected_population}</span>
+                </div>
+                ` : ''}
+                <div class="info-item">
+                    <span class="info-label">Quelle:</span>
+                    <span class="info-value">${event.source === 'custom' ? (event.source_logo ? `<img src="${event.source_logo}" alt="${event.source_name || 'Quelle'}" style="height:14px; vertical-align:middle;" />` : (event.source_name || 'Intern')) : 'GDACS'}</span>
+                </div>
+                ${event.archived ? `
+                <div class="info-item col-span-2">
+                    <span class="info-label">Archiviert am:</span>
+                    <span class="info-value">${event.archived_at ? formatDateTimeDE(event.archived_at) : 'Unbekannt'}</span>
+                </div>
+                <div class="info-item col-span-2">
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mt-2">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Dieses archivierte Event wird noch bis ${event.end_date ? formatDateTimeDE(new Date(new Date(event.end_date).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()) : (event.archived_at ? formatDateTimeDE(new Date(new Date(event.archived_at).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()) : 'unbekannt')} auf der Karte angezeigt.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+    `;
+}
+
 // Event-Details in die Seitenleiste laden
 async function loadEventDetails(event) {
     const sidebarContent = document.getElementById('sidebarContent');
+
+    // Ein neu geoeffnetes Ereignis beendet einen laufenden Versionsvergleich -
+    // samt der Breite, die nur fuer die zweite Spalte da war.
+    if (sidebarWidthBeforeComparison !== null) {
+        setSidebarWidth(sidebarWidthBeforeComparison);
+        sidebarWidthBeforeComparison = null;
+    }
+
+    currentDetailEvent = event;
+    comparedVersionId = null;
     
     // Zeige Loading-Zustand
     sidebarContent.innerHTML = `
@@ -2811,87 +3086,7 @@ async function loadEventDetails(event) {
         // Erstelle detaillierte Event-Anzeige
         let detailsHtml = `
             <div class="event-details">
-                <div class="event-header">
-                    <h2 class="event-title">${event.title}</h2>
-                    <div class="event-meta">
-                        ${event.event_types && event.event_types.length > 0
-                            ? event.event_types.map(type => `<span class="event-type">${type}</span>`).join(' ')
-                            : `<span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>`
-                        }
-                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>
-                        ${event.archived ? '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-warning text-white ml-2" style="background-color: #f59e0b">Archiviert</span>' : ''}
-                    </div>
-                </div>
-                ${event.description ? `
-                    <div class="event-description mt-3 mb-3">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${escapeHtml(event.description)}${renderEventSources(event)}</div>
-                    </div>
-                ` : ''}
-                ${event.source === 'custom' && event.popup_content ? `
-                    <div class="event-description mt-3 mb-3">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Beschreibung</h4>
-                        <div class="text-sm leading-6 text-gray-800 bg-gray-50 p-3 rounded-lg border-l-4" style="border-left-color: ${getPriorityColor(event.priority || event.severity)}">${event.popup_content}${renderEventSources(event)}</div>
-                    </div>
-                ` : ''}
-                
-                <div id="event-version-history"></div>
-
-                <div class="event-info-grid">
-                    ${event.country_name && event.country_name !== 'ALLGEMEIN' || event.country && event.country !== 'ALLGEMEIN' ? `
-                    <div class="info-item">
-                        <span class="info-label">Land:</span>
-                        <span class="info-value">${event.country_name || event.country}</span>
-                    </div>
-                    ` : ''}
-                    ${renderEventLocations(event)}
-                    <div class="info-item">
-                        <span class="info-label">Startdatum:</span>
-                        <span class="info-value">${event.start_date ? formatDateTimeDE(event.start_date) : (event.date_iso ? formatDateTimeDE(event.date_iso) : (event.date ? formatDateTimeDE(event.date) : 'Unbekannt'))}</span>
-                    </div>
-                    ${event.gdacs_date_added && event.source === 'gdacs' ? `
-                    <div class="info-item">
-                        <span class="info-label">GDACS hinzugefügt:</span>
-                        <span class="info-value">${formatDateTimeDE(event.gdacs_date_added)}</span>
-                    </div>
-                    ` : ''}
-                    ${event.magnitude ? `
-                    <div class="info-item">
-                        <span class="info-label">Magnitude:</span>
-                        <span class="info-value">${event.magnitude}</span>
-                    </div>
-                    ` : ''}
-                    ${event.affected_population ? `
-                    <div class="info-item">
-                        <span class="info-label">Betroffene:</span>
-                        <span class="info-value">${event.affected_population}</span>
-                    </div>
-                    ` : ''}
-                    <div class="info-item">
-                        <span class="info-label">Quelle:</span>
-                        <span class="info-value">${event.source === 'custom' ? (event.source_logo ? `<img src="${event.source_logo}" alt="${event.source_name || 'Quelle'}" style="height:14px; vertical-align:middle;" />` : (event.source_name || 'Intern')) : 'GDACS'}</span>
-                    </div>
-                    ${event.archived ? `
-                    <div class="info-item col-span-2">
-                        <span class="info-label">Archiviert am:</span>
-                        <span class="info-value">${event.archived_at ? formatDateTimeDE(event.archived_at) : 'Unbekannt'}</span>
-                    </div>
-                    <div class="info-item col-span-2">
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mt-2">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-yellow-700">
-                                        Dieses archivierte Event wird noch bis ${event.end_date ? formatDateTimeDE(new Date(new Date(event.end_date).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()) : (event.archived_at ? formatDateTimeDE(new Date(new Date(event.archived_at).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()) : 'unbekannt')} auf der Karte angezeigt.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
+                ${buildEventRecordHtml(event)}
         `;
 
         // Wetter- und Zeitzonen-Daten nur anzeigen wenn Koordinaten vorhanden sind
