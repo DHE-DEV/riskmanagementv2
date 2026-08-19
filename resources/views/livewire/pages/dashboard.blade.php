@@ -3122,8 +3122,14 @@ async function renderEventVersionHistory(eventId) {
  * Ortszeit) nicht im selben Template-String stecken wie der Datensatz.
  */
 function buildEventRecordHtml(event) {
+    // Gleiche Kennzeichnung wie in der Liste - ueber der Ueberschrift, damit
+    // beim Oeffnen der Details sofort erkennbar ist, dass es eine neuere
+    // Fassung gibt.
+    const versionBadgeHtml = eventVersionBadge(event);
+
     return `
             <div class="event-header">
+                ${versionBadgeHtml ? `<div class="mb-2">${versionBadgeHtml}</div>` : ''}
                 <h2 class="event-title">${event.title}</h2>
                 <div class="event-meta">
                     ${event.event_types && event.event_types.length > 0
