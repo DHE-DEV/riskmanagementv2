@@ -700,30 +700,69 @@
         .event-sidebar.w-2x { width: 800px; right: -800px; }
         .event-sidebar.w-3x { width: 1200px; right: -1200px; }
 
-        /* Versionsvergleich: zwei Fassungen nebeneinander in der breiten Sidebar */
-        .version-compare {
+        /* Versionsvergleich: ein Raster statt zweier Spalten-Stapel. Beide
+           Fassungen eines Feldes liegen in derselben Rasterzeile, deshalb
+           bleiben sie auf gleicher Hoehe - auch wenn die Beschreibung links
+           doppelt so lang ist wie rechts. */
+        .version-compare-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            align-items: start;
+            gap: 0 16px;
+            align-items: stretch;
         }
-
-        /* Ohne min-width sprengen lange Titel die Spalte statt umzubrechen */
-        .version-compare-col { min-width: 0; }
 
         .version-compare-head {
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             color: #6b7280;
-            margin-bottom: 8px;
             padding-bottom: 6px;
             border-bottom: 1px solid #e5e7eb;
         }
 
-        /* Schmaler als 900px stehen zwei Spalten zu eng - dann untereinander */
+        .version-field-label {
+            grid-column: 1 / -1;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin: 12px 0 4px;
+        }
+
+        /* min-width: 0 verhindert, dass lange Woerter die Spalte aufziehen */
+        .version-field-cell {
+            min-width: 0;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .version-field-cell p { margin: 0 0 6px; }
+        .version-field-cell p:last-child { margin-bottom: 0; }
+        .version-field-empty { color: #94a3b8; }
+
+        /* Kennzeichnung der Spalte - nur noetig, wenn gestapelt wird */
+        .version-cell-tag { display: none; }
+
+        /* Schmaler als 900px stehen zwei Spalten zu eng - dann untereinander.
+           Dort braucht jede Zelle ihre eigene Beschriftung. */
         @media (max-width: 900px) {
-            .version-compare { grid-template-columns: 1fr; }
+            .version-compare-grid { grid-template-columns: 1fr; }
+            .version-compare-head { display: none; }
+            .version-field-cell { margin-bottom: 6px; }
+            .version-cell-tag {
+                display: block;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                color: #94a3b8;
+                margin-bottom: 2px;
+            }
         }
 
         .version-compare-bar {
@@ -2775,6 +2814,108 @@ let comparedVersionId = null;
 let sidebarWidthBeforeComparison = null;
 
 /**
+ * Felder, die der Versionsvergleich gegenueberstellt.
+ *
+ * Eine Liste fuer beide Spalten: jedes Feld liefert links wie rechts genau
+ * eine Zelle, und beide landen in derselben Rasterzeile. Dadurch stehen sie
+ * auf gleicher Hoehe, egal wie unterschiedlich lang der Inhalt ist.
+ */
+const VERSION_COMPARE_FIELDS = [
+    {
+        label: 'Titel',
+        render: (event) => escapeHtml(event.title || ''),
+    },
+    {
+        label: 'Ereignistyp',
+        render: (event) => (event.event_types && event.event_types.length > 0)
+            ? event.event_types.map(type => `<span class="event-type">${escapeHtml(type)}</span>`).join(' ')
+            : `<span class="event-type">${mapEventType(event.event_type, event.event_type_name)}</span>`,
+    },
+    {
+        label: 'Priorität',
+        render: (event) => `<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white" style="background-color: ${getPriorityColor(event.priority || event.severity)}">${mapPriority(event.priority || event.severity)}</span>`,
+    },
+    {
+        label: 'Beschreibung',
+        // popup_content ist bereits HTML aus dem Editor, description ist Text.
+        render: (event) => event.popup_content
+            ? event.popup_content
+            : (event.description ? escapeHtml(event.description) : ''),
+    },
+    {
+        label: 'Land',
+        render: (event) => {
+            const country = event.country_name || event.country;
+            return (country && country !== 'ALLGEMEIN') ? escapeHtml(country) : '';
+        },
+    },
+    {
+        label: 'Standort',
+        render: (event) => escapeHtml(eventLocationLabels(event).join(', ')),
+    },
+    {
+        label: 'Startdatum',
+        render: (event) => event.start_date ? formatDateTimeDE(event.start_date) : '',
+    },
+    {
+        label: 'Enddatum',
+        render: (event) => event.end_date ? formatDateTimeDE(event.end_date) : '',
+    },
+    {
+        label: 'Quelle',
+        render: (event) => event.source_logo
+            ? `<img src="${event.source_logo}" alt="${escapeHtml(event.source_name || 'Quelle')}" style="height:14px; vertical-align:middle;" />`
+            : escapeHtml(event.source_name || ''),
+    },
+    {
+        // Leer statt 'Nein', damit die Zeile nur auftaucht, wenn mindestens
+        // eine der beiden Fassungen tatsaechlich archiviert ist.
+        label: 'Archiviert',
+        render: (event) => event.archived
+            ? (event.archived_at ? `Ja, am ${formatDateTimeDE(event.archived_at)}` : 'Ja')
+            : '',
+    },
+];
+
+/**
+ * Gegenueberstellung zweier Fassungen als Raster.
+ *
+ * Felder, die in beiden Fassungen leer sind, werden weggelassen - sie sagen
+ * nichts ueber den Unterschied aus und wuerden die Liste nur strecken.
+ */
+function buildVersionComparisonHtml(current, older, currentLabel, olderLabel) {
+    const rows = VERSION_COMPARE_FIELDS.map((field) => {
+        const left = field.render(current) || '';
+        const right = field.render(older) || '';
+
+        if (!left && !right) {
+            return '';
+        }
+
+        const cell = (value, tag) => `
+            <div class="version-field-cell">
+                <span class="version-cell-tag">${escapeHtml(tag)}</span>
+                ${value || '<span class="version-field-empty">—</span>'}
+            </div>
+        `;
+
+        return `
+            <div class="version-field-label">${escapeHtml(field.label)}</div>
+            ${cell(left, currentLabel)}
+            ${cell(right, olderLabel)}
+        `;
+    }).join('');
+
+    return `
+        <div class="version-compare-grid">
+            <div class="version-compare-head">${escapeHtml(currentLabel)}</div>
+            <div class="version-compare-head">${escapeHtml(olderLabel)}</div>
+            ${rows}
+        </div>
+    `;
+}
+
+/**
  * Eine fruehere Fassung neben der aktuellen anzeigen - oder den Vergleich
  * wieder beenden, wenn dieselbe Version erneut angeklickt wird.
  */
@@ -2842,20 +2983,12 @@ async function renderVersionComparison(versionId) {
 
             <div id="event-version-history"></div>
 
-            <div class="version-compare">
-                <div class="version-compare-col">
-                    <div class="version-compare-head">
-                        Aktuelle Fassung${current.version ? ` · Version ${current.version}` : ''}
-                    </div>
-                    ${buildEventRecordHtml(current, { withVersionHistory: false })}
-                </div>
-                <div class="version-compare-col">
-                    <div class="version-compare-head">
-                        Frühere Fassung${older.version ? ` · Version ${older.version}` : ''}
-                    </div>
-                    ${buildEventRecordHtml(older, { withVersionHistory: false })}
-                </div>
-            </div>
+            ${buildVersionComparisonHtml(
+                current,
+                older,
+                current.version ? `Aktuell · Version ${current.version}` : 'Aktuelle Fassung',
+                older.version ? `Version ${older.version}` : 'Frühere Fassung',
+            )}
         </div>
     `;
 
@@ -2949,14 +3082,10 @@ async function renderEventVersionHistory(eventId) {
 /**
  * Stammdaten eines Ereignisses als HTML - Kopf, Beschreibung, Info-Raster.
  *
- * Bewusst eine eigene Funktion: der Versionsvergleich stellt zwei Fassungen
- * nebeneinander und muss beide gleich aufbauen, sonst laufen die Spalten bei
- * der naechsten Aenderung auseinander. Wetter und Ortszeit gehoeren nicht
- * hierher - das sind Live-Daten, keine Eigenschaft einer Fassung.
+ * Aus loadEventDetails herausgeloest, damit dort die Live-Daten (Wetter,
+ * Ortszeit) nicht im selben Template-String stecken wie der Datensatz.
  */
-function buildEventRecordHtml(event, options = {}) {
-    const withVersionHistory = options.withVersionHistory !== false;
-
+function buildEventRecordHtml(event) {
     return `
             <div class="event-header">
                 <h2 class="event-title">${event.title}</h2>
@@ -2982,7 +3111,7 @@ function buildEventRecordHtml(event, options = {}) {
                 </div>
             ` : ''}
             
-            ${withVersionHistory ? '<div id="event-version-history"></div>' : ''}
+            <div id="event-version-history"></div>
 
             <div class="event-info-grid">
                 ${event.country_name && event.country_name !== 'ALLGEMEIN' || event.country && event.country !== 'ALLGEMEIN' ? `
@@ -6114,7 +6243,13 @@ function escapeForAttr(str) {
 
 // Standort-Datensaetze eines Events rendern (Land / Region / Stadt, ggf. mit Notiz).
 // Pro Land sind mehrere Datensaetze moeglich - alle werden aufgelistet.
-function renderEventLocations(event) {
+/**
+ * Standorte eines Ereignisses als lesbare Bezeichnungen.
+ *
+ * Eigene Funktion, weil der Versionsvergleich dieselbe Ableitung braucht -
+ * nur eben ohne das Info-Item-Markup drumherum.
+ */
+function eventLocationLabels(event) {
     const locations = Array.isArray(event.countries) ? event.countries : [];
 
     const labels = locations.map(loc => {
@@ -6131,11 +6266,15 @@ function renderEventLocations(event) {
         return loc.location_note ? `${label} (${loc.location_note})` : label;
     }).filter(Boolean);
 
-    if (labels.length === 0) {
+    return [...new Set(labels)];
+}
+
+function renderEventLocations(event) {
+    const unique = eventLocationLabels(event);
+
+    if (unique.length === 0) {
         return '';
     }
-
-    const unique = [...new Set(labels)];
 
     return `<div class="info-item">
         <span class="info-label">${unique.length > 1 ? 'Standorte:' : 'Standort:'}</span>
