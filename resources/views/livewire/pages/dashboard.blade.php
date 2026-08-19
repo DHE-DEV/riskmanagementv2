@@ -3096,9 +3096,8 @@ async function renderEventVersionHistory(eventId) {
         return 'noch nicht veröffentlicht';
     };
 
-    // Aufsteigend, damit die Pillen in der Reihenfolge ihrer Entstehung
-    // stehen - die API liefert die neueste zuerst.
-    const ordered = [...versions].sort((a, b) => (a.version || 0) - (b.version || 0));
+    // Absteigend - die aktuelle Fassung steht vorn, aeltere folgen dahinter.
+    const ordered = [...versions].sort((a, b) => (b.version || 0) - (a.version || 0));
 
     const pills = ordered.map((version) => {
         // Die aktuelle Fassung steht im Vergleich immer links - sie mit sich
