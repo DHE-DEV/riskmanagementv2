@@ -2843,10 +2843,34 @@ const VERSION_COMPARE_FIELDS = [
             : (event.description ? escapeHtml(event.description) : ''),
     },
     {
+        // Die Quellenangaben haengen in der Einzelansicht unter der
+        // Beschreibung. Im Vergleich stehen sie in einer eigenen Zeile, sonst
+        // waeren sie an die unterschiedlich langen Beschreibungstexte gekoppelt.
+        label: 'Quellenangabe',
+        render: (event) => renderEventSourceLinks(eventSourceLinks(event)),
+    },
+    {
+        // Das Land steckt in der countries-Relation - die Karte baut daraus je
+        // Land einen Marker und setzt country_name darauf. Die Spalte
+        // country_id ist Altbestand und meist leer; dann liefert die API den
+        // Platzhalter 'Unbekannt' bzw. 'ALLGEMEIN' statt null.
         label: 'Land',
         render: (event) => {
-            const country = event.country_name || event.country;
-            return (country && country !== 'ALLGEMEIN') ? escapeHtml(country) : '';
+            const assigned = [...new Set(
+                (Array.isArray(event.countries) ? event.countries : [])
+                    .map(loc => loc && loc.name)
+                    .filter(Boolean)
+            )];
+
+            if (assigned.length > 0) {
+                return escapeHtml(assigned.join(', '));
+            }
+
+            const fallback = event.country_name || event.country;
+
+            return (fallback && !['ALLGEMEIN', 'Unbekannt'].includes(fallback))
+                ? escapeHtml(fallback)
+                : '';
         },
     },
     {
@@ -6284,7 +6308,13 @@ function renderEventLocations(event) {
 
 // Quellenangaben eines Events rendern. Neue Events liefern eine Liste (source_links),
 // aeltere nur die Einzelfelder - beides wird unterstuetzt.
-function renderEventSources(event) {
+/**
+ * Sichtbare Quellenangaben eines Ereignisses.
+ *
+ * Eigene Funktion, weil der Versionsvergleich dieselbe Auswahl braucht -
+ * dort aber als eigene Zeile statt angehaengt an die Beschreibung.
+ */
+function eventSourceLinks(event) {
     let links = Array.isArray(event.source_links) ? event.source_links : [];
 
     if (links.length === 0 && event.source_link_text) {
@@ -6295,23 +6325,32 @@ function renderEventSources(event) {
         }];
     }
 
-    const visible = links.filter(link => link && link.show_frontend !== false && (link.link_text || link.link_url));
+    return links.filter(link => link && link.show_frontend !== false && (link.link_text || link.link_url));
+}
 
-    if (visible.length === 0) {
-        return '';
-    }
-
-    const rendered = visible.map(link => {
+/**
+ * Quellenangaben als kommaseparierte Liste - verlinkt, wo eine URL vorliegt.
+ */
+function renderEventSourceLinks(links) {
+    return links.map(link => {
         const text = escapeHtml(link.link_text || link.link_url);
 
         return link.link_url
             ? `<a href="${escapeHtml(link.link_url)}" target="_blank" rel="noopener noreferrer" style="font-style: italic; text-decoration: underline;">${text}</a>`
             : text;
     }).join(', ');
+}
+
+function renderEventSources(event) {
+    const visible = eventSourceLinks(event);
+
+    if (visible.length === 0) {
+        return '';
+    }
 
     const label = visible.length > 1 ? 'Quellen' : 'Quelle';
 
-    return `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">${label}: ${rendered}</span></div>`;
+    return `<div style="margin-top: 0.75rem;"><span style="font-style: italic;">${label}: ${renderEventSourceLinks(visible)}</span></div>`;
 }
 
 // Check if any filters are active (kept for potential future use)
