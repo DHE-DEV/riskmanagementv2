@@ -789,7 +789,9 @@
             gap: 5px;
             padding: 2px 8px;
             border-radius: 9999px;
-            background: #CEE741;
+            /* Oben 1px mehr als unten - der Text sass sonst zu dicht am Rand */
+            padding-top: 3px;
+            background: rgb(211, 227, 96);
             color: #002742;
             font-size: 11px;
             white-space: nowrap;
