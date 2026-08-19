@@ -375,7 +375,15 @@ class ManageEventCountries extends Page implements HasForms
     {
         return City::query()
             ->with(['country', 'region'])
-            ->where('name_translations', 'like', '%' . $search . '%')
+            ->where(function ($query) use ($search) {
+                // Ueber JSON_EXTRACT statt LIKE auf der Spalte: MySQL vergleicht
+                // eine JSON-Spalte in binaerer Kollation, damit waere die Suche
+                // case-sensitiv. Der ausgepackte Wert traegt die Kollation der
+                // Tabelle. Englisch als Rueckfall - nicht jede Stadt hat eine
+                // deutsche Uebersetzung.
+                $query->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ['%' . $search . '%'])
+                    ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ['%' . $search . '%']);
+            })
             ->orderBy('name_translations->de')
             ->limit(50)
             ->get()
@@ -396,7 +404,8 @@ class ManageEventCountries extends Page implements HasForms
         return Region::query()
             ->with('country')
             ->where(function ($query) use ($search) {
-                $query->where('name_translations', 'like', '%' . $search . '%')
+                $query->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE LOWER(?)", ['%' . $search . '%'])
+                    ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ['%' . $search . '%'])
                     ->orWhere('code', 'like', '%' . $search . '%');
             })
             ->orderBy('name_translations->de')
