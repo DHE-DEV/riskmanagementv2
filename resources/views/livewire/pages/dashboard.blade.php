@@ -789,20 +789,11 @@
             gap: 5px;
             padding: 2px 8px;
             border-radius: 9999px;
-            background: #002742;
-            color: #CEE741;
+            background: #CEE741;
+            color: #002742;
             font-size: 11px;
             font-weight: 600;
             white-space: nowrap;
-        }
-
-        /* Am Tag der Aenderung zusaetzlich ein Punkt - die Farben bleiben
-           gleich, sonst gaebe es zwei konkurrierende Auszeichnungen. */
-        .event-version-dot {
-            width: 5px;
-            height: 5px;
-            border-radius: 9999px;
-            background: #CEE741;
         }
 
         .version-row { cursor: pointer; }
@@ -4741,36 +4732,14 @@ function eventVersionDate(event) {
 }
 
 /**
- * Hat das Ereignis heute eine neue Fassung bekommen?
- */
-function eventVersionedToday(event) {
-    const changed = eventVersionDate(event);
-    if (!changed) return false;
-
-    const today = new Date();
-
-    return changed.getFullYear() === today.getFullYear()
-        && changed.getMonth() === today.getMonth()
-        && changed.getDate() === today.getDate();
-}
-
-/**
  * Kennzeichnung auf der Event-Karte: seit wann die aktuelle Fassung gilt.
- *
- * Am Tag der Aenderung blau hervorgehoben, danach gedeckt wie die uebrigen
- * Badges - die linke Kante der Karte traegt die Prioritaetsfarbe, ein zweiter
- * dauerhaft kraeftiger Akzent wuerde mit ihr konkurrieren.
  */
 function eventVersionBadge(event) {
     const changed = eventVersionDate(event);
 
     if (!changed) return '';
 
-    const today = eventVersionedToday(event);
-
-    return `<span class="event-version-badge${today ? ' is-today' : ''}">
-        ${today ? '<span class="event-version-dot"></span>' : ''}Aktualisiert ${formatCardDate(changed)}
-    </span>`;
+    return `<span class="event-version-badge">Aktualisiert ${formatCardDate(changed)}</span>`;
 }
 
 // Startdatum als eigene Textzeile, gleiche Optik wie "Aktualisiert".
@@ -4877,17 +4846,18 @@ function createEventElement(event) {
         }
     }
     
-    // Steht ueber Land und Logo, damit die Aenderung beim Ueberfliegen der
-    // Liste als Erstes ins Auge faellt.
+    // Eigene Zeile ueber der Karte, damit die Aenderung beim Ueberfliegen der
+    // Liste als Erstes ins Auge faellt - und der Prioritaetspunkt weiterhin
+    // neben dem Land steht statt neben dem Badge.
     const versionBadgeHtml = eventVersionBadge(event);
 
     div.className = `bg-gray-50 rounded-lg p-3 border-l-4 cursor-pointer hover:bg-gray-100 transition-colors`;
     div.style.borderLeftColor = severityBorderColor;
     div.innerHTML = `
+        ${versionBadgeHtml ? `<div class="mb-2">${versionBadgeHtml}</div>` : ''}
         <div class="flex items-start space-x-2">
             <div class="w-2 h-2 rounded-full mt-2 ${severityColor}"></div>
             <div class="flex-1 min-w-0">
-                ${versionBadgeHtml ? `<div class="mb-1.5">${versionBadgeHtml}</div>` : ''}
                 <div class="flex items-start gap-2">
                     <div class="flex-1 min-w-0" style="max-width: 66.666%;">
                         <span class="text-xs font-medium uppercase text-gray-800 break-words">${countryDisplay}</span>
