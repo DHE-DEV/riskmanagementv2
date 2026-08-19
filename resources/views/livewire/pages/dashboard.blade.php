@@ -780,38 +780,9 @@
             font-weight: 600;
         }
 
-        /* Versionen als Pillenreihe - eine Zeile statt einer Kastenliste */
-        .version-pills {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin: 10px 0 14px;
-        }
-
-        .version-pills-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #94a3b8;
-        }
-
-        .version-pill {
-            display: inline-block;
-            padding: 2px 9px;
-            border: 1px solid transparent;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 600;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .version-pill:hover { border-color: #2563eb; }
-
-        /* Die aktuelle Fassung ist der Bezugspunkt, nicht das Ziel */
-        .version-pill.is-current { cursor: default; }
-        .version-pill.is-current:hover { border-color: #bbf7d0; }
+        .version-row { cursor: pointer; }
+        .version-row:hover { border-color: #93c5fd; }
+        .version-row.is-compared { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
         
         .event-sidebar.open { right: 0; }
         
@@ -3096,37 +3067,38 @@ async function renderEventVersionHistory(eventId) {
         return 'noch nicht veröffentlicht';
     };
 
-    // Absteigend - die aktuelle Fassung steht vorn, aeltere folgen dahinter.
-    const ordered = [...versions].sort((a, b) => (b.version || 0) - (a.version || 0));
+    const rows = versions.map((version) => {
+        // Vorerst ohne Textvergleich: die Gegenüberstellung alt/neu ist für
+        // Leser schwer zu deuten. Ob sich etwas geändert hat, genügt.
+        const hasChanges = (version.changes || []).length > 0;
 
-    const pills = ordered.map((version) => {
         // Die aktuelle Fassung steht im Vergleich immer links - sie mit sich
         // selbst zu vergleichen ergibt nichts, also ist sie nicht anklickbar.
         const isComparable = !version.is_current_version;
         const isCompared = comparedVersionId === version.id;
 
-        const background = version.is_current_version ? '#dcfce7' : (isCompared ? '#dbeafe' : '#f1f5f9');
-        const color = version.is_current_version ? '#15803d' : (isCompared ? '#1d4ed8' : '#475569');
-        const border = isCompared ? '#2563eb' : (version.is_current_version ? '#bbf7d0' : '#e2e8f0');
-
-        const hint = version.is_current_version
-            ? `Aktuelle Fassung — ${period(version)}`
-            : `${period(version)} — anklicken, um mit der aktuellen Fassung zu vergleichen`;
-
         return `
-            <span class="${isComparable ? 'version-pill' : 'version-pill is-current'}"
-                  ${isComparable ? `onclick="toggleVersionComparison(${version.id})"` : ''}
-                  title="${escapeHtml(hint)}"
-                  style="background:${background};color:${color};border-color:${border};">
-                v${version.version}${version.is_current_version ? ' · aktuell' : ''}
-            </span>
+            <div class="${isComparable ? 'version-row' : ''}${isCompared ? ' is-compared' : ''}"
+                 ${isComparable ? `onclick="toggleVersionComparison(${version.id})" title="Mit der aktuellen Fassung vergleichen"` : ''}
+                 style="border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;padding:10px 12px;background:${version.is_current_version ? '#ffffff' : '#f9fafb'};">
+                <span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${version.is_current_version ? '#dcfce7' : '#e5e7eb'};color:${version.is_current_version ? '#15803d' : '#4b5563'};">
+                    Version ${version.version}${version.is_current_version ? ' · aktuell' : ''}
+                </span>
+                <span style="font-size:11px;color:#6b7280;margin-left:8px;">${period(version)}</span>
+                ${hasChanges ? `<div style="font-size:12px;color:#374151;margin-top:4px;">Redaktionelle Änderung</div>` : ''}
+                ${isCompared ? `<div style="font-size:11px;color:#1d4ed8;font-weight:600;margin-top:4px;">Wird rechts angezeigt</div>` : ''}
+            </div>
         `;
     }).join('');
 
     container.innerHTML = `
-        <div class="version-pills">
-            <span class="version-pills-label">Versionen</span>
-            ${pills}
+        <div style="margin:12px 0 16px;">
+            <h4 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">Versionshistorie</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+                Dieses Ereignis wurde aktualisiert. Eine frühere Fassung anklicken, um sie
+                neben der aktuellen zu sehen.
+            </p>
+            ${rows}
         </div>
     `;
 }
