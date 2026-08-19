@@ -4721,21 +4721,30 @@ function formatCardDate(value) {
 }
 
 /**
- * Hat das Ereignis heute eine neue Fassung bekommen?
+ * Datum der aktiven Fassung - null, wenn es keine neuere Fassung gibt.
  *
- * Ab Version 2 gibt es eine Vorgaengerfassung. Massgeblich ist der Tag, an dem
- * die Fassung aktiv geschaltet wurde; ohne diesen Zeitstempel dient das
- * Aenderungsdatum als Ersatz - aeltere Ereignisse haben noch keine
- * Versionierung durchlaufen.
+ * Erst ab Version 2 existiert eine Vorgaengerfassung, vorher gab es nichts zu
+ * aktualisieren. Massgeblich ist der Zeitpunkt, zu dem die Fassung aktiv
+ * geschaltet wurde; ohne diesen Zeitstempel dient das Aenderungsdatum als
+ * Ersatz - aeltere Ereignisse haben die Versionierung nie durchlaufen.
  */
-function eventVersionedToday(event) {
-    if ((event.version || 1) < 2) return false;
+function eventVersionDate(event) {
+    if ((event.version || 1) < 2) return null;
 
     const stamp = event.activated_at || event.updated_at;
-    if (!stamp) return false;
+    if (!stamp) return null;
 
-    const changed = new Date(stamp);
-    if (Number.isNaN(changed.getTime())) return false;
+    const date = new Date(stamp);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Hat das Ereignis heute eine neue Fassung bekommen?
+ */
+function eventVersionedToday(event) {
+    const changed = eventVersionDate(event);
+    if (!changed) return false;
 
     const today = new Date();
 
@@ -4765,22 +4774,15 @@ function eventStartDateLine(startLabel) {
     return `<p class="text-[11px] text-gray-500 mt-1.5">Startdatum: ${startLabel || 'Unbekannt'}</p>`;
 }
 
-// Fusszeile der Event-Karte: nur fuer Events, die nach dem Anlegen wirklich
-// geaendert wurden. Stimmen created_at und updated_at ueberein, bleibt es beim
-// Startdatum - eine zusaetzliche Datumszeile haette dort keine Aussage.
+// Fusszeile der Event-Karte: das Datum der aktuellen Fassung. Ohne neuere
+// Fassung gibt es nichts zu melden - dann bleibt es beim Startdatum.
 function eventTimestampLine(event) {
-    const valid = date => date && !Number.isNaN(date.getTime());
-    const created = event.created_at ? new Date(event.created_at) : null;
-    const updated = event.updated_at ? new Date(event.updated_at) : null;
+    const changed = eventVersionDate(event);
 
-    if (! valid(updated)) return '';
+    if (!changed) return '';
 
-    // Toleranz von einer Sekunde: beim Anlegen setzt Laravel beide Zeitstempel,
-    // sie koennen sich um Sekundenbruchteile unterscheiden.
-    if (valid(created) && updated.getTime() - created.getTime() <= 1000) return '';
-
-    // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(updated).
-    return `<p class="text-[11px] text-gray-500 mt-1.5">Aktualisiert: ${formatCardDate(updated)}</p>`;
+    // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(changed).
+    return `<p class="text-[11px] text-gray-500 mt-1.5">Aktualisiert: ${formatCardDate(changed)}</p>`;
 }
 
 // Event-Element erstellen
