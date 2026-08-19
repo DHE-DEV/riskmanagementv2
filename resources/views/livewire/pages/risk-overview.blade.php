@@ -2461,7 +2461,7 @@ $version = '1.1.0';
                                 <!-- Ab Version 2 wurde das Ereignis nachtraeglich aktualisiert -->
                                 <span x-show="(selectedEvent?.version || 1) > 1" x-cloak
                                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700"
-                                    :title="selectedEvent?.version_note || 'Aktualisierte Fassung'">
+                                    title="Aktualisierte Fassung">
                                     <i class="fa-regular fa-clock-rotate-left text-[10px]"></i>
                                     <span x-text="'Version ' + (selectedEvent?.version || 1)"></span>
                                 </span>
@@ -2634,9 +2634,6 @@ $version = '1.1.0';
                                                 <span class="text-[11px] text-gray-500"
                                                     x-text="formatVersionPeriod(version)"></span>
                                             </div>
-                                            <div x-show="version.version_note"
-                                                class="text-[11px] text-gray-500 mt-0.5"
-                                                x-text="version.version_note"></div>
                                             <template x-if="version.changes && version.changes.length > 0">
                                                 <div class="text-xs text-gray-700 mt-1">Redaktionelle Änderung</div>
                                             </template>

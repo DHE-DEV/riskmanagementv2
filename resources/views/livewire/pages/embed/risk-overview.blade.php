@@ -2395,9 +2395,6 @@
                                             <span class="text-[11px] text-gray-500"
                                                 x-text="formatVersionPeriod(version)"></span>
                                         </div>
-                                        <div x-show="version.version_note"
-                                            class="text-[11px] text-gray-500 mt-0.5"
-                                            x-text="version.version_note"></div>
                                         <template x-if="version.changes && version.changes.length > 0">
                                             <div class="text-xs text-gray-700 mt-1">Redaktionelle Änderung</div>
                                         </template>

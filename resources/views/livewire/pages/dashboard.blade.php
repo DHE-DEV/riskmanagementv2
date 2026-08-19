@@ -2761,7 +2761,6 @@ async function renderEventVersionHistory(eventId) {
                     Version ${version.version}${version.is_current_version ? ' · aktuell' : ''}
                 </span>
                 <span style="font-size:11px;color:#6b7280;margin-left:8px;">${period(version)}</span>
-                ${version.version_note ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">${escapeHtml(version.version_note)}</div>` : ''}
                 ${hasChanges ? `<div style="font-size:12px;color:#374151;margin-top:4px;">Redaktionelle Änderung</div>` : ''}
             </div>
         `;
