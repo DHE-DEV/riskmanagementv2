@@ -788,13 +788,19 @@
             align-items: center;
             gap: 5px;
             padding: 2px 7px;
-            border: 1px solid #bfdbfe;
+            border: 1px solid #e2e8f0;
             border-radius: 9999px;
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #ffffff;
+            color: #475569;
             font-size: 11px;
             font-weight: 600;
             white-space: nowrap;
+        }
+
+        .event-version-badge.is-today {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
         }
 
         .event-version-dot {
@@ -4754,15 +4760,21 @@ function eventVersionedToday(event) {
 }
 
 /**
- * Kennzeichnung auf der Event-Karte, wenn heute eine neue Fassung entstand.
- * Bewusst zurueckhaltend: die linke Kante der Karte traegt bereits die
- * Prioritaetsfarbe, ein zweiter kraeftiger Akzent wuerde mit ihr konkurrieren.
+ * Kennzeichnung auf der Event-Karte: seit wann die aktuelle Fassung gilt.
+ *
+ * Am Tag der Aenderung blau hervorgehoben, danach gedeckt wie die uebrigen
+ * Badges - die linke Kante der Karte traegt die Prioritaetsfarbe, ein zweiter
+ * dauerhaft kraeftiger Akzent wuerde mit ihr konkurrieren.
  */
 function eventVersionBadge(event) {
-    if (!eventVersionedToday(event)) return '';
+    const changed = eventVersionDate(event);
 
-    return `<span class="event-version-badge">
-        <span class="event-version-dot"></span>Aktualisiert
+    if (!changed) return '';
+
+    const today = eventVersionedToday(event);
+
+    return `<span class="event-version-badge${today ? ' is-today' : ''}">
+        ${today ? '<span class="event-version-dot"></span>' : ''}Aktualisiert ${formatCardDate(changed)}
     </span>`;
 }
 
@@ -4772,17 +4784,6 @@ function eventStartDateLine(startLabel) {
     if (! SHOW_EVENT_DATE_BADGE) return '';
 
     return `<p class="text-[11px] text-gray-500 mt-1.5">Startdatum: ${startLabel || 'Unbekannt'}</p>`;
-}
-
-// Fusszeile der Event-Karte: das Datum der aktuellen Fassung. Ohne neuere
-// Fassung gibt es nichts zu melden - dann bleibt es beim Startdatum.
-function eventTimestampLine(event) {
-    const changed = eventVersionDate(event);
-
-    if (!changed) return '';
-
-    // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(changed).
-    return `<p class="text-[11px] text-gray-500 mt-1.5">Aktualisiert: ${formatCardDate(changed)}</p>`;
 }
 
 // Event-Element erstellen
@@ -4899,7 +4900,6 @@ function createEventElement(event) {
                 ${badgesHtml ? `<div class="flex flex-wrap items-center gap-1 mt-1.5">${badgesHtml}</div>` : ''}
                 ${event.affected_population ? `<p class="text-xs text-gray-500 mt-1">${event.affected_population}</p>` : ''}
                 ${eventStartDateLine(startLabel)}
-                ${eventTimestampLine(event)}
             </div>
         </div>
     `;
