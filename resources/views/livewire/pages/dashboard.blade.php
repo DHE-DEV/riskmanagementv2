@@ -780,6 +780,30 @@
             font-weight: 600;
         }
 
+        /* Kennzeichnung auf der Event-Karte am Tag einer neuen Fassung.
+           Gedeckte Blautoene, damit die Prioritaetsfarbe an der linken Kante
+           der Karte weiterhin das kraeftigste Signal bleibt. */
+        .event-version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 7px;
+            border: 1px solid #bfdbfe;
+            border-radius: 9999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .event-version-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 9999px;
+            background: #2563eb;
+        }
+
         .version-row { cursor: pointer; }
         .version-row:hover { border-color: #93c5fd; }
         .version-row.is-compared { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
@@ -4681,6 +4705,58 @@ function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
     newestEvents.forEach(event => listEl.appendChild(createEventElement(event)));
 }
 
+// Datumsformat der Event-Karten: zweistellig mit Punkten (07.08.2026).
+// Gemeinsam fuer "Startdatum" und "Aktualisiert" - toLocaleDateString liefert
+// je nach Wert "7.8.2026" und die Zeilen stuenden dann unterschiedlich da.
+function formatCardDate(value) {
+    if (!value) return '';
+
+    const date = value instanceof Date ? value : new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+    }).format(date);
+}
+
+/**
+ * Hat das Ereignis heute eine neue Fassung bekommen?
+ *
+ * Ab Version 2 gibt es eine Vorgaengerfassung. Massgeblich ist der Tag, an dem
+ * die Fassung aktiv geschaltet wurde; ohne diesen Zeitstempel dient das
+ * Aenderungsdatum als Ersatz - aeltere Ereignisse haben noch keine
+ * Versionierung durchlaufen.
+ */
+function eventVersionedToday(event) {
+    if ((event.version || 1) < 2) return false;
+
+    const stamp = event.activated_at || event.updated_at;
+    if (!stamp) return false;
+
+    const changed = new Date(stamp);
+    if (Number.isNaN(changed.getTime())) return false;
+
+    const today = new Date();
+
+    return changed.getFullYear() === today.getFullYear()
+        && changed.getMonth() === today.getMonth()
+        && changed.getDate() === today.getDate();
+}
+
+/**
+ * Kennzeichnung auf der Event-Karte, wenn heute eine neue Fassung entstand.
+ * Bewusst zurueckhaltend: die linke Kante der Karte traegt bereits die
+ * Prioritaetsfarbe, ein zweiter kraeftiger Akzent wuerde mit ihr konkurrieren.
+ */
+function eventVersionBadge(event) {
+    if (!eventVersionedToday(event)) return '';
+
+    return `<span class="event-version-badge">
+        <span class="event-version-dot"></span>Aktualisiert
+    </span>`;
+}
+
 // Startdatum als eigene Textzeile, gleiche Optik wie "Aktualisiert".
 // Per .env abschaltbar (DASHBOARD_EVENT_DATE_BADGE_ENABLED).
 function eventStartDateLine(startLabel) {
@@ -4704,11 +4780,7 @@ function eventTimestampLine(event) {
     if (valid(created) && updated.getTime() - created.getTime() <= 1000) return '';
 
     // Vorerst ohne Uhrzeit. Fuer Datum + Uhrzeit stattdessen formatDateTimeDE(updated).
-    const datum = new Intl.DateTimeFormat('de-DE', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-    }).format(updated);
-
-    return `<p class="text-[11px] text-gray-500 mt-1.5">Aktualisiert: ${datum}</p>`;
+    return `<p class="text-[11px] text-gray-500 mt-1.5">Aktualisiert: ${formatCardDate(updated)}</p>`;
 }
 
 // Event-Element erstellen
@@ -4765,8 +4837,8 @@ function createEventElement(event) {
         ? (event.source_logo ? `<img src="${event.source_logo}" alt="${event.source_name || 'Quelle'}" style="height:12px;vertical-align:middle;" />` : `<span class="text-xs text-gray-500">${event.source_name || 'Intern'}</span>`)
         : '<span class="text-xs text-gray-500 uppercase">GDACS</span>';
     const displayDate = event.source === 'custom'
-        ? (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : ''))
-        : (event.start_date ? new Date(event.start_date).toLocaleDateString('de-DE') : (event.date_iso ? new Date(event.date_iso).toLocaleDateString('de-DE') : (event.date ? new Date(event.date).toLocaleDateString('de-DE') : '')));
+        ? (formatCardDate(event.start_date) || formatCardDate(event.date))
+        : (formatCardDate(event.start_date) || formatCardDate(event.date_iso) || formatCardDate(event.date));
 
     // Kategorie(n) des Events - jede bekommt ein eigenes Badge
     const typeLabels = (event.event_types && event.event_types.length > 0
@@ -4775,13 +4847,8 @@ function createEventElement(event) {
     ).filter(Boolean);
 
     // Nur das Startdatum. Fuer eine Spanne stattdessen:
-    // startLabel + ' – ' + asDate(event.end_date), sofern abweichend.
-    const asDate = (value) => {
-        if (!value) return '';
-        const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('de-DE');
-    };
-    const startLabel = displayDate || asDate(event.date);
+    // startLabel + ' – ' + formatCardDate(event.end_date), sofern abweichend.
+    const startLabel = displayDate || formatCardDate(event.date);
 
     const badge = (text) => text
         ? `<span class="inline-flex items-center bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[11px] text-gray-700 whitespace-nowrap">${text}</span>`
@@ -4789,7 +4856,8 @@ function createEventElement(event) {
 
     // Ohne Datums-Badge kann die Reihe komplett leer bleiben - dann entfaellt
     // sie ganz, sonst bliebe ein Abstand ohne Inhalt stehen
-    const badgesHtml = typeLabels.map(label => badge(label)).join('')
+    const badgesHtml = eventVersionBadge(event)
+        + typeLabels.map(label => badge(label)).join('')
         + (event.magnitude ? badge(`Magnitude: ${event.magnitude}`) : '');
 
     // Wenn es ein zusammengefasstes Event ist (aus mehreren Ländern), zeige den Original-Titel

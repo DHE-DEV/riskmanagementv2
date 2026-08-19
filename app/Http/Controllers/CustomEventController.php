@@ -122,6 +122,10 @@ class CustomEventController extends Controller
                         'source_link_text' => $event->source_link_text,
                         'source_link_url' => $event->source_link_url,
                         'source_links' => $event->visibleSourceLinks(),
+                        // Versionierung: die Liste kennzeichnet Ereignisse, die am
+                        // laufenden Tag eine neue Fassung bekommen haben.
+                        'version' => $event->version ?? 1,
+                        'activated_at' => $event->activated_at,
                     ];
                 });
 
