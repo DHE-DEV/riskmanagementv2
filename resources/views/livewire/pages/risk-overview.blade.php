@@ -2622,66 +2622,24 @@ $version = '1.1.0';
 
                                 <div class="space-y-2">
                                     <template x-for="version in eventVersions" :key="version.id">
-                                        <div class="border border-gray-200 rounded-lg overflow-hidden"
+                                        <div class="border border-gray-200 rounded-lg px-3 py-2.5"
                                             :class="version.is_current_version ? 'bg-white' : 'bg-gray-50'">
-                                            <button type="button" @click="toggleVersion(version.id)"
-                                                class="w-full flex items-start justify-between gap-3 px-3 py-2.5 text-left hover:bg-gray-100 transition-colors">
-                                                <div class="min-w-0">
-                                                    <div class="flex items-center gap-2 flex-wrap">
-                                                        <span
-                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                                                            :class="version.is_current_version ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'"
-                                                            x-text="'Version ' + version.version"></span>
-                                                        <span x-show="version.is_current_version"
-                                                            class="text-[11px] text-green-700 font-medium">aktuell</span>
-                                                        <span class="text-[11px] text-gray-500"
-                                                            x-text="formatVersionPeriod(version)"></span>
-                                                    </div>
-                                                    <div class="text-xs text-gray-700 mt-1 truncate"
-                                                        x-text="version.title"></div>
-                                                    <div x-show="version.version_note"
-                                                        class="text-[11px] text-gray-500 mt-0.5"
-                                                        x-text="version.version_note"></div>
-                                                </div>
-                                                <i class="fa-regular text-gray-400 text-xs mt-1 flex-shrink-0"
-                                                    :class="expandedVersionId === version.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                                            </button>
-
-                                            <div x-show="expandedVersionId === version.id" x-cloak
-                                                class="px-3 pb-3 pt-1 border-t border-gray-200 bg-white">
-                                                <template x-if="version.changes && version.changes.length > 0">
-                                                    <div class="mb-3">
-                                                        <div class="text-[11px] font-semibold text-gray-500 uppercase mb-1">
-                                                            Änderungen gegenüber der Vorversion
-                                                        </div>
-                                                        <ul class="space-y-1">
-                                                            <template x-for="change in version.changes"
-                                                                :key="change.field">
-                                                                <li class="text-xs text-gray-700">
-                                                                    <span class="font-medium"
-                                                                        x-text="change.label + ': '"></span>
-                                                                    <span class="line-through text-gray-400"
-                                                                        x-text="change.old || '—'"></span>
-                                                                    <span class="mx-1 text-gray-400">→</span>
-                                                                    <span class="text-gray-900"
-                                                                        x-text="change.new || '—'"></span>
-                                                                </li>
-                                                            </template>
-                                                        </ul>
-                                                    </div>
-                                                </template>
-
-                                                <div class="text-[11px] font-semibold text-gray-500 uppercase mb-1">
-                                                    Inhalt dieser Fassung
-                                                </div>
-                                                <div class="prose prose-sm max-w-none text-xs text-gray-700"
-                                                    x-html="version.content || '<p class=\'text-gray-400 italic\'>Keine Beschreibung hinterlegt</p>'">
-                                                </div>
-
-                                                <div x-show="version.changed_by"
-                                                    class="text-[11px] text-gray-400 mt-2"
-                                                    x-text="'Bearbeitet von ' + version.changed_by"></div>
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span
+                                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                                                    :class="version.is_current_version ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'"
+                                                    x-text="'Version ' + version.version"></span>
+                                                <span x-show="version.is_current_version"
+                                                    class="text-[11px] text-green-700 font-medium">aktuell</span>
+                                                <span class="text-[11px] text-gray-500"
+                                                    x-text="formatVersionPeriod(version)"></span>
                                             </div>
+                                            <div x-show="version.version_note"
+                                                class="text-[11px] text-gray-500 mt-0.5"
+                                                x-text="version.version_note"></div>
+                                            <template x-if="version.changes && version.changes.length > 0">
+                                                <div class="text-xs text-gray-700 mt-1">Redaktionelle Änderung</div>
+                                            </template>
                                         </div>
                                     </template>
                                 </div>

@@ -13,7 +13,6 @@ function riskOverviewApp() {
         // Versionshistorie des geoeffneten Ereignisses
         eventVersions: [],
         eventVersionsLoading: false,
-        expandedVersionId: null,
         selectedTraveler: null,
         showTravelerModal: false,
         loading: false,
@@ -750,7 +749,6 @@ function riskOverviewApp() {
             this.showEventModal = false;
             this.selectedEvent = null;
             this.eventVersions = [];
-            this.expandedVersionId = null;
             document.body.style.overflow = '';
         },
 
@@ -761,7 +759,6 @@ function riskOverviewApp() {
          */
         async loadEventVersions(eventId) {
             this.eventVersions = [];
-            this.expandedVersionId = null;
             this.eventVersionsLoading = false;
 
             if (!eventId) {
@@ -783,10 +780,6 @@ function riskOverviewApp() {
             } finally {
                 this.eventVersionsLoading = false;
             }
-        },
-
-        toggleVersion(versionId) {
-            this.expandedVersionId = this.expandedVersionId === versionId ? null : versionId;
         },
 
         formatVersionPeriod(version) {
