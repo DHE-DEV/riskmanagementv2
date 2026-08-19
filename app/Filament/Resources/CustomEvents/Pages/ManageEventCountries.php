@@ -68,6 +68,82 @@ class ManageEventCountries extends Page implements HasForms
                         ->schema([
                             Grid::make(2)
                                 ->schema([
+                                    // Einstieg ueber Stadt oder Region, ohne vorher das Land zu
+                                    // kennen. Die Auswahl fuellt die drei Felder darunter; die
+                                    // Suchfelder selbst werden nicht gespeichert.
+                                    Select::make('city_search')
+                                        ->label('Stadt suchen')
+                                        ->placeholder('z.B. Köln')
+                                        ->helperText('Sucht über alle Länder. Die Auswahl setzt Land, Region und Stadt.')
+                                        ->searchable()
+                                        ->dehydrated(false)
+                                        ->reactive()
+                                        ->searchPrompt('Stadtnamen eingeben')
+                                        ->noSearchResultsMessage('Keine Stadt gefunden')
+                                        ->loadingMessage('Suche läuft …')
+                                        ->getSearchResultsUsing(fn (string $search): array => self::searchCities($search))
+                                        ->getOptionLabelUsing(fn ($value): ?string => ($city = City::with(['country', 'region'])->find($value))
+                                            ? self::cityLabel($city)
+                                            : null)
+                                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                            if (! $state) {
+                                                return;
+                                            }
+
+                                            $city = City::find($state);
+
+                                            if (! $city) {
+                                                return;
+                                            }
+
+                                            $set('country_id', $city->country_id);
+                                            $set('region_id', $city->region_id);
+                                            $set('city_id', $city->id);
+
+                                            self::applyDefaultCoordinates($get, $set);
+
+                                            // Das Suchfeld ist nur der Einstieg - was ausgewaehlt
+                                            // wurde, steht jetzt in den Feldern darunter.
+                                            $set('city_search', null);
+                                        })
+                                        ->columnSpan(1),
+
+                                    Select::make('region_search')
+                                        ->label('Region suchen')
+                                        ->placeholder('z.B. Nordrhein-Westfalen')
+                                        ->helperText('Sucht über alle Länder. Die Auswahl setzt Land und Region.')
+                                        ->searchable()
+                                        ->dehydrated(false)
+                                        ->reactive()
+                                        ->searchPrompt('Regionsnamen eingeben')
+                                        ->noSearchResultsMessage('Keine Region gefunden')
+                                        ->loadingMessage('Suche läuft …')
+                                        ->getSearchResultsUsing(fn (string $search): array => self::searchRegions($search))
+                                        ->getOptionLabelUsing(fn ($value): ?string => ($region = Region::with('country')->find($value))
+                                            ? self::regionLabel($region)
+                                            : null)
+                                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                            if (! $state) {
+                                                return;
+                                            }
+
+                                            $region = Region::find($state);
+
+                                            if (! $region) {
+                                                return;
+                                            }
+
+                                            $set('country_id', $region->country_id);
+                                            $set('region_id', $region->id);
+                                            // Die bisherige Stadt gehoert zu einer anderen Region.
+                                            $set('city_id', null);
+
+                                            self::applyDefaultCoordinates($get, $set);
+
+                                            $set('region_search', null);
+                                        })
+                                        ->columnSpan(1),
+
                                     Select::make('country_id')
                                         ->label('Land')
                                         ->options(fn () => Country::query()
@@ -154,6 +230,10 @@ class ManageEventCountries extends Page implements HasForms
                                         ->searchable()
                                         ->preload()
                                         ->reactive()
+                                        // Die Optionsliste ist auf 500 Staedte begrenzt; ueber die
+                                        // uebergreifende Suche kann eine Stadt ausserhalb dieses
+                                        // Fensters gesetzt werden und braeuchte sonst keine Beschriftung.
+                                        ->getOptionLabelUsing(fn ($value): ?string => City::find($value)?->getName('de'))
                                         ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                                             if ($state && $get('use_default_coordinates')) {
                                                 $city = City::find($state);
@@ -282,6 +362,87 @@ class ManageEventCountries extends Page implements HasForms
     }
 
     // Speichern/Abbrechen liegen im Blade-View der Seite (manage-event-countries.blade.php).
+
+    /**
+     * Staedte fuer die uebergreifende Suche.
+     *
+     * Region und Land stehen im Label, damit vor der Auswahl erkennbar ist,
+     * welcher Ort gemeint ist - Stadtnamen sind selten eindeutig.
+     *
+     * @return array<int, string>
+     */
+    protected static function searchCities(string $search): array
+    {
+        return City::query()
+            ->with(['country', 'region'])
+            ->where('name_translations', 'like', '%' . $search . '%')
+            ->orderBy('name_translations->de')
+            ->limit(50)
+            ->get()
+            ->mapWithKeys(fn (City $city) => [$city->id => self::cityLabel($city)])
+            ->all();
+    }
+
+    /**
+     * Regionen fuer die uebergreifende Suche - mit Land im Label.
+     *
+     * Neben dem Namen wird der Code durchsucht: nicht jede Region traegt eine
+     * deutsche Uebersetzung, dann bleibt der Code der einzige Sucheinstieg.
+     *
+     * @return array<int, string>
+     */
+    protected static function searchRegions(string $search): array
+    {
+        return Region::query()
+            ->with('country')
+            ->where(function ($query) use ($search) {
+                $query->where('name_translations', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
+            })
+            ->orderBy('name_translations->de')
+            ->limit(50)
+            ->get()
+            ->mapWithKeys(fn (Region $region) => [$region->id => self::regionLabel($region)])
+            ->all();
+    }
+
+    protected static function cityLabel(City $city): string
+    {
+        return implode(' – ', array_filter([
+            $city->getName('de'),
+            $city->region?->getName('de'),
+            $city->country?->getName('de'),
+        ]));
+    }
+
+    protected static function regionLabel(Region $region): string
+    {
+        return implode(' – ', array_filter([
+            $region->getName('de'),
+            $region->country?->getName('de'),
+        ]));
+    }
+
+    /**
+     * Koordinaten der Kaskade nachziehen, sofern sie nicht von Hand gesetzt sind.
+     */
+    protected static function applyDefaultCoordinates(Get $get, Set $set): void
+    {
+        if (! $get('use_default_coordinates')) {
+            return;
+        }
+
+        $coords = self::defaultCoordinatesFor(
+            $get('country_id'),
+            $get('region_id'),
+            $get('city_id'),
+        );
+
+        if ($coords) {
+            $set('latitude', $coords[0]);
+            $set('longitude', $coords[1]);
+        }
+    }
 
     /**
      * Standard-Koordinaten nach Kaskade Stadt > Region > Hauptstadt > Land.
