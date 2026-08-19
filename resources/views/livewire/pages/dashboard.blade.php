@@ -1028,7 +1028,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
-                        <div id="countriesSection" class="p-3">
+                        <div id="countriesSection" class="p-3" style="display: none;">
                             <div class="space-y-2">
                                 <input
                                     type="text"
@@ -1112,7 +1112,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
-                        <div id="continentsSection" class="p-3">
+                        <div id="continentsSection" class="p-3" style="display: none;">
                             <div class="grid grid-cols-2 gap-2" id="continentsList">
                                 <!-- Kontinente werden hier dynamisch eingefügt -->
                             </div>
@@ -1128,7 +1128,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
-                        <div id="providersSection" class="p-3">
+                        <div id="providersSection" class="p-3" style="display: none;">
                             <div class="grid gap-2" id="provider-buttons-container">
                                 <button type="button" id="provider-gdacs" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="gdacs" onclick="toggleProviderFilter('gdacs', this)" style="display: none;">GDACS</button>
                                 <button type="button" id="provider-custom" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-provider="custom" onclick="toggleProviderFilter('custom', this)">Passolution</button>
@@ -1144,7 +1144,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
-                        <div id="riskLevelSection" class="p-3">
+                        <div id="riskLevelSection" class="p-3" style="display: none;">
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" id="toggleAllRiskLevels" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2" onclick="toggleAllRiskLevels()">Alle ausblenden</button>
                                 <button type="button" id="risk-info" class="px-3 py-2 text-xs rounded-lg border transition-colors text-white" style="background-color: #0066cc; border-color: #0066cc;" data-risk="info" onclick="toggleRiskFilter('info', this)">Information</button>
@@ -1163,7 +1163,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
-                        <div id="eventTypeSection" class="p-3">
+                        <div id="eventTypeSection" class="p-3" style="display: none;">
                             <div class="grid grid-cols-2 gap-2 mb-2" id="eventTypeButtons">
                                 <button type="button" id="toggleAllEventTypes" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black col-span-2" onclick="toggleAllEventTypes()">Alle ausblenden</button>
                                 <!-- Event-Type Buttons werden hier dynamisch eingefügt -->
@@ -1179,7 +1179,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
-                        <div id="timePeriodSection" class="p-3">
+                        <div id="timePeriodSection" class="p-3" style="display: none;">
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" id="period-all" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-300 text-black" data-period="all" onclick="toggleTimePeriodFilter('all', this)">Alle ausblenden</button>
                                 <button type="button" id="period-7days" class="px-3 py-2 text-xs rounded-lg border transition-colors bg-gray-200 text-gray-700 border-gray-300" data-period="7days" onclick="toggleTimePeriodFilter('7days', this)">Letzte 7 Tage</button>
@@ -6984,34 +6984,25 @@ function toggleNewFilterSection() {
     }
 }
 
+// Filter-Unterbereiche und ihre Pfeil-Icons. Eine Liste für Auf-/Zuklappen und
+// Wiederherstellen — vorher standen die Zuordnungen doppelt da, und der
+// 3-Letter-Code fehlte in beiden: sein Klick drehte den Pfeil der Welt-Regionen.
+const FILTER_SUB_SECTION_ICONS = {
+    continentsSection: 'continentsToggleIcon',
+    countriesSection: 'countriesToggleIcon',
+    airportCodeSection: 'airportCodeToggleIcon',
+    providersSection: 'providersToggleIcon',
+    riskLevelSection: 'riskLevelToggleIcon',
+    eventTypeSection: 'eventTypeToggleIcon',
+    timePeriodSection: 'timePeriodToggleIcon',
+};
+
 // Filter Unterbereiche auf-/zuklappen
 function toggleFilterSubSection(sectionId) {
     const content = document.getElementById(sectionId);
-    let iconId;
-    switch(sectionId) {
-        case 'continentsSection':
-            iconId = 'continentsToggleIcon';
-            break;
-        case 'countriesSection':
-            iconId = 'countriesToggleIcon';
-            break;
-        case 'providersSection':
-            iconId = 'providersToggleIcon';
-            break;
-        case 'riskLevelSection':
-            iconId = 'riskLevelToggleIcon';
-            break;
-        case 'eventTypeSection':
-            iconId = 'eventTypeToggleIcon';
-            break;
-        case 'timePeriodSection':
-            iconId = 'timePeriodToggleIcon';
-            break;
-        default:
-            iconId = 'continentsToggleIcon';
-    }
-    const icon = document.getElementById(iconId);
-    
+    const iconId = FILTER_SUB_SECTION_ICONS[sectionId];
+    const icon = iconId ? document.getElementById(iconId) : null;
+
     if (!content || !icon) return;
     
     const isOpen = content.style.display !== 'none';
@@ -7029,53 +7020,24 @@ function toggleFilterSubSection(sectionId) {
 
 // Filter Unterbereiche Zustand wiederherstellen
 function restoreFilterSubSections() {
-    const sections = ['continentsSection', 'countriesSection', 'providersSection', 'riskLevelSection', 'eventTypeSection', 'timePeriodSection'];
-    
-    sections.forEach(sectionId => {
+    Object.entries(FILTER_SUB_SECTION_ICONS).forEach(([sectionId, iconId]) => {
         const content = document.getElementById(sectionId);
-        let iconId;
-        switch(sectionId) {
-            case 'continentsSection':
-                iconId = 'continentsToggleIcon';
-                break;
-            case 'countriesSection':
-                iconId = 'countriesToggleIcon';
-                break;
-            case 'providersSection':
-                iconId = 'providersToggleIcon';
-                break;
-            case 'riskLevelSection':
-                iconId = 'riskLevelToggleIcon';
-                break;
-            case 'eventTypeSection':
-                iconId = 'eventTypeToggleIcon';
-                break;
-            case 'timePeriodSection':
-                iconId = 'timePeriodToggleIcon';
-                break;
-            default:
-                iconId = null;
-        }
         const icon = document.getElementById(iconId);
-        
+
         if (!content || !icon) return;
-        
+
+        // Ohne gespeicherten Zustand bleibt der Bereich zu: beim ersten Öffnen der
+        // Filter sind es sieben Gruppen, aufgeklappt fuellen sie mehrere Bildschirme
+        // und man sieht nicht mehr, welche es ueberhaupt gibt.
+        let shouldOpen = false;
         try {
-            const saved = localStorage.getItem(`filterSubSection_${sectionId}`);
-            if (saved !== null) {
-                const shouldOpen = saved === 'true';
-                content.style.display = shouldOpen ? 'block' : 'none';
-                icon.style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-            } else {
-                // Standardmäßig geöffnet
-                content.style.display = 'block';
-                icon.style.transform = 'rotate(180deg)';
-            }
+            shouldOpen = localStorage.getItem(`filterSubSection_${sectionId}`) === 'true';
         } catch (e) {
-            // Fallback: Standardmäßig geöffnet
-            content.style.display = 'block';
-            icon.style.transform = 'rotate(180deg)';
+            shouldOpen = false;
         }
+
+        content.style.display = shouldOpen ? 'block' : 'none';
+        icon.style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 }
 
