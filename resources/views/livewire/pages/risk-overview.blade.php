@@ -2634,9 +2634,6 @@ $version = '1.1.0';
                                                 <span class="text-[11px] text-gray-500"
                                                     x-text="formatVersionPeriod(version)"></span>
                                             </div>
-                                            <template x-if="version.changes && version.changes.length > 0">
-                                                <div class="text-xs text-gray-700 mt-1">Redaktionelle Änderung</div>
-                                            </template>
                                         </div>
                                     </template>
                                 </div>

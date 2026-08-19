@@ -3068,10 +3068,6 @@ async function renderEventVersionHistory(eventId) {
     };
 
     const rows = versions.map((version) => {
-        // Vorerst ohne Textvergleich: die Gegenüberstellung alt/neu ist für
-        // Leser schwer zu deuten. Ob sich etwas geändert hat, genügt.
-        const hasChanges = (version.changes || []).length > 0;
-
         // Die aktuelle Fassung steht im Vergleich immer links - sie mit sich
         // selbst zu vergleichen ergibt nichts, also ist sie nicht anklickbar.
         const isComparable = !version.is_current_version;
@@ -3085,7 +3081,6 @@ async function renderEventVersionHistory(eventId) {
                     Version ${version.version}${version.is_current_version ? ' · aktuell' : ''}
                 </span>
                 <span style="font-size:11px;color:#6b7280;margin-left:8px;">${period(version)}</span>
-                ${hasChanges ? `<div style="font-size:12px;color:#374151;margin-top:4px;">Redaktionelle Änderung</div>` : ''}
                 ${isCompared ? `<div style="font-size:11px;color:#1d4ed8;font-weight:600;margin-top:4px;">Wird rechts angezeigt</div>` : ''}
             </div>
         `;
