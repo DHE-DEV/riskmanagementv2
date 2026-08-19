@@ -4587,8 +4587,10 @@ function renderEvents() {
         }
     });
 
-    // Sortierung in allen Rubriken einheitlich: zuletzt geaendert zuerst
-    futureEvents.sort(byUpdatedAtDesc);
+    // Zukuenftige Ereignisse nach Startdatum, das naechste zuerst - hier zaehlt,
+    // was als naechstes eintritt, nicht wann der Datensatz zuletzt bearbeitet
+    // wurde. Die uebrigen Rubriken bleiben nach Aenderungsdatum sortiert.
+    futureEvents.sort(byStartDateAsc);
 
     // Rendere zukünftige Events
     if (futureEvents.length > 0) {
@@ -4630,6 +4632,24 @@ function eventUpdatedAtMs(event) {
 // Neuste zuerst
 function byUpdatedAtDesc(a, b) {
     return eventUpdatedAtMs(b) - eventUpdatedAtMs(a);
+}
+
+// Startdatum in Millisekunden - dieselbe Feldreihenfolge, nach der die Rubrik
+// "Zukuenftige Ereignisse" gebildet wird. Ohne verwertbares Datum landet das
+// Event ans Ende statt an den Anfang.
+function eventStartDateMs(event) {
+    const value = event.start_date || event.date_iso || event.date || event.event_date;
+
+    if (!value) return Number.POSITIVE_INFINITY;
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime()) ? Number.POSITIVE_INFINITY : date.getTime();
+}
+
+// Naechstes Startdatum zuerst
+function byStartDateAsc(a, b) {
+    return eventStartDateMs(a) - eventStartDateMs(b);
 }
 
 // "Heute": Startdatum ist heute ODER heute angelegt ODER heute geaendert.
