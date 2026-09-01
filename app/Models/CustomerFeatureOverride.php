@@ -24,6 +24,7 @@ class CustomerFeatureOverride extends Model
         'navigation_center_map_enabled',
         'navigation_visumpoint_enabled',
         'navigation_customer_events_enabled',
+        'navigation_doctors_network_enabled',
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class CustomerFeatureOverride extends Model
         'navigation_center_map_enabled' => 'boolean',
         'navigation_visumpoint_enabled' => 'boolean',
         'navigation_customer_events_enabled' => 'boolean',
+        'navigation_doctors_network_enabled' => 'boolean',
     ];
 
     /**
@@ -67,6 +69,7 @@ class CustomerFeatureOverride extends Model
             'navigation_center_map_enabled',
             'navigation_visumpoint_enabled',
             'navigation_customer_events_enabled',
+            'navigation_doctors_network_enabled',
         ];
     }
 
@@ -88,6 +91,7 @@ class CustomerFeatureOverride extends Model
             'navigation_center_map_enabled' => 'Karte zentrieren',
             'navigation_visumpoint_enabled' => 'VisumPoint',
             'navigation_customer_events_enabled' => 'Eigene Ereignisse',
+            'navigation_doctors_network_enabled' => 'Doctors Network',
         ];
     }
 }

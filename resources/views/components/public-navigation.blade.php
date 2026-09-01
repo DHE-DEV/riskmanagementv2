@@ -55,7 +55,7 @@
         </a>
 
         <!-- Doctors Network -->
-        @if(config('app.navigation_doctors_network_enabled', true))
+        @if($featureService->isFeatureEnabled('navigation_doctors_network_enabled', $customer))
         <a href="{{ route('doctors-network') }}" class="p-3 {{ $active === 'doctors-network' ? 'bg-white text-black' : 'text-white hover:bg-gray-800' }} rounded-lg transition-colors block" title="Doctors Network">
             <i class="fa-solid fa-stethoscope text-2xl" aria-hidden="true"></i>
         </a>

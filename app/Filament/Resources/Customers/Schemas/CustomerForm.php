@@ -221,6 +221,15 @@ class CustomerForm
                                             ])
                                             ->placeholder('Standard (.env)')
                                             ->native(false),
+
+                                        Select::make('navigation_doctors_network_enabled')
+                                            ->label('Doctors Network')
+                                            ->options([
+                                                '1' => 'Aktiviert',
+                                                '0' => 'Deaktiviert',
+                                            ])
+                                            ->placeholder('Standard (.env)')
+                                            ->native(false),
                                     ]),
                                 ])
                                 ->collapsible()

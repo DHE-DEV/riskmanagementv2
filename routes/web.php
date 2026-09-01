@@ -380,7 +380,8 @@ Route::get('/airports', function () {
 
 // Doctors Network (myBakup) - eingebettete Arztsuche
 Route::get('/doctors-network', function () {
-    if (! config('app.navigation_doctors_network_enabled', true)) {
+    $featureService = app(\App\Services\CustomerFeatureService::class);
+    if (! $featureService->isFeatureEnabled('navigation_doctors_network_enabled')) {
         abort(404);
     }
 
