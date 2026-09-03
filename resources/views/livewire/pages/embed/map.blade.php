@@ -317,6 +317,7 @@ function embedMapApp() {
             timePeriod: 'all',
             priorities: [],
             continents: [],
+            countries: [],
             eventTypes: []
         },
 
@@ -363,6 +364,7 @@ function embedMapApp() {
             if (this.filters.timePeriod !== 'all') count++;
             count += this.filters.priorities.length;
             count += this.filters.continents.length;
+            count += this.filters.countries.length;
             count += this.filters.eventTypes.length;
             return count;
         },
@@ -401,6 +403,14 @@ function embedMapApp() {
                 this.filters.continents = continents.split(',')
                     .map(c => c.trim().toUpperCase())
                     .filter(c => validContinents.includes(c));
+            }
+
+            // Countries: ?country=TR or ?countries=DE,ES,IT
+            const countries = params.get('country') || params.get('countries');
+            if (countries) {
+                this.filters.countries = countries.split(',')
+                    .map(c => c.trim().toUpperCase())
+                    .filter(c => /^[A-Z]{2}$/.test(c));
             }
 
             // Event Types: ?eventTypes=1,2,3
@@ -549,6 +559,15 @@ function embedMapApp() {
                 );
             }
 
+            // Country
+            if (this.filters.countries.length > 0) {
+                filtered = filtered.filter(e =>
+                    (e.countries || []).some(c =>
+                        this.filters.countries.includes((c.iso_code || '').toUpperCase())
+                    )
+                );
+            }
+
             // Event Types
             if (this.filters.eventTypes.length > 0) {
                 filtered = filtered.filter(e => {
@@ -636,6 +655,7 @@ function embedMapApp() {
                 timePeriod: 'all',
                 priorities: [],
                 continents: [],
+                countries: [],
                 eventTypes: []
             };
             this.applyFilters();

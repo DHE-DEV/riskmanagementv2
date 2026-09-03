@@ -1,5 +1,10 @@
 # URL-Parameter für den Global Travel Monitor
 
+> **Achtung:** Diese Seite beschreibt die Parameter des Haupt-Dashboards (`/`).
+> Die Plugin-/Embed-Routen (`/embed/events`, `/embed/map`, `/embed/dashboard`)
+> haben einen eigenen, abweichenden Parametersatz – siehe
+> [Embed-/Plugin-Parameter](#embed--plugin-parameter) am Ende dieser Datei.
+
 ## Filter-Parameter
 
 | Parameter | Werte | Beschreibung |
@@ -120,3 +125,40 @@
 ```
 /?risk=red,orange&continent=1&eventType=10,11&timePeriod=30days&hide=hf
 ```
+
+---
+
+## Embed-/Plugin-Parameter
+
+Gelten für `/embed/events`, `/embed/map` und `/embed/dashboard`.
+Die Namen und Werte unterscheiden sich bewusst von denen des Haupt-Dashboards.
+
+| Parameter | Werte | Beschreibung |
+|-----------|-------|--------------|
+| `key` | `pk_live_...` | Plugin-API-Key (**Pflicht**) |
+| `timePeriod` | `all`, `future`, `today`, `week`, `month` | Zeitraum |
+| `priorities` | `critical`, `high`, `medium`, `low`, `info` | Prioritäten (kommagetrennt) |
+| `continents` | `EU`, `AS`, `AF`, `NA`, `SA`, `OC` | Kontinente (kommagetrennt) |
+| `country` | ISO-Codes, z.B. `TR` oder `DE,ES,IT` | Länder (kommagetrennt), Alias: `countries` |
+| `eventTypes` | Event-Type-IDs | Ereignistypen (kommagetrennt) |
+| `search` | Suchbegriff | Volltextsuche, nur `/embed/events` |
+| `hide_badge` | `1` | "Powered by"-Badge ausblenden, nur `/embed/events` |
+
+### Beispiel
+
+```html
+<iframe
+  src="https://global-travel-monitor.eu/embed/events?key=pk_live_xxx&country=TR"
+  width="400" height="600" frameborder="0"></iframe>
+```
+
+### Hinweise
+
+- Unbekannte Parameter werden stillschweigend ignoriert.
+- Ungültige Werte (z.B. `country=XYZ`) werden herausgefiltert; bleibt keine
+  gültige Angabe übrig, greift der Filter nicht.
+- Die Filter wirken clientseitig auf die geladenen Ereignisse
+  (`/api/custom-events/dashboard-events?limit=100`). Bei sehr selektiven
+  Filtern können daher ältere Treffer außerhalb dieser 100 Ereignisse fehlen.
+- Über "Zurücksetzen" im Filterpanel werden auch die per URL gesetzten Filter
+  geleert; ein Reload stellt sie wieder her.

@@ -459,6 +459,12 @@
                             <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?continents=EU,AS</code></td>
                         </tr>
                         <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">country</code></td>
+                            <td class="py-3 px-4">ISO-Codes, z.&nbsp;B. <code>TR</code></td>
+                            <td class="py-3 px-4 text-gray-600">L&auml;nder (kommagetrennt)</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?country=DE,ES,TR</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
                             <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">eventTypes</code></td>
                             <td class="py-3 px-4">Event-Type-IDs</td>
                             <td class="py-3 px-4 text-gray-600">Ereignistypen nach ID (kommagetrennt)</td>
@@ -479,7 +485,7 @@
                     <p class="text-sm text-blue-800">
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Beispiel mit mehreren Parametern:</strong><br>
-                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">https://global-travel-monitor.eu/embed/events?key=IHR_API_KEY&timePeriod=future&priorities=high,medium&continents=EU</code>
+                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">https://global-travel-monitor.eu/embed/events?key=IHR_API_KEY&timePeriod=future&priorities=high,medium&country=DE,TR</code>
                     </p>
                 </div>
 

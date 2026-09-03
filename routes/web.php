@@ -179,10 +179,14 @@ Route::get('/help-center', function () {
 | Required parameters:
 |   ?key=pk_live_...              - Your Plugin API key (required)
 |
-| Optional parameters:
-|   ?filter=critical|high|medium  - Pre-filter by priority
-|   ?lang=de|en                   - Language (default: de)
-|   ?hide_badge=1                 - Hide "Powered by" badge
+| Optional parameters (parsed client-side in the embed views):
+|   ?timePeriod=all|future|today|week|month  - Time range
+|   ?priorities=critical,high,medium,low,info - Priorities (comma separated)
+|   ?continents=EU,AS,AF,NA,SA,OC            - Continents (comma separated)
+|   ?country=TR  (alias: ?countries=DE,ES)   - Countries by ISO code (comma separated)
+|   ?eventTypes=1,2,3                        - Event types by ID (comma separated)
+|   ?search=keyword               - Full text search (only /embed/events)
+|   ?hide_badge=1                 - Hide "Powered by" badge (only /embed/events)
 |
 */
 Route::prefix('embed')->name('embed.')->middleware(['allow.embedding', 'validate.embed.key'])->group(function () {
