@@ -22,10 +22,19 @@
 @endpush
 
 @section('content')
+@php
+    // Sichtbarkeit der Bedienelemente ueber URL-Parameter steuerbar,
+    // analog zu ?hide_badge=1 im Embed-Layout.
+    $hideSearch = (bool) request()->query('hide_search');
+    $hideFilter = (bool) request()->query('hide_filter');
+    $hideReset  = (bool) request()->query('hide_reset');
+@endphp
 <div x-data="embedEventsApp()" x-init="init()" class="h-full flex flex-col bg-gray-50">
+    @if(! ($hideSearch && $hideFilter))
     <!-- Filter Bar -->
     <div class="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
         <div class="flex items-center justify-between gap-4">
+            @if(! $hideSearch)
             <!-- Search -->
             <div class="relative flex-1 max-w-xs">
                 <input type="text"
@@ -35,7 +44,11 @@
                        class="w-full pl-8 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
             </div>
+            @else
+            <div class="flex-1"></div>
+            @endif
 
+            @if(! $hideFilter)
             <!-- Filter Button -->
             <button @click="filterModalOpen = true" class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors relative">
                 <i class="fas fa-filter"></i>
@@ -44,8 +57,10 @@
                       x-text="activeFiltersCount"
                       class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
             </button>
+            @endif
         </div>
 
+        @if(! $hideFilter)
         <!-- Active Filter Chips -->
         <div x-show="activeFiltersCount > 0" class="flex flex-wrap gap-2 mt-3">
             <template x-if="filters.timePeriod !== 'all'">
@@ -72,6 +87,14 @@
                     </button>
                 </span>
             </template>
+            <template x-for="code in filters.countries" :key="code">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <span x-text="getCountryName(code)"></span>
+                    <button @click="toggleCountry(code); applyFilters()" class="hover:text-blue-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            </template>
             <template x-for="typeId in filters.eventTypes" :key="typeId">
                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                     <span x-text="getEventTypeName(typeId)"></span>
@@ -80,11 +103,15 @@
                     </button>
                 </span>
             </template>
+            @if(! $hideReset)
             <button @click="resetFilters()" class="text-xs text-gray-500 hover:text-gray-700 underline">
                 Alle zurücksetzen
             </button>
+            @endif
         </div>
+        @endif
     </div>
+    @endif
 
     <!-- Events List -->
     <div class="flex-1 overflow-y-auto">
@@ -150,6 +177,7 @@
     </div>
     @endif
 
+    @if(! $hideFilter)
     <!-- Filter Modal -->
     <div x-show="filterModalOpen"
          x-transition:enter="transition ease-out duration-300"
@@ -174,7 +202,9 @@
             <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
                 <h2 class="text-lg font-semibold">Filter</h2>
                 <div class="flex gap-3 items-center">
+                    @if(! $hideReset)
                     <button @click="resetFilters()" class="text-sm text-blue-600 hover:text-blue-800">Zurücksetzen</button>
+                    @endif
                     <button @click="filterModalOpen = false" class="p-1 text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times text-lg"></i>
                     </button>
@@ -262,6 +292,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Event Detail Modal -->
     <div x-show="selectedEvent"
@@ -585,6 +616,15 @@ function embedEventsApp() {
             }
         },
 
+        toggleCountry(code) {
+            const idx = this.filters.countries.indexOf(code);
+            if (idx > -1) {
+                this.filters.countries.splice(idx, 1);
+            } else {
+                this.filters.countries.push(code);
+            }
+        },
+
         toggleEventType(id) {
             const idx = this.filters.eventTypes.indexOf(id);
             if (idx > -1) {
@@ -648,6 +688,14 @@ function embedEventsApp() {
         getContinentName(code) {
             const continent = this.continents.find(c => c.code === code);
             return continent ? continent.name : code;
+        },
+
+        getCountryName(code) {
+            for (const event of this.events) {
+                const match = (event.countries || []).find(c => (c.iso_code || '').toUpperCase() === code);
+                if (match) return match.name_de || match.name || code;
+            }
+            return code;
         },
 
         getEventTypeName(typeId) {

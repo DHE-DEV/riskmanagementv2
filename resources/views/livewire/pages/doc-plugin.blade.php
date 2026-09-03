@@ -476,6 +476,30 @@
                             <td class="py-3 px-4 text-gray-600">Volltextsuche in Ereignissen</td>
                             <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?search=Erdbeben</code></td>
                         </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">hide_search</code></td>
+                            <td class="py-3 px-4"><code>1</code></td>
+                            <td class="py-3 px-4 text-gray-600">Suchfeld ausblenden</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?hide_search=1</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">hide_filter</code></td>
+                            <td class="py-3 px-4"><code>1</code></td>
+                            <td class="py-3 px-4 text-gray-600">Filter-Button samt Filter-Dialog ausblenden</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?hide_filter=1</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">hide_reset</code></td>
+                            <td class="py-3 px-4"><code>1</code></td>
+                            <td class="py-3 px-4 text-gray-600">Links zum Zur&uuml;cksetzen der Filter ausblenden</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?hide_reset=1</code></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-3 px-4"><code class="bg-gray-100 px-2 py-1 rounded text-blue-600">hide_badge</code></td>
+                            <td class="py-3 px-4"><code>1</code></td>
+                            <td class="py-3 px-4 text-gray-600">&bdquo;Powered by&ldquo;-Badge ausblenden</td>
+                            <td class="py-3 px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded">?hide_badge=1</code></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -486,6 +510,17 @@
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Beispiel mit mehreren Parametern:</strong><br>
                         <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">https://global-travel-monitor.eu/embed/events?key=IHR_API_KEY&timePeriod=future&priorities=high,medium&country=DE,TR</code>
+                    </p>
+                </div>
+
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-lock mr-2"></i>
+                        <strong>Fest eingestelltes Widget:</strong><br>
+                        Mit den <code>hide_</code>-Parametern lässt sich die Bedienung ausblenden, sodass die
+                        per URL gesetzten Filter nicht mehr verändert werden können:<br>
+                        <code class="mt-2 inline-block bg-blue-100 px-2 py-1 rounded text-xs">https://global-travel-monitor.eu/embed/events?key=IHR_API_KEY&country=TR&hide_search=1&hide_filter=1</code><br>
+                        <span class="text-xs">Hinweis: <code>search</code> und <code>hide_search</code> wirken nur auf <code>/embed/events</code>, die übrigen Parameter auf allen Embed-Ansichten.</span>
                     </p>
                 </div>
 

@@ -49,6 +49,13 @@
 @endpush
 
 @section('content')
+@php
+    // Sichtbarkeit der Bedienelemente ueber URL-Parameter steuerbar,
+    // analog zu ?hide_badge=1 im Embed-Layout.
+    $hideSearch = (bool) request()->query('hide_search');
+    $hideFilter = (bool) request()->query('hide_filter');
+    $hideReset  = (bool) request()->query('hide_reset');
+@endphp
 <div x-data="embedDashboardApp()" x-init="init()" class="h-full flex flex-col lg:flex-row">
     <!-- Sidebar with Events -->
     <div class="w-full lg:w-80 xl:w-96 flex-shrink-0 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col h-1/2 lg:h-full">
@@ -118,6 +125,7 @@
             </button>
         </div>
 
+        @if(! $hideFilter)
         <!-- Filter Button (Top Right, below Powered by badge) -->
         <div class="absolute top-16 right-4 z-[1000] flex flex-col items-end">
             <button @click="filterModalOpen = true"
@@ -155,8 +163,17 @@
                         </button>
                     </span>
                 </template>
+                <template x-for="code in filters.countries" :key="code">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
+                        <span x-text="getCountryName(code)"></span>
+                        <button @click="toggleCountry(code); applyFilters()" class="hover:text-red-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
+                </template>
             </div>
         </div>
+        @endif
 
         <!-- Legend -->
         <div class="absolute bottom-8 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
@@ -187,6 +204,7 @@
         </div>
     </div>
 
+    @if(! $hideFilter)
     <!-- Filter Modal -->
     <div x-show="filterModalOpen"
          x-transition:enter="transition ease-out duration-300"
@@ -211,7 +229,9 @@
             <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
                 <h2 class="text-lg font-semibold">Filter</h2>
                 <div class="flex gap-3 items-center">
+                    @if(! $hideReset)
                     <button @click="resetFilters()" class="text-sm text-blue-600 hover:text-blue-800">Zurücksetzen</button>
+                    @endif
                     <button @click="filterModalOpen = false" class="p-1 text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times text-lg"></i>
                     </button>
@@ -298,6 +318,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Event Detail Drawer -->
     <div x-show="selectedEvent"
@@ -665,6 +686,15 @@ function embedDashboardApp() {
             }
         },
 
+        toggleCountry(code) {
+            const idx = this.filters.countries.indexOf(code);
+            if (idx > -1) {
+                this.filters.countries.splice(idx, 1);
+            } else {
+                this.filters.countries.push(code);
+            }
+        },
+
         toggleEventType(id) {
             const idx = this.filters.eventTypes.indexOf(id);
             if (idx > -1) {
@@ -811,6 +841,14 @@ function embedDashboardApp() {
         getContinentName(code) {
             const continent = this.continents.find(c => c.code === code);
             return continent ? continent.name : code;
+        },
+
+        getCountryName(code) {
+            for (const event of this.events) {
+                const match = (event.countries || []).find(c => (c.iso_code || '').toUpperCase() === code);
+                if (match) return match.name_de || match.name || code;
+            }
+            return code;
         },
 
         formatDate(dateStr) {

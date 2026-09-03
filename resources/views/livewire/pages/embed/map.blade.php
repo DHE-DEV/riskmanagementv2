@@ -49,6 +49,13 @@
 @endpush
 
 @section('content')
+@php
+    // Sichtbarkeit der Bedienelemente ueber URL-Parameter steuerbar,
+    // analog zu ?hide_badge=1 im Embed-Layout.
+    $hideSearch = (bool) request()->query('hide_search');
+    $hideFilter = (bool) request()->query('hide_filter');
+    $hideReset  = (bool) request()->query('hide_reset');
+@endphp
 <div x-data="embedMapApp()" x-init="init()" class="h-full w-full relative">
     <!-- Map Container -->
     <div id="embed-map" class="h-full w-full"></div>
@@ -62,6 +69,7 @@
         </button>
     </div>
 
+    @if(! $hideFilter)
     <!-- Filter Button (Floating - Top Right, below Powered by badge) -->
     <div id="filter-container" class="absolute top-16 right-4 z-[1000] flex flex-col items-end">
         <button @click="filterModalOpen = true"
@@ -99,8 +107,17 @@
                     </button>
                 </span>
             </template>
+            <template x-for="code in filters.countries" :key="code">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded shadow text-xs">
+                    <span x-text="getCountryName(code)"></span>
+                    <button @click="toggleCountry(code); applyFilters()" class="hover:text-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            </template>
         </div>
     </div>
+    @endif
 
     <!-- Loading Overlay -->
     <div x-show="loading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[1001]">
@@ -133,6 +150,7 @@
         </div>
     </div>
 
+    @if(! $hideFilter)
     <!-- Filter Modal -->
     <div x-show="filterModalOpen"
          x-transition:enter="transition ease-out duration-300"
@@ -157,7 +175,9 @@
             <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
                 <h2 class="text-lg font-semibold">Filter</h2>
                 <div class="flex gap-3 items-center">
+                    @if(! $hideReset)
                     <button @click="resetFilters()" class="text-sm text-blue-600 hover:text-blue-800">Zurücksetzen</button>
+                    @endif
                     <button @click="filterModalOpen = false" class="p-1 text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times text-lg"></i>
                     </button>
@@ -245,6 +265,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Event Detail Drawer -->
     <div x-show="selectedEvent"
@@ -641,6 +662,15 @@ function embedMapApp() {
             }
         },
 
+        toggleCountry(code) {
+            const idx = this.filters.countries.indexOf(code);
+            if (idx > -1) {
+                this.filters.countries.splice(idx, 1);
+            } else {
+                this.filters.countries.push(code);
+            }
+        },
+
         toggleEventType(id) {
             const idx = this.filters.eventTypes.indexOf(id);
             if (idx > -1) {
@@ -706,6 +736,14 @@ function embedMapApp() {
         getContinentName(code) {
             const continent = this.continents.find(c => c.code === code);
             return continent ? continent.name : code;
+        },
+
+        getCountryName(code) {
+            for (const event of this.events) {
+                const match = (event.countries || []).find(c => (c.iso_code || '').toUpperCase() === code);
+                if (match) return match.name_de || match.name || code;
+            }
+            return code;
         },
 
         getEventTypeName(typeId) {

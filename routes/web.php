@@ -186,7 +186,12 @@ Route::get('/help-center', function () {
 |   ?country=TR  (alias: ?countries=DE,ES)   - Countries by ISO code (comma separated)
 |   ?eventTypes=1,2,3                        - Event types by ID (comma separated)
 |   ?search=keyword               - Full text search (only /embed/events)
-|   ?hide_badge=1                 - Hide "Powered by" badge (only /embed/events)
+|
+| Display parameters (set to 1 to hide the element):
+|   ?hide_search=1                - Hide the search field (only /embed/events)
+|   ?hide_filter=1                - Hide the filter button and the filter dialog
+|   ?hide_reset=1                 - Hide the "reset filters" links
+|   ?hide_badge=1                 - Hide "Powered by" badge (all embed views)
 |
 */
 Route::prefix('embed')->name('embed.')->middleware(['allow.embedding', 'validate.embed.key'])->group(function () {

@@ -142,13 +142,34 @@ Die Namen und Werte unterscheiden sich bewusst von denen des Haupt-Dashboards.
 | `country` | ISO-Codes, z.B. `TR` oder `DE,ES,IT` | Länder (kommagetrennt), Alias: `countries` |
 | `eventTypes` | Event-Type-IDs | Ereignistypen (kommagetrennt) |
 | `search` | Suchbegriff | Volltextsuche, nur `/embed/events` |
-| `hide_badge` | `1` | "Powered by"-Badge ausblenden, nur `/embed/events` |
+
+### Darstellung
+
+| Parameter | Werte | Beschreibung |
+|-----------|-------|--------------|
+| `hide_search` | `1` | Suchfeld ausblenden, nur `/embed/events` |
+| `hide_filter` | `1` | Filter-Button und Filter-Dialog ausblenden |
+| `hide_reset` | `1` | Links zum Zurücksetzen der Filter ausblenden |
+| `hide_badge` | `1` | "Powered by"-Badge ausblenden |
+
+Sind `hide_search` und `hide_filter` beide gesetzt, entfällt in `/embed/events`
+die komplette Filterleiste. `hide_filter` blendet auch die Chips der aktiven
+Filter aus – die per URL gesetzten Filter bleiben wirksam, sind für den
+Besucher aber nicht mehr veränderbar.
 
 ### Beispiel
 
 ```html
 <iframe
   src="https://global-travel-monitor.eu/embed/events?key=pk_live_xxx&country=TR"
+  width="400" height="600" frameborder="0"></iframe>
+```
+
+Fest auf die Türkei eingestelltes Widget ohne Bedienelemente:
+
+```html
+<iframe
+  src="https://global-travel-monitor.eu/embed/events?key=pk_live_xxx&country=TR&hide_search=1&hide_filter=1"
   width="400" height="600" frameborder="0"></iframe>
 ```
 
