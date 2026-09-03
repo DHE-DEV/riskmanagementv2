@@ -281,9 +281,33 @@ Alle Ansichten unterstützen URL-Parameter zur Vorkonfiguration. Parameter werde
 | `timePeriod` | `all`, `future`, `today`, `week`, `month` | Zeitraum der Ereignisse | `&timePeriod=future` |
 | `priorities` | `high`, `medium`, `low`, `info` | Prioritäten (kommagetrennt) | `&priorities=high,medium` |
 | `continents` | `EU`, `AS`, `AF`, `NA`, `SA`, `OC`, `AN` | Kontinente (kommagetrennt) | `&continents=EU,AS` |
-| `countries` | ISO-3166-1 Alpha-2 Codes | Länder (kommagetrennt) | `&countries=DE,AT,CH` |
+| `country` | ISO-3166-1 Alpha-2 Codes | Länder (kommagetrennt), Alias: `countries` | `&country=DE,AT,CH` |
 | `eventTypes` | Event-Type-IDs | Ereignistypen (kommagetrennt) | `&eventTypes=9,10,11` |
 | `search` | Beliebiger Text | Volltextsuche | `&search=Erdbeben` |
+
+### Darstellungs-Parameter
+
+Steuern, welche Bedienelemente im eingebetteten Widget sichtbar sind. Wert `1`
+blendet das jeweilige Element aus. Damit lässt sich ein per Filter-Parameter
+vorkonfiguriertes Widget fixieren, sodass Besucher die Auswahl nicht ändern
+können.
+
+| Parameter | Werte | Beschreibung | Gilt für |
+|-----------|-------|--------------|----------|
+| `hide_search` | `1` | Suchfeld ausblenden | nur `/embed/events` |
+| `hide_filter` | `1` | Filter-Button, Filter-Dialog und die Chips der aktiven Filter ausblenden | alle Ansichten |
+| `hide_reset` | `1` | Links zum Zurücksetzen der Filter ausblenden | alle Ansichten |
+| `hide_badge` | `1` | „Powered by"-Badge ausblenden | alle Ansichten |
+
+**Hinweise:**
+
+- `hide_filter` blendet auch die Chips der aktiven Filter aus. Andernfalls
+  ließen sich die per URL gesetzten Filter über das X an den Chips wieder
+  entfernen.
+- Sind in `/embed/events` sowohl `hide_search=1` als auch `hide_filter=1`
+  gesetzt, entfällt die komplette Filterleiste.
+- Die Elemente werden serverseitig entfernt und sind im ausgelieferten HTML
+  nicht enthalten.
 
 ### Kontinente-Kürzel
 
@@ -322,6 +346,9 @@ Alle Ansichten unterstützen URL-Parameter zur Vorkonfiguration. Parameter werde
 
 # Naturkatastrophen in Asien
 /embed/map?key=API_KEY&continents=AS&eventTypes=11
+
+# Fest auf die Türkei eingestelltes Widget ohne Bedienelemente
+/embed/events?key=API_KEY&country=TR&hide_search=1&hide_filter=1
 ```
 
 ---
@@ -420,9 +447,15 @@ function updatePluginFilter(options) {
     if (options.timePeriod) params.set('timePeriod', options.timePeriod);
     if (options.priorities) params.set('priorities', options.priorities.join(','));
     if (options.continents) params.set('continents', options.continents.join(','));
-    if (options.countries) params.set('countries', options.countries.join(','));
+    if (options.countries) params.set('country', options.countries.join(','));
     if (options.eventTypes) params.set('eventTypes', options.eventTypes.join(','));
     if (options.search) params.set('search', options.search);
+
+    // Bedienelemente ausblenden
+    if (options.hideSearch) params.set('hide_search', '1');
+    if (options.hideFilter) params.set('hide_filter', '1');
+    if (options.hideReset) params.set('hide_reset', '1');
+    if (options.hideBadge) params.set('hide_badge', '1');
 
     const iframe = document.getElementById('gtm-plugin');
     iframe.src = `${baseUrl}?${params.toString()}`;
@@ -437,6 +470,13 @@ updatePluginFilter({
 // Beispiel: Suche nach "Streik"
 updatePluginFilter({
     search: 'Streik'
+});
+
+// Beispiel: fest auf die Türkei eingestellt, ohne Bedienelemente
+updatePluginFilter({
+    countries: ['TR'],
+    hideSearch: true,
+    hideFilter: true
 });
 ```
 
