@@ -36,11 +36,19 @@ class NotificationRuleService
     private bool $collectDecisions = false;
 
     /**
-     * PDS-Reisen je Kunde, einmal pro Lauf geholt.
+     * PDS-Reisen je Kunde und Zeitraum, einmal pro Lauf geholt.
      *
-     * @var array<int, Collection<int, TdTrip>>
+     * @var array<string, Collection<int, TdTrip>>
      */
     private array $pdsTripCache = [];
+
+    /**
+     * Kunden, deren PDS-Abruf in diesem Lauf fehlgeschlagen ist. Sie werden
+     * nicht fuer jedes weitere Event erneut abgefragt.
+     *
+     * @var array<int, true>
+     */
+    private array $pdsFailedCustomers = [];
 
     /**
      * Ist in diesem Lauf mindestens ein PDS-Abruf fehlgeschlagen? Wird vom
@@ -52,6 +60,23 @@ class NotificationRuleService
     public function pdsApiFailed(): bool
     {
         return $this->pdsApiFailed;
+    }
+
+    /**
+     * Kreuzfahrten, deren Haefen PDS in diesem Lauf nicht liefern konnte
+     * (Link-Kennungen je Kunde). Ohne Haefen kennt die Pruefung ihre Laender
+     * nicht – sie gelten dann nicht als betroffen.
+     *
+     * @var array<int, array<int, string>>
+     */
+    private array $pdsPortsMissing = [];
+
+    /**
+     * @return array<int, array<int, string>>
+     */
+    public function pdsPortsMissing(): array
+    {
+        return $this->pdsPortsMissing;
     }
 
     /**
@@ -107,16 +132,30 @@ class NotificationRuleService
     {
         $event->loadMissing(['countries', 'eventType', 'eventTypes']);
 
-        $countryIds = $event->countries->pluck('id')->toArray();
-        if (empty($countryIds) && $event->country_id) {
-            $countryIds = [$event->country_id];
-        }
+        ['countryIds' => $countryIds, 'countryIsoCodes' => $countryIsoCodes, 'categories' => $categories] = $this->matchCriteria($event);
 
-        $countryIsoCodes = $event->countries->pluck('iso_code')->toArray();
-        if (empty($countryIsoCodes) && $event->country) {
-            $countryIsoCodes = [$event->country->iso_code];
-        }
+        $placeholders = $this->customEventPlaceholders($event, $categories);
 
+        return $this->sendMatchingNotifications(
+            event: $event,
+            riskLevel: $event->priority,
+            categories: $categories,
+            countryIds: $countryIds,
+            placeholders: $placeholders,
+            force: $force,
+            sourceFilter: $sourceFilter,
+            countryIsoCodes: $countryIsoCodes,
+        );
+    }
+
+    /**
+     * Platzhalter eines CustomEvents fuer die Mail-Vorlagen.
+     *
+     * @param  array<int, string>  $categories
+     * @return array<string, string>
+     */
+    private function customEventPlaceholders(CustomEvent $event, array $categories): array
+    {
         // unique(): ein Land kann mehrere Standort-Datensaetze haben und wuerde sonst mehrfach erscheinen.
         $countryName = $event->countries->map(fn ($c) => $c->getName('de'))->unique()->implode(', ')
             ?: ($event->country?->getName('de') ?? '');
@@ -124,23 +163,8 @@ class NotificationRuleService
         // Standorte inkl. Region/Stadt - matcht weiterhin auf Laenderebene, dient nur der Anzeige.
         $locationSummary = $event->locationSummary('de') ?: $countryName;
 
-        // Kategorien aus eventTypes ableiten (category-Feld ist oft NULL).
-        // Massgeblich ist der Code des Event-Typs - der Abgleich mit den Regeln
-        // laeuft in ruleMatches() ueber dieselben Codes.
-        $categories = [];
-        $categoryLabel = '';
-        if ($event->eventTypes->isNotEmpty()) {
-            $categoryLabel = $event->eventTypes->pluck('name')->implode(', ');
-            $categories = $event->eventTypes
-                ->pluck('code')
-                ->unique()
-                ->values()
-                ->toArray();
-        }
-        // Fallback auf das category-Feld des Events
-        if (empty($categories) && $event->category) {
-            $categories = [NotificationRule::normalizeCategory($event->category)];
-        }
+        // Anzeigename der Kategorien: die Namen der Event-Typen, sonst die der Codes.
+        $categoryLabel = $event->eventTypes->pluck('name')->implode(', ');
         if (!$categoryLabel) {
             $options = NotificationRule::categoryOptions();
             $categoryLabel = collect($categories)
@@ -148,7 +172,7 @@ class NotificationRuleService
                 ->implode(', ');
         }
 
-        $placeholders = [
+        return [
             '{event_title}' => $event->title,
             '{country_name}' => $countryName,
             '{locations}' => $locationSummary,
@@ -164,17 +188,247 @@ class NotificationRuleService
                 ? 'Aktualisierte Fassung (Version ' . $event->version . ')'
                 : '',
         ];
+    }
 
-        return $this->sendMatchingNotifications(
-            event: $event,
-            riskLevel: $event->priority,
-            categories: $categories,
-            countryIds: $countryIds,
-            placeholders: $placeholders,
-            force: $force,
-            sourceFilter: $sourceFilter,
-            countryIsoCodes: $countryIsoCodes,
-        );
+    /** Schutz vor versehentlichem Doppelversand von Hand (Sekunden). */
+    private const MANUAL_RESEND_LOCK_SECONDS = 60;
+
+    /**
+     * Von Hand: die Benachrichtigung fuer genau EINE Regel und EIN Ereignis
+     * senden – auch wenn sie schon einmal verschickt wurde.
+     *
+     * Die Duplikat-Pruefung und das Stundenlimit gelten hier bewusst nicht.
+     * Alles andere ist wie im Versand: Die Regel muss aktiv sein und auf das
+     * Ereignis zutreffen, bei Travel Alert muss es betroffene Reisen geben,
+     * und abgemeldete Empfaenger bekommen keine Mail. Frueher protokollierte
+     * Versendungen bleiben erhalten.
+     *
+     * @return array{sent: bool, message: string, recipient: ?string}
+     */
+    public function sendForRule(CustomEvent $event, NotificationRule $rule): array
+    {
+        $event->loadMissing(['countries', 'eventType', 'eventTypes']);
+        $rule->loadMissing(['recipients', 'template', 'customer']);
+
+        $refuse = fn (string $message) => ['sent' => false, 'message' => $message, 'recipient' => null];
+
+        if (! $rule->is_active) {
+            return $refuse('Die Regel ist deaktiviert.');
+        }
+
+        if (! $rule->customer?->notifications_enabled) {
+            return $refuse('Die Benachrichtigungen des Kunden sind ausgeschaltet.');
+        }
+
+        ['countryIds' => $countryIds, 'countryIsoCodes' => $countryIsoCodes, 'categories' => $categories] = $this->matchCriteria($event);
+
+        if (! $this->ruleMatches($rule, (string) $event->priority, $categories, $countryIds)) {
+            return $refuse('Die Regel trifft auf dieses Ereignis nicht zu.');
+        }
+
+        $eventType = get_class($event);
+
+        $justSent = NotificationLog::where('notification_rule_id', $rule->id)
+            ->forEvent($event->id, $eventType)
+            ->where('created_at', '>=', now()->subSeconds(self::MANUAL_RESEND_LOCK_SECONDS))
+            ->exists();
+
+        if ($justSent) {
+            return $refuse('Für diese Regel wurde gerade erst eine Benachrichtigung verschickt. Bitte einen Moment warten.');
+        }
+
+        $placeholders = $this->customEventPlaceholders($event, $categories);
+        $affectedTrips = null;
+
+        if (($rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT) === NotificationRule::SOURCE_TRAVEL_ALERT) {
+            $affectedTrips = $this->findAffectedTrips($rule->customer_id, array_map('strtoupper', $countryIsoCodes), $event);
+
+            if ($affectedTrips->isEmpty()) {
+                return $refuse('Es sind keine Reisen des Kunden betroffen.');
+            }
+
+            $placeholders['{affected_trips}'] = $this->buildAffectedTripsHtml($affectedTrips);
+            $placeholders['{affected_trips_count}'] = (string) $affectedTrips->count();
+        } else {
+            $placeholders['{affected_trips}'] = '';
+            $placeholders['{affected_trips_count}'] = '0';
+        }
+
+        // Die Begruendung des Versands mitlesen, ohne einen laufenden Mitschnitt zu stoeren.
+        [$wasCollecting, $previousDecisions] = [$this->collectDecisions, $this->decisions];
+        $this->collectDecisions = true;
+        $this->decisions = [];
+
+        try {
+            $sentEmails = [];
+            $sent = $this->sendNotification($rule, $placeholders, $event->id, $eventType, $sentEmails, $affectedTrips ?? null);
+            $decision = $this->decisions[0] ?? null;
+        } finally {
+            $this->collectDecisions = $wasCollecting;
+            $this->decisions = $previousDecisions;
+        }
+
+        Log::info('Benachrichtigung von Hand ausgeloest', [
+            'rule_id' => $rule->id,
+            'event_id' => $event->id,
+            'sent' => $sent,
+            'user_id' => auth('web')->id(),
+        ]);
+
+        return [
+            'sent' => $sent,
+            'message' => $sent
+                ? 'Benachrichtigung versendet.'
+                : 'Nicht versendet: '.str_replace(['Empfaenger', 'fuer'], ['Empfänger', 'für'], $decision['reason'] ?? 'unbekannter Grund').'.',
+            'recipient' => $decision['recipient'] ?? null,
+        ];
+    }
+
+    /**
+     * Woran die Regeln ein CustomEvent messen: Laender (IDs fuer GTM-Regeln,
+     * ISO-Codes fuer den Abgleich mit Reisen) und Kategorien (Codes der Event-Typen).
+     *
+     * @return array{countryIds: array<int, int>, countryIsoCodes: array<int, string>, categories: array<int, string>}
+     */
+    private function matchCriteria(CustomEvent $event): array
+    {
+        $event->loadMissing(['countries', 'eventType', 'eventTypes']);
+
+        $countryIds = $event->countries->pluck('id')->toArray();
+        if (empty($countryIds) && $event->country_id) {
+            $countryIds = [$event->country_id];
+        }
+
+        $countryIsoCodes = $event->countries->pluck('iso_code')->toArray();
+        if (empty($countryIsoCodes) && $event->country) {
+            $countryIsoCodes = [$event->country->iso_code];
+        }
+
+        // Kategorien aus eventTypes ableiten (category-Feld ist oft NULL).
+        // Massgeblich ist der Code des Event-Typs - der Abgleich mit den Regeln
+        // laeuft in ruleMatches() ueber dieselben Codes.
+        $categories = $event->eventTypes->pluck('code')->unique()->values()->toArray();
+
+        // Fallback auf das category-Feld des Events
+        if (empty($categories) && $event->category) {
+            $categories = [NotificationRule::normalizeCategory($event->category)];
+        }
+
+        return compact('countryIds', 'countryIsoCodes', 'categories');
+    }
+
+    /**
+     * Vorschau fuer EIN Ereignis: Welche Regeln welcher Kunden wuerden greifen?
+     *
+     * Es wird nichts versendet und nichts protokolliert. Geprueft wird mit
+     * denselben Bausteinen wie im Versand (ruleMatches, findAffectedTrips),
+     * aber ueber ALLE Regeln – auch inaktive und solche von Kunden mit
+     * abgeschaltetem Versand –, damit sichtbar wird, woran es jeweils liegt.
+     *
+     * @param  array<int, int>|null  $customerIds  nur Regeln dieser Kunden; null = alle
+     * @return array<int, array{
+     *     rule: NotificationRule,
+     *     source: string,
+     *     criteria_match: bool,
+     *     would_notify: bool,
+     *     reasons: array<int, string>,
+     *     recipient: ?string,
+     *     affected_trips: ?Collection,
+     *     already_sent_at: ?\Illuminate\Support\Carbon,
+     * }>
+     */
+    public function previewRulesForEvent(CustomEvent $event, ?array $customerIds = null): array
+    {
+        ['countryIds' => $countryIds, 'countryIsoCodes' => $countryIsoCodes, 'categories' => $categories] = $this->matchCriteria($event);
+
+        $eventCountryIsos = array_map('strtoupper', $countryIsoCodes);
+        $eventType = get_class($event);
+
+        $rules = NotificationRule::with(['recipients', 'customer'])
+            ->when($customerIds !== null, fn ($query) => $query->whereIn('customer_id', $customerIds))
+            ->get();
+
+        $lastSent = NotificationLog::query()
+            ->forEvent($event->id, $eventType)
+            ->byStatus('sent')
+            ->orderBy('created_at')
+            ->get()
+            ->keyBy('notification_rule_id');
+
+        $results = [];
+
+        foreach ($rules as $rule) {
+            $source = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
+            $isTravelAlert = $source === NotificationRule::SOURCE_TRAVEL_ALERT;
+            $reasons = [];
+
+            // 1. Kriterien der Regel
+            if (! empty($rule->risk_levels) && ! in_array($event->priority, $rule->risk_levels)) {
+                $reasons[] = 'Priorität passt nicht';
+            }
+
+            if (! empty($rule->categories)) {
+                $ruleCategories = NotificationRule::normalizeCategories($rule->categories);
+                $eventCategories = NotificationRule::normalizeCategories($categories);
+
+                if (empty($eventCategories) || empty(array_intersect($ruleCategories, $eventCategories))) {
+                    $reasons[] = 'Event-Typ passt nicht';
+                }
+            }
+
+            if (! $isTravelAlert && ! empty($rule->country_ids)
+                && (empty($countryIds) || empty(array_intersect($rule->country_ids, $countryIds)))) {
+                $reasons[] = 'Land passt nicht';
+            }
+
+            $criteriaMatch = $this->ruleMatches($rule, (string) $event->priority, $categories, $countryIds);
+
+            // 2. Voraussetzungen fuer den Versand
+            $enabled = (bool) $rule->is_active && (bool) $rule->customer?->notifications_enabled;
+
+            if (! $rule->is_active) {
+                $reasons[] = 'Regel ist deaktiviert';
+            }
+            if (! $rule->customer) {
+                $reasons[] = 'Kunde nicht mehr vorhanden';
+            } elseif (! $rule->customer->notifications_enabled) {
+                $reasons[] = 'Benachrichtigungen des Kunden sind ausgeschaltet';
+            }
+
+            $recipient = $rule->recipients->where('recipient_type', 'to')->first()?->email;
+
+            if (! $recipient) {
+                $reasons[] = 'Kein Empfänger hinterlegt';
+            } elseif ($this->isUnsubscribed($recipient, $rule->customer_id)) {
+                $reasons[] = 'Empfänger hat sich abgemeldet';
+            }
+
+            // 3. Travel Alert: betroffene Reisen – nur dort abrufen, wo die Regel ueberhaupt greifen kann.
+            $affectedTrips = null;
+
+            if ($isTravelAlert && $criteriaMatch && $enabled) {
+                $affectedTrips = $this->findAffectedTrips($rule->customer_id, $eventCountryIsos, $event);
+
+                if ($affectedTrips->isEmpty()) {
+                    $reasons[] = empty($eventCountryIsos)
+                        ? 'Keine betroffenen Reisen (Ereignis hat keine Länder)'
+                        : 'Keine betroffenen Reisen im Zeitraum';
+                }
+            }
+
+            $results[] = [
+                'rule' => $rule,
+                'source' => $source,
+                'criteria_match' => $criteriaMatch,
+                'would_notify' => $reasons === [],
+                'reasons' => $reasons,
+                'recipient' => $recipient,
+                'affected_trips' => $affectedTrips,
+                'already_sent_at' => $lastSent->get($rule->id)?->created_at,
+            ];
+        }
+
+        return $results;
     }
 
     /**
@@ -420,6 +674,7 @@ class NotificationRuleService
             }
 
             // Bei Travel-Alert-Regeln: betroffene Reisen suchen
+            $affectedTrips = null;
             $rulePlaceholders = $placeholders;
             $ruleSource = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
             if ($ruleSource === NotificationRule::SOURCE_TRAVEL_ALERT) {
@@ -492,7 +747,7 @@ class NotificationRuleService
                 $rulePlaceholders['{affected_trips_count}'] = '0';
             }
 
-            if ($this->sendNotification($rule, $rulePlaceholders, $eventId, $eventType, $sentEmails)) {
+            if ($this->sendNotification($rule, $rulePlaceholders, $eventId, $eventType, $sentEmails, $affectedTrips ?? null)) {
                 $sentCount++;
             }
         }
@@ -586,6 +841,7 @@ class NotificationRuleService
         int $eventId,
         string $eventType,
         array &$sentEmails,
+        ?Collection $affectedTrips = null,
     ): bool {
         $source = $rule->source ?? NotificationRule::SOURCE_TRAVEL_ALERT;
         $template = $rule->template ?? NotificationTemplate::system($source)->first();
@@ -664,7 +920,7 @@ class NotificationRuleService
                 'status' => 'sent',
                 'error_message' => null,
                 'affected_trips_count' => (int) ($placeholders['{affected_trips_count}'] ?? 0),
-            ]);
+            ] + $this->affectedTripsForLog($affectedTrips));
 
             // Track for deduplication
             $sentEmails[] = $deduplicationKey;
@@ -694,6 +950,43 @@ class NotificationRuleService
 
             return false;
         }
+    }
+
+    /**
+     * Kennung einer Reise ueber lokale und PDS-Reisen hinweg: die Link-Kennung,
+     * ersatzweise die lokale ID.
+     */
+    private function tripKey(TdTrip $trip): string
+    {
+        return (string) ($trip->pds_tid ?: $trip->external_trip_id ?: 'trip-'.$trip->id);
+    }
+
+    /** Gibt es die Spalte notification_logs.affected_trips schon (Migration eingespielt)? */
+    private ?bool $logsStoreTrips = null;
+
+    /**
+     * Die in einer Mail genannten Reisen fuers Protokoll – damit sich spaeter
+     * je Reise sagen laesst, wann sie gemeldet wurde.
+     *
+     * @return array{affected_trips?: array<int, array{key: string, name: ?string, start: ?string, end: ?string}>}
+     */
+    private function affectedTripsForLog(?Collection $trips): array
+    {
+        if ($trips === null || $trips->isEmpty()) {
+            return [];
+        }
+
+        // Ohne die Spalte schluege das Protokollieren fehl – und die Mail ginge beim naechsten Lauf erneut raus.
+        if (! ($this->logsStoreTrips ??= \Schema::hasColumn('notification_logs', 'affected_trips'))) {
+            return [];
+        }
+
+        return ['affected_trips' => $trips->map(fn (TdTrip $trip) => [
+            'key' => $this->tripKey($trip),
+            'name' => $trip->trip_name ?: $trip->booking_reference,
+            'start' => $trip->computed_start_at?->format('Y-m-d'),
+            'end' => $trip->computed_end_at?->format('Y-m-d'),
+        ])->values()->all()];
     }
 
     /**
@@ -741,7 +1034,11 @@ class NotificationRuleService
         // direkt bei PDS nachfragen. Ohne das bleiben Kunden aussen vor, deren
         // Reisen nie nach td_trips synchronisiert wurden.
         if ($trips->isEmpty()) {
-            $trips = $this->fetchPdsTrips($customerId, $eventStartDate, $eventEndDate);
+            // Den Zeitraum zusaetzlich hier pruefen: verlassen wir uns allein auf
+            // den Datumsfilter von PDS, entscheidet am Ende nur noch das Land.
+            $trips = $this->fetchPdsTrips($customerId, $eventStartDate, $eventEndDate)
+                ->filter(fn (TdTrip $trip) => $this->tripOverlapsPeriod($trip, $eventStartDate, $eventEndDate))
+                ->values();
         }
 
         Log::info('findAffectedTrips: Reisen im Zeitraum', [
@@ -785,10 +1082,18 @@ class NotificationRuleService
      */
     private function fetchPdsTrips(int $customerId, ?\DateTimeInterface $from, ?\DateTimeInterface $to): Collection
     {
-        // Pro Lauf nur einmal abfragen: findAffectedTrips() wird je Regel UND
-        // je Event aufgerufen, sonst entstuenden dutzende HTTP-Calls.
-        if (array_key_exists($customerId, $this->pdsTripCache)) {
-            return $this->pdsTripCache[$customerId];
+        // Pro Kunde und Zeitraum nur einmal abfragen: findAffectedTrips() wird
+        // je Regel UND je Event aufgerufen, sonst entstuenden dutzende HTTP-Calls.
+        // Der Zeitraum gehoert in den Schluessel – der Abruf ist auf ihn
+        // eingeschraenkt, ein anderes Event braucht also andere Reisen.
+        $cacheKey = $customerId.'|'.($from?->format('Y-m-d') ?? '').'|'.($to?->format('Y-m-d') ?? '');
+
+        if (array_key_exists($cacheKey, $this->pdsTripCache)) {
+            return $this->pdsTripCache[$cacheKey];
+        }
+
+        if (isset($this->pdsFailedCustomers[$customerId])) {
+            return collect();
         }
 
         $accountId = Customer::whereKey($customerId)->value('pds_account_id');
@@ -798,58 +1103,29 @@ class NotificationRuleService
                 'customer_id' => $customerId,
             ]);
 
-            return $this->pdsTripCache[$customerId] = collect();
+            return $this->pdsTripCache[$cacheKey] = collect();
         }
 
-        try {
-            $rows = app(PassolutionApiService::class)->fetchTravelDetailsByAccountId(
-                (int) $accountId,
-                $from?->format('Y-m-d'),
-                $to?->format('Y-m-d'),
-            );
-        } catch (\Throwable $e) {
-            // Ein API-Ausfall darf nicht als "keine betroffenen Reisen"
-            // durchgehen – sonst bleibt ein Totalausfall unbemerkt.
-            Log::error('findAffectedTrips: PDS-Abruf fehlgeschlagen', [
-                'customer_id' => $customerId,
-                'pds_account_id' => $accountId,
-                'error' => $e->getMessage(),
-            ]);
-            $this->pdsApiFailed = true;
-
-            return $this->pdsTripCache[$customerId] = collect();
-        }
+        ['rows' => $rows, 'ports_missing' => $portsMissing] = $this->fetchPdsTravelDetails((int) $accountId, $from, $to);
 
         if ($rows === null) {
-            Log::warning('findAffectedTrips: PDS lieferte keine Antwort', [
+            // Ein API-Ausfall darf nicht als "keine betroffenen Reisen"
+            // durchgehen – sonst bleibt ein Totalausfall unbemerkt.
+            Log::warning('findAffectedTrips: PDS-Abruf fehlgeschlagen', [
                 'customer_id' => $customerId,
                 'pds_account_id' => $accountId,
             ]);
             $this->pdsApiFailed = true;
+            $this->pdsFailedCustomers[$customerId] = true;
 
-            return $this->pdsTripCache[$customerId] = collect();
+            return collect();
         }
 
-        $trips = collect($rows)->map(function (array $row) use ($customerId) {
-            $tid = $row['tid'] ?? $row['id'] ?? null;
+        if ($portsMissing !== []) {
+            $this->pdsPortsMissing[$customerId] = array_values(array_unique(array_merge($this->pdsPortsMissing[$customerId] ?? [], $portsMissing)));
+        }
 
-            $trip = new TdTrip([
-                'customer_id' => $customerId,
-                'trip_name' => $row['trip_name'] ?? null,
-                'booking_reference' => $row['reference_id'] ?? null,
-                'external_trip_id' => $tid,
-                'pds_tid' => $tid,
-                'status' => 'active',
-                'computed_start_at' => $row['start_date'] ?? null,
-                'computed_end_at' => $row['end_date'] ?? null,
-                'countries_visited' => $this->extractPdsCountryCodes($row),
-            ]);
-
-            // Nicht persistiert: die Reise existiert nur im Fremdsystem.
-            $trip->exists = false;
-
-            return $trip;
-        });
+        $trips = collect($rows)->map(fn (array $row) => $this->tripFromPdsRow($row, $customerId));
 
         Log::info('findAffectedTrips: Reisen von PDS geholt', [
             'customer_id' => $customerId,
@@ -857,7 +1133,234 @@ class NotificationRuleService
             'count' => $trips->count(),
         ]);
 
-        return $this->pdsTripCache[$customerId] = $trips;
+        return $this->pdsTripCache[$cacheKey] = $trips;
+    }
+
+    /**
+     * Eine Zeile des PDS-Abrufs als (nicht gespeicherte) Reise.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function tripFromPdsRow(array $row, int $customerId): TdTrip
+    {
+        $tid = $row['tid'] ?? $row['id'] ?? null;
+
+        $trip = new TdTrip([
+            'customer_id' => $customerId,
+            'trip_name' => $row['trip_name'] ?? null,
+            'booking_reference' => $row['reference_id'] ?? null,
+            'external_trip_id' => $tid,
+            'pds_tid' => $tid,
+            'status' => 'active',
+            'computed_start_at' => $row['start_date'] ?? null,
+            'computed_end_at' => $row['end_date'] ?? null,
+            'countries_visited' => $this->extractPdsCountryCodes($row),
+        ]);
+
+        // Nicht persistiert: die Reise existiert nur im Fremdsystem.
+        $trip->exists = false;
+
+        return $trip;
+    }
+
+    /**
+     * Vorschau: die zukuenftigen Reisen (Travel-Detail-Links) eines Kunden und
+     * ob sie von diesem Ereignis betroffen sind. Nichts wird versendet.
+     *
+     * "Betroffen" heisst wie im Versand: Der Reisezeitraum ueberschneidet den
+     * des Ereignisses und die Reise fuehrt in eines seiner Laender. Zusaetzlich
+     * wird festgehalten, ob der Versand die Reise tatsaechlich mitzaehlt
+     * (findAffectedTrips) – weicht das ab, soll es auffallen.
+     *
+     * @return array{
+     *     trips: array<int, array{trip: TdTrip, key: string, in_period: bool, matching_countries: array<int, string>, affected: bool, counted: bool, ports_missing: bool}>,
+     *     failed: bool,
+     * }
+     */
+    public function upcomingTripsForEvent(int $customerId, CustomEvent $event): array
+    {
+        $eventCountryIsos = array_map('strtoupper', $this->matchCriteria($event)['countryIsoCodes']);
+        $eventStart = $event->start_date ?? now();
+        $eventEnd = $event->end_date;
+        $today = now()->startOfDay();
+
+        $key = fn (TdTrip $trip) => $this->tripKey($trip);
+
+        // Lokal gespeicherte Reisen – dieselben Status wie im Versand.
+        $trips = TdTrip::where('customer_id', $customerId)
+            ->whereIn('status', ['active', 'confirmed'])
+            ->where('computed_end_at', '>=', $today)
+            ->get()
+            ->keyBy($key);
+
+        // Dazu die Travel-Detail-Links aus PDS; lokal Gespeichertes hat Vorrang.
+        ['trips' => $pdsTrips, 'failed' => $failed, 'ports_missing' => $portsMissing] = $this->fetchUpcomingPdsTrips($customerId, $today);
+
+        foreach ($pdsTrips as $trip) {
+            if (! $trips->has($key($trip))) {
+                $trips->put($key($trip), $trip);
+            }
+        }
+
+        $counted = $this->findAffectedTrips($customerId, $eventCountryIsos, $event)->map($key)->flip();
+
+        $rows = $trips->map(function (TdTrip $trip, string $tripKey) use ($eventCountryIsos, $eventStart, $eventEnd, $counted, $portsMissing) {
+            $inPeriod = $this->tripOverlapsPeriod($trip, $eventStart, $eventEnd);
+            $matching = array_values(array_intersect(array_map('strtoupper', $trip->countries_visited ?? []), $eventCountryIsos));
+
+            return [
+                'trip' => $trip,
+                'key' => $tripKey,
+                'in_period' => $inPeriod,
+                'matching_countries' => $matching,
+                'affected' => $inPeriod && $matching !== [],
+                'counted' => $counted->has($tripKey),
+                'ports_missing' => in_array($tripKey, $portsMissing, true),
+            ];
+        });
+
+        return [
+            'trips' => $rows->values()->all(),
+            'failed' => $failed,
+        ];
+    }
+
+    /**
+     * Alle Travel-Detail-Links eines Kunden ab $from. Kreuzfahrten, deren
+     * Haefen PDS nicht liefern konnte, stehen in "ports_missing".
+     *
+     * @return array{trips: Collection, failed: bool, ports_missing: array<int, string>}
+     */
+    private function fetchUpcomingPdsTrips(int $customerId, \DateTimeInterface $from): array
+    {
+        $accountId = Customer::whereKey($customerId)->value('pds_account_id');
+
+        if (! $accountId) {
+            return ['trips' => collect(), 'failed' => false, 'ports_missing' => []];
+        }
+
+        ['rows' => $rows, 'ports_missing' => $portsMissing] = $this->fetchPdsTravelDetails((int) $accountId, $from, null);
+
+        return [
+            'trips' => collect($rows ?? [])->map(fn (array $row) => $this->tripFromPdsRow($row, $customerId)),
+            'failed' => $rows === null,
+            'ports_missing' => $portsMissing,
+        ];
+    }
+
+    /** Hoechstzahl der Einzelabrufe, mit denen fehlende Haefen nachgeladen werden. */
+    private const MAX_CRUISE_PROBES = 10;
+
+    /**
+     * Travel-Details eines Accounts im Zeitraum – abgesichert gegen einen
+     * Fehler in den Kreuzfahrt-Daten.
+     *
+     * PDS scheitert am gesamten Abruf, sobald es zu einer einzigen Kreuzfahrt
+     * im Zeitraum die Route nicht laden kann. Damit daran nicht alle Reisen
+     * des Kunden haengen, wird die Liste dann ohne Kreuzfahrt-Daten geholt und
+     * die Haefen werden tageweise nachgeladen: Ein Abruf fuer einen einzelnen
+     * Tag gelingt, solange an diesem Tag keine der fehlerhaften Kreuzfahrten
+     * unterwegs ist. Was danach noch fehlt, steht in "ports_missing".
+     *
+     * @return array{rows: array<int, array<string, mixed>>|null, ports_missing: array<int, string>} rows = null: Abruf ganz gescheitert
+     */
+    private function fetchPdsTravelDetails(int $accountId, ?\DateTimeInterface $from, ?\DateTimeInterface $to): array
+    {
+        $api = app(PassolutionApiService::class);
+        $fromDay = $from?->format('Y-m-d');
+        $toDay = $to?->format('Y-m-d');
+
+        $fetch = function (?string $start, ?string $end, bool $withCruiseInfo) use ($api, $accountId): ?array {
+            try {
+                return $api->fetchTravelDetailsByAccountId($accountId, $start, $end, $withCruiseInfo);
+            } catch (\Throwable $e) {
+                Log::error('PDS-Abruf der Travel-Details fehlgeschlagen', ['pds_account_id' => $accountId, 'error' => $e->getMessage()]);
+
+                return null;
+            }
+        };
+
+        if (($rows = $fetch($fromDay, $toDay, true)) !== null) {
+            return ['rows' => $rows, 'ports_missing' => []];
+        }
+
+        // Nur wenn PDS mit einem Serverfehler geantwortet hat. Ist PDS gar
+        // nicht erreichbar, wuerde ein zweiter Versuch nur die Wartezeit verdoppeln.
+        if (($api->lastTravelDetailsStatus() ?? 0) < 500 || ($rows = $fetch($fromDay, $toDay, false)) === null) {
+            return ['rows' => null, 'ports_missing' => []];
+        }
+
+        $tidOf = fn (array $row) => (string) ($row['tid'] ?? $row['id'] ?? '');
+        $rows = collect($rows)->keyBy($tidOf);
+
+        // Kreuzfahrten ohne Haefen – die naechsten zuerst, falls die Abrufe nicht fuer alle reichen.
+        $missing = $rows
+            ->filter(fn (array $row) => ! empty($row['cruise_compass']))
+            ->sortBy(fn (array $row) => (string) ($row['start_date'] ?? ''))
+            ->keys()
+            ->flip();
+
+        $triedDays = [];
+
+        foreach ($missing->keys() as $tid) {
+            $start = substr((string) ($rows[$tid]['start_date'] ?? ''), 0, 10);
+            $end = substr((string) ($rows[$tid]['end_date'] ?? ''), 0, 10);
+
+            // Erst der erste, dann der letzte Reisetag innerhalb des Zeitraums.
+            $days = array_unique(array_filter([
+                $fromDay ? max($start, $fromDay) : $start,
+                $toDay ? min($end, $toDay) : $end,
+            ]));
+
+            foreach ($days as $day) {
+                if (! $missing->has($tid) || isset($triedDays[$day]) || count($triedDays) >= self::MAX_CRUISE_PROBES) {
+                    continue;
+                }
+
+                $triedDays[$day] = true;
+
+                foreach ($fetch($day, $day, true) ?? [] as $row) {
+                    if ($rows->has($tidOf($row))) {
+                        $rows->put($tidOf($row), $row);
+                        $missing->forget($tidOf($row));
+                    }
+                }
+            }
+        }
+
+        $portsMissing = $missing->keys()->map(fn ($tid) => (string) $tid)->all();
+
+        Log::warning('PDS: Abruf mit Kreuzfahrt-Daten gescheitert, Haefen einzeln nachgeladen', [
+            'pds_account_id' => $accountId,
+            'from' => $fromDay,
+            'to' => $toDay,
+            'einzelabrufe' => count($triedDays),
+            'kreuzfahrten_ohne_haefen' => $portsMissing,
+        ]);
+
+        return ['rows' => $rows->values()->all(), 'ports_missing' => $portsMissing];
+    }
+
+    /**
+     * Ueberschneidet sich die Reise mit dem Zeitraum? Verglichen wird wie beim
+     * PDS-Abruf auf Tagesebene ueber die gesamte Reisedauer – auch bei
+     * Kreuzfahrten, deren Haefen keinem einzelnen Tag zugeordnet werden.
+     * $to = null steht fuer ein offenes Event.
+     */
+    private function tripOverlapsPeriod(TdTrip $trip, \DateTimeInterface $from, ?\DateTimeInterface $to): bool
+    {
+        $tripStart = $trip->computed_start_at?->format('Y-m-d');
+        $tripEnd = $trip->computed_end_at?->format('Y-m-d');
+
+        if (! $tripStart || ! $tripEnd) {
+            return false;
+        }
+
+        if ($tripEnd < $from->format('Y-m-d')) {
+            return false;
+        }
+
+        return ! $to || $tripStart <= $to->format('Y-m-d');
     }
 
     /**

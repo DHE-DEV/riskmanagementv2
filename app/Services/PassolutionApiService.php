@@ -164,6 +164,17 @@ class PassolutionApiService
     }
 
     /**
+     * HTTP-Status des letzten Abrufs ueber fetchTravelDetailsByAccountId();
+     * null, wenn PDS gar nicht geantwortet hat (kein Token, Timeout, Verbindung).
+     */
+    private ?int $lastTravelDetailsStatus = null;
+
+    public function lastTravelDetailsStatus(): ?int
+    {
+        return $this->lastTravelDetailsStatus;
+    }
+
+    /**
      * Travel-Details eines Accounts ueber die pds_account_id.
      *
      * Gegenstueck zu fetchTravelDetailsByEmail(): liefert nachweislich dieselben
@@ -173,8 +184,9 @@ class PassolutionApiService
      *
      * @return array<int, array<string, mixed>>|null null bei Fehler
      */
-    public function fetchTravelDetailsByAccountId(int $accountId, ?string $startDate = null, ?string $endDate = null): ?array
+    public function fetchTravelDetailsByAccountId(int $accountId, ?string $startDate = null, ?string $endDate = null, bool $withCruiseInfo = true): ?array
     {
+        $this->lastTravelDetailsStatus = null;
         $token = config('services.passolution.internal_token') ?: $this->apiKey;
 
         if (! $token) {
@@ -189,8 +201,12 @@ class PassolutionApiService
             'per_page' => 1000,
             'sort_by' => 'start_date',
             'sort_order' => 'desc',
-            '__with' => '__cruise-info',
         ];
+        // Ohne Kreuzfahrt-Daten fehlen die Haefen, der Abruf gelingt aber auch
+        // dann, wenn PDS zu einer Kreuzfahrt keine Routendaten laden kann.
+        if ($withCruiseInfo) {
+            $reqParams['__with'] = '__cruise-info';
+        }
         if ($endDate) {
             $reqParams['start_date'] = ['<=' => $endDate];
         }
@@ -210,6 +226,7 @@ class PassolutionApiService
                 ->get($url, $reqParams);
 
             \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
+            $this->lastTravelDetailsStatus = $response->status();
 
             if ($response->successful()) {
                 return $response->json('data', []);

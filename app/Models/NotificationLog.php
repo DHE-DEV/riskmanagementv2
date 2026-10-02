@@ -21,6 +21,7 @@ class NotificationLog extends Model
         'status',
         'error_message',
         'affected_trips_count',
+        'affected_trips',
     ];
 
     protected $casts_extra = [
@@ -29,6 +30,7 @@ class NotificationLog extends Model
 
     protected $casts = [
         'status' => 'string',
+        'affected_trips' => 'array',
     ];
 
     public function customer(): BelongsTo

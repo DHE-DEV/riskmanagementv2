@@ -51,6 +51,12 @@ trait RunsNotificationDryRun
                 $this->line('     die Reisedaten konnten gar nicht geladen werden. Siehe laravel.log.');
             }
 
+            if ($portsMissing = $service->pdsPortsMissing()) {
+                $this->newLine();
+                $this->warn('Hinweis: PDS konnte zu '.count(array_merge(...array_values($portsMissing))).' Kreuzfahrt(en) keine Haefen liefern.');
+                $this->line('  -> Diese Reisen gelten nicht als betroffen; alle uebrigen wurden geprueft. Siehe laravel.log.');
+            }
+
             foreach ($renderErrors as $error) {
                 $this->error("  Template konnte nicht gerendert werden: {$error}");
             }

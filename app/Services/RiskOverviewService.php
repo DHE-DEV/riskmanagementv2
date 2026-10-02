@@ -817,7 +817,10 @@ class RiskOverviewService
         }
 
         // Get travelers in this country
-        $travelers = $this->getTravelersInCountry($customerId, $countryCode, $daysAhead);
+        $travelers = $this->filterTravelersByEventOverlap(
+            $this->getTravelersInCountry($customerId, $countryCode, $daysAhead),
+            $events
+        );
 
         // Batch-load labels for events
         $eventIds = $events->pluck('id')->toArray();
@@ -865,7 +868,10 @@ class RiskOverviewService
         }
 
         // Get travelers in this country
-        $travelers = $this->getTravelersInCountryByDateRange($customerId, $countryCode, $dateFrom, $dateTo);
+        $travelers = $this->filterTravelersByEventOverlap(
+            $this->getTravelersInCountryByDateRange($customerId, $countryCode, $dateFrom, $dateTo),
+            $events
+        );
 
         // Batch-load labels for events
         $eventIds = $events->pluck('id')->toArray();
@@ -896,6 +902,25 @@ class RiskOverviewService
                 'total_travelers' => count($travelers),
             ],
         ];
+    }
+
+    /**
+     * Keep only trips whose travel dates overlap with at least one of the events.
+     * Same rule as the traveler counts in the overview: the whole trip period
+     * counts, also for cruises.
+     */
+    protected function filterTravelersByEventOverlap(array $travelers, Collection $events): array
+    {
+        $eventDates = $events->map(fn (CustomEvent $event) => [
+            'start_date' => $event->start_date,
+            'end_date' => $event->end_date,
+        ])->all();
+
+        return array_values(array_filter($travelers, fn (array $traveler) => $this->hasOverlappingEvent(
+            $eventDates,
+            ! empty($traveler['start_date']) ? \Carbon\Carbon::parse($traveler['start_date'])->startOfDay() : null,
+            ! empty($traveler['end_date']) ? \Carbon\Carbon::parse($traveler['end_date'])->endOfDay() : null
+        )));
     }
 
     /**
