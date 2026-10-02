@@ -59,7 +59,7 @@
                             </flux:select>
                             @if ($shownPrompt)
                                 <details class="mt-2 text-sm">
-                                    <summary class="cursor-pointer text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">Auftrag der Vorlage „{{ $shownPrompt->name }}“ ansehen</summary>
+                                    <summary class="cursor-pointer text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">KI Prompt der Vorlage „{{ $shownPrompt->name }}“ ansehen</summary>
                                     <p class="mt-2 rounded-lg bg-zinc-50 p-3 text-sm whitespace-pre-line text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">{{ $shownPrompt->prompt }}</p>
                                 </details>
                             @endif
