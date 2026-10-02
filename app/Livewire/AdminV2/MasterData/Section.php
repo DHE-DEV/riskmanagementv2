@@ -22,7 +22,7 @@ class Section extends Component
 
     public function mount(string $section): void
     {
-        abort_unless(isset(MasterData::sections()[$section]), 404);
+        abort_unless(in_array($section, MasterData::placeholderKeys(), true), 404);
 
         $this->section = $section;
     }

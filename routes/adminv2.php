@@ -7,6 +7,20 @@ use App\Livewire\AdminV2\Events\Editor as EventEditor;
 use App\Livewire\AdminV2\Events\Index as EventIndex;
 use App\Livewire\AdminV2\Events\Overview as EventOverview;
 use App\Livewire\AdminV2\Events\RuleCheck as EventRuleCheck;
+use App\Livewire\AdminV2\MasterData\Airlines\Editor as AirlineEditor;
+use App\Livewire\AdminV2\MasterData\Airlines\Index as AirlineIndex;
+use App\Livewire\AdminV2\MasterData\AirportCodes\Editor as AirportCodeEditor;
+use App\Livewire\AdminV2\MasterData\AirportCodes\Index as AirportCodeIndex;
+use App\Livewire\AdminV2\MasterData\Airports\Editor as AirportEditor;
+use App\Livewire\AdminV2\MasterData\Airports\Index as AirportIndex;
+use App\Livewire\AdminV2\MasterData\Cities\Editor as CityEditor;
+use App\Livewire\AdminV2\MasterData\Cities\Index as CityIndex;
+use App\Livewire\AdminV2\MasterData\Continents\Editor as ContinentEditor;
+use App\Livewire\AdminV2\MasterData\Continents\Index as ContinentIndex;
+use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
+use App\Livewire\AdminV2\MasterData\Countries\Index as CountryIndex;
+use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
+use App\Livewire\AdminV2\MasterData\Regions\Index as RegionIndex;
 use App\Livewire\AdminV2\MasterData\Section as MasterDataSection;
 use App\Livewire\AdminV2\Rules\Show as RuleShow;
 use App\Livewire\AdminV2\System\Ai as SystemAi;
@@ -51,9 +65,41 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('tasks/create', TaskDetail::class)->name('tasks.create');
         Route::get('tasks/{task}', TaskDetail::class)->whereNumber('task')->name('tasks.show');
 
-        Route::get('master-data/{section}', MasterDataSection::class)
-            ->whereIn('section', array_keys(MasterData::sections()))
-            ->name('master-data.section');
+        // Stammdaten – je Bereich Liste, Anlegen und Bearbeiten.
+        Route::prefix('master-data')->name('master-data.')->group(function () {
+            Route::get('continents', ContinentIndex::class)->name('continents.index');
+            Route::get('continents/create', ContinentEditor::class)->name('continents.create');
+            Route::get('continents/{continent}', ContinentEditor::class)->whereNumber('continent')->name('continents.edit');
+
+            Route::get('countries', CountryIndex::class)->name('countries.index');
+            Route::get('countries/create', CountryEditor::class)->name('countries.create');
+            Route::get('countries/{country}', CountryEditor::class)->whereNumber('country')->name('countries.edit');
+
+            Route::get('regions', RegionIndex::class)->name('regions.index');
+            Route::get('regions/create', RegionEditor::class)->name('regions.create');
+            Route::get('regions/{region}', RegionEditor::class)->whereNumber('region')->name('regions.edit');
+
+            Route::get('cities', CityIndex::class)->name('cities.index');
+            Route::get('cities/create', CityEditor::class)->name('cities.create');
+            Route::get('cities/{city}', CityEditor::class)->whereNumber('city')->name('cities.edit');
+
+            Route::get('airports', AirportIndex::class)->name('airports.index');
+            Route::get('airports/create', AirportEditor::class)->name('airports.create');
+            Route::get('airports/{airport}', AirportEditor::class)->whereNumber('airport')->name('airports.edit');
+
+            Route::get('airport-codes', AirportCodeIndex::class)->name('airport-codes.index');
+            Route::get('airport-codes/create', AirportCodeEditor::class)->name('airport-codes.create');
+            Route::get('airport-codes/{airportCode}', AirportCodeEditor::class)->whereNumber('airportCode')->name('airport-codes.edit');
+
+            Route::get('airlines', AirlineIndex::class)->name('airlines.index');
+            Route::get('airlines/create', AirlineEditor::class)->name('airlines.create');
+            Route::get('airlines/{airline}', AirlineEditor::class)->whereNumber('airline')->name('airlines.edit');
+
+            // Bereiche, die noch nicht umgezogen sind, zeigen einen Hinweis.
+            Route::get('{section}', MasterDataSection::class)
+                ->whereIn('section', MasterData::placeholderKeys())
+                ->name('section');
+        });
 
         Route::get('system/ai', SystemAi::class)->name('system.ai');
         Route::get('system/ai/searches/create', SystemAiSearchEditor::class)->name('system.ai.searches.create');

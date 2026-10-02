@@ -54,13 +54,15 @@ it('leitet ohne Anmeldung zum Login und sperrt Nicht-Administratoren aus', funct
         ->assertForbidden();
 });
 
-it('zeigt fuer jeden Stammdaten-Bereich den Hinweis, dass daran gearbeitet wird', function () {
+it('zeigt fuer noch nicht umgezogene Stammdaten-Bereiche den Hinweis, dass daran gearbeitet wird', function () {
     $this->actingAs(adminUser());
 
-    foreach (\App\Support\AdminV2\MasterData::sections() as $key => $section) {
+    $sections = \App\Support\AdminV2\MasterData::sections();
+
+    foreach (\App\Support\AdminV2\MasterData::placeholderKeys() as $key) {
         $this->get("/adminv2/master-data/{$key}")
             ->assertOk()
-            ->assertSee($section['label'])
+            ->assertSee($sections[$key]['label'])
             ->assertSee('An dieser Seite wird aktuell gearbeitet');
     }
 

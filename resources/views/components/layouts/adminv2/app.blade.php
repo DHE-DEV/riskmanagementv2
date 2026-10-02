@@ -67,8 +67,8 @@
                     @foreach (\App\Support\AdminV2\MasterData::sections() as $sectionKey => $sectionDefinition)
                         <flux:navlist.item
                             :icon="$sectionDefinition['icon']"
-                            :href="route('adminv2.master-data.section', $sectionKey)"
-                            :current="request()->routeIs('adminv2.master-data.section') && request()->route('section') === $sectionKey"
+                            :href="\App\Support\AdminV2\MasterData::url($sectionKey)"
+                            :current="\App\Support\AdminV2\MasterData::isCurrent($sectionKey)"
                         >
                             {{ $sectionDefinition['label'] }}
                         </flux:navlist.item>

@@ -1,0 +1,209 @@
+@php
+    use App\Livewire\AdminV2\MasterData\Airlines\Editor;
+    use App\Models\Airline;
+
+    $record = $this->record;
+    $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
+    $country = $this->countryOptions->firstWhere('id', (int) $homeCountryId);
+    $classes = Airline::getCabinClassOptions();
+    $hasBaggage = collect($checkedBaggage)->contains(fn ($value) => $value !== '') || collect($handBaggage)->contains(fn ($value) => $value !== '') || $handBaggageNotes !== '' || $handBaggageInfoUrl !== '';
+@endphp
+
+<form wire:submit="save" class="flex flex-col gap-6">
+    <x-adminv2.master-data.editor-header
+        section="airlines"
+        :title="$record ? $record->name : 'Neue Airline'"
+        :subtitle="$record ? trim(($record->iata_code ?: '–').' · '.($record->icao_code ?: '–'), ' ·') : null"
+        :record="$record"
+    />
+
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div class="flex flex-col gap-6">
+            <x-adminv2.card heading="Airline">
+                <div class="flex flex-col gap-5">
+                    <flux:input wire:model="name" label="Name der Airline" maxlength="255" />
+
+                    <div class="grid gap-5 sm:grid-cols-4">
+                        <flux:field>
+                            <flux:label>IATA-Code</flux:label>
+                            <flux:input wire:model="iataCode" maxlength="2" class="font-mono uppercase" placeholder="LH" />
+                            <flux:error name="iataCode" />
+                        </flux:field>
+                        <flux:field>
+                            <flux:label>ICAO-Code</flux:label>
+                            <flux:input wire:model="icaoCode" maxlength="3" class="font-mono uppercase" placeholder="DLH" />
+                            <flux:error name="icaoCode" />
+                        </flux:field>
+                        <flux:field class="sm:col-span-2">
+                            <flux:label>Heimatland</flux:label>
+                            <x-adminv2.search-select :options="$countryOptions" model="homeCountryId" :selected="$homeCountryId" placeholder="Kein Heimatland" search-placeholder="Land oder ISO-Code …" label="Heimatland" live clearable />
+                            <flux:error name="homeCountryId" />
+                        </flux:field>
+                    </div>
+
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <flux:field>
+                            <flux:label>Hauptsitz</flux:label>
+                            <flux:input wire:model="headquarters" maxlength="255" placeholder="z. B. Köln" />
+                            <flux:error name="headquarters" />
+                        </flux:field>
+                        <div class="flex items-end pb-2">
+                            <flux:switch wire:model="isActive" label="Aktiv" align="left" />
+                        </div>
+                        <flux:field>
+                            <flux:label>Website</flux:label>
+                            <flux:input wire:model="website" placeholder="https://…" maxlength="255" />
+                            <flux:error name="website" />
+                        </flux:field>
+                        <flux:field>
+                            <flux:label>Buchungslink</flux:label>
+                            <flux:input wire:model="bookingUrl" placeholder="https://…" maxlength="255" />
+                            <flux:error name="bookingUrl" />
+                        </flux:field>
+                    </div>
+
+                    <div>
+                        <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Kontaktmöglichkeiten</p>
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            @foreach (Editor::CONTACT_FIELDS as $field => $label)
+                                <flux:field>
+                                    <flux:label>{{ $label }}</flux:label>
+                                    <flux:input wire:model="contact.{{ $field }}" :placeholder="str_ends_with($field, '_url') ? 'https://…' : ''" />
+                                    <flux:error name="contact.{{ $field }}" />
+                                </flux:field>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </x-adminv2.card>
+
+            <x-adminv2.card heading="Tarifarten / Kabinenklassen" :description="$cabinClasses ? implode(', ', array_intersect_key($classes, array_flip($cabinClasses))) : 'Noch keine Klasse markiert.'">
+                <div class="flex flex-wrap gap-x-8 gap-y-3">
+                    @foreach ($classes as $value => $label)
+                        <flux:checkbox wire:model.live="cabinClasses" value="{{ $value }}" :label="$label" />
+                    @endforeach
+                </div>
+            </x-adminv2.card>
+
+            <x-adminv2.card heading="Freigepäck & Handgepäck" collapsible :collapsed="! $hasBaggage" collapse-key="airline-baggage">
+                <div class="flex flex-col gap-6">
+                    <div>
+                        <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Freigepäck (Aufgabegepäck)</p>
+                        <div class="grid gap-4 sm:grid-cols-4">
+                            @foreach ($classes as $value => $label)
+                                <flux:input wire:model="checkedBaggage.{{ $value }}" :label="$label" placeholder="z. B. 23 kg" maxlength="100" />
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Handgepäck</p>
+                        <div class="flex flex-col gap-4">
+                            @foreach ($classes as $value => $label)
+                                <div wire:key="hand-{{ $value }}" class="grid gap-3 rounded-xl border border-zinc-200 p-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] dark:border-zinc-800">
+                                    <flux:input wire:model="handBaggage.{{ $value }}" :label="$label.' – Gewicht'" placeholder="z. B. 8 kg" maxlength="100" />
+                                    <flux:input wire:model="handDimensions.{{ $value }}.length" label="Länge (cm)" inputmode="decimal" />
+                                    <flux:input wire:model="handDimensions.{{ $value }}.width" label="Breite (cm)" inputmode="decimal" />
+                                    <flux:input wire:model="handDimensions.{{ $value }}.height" label="Höhe (cm)" inputmode="decimal" />
+                                    <flux:error name="handDimensions.{{ $value }}.length" />
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <flux:textarea wire:model="handBaggageNotes" label="Allgemeine Hinweise" rows="3" />
+                    <flux:field>
+                        <flux:label>Info-URL</flux:label>
+                        <flux:input wire:model="handBaggageInfoUrl" placeholder="https://…" />
+                        <flux:error name="handBaggageInfoUrl" />
+                    </flux:field>
+                </div>
+            </x-adminv2.card>
+
+            <x-adminv2.card heading="Haustiermitnahme" :description="$petsAllowed ? 'Haustiere dürfen mitreisen.' : 'Keine Haustiermitnahme hinterlegt.'" collapsible :collapsed="! $petsAllowed" collapse-key="airline-pets">
+                <div class="flex flex-col gap-5">
+                    <flux:switch wire:model.live="petsAllowed" label="Haustiermitnahme erlaubt" align="left" />
+
+                    @if ($petsAllowed)
+                        <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+                            <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">In der Kabine</p>
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-wrap gap-x-8 gap-y-3">
+                                    <flux:switch wire:model="petCabin.allowed" label="Erlaubt" align="left" />
+                                    <flux:switch wire:model="petCabin.weight_includes_bag" label="Gewicht inklusive Tasche" align="left" />
+                                    <flux:switch wire:model="petCabin.advance_notice_required" label="Voranmeldung erforderlich" align="left" />
+                                </div>
+                                <div class="grid gap-4 sm:grid-cols-4">
+                                    <flux:input wire:model="petCabin.max_weight" label="Maximales Gewicht" placeholder="z. B. 8 kg" maxlength="50" />
+                                    <flux:input wire:model="petCabin.carrier_length" label="Transportbox-Länge (cm)" inputmode="decimal" />
+                                    <flux:input wire:model="petCabin.carrier_width" label="Transportbox-Breite (cm)" inputmode="decimal" />
+                                    <flux:input wire:model="petCabin.carrier_height" label="Transportbox-Höhe (cm)" inputmode="decimal" />
+                                </div>
+                                <flux:error name="petCabin.carrier_length" />
+                                <flux:textarea wire:model="petCabin.notes" label="Zusätzliche Hinweise" rows="3" />
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+                            <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Im Frachtraum</p>
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-wrap gap-x-8 gap-y-3">
+                                    <flux:switch wire:model="petHold.allowed" label="Erlaubt" align="left" />
+                                    <flux:switch wire:model="petHold.advance_notice_required" label="Voranmeldung erforderlich" align="left" />
+                                </div>
+                                <div class="grid gap-4 sm:grid-cols-4">
+                                    <flux:input wire:model="petHold.max_weight" label="Maximales Gewicht" placeholder="z. B. 32 kg" maxlength="50" />
+                                </div>
+                                <flux:textarea wire:model="petHold.notes" label="Zusätzliche Hinweise" rows="3" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Allgemeine Einschränkungen</p>
+                            <div class="flex flex-wrap gap-x-8 gap-y-3">
+                                @foreach (Editor::PET_RESTRICTIONS as $value => $label)
+                                    <flux:checkbox wire:model="petRestrictions" value="{{ $value }}" :label="$label" />
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <flux:field>
+                            <flux:label>Info-URL</flux:label>
+                            <flux:input wire:model="petInfoUrl" placeholder="https://…" />
+                            <flux:error name="petInfoUrl" />
+                        </flux:field>
+                        <flux:textarea wire:model="petNotes" label="Allgemeine Hinweise" rows="3" />
+                    @endif
+                </div>
+            </x-adminv2.card>
+        </div>
+
+        <div class="flex flex-col gap-6">
+            @if ($record)
+                <x-adminv2.master-data.record-meta :record="$record">
+                    @if ($record->home_country_id)
+                        <a href="{{ route('adminv2.master-data.countries.edit', $record->home_country_id) }}" class="mt-3 inline-flex w-fit text-sm text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300">Zum Heimatland {{ $country?->getName('de') }}</a>
+                    @endif
+                </x-adminv2.master-data.record-meta>
+
+                <x-adminv2.master-data.airline-links
+                    heading="Flughäfen"
+                    noun="Flughafen"
+                    :links="$this->links"
+                    :options="$this->availableLinkOptions"
+                    :edit-url="fn ($airport) => route('adminv2.master-data.airports.edit', $airport->id)"
+                    :link-id="$linkId"
+                    :link-direction="$linkDirection"
+                    :link-terminal="$linkTerminal"
+                    :editing-link-id="$editingLinkId"
+                />
+            @else
+                <x-adminv2.card heading="Nach dem Speichern">
+                    <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Sobald die Airline angelegt ist, lassen sich hier die Flughäfen verknüpfen, die sie anfliegt (Direktverbindungen).</p>
+                </x-adminv2.card>
+            @endif
+        </div>
+    </div>
+
+    <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+</form>

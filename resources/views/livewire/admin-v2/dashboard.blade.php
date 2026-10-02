@@ -28,9 +28,9 @@
         ],
         [
             'title' => 'Stammdaten',
-            'text' => 'Kontinente, Länder, Regionen, Städte, Flughäfen, Airlines und Länderinformationen – im Aufbau.',
+            'text' => 'Kontinente, Länder, Regionen, Städte, Flughäfen, Flughafen-Codes und Airlines pflegen.',
             'icon' => 'circle-stack',
-            'href' => route('adminv2.master-data.section', 'continents'),
+            'href' => route('adminv2.master-data.countries.index'),
         ],
     ];
 @endphp
