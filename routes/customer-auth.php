@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\Customer\DevLoginController;
 use App\Http\Controllers\Auth\Customer\KeycloakAuthController;
 use App\Http\Controllers\Auth\Customer\LoginController;
 use App\Http\Controllers\Auth\Customer\MagicLoginController;
@@ -53,6 +54,11 @@ Route::get('customer/magic-login/{id}', [MagicLoginController::class, 'verify'])
 Route::get('auth/login/keycloak', [KeycloakAuthController::class, 'redirect'])->name('auth.keycloak.redirect');
 Route::get('auth/login/keycloak/start', [KeycloakAuthController::class, 'startLogin'])->name('auth.keycloak.start');
 Route::get('auth/callback', [KeycloakAuthController::class, 'callback'])->name('auth.keycloak.callback');
+
+// Lokaler Entwickler-Login ohne SSO – die Route existiert nur bei APP_ENV=local.
+if (app()->environment('local')) {
+    Route::get('dev/login-as/{email}', DevLoginController::class)->name('dev.login-as');
+}
 
 // Iframe-Login: Wird der SSO-Login im iframe (Modal) gestartet (?from=iframe),
 // leitet der Callback nach Erfolg hierher. Diese Mini-Seite meldet dem Parent-

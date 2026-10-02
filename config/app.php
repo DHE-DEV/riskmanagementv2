@@ -210,6 +210,10 @@ return [
     'customer_registration_enabled' => env('CUSTOMER_REGISTRATION_ENABLED', false),
     'customer_login_enabled' => env('CUSTOMER_LOGIN_ENABLED', true),
 
+    // Lokaler Test-Login in der Seitenleiste (nur lokale Entwicklungs-Domain):
+    // Kunde, als der das Symbol anmeldet.
+    'dev_login_email' => env('DEV_LOGIN_EMAIL', 'info@passolution.eu'),
+
     /*
     |--------------------------------------------------------------------------
     | Navigation Menu Configuration

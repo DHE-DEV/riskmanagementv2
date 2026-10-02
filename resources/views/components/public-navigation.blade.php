@@ -153,6 +153,12 @@
         </a>
 
         @guest('customer')
+        <!-- Lokaler Test-Login ohne SSO: nur auf der lokalen Entwicklungs-Domain -->
+        @if(rtrim(config('app.url'), '/') === 'https://plattform.passolution.test' && Route::has('dev.login-as'))
+        <a href="{{ route('dev.login-as', ['email' => config('app.dev_login_email')]) }}" class="p-3 text-amber-400 hover:bg-gray-800 rounded-lg transition-colors block" title="Test-Login als {{ config('app.dev_login_email') }}">
+            <i class="fa-regular fa-user-check text-2xl" aria-hidden="true"></i>
+        </a>
+        @endif
         <!-- Login: oeffnet das SSO-Login im Modal-iframe, ohne die Plattform zu verlassen -->
         <button type="button" onclick="openSsoLoginModal()" class="p-3 text-white hover:bg-gray-800 rounded-lg transition-colors block" title="Anmelden">
             <i class="fa-regular fa-right-to-bracket text-2xl" aria-hidden="true"></i>
