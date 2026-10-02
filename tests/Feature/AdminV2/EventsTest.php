@@ -379,3 +379,32 @@ it('zeigt im Reiter "Heute angelegt" nur die heute erfassten Ereignisse', functi
 
     \Illuminate\Support\Carbon::setTestNow();
 });
+
+it('legt Ereignisse so an, dass die Kunden-Ansicht sie nach dem Veroeffentlichen zeigt', function () {
+    $type = eventType('safety');
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+
+    $this->actingAs(adminUser());
+
+    \Livewire\Livewire::test(\App\Livewire\AdminV2\Events\Editor::class)
+        ->set('titles.de', 'Demonstration in Rom')
+        ->set('eventTypeIds', [(string) $type->id])
+        ->set('startDate', now()->subHour()->format('Y-m-d\TH:i'))
+        ->call('addLocation', 'country', $italy->id)
+        ->call('publish')
+        ->assertHasNoErrors();
+
+    $event = CustomEvent::firstWhere('title', 'Demonstration in Rom');
+
+    // Die Kunden-Ansicht fragt nach archived = false – ein leerer Wert zaehlt dort nicht.
+    expect($event->getRawOriginal('archived'))->not->toBeNull()
+        ->and($event->archived)->toBeFalse()
+        ->and(CustomEvent::visible()->approved()->where('archived', false)->whereKey($event->id)->exists())->toBeTrue()
+        ->and(CustomEvent::notArchived()->whereKey($event->id)->exists())->toBeTrue();
+
+    // Auch ein Entwurf (ohne Veroeffentlichen) traegt den Wert schon.
+    $draft = new CustomEvent(['is_active' => false]);
+    $draft->fill(['title_translations' => ['de' => 'Entwurf'], 'priority' => 'low', 'start_date' => now()])->save();
+
+    expect(\Illuminate\Support\Facades\DB::table('custom_events')->where('id', $draft->id)->value('archived'))->toBe(0);
+});

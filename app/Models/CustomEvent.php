@@ -115,6 +115,9 @@ class CustomEvent extends Model implements Feedable
         'icon_color' => '#FFFFFF',
         'marker_size' => 'medium',
         'is_active' => true,
+        // Ohne diesen Standard bliebe die Spalte leer – und die Kunden-Ansicht
+        // (archived = false) wuerde ein neues Ereignis nicht zeigen.
+        'archived' => false,
         'priority' => 'medium',
         'severity' => 'medium',
     ];
