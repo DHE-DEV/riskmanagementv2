@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AiEventSearch;
+use App\Models\AiEventSearchProfile;
 use App\Models\AiEventSuggestion;
 use App\Models\Country;
 use App\Models\CustomEvent;
@@ -47,7 +48,11 @@ class AiEventSearchService
 
         try {
             $ai = app(ChatGptService::class);
-            $answer = $ai->searchWeb($this->buildPrompt($search->exclude_existing, $search->isTargeted() ? $search->filters : null));
+            $answer = $ai->searchWeb($this->buildPrompt(
+                $search->exclude_existing,
+                $search->isTargeted() ? $search->filters : null,
+                $search->prompt,
+            ));
 
             $found = $this->parse($answer);
             $new = $this->store($search, $found);
@@ -78,17 +83,65 @@ class AiEventSearchService
     }
 
     /**
+     * Einen Lauf fuer eine hinterlegte Suche anlegen (noch nicht ausfuehren).
+     */
+    public function createSearchFor(AiEventSearchProfile $profile, ?int $userId = null): AiEventSearch
+    {
+        return AiEventSearch::create([
+            'profile_id' => $profile->id,
+            'status' => AiEventSearch::STATUS_RUNNING,
+            'exclude_existing' => $profile->exclude_existing,
+            'filters' => $profile->filtersForRun(),
+            'prompt' => filled($profile->prompt) ? $profile->prompt : null,
+            'started_by' => $userId,
+        ]);
+    }
+
+    /**
+     * Alle hinterlegten Suchen ausfuehren, deren Zeitpunkt erreicht ist –
+     * nacheinander. War der Zeitplaner ausgefallen, laeuft jede Suche nur
+     * einmal und danach wieder nach Plan.
+     *
+     * @return array{run: int, failed: int}
+     */
+    public function runDueProfiles(): array
+    {
+        $result = ['run' => 0, 'failed' => 0];
+
+        $profiles = AiEventSearchProfile::query()
+            ->where('is_active', true)
+            ->whereNotNull('next_run_at')
+            ->where('next_run_at', '<=', now())
+            ->orderBy('next_run_at')
+            ->get();
+
+        foreach ($profiles as $profile) {
+            // Den naechsten Termin zuerst festhalten – so startet ein zweiter
+            // Lauf des Zeitplaners dieselbe Suche nicht noch einmal.
+            $profile->last_run_at = now();
+            $profile->scheduleNext()->save();
+
+            $search = $this->run($this->createSearchFor($profile));
+
+            $result[$search->status === AiEventSearch::STATUS_DONE ? 'run' : 'failed']++;
+        }
+
+        return $result;
+    }
+
+    /**
      * Auftrag (frei formulierbar) plus der feste Teil: Datum, Kategorien,
      * Ausschlussliste und das Antwortformat.
      */
-    public function buildPrompt(bool $excludeExisting, ?array $filters = null): string
+    public function buildPrompt(bool $excludeExisting, ?array $filters = null, ?string $prompt = null): string
     {
         $types = EventType::active()->get(['code', 'name'])
             ->map(fn (EventType $type) => '- '.$type->code.': '.$type->name)
             ->implode("\n");
 
         $lines = [
-            AiSettings::eventSearchPrompt(),
+            // Der Auftrag der hinterlegten Suche, sonst der Standard-Auftrag.
+            filled($prompt) ? trim($prompt) : AiSettings::eventSearchPrompt(),
             '',
             'Heute ist der '.now()->format('d.m.Y').'.',
             '',

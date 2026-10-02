@@ -17,7 +17,7 @@
     <div {{ $attributes->class('text-sm') }}>
         @if ($search->status === \App\Models\AiEventSearch::STATUS_DONE)
             <p class="text-zinc-700 dark:text-zinc-300">
-                <span class="font-medium text-zinc-900 dark:text-white">Letzte Suche {{ $search->finished_at?->format('d.m.Y H:i') }}</span>{{ $search->isTargeted() ? ' (gezielt – '.$search->filterSummary().')' : '' }}{{ $search->starter ? ' von '.trim($search->starter->name) : '' }}:
+                <span class="font-medium text-zinc-900 dark:text-white">Letzte Suche {{ $search->finished_at?->format('d.m.Y H:i') }}</span>{{ $search->isTargeted() ? ' (gezielt – '.$search->filterSummary().')' : '' }}{{ $search->profile ? ' – „'.$search->profile->name.'“' : '' }}{{ $search->starter ? ' von '.trim($search->starter->name) : ($search->profile_id ? ' (automatisch)' : '') }}:
                 {{ $search->found_count }} {{ $search->found_count === 1 ? 'Thema' : 'Themen' }} gefunden, davon {{ $search->new_count }} neu.
                 {{ $search->exclude_existing ? 'Bereits erfasste Ereignisse waren ausgeschlossen.' : 'Bereits erfasste Ereignisse waren nicht ausgeschlossen.' }}
             </p>

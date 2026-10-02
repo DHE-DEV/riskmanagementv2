@@ -5,6 +5,8 @@
     $user = auth('web')->user();
     $pendingReview = EventState::PendingReview->apply(CustomEvent::query())->count();
     // Offene Aufgaben, die gerade beim angemeldeten Benutzer liegen.
+    // Offene KI-Vorschlaege fuer Ereignisse.
+    $openAiSuggestions = \App\Models\AiEventSuggestion::query()->open()->count();
     $myOpenTasks = $user ? \App\Models\AdminTask::query()->open()->handledBy($user->id)->count() : 0;
 @endphp
 <!DOCTYPE html>
@@ -50,6 +52,14 @@
                         badge-color="amber"
                     >
                         Passolution Ereignisse
+                    </flux:navlist.item>
+                    <flux:navlist.item
+                        icon="sparkles"
+                        :href="route('adminv2.events.ai-results')"
+                        :current="request()->routeIs('adminv2.events.ai-results')"
+                        :badge="$openAiSuggestions ?: null"
+                    >
+                        KI Suchergebnisse
                     </flux:navlist.item>
                 </flux:navlist.group>
 

@@ -2,6 +2,7 @@
 
 use App\Livewire\AdminV2\Auth\Login;
 use App\Livewire\AdminV2\Dashboard;
+use App\Livewire\AdminV2\Events\AiResults as EventAiResults;
 use App\Livewire\AdminV2\Events\Editor as EventEditor;
 use App\Livewire\AdminV2\Events\Index as EventIndex;
 use App\Livewire\AdminV2\Events\Overview as EventOverview;
@@ -37,6 +38,7 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
 
         Route::get('events/overview', EventOverview::class)->name('events.overview');
         Route::get('events', EventIndex::class)->name('events.index');
+        Route::get('events/ai-results', EventAiResults::class)->name('events.ai-results');
         Route::get('events/create', EventEditor::class)->name('events.create');
         Route::get('events/{event}', EventEditor::class)->whereNumber('event')->name('events.edit');
         Route::get('events/{event}/rules', EventRuleCheck::class)->whereNumber('event')->name('events.rules');

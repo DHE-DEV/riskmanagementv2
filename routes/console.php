@@ -99,6 +99,12 @@ Schedule::command('notifications:process-gtm')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/gtm-notifications.log'));
 
+// Hinterlegte KI-Suchen nach Ereignissen zu ihrem Zeitpunkt ausführen (System > KI)
+Schedule::command('ai:run-event-searches')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(30)
+    ->runInBackground();
+
 // Wiederkehrende Aufgaben anlegen, sobald ihr Termin erreicht ist (Admin-Bereich)
 Schedule::command('tasks:create-recurring')
     ->everyFiveMinutes()

@@ -2,15 +2,24 @@
 
 namespace App\Livewire\AdminV2\System;
 
+use App\Jobs\RunAiEventSearch;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\StartsAiEventSearch;
 use App\Models\AiEventSearch;
+use App\Models\AiEventSearchProfile;
+use App\Models\Country;
+use App\Models\CustomEvent;
+use App\Models\EventType;
 use App\Models\SystemSetting;
+use App\Services\AiEventSearchService;
 use App\Services\ChatGptService;
 use App\Services\OpenAiModelService;
 use App\Support\AiSettings;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -33,6 +42,39 @@ class Ai extends Component
 
     /** Bereits erfasste Ereignisse ausschliessen – nur neue suchen. */
     public bool $eventSearchExcludeExisting = true;
+
+    // Hinterlegte Suche (Formular im Dialog)
+    #[Locked]
+    public ?int $profileId = null;
+
+    public string $profileName = '';
+
+    /** Eigener Auftrag; leer = der Standard-Auftrag oben. */
+    public string $profilePrompt = '';
+
+    public bool $profileExcludeExisting = true;
+
+    /** @var array<int, string> ISO-Codes */
+    public array $profileCountries = [];
+
+    /** @var array<int, string> Codes der Event-Typen */
+    public array $profileTypes = [];
+
+    /** @var array<int, string> */
+    public array $profilePriorities = [];
+
+    public string $profileKeyword = '';
+
+    /** Zeitraum der Auswirkungen: heute bis in so vielen Tagen; leer = keine Eingrenzung. */
+    public string $profileDaysAhead = '';
+
+    /** @var array<int, string> Wochentage 1–7; leer = jeden Tag */
+    public array $profileWeekdays = [];
+
+    /** @var array<int, string> Uhrzeiten "HH:MM" */
+    public array $profileTimes = ['07:00'];
+
+    public bool $profileActive = true;
 
     /** Eingabefeld fuer einen neuen Schluessel; wird nach dem Speichern geleert. */
     public string $newApiKey = '';
@@ -91,12 +133,239 @@ class Ai extends Component
     }
 
     /**
+     * Wird waehrend einer laufenden Suche in kurzen Abstaenden aufgerufen.
+     */
+    public function refreshAiSearch(): void
+    {
+        unset($this->latestAiSearch, $this->recentAiSearches, $this->profiles);
+    }
+
+    // ------------------------------------------------------------------
+    // Hinterlegte Suchen mit Zeitplan
+    // ------------------------------------------------------------------
+
+    #[Computed]
+    public function profiles()
+    {
+        return AiEventSearchProfile::query()
+            ->with(['searches' => fn ($query) => $query->latest('id')->limit(1)])
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->get();
+    }
+
+    #[Computed]
+    public function countryOptions()
+    {
+        return Country::query()
+            ->whereNotNull('iso_code')
+            ->get(['id', 'iso_code', 'name_translations'])
+            ->sortBy(fn (Country $country) => $country->getName('de'), SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+    }
+
+    #[Computed]
+    public function eventTypeOptions()
+    {
+        return EventType::active()->get(['id', 'code', 'name', 'icon'])
+            ->sortBy(fn (EventType $type) => Str::lower(Str::ascii($type->name)))
+            ->values();
+    }
+
+    public function createProfile(): void
+    {
+        $this->reset([
+            'profileId', 'profileName', 'profilePrompt', 'profileExcludeExisting', 'profileCountries', 'profileTypes',
+            'profilePriorities', 'profileKeyword', 'profileDaysAhead', 'profileWeekdays', 'profileTimes', 'profileActive',
+        ]);
+        $this->resetValidation();
+
+        $this->modal('search-profile')->show();
+    }
+
+    public function editProfile(int $profileId): void
+    {
+        $profile = AiEventSearchProfile::findOrFail($profileId);
+
+        $this->resetValidation();
+        $this->profileId = $profile->id;
+        $this->profileName = $profile->name;
+        $this->profilePrompt = (string) $profile->prompt;
+        $this->profileExcludeExisting = $profile->exclude_existing;
+        $this->profileCountries = array_values($profile->country_codes ?? []);
+        $this->profileTypes = array_values($profile->event_type_codes ?? []);
+        $this->profilePriorities = array_values($profile->priorities ?? []);
+        $this->profileKeyword = (string) $profile->keyword;
+        $this->profileDaysAhead = $profile->days_ahead !== null ? (string) $profile->days_ahead : '';
+        $this->profileWeekdays = array_map('strval', $profile->sortedWeekdays());
+        $this->profileTimes = $profile->sortedTimes() ?: [''];
+        $this->profileActive = $profile->is_active;
+
+        $this->modal('search-profile')->show();
+    }
+
+    /**
+     * Alle Laender auswaehlen – danach lassen sich einzelne gezielt abwaehlen.
+     */
+    public function selectAllProfileCountries(): void
+    {
+        $this->profileCountries = $this->countryOptions
+            ->map(fn (Country $country) => strtoupper((string) $country->iso_code))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function clearProfileCountries(): void
+    {
+        $this->profileCountries = [];
+    }
+
+    /**
+     * Auswahl fuer "Zeitraum der Ereignisse": Tage ab dem Tag des Laufs.
+     *
+     * @return array<string, string>
+     */
+    public function profilePeriodOptions(): array
+    {
+        $options = [
+            '' => 'Keine zeitliche Eingrenzung',
+            '0' => 'Nur Ereignisse am Tag der Suche',
+            '3' => 'Ereignisse in den nächsten 3 Tagen',
+            '7' => 'Ereignisse in den nächsten 7 Tagen',
+            '14' => 'Ereignisse in den nächsten 14 Tagen',
+            '30' => 'Ereignisse in den nächsten 30 Tagen',
+            '90' => 'Ereignisse in den nächsten 90 Tagen',
+        ];
+
+        // Ein frueher gespeicherter anderer Wert bleibt waehlbar.
+        if ($this->profileDaysAhead !== '' && ! isset($options[$this->profileDaysAhead])) {
+            $options[$this->profileDaysAhead] = 'Ereignisse in den nächsten '.(int) $this->profileDaysAhead.' Tagen';
+        }
+
+        return $options;
+    }
+
+    public function addProfileTime(): void
+    {
+        $this->profileTimes[] = '';
+    }
+
+    public function removeProfileTime(int $index): void
+    {
+        unset($this->profileTimes[$index]);
+        $this->profileTimes = array_values($this->profileTimes);
+    }
+
+    public function fillProfilePromptWithDefault(): void
+    {
+        $this->profilePrompt = AiSettings::eventSearchPrompt();
+    }
+
+    public function saveProfile(): void
+    {
+        // Leere Zeilen bei den Uhrzeiten zaehlen nicht.
+        $this->profileTimes = array_values(array_filter($this->profileTimes, fn ($time) => trim((string) $time) !== ''));
+
+        $this->validate([
+            'profileName' => ['required', 'string', 'max:100'],
+            'profilePrompt' => ['nullable', 'string', 'max:6000'],
+            'profileCountries' => ['array'],
+            'profileCountries.*' => [Rule::in($this->countryOptions->map(fn (Country $country) => strtoupper((string) $country->iso_code))->all())],
+            'profileTypes' => ['array'],
+            'profileTypes.*' => [Rule::in($this->eventTypeOptions->pluck('code')->all())],
+            'profilePriorities' => ['array'],
+            'profilePriorities.*' => [Rule::in(array_keys(CustomEvent::getPriorityOptions()))],
+            'profileKeyword' => ['nullable', 'string', 'max:200'],
+            'profileDaysAhead' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'profileWeekdays' => ['array'],
+            'profileWeekdays.*' => ['integer', 'between:1,7'],
+            'profileTimes' => ['array', 'max:12'],
+            'profileTimes.*' => ['date_format:H:i'],
+        ], [
+            'profileName.required' => 'Bitte einen Namen für die Suche eingeben.',
+            'profileTimes.*.date_format' => 'Bitte die Uhrzeit als Stunde und Minute angeben.',
+            'profileDaysAhead.integer' => 'Bitte eine Zahl von Tagen eingeben.',
+        ]);
+
+        $profile = $this->profileId ? AiEventSearchProfile::findOrFail($this->profileId) : new AiEventSearchProfile(['created_by' => auth('web')->id()]);
+
+        $profile->fill([
+            'name' => trim($this->profileName),
+            'prompt' => filled($this->profilePrompt) ? trim($this->profilePrompt) : null,
+            'exclude_existing' => $this->profileExcludeExisting,
+            'country_codes' => array_values($this->profileCountries),
+            'event_type_codes' => array_values($this->profileTypes),
+            'priorities' => array_values($this->profilePriorities),
+            'keyword' => filled($this->profileKeyword) ? trim($this->profileKeyword) : null,
+            'days_ahead' => $this->profileDaysAhead !== '' ? (int) $this->profileDaysAhead : null,
+            'weekdays' => array_map('intval', $this->profileWeekdays),
+            'times' => array_values(array_unique($this->profileTimes)),
+            'is_active' => $this->profileActive,
+        ]);
+        $profile->scheduleNext()->save();
+
+        unset($this->profiles);
+        $this->modal('search-profile')->close();
+
+        $this->dispatch('adminv2-toast', message: $profile->next_run_at
+            ? 'Suche gespeichert. Nächster Lauf am '.$profile->next_run_at->format('d.m.Y').' um '.$profile->next_run_at->format('H:i').' Uhr.'
+            : 'Suche gespeichert'.($profile->is_active ? ' – ohne Zeitpunkt läuft sie nur von Hand.' : ' – pausiert.'));
+    }
+
+    public function toggleProfile(int $profileId): void
+    {
+        $profile = AiEventSearchProfile::findOrFail($profileId);
+
+        $profile->is_active = ! $profile->is_active;
+        $profile->scheduleNext()->save();
+
+        unset($this->profiles);
+    }
+
+    public function deleteProfile(int $profileId): void
+    {
+        AiEventSearchProfile::findOrFail($profileId)->delete();
+
+        unset($this->profiles);
+
+        $this->dispatch('adminv2-toast', message: 'Suche gelöscht. Bereits gefundene Vorschläge bleiben erhalten.');
+    }
+
+    /**
+     * Eine hinterlegte Suche sofort ausfuehren – ausser der Reihe.
+     */
+    public function runProfileNow(int $profileId): void
+    {
+        if (! AiSettings::apiKey()) {
+            $this->dispatch('adminv2-toast', message: 'Es ist kein OpenAI-Schlüssel hinterlegt.', variant: 'danger');
+
+            return;
+        }
+
+        if ($this->latestAiSearch?->isRunning()) {
+            $this->dispatch('adminv2-toast', message: 'Es läuft bereits eine Suche. Bitte warten, bis sie fertig ist.', variant: 'danger');
+
+            return;
+        }
+
+        $profile = AiEventSearchProfile::findOrFail($profileId);
+        $search = app(AiEventSearchService::class)->createSearchFor($profile, auth('web')->id());
+
+        $profile->forceFill(['last_run_at' => now()])->save();
+
+        RunAiEventSearch::dispatchAfterResponse($search->id);
+
+        unset($this->latestAiSearch, $this->recentAiSearches, $this->profiles);
+    }
+
+    /**
      * Die letzten Suchlaeufe.
      */
     #[Computed]
     public function recentAiSearches()
     {
-        return AiEventSearch::query()->with('starter')->latest('id')->limit(5)->get();
+        return AiEventSearch::query()->with(['starter', 'profile'])->latest('id')->limit(8)->get();
     }
 
     /**

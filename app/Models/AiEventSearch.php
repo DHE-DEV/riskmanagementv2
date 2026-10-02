@@ -21,7 +21,7 @@ class AiEventSearch extends Model
     public const STALE_AFTER_MINUTES = 10;
 
     protected $fillable = [
-        'status', 'exclude_existing', 'filters', 'started_by', 'found_count', 'new_count',
+        'profile_id', 'status', 'exclude_existing', 'filters', 'prompt', 'started_by', 'found_count', 'new_count',
         'model', 'input_tokens', 'output_tokens', 'cost', 'error', 'finished_at',
     ];
 
@@ -39,6 +39,14 @@ class AiEventSearch extends Model
     public function starter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'started_by');
+    }
+
+    /**
+     * Die hinterlegte Suche, aus der dieser Lauf stammt.
+     */
+    public function profile(): BelongsTo
+    {
+        return $this->belongsTo(AiEventSearchProfile::class, 'profile_id');
     }
 
     public function suggestions(): HasMany

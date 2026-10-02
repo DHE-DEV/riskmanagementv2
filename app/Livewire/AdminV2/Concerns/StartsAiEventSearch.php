@@ -16,7 +16,7 @@ trait StartsAiEventSearch
     #[Computed]
     public function latestAiSearch(): ?AiEventSearch
     {
-        return AiEventSearch::query()->with('starter')->latest('id')->first();
+        return AiEventSearch::query()->with(['starter', 'profile'])->latest('id')->first();
     }
 
     /**

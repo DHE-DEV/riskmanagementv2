@@ -3,6 +3,7 @@
 namespace App\Livewire\AdminV2\Events;
 
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
+use App\Livewire\AdminV2\Concerns\HandlesAiSuggestions;
 use App\Livewire\AdminV2\Concerns\StartsAiEventSearch;
 use App\Models\AdminTask;
 use App\Models\AdminTeam;
@@ -10,7 +11,6 @@ use App\Models\AiEventSuggestion;
 use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\EventType;
-use App\Services\AiEventSearchService;
 use App\Services\CustomEventVersionService;
 use App\Support\AdminV2\EventState;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,6 +28,7 @@ use Livewire\WithPagination;
 class Index extends Component
 {
     use AuthorizesAdminV2;
+    use HandlesAiSuggestions;
     use StartsAiEventSearch;
     use WithPagination;
 
@@ -292,6 +293,7 @@ class Index extends Component
         return AiEventSuggestion::query()
             ->open()
             ->when(! $this->showOlderSuggestions, fn (Builder $query) => $query->whereDate('created_at', today()))
+            ->with('search.profile')
             ->latest('id')
             ->get();
     }
@@ -352,37 +354,9 @@ class Index extends Component
         unset($this->latestAiSearch, $this->allAiSuggestions, $this->aiSuggestions, $this->olderAiSuggestionsCount);
     }
 
-    /**
-     * Aus einem KI-Vorschlag ein Ereignis als Entwurf anlegen und oeffnen.
-     */
-    public function createDraftFromSuggestion(int $suggestionId)
+    protected function forgetAiSuggestions(): void
     {
-        $suggestion = AiEventSuggestion::query()->open()->find($suggestionId);
-
-        if (! $suggestion) {
-            $this->dispatch('adminv2-toast', message: 'Dieser Vorschlag ist nicht mehr offen.', variant: 'danger');
-            unset($this->allAiSuggestions, $this->aiSuggestions);
-
-            return;
-        }
-
-        $event = app(AiEventSearchService::class)->createDraft($suggestion, auth('web')->id());
-
-        session()->flash('adminv2-toast', 'Entwurf aus dem KI-Vorschlag angelegt. Bitte Standort, Text und Quellen prüfen.');
-
-        return $this->redirectRoute('adminv2.events.edit', $event);
-    }
-
-    public function dismissSuggestion(int $suggestionId): void
-    {
-        AiEventSuggestion::query()->open()->whereKey($suggestionId)->update([
-            'status' => AiEventSuggestion::STATUS_DISMISSED,
-            'handled_by' => auth('web')->id(),
-        ]);
-
         unset($this->allAiSuggestions, $this->aiSuggestions, $this->olderAiSuggestionsCount);
-
-        $this->dispatch('adminv2-toast', message: 'Vorschlag verworfen – er wird nicht erneut vorgeschlagen.');
     }
 
     public function approve(int $eventId): void
