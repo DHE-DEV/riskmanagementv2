@@ -278,25 +278,30 @@
         <div>
             <flux:heading size="lg" level="2">Suchen und Ergebnisse</flux:heading>
             <flux:subheading>
-                {{ $runs->total() === 0 ? 'Diese Suche ist noch nicht gelaufen.' : $runs->total().' '.($runs->total() === 1 ? 'Lauf' : 'Läufe').' – der letzte zuerst. Bei übernommenen Ergebnissen steht, welcher Text im Passolution Ereignis gelandet ist.' }}
+                {{ $runs->total() === 0 ? 'Diese Suche ist noch nicht gelaufen.' : $runs->total().' '.($runs->total() === 1 ? 'Lauf' : 'Läufe').' – der letzte zuerst. Ein Klick auf einen Lauf klappt seine Ergebnisse auf; bei übernommenen steht, welcher Text im Passolution Ereignis gelandet ist.' }}
             </flux:subheading>
         </div>
 
         <div class="flex flex-col gap-6" wire:loading.class="opacity-60" wire:target="createDraftFromSuggestion, dismissSuggestion, restoreSuggestion, gotoPage, nextPage, previousPage">
             @foreach ($runs as $run)
-                <section wire:key="run-{{ $run->id }}" class="rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
-                    <header class="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-                        <div class="min-w-0">
-                            <h3 class="text-base font-semibold tabular-nums text-zinc-900 dark:text-white">
+                {{-- Jeder Lauf ist auf- und zuklappbar; zugeklappt zeigt die Kopfzeile die Zusammenfassung.
+                     Ein laufender Lauf ist aufgeklappt, damit seine Ergebnisse gleich zu sehen sind. --}}
+                <section wire:key="run-{{ $run->id }}" class="rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950" x-data="{ open: {{ $run->isRunning() ? 'true' : 'false' }} }">
+                    <header class="flex flex-wrap items-start justify-between gap-3 px-5 py-4" :class="open && 'border-b border-zinc-100 dark:border-zinc-800'">
+                        <button type="button" x-on:click="open = ! open" :aria-expanded="open" class="group/collapse flex min-w-0 flex-1 items-start gap-2 text-start">
+                            <flux:icon.chevron-down variant="mini" class="mt-0.5 shrink-0 text-zinc-400 transition-transform group-hover/collapse:text-zinc-700 dark:group-hover/collapse:text-zinc-200" ::class="open || '-rotate-90'" />
+                            <span class="block min-w-0">
+                                <span class="block text-base font-semibold tabular-nums text-zinc-900 dark:text-white">
                                 {{ $run->created_at?->format('d.m.Y H:i') }}
                                 <span class="text-sm font-normal text-zinc-500">· {{ $run->starter ? 'von '.trim($run->starter->name) : 'automatisch' }}</span>
-                            </h3>
-                            <p class="mt-0.5 text-sm text-zinc-600 dark:text-zinc-400">
+                                </span>
+                                <span class="mt-0.5 block text-sm text-zinc-600 dark:text-zinc-400">
                                 Vorlage „{{ $run->prompt_name ?? 'Standard' }}“
                                 · {{ $run->exclude_existing ? 'nur Neues' : 'auch bereits Erfasstes' }}
                                 @if ($run->filterSummary()) · {{ $run->filterSummary() }} @endif
-                            </p>
-                        </div>
+                                </span>
+                            </span>
+                        </button>
 
                         <div class="flex shrink-0 flex-wrap items-center gap-3 text-sm">
                             @if ($run->isRunning())
@@ -315,7 +320,7 @@
                         </div>
                     </header>
 
-                    <div class="p-5">
+                    <div class="p-5" x-show="open" x-collapse @unless ($run->isRunning()) x-cloak @endunless>
                         @if ($run->status === AiEventSearch::STATUS_FAILED && $run->error)
                             <p class="text-sm text-red-700 dark:text-red-400">{{ $run->error }}</p>
                         @elseif ($run->suggestions->isEmpty())
