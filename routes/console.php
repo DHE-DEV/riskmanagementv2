@@ -99,6 +99,18 @@ Schedule::command('notifications:process-gtm')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/gtm-notifications.log'));
 
+// Wiederkehrende Aufgaben anlegen, sobald ihr Termin erreicht ist (Admin-Bereich)
+Schedule::command('tasks:create-recurring')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10)
+    ->runInBackground();
+
+// Erinnerungen und Fälligkeits-Mails der Aufgabenverwaltung (Admin-Bereich)
+Schedule::command('tasks:send-reminders')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10)
+    ->runInBackground();
+
 // Travel Alert Notification Queue
 Schedule::command('notifications:process-travel-alert')
     ->cron('*/' . config('notifications.travel_alert_interval', 5) . ' * * * *')

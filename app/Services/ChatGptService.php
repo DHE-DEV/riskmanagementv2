@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\AiSettings;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,13 +13,48 @@ class ChatGptService
     protected string $apiUrl = 'https://api.openai.com/v1/chat/completions';
     protected string $model = 'gpt-4';
 
+    /**
+     * Verbrauch der letzten Anfrage, wie ihn OpenAI meldet.
+     *
+     * @var array{model: string, input_tokens: int, output_tokens: int, total_tokens: int}|null
+     */
+    protected ?array $lastUsage = null;
+
+    public function lastUsage(): ?array
+    {
+        return $this->lastUsage;
+    }
+
     public function __construct()
     {
-        $this->apiKey = config('services.openai.key');
+        // Schluessel und Modell kommen aus dem Admin-Bereich (System > KI),
+        // ersatzweise aus der .env.
+        $this->apiKey = (string) AiSettings::apiKey();
+        $this->model = AiSettings::model();
 
         if (empty($this->apiKey)) {
-            throw new Exception('OpenAI API Key nicht konfiguriert. Bitte RISK_CHARGPT_KEY in .env setzen.');
+            throw new Exception('OpenAI API Key nicht konfiguriert. Bitte im Admin-Bereich unter System > KI hinterlegen oder RISK_CHARGPT_KEY in .env setzen.');
         }
+    }
+
+    /**
+     * Nur die aelteren Modellreihen (GPT-3.5, GPT-4, GPT-4o, GPT-4.1) nehmen
+     * max_tokens und eine eigene temperature. Alle neueren (o-Reihe, GPT-5 und
+     * spaeter) erwarten max_completion_tokens und lassen temperature nicht zu.
+     * Weil sie zusaetzlich "nachdenken", brauchen sie deutlich mehr Antwort-Budget.
+     */
+    protected function completionParameters(string $model, array $options): array
+    {
+        $maxTokens = $options['max_tokens'] ?? 2000;
+
+        if (! preg_match('/^(gpt-3\.5|gpt-4|chatgpt-4o)/', $model)) {
+            return ['max_completion_tokens' => max(4000, $maxTokens * 4)];
+        }
+
+        return [
+            'temperature' => $options['temperature'] ?? 0.7,
+            'max_tokens' => $maxTokens,
+        ];
     }
 
     /**
@@ -38,16 +74,14 @@ class ChatGptService
             ])
             ->timeout(60)
             ->post($this->apiUrl, [
-                'model' => $options['model'] ?? $this->model,
+                'model' => $model = $options['model'] ?? $this->model,
                 'messages' => [
                     [
                         'role' => 'user',
                         'content' => $prompt,
                     ],
                 ],
-                'temperature' => $options['temperature'] ?? 0.7,
-                'max_tokens' => $options['max_tokens'] ?? 2000,
-            ]);
+            ] + $this->completionParameters($model, $options));
 
             if (!$response->successful()) {
                 $error = $response->json();
@@ -63,6 +97,13 @@ class ChatGptService
 
             $data = $response->json();
 
+            $this->lastUsage = isset($data['usage']) ? [
+                'model' => (string) ($data['model'] ?? $model),
+                'input_tokens' => (int) ($data['usage']['prompt_tokens'] ?? 0),
+                'output_tokens' => (int) ($data['usage']['completion_tokens'] ?? 0),
+                'total_tokens' => (int) ($data['usage']['total_tokens'] ?? 0),
+            ] : null;
+
             if (!isset($data['choices'][0]['message']['content'])) {
                 throw new Exception('Ungültige API-Antwort von ChatGPT');
             }
@@ -77,6 +118,71 @@ class ChatGptService
 
             throw new Exception('Fehler bei der Kommunikation mit ChatGPT: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Stellt eine Anfrage, bei der das Modell im Internet suchen darf
+     * (Responses-API mit dem Werkzeug "web_search").
+     *
+     * @throws Exception Bei API-Fehlern
+     */
+    public function searchWeb(string $prompt, array $options = []): string
+    {
+        $model = $options['model'] ?? $this->model;
+
+        $request = fn (string $tool) => Http::withHeaders([
+            'Authorization' => 'Bearer '.$this->apiKey,
+            'Content-Type' => 'application/json',
+        ])
+            // Suchen und Lesen dauert laenger als eine reine Textantwort.
+            ->timeout($options['timeout'] ?? 240)
+            ->post('https://api.openai.com/v1/responses', [
+                'model' => $model,
+                'input' => $prompt,
+                'tools' => [['type' => $tool]],
+            ]);
+
+        try {
+            $response = $request('web_search');
+
+            // Aeltere Modelle kennen das Werkzeug nur unter seinem frueheren Namen.
+            if ($response->status() === 400 && str_contains((string) $response->json('error.message'), 'web_search')) {
+                $response = $request('web_search_preview');
+            }
+        } catch (Exception $e) {
+            Log::error('OpenAI-Websuche fehlgeschlagen', ['message' => $e->getMessage()]);
+
+            throw new Exception('Fehler bei der Kommunikation mit OpenAI: '.$e->getMessage());
+        }
+
+        if (! $response->successful()) {
+            Log::error('OpenAI-Websuche: API-Fehler', ['status' => $response->status(), 'error' => $response->json()]);
+
+            throw new Exception('OpenAI-Fehler: '.($response->json('error.message') ?? 'Unbekannter Fehler (HTTP '.$response->status().')'));
+        }
+
+        $data = $response->json();
+
+        $this->lastUsage = isset($data['usage']) ? [
+            'model' => (string) ($data['model'] ?? $model),
+            'input_tokens' => (int) ($data['usage']['input_tokens'] ?? 0),
+            'output_tokens' => (int) ($data['usage']['output_tokens'] ?? 0),
+            'total_tokens' => (int) ($data['usage']['total_tokens'] ?? 0),
+        ] : null;
+
+        // Die Antwort besteht aus Suchschritten und Textbloecken – nur der Text zaehlt.
+        $text = collect($data['output'] ?? [])
+            ->where('type', 'message')
+            ->flatMap(fn (array $item) => $item['content'] ?? [])
+            ->where('type', 'output_text')
+            ->pluck('text')
+            ->implode("\n");
+
+        if (trim($text) === '') {
+            throw new Exception('OpenAI hat keine auswertbare Antwort geliefert.');
+        }
+
+        return trim($text);
     }
 
     /**

@@ -615,3 +615,4 @@ Route::middleware(['web', 'admin-tools'])
 
 require __DIR__.'/auth.php';
 require __DIR__.'/customer-auth.php';
+require __DIR__.'/adminv2.php';

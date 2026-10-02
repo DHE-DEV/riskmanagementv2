@@ -23,8 +23,9 @@ class CustomEventVersionService
         CustomEvent $source,
         ?int $userId = null,
         ?string $versionNote = null,
+        ?string $internalNote = null,
     ): CustomEvent {
-        return DB::transaction(function () use ($source, $userId, $versionNote) {
+        return DB::transaction(function () use ($source, $userId, $versionNote, $internalNote) {
             $source->loadMissing(['countries', 'regions', 'cities', 'eventTypes', 'labels', 'orgNodes']);
 
             // Gruppen-UUID nachziehen, falls das Ereignis noch aus der Zeit vor
@@ -45,6 +46,8 @@ class CustomEventVersionService
             $copy->version = $source->nextVersionNumber();
             $copy->version_parent_id = $source->getKey();
             $copy->version_note = $versionNote;
+            // Die interne Notiz gehoert zur jeweiligen Version – nicht mitkopieren.
+            $copy->version_internal_note = $internalNote;
             $copy->superseded_by_id = null;
             $copy->superseded_at = null;
             $copy->activated_at = null;

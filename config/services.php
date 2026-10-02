@@ -111,6 +111,8 @@ return [
 
     'openai' => [
         'key' => env('RISK_CHARGPT_KEY'),
+        // Modell, falls im Admin-Bereich (System > KI) keines gewaehlt ist; leer = gpt-4.
+        'model' => env('OPENAI_MODEL'),
     ],
 
     // Social Authentication Providers for Customers

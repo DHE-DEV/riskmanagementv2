@@ -39,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'plugin.onboarded' => \App\Http\Middleware\EnsurePluginOnboarded::class,
             'validate.embed.key' => \App\Http\Middleware\ValidateEmbedKey::class,
             'admin-tools' => \App\Http\Middleware\AdminToolsAccess::class,
+            'adminv2' => \App\Http\Middleware\EnsureAdminV2Access::class,
         ]);
 
         // Login-Status mit platform.passolution.de abgleichen (?user-state=...).

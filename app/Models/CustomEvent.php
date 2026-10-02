@@ -17,6 +17,14 @@ class CustomEvent extends Model implements Feedable
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * Die interne Versionsnotiz darf nie in einer Ausgabe an Kunden landen –
+     * auch nicht, wenn ein Ereignis als Ganzes serialisiert wird.
+     */
+    protected $hidden = [
+        'version_internal_note',
+    ];
+
     protected $fillable = [
         'uuid',
         'version',
@@ -26,6 +34,7 @@ class CustomEvent extends Model implements Feedable
         'superseded_at',
         'activated_at',
         'version_note',
+        'version_internal_note',
         'title',
         'title_translations',
         'description',
