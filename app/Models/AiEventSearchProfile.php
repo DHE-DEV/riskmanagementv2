@@ -7,6 +7,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 /**
  * Hinterlegte KI-Suche nach Ereignissen: Auftrag, Filter und Zeitplan. Der
@@ -20,8 +21,9 @@ class AiEventSearchProfile extends Model
     public const WEEKDAYS_SHORT = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa', 7 => 'So'];
 
     protected $fillable = [
-        'name', 'prompt', 'exclude_existing', 'country_codes', 'event_type_codes', 'priorities',
-        'keyword', 'days_ahead', 'weekdays', 'times', 'is_active', 'created_by',
+        'name', 'prompt_id', 'exclude_existing', 'country_codes', 'event_type_codes', 'priorities',
+        'keyword', 'days_ahead', 'max_results', 'weekdays', 'times', 'is_active', 'created_by',
+        'notify_user_ids', 'notify_team_ids', 'notify_when_empty',
     ];
 
     protected $casts = [
@@ -30,9 +32,13 @@ class AiEventSearchProfile extends Model
         'event_type_codes' => 'array',
         'priorities' => 'array',
         'days_ahead' => 'integer',
+        'max_results' => 'integer',
         'weekdays' => 'array',
         'times' => 'array',
         'is_active' => 'boolean',
+        'notify_user_ids' => 'array',
+        'notify_team_ids' => 'array',
+        'notify_when_empty' => 'boolean',
         'next_run_at' => 'datetime',
         'last_run_at' => 'datetime',
     ];
@@ -47,9 +53,74 @@ class AiEventSearchProfile extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Die gewaehlte KI-Vorlage; ohne Auswahl gilt die Standard-Vorlage.
+     */
+    public function promptTemplate(): BelongsTo
+    {
+        return $this->belongsTo(AiEventSearchPrompt::class, 'prompt_id');
+    }
+
+    /**
+     * Die Vorlage, mit der diese Suche tatsaechlich laeuft.
+     */
+    public function effectivePrompt(): ?AiEventSearchPrompt
+    {
+        return $this->promptTemplate ?? AiEventSearchPrompt::default();
+    }
+
     public function searches(): HasMany
     {
         return $this->hasMany(AiEventSearch::class, 'profile_id');
+    }
+
+    /**
+     * Benutzer, die vom Ergebnis erfahren – nur aktive mit Admin-Zugang.
+     */
+    public function notifyUsers(): Collection
+    {
+        return User::query()
+            ->whereIn('id', $this->notify_user_ids ?? [])
+            ->where('is_admin', true)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Teams, die vom Ergebnis erfahren.
+     */
+    public function notifyTeams(): Collection
+    {
+        return AdminTeam::query()->with('users')->whereIn('id', $this->notify_team_ids ?? [])->orderBy('name')->get();
+    }
+
+    /**
+     * Alle Adressen fuer die Ergebnis-Mail: die Benutzer selbst und je Team –
+     * nach dessen Einstellung – die zentrale Adresse oder jedes Mitglied.
+     * Jede Adresse nur einmal.
+     *
+     * @return array<int, string>
+     */
+    public function notificationEmails(): array
+    {
+        return $this->notifyUsers()->pluck('email')
+            ->concat($this->notifyTeams()->flatMap(fn (AdminTeam $team) => $team->notificationEmails()))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Die Empfaenger in Worten, z. B. "Anna, Dennis, Team Redaktion".
+     */
+    public function recipientSummary(): ?string
+    {
+        $names = $this->notifyUsers()->map(fn (User $user) => trim($user->name))
+            ->concat($this->notifyTeams()->map(fn (AdminTeam $team) => $team->label()));
+
+        return $names->isEmpty() ? null : $names->implode(', ');
     }
 
     /**

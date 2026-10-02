@@ -76,7 +76,7 @@
                 </flux:navlist.group>
 
                 <flux:navlist.group heading="System" class="mt-4">
-                    <flux:navlist.item icon="sparkles" :href="route('adminv2.system.ai')" :current="request()->routeIs('adminv2.system.ai')">
+                    <flux:navlist.item icon="sparkles" :href="route('adminv2.system.ai')" :current="request()->routeIs('adminv2.system.ai', 'adminv2.system.ai.*')">
                         KI
                     </flux:navlist.item>
                     <flux:navlist.item icon="arrow-path" :href="route('adminv2.system.recurring-tasks.index')" :current="request()->routeIs('adminv2.system.recurring-tasks.*')">

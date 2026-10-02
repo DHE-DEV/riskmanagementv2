@@ -273,14 +273,24 @@ class Index extends Component
     }
 
     /**
-     * Die KI gezielt mit den gerade gesetzten Filtern suchen lassen. Die
-     * allgemeinen Vorschlaege bleiben daneben erhalten.
+     * Adresse, unter der sich die gerade gesetzten Filter als neue Suche
+     * hinterlegen lassen (gesucht wird nur ueber hinterlegte Suchen).
      */
-    public function startFilteredAiSearch(): void
+    #[Computed]
+    public function saveFiltersAsSearchUrl(): ?string
     {
-        if ($filters = $this->aiSearchFilters) {
-            $this->startAiSearch($filters);
+        $filters = $this->aiSearchFilters;
+
+        if (! $filters) {
+            return null;
         }
+
+        return route('adminv2.system.ai.searches.create', array_filter([
+            'countries' => implode(',', $filters['countries']),
+            'types' => implode(',', $filters['types']),
+            'priorities' => implode(',', $filters['priorities']),
+            'keyword' => $filters['search'],
+        ]));
     }
 
     /**

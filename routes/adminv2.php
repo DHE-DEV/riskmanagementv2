@@ -10,6 +10,7 @@ use App\Livewire\AdminV2\Events\RuleCheck as EventRuleCheck;
 use App\Livewire\AdminV2\MasterData\Section as MasterDataSection;
 use App\Livewire\AdminV2\Rules\Show as RuleShow;
 use App\Livewire\AdminV2\System\Ai as SystemAi;
+use App\Livewire\AdminV2\System\AiSearchEditor as SystemAiSearchEditor;
 use App\Livewire\AdminV2\System\RecurringTasks\Editor as RecurringTaskEditor;
 use App\Livewire\AdminV2\System\RecurringTasks\Index as RecurringTaskIndex;
 use App\Livewire\AdminV2\System\Teams as SystemTeams;
@@ -55,6 +56,8 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             ->name('master-data.section');
 
         Route::get('system/ai', SystemAi::class)->name('system.ai');
+        Route::get('system/ai/searches/create', SystemAiSearchEditor::class)->name('system.ai.searches.create');
+        Route::get('system/ai/searches/{profile}', SystemAiSearchEditor::class)->whereNumber('profile')->name('system.ai.searches.edit');
         Route::get('system/teams', SystemTeams::class)->name('system.teams');
         Route::get('system/recurring-tasks', RecurringTaskIndex::class)->name('system.recurring-tasks.index');
         Route::get('system/recurring-tasks/create', RecurringTaskEditor::class)->name('system.recurring-tasks.create');

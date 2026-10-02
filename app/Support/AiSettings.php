@@ -21,12 +21,17 @@ class AiSettings
 
     public const DEFAULT_MODEL = 'gpt-4';
 
-    /** Auftrag fuer die KI-Suche nach aktuellen Ereignissen (System > KI). */
-    public const KEY_EVENT_SEARCH_PROMPT = 'ai.event_search.prompt';
+    /** Hoechstzahl der Ergebnisse je Lauf der KI-Suche. */
+    public const KEY_EVENT_SEARCH_MAX_RESULTS = 'ai.event_search.max_results';
 
-    /** "1"/"0": bereits erfasste Ereignisse bei der Suche ausschliessen. */
-    public const KEY_EVENT_SEARCH_EXCLUDE = 'ai.event_search.exclude_existing';
+    public const DEFAULT_EVENT_SEARCH_MAX_RESULTS = 15;
 
+    public const EVENT_SEARCH_MAX_RESULTS_LIMIT = 40;
+
+    /**
+     * Mitgelieferter Auftrag fuer die KI-Suche nach Ereignissen – Inhalt der
+     * ersten Standard-Vorlage und Ausgangspunkt fuer neue Vorlagen.
+     */
     public const DEFAULT_EVENT_SEARCH_PROMPT = <<<'TEXT'
 Suche im Internet nach aktuellen Ereignissen der letzten 48 Stunden, die für Reisende und Reiseveranstalter relevant sind – weltweit, mit Schwerpunkt auf beliebten Reisezielen deutscher Urlauber und Geschäftsreisender.
 
@@ -75,19 +80,22 @@ TEXT;
     }
 
     /**
-     * Der Auftrag fuer die KI-Suche nach aktuellen Ereignissen.
+     * Der Standard-Auftrag fuer die KI-Suche nach aktuellen Ereignissen: die
+     * als Standard markierte KI-Vorlage (System > KI).
      */
     public static function eventSearchPrompt(): string
     {
-        return trim((string) SystemSetting::read(self::KEY_EVENT_SEARCH_PROMPT)) ?: self::DEFAULT_EVENT_SEARCH_PROMPT;
+        return trim((string) \App\Models\AiEventSearchPrompt::default()?->prompt) ?: self::DEFAULT_EVENT_SEARCH_PROMPT;
     }
 
     /**
-     * Sollen bereits erfasste Ereignisse ausgeschlossen werden? Standard: ja.
+     * Wie viele Ergebnisse ein Lauf der KI-Suche hoechstens liefern soll.
      */
-    public static function eventSearchExcludesExisting(): bool
+    public static function eventSearchMaxResults(): int
     {
-        return SystemSetting::read(self::KEY_EVENT_SEARCH_EXCLUDE, '1') !== '0';
+        $value = (int) SystemSetting::read(self::KEY_EVENT_SEARCH_MAX_RESULTS, (string) self::DEFAULT_EVENT_SEARCH_MAX_RESULTS);
+
+        return min(self::EVENT_SEARCH_MAX_RESULTS_LIMIT, max(1, $value ?: self::DEFAULT_EVENT_SEARCH_MAX_RESULTS));
     }
 
     public static function model(): string

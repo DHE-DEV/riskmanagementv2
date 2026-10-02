@@ -72,6 +72,33 @@
         </ul>
     @endif
 
+    {{-- Was daraus im Passolution Ereignis geworden ist --}}
+    @if ($status === \App\Models\AiEventSuggestion::STATUS_CONVERTED && ($event = $suggestion->customEvent))
+        @php
+            $plain = fn (?string $html) => trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) preg_replace('#<(br|/p|/div|/li)[^>]*>#i', ' ', (string) $html)))));
+            $eventTitle = (string) $event->getTitle('de');
+            $eventText = $plain($event->getPopupContent('de'));
+            $unchanged = trim($eventTitle) === trim($suggestion->title) && $eventText === $plain($suggestion->summary);
+        @endphp
+        <div class="mt-3 rounded-lg border border-green-200 bg-green-50/70 px-3 py-2.5 dark:border-green-400/20 dark:bg-green-400/5">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-medium uppercase tracking-wide text-green-800 dark:text-green-300">Übernommen ins Passolution Ereignis</span>
+                @unless ($event->trashed())
+                    <x-adminv2.state-badge :state="\App\Support\AdminV2\EventState::of($event)" />
+                @endunless
+            </div>
+            <p class="mt-1.5 text-sm font-semibold text-zinc-900 dark:text-white">{{ $eventTitle !== '' ? $eventTitle : 'Ohne Titel' }}</p>
+            @if ($eventText !== '')
+                <p class="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{{ \Illuminate\Support\Str::limit($eventText, 500) }}</p>
+            @endif
+            <p class="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+                {{ $unchanged
+                    ? 'Titel und Text wurden unverändert aus dem Vorschlag übernommen.'
+                    : 'Titel oder Text wurden im Ereignis angepasst – oben steht der Vorschlag der KI, hier der Stand im Ereignis.' }}
+            </p>
+        </div>
+    @endif
+
     <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
         <div class="flex flex-wrap items-center gap-2">
             @if ($status === \App\Models\AiEventSuggestion::STATUS_NEW)

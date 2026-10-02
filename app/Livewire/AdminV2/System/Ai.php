@@ -2,20 +2,14 @@
 
 namespace App\Livewire\AdminV2\System;
 
-use App\Jobs\RunAiEventSearch;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\StartsAiEventSearch;
-use App\Models\AiEventSearch;
 use App\Models\AiEventSearchProfile;
-use App\Models\Country;
-use App\Models\CustomEvent;
-use App\Models\EventType;
+use App\Models\AiEventSearchPrompt;
 use App\Models\SystemSetting;
-use App\Services\AiEventSearchService;
 use App\Services\ChatGptService;
 use App\Services\OpenAiModelService;
 use App\Support\AiSettings;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -37,44 +31,15 @@ class Ai extends Component
     use AuthorizesAdminV2;
     use StartsAiEventSearch;
 
-    /** Auftrag fuer die KI-Suche nach aktuellen Ereignissen. */
-    public string $eventSearchPrompt = '';
-
-    /** Bereits erfasste Ereignisse ausschliessen – nur neue suchen. */
-    public bool $eventSearchExcludeExisting = true;
-
-    // Hinterlegte Suche (Formular im Dialog)
+    // KI-Vorlage (Formular im Dialog)
     #[Locked]
-    public ?int $profileId = null;
+    public ?int $promptId = null;
 
-    public string $profileName = '';
+    public string $promptName = '';
 
-    /** Eigener Auftrag; leer = der Standard-Auftrag oben. */
-    public string $profilePrompt = '';
+    public string $promptText = '';
 
-    public bool $profileExcludeExisting = true;
-
-    /** @var array<int, string> ISO-Codes */
-    public array $profileCountries = [];
-
-    /** @var array<int, string> Codes der Event-Typen */
-    public array $profileTypes = [];
-
-    /** @var array<int, string> */
-    public array $profilePriorities = [];
-
-    public string $profileKeyword = '';
-
-    /** Zeitraum der Auswirkungen: heute bis in so vielen Tagen; leer = keine Eingrenzung. */
-    public string $profileDaysAhead = '';
-
-    /** @var array<int, string> Wochentage 1–7; leer = jeden Tag */
-    public array $profileWeekdays = [];
-
-    /** @var array<int, string> Uhrzeiten "HH:MM" */
-    public array $profileTimes = ['07:00'];
-
-    public bool $profileActive = true;
+    public bool $promptIsDefault = false;
 
     /** Eingabefeld fuer einen neuen Schluessel; wird nach dem Speichern geleert. */
     public string $newApiKey = '';
@@ -98,38 +63,6 @@ class Ai extends Component
     {
         $this->model = AiSettings::model();
         $this->loadPrices();
-
-        $this->eventSearchPrompt = AiSettings::eventSearchPrompt();
-        $this->eventSearchExcludeExisting = AiSettings::eventSearchExcludesExisting();
-    }
-
-    /**
-     * Auftrag und Ausschluss fuer die KI-Suche nach Ereignissen speichern.
-     */
-    public function saveEventSearchSettings(): void
-    {
-        $this->validate(
-            ['eventSearchPrompt' => ['required', 'string', 'min:20', 'max:6000']],
-            [
-                'eventSearchPrompt.required' => 'Bitte einen Auftrag für die Suche eingeben.',
-                'eventSearchPrompt.min' => 'Der Auftrag ist zu kurz – bitte beschreiben, wonach die KI suchen soll.',
-            ],
-        );
-
-        $prompt = trim($this->eventSearchPrompt);
-
-        // Entspricht der Auftrag dem Standard, wird nichts gespeichert – so
-        // greifen spaetere Verbesserungen des Standards von selbst.
-        SystemSetting::write(AiSettings::KEY_EVENT_SEARCH_PROMPT, $prompt === AiSettings::DEFAULT_EVENT_SEARCH_PROMPT ? null : $prompt);
-        SystemSetting::write(AiSettings::KEY_EVENT_SEARCH_EXCLUDE, $this->eventSearchExcludeExisting ? '1' : '0');
-
-        $this->dispatch('adminv2-toast', message: 'Einstellungen der Ereignis-Suche gespeichert.');
-    }
-
-    public function resetEventSearchPrompt(): void
-    {
-        $this->eventSearchPrompt = AiSettings::DEFAULT_EVENT_SEARCH_PROMPT;
-        $this->resetErrorBag('eventSearchPrompt');
     }
 
     /**
@@ -137,7 +70,102 @@ class Ai extends Component
      */
     public function refreshAiSearch(): void
     {
-        unset($this->latestAiSearch, $this->recentAiSearches, $this->profiles);
+        unset($this->latestAiSearch, $this->profiles);
+    }
+
+    // ------------------------------------------------------------------
+    // KI-Vorlagen: die Auftraege fuer die Suche nach Ereignissen
+    // ------------------------------------------------------------------
+
+    #[Computed]
+    public function prompts()
+    {
+        return AiEventSearchPrompt::query()->withCount('profiles')->orderByDesc('is_default')->orderBy('name')->get();
+    }
+
+    public function createPrompt(): void
+    {
+        $this->reset(['promptId', 'promptName', 'promptText', 'promptIsDefault']);
+        $this->resetValidation();
+
+        $this->modal('ai-prompt')->show();
+    }
+
+    public function editPrompt(int $promptId): void
+    {
+        $prompt = AiEventSearchPrompt::findOrFail($promptId);
+
+        $this->resetValidation();
+        $this->promptId = $prompt->id;
+        $this->promptName = $prompt->name;
+        $this->promptText = $prompt->prompt;
+        $this->promptIsDefault = $prompt->is_default;
+
+        $this->modal('ai-prompt')->show();
+    }
+
+    public function savePrompt(): void
+    {
+        $this->validate([
+            'promptName' => ['required', 'string', 'max:100', Rule::unique('ai_event_search_prompts', 'name')->ignore($this->promptId)],
+            'promptText' => ['required', 'string', 'min:20', 'max:6000'],
+        ], [
+            'promptName.required' => 'Bitte einen Namen für die Vorlage eingeben.',
+            'promptName.unique' => 'Eine Vorlage mit diesem Namen gibt es bereits.',
+            'promptText.required' => 'Bitte den Auftrag an die KI eingeben.',
+            'promptText.min' => 'Der Auftrag ist zu kurz – bitte beschreiben, wonach die KI suchen soll.',
+        ]);
+
+        $prompt = $this->promptId ? AiEventSearchPrompt::findOrFail($this->promptId) : new AiEventSearchPrompt(['created_by' => auth('web')->id()]);
+        $prompt->fill(['name' => trim($this->promptName), 'prompt' => trim($this->promptText)])->save();
+
+        // Es gibt immer genau einen Standard: abwaehlen laesst er sich nur, indem ein anderer gewaehlt wird.
+        if ($this->promptIsDefault || AiEventSearchPrompt::query()->where('is_default', true)->doesntExist()) {
+            $prompt->makeDefault();
+        }
+
+        unset($this->prompts, $this->profiles);
+        $this->modal('ai-prompt')->close();
+
+        $this->dispatch('adminv2-toast', message: $this->promptId ? 'Vorlage gespeichert.' : 'Vorlage angelegt.');
+    }
+
+    public function makeDefaultPrompt(int $promptId): void
+    {
+        AiEventSearchPrompt::findOrFail($promptId)->makeDefault();
+
+        unset($this->prompts, $this->profiles);
+
+        $this->dispatch('adminv2-toast', message: 'Standard-Vorlage geändert. Sie gilt für alle Suchen ohne eigene Vorlage.');
+    }
+
+    /**
+     * Die Standard-Vorlage laesst sich nicht loeschen. Suchen, die eine
+     * geloeschte Vorlage nutzten, laufen danach mit dem Standard.
+     */
+    public function deletePrompt(int $promptId): void
+    {
+        $prompt = AiEventSearchPrompt::findOrFail($promptId);
+
+        if ($prompt->is_default) {
+            $this->dispatch('adminv2-toast', message: 'Die Standard-Vorlage lässt sich nicht löschen. Bitte zuerst eine andere zum Standard machen.', variant: 'danger');
+
+            return;
+        }
+
+        $prompt->delete();
+
+        unset($this->prompts, $this->profiles);
+
+        $this->dispatch('adminv2-toast', message: 'Vorlage gelöscht.');
+    }
+
+    /**
+     * Der mitgelieferte Auftrag als Ausgangspunkt fuer eine neue Vorlage.
+     */
+    public function fillPromptWithBuiltIn(): void
+    {
+        $this->promptText = AiSettings::DEFAULT_EVENT_SEARCH_PROMPT;
     }
 
     // ------------------------------------------------------------------
@@ -148,169 +176,10 @@ class Ai extends Component
     public function profiles()
     {
         return AiEventSearchProfile::query()
-            ->with(['searches' => fn ($query) => $query->latest('id')->limit(1)])
+            ->with(['promptTemplate', 'searches' => fn ($query) => $query->latest('id')->limit(1)])
             ->orderByDesc('is_active')
             ->orderBy('name')
             ->get();
-    }
-
-    #[Computed]
-    public function countryOptions()
-    {
-        return Country::query()
-            ->whereNotNull('iso_code')
-            ->get(['id', 'iso_code', 'name_translations'])
-            ->sortBy(fn (Country $country) => $country->getName('de'), SORT_NATURAL | SORT_FLAG_CASE)
-            ->values();
-    }
-
-    #[Computed]
-    public function eventTypeOptions()
-    {
-        return EventType::active()->get(['id', 'code', 'name', 'icon'])
-            ->sortBy(fn (EventType $type) => Str::lower(Str::ascii($type->name)))
-            ->values();
-    }
-
-    public function createProfile(): void
-    {
-        $this->reset([
-            'profileId', 'profileName', 'profilePrompt', 'profileExcludeExisting', 'profileCountries', 'profileTypes',
-            'profilePriorities', 'profileKeyword', 'profileDaysAhead', 'profileWeekdays', 'profileTimes', 'profileActive',
-        ]);
-        $this->resetValidation();
-
-        $this->modal('search-profile')->show();
-    }
-
-    public function editProfile(int $profileId): void
-    {
-        $profile = AiEventSearchProfile::findOrFail($profileId);
-
-        $this->resetValidation();
-        $this->profileId = $profile->id;
-        $this->profileName = $profile->name;
-        $this->profilePrompt = (string) $profile->prompt;
-        $this->profileExcludeExisting = $profile->exclude_existing;
-        $this->profileCountries = array_values($profile->country_codes ?? []);
-        $this->profileTypes = array_values($profile->event_type_codes ?? []);
-        $this->profilePriorities = array_values($profile->priorities ?? []);
-        $this->profileKeyword = (string) $profile->keyword;
-        $this->profileDaysAhead = $profile->days_ahead !== null ? (string) $profile->days_ahead : '';
-        $this->profileWeekdays = array_map('strval', $profile->sortedWeekdays());
-        $this->profileTimes = $profile->sortedTimes() ?: [''];
-        $this->profileActive = $profile->is_active;
-
-        $this->modal('search-profile')->show();
-    }
-
-    /**
-     * Alle Laender auswaehlen – danach lassen sich einzelne gezielt abwaehlen.
-     */
-    public function selectAllProfileCountries(): void
-    {
-        $this->profileCountries = $this->countryOptions
-            ->map(fn (Country $country) => strtoupper((string) $country->iso_code))
-            ->unique()
-            ->values()
-            ->all();
-    }
-
-    public function clearProfileCountries(): void
-    {
-        $this->profileCountries = [];
-    }
-
-    /**
-     * Auswahl fuer "Zeitraum der Ereignisse": Tage ab dem Tag des Laufs.
-     *
-     * @return array<string, string>
-     */
-    public function profilePeriodOptions(): array
-    {
-        $options = [
-            '' => 'Keine zeitliche Eingrenzung',
-            '0' => 'Nur Ereignisse am Tag der Suche',
-            '3' => 'Ereignisse in den nächsten 3 Tagen',
-            '7' => 'Ereignisse in den nächsten 7 Tagen',
-            '14' => 'Ereignisse in den nächsten 14 Tagen',
-            '30' => 'Ereignisse in den nächsten 30 Tagen',
-            '90' => 'Ereignisse in den nächsten 90 Tagen',
-        ];
-
-        // Ein frueher gespeicherter anderer Wert bleibt waehlbar.
-        if ($this->profileDaysAhead !== '' && ! isset($options[$this->profileDaysAhead])) {
-            $options[$this->profileDaysAhead] = 'Ereignisse in den nächsten '.(int) $this->profileDaysAhead.' Tagen';
-        }
-
-        return $options;
-    }
-
-    public function addProfileTime(): void
-    {
-        $this->profileTimes[] = '';
-    }
-
-    public function removeProfileTime(int $index): void
-    {
-        unset($this->profileTimes[$index]);
-        $this->profileTimes = array_values($this->profileTimes);
-    }
-
-    public function fillProfilePromptWithDefault(): void
-    {
-        $this->profilePrompt = AiSettings::eventSearchPrompt();
-    }
-
-    public function saveProfile(): void
-    {
-        // Leere Zeilen bei den Uhrzeiten zaehlen nicht.
-        $this->profileTimes = array_values(array_filter($this->profileTimes, fn ($time) => trim((string) $time) !== ''));
-
-        $this->validate([
-            'profileName' => ['required', 'string', 'max:100'],
-            'profilePrompt' => ['nullable', 'string', 'max:6000'],
-            'profileCountries' => ['array'],
-            'profileCountries.*' => [Rule::in($this->countryOptions->map(fn (Country $country) => strtoupper((string) $country->iso_code))->all())],
-            'profileTypes' => ['array'],
-            'profileTypes.*' => [Rule::in($this->eventTypeOptions->pluck('code')->all())],
-            'profilePriorities' => ['array'],
-            'profilePriorities.*' => [Rule::in(array_keys(CustomEvent::getPriorityOptions()))],
-            'profileKeyword' => ['nullable', 'string', 'max:200'],
-            'profileDaysAhead' => ['nullable', 'integer', 'min:0', 'max:365'],
-            'profileWeekdays' => ['array'],
-            'profileWeekdays.*' => ['integer', 'between:1,7'],
-            'profileTimes' => ['array', 'max:12'],
-            'profileTimes.*' => ['date_format:H:i'],
-        ], [
-            'profileName.required' => 'Bitte einen Namen für die Suche eingeben.',
-            'profileTimes.*.date_format' => 'Bitte die Uhrzeit als Stunde und Minute angeben.',
-            'profileDaysAhead.integer' => 'Bitte eine Zahl von Tagen eingeben.',
-        ]);
-
-        $profile = $this->profileId ? AiEventSearchProfile::findOrFail($this->profileId) : new AiEventSearchProfile(['created_by' => auth('web')->id()]);
-
-        $profile->fill([
-            'name' => trim($this->profileName),
-            'prompt' => filled($this->profilePrompt) ? trim($this->profilePrompt) : null,
-            'exclude_existing' => $this->profileExcludeExisting,
-            'country_codes' => array_values($this->profileCountries),
-            'event_type_codes' => array_values($this->profileTypes),
-            'priorities' => array_values($this->profilePriorities),
-            'keyword' => filled($this->profileKeyword) ? trim($this->profileKeyword) : null,
-            'days_ahead' => $this->profileDaysAhead !== '' ? (int) $this->profileDaysAhead : null,
-            'weekdays' => array_map('intval', $this->profileWeekdays),
-            'times' => array_values(array_unique($this->profileTimes)),
-            'is_active' => $this->profileActive,
-        ]);
-        $profile->scheduleNext()->save();
-
-        unset($this->profiles);
-        $this->modal('search-profile')->close();
-
-        $this->dispatch('adminv2-toast', message: $profile->next_run_at
-            ? 'Suche gespeichert. Nächster Lauf am '.$profile->next_run_at->format('d.m.Y').' um '.$profile->next_run_at->format('H:i').' Uhr.'
-            : 'Suche gespeichert'.($profile->is_active ? ' – ohne Zeitpunkt läuft sie nur von Hand.' : ' – pausiert.'));
     }
 
     public function toggleProfile(int $profileId): void
@@ -330,57 +199,6 @@ class Ai extends Component
         unset($this->profiles);
 
         $this->dispatch('adminv2-toast', message: 'Suche gelöscht. Bereits gefundene Vorschläge bleiben erhalten.');
-    }
-
-    /**
-     * Eine hinterlegte Suche sofort ausfuehren – ausser der Reihe.
-     */
-    public function runProfileNow(int $profileId): void
-    {
-        if (! AiSettings::apiKey()) {
-            $this->dispatch('adminv2-toast', message: 'Es ist kein OpenAI-Schlüssel hinterlegt.', variant: 'danger');
-
-            return;
-        }
-
-        if ($this->latestAiSearch?->isRunning()) {
-            $this->dispatch('adminv2-toast', message: 'Es läuft bereits eine Suche. Bitte warten, bis sie fertig ist.', variant: 'danger');
-
-            return;
-        }
-
-        $profile = AiEventSearchProfile::findOrFail($profileId);
-        $search = app(AiEventSearchService::class)->createSearchFor($profile, auth('web')->id());
-
-        $profile->forceFill(['last_run_at' => now()])->save();
-
-        RunAiEventSearch::dispatchAfterResponse($search->id);
-
-        unset($this->latestAiSearch, $this->recentAiSearches, $this->profiles);
-    }
-
-    /**
-     * Die letzten Suchlaeufe.
-     */
-    #[Computed]
-    public function recentAiSearches()
-    {
-        return AiEventSearch::query()->with(['starter', 'profile'])->latest('id')->limit(8)->get();
-    }
-
-    /**
-     * Speichern und sofort suchen – damit gilt, was gerade im Formular steht.
-     */
-    public function searchEventsNow(): void
-    {
-        $this->saveEventSearchSettings();
-
-        if ($this->getErrorBag()->isNotEmpty()) {
-            return;
-        }
-
-        $this->startAiSearch();
-        unset($this->recentAiSearches);
     }
 
     protected function loadPrices(): void

@@ -17,7 +17,7 @@
 
         <div class="flex items-center gap-2">
             <flux:button icon="cog-6-tooth" :href="route('adminv2.system.ai')">Suchen verwalten</flux:button>
-            <flux:button variant="primary" icon="sparkles" wire:click="startAiSearch" wire:loading.attr="disabled" wire:target="startAiSearch" :disabled="(bool) $latestSearch?->isRunning()">KI jetzt suchen lassen</flux:button>
+            <x-adminv2.ai-search-run-menu :profiles="$this->aiSearchProfiles" :running="(bool) $latestSearch?->isRunning()" />
         </div>
     </div>
 
@@ -48,9 +48,13 @@
                                     <div class="mt-0.5 text-xs text-zinc-500">{{ $run->starter ? trim($run->starter->name) : ($run->profile_id ? 'automatisch' : '–') }}</div>
                                 </td>
                                 <td class="px-3 py-3">
-                                    <div class="text-zinc-900 dark:text-white">{{ $runName($run) }}</div>
+                                    @if ($run->profile)
+                                        <a href="{{ route('adminv2.system.ai.searches.edit', $run->profile) }}" class="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $runName($run) }}</a>
+                                    @else
+                                        <div class="text-zinc-900 dark:text-white">{{ $runName($run) }}</div>
+                                    @endif
                                     <div class="mt-0.5 text-xs text-zinc-500">
-                                        {{ $run->prompt ? 'eigener Auftrag' : 'Standard-Auftrag' }} · {{ $run->exclude_existing ? 'nur Neues' : 'auch bereits Erfasstes' }}
+                                        Vorlage „{{ $run->prompt_name ?? 'Standard' }}“ · {{ $run->exclude_existing ? 'nur Neues' : 'auch bereits Erfasstes' }}
                                     </div>
                                 </td>
                                 <td class="px-3 py-3 text-zinc-700 dark:text-zinc-300">{{ $run->filterSummary() ?? '–' }}</td>
@@ -158,7 +162,7 @@
                         @if ($search !== '' || $selectedRun)
                             Für diese Auswahl gibt es im Reiter „{{ $this->tabs()[$status] ?? 'Alle' }}“ keine Treffer.
                         @elseif ($status === \App\Models\AiEventSuggestion::STATUS_NEW)
-                            Es gibt keine offenen Ergebnisse. Mit „KI jetzt suchen lassen“ startest du eine neue Suche.
+                            Es gibt keine offenen Ergebnisse. Über „Suche ausführen“ startest du eine der hinterlegten Suchen.
                         @else
                             In diesem Reiter liegt nichts.
                         @endif

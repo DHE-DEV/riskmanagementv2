@@ -3,7 +3,10 @@
 use App\Jobs\RunAiEventSearch;
 use App\Livewire\AdminV2\Events\Index;
 use App\Livewire\AdminV2\System\Ai;
+use App\Livewire\AdminV2\System\AiSearchEditor;
 use App\Models\AiEventSearch;
+use App\Models\AiEventSearchProfile;
+use App\Models\AiEventSearchPrompt;
 use App\Models\AiEventSuggestion;
 use App\Models\Country;
 use App\Models\CustomEvent;
@@ -203,50 +206,58 @@ it('haelt einen Fehler der KI am Suchlauf fest', function () {
     expect(runAiSearch()->status)->toBe(AiEventSearch::STATUS_FAILED);
 });
 
-it('laesst Auftrag und Ausschluss unter System > KI einstellen und die Suche starten', function () {
-    Bus::fake();
+it('verwaltet unter System > KI die Vorlagen fuer den Auftrag an die KI – eine ist der Standard', function () {
+    $this->get(route('adminv2.system.ai'))->assertOk()->assertSee('KI Vorlagen')->assertDontSee('Aktuelle Ereignisse suchen');
 
-    $this->get(route('adminv2.system.ai'))->assertOk()->assertSee('Aktuelle Ereignisse suchen');
+    // Die mitgelieferte Vorlage ist der Standard.
+    $standard = AiEventSearchPrompt::default();
+
+    expect($standard->name)->toBe('Standard')
+        ->and($standard->prompt)->toBe(AiSettings::DEFAULT_EVENT_SEARCH_PROMPT)
+        ->and(AiSettings::eventSearchPrompt())->toBe(AiSettings::DEFAULT_EVENT_SEARCH_PROMPT);
 
     $page = Livewire::test(Ai::class)
-        // Der Standard-Auftrag ist bereits hinterlegt.
-        ->assertSet('eventSearchPrompt', AiSettings::DEFAULT_EVENT_SEARCH_PROMPT)
-        ->assertSet('eventSearchExcludeExisting', true)
-        ->set('eventSearchPrompt', 'zu kurz')
-        ->call('saveEventSearchSettings')
-        ->assertHasErrors('eventSearchPrompt')
-        ->set('eventSearchPrompt', 'Suche nach Streiks im europäischen Bahnverkehr der kommenden Woche.')
-        ->set('eventSearchExcludeExisting', false)
-        ->call('saveEventSearchSettings')
-        ->assertHasNoErrors();
+        ->assertSee('Standard')
+        ->assertSee('gilt für alle Suchen ohne eigene Vorlage')
+        ->call('createPrompt')
+        ->call('savePrompt')
+        ->assertHasErrors(['promptName', 'promptText'])
+        ->set('promptName', 'Standard')
+        ->set('promptText', 'Suche nach Streiks im europäischen Bahnverkehr der kommenden Woche.')
+        ->call('savePrompt')
+        ->assertHasErrors('promptName')
+        ->set('promptName', 'Bahnstreiks')
+        ->call('savePrompt')
+        ->assertHasNoErrors()
+        ->assertSee('Bahnstreiks')
+        ->assertSee('von keiner Suche gewählt');
 
-    expect(AiSettings::eventSearchPrompt())->toBe('Suche nach Streiks im europäischen Bahnverkehr der kommenden Woche.')
-        ->and(AiSettings::eventSearchExcludesExisting())->toBeFalse()
-        ->and(app(AiEventSearchService::class)->buildPrompt(false))->toContain('Suche nach Streiks im europäischen Bahnverkehr');
+    $strikes = AiEventSearchPrompt::firstWhere('name', 'Bahnstreiks');
 
-    // Suche starten: der Lauf wird angelegt und nach der Antwort ausgefuehrt.
-    $page->call('searchEventsNow')->assertSee('Die KI sucht nach aktuellen Ereignissen');
+    expect($strikes->is_default)->toBeFalse()
+        ->and($strikes->created_by)->toBe($this->admin->id)
+        ->and(AiEventSearchPrompt::count())->toBe(2);
 
-    $search = AiEventSearch::first();
+    // Bearbeiten und zum Standard machen: es gibt immer genau einen.
+    $page->call('editPrompt', $strikes->id)
+        ->assertSet('promptName', 'Bahnstreiks')
+        ->set('promptText', 'Suche nach angekündigten Streiks im Bahnverkehr in Europa.')
+        ->call('savePrompt')
+        ->call('makeDefaultPrompt', $strikes->id);
 
-    expect($search->status)->toBe(AiEventSearch::STATUS_RUNNING)
-        ->and($search->exclude_existing)->toBeFalse()
-        ->and($search->started_by)->toBe($this->admin->id);
+    expect(AiEventSearchPrompt::where('is_default', true)->pluck('name')->all())->toBe(['Bahnstreiks'])
+        ->and(AiSettings::eventSearchPrompt())->toBe('Suche nach angekündigten Streiks im Bahnverkehr in Europa.')
+        ->and(app(AiEventSearchService::class)->buildPrompt(true))->toContain('Suche nach angekündigten Streiks im Bahnverkehr in Europa.');
 
-    Bus::assertDispatchedAfterResponse(RunAiEventSearch::class, fn (RunAiEventSearch $job) => $job->searchId === $search->id);
+    // Die Standard-Vorlage laesst sich nicht loeschen, eine andere schon.
+    $page->call('deletePrompt', $strikes->id);
+    expect(AiEventSearchPrompt::count())->toBe(2);
 
-    // Waehrend eine Suche laeuft, startet keine zweite.
-    $page->call('searchEventsNow');
-    expect(AiEventSearch::count())->toBe(1);
+    $page->call('deletePrompt', $standard->id);
+    expect(AiEventSearchPrompt::pluck('name')->all())->toBe(['Bahnstreiks']);
 
-    // Ein haengengebliebener Lauf gilt nach zehn Minuten als abgebrochen.
-    Carbon::setTestNow('2026-10-02 10:15:00');
-    Livewire::test(Ai::class)->assertSee('abgebrochen')->call('searchEventsNow');
-    expect(AiEventSearch::count())->toBe(2);
-
-    // Standard wiederherstellen
-    Livewire::test(Ai::class)->call('resetEventSearchPrompt')->call('saveEventSearchSettings');
-    expect(AiSettings::eventSearchPrompt())->toBe(AiSettings::DEFAULT_EVENT_SEARCH_PROMPT);
+    // Der mitgelieferte Auftrag laesst sich als Ausgangspunkt einfuegen.
+    $page->call('createPrompt')->call('fillPromptWithBuiltIn')->assertSet('promptText', AiSettings::DEFAULT_EVENT_SEARCH_PROMPT);
 });
 
 it('fuehrt den Suchlauf als Auftrag aus', function () {
@@ -297,9 +308,12 @@ it('zeigt die Vorschlaege im Reiter "Heute angelegt" und legt daraus einen Entwu
     $list->call('dismissSuggestion', $old->id)->assertDontSee('Älteres Thema');
     expect($old->fresh()->status)->toBe(AiEventSuggestion::STATUS_DISMISSED);
 
-    // Suche aus der Liste starten
-    $list->call('startAiSearch');
+    // Eine hinterlegte Suche aus der Liste starten
+    $general = AiEventSearchProfile::firstWhere('name', 'Allgemeine Suche');
+
+    $list->assertSee('Suche ausführen')->call('runAiProfile', $general->id);
     Bus::assertDispatchedAfterResponse(RunAiEventSearch::class);
+    expect(AiEventSearch::latest('id')->first()->profile_id)->toBe($general->id);
 
     // (Die gestartete Suche ist inzwischen fertig.)
     AiEventSearch::query()->where('status', AiEventSearch::STATUS_RUNNING)->update(['status' => AiEventSearch::STATUS_DONE, 'finished_at' => now()]);
@@ -339,9 +353,7 @@ it('zeigt die Vorschlaege im Reiter "Heute angelegt" und legt daraus einen Entwu
     $this->get(route('adminv2.events.edit', $event))->assertOk()->assertSee('Streik legt Nahverkehr in Rom lahm');
 });
 
-it('sucht auf Wunsch gezielt mit den Filtern der Liste – die allgemeinen Vorschlaege bleiben erhalten', function () {
-    Bus::fake();
-
+it('zeigt die Vorschlaege passend zu den Filtern der Liste und hinterlegt die Filter als Suche', function () {
     // Damit Italien im Laender-Filter der Liste waehlbar ist, braucht es ein Ereignis dort.
     $existing = CustomEvent::create([
         'title' => 'Altes Ereignis', 'popup_content' => 'Text', 'event_type' => 'other', 'priority' => 'low',
@@ -349,7 +361,6 @@ it('sucht auf Wunsch gezielt mit den Filtern der Liste – die allgemeinen Vorsc
     ]);
     $existing->countries()->attach($this->italy->id, ['use_default_coordinates' => true]);
 
-    // Zwei allgemeine Vorschlaege von heute.
     AiEventSuggestion::create(['title' => 'Streik legt Nahverkehr in Rom lahm', 'priority' => 'medium', 'country_codes' => ['IT'], 'event_type_codes' => ['strike'], 'start_date' => '2026-10-03', 'end_date' => '2026-10-04']);
     AiEventSuggestion::create(['title' => 'Waldbrände auf Rhodos', 'priority' => 'high', 'country_codes' => ['GR'], 'event_type_codes' => ['environment'], 'start_date' => '2026-10-01']);
 
@@ -357,123 +368,101 @@ it('sucht auf Wunsch gezielt mit den Filtern der Liste – die allgemeinen Vorsc
 
     $list = Livewire::test(Index::class)
         ->set('tab', 'today')
-        // Ohne Filter: nur die allgemeine Suche, alle Vorschlaege sichtbar.
-        ->assertDontSee('KI mit diesen Filtern suchen lassen')
+        // Ohne Filter: alle Vorschlaege, kein Hinweis auf Filter.
+        ->assertDontSee('Filter als Suche hinterlegen')
         ->assertSee('Waldbrände auf Rhodos')
         ->set('countryIds', [(string) $this->italy->id])
         ->set('types', [(string) $strike->id])
-        ->set('periodFrom', '2026-10-01')
-        ->set('periodTo', '2026-10-10')
+        ->set('priorities', ['medium'])
+        ->set('search', 'Streik')
         // Mit Filtern: die Anzeige folgt ihnen, nichts geht verloren.
-        ->assertSee('KI mit diesen Filtern suchen lassen')
+        ->assertSee('Filter als Suche hinterlegen')
         ->assertSee('Länder: Italien (IT)')
         ->assertSee('Streik legt Nahverkehr in Rom lahm')
         ->assertDontSee('Waldbrände auf Rhodos')
         ->assertSee('Alle 2 Vorschläge zeigen')
         ->set('showAllSuggestions', true)
-        ->assertSee('Waldbrände auf Rhodos')
-        ->set('showAllSuggestions', false);
+        ->assertSee('Waldbrände auf Rhodos');
 
-    expect($list->instance()->aiSuggestions)->toHaveCount(1)
+    expect($list->set('showAllSuggestions', false)->instance()->aiSuggestions)->toHaveCount(1)
         ->and($list->instance()->allAiSuggestions)->toHaveCount(2);
 
-    // Gezielte Suche: der Lauf merkt sich die Eingrenzung.
-    $list->call('startFilteredAiSearch')->assertSee('Die KI sucht gezielt nach aktuellen Ereignissen');
+    // Gesucht wird nur ueber hinterlegte Suchen: die Filter lassen sich als neue Suche uebernehmen.
+    $url = $list->instance()->saveFiltersAsSearchUrl;
 
-    $search = AiEventSearch::first();
+    expect($url)->toContain('/adminv2/system/ai/searches/create')->toContain('countries=IT')->toContain('types=strike');
 
-    expect($search->isTargeted())->toBeTrue()
-        ->and($search->filters['countries'])->toBe(['IT'])
-        ->and($search->filters['types'])->toBe(['strike'])
-        ->and($search->filters['from'])->toBe('2026-10-01')
-        ->and($search->filterSummary())->toBe('Länder: Italien (IT) · Event-Typen: Streik · Zeitraum: 01.10.2026 bis 10.10.2026');
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
 
-    Bus::assertDispatchedAfterResponse(RunAiEventSearch::class);
-
-    // Der Auftrag an die KI enthaelt die Eingrenzung.
-    $prompt = app(AiEventSearchService::class)->buildPrompt(true, $search->filters);
-
-    expect($prompt)->toContain('EINGRENZUNG für diese Suche')
-        ->toContain('- Länder: Italien (IT)')
-        ->toContain('- Event-Typen: Streik')
-        ->toContain('- Zeitraum: 01.10.2026 bis 10.10.2026')
-        ->and(app(AiEventSearchService::class)->buildPrompt(true))->not->toContain('EINGRENZUNG');
-
-    // Das Ergebnis der gezielten Suche kommt zu den vorhandenen Vorschlaegen dazu.
-    fakeAiSearch([aiEvent(['title' => 'Bahnstreik in Mailand', 'location' => 'Mailand', 'start_date' => '2026-10-06', 'end_date' => '2026-10-06'])]);
-    app(AiEventSearchService::class)->run($search);
-
-    expect(AiEventSuggestion::query()->open()->count())->toBe(3);
-
-    Livewire::test(Index::class)
-        ->set('tab', 'today')
-        ->assertSee('gezielt – Länder: Italien (IT)')
-        ->assertSee('Bahnstreik in Mailand')
-        ->assertSee('Waldbrände auf Rhodos')
-        // Eine allgemeine Suche laesst sich weiterhin starten.
-        ->call('startAiSearch');
-
-    expect(AiEventSearch::latest('id')->first()->isTargeted())->toBeFalse();
+    Livewire::withQueryParams($query)
+        ->test(AiSearchEditor::class)
+        ->assertSet('countries', ['IT'])
+        ->assertSet('types', ['strike'])
+        ->assertSet('priorities', ['medium'])
+        ->assertSet('keyword', 'Streik');
 });
 
-it('laesst mehrere Suchen mit Filtern und Zeitplan hinterlegen und fuehrt sie automatisch aus', function () {
+it('laesst mehrere Suchen mit Vorlage, Filtern und Zeitplan hinterlegen und fuehrt sie automatisch aus', function () {
     Bus::fake();
 
-    $page = Livewire::test(Ai::class)
-        ->assertSee('Hinterlegte Suchen')
-        ->assertSee('Noch keine Suche hinterlegt')
-        ->call('createProfile')
-        ->call('saveProfile')
-        ->assertHasErrors('profileName')
-        ->set('profileName', 'Streiks in Italien')
-        ->set('profilePrompt', 'Suche nach angekündigten Streiks im Bahn- und Flugverkehr.')
-        ->set('profileCountries', ['IT'])
-        ->set('profileTypes', ['strike'])
-        ->set('profilePriorities', ['high', 'medium'])
-        ->set('profileDaysAhead', '7')
-        ->set('profileKeyword', 'Bahn')
-        ->set('profileWeekdays', ['1', '2', '3', '4', '5'])
-        ->call('addProfileTime')
-        ->set('profileTimes', ['13:00', '07:00', ''])
-        ->call('saveProfile')
+    $template = AiEventSearchPrompt::create(['name' => 'Streiks', 'prompt' => 'Suche nach angekündigten Streiks im Bahn- und Flugverkehr.']);
+
+    $this->get(route('adminv2.system.ai.searches.create'))->assertOk()->assertSee('Neue Suche')->assertSee('KI-Vorlage');
+
+    Livewire::withQueryParams([])
+        ->test(AiSearchEditor::class)
+        ->call('save')
+        ->assertHasErrors('name')
+        ->set('name', 'Streiks in Italien')
+        ->set('promptId', (string) $template->id)
+        ->assertSee('Suche nach angekündigten Streiks im Bahn- und Flugverkehr.')
+        ->set('countries', ['IT'])
+        ->set('types', ['strike'])
+        ->set('priorities', ['high', 'medium'])
+        ->set('daysAhead', '7')
+        ->set('keyword', 'Bahn')
+        ->set('weekdays', ['1', '2', '3', '4', '5'])
+        ->call('addTime')
+        ->set('times', ['13:00', '07:00', ''])
+        ->call('save')
         ->assertHasNoErrors()
-        ->assertSee('Streiks in Italien')
-        ->assertSee('Montag bis Freitag um 07:00 und 13:00 Uhr')
-        // Freitag, 02.10.2026, 10:00 Uhr: der naechste Lauf ist heute um 13:00.
-        ->assertSee('nächster Lauf 02.10.2026 13:00')
-        ->assertSee('Länder: Italien (IT) · Event-Typen: Streik · Priorität: Mittel, Hoch · Zeitraum: die nächsten 7 Tage ab dem Tag der Suche · Stichwort: Bahn');
+        ->assertRedirect(route('adminv2.system.ai.searches.edit', AiEventSearchProfile::firstWhere('name', 'Streiks in Italien')));
 
-    $strikes = \App\Models\AiEventSearchProfile::firstWhere('name', 'Streiks in Italien');
+    $strikes = AiEventSearchProfile::firstWhere('name', 'Streiks in Italien');
 
+    // Freitag, 02.10.2026, 10:00 Uhr: der naechste Lauf ist heute um 13:00.
     expect($strikes->sortedTimes())->toBe(['07:00', '13:00'])
+        ->and($strikes->prompt_id)->toBe($template->id)
         ->and($strikes->next_run_at->format('Y-m-d H:i'))->toBe('2026-10-02 13:00')
         ->and($strikes->created_by)->toBe($this->admin->id);
 
-    // Eine zweite Suche: Standard-Auftrag, keine Filter, taeglich um 06:00.
-    $page->call('createProfile')
-        ->assertSet('profileName', '')
-        ->set('profileName', 'Allgemein am Morgen')
-        ->set('profileTimes', ['06:00'])
-        ->call('saveProfile')
-        ->assertHasNoErrors()
-        ->assertSee('Täglich um 06:00 Uhr');
+    // Die Liste unter System > KI zeigt die Suchen und verlinkt ihre Seiten.
+    Livewire::test(Ai::class)
+        ->assertSee('Hinterlegte Suchen')
+        ->assertSee('Streiks in Italien')
+        ->assertSee('Vorlage: Streiks')
+        ->assertSee('Montag bis Freitag um 07:00 und 13:00 Uhr')
+        ->assertSee('nächster Lauf 02.10.2026 13:00')
+        ->assertSee('Länder: Italien (IT) · Event-Typen: Streik · Priorität: Mittel, Hoch · Zeitraum: die nächsten 7 Tage ab dem Tag der Suche · Stichwort: Bahn')
+        ->assertSee(route('adminv2.system.ai.searches.edit', $strikes))
+        // Die mitgelieferte allgemeine Suche nutzt die Standard-Vorlage und laeuft nur von Hand.
+        ->assertSee('Allgemeine Suche')
+        ->assertSee('Vorlage: Standard');
 
-    $general = \App\Models\AiEventSearchProfile::firstWhere('name', 'Allgemein am Morgen');
+    // Die eigene Seite der Suche: die Werte stehen im Formular.
+    $this->get(route('adminv2.system.ai.searches.edit', $strikes))->assertOk()->assertSee('Suchen und Ergebnisse')->assertSee('Diese Suche ist noch nicht gelaufen.');
 
-    expect($general->next_run_at->format('Y-m-d H:i'))->toBe('2026-10-03 06:00')
-        ->and($general->filtersForRun())->toBeNull();
-
-    // Bearbeiten: die Werte stehen wieder im Formular.
-    $page->call('editProfile', $strikes->id)
-        ->assertSet('profileCountries', ['IT'])
-        ->assertSet('profileTimes', ['07:00', '13:00'])
-        ->assertSet('profileDaysAhead', '7');
+    Livewire::test(AiSearchEditor::class, ['profile' => $strikes->id])
+        ->assertSet('countries', ['IT'])
+        ->assertSet('times', ['07:00', '13:00'])
+        ->assertSet('daysAhead', '7')
+        ->assertSet('promptId', (string) $template->id);
 
     // Vor dem Zeitpunkt passiert nichts.
     $this->artisan('ai:run-event-searches')->assertSuccessful();
     expect(AiEventSearch::count())->toBe(0);
 
-    // 13:02 Uhr: die Streik-Suche laeuft – mit eigenem Auftrag und ihren Filtern.
+    // 13:02 Uhr: die Streik-Suche laeuft – mit ihrer Vorlage und ihren Filtern.
     Carbon::setTestNow('2026-10-02 13:02:00');
     fakeAiSearch([aiEvent(['title' => 'Bahnstreik in Mailand', 'location' => 'Mailand'])]);
 
@@ -486,6 +475,8 @@ it('laesst mehrere Suchen mit Filtern und Zeitplan hinterlegen und fuehrt sie au
         ->and($search->profile_id)->toBe($strikes->id)
         ->and($search->status)->toBe(AiEventSearch::STATUS_DONE)
         ->and($search->started_by)->toBeNull()
+        ->and($search->prompt_name)->toBe('Streiks')
+        ->and($search->prompt)->toBe('Suche nach angekündigten Streiks im Bahn- und Flugverkehr.')
         ->and($search->filters['countries'])->toBe(['IT'])
         ->and($search->filters['from'])->toBe('2026-10-02')
         ->and($search->filters['to'])->toBe('2026-10-09')
@@ -504,6 +495,16 @@ it('laesst mehrere Suchen mit Filtern und Zeitplan hinterlegen und fuehrt sie au
     // Der Vorschlag zeigt, aus welcher Suche er stammt.
     Livewire::test(Index::class)->set('tab', 'today')->assertSee('Suche „Streiks in Italien“');
 
+    // Ohne eigene Vorlage laeuft eine Suche mit dem Standard – auch nachdem die gewaehlte Vorlage geloescht wurde.
+    $general = AiEventSearchProfile::firstWhere('name', 'Allgemeine Suche');
+
+    expect($general->effectivePrompt()->name)->toBe('Standard');
+
+    $template->delete();
+
+    expect($strikes->fresh()->prompt_id)->toBeNull()
+        ->and($strikes->fresh()->effectivePrompt()->name)->toBe('Standard');
+
     // Pausieren, fortsetzen, von Hand ausfuehren, loeschen.
     $page = Livewire::test(Ai::class)
         ->assertSee('1 neu von 1')
@@ -511,49 +512,113 @@ it('laesst mehrere Suchen mit Filtern und Zeitplan hinterlegen und fuehrt sie au
 
     expect($strikes->fresh()->is_active)->toBeFalse()->and($strikes->fresh()->next_run_at)->toBeNull();
 
-    $page->call('toggleProfile', $strikes->id)->call('runProfileNow', $general->id);
+    $page->call('toggleProfile', $strikes->id)->call('runAiProfile', $general->id)->assertSee('Die KI sucht nach aktuellen Ereignissen');
 
     $manual = AiEventSearch::latest('id')->first();
 
     expect($manual->profile_id)->toBe($general->id)
         ->and($manual->started_by)->toBe($this->admin->id)
-        ->and($manual->prompt)->toBeNull()
+        ->and($manual->prompt_name)->toBe('Standard')
         ->and($manual->isTargeted())->toBeFalse();
 
     Bus::assertDispatchedAfterResponse(RunAiEventSearch::class, fn (RunAiEventSearch $job) => $job->searchId === $manual->id);
 
+    // Waehrend eine Suche laeuft, startet keine zweite.
+    $page->call('runAiProfile', $strikes->id);
+    expect(AiEventSearch::count())->toBe(2);
+
     $page->call('deleteProfile', $strikes->id);
 
-    expect(\App\Models\AiEventSearchProfile::count())->toBe(1)
+    expect(AiEventSearchProfile::pluck('name')->all())->toBe(['Allgemeine Suche'])
         ->and(AiEventSuggestion::count())->toBe(1)
         ->and($search->fresh()->profile_id)->toBeNull();
 
     // Eine ungueltige Uhrzeit wird abgelehnt.
-    Livewire::test(Ai::class)->call('createProfile')->set('profileName', 'Kaputt')->set('profileTimes', ['25:99'])->call('saveProfile')->assertHasErrors('profileTimes.0');
+    Livewire::test(AiSearchEditor::class)->set('name', 'Kaputt')->set('times', ['25:99'])->call('save')->assertHasErrors('times.0');
+});
+
+it('zeigt auf der Seite einer Suche ihre Laeufe mit Ergebnissen und den ins Ereignis uebernommenen Text', function () {
+    $profile = AiEventSearchProfile::create(['name' => 'Streiks in Italien', 'country_codes' => ['IT']]);
+    $service = app(AiEventSearchService::class);
+
+    fakeAiSearch([aiEvent(), aiEvent(['title' => 'Bahnstreik in Mailand', 'location' => 'Mailand', 'summary' => 'In Mailand fahren keine Züge.', 'sources' => []])]);
+    $first = $service->run($service->createSearchFor($profile, $this->admin->id));
+
+    Carbon::setTestNow('2026-10-02 15:00:00');
+    fakeAiSearch([aiEvent(['title' => 'Fluglotsenstreik in Neapel', 'location' => 'Neapel', 'sources' => []])]);
+    $second = $service->run($service->createSearchFor($profile));
+
+    $rome = AiEventSuggestion::firstWhere('title', 'Streik legt Nahverkehr in Rom lahm');
+    $milan = AiEventSuggestion::firstWhere('title', 'Bahnstreik in Mailand');
+
+    $page = Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])
+        ->assertSee('2 Läufe – der letzte zuerst')
+        // Der letzte Lauf steht oben.
+        ->assertSeeInOrder(['02.10.2026 15:00', 'Fluglotsenstreik in Neapel', '02.10.2026 10:00', 'Streik legt Nahverkehr in Rom lahm'])
+        ->assertSee('automatisch')
+        ->assertSee('von Anna')
+        ->assertSee('2 gefunden, 2 neu')
+        ->assertSee('Vorlage „Standard“');
+
+    // Verwerfen direkt auf der Seite
+    $page->call('dismissSuggestion', $milan->id)->assertSee('Verworfen')->assertSee('Wieder vorschlagen');
+
+    // Als Entwurf anlegen und den Text im Ereignis aendern.
+    $event = $service->createDraft($rome, $this->admin->id);
+
+    Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])
+        ->assertSee('Übernommen ins Passolution Ereignis')
+        ->assertSee('Titel und Text wurden unverändert aus dem Vorschlag übernommen.')
+        ->assertSee('Zum Ereignis');
+
+    $event->fill([
+        'title_translations' => ['de' => 'Rom: Nahverkehr bestreikt'],
+        'popup_content_translations' => ['de' => '<p>Busse und Bahnen fahren am 3. und 4. Oktober nur eingeschränkt.</p>'],
+    ])->save();
+
+    Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])
+        // Der Stand im Ereignis …
+        ->assertSee('Rom: Nahverkehr bestreikt')
+        ->assertSee('Busse und Bahnen fahren am 3. und 4. Oktober nur eingeschränkt.')
+        // … neben dem Vorschlag der KI.
+        ->assertSee('Streik legt Nahverkehr in Rom lahm')
+        ->assertSee('Titel oder Text wurden im Ereignis angepasst');
+
+    // Von der Seite aus ausfuehren und loeschen
+    Bus::fake();
+    Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])
+        ->call('runNow')
+        ->assertSee('Die KI sucht gezielt nach aktuellen Ereignissen')
+        ->call('delete')
+        ->assertRedirect(route('adminv2.system.ai'));
+
+    Bus::assertDispatchedAfterResponse(RunAiEventSearch::class);
+    expect(AiEventSearchProfile::whereKey($profile->id)->exists())->toBeFalse();
 });
 
 it('laesst fuer eine hinterlegte Suche alle Laender waehlen und einzelne ausnehmen', function () {
     Country::factory()->create(['iso_code' => 'RU', 'iso3_code' => 'RUS', 'name_translations' => ['de' => 'Russland', 'en' => 'Russia']]);
 
-    $page = Livewire::test(Ai::class)
-        ->call('createProfile')
-        ->set('profileName', 'Weltweit ohne Russland')
-        ->set('profileTimes', ['08:00'])
+    Livewire::withQueryParams([])
+        ->test(AiSearchEditor::class)
+        ->set('name', 'Weltweit ohne Russland')
+        ->set('times', ['08:00'])
         // Alle auswaehlen, dann eines abwaehlen.
-        ->call('selectAllProfileCountries')
-        ->assertSet('profileCountries', ['GR', 'IT', 'RU'])
+        ->call('selectAllCountries')
+        ->assertSet('countries', ['GR', 'IT', 'RU'])
         ->assertSee('alle 3 gewählt')
-        ->set('profileCountries', ['GR', 'IT'])
+        ->set('countries', ['GR', 'IT'])
         ->assertSee('2 von 3 gewählt – 1 ausgenommen')
         // Der Zeitraum ist eine Auswahl mit Beispiel statt einer Zahl.
         ->assertSee('Keine zeitliche Eingrenzung')
-        ->set('profileDaysAhead', '14')
+        ->set('daysAhead', '14')
         ->assertSee('zwischen dem 02.10.2026 und dem 16.10.2026')
-        ->call('saveProfile')
-        ->assertHasNoErrors()
-        ->assertSee('Länder: alle außer Russland (RU)');
+        ->call('save')
+        ->assertHasNoErrors();
 
-    $profile = \App\Models\AiEventSearchProfile::firstWhere('name', 'Weltweit ohne Russland');
+    $profile = AiEventSearchProfile::firstWhere('name', 'Weltweit ohne Russland');
+
+    expect($profile->filterSummary())->toContain('Länder: alle außer Russland (RU)');
 
     // Der Auftrag an die KI nennt die Ausnahme statt einer langen Laenderliste.
     $prompt = app(AiEventSearchService::class)->buildPrompt(true, $profile->filtersForRun());
@@ -562,12 +627,12 @@ it('laesst fuer eine hinterlegte Suche alle Laender waehlen und einzelne ausnehm
         ->toContain('- Zeitraum: 02.10.2026 bis 16.10.2026');
 
     // Sind alle Laender gewaehlt, ist das keine Eingrenzung.
-    $page->call('editProfile', $profile->id)->call('selectAllProfileCountries')->set('profileDaysAhead', '')->call('saveProfile');
+    Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])->call('selectAllCountries')->set('daysAhead', '')->call('save')->assertHasNoErrors();
 
     expect($profile->fresh()->filtersForRun())->toBeNull();
 
     // Alle abwaehlen
-    $page->call('editProfile', $profile->id)->call('clearProfileCountries')->assertSet('profileCountries', [])->assertSee('keine Eingrenzung');
+    Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])->call('clearCountries')->assertSet('countries', [])->assertSee('keine Eingrenzung');
 });
 
 it('zeigt unter "KI Suchergebnisse" die Suchen und alles, was sie gefunden haben', function () {
@@ -576,7 +641,7 @@ it('zeigt unter "KI Suchergebnisse" die Suchen und alles, was sie gefunden haben
 
     Carbon::setTestNow('2026-10-02 12:00:00');
     fakeAiSearch([aiEvent(['title' => 'Bahnstreik in Mailand', 'location' => 'Mailand', 'sources' => []])]);
-    $profile = \App\Models\AiEventSearchProfile::create(['name' => 'Streiks in Italien', 'country_codes' => ['IT'], 'times' => ['12:00']]);
+    $profile = AiEventSearchProfile::create(['name' => 'Streiks in Italien', 'country_codes' => ['IT'], 'times' => ['12:00']]);
     $second = app(AiEventSearchService::class)->run(app(AiEventSearchService::class)->createSearchFor($profile));
 
     $rome = AiEventSuggestion::firstWhere('title', 'Streik legt Nahverkehr in Rom lahm');
@@ -631,8 +696,147 @@ it('zeigt unter "KI Suchergebnisse" die Suchen und alles, was sie gefunden haben
         ->assertSee('Zum Ereignis')
         ->assertSee(route('adminv2.events.edit', $event));
 
-    // Suche von hier starten
+    // Eine hinterlegte Suche von hier starten
     Bus::fake();
-    Livewire::test(\App\Livewire\AdminV2\Events\AiResults::class)->call('startAiSearch')->assertSee('Die KI sucht nach aktuellen Ereignissen');
+    Livewire::test(\App\Livewire\AdminV2\Events\AiResults::class)
+        ->assertSee('Suche ausführen')
+        ->call('runAiProfile', $profile->id)
+        ->assertSee('Die KI sucht gezielt nach aktuellen Ereignissen');
     Bus::assertDispatchedAfterResponse(RunAiEventSearch::class);
+});
+
+it('benachrichtigt die bei einer hinterlegten Suche eingetragenen Benutzer und Teams mit Link zum Ergebnis', function () {
+    \Illuminate\Support\Facades\Mail::fake();
+
+    $user = fn (string $name, bool $active = true) => User::factory()->create(['name' => $name, 'is_admin' => true, 'is_active' => $active]);
+
+    $dennis = $user('Dennis');
+    $carla = $user('Carla');
+    $eva = $user('Eva');
+    $gone = $user('Weg', false);
+
+    $redaktion = \App\Models\AdminTeam::create(['name' => 'Redaktion']);
+    $redaktion->users()->sync([$carla->id, $dennis->id]);
+    $support = \App\Models\AdminTeam::create(['name' => 'Support', 'email' => 'support@example.com', 'notify_mode' => \App\Models\AdminTeam::NOTIFY_TEAM_EMAIL]);
+    $support->users()->sync([$eva->id]);
+
+    // Im Formular: Benutzer und Teams waehlen.
+    Livewire::withQueryParams([])
+        ->test(AiSearchEditor::class)
+        ->set('name', 'Streiks in Italien')
+        ->set('countries', ['IT'])
+        ->set('times', ['12:00'])
+        ->set('notifyUsers', [(string) $dennis->id, (string) $gone->id, '999999'])
+        ->call('save')
+        ->assertHasErrors('notifyUsers.1')
+        ->set('notifyUsers', [(string) $dennis->id])
+        ->set('notifyTeams', [(string) $redaktion->id, (string) $support->id])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $profile = AiEventSearchProfile::firstWhere('name', 'Streiks in Italien');
+
+    Livewire::test(Ai::class)->assertSee('E-Mail an Dennis, Team Redaktion, Team Support – bei neuen Vorschlägen');
+
+    // Dennis steht selbst und ueber die Redaktion drin – er bekommt nur eine Mail.
+    expect($profile->notificationEmails())->toEqualCanonicalizing([$dennis->email, $carla->email, 'support@example.com']);
+
+    Livewire::test(AiSearchEditor::class, ['profile' => $profile->id])
+        ->assertSet('notifyUsers', [(string) $dennis->id])
+        ->assertSet('notifyTeams', [(string) $redaktion->id, (string) $support->id]);
+
+    // Lauf mit neuem Ergebnis: Mail an alle, mit Link direkt zu diesem Lauf.
+    Carbon::setTestNow('2026-10-02 12:01:00');
+    fakeAiSearch([aiEvent(['title' => 'Bahnstreik in Mailand', 'location' => 'Mailand'])]);
+    $this->artisan('ai:run-event-searches')->assertSuccessful();
+
+    $search = AiEventSearch::first();
+    $url = route('adminv2.events.ai-results', ['run' => $search->id, 'status' => 'all']);
+
+    \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\AiEventSearchResultMail::class, 3);
+    \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\AiEventSearchResultMail::class, fn ($mail) => $mail->hasTo('support@example.com'));
+    \Illuminate\Support\Facades\Mail::assertNotSent(\App\Mail\AiEventSearchResultMail::class, fn ($mail) => $mail->hasTo($eva->email));
+
+    $mail = new \App\Mail\AiEventSearchResultMail($search->fresh());
+
+    expect($mail->envelope()->subject)->toBe('KI-Suche „Streiks in Italien“: 1 neuer Vorschlag')
+        ->and($mail->render())->toContain('Bahnstreik in Mailand')
+        ->toContain('Suchergebnis öffnen')
+        ->toContain(e($url))
+        ->and($search->fresh()->notified_at)->not->toBeNull();
+
+    // Der Link fuehrt auf die Ergebnisse genau dieses Laufs.
+    $this->get($url)->assertOk()->assertSee('Bahnstreik in Mailand')->assertSee('Auswahl aufheben');
+
+    // Kein zweites Mal fuer denselben Lauf.
+    expect(app(AiEventSearchService::class)->notifyRecipients($search->fresh()))->toBe(0);
+
+    // Lauf ohne Neues: keine Mail – ausser es ist so eingestellt.
+    $run = fn () => app(AiEventSearchService::class)->run(app(AiEventSearchService::class)->createSearchFor($profile->fresh()));
+
+    fakeAiSearch([aiEvent(['title' => 'Bahnstreik in Mailand', 'location' => 'Mailand'])]);
+    $run();
+    \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\AiEventSearchResultMail::class, 3);
+
+    $profile->update(['notify_when_empty' => true]);
+    $run();
+    \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\AiEventSearchResultMail::class, 6);
+
+    // Ein fehlgeschlagener Lauf wird immer gemeldet.
+    $profile->update(['notify_when_empty' => false]);
+    $GLOBALS['aiSearchResponse'] = fn () => Http::response(['error' => ['message' => 'Quota exceeded']], 429);
+    $failed = $run();
+
+    \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\AiEventSearchResultMail::class, 9);
+    expect((new \App\Mail\AiEventSearchResultMail($failed->fresh()))->envelope()->subject)->toBe('KI-Suche „Streiks in Italien“: fehlgeschlagen');
+
+    // Eine Suche ohne Profil (von Hand, allgemein) verschickt nichts.
+    fakeAiSearch([aiEvent(['title' => 'Etwas ganz anderes', 'countries' => ['GR'], 'location' => 'Athen', 'sources' => []])]);
+    runAiSearch();
+    \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\AiEventSearchResultMail::class, 9);
+});
+
+it('begrenzt die Zahl der Ergebnisse je hinterlegter Suche', function () {
+    $service = app(AiEventSearchService::class);
+
+    // Standard: 15
+    expect(AiSettings::eventSearchMaxResults())->toBe(15)
+        ->and($service->buildPrompt(true))->toContain('Liefere höchstens 15 Ereignisse');
+
+    // Je hinterlegter Suche eine eigene Zahl
+    Livewire::withQueryParams([])
+        ->test(AiSearchEditor::class)
+        ->set('name', 'Nur das Wichtigste')
+        ->set('maxResults', '99')
+        ->call('save')
+        ->assertHasErrors('maxResults')
+        ->set('maxResults', '2')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $profile = AiEventSearchProfile::firstWhere('name', 'Nur das Wichtigste');
+
+    Livewire::test(Ai::class)->assertSee('höchstens 2 Ergebnisse');
+
+    // Liefert die KI trotzdem mehr, zaehlen nur die ersten.
+    fakeAiSearch([
+        aiEvent(['title' => 'Erstes Thema', 'location' => 'Rom', 'sources' => []]),
+        aiEvent(['title' => 'Zweites Thema', 'location' => 'Mailand', 'event_types' => ['environment'], 'sources' => []]),
+        aiEvent(['title' => 'Drittes Thema', 'location' => 'Neapel', 'event_types' => ['travel'], 'sources' => []]),
+    ]);
+
+    $search = $service->run($service->createSearchFor($profile));
+
+    expect($search->max_results)->toBe(2)
+        ->and($search->found_count)->toBe(2)
+        ->and(AiEventSuggestion::pluck('title')->all())->toBe(['Erstes Thema', 'Zweites Thema']);
+
+    Http::assertSent(fn (Request $request) => $request->url() === 'https://api.openai.com/v1/responses'
+        && str_contains($request['input'], 'Liefere höchstens 2 Ereignisse'));
+
+    // Ohne eigene Zahl gilt der Standard.
+    $profile->update(['max_results' => null]);
+    AiEventSuggestion::query()->delete();
+
+    expect($service->run($service->createSearchFor($profile->fresh()))->found_count)->toBe(3);
 });

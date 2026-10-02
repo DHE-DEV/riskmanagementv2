@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\AiEventSearchResultMail;
 use App\Models\AiEventSearch;
 use App\Models\AiEventSearchProfile;
 use App\Models\AiEventSuggestion;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 /**
@@ -34,8 +36,6 @@ class AiEventSearchService
     /** Wie weit zurueck fruehere Vorschlaege als "schon vorgeschlagen" gelten (Tage). */
     private const REMEMBER_SUGGESTIONS_DAYS = 14;
 
-    private const MAX_RESULTS = 15;
-
     /** Fuer einen Lauf gemerkt: was es schon gibt. */
     private ?Collection $knownTopics = null;
 
@@ -52,9 +52,11 @@ class AiEventSearchService
                 $search->exclude_existing,
                 $search->isTargeted() ? $search->filters : null,
                 $search->prompt,
+                $maxResults = $search->max_results ?: AiSettings::eventSearchMaxResults(),
             ));
 
-            $found = $this->parse($answer);
+            // Liefert die KI mehr als gewuenscht, zaehlen die ersten – sie stehen nach Wichtigkeit.
+            $found = array_slice($this->parse($answer), 0, $maxResults);
             $new = $this->store($search, $found);
 
             $usage = $ai->lastUsage();
@@ -79,7 +81,51 @@ class AiEventSearchService
             ]);
         }
 
+        $this->notifyRecipients($search);
+
         return $search;
+    }
+
+    /**
+     * Die bei der hinterlegten Suche eingetragenen Benutzer und Teams per
+     * E-Mail ueber das Ergebnis informieren – mit Link zu diesem Lauf.
+     * Ohne neue Vorschlaege nur, wenn das so eingestellt ist; ein
+     * fehlgeschlagener Lauf wird immer gemeldet.
+     *
+     * @return int Zahl der versendeten Mails
+     */
+    public function notifyRecipients(AiEventSearch $search): int
+    {
+        $profile = $search->profile;
+
+        if (! $profile || $search->notified_at || $search->status === AiEventSearch::STATUS_RUNNING) {
+            return 0;
+        }
+
+        if ($search->status === AiEventSearch::STATUS_DONE && $search->new_count === 0 && ! $profile->notify_when_empty) {
+            return 0;
+        }
+
+        $sent = 0;
+
+        foreach ($profile->notificationEmails() as $email) {
+            try {
+                Mail::to($email)->send(new AiEventSearchResultMail($search));
+                $sent++;
+            } catch (\Throwable $e) {
+                // Eine fehlgeschlagene Mail darf den Lauf nicht kippen.
+                Log::error('Ergebnis-Mail der KI-Suche konnte nicht versendet werden', [
+                    'search_id' => $search->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if ($sent > 0) {
+            $search->forceFill(['notified_at' => now()])->save();
+        }
+
+        return $sent;
     }
 
     /**
@@ -87,12 +133,17 @@ class AiEventSearchService
      */
     public function createSearchFor(AiEventSearchProfile $profile, ?int $userId = null): AiEventSearch
     {
+        $template = $profile->effectivePrompt();
+
         return AiEventSearch::create([
             'profile_id' => $profile->id,
             'status' => AiEventSearch::STATUS_RUNNING,
             'exclude_existing' => $profile->exclude_existing,
             'filters' => $profile->filtersForRun(),
-            'prompt' => filled($profile->prompt) ? $profile->prompt : null,
+            // Auftrag und Name der Vorlage festhalten – so bleibt nachvollziehbar, womit gesucht wurde.
+            'prompt' => $template?->prompt,
+            'prompt_name' => $template?->name,
+            'max_results' => $profile->max_results,
             'started_by' => $userId,
         ]);
     }
@@ -133,8 +184,10 @@ class AiEventSearchService
      * Auftrag (frei formulierbar) plus der feste Teil: Datum, Kategorien,
      * Ausschlussliste und das Antwortformat.
      */
-    public function buildPrompt(bool $excludeExisting, ?array $filters = null, ?string $prompt = null): string
+    public function buildPrompt(bool $excludeExisting, ?array $filters = null, ?string $prompt = null, ?int $maxResults = null): string
     {
+        $maxResults ??= AiSettings::eventSearchMaxResults();
+
         $types = EventType::active()->get(['code', 'name'])
             ->map(fn (EventType $type) => '- '.$type->code.': '.$type->name)
             ->implode("\n");
@@ -181,7 +234,7 @@ class AiEventSearchService
         }
 
         $lines[] = '';
-        $lines[] = 'Liefere höchstens '.self::MAX_RESULTS.' Ereignisse, die wichtigsten zuerst. Titel und Zusammenfassung auf Deutsch; die Zusammenfassung in 2 bis 4 sachlichen Sätzen: was, wo, seit/bis wann, was bedeutet es für Reisende.';
+        $lines[] = 'Liefere höchstens '.$maxResults.' '.($maxResults === 1 ? 'Ereignis' : 'Ereignisse').', die wichtigsten zuerst. Titel und Zusammenfassung auf Deutsch; die Zusammenfassung in 2 bis 4 sachlichen Sätzen: was, wo, seit/bis wann, was bedeutet es für Reisende.';
         $lines[] = '';
         $lines[] = 'Antworte AUSSCHLIESSLICH mit JSON in genau dieser Form, ohne weiteren Text:';
         $lines[] = '{"events":[{"title":"…","summary":"…","priority":"high|medium|low|info","start_date":"JJJJ-MM-TT","end_date":"JJJJ-MM-TT oder null","event_types":["code"],"countries":["IT"],"location":"… oder null","sources":[{"title":"Name der Quelle","url":"https://…"}]}]}';

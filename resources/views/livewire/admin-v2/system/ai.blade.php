@@ -15,70 +15,113 @@
     </div>
 
     <div class="grid items-start gap-6 xl:grid-cols-2">
-        {{-- API-Schluessel --}}
-        <x-adminv2.card heading="API-Schlüssel" description="Zugang zu OpenAI. Der Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.">
-            <div class="flex flex-col gap-5">
-                <div class="flex flex-wrap items-center gap-3">
-                    @if ($keySource)
-                        <flux:badge color="green" inset="top bottom">Hinterlegt</flux:badge>
-                        <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiSettings::maskedApiKey() }}</span>
-                        <span class="text-sm text-zinc-500">
-                            {{ $keySource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env (RISK_CHARGPT_KEY)' }}
-                        </span>
-                    @else
-                        <flux:badge color="amber" inset="top bottom">Fehlt</flux:badge>
-                        <span class="text-sm text-zinc-500">Ohne Schlüssel stehen KI-Assistent und Quellen-Prüfung nicht zur Verfügung.</span>
-                    @endif
-                </div>
-
-                <form wire:submit="saveApiKey" class="flex flex-col gap-3">
-                    <flux:input
-                        wire:model="newApiKey"
-                        type="password"
-                        label="{{ $keySource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen' }}"
-                        placeholder="sk-…"
-                        autocomplete="off"
-                        viewable
-                    />
-                    <div class="flex flex-wrap items-center gap-2">
-                        <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
-                        @if ($keySource === 'admin')
-                            <flux:button variant="ghost" wire:click="removeApiKey" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
-                                Hinterlegten Schlüssel entfernen
-                            </flux:button>
+        {{-- Linke Spalte: Schluessel, darunter die KI-Vorlagen --}}
+        <div class="flex flex-col gap-6">
+            {{-- API-Schluessel --}}
+            <x-adminv2.card heading="API-Schlüssel" description="Zugang zu OpenAI. Der Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.">
+                <div class="flex flex-col gap-5">
+                    <div class="flex flex-wrap items-center gap-3">
+                        @if ($keySource)
+                            <flux:badge color="green" inset="top bottom">Hinterlegt</flux:badge>
+                            <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiSettings::maskedApiKey() }}</span>
+                            <span class="text-sm text-zinc-500">
+                                {{ $keySource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env (RISK_CHARGPT_KEY)' }}
+                            </span>
+                        @else
+                            <flux:badge color="amber" inset="top bottom">Fehlt</flux:badge>
+                            <span class="text-sm text-zinc-500">Ohne Schlüssel stehen KI-Assistent und Quellen-Prüfung nicht zur Verfügung.</span>
                         @endif
                     </div>
-                </form>
 
-                <flux:separator />
-
-                <div class="flex flex-col gap-3">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <flux:button icon="signal" wire:click="testConnection" :disabled="! $keySource">Verbindung testen</flux:button>
-                        <span class="text-sm text-zinc-500">Schickt eine kurze Anfrage an „{{ $model ?: $activeModel }}“.</span>
-                    </div>
-
-                    <div wire:loading.flex wire:target="testConnection" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
-                        <flux:icon.arrow-path variant="micro" class="animate-spin" /> Die KI wird gefragt …
-                    </div>
-
-                    @if ($testResult)
-                        <div
-                            wire:loading.remove
-                            wire:target="testConnection"
-                            @class([
-                                'flex gap-2 rounded-lg border px-3 py-2 text-sm',
-                                'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $testResult['ok'],
-                                'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $testResult['ok'],
-                            ])
-                        >
-                            <flux:icon :icon="$testResult['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
-                            <span class="min-w-0 break-words">{{ $testResult['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $testResult['message'] }}</span>
+                    <form wire:submit="saveApiKey" class="flex flex-col gap-3">
+                        <flux:input
+                            wire:model="newApiKey"
+                            type="password"
+                            label="{{ $keySource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen' }}"
+                            placeholder="sk-…"
+                            autocomplete="off"
+                            viewable
+                        />
+                        <div class="flex flex-wrap items-center gap-2">
+                            <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
+                            @if ($keySource === 'admin')
+                                <flux:button variant="ghost" wire:click="removeApiKey" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
+                                    Hinterlegten Schlüssel entfernen
+                                </flux:button>
+                            @endif
                         </div>
-                    @endif
+                    </form>
+
+                    <flux:separator />
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <flux:button icon="signal" wire:click="testConnection" :disabled="! $keySource">Verbindung testen</flux:button>
+                            <span class="text-sm text-zinc-500">Schickt eine kurze Anfrage an „{{ $model ?: $activeModel }}“.</span>
+                        </div>
+
+                        <div wire:loading.flex wire:target="testConnection" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
+                            <flux:icon.arrow-path variant="micro" class="animate-spin" /> Die KI wird gefragt …
+                        </div>
+
+                        @if ($testResult)
+                            <div
+                                wire:loading.remove
+                                wire:target="testConnection"
+                                @class([
+                                    'flex gap-2 rounded-lg border px-3 py-2 text-sm',
+                                    'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $testResult['ok'],
+                                    'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $testResult['ok'],
+                                ])
+                            >
+                                <flux:icon :icon="$testResult['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
+                                <span class="min-w-0 break-words">{{ $testResult['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $testResult['message'] }}</span>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
-        </x-adminv2.card>
+            </x-adminv2.card>
+
+            {{-- KI-Vorlagen: die Auftraege fuer die Suche nach Ereignissen --}}
+            <x-adminv2.card heading="KI Vorlagen" description="Die Aufträge (Prompts) für die KI-Suche nach Ereignissen. Jede hinterlegte Suche wählt eine Vorlage; ohne Auswahl gilt die Standard-Vorlage.">
+                <x-slot:actions>
+                    <flux:button size="sm" variant="primary" icon="plus" wire:click="createPrompt">Neue Vorlage</flux:button>
+                </x-slot:actions>
+
+                <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800" wire:loading.class="opacity-60" wire:target="makeDefaultPrompt, deletePrompt, savePrompt">
+                    @foreach ($this->prompts as $prompt)
+                        <li wire:key="prompt-{{ $prompt->id }}" class="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-medium text-zinc-900 dark:text-white">{{ $prompt->name }}</span>
+                                    @if ($prompt->is_default)
+                                        <flux:badge size="sm" color="green" inset="top bottom">Standard</flux:badge>
+                                    @endif
+                                    <span class="text-xs text-zinc-500">
+                                        {{ $prompt->is_default ? 'gilt für alle Suchen ohne eigene Vorlage' : ($prompt->profiles_count === 0 ? 'von keiner Suche gewählt' : 'gewählt von '.$prompt->profiles_count.' '.($prompt->profiles_count === 1 ? 'Suche' : 'Suchen')) }}
+                                    </span>
+                                </div>
+                                <p class="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">{{ $prompt->prompt }}</p>
+                            </div>
+
+                            <div class="flex shrink-0 items-center gap-1">
+                                @unless ($prompt->is_default)
+                                    <flux:button size="sm" variant="ghost" wire:click="makeDefaultPrompt({{ $prompt->id }})">Als Standard</flux:button>
+                                @endunless
+                                <flux:button size="sm" icon="pencil-square" wire:click="editPrompt({{ $prompt->id }})">Bearbeiten</flux:button>
+                                @unless ($prompt->is_default)
+                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="deletePrompt({{ $prompt->id }})" wire:confirm="Die Vorlage „{{ $prompt->name }}“ löschen? Suchen, die sie nutzen, laufen danach mit der Standard-Vorlage." aria-label="Vorlage löschen" />
+                                @endunless
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+
+                <p class="mt-4 text-xs text-zinc-500">
+                    Die Vorlage beschreibt, wonach gesucht wird. Datum, Kategorien, Filter der Suche, die Liste des bereits Erfassten und das Antwortformat ergänzt die Plattform selbst.
+                </p>
+            </x-adminv2.card>
+        </div>
 
         {{-- Modell --}}
         <x-adminv2.card heading="Modell" description="Gilt für alle KI-Funktionen. Die Liste zeigt die Modelle, die mit dem hinterlegten Schlüssel verfügbar sind.">
@@ -188,99 +231,16 @@
         </x-adminv2.card>
     </div>
 
-    {{-- KI-Suche nach aktuellen Ereignissen --}}
-    @php
-        $latestSearch = $this->latestAiSearch;
-        $openSuggestions = \App\Models\AiEventSuggestion::query()->open()->count();
-    @endphp
-    <x-adminv2.card heading="Aktuelle Ereignisse suchen" description="Die KI durchsucht das Internet nach Themen für neue Ereignisse und schlägt Priorität, Zeitraum, Event-Typen und Länder vor.">
-        <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <form wire:submit="saveEventSearchSettings" class="flex flex-col gap-5">
-                <flux:textarea
-                    wire:model="eventSearchPrompt"
-                    label="Auftrag an die KI"
-                    description="Wonach gesucht werden soll. Datum, Kategorien, Antwortformat und die Liste des bereits Erfassten ergänzt die Plattform selbst."
-                    rows="14"
-                />
+    @php $latestSearch = $this->latestAiSearch; @endphp
 
-                <flux:switch
-                    wire:model="eventSearchExcludeExisting"
-                    label="Bereits erfasste Ereignisse ausschließen – nur neue suchen"
-                    description="Die KI bekommt die ausgelieferten und kürzlich angelegten Ereignisse mitgeteilt und lässt sie weg. Schon Vorgeschlagenes kommt in jedem Fall nicht noch einmal."
-                    align="left"
-                />
+    @if ($latestSearch?->isRunning())
+        <x-adminv2.ai-search-status :search="$latestSearch" />
+    @endif
 
-                <div class="flex flex-wrap items-center gap-2">
-                    <flux:button type="submit">Einstellungen speichern</flux:button>
-                    <flux:button variant="ghost" wire:click="resetEventSearchPrompt">Standard-Auftrag wiederherstellen</flux:button>
-                </div>
-            </form>
-
-            <div class="flex flex-col gap-4">
-                <div>
-                    <flux:button
-                        variant="primary"
-                        icon="sparkles"
-                        wire:click="searchEventsNow"
-                        wire:loading.attr="disabled"
-                        wire:target="searchEventsNow"
-                        :disabled="$latestSearch?->isRunning() || ! $keySource"
-                    >Jetzt nach Ereignissen suchen</flux:button>
-                    @unless ($keySource)
-                        <p class="mt-2 text-sm text-amber-700 dark:text-amber-400">Dafür muss oben ein API-Schlüssel hinterlegt sein.</p>
-                    @endunless
-                </div>
-
-                <x-adminv2.ai-search-status :search="$latestSearch" />
-
-                <div class="rounded-xl border border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800">
-                    <p class="text-zinc-700 dark:text-zinc-300">
-                        <span class="font-medium text-zinc-900 dark:text-white">{{ $openSuggestions }} {{ $openSuggestions === 1 ? 'offener Vorschlag' : 'offene Vorschläge' }}</span>
-                        – sie stehen in der Ereignisliste im Reiter „Heute angelegt“. Dort lässt sich aus jedem Vorschlag ein Ereignis als Entwurf anlegen.
-                    </p>
-                    <flux:button size="sm" icon-trailing="arrow-right" :href="route('adminv2.events.index', ['tab' => 'today'])" class="mt-3">Vorschläge ansehen</flux:button>
-                </div>
-
-                @if ($this->recentAiSearches->count() > 1)
-                    <div>
-                        <div class="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Letzte Suchen</div>
-                        <ul class="flex flex-col divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
-                            @foreach ($this->recentAiSearches as $search)
-                                <li wire:key="search-{{ $search->id }}" class="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5 tabular-nums">
-                                    <span class="text-zinc-700 dark:text-zinc-300">
-                                        {{ $search->created_at?->format('d.m.Y H:i') }}
-                                        <span class="text-zinc-500">· {{ $search->profile?->name ?? ($search->isTargeted() ? 'gezielt' : 'allgemein') }}{{ $search->profile_id && ! $search->started_by ? ' (automatisch)' : '' }}</span>
-                                    </span>
-                                    <span class="text-zinc-500">
-                                        @if ($search->status === \App\Models\AiEventSearch::STATUS_DONE)
-                                            {{ $search->new_count }} neu von {{ $search->found_count }}{{ $search->cost !== null ? ' · '.number_format($search->cost, 4, ',', '.').' $' : '' }}
-                                        @elseif ($search->isRunning())
-                                            läuft …
-                                        @else
-                                            {{ $search->isStale() ? 'abgebrochen' : 'fehlgeschlagen' }}
-                                        @endif
-                                    </span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </x-adminv2.card>
-
-    {{-- Hinterlegte Suchen: eigener Auftrag, Filter und Zeitplan --}}
-    @php
-        $priorityOptions = \App\Models\CustomEvent::getPriorityOptions();
-        $priorityDots = ['high' => 'bg-red-500', 'medium' => 'bg-amber-500', 'low' => 'bg-sky-500', 'info' => 'bg-zinc-400'];
-        $chip = 'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 transition select-none hover:border-zinc-300 '
-            .'has-[:checked]:border-[var(--color-accent)] has-[:checked]:bg-[var(--color-accent)] has-[:checked]:text-[var(--color-accent-foreground)] '
-            .'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]/40 '
-            .'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600';
-    @endphp
-    <x-adminv2.card heading="Hinterlegte Suchen" description="Suchen mit eigenem Auftrag, Filtern und Zeitplan. Der Zeitplaner führt sie zu den angegebenen Zeiten automatisch aus; die Ergebnisse stehen bei den KI-Vorschlägen in der Ereignisliste.">
+    {{-- Hinterlegte Suchen: KI-Vorlage, Filter und Zeitplan – jede mit eigener Seite --}}
+    <x-adminv2.card heading="Hinterlegte Suchen" description="Gesucht wird ausschließlich über diese Suchen: KI-Vorlage, Filter und Zeitplan. Der Zeitplaner führt sie zu den angegebenen Zeiten aus; die Ergebnisse stehen unter „KI Suchergebnisse“.">
         <x-slot:actions>
-            <flux:button size="sm" variant="primary" icon="plus" wire:click="createProfile">Neue Suche</flux:button>
+            <flux:button size="sm" variant="primary" icon="plus" :href="route('adminv2.system.ai.searches.create')">Neue Suche</flux:button>
         </x-slot:actions>
 
         @if ($this->profiles->isEmpty())
@@ -288,7 +248,7 @@
                 Noch keine Suche hinterlegt. Lege zum Beispiel „Streiks in Europa – werktags um 7 und 13 Uhr“ an; sie läuft dann von selbst.
             </p>
         @else
-            <div class="grid gap-4 lg:grid-cols-2" wire:loading.class="opacity-60" wire:target="toggleProfile, deleteProfile, runProfileNow, saveProfile">
+            <div class="grid gap-4 lg:grid-cols-2" wire:loading.class="opacity-60" wire:target="toggleProfile, deleteProfile, runAiProfile">
                 @foreach ($this->profiles as $profile)
                     @php $lastSearch = $profile->searches->first(); @endphp
                     <article
@@ -302,7 +262,9 @@
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <h3 class="text-base font-semibold leading-snug text-zinc-900 dark:text-white">{{ $profile->name }}</h3>
+                                <h3 class="text-base font-semibold leading-snug text-zinc-900 dark:text-white">
+                                    <a href="{{ route('adminv2.system.ai.searches.edit', $profile) }}" class="hover:underline">{{ $profile->name }}</a>
+                                </h3>
                                 <div class="mt-1.5 flex flex-wrap items-center gap-2">
                                     @if (! $profile->is_active)
                                         <flux:badge size="sm" color="amber" inset="top bottom">Pausiert</flux:badge>
@@ -311,7 +273,10 @@
                                     @else
                                         <flux:badge size="sm" inset="top bottom">Nur von Hand</flux:badge>
                                     @endif
-                                    <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{{ $profile->prompt ? 'eigener Auftrag' : 'Standard-Auftrag' }}</span>
+                                    <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">Vorlage: {{ $profile->promptTemplate?->name ?? 'Standard' }}</span>
+                                    @if ($profile->max_results)
+                                        <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">höchstens {{ $profile->max_results }} {{ $profile->max_results === 1 ? 'Ergebnis' : 'Ergebnisse' }}</span>
+                                    @endif
                                     @unless ($profile->exclude_existing)
                                         <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">auch bereits Erfasstes</span>
                                     @endunless
@@ -321,8 +286,8 @@
                             <flux:dropdown align="end">
                                 <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" aria-label="Aktionen" />
                                 <flux:menu>
-                                    <flux:menu.item icon="pencil-square" wire:click="editProfile({{ $profile->id }})">Bearbeiten</flux:menu.item>
-                                    <flux:menu.item icon="bolt" wire:click="runProfileNow({{ $profile->id }})">Jetzt ausführen</flux:menu.item>
+                                    <flux:menu.item icon="pencil-square" :href="route('adminv2.system.ai.searches.edit', $profile)">Bearbeiten und Ergebnisse</flux:menu.item>
+                                    <flux:menu.item icon="bolt" wire:click="runAiProfile({{ $profile->id }})">Jetzt ausführen</flux:menu.item>
                                     <flux:menu.item :icon="$profile->is_active ? 'pause' : 'play'" wire:click="toggleProfile({{ $profile->id }})">{{ $profile->is_active ? 'Pausieren' : 'Fortsetzen' }}</flux:menu.item>
                                     <flux:menu.separator />
                                     <flux:menu.item icon="trash" variant="danger" wire:click="deleteProfile({{ $profile->id }})" wire:confirm="Die Suche „{{ $profile->name }}“ löschen? Bereits gefundene Vorschläge bleiben erhalten.">Löschen</flux:menu.item>
@@ -343,6 +308,16 @@
                             <div class="flex items-start gap-2">
                                 <dt class="mt-0.5 shrink-0"><flux:icon.funnel variant="mini" class="text-zinc-400" /><span class="sr-only">Filter</span></dt>
                                 <dd>{{ $profile->filterSummary() ?? 'Keine Filter – sucht nach allem, was der Auftrag nennt' }}</dd>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <dt class="mt-0.5 shrink-0"><flux:icon.envelope variant="mini" class="text-zinc-400" /><span class="sr-only">Benachrichtigung</span></dt>
+                                <dd>
+                                    @if ($recipients = $profile->recipientSummary())
+                                        E-Mail an {{ $recipients }}{{ $profile->notify_when_empty ? ' – nach jedem Lauf' : ' – bei neuen Vorschlägen' }}
+                                    @else
+                                        Keine E-Mail-Benachrichtigung
+                                    @endif
+                                </dd>
                             </div>
                         </dl>
 
@@ -366,159 +341,29 @@
         @endif
     </x-adminv2.card>
 
-    {{-- Hinterlegte Suche anlegen / bearbeiten --}}
-    <flux:modal name="search-profile" variant="flyout" class="w-full md:w-[44rem]">
-        <form wire:submit="saveProfile" class="flex flex-col gap-6">
-            <div>
-                <flux:heading size="lg">{{ $profileId ? 'Suche bearbeiten' : 'Neue Suche' }}</flux:heading>
-                <flux:text class="mt-1">Auftrag, Filter und Zeitplan einer Suche, die die KI automatisch ausführt.</flux:text>
-            </div>
 
-            <flux:input wire:model="profileName" label="Name" placeholder="z. B. Streiks in Europa" maxlength="100" />
+    {{-- KI-Vorlage anlegen / bearbeiten --}}
+    <flux:modal name="ai-prompt" class="md:w-[44rem]">
+        <form wire:submit="savePrompt" class="flex flex-col gap-5">
+            <flux:heading size="lg">{{ $promptId ? 'Vorlage bearbeiten' : 'Neue Vorlage' }}</flux:heading>
+
+            <flux:input wire:model="promptName" label="Name" placeholder="z. B. Streiks und Verkehr" maxlength="100" />
 
             <flux:field>
                 <flux:label>Auftrag an die KI</flux:label>
-                <flux:description>Leer lassen, um den Standard-Auftrag zu verwenden. Datum, Kategorien, Filter und Antwortformat ergänzt die Plattform selbst.</flux:description>
-                <flux:textarea wire:model="profilePrompt" rows="6" placeholder="Leer = Standard-Auftrag" />
+                <flux:description>Wonach die KI im Internet suchen soll – in eigenen Worten.</flux:description>
+                <flux:textarea wire:model="promptText" rows="14" />
                 <div class="mt-1">
-                    <flux:button size="xs" variant="ghost" wire:click="fillProfilePromptWithDefault">Standard-Auftrag als Vorlage einfügen</flux:button>
+                    <flux:button size="xs" variant="ghost" wire:click="fillPromptWithBuiltIn">Mitgelieferten Auftrag als Ausgangspunkt einfügen</flux:button>
                 </div>
-                <flux:error name="profilePrompt" />
+                <flux:error name="promptText" />
             </flux:field>
 
-            <flux:separator text="Filter" />
-
-            <flux:field>
-                <flux:label>Länder</flux:label>
-                <flux:description>Keines gewählt = alle Länder. Um nur einzelne Länder auszunehmen: „Alle auswählen“ und die unerwünschten abwählen.</flux:description>
-                <div class="mb-2 flex flex-wrap items-center gap-2">
-                    <flux:button size="xs" icon="check" wire:click="selectAllProfileCountries">Alle auswählen</flux:button>
-                    <flux:button size="xs" variant="ghost" icon="x-mark" wire:click="clearProfileCountries">Alle abwählen</flux:button>
-                    <span class="text-xs tabular-nums text-zinc-500">
-                        @php $countryTotal = $this->countryOptions->count(); $countrySelected = count($profileCountries); @endphp
-                        @if ($countrySelected === 0)
-                            keine Eingrenzung
-                        @elseif ($countrySelected >= $countryTotal)
-                            alle {{ $countryTotal }} gewählt
-                        @else
-                            {{ $countrySelected }} von {{ $countryTotal }} gewählt{{ $countryTotal - $countrySelected <= 20 ? ' – '.($countryTotal - $countrySelected).' ausgenommen' : '' }}
-                        @endif
-                    </span>
-                </div>
-                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700" x-data="{ query: '' }">
-                    <div class="border-b border-zinc-100 p-1.5 dark:border-zinc-800">
-                        <input type="search" x-model="query" placeholder="Land oder Code suchen" autocomplete="off" aria-label="Land suchen" class="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none placeholder:text-zinc-400 focus:border-[var(--color-accent)] dark:border-zinc-700 dark:bg-zinc-800 dark:text-white" />
-                    </div>
-                    <div class="flex max-h-44 flex-col overflow-y-auto p-1">
-                        @foreach ($this->countryOptions as $country)
-                            @php $iso = strtoupper((string) $country->iso_code); @endphp
-                            <label
-                                wire:key="profile-country-{{ $iso }}"
-                                x-show="query.trim() === '' || @js(mb_strtolower($country->getName('de').' '.$iso)).includes(query.trim().toLowerCase())"
-                                class="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-zinc-800 hover:bg-zinc-100 has-[:checked]:font-medium dark:text-zinc-200 dark:hover:bg-zinc-800"
-                            >
-                                <input type="checkbox" wire:model.live.debounce.400ms="profileCountries" value="{{ $iso }}" class="size-4 shrink-0 rounded border-zinc-300 accent-[var(--color-accent)]" />
-                                <span class="min-w-0 flex-1 truncate">{{ $country->getName('de') }}</span>
-                                <span class="shrink-0 font-mono text-xs text-zinc-400">{{ $iso }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-                <flux:error name="profileCountries" />
-            </flux:field>
-
-            <flux:field>
-                <flux:label>Event-Typen</flux:label>
-                <div class="flex flex-wrap gap-2">
-                    @foreach ($this->eventTypeOptions as $eventType)
-                        <label wire:key="profile-type-{{ $eventType->code }}" class="{{ $chip }}">
-                            <input type="checkbox" wire:model="profileTypes" value="{{ $eventType->code }}" class="sr-only" />
-                            <i class="fas {{ $eventType->icon ?: 'fa-map-marker' }} text-xs opacity-70" aria-hidden="true"></i>
-                            {{ $eventType->name }}
-                        </label>
-                    @endforeach
-                </div>
-            </flux:field>
-
-            <flux:field>
-                <flux:label>Priorität</flux:label>
-                <div class="flex flex-wrap gap-2">
-                    @foreach ($priorityOptions as $value => $label)
-                        <label wire:key="profile-priority-{{ $value }}" class="{{ $chip }}">
-                            <input type="checkbox" wire:model="profilePriorities" value="{{ $value }}" class="sr-only" />
-                            <span class="size-2 rounded-full {{ $priorityDots[$value] ?? 'bg-zinc-400' }}"></span>
-                            {{ $label }}
-                        </label>
-                    @endforeach
-                </div>
-            </flux:field>
-
-            <flux:field>
-                <flux:label>Zeitraum der Ereignisse</flux:label>
-                <flux:description>Wie weit in die Zukunft die KI schauen soll. Gerechnet wird jedes Mal ab dem Tag, an dem die Suche läuft.</flux:description>
-                <flux:select wire:model.live="profileDaysAhead">
-                    @foreach ($this->profilePeriodOptions() as $value => $label)
-                        <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-                <p class="mt-2 text-xs text-zinc-500">
-                    @if ($profileDaysAhead === '')
-                        Die KI sucht ohne Vorgabe eines Zeitraums – maßgeblich ist, was im Auftrag steht.
-                    @else
-                        Beispiel: Läuft die Suche heute ({{ now()->format('d.m.Y') }}), findet die KI nur Ereignisse, die
-                        {{ (int) $profileDaysAhead === 0 ? 'am '.now()->format('d.m.Y') : 'zwischen dem '.now()->format('d.m.Y').' und dem '.now()->addDays((int) $profileDaysAhead)->format('d.m.Y') }}
-                        stattfinden oder sich dann auswirken – auch angekündigte.
-                    @endif
-                </p>
-                <flux:error name="profileDaysAhead" />
-            </flux:field>
-
-            <flux:input wire:model="profileKeyword" label="Stichwort" placeholder="z. B. Bahn" maxlength="200" description:trailing="Optional: Die KI sucht dann nur nach Ereignissen zu diesem Begriff." />
-
-            <flux:switch wire:model="profileExcludeExisting" label="Bereits erfasste Ereignisse ausschließen – nur neue suchen" align="left" />
-
-            <flux:separator text="Zeitplan" />
-
-            <flux:field>
-                <flux:label>Wochentage</flux:label>
-                <flux:description>Keiner gewählt = jeden Tag.</flux:description>
-                <div class="flex flex-wrap gap-2">
-                    @foreach (\App\Models\AiEventSearchProfile::WEEKDAYS_SHORT as $value => $label)
-                        <label wire:key="profile-weekday-{{ $value }}" class="{{ $chip }}">
-                            <input type="checkbox" wire:model="profileWeekdays" value="{{ $value }}" class="sr-only" />
-                            {{ $label }}
-                        </label>
-                    @endforeach
-                </div>
-            </flux:field>
-
-            <flux:field>
-                <flux:label>Uhrzeiten</flux:label>
-                <flux:description>Zu jeder Uhrzeit läuft die Suche einmal. Ohne Uhrzeit läuft sie nur von Hand.</flux:description>
-                <div class="flex flex-wrap items-center gap-2">
-                    @foreach ($profileTimes as $index => $time)
-                        <div wire:key="profile-time-{{ $index }}" class="flex items-center gap-1">
-                            <div class="w-32"><flux:input wire:model="profileTimes.{{ $index }}" type="time" aria-label="Uhrzeit {{ $index + 1 }}" /></div>
-                            <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="removeProfileTime({{ $index }})" aria-label="Uhrzeit entfernen" />
-                        </div>
-                    @endforeach
-                    <flux:button size="sm" icon="plus" wire:click="addProfileTime">Uhrzeit</flux:button>
-                </div>
-                <flux:error name="profileTimes" />
-                @foreach ($profileTimes as $index => $time)
-                    <flux:error name="profileTimes.{{ $index }}" />
-                @endforeach
-            </flux:field>
-
-            <flux:switch wire:model="profileActive" label="Aktiv" description="Ausgeschaltet läuft die Suche nicht automatisch." align="left" />
-
-            <p class="text-xs text-zinc-500">
-                Jeder Lauf kostet Token (siehe „Letzte Suchen“). Der Zeitplaner prüft alle fünf Minuten; eine Suche startet also spätestens fünf Minuten nach der Uhrzeit.
-            </p>
+            <flux:switch wire:model="promptIsDefault" label="Als Standard verwenden" description="Die Standard-Vorlage gilt für jede hinterlegte Suche, die keine eigene Vorlage gewählt hat. Es gibt immer genau einen Standard." align="left" />
 
             <div class="flex justify-end gap-2">
                 <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
-                <flux:button type="submit" variant="primary">{{ $profileId ? 'Speichern' : 'Suche anlegen' }}</flux:button>
+                <flux:button type="submit" variant="primary">{{ $promptId ? 'Speichern' : 'Vorlage anlegen' }}</flux:button>
             </div>
         </form>
     </flux:modal>

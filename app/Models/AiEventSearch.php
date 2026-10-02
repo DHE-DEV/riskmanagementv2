@@ -21,8 +21,8 @@ class AiEventSearch extends Model
     public const STALE_AFTER_MINUTES = 10;
 
     protected $fillable = [
-        'profile_id', 'status', 'exclude_existing', 'filters', 'prompt', 'started_by', 'found_count', 'new_count',
-        'model', 'input_tokens', 'output_tokens', 'cost', 'error', 'finished_at',
+        'profile_id', 'status', 'exclude_existing', 'filters', 'prompt', 'prompt_name', 'max_results', 'started_by', 'found_count', 'new_count',
+        'model', 'input_tokens', 'output_tokens', 'cost', 'error', 'finished_at', 'notified_at',
     ];
 
     protected $casts = [
@@ -34,6 +34,8 @@ class AiEventSearch extends Model
         'output_tokens' => 'integer',
         'cost' => 'float',
         'finished_at' => 'datetime',
+        'notified_at' => 'datetime',
+        'max_results' => 'integer',
     ];
 
     public function starter(): BelongsTo

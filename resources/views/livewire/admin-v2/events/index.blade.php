@@ -314,14 +314,14 @@
                         </flux:button>
                     @endif
                     @if ($aiFilters)
-                        <flux:button size="sm" variant="primary" icon="funnel" wire:click="startFilteredAiSearch" x-on:click="open = true" wire:loading.attr="disabled" wire:target="startFilteredAiSearch, startAiSearch" :disabled="(bool) $latestSearch?->isRunning()">KI mit diesen Filtern suchen lassen</flux:button>
+                        <flux:button size="sm" icon="funnel" :href="$this->saveFiltersAsSearchUrl">Filter als Suche hinterlegen</flux:button>
                     @endif
-                    <flux:button size="sm" icon="sparkles" wire:click="startAiSearch" x-on:click="open = true" wire:loading.attr="disabled" wire:target="startAiSearch, startFilteredAiSearch" :disabled="(bool) $latestSearch?->isRunning()">{{ $aiFilters ? 'Allgemein suchen lassen' : 'KI jetzt suchen lassen' }}</flux:button>
+                    <x-adminv2.ai-search-run-menu :profiles="$this->aiSearchProfiles" :running="(bool) $latestSearch?->isRunning()" size="sm" variant="outline" />
                 </div>
             </div>
 
-            {{-- Mit gesetzten Filtern: gezielte Suche moeglich, die Anzeige folgt den Filtern –
-                 die uebrigen Vorschlaege bleiben erhalten und lassen sich einblenden. --}}
+            {{-- Mit gesetzten Filtern folgt die Anzeige den Filtern – die uebrigen Vorschlaege
+                 bleiben erhalten und lassen sich einblenden. --}}
             @if ($aiFilters)
                 <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-white/70 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-300">
                     <flux:icon.funnel variant="micro" class="shrink-0 text-zinc-400" />
@@ -362,10 +362,10 @@
             @elseif (! $latestSearch?->isRunning())
                 <p class="mt-3 text-sm text-zinc-500">
                     @if ($allSuggestions->isNotEmpty())
-                        Zu den gesetzten Filtern passt keiner der {{ $allSuggestions->count() }} offenen Vorschläge. Mit „KI mit diesen Filtern suchen lassen“ sucht die KI gezielt danach.
+                        Zu den gesetzten Filtern passt keiner der {{ $allSuggestions->count() }} offenen Vorschläge. Über „Filter als Suche hinterlegen“ lässt sich gezielt danach suchen.
                     @else
                         {{ $showOlderSuggestions || $this->olderAiSuggestionsCount === 0 ? 'Es gibt keine offenen Vorschläge.' : 'Heute gibt es noch keine offenen Vorschläge.' }}
-                        Mit „{{ $aiFilters ? 'Allgemein suchen lassen' : 'KI jetzt suchen lassen' }}“ startest du eine neue Suche.
+                        Über „Suche ausführen“ startest du eine der hinterlegten Suchen.
                     @endif
                 </p>
             @endif
