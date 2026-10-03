@@ -24,6 +24,7 @@
 @endphp
 
 <x-adminv2.card :heading="$heading.' ('.$links->count().')'" description="Mit Richtung und Terminal." collapsible :collapsed="$links->isEmpty()" :collapse-key="'airline-links-'.\Illuminate\Support\Str::slug($heading)">
+    <x-slot:actions><x-adminv2.ai-check-button :section="$heading === 'Airlines' ? 'airlines' : 'airports'" /></x-slot:actions>
     <div class="flex flex-col gap-4">
         @if ($links->isNotEmpty())
             <ul class="flex max-h-[28rem] flex-col divide-y divide-zinc-100 overflow-y-auto text-sm dark:divide-zinc-800">

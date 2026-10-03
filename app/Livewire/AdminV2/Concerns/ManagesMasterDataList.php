@@ -28,11 +28,27 @@ trait ManagesMasterDataList
     public string $trashed = '';
 
     /**
+     * Sortierungen: Spalte => Bezeichnung; die erste ist die Vorgabe.
+     *
+     * @return array<string, string>
+     */
+    abstract public function sortOptions(): array;
+
+    /**
      * Spalten, nach denen sortiert werden darf.
      *
      * @return array<int, string>
      */
-    abstract protected function sortable(): array;
+    protected function sortable(): array
+    {
+        return array_keys($this->sortOptions());
+    }
+
+    public function toggleDirection(): void
+    {
+        $this->direction = $this->direction === 'asc' ? 'desc' : 'asc';
+        $this->resetPage();
+    }
 
     /**
      * Namen der Filter dieser Liste (ohne Suche und Papierkorb).

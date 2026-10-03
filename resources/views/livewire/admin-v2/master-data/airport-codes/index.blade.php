@@ -55,6 +55,12 @@
                 <flux:select.option value="inactive">Nur inaktive</flux:select.option>
             </flux:select>
         </div>
+        <div class="w-64">
+            <flux:select wire:model.live="managed" aria-label="Gepflegt">
+                <flux:select.option value="">Gepflegt: alle</flux:select.option>
+                <flux:select.option value="unmanaged">Große Flughäfen, noch nicht gepflegt</flux:select.option>
+            </flux:select>
+        </div>
         <div class="w-48">
             <x-adminv2.master-data.trashed-filter />
         </div>
@@ -63,63 +69,46 @@
         @endif
     </div>
 
-    <x-adminv2.card flush>
-        @if ($rows->isEmpty())
-            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Flughafen-Codes" />
-        @else
-            <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search, isoCountry, continent, type, codes, scheduled, active, trashed, sortBy, resetFilters, gotoPage, nextPage, previousPage">
-                <table class="w-full min-w-[1000px] text-left text-sm">
-                    <thead class="border-b border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800">
-                        <tr>
-                            <x-adminv2.sort-th column="name" :sort="$sort" :direction="$direction" class="ps-5">Name</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="ident" :sort="$sort" :direction="$direction">Ident</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="iata_code" :sort="$sort" :direction="$direction">IATA</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="icao_code" :sort="$sort" :direction="$direction">ICAO</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="municipality" :sort="$sort" :direction="$direction">Ort</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="iso_country" :sort="$sort" :direction="$direction">Land</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="type" :sort="$sort" :direction="$direction">Typ</x-adminv2.sort-th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Linienflug</th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Koordinaten</th>
-                            <th class="px-3 py-3 pe-5"><span class="sr-only">Aktionen</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @foreach ($rows as $code)
-                            @php $editUrl = route('adminv2.master-data.airport-codes.edit', $code->id); @endphp
-                            <tr wire:key="code-{{ $code->id }}" @class(['bg-zinc-50/70 text-zinc-500 dark:bg-zinc-900/40' => $code->trashed()])>
-                                <td class="px-3 py-3 ps-5">
-                                    <a href="{{ $editUrl }}" class="font-medium text-zinc-900 hover:underline dark:text-white">{{ $code->name }}</a>
-                                    @unless ($code->is_active) <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">inaktiv</flux:badge> @endunless
-                                    @if ($code->trashed()) <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">Papierkorb</flux:badge> @endif
-                                </td>
-                                <td class="px-3 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{{ $code->ident ?: '–' }}</td>
-                                <td class="px-3 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{{ $code->iata_code ?: '–' }}</td>
-                                <td class="px-3 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{{ $code->icao_code ?: '–' }}</td>
-                                <td class="px-3 py-3 text-zinc-700 dark:text-zinc-300">{{ $code->municipality ?: '–' }}</td>
-                                <td class="px-3 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{{ $code->iso_country ?: '–' }}@if ($code->iso_region) <span class="text-zinc-400">{{ $code->iso_region }}</span>@endif</td>
-                                <td class="px-3 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-300">{{ $types[$code->type] ?? ($code->type ?: '–') }}</td>
-                                <td class="px-3 py-3">
-                                    @if ($code->scheduled_service === 'yes')
-                                        <flux:badge size="sm" color="green" inset="top bottom">Ja</flux:badge>
-                                    @else
-                                        <span class="text-zinc-400">Nein</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap tabular-nums text-zinc-600 dark:text-zinc-400">
-                                    {{ $code->latitude_deg !== null && $code->longitude_deg !== null ? Coordinates::format($code->latitude_deg).', '.Coordinates::format($code->longitude_deg) : '–' }}
-                                </td>
-                                <td class="px-3 py-2 pe-5">
-                                    <x-adminv2.master-data.row-actions :id="$code->id" :trashed="$code->trashed()" :edit-url="$editUrl" :name="$code->name" />
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <x-adminv2.master-data.sort-bar :options="$this->sortOptions()" :sort="$sort" :direction="$direction" :total="$rows->total()" :noun="['Flughafen-Code', 'Flughafen-Codes']" />
 
-            <x-adminv2.pagination :paginator="$rows" class="border-t border-zinc-100 px-5 py-3 dark:border-zinc-800" />
-        @endif
-    </x-adminv2.card>
+    @if ($rows->isEmpty())
+        <x-adminv2.card flush>
+            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Flughafen-Codes" />
+        </x-adminv2.card>
+    @else
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, isoCountry, continent, type, codes, scheduled, active, managed, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+            @foreach ($rows as $code)
+                <x-adminv2.master-data.record-card
+                    wire:key="code-{{ $code->id }}"
+                    :id="$code->id"
+                    :edit-url="route('adminv2.master-data.airport-codes.edit', $code->id)"
+                    :title="$code->name"
+                    :tags="array_filter(['Ident '.($code->ident ?: '–'), $code->iata_code ? 'IATA '.$code->iata_code : null, $code->icao_code ? 'ICAO '.$code->icao_code : null])"
+                    :trashed="$code->trashed()"
+                    :inactive="! $code->is_active"
+                >
+                    <x-slot:aside>
+                        <span class="inline-flex items-center gap-1.5">
+                            @if ($code->scheduled_service === 'yes') <flux:badge size="sm" color="green" inset="top bottom">Linienflug</flux:badge> @endif
+                            <x-adminv2.master-data.coordinates-mark :lat="$code->latitude_deg" :lng="$code->longitude_deg" />
+                        </span>
+                    </x-slot:aside>
+                    <x-adminv2.master-data.card-row icon="map-pin" label="Ort und Land">
+                        {{ $code->municipality ?: '–' }}
+                        <span class="text-zinc-400">·</span>
+                        <span class="font-mono text-xs">{{ $code->iso_country ?: '–' }}@if ($code->iso_region) <span class="text-zinc-400">{{ $code->iso_region }}</span>@endif</span>
+                        @if ($code->continent) <span class="text-zinc-400">·</span> {{ $continents[$code->continent] ?? $code->continent }} @endif
+                    </x-adminv2.master-data.card-row>
+                    <x-adminv2.master-data.card-row icon="tag" label="Typ">{{ $types[$code->type] ?? ($code->type ?: '–') }}</x-adminv2.master-data.card-row>
+                    @if ($code->elevation_ft !== null)
+                        <x-adminv2.master-data.card-row icon="arrow-trending-up" label="Höhe">{{ number_format($code->elevation_ft, 0, ',', '.') }} ft</x-adminv2.master-data.card-row>
+                    @endif
+                </x-adminv2.master-data.record-card>
+            @endforeach
+        </div>
+
+        <x-adminv2.pagination :paginator="$rows" />
+    @endif
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 </div>

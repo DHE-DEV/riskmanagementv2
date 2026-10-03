@@ -31,6 +31,8 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            {{-- KI-Pruefungen fuer den gesamten Eintrag --}}
+            <x-adminv2.ai-check-button section="general" label="KI-Prüfung" size="base" class="me-2" />
             <flux:button variant="ghost" :href="$index">{{ $record ? 'Zur Liste' : 'Abbrechen' }}</flux:button>
             @unless ($record)
                 <flux:button wire:click="save(true)" wire:loading.attr="disabled" wire:target="save">Speichern &amp; weitere anlegen</flux:button>

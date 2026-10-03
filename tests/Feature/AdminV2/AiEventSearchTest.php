@@ -207,7 +207,7 @@ it('haelt einen Fehler der KI am Suchlauf fest', function () {
 });
 
 it('verwaltet unter System > KI die Vorlagen fuer den Auftrag an die KI – eine ist der Standard', function () {
-    $this->get(route('adminv2.system.ai'))->assertOk()->assertSee('KI Vorlagen')->assertDontSee('Aktuelle Ereignisse suchen');
+    $this->get(route('adminv2.system.ai', ['tab' => 'events']))->assertOk()->assertSee('KI Vorlagen')->assertDontSee('Aktuelle Ereignisse suchen');
 
     // Die mitgelieferte Vorlage ist der Standard.
     $standard = AiEventSearchPrompt::default();
@@ -216,7 +216,7 @@ it('verwaltet unter System > KI die Vorlagen fuer den Auftrag an die KI – eine
         ->and($standard->prompt)->toBe(AiSettings::DEFAULT_EVENT_SEARCH_PROMPT)
         ->and(AiSettings::eventSearchPrompt())->toBe(AiSettings::DEFAULT_EVENT_SEARCH_PROMPT);
 
-    $page = Livewire::test(Ai::class)
+    $page = Livewire::test(Ai::class)->set('tab', 'events')
         ->assertSee('Standard')
         ->assertSee('gilt für alle Suchen ohne eigene Vorlage')
         ->call('createPrompt')
@@ -437,7 +437,7 @@ it('laesst mehrere Suchen mit Vorlage, Filtern und Zeitplan hinterlegen und fueh
         ->and($strikes->created_by)->toBe($this->admin->id);
 
     // Die Liste unter System > KI zeigt die Suchen und verlinkt ihre Seiten.
-    Livewire::test(Ai::class)
+    Livewire::test(Ai::class)->set('tab', 'events')
         ->assertSee('Hinterlegte Suchen')
         ->assertSee('Streiks in Italien')
         ->assertSee('Vorlage: Streiks')
@@ -506,7 +506,7 @@ it('laesst mehrere Suchen mit Vorlage, Filtern und Zeitplan hinterlegen und fueh
         ->and($strikes->fresh()->effectivePrompt()->name)->toBe('Standard');
 
     // Pausieren, fortsetzen, von Hand ausfuehren, loeschen.
-    $page = Livewire::test(Ai::class)
+    $page = Livewire::test(Ai::class)->set('tab', 'events')
         ->assertSee('1 neu von 1')
         ->call('toggleProfile', $strikes->id);
 
@@ -736,7 +736,7 @@ it('benachrichtigt die bei einer hinterlegten Suche eingetragenen Benutzer und T
 
     $profile = AiEventSearchProfile::firstWhere('name', 'Streiks in Italien');
 
-    Livewire::test(Ai::class)->assertSee('E-Mail an Dennis, Team Redaktion, Team Support – bei neuen Vorschlägen');
+    Livewire::test(Ai::class)->set('tab', 'events')->assertSee('E-Mail an Dennis, Team Redaktion, Team Support – bei neuen Vorschlägen');
 
     // Dennis steht selbst und ueber die Redaktion drin – er bekommt nur eine Mail.
     expect($profile->notificationEmails())->toEqualCanonicalizing([$dennis->email, $carla->email, 'support@example.com']);
@@ -816,7 +816,7 @@ it('begrenzt die Zahl der Ergebnisse je hinterlegter Suche', function () {
 
     $profile = AiEventSearchProfile::firstWhere('name', 'Nur das Wichtigste');
 
-    Livewire::test(Ai::class)->assertSee('höchstens 2 Ergebnisse');
+    Livewire::test(Ai::class)->set('tab', 'events')->assertSee('höchstens 2 Ergebnisse');
 
     // Liefert die KI trotzdem mehr, zaehlen nur die ersten.
     fakeAiSearch([

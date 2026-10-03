@@ -5,7 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Regions;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
-use App\Livewire\AdminV2\Concerns\RunsAiAssistant;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Country;
 use App\Models\Region;
 use App\Support\AdminV2\MasterData;
@@ -22,7 +22,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiAssistant;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
 
     /** So viele Staedte zeigt die Seitenspalte. */
     public const RELATED_LIMIT = 12;
@@ -137,28 +137,70 @@ class Editor extends Component
         $this->finishSave($record, $created, $another);
     }
 
-    protected function aiModelType(): string
+    protected function aiArea(): string
     {
-        return 'Region';
+        return 'regions';
     }
 
-    protected function aiPlaceholderData(): array
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
     {
-        $region = $this->record;
-        $country = $region->country()->withTrashed()->first();
+        $cities = $this->cities;
 
         return [
-            'name' => $region->getName('de'),
-            'name_en' => $region->getName('en'),
-            'code' => $region->code,
-            'country' => $country?->getName('de') ?? 'N/A',
-            'country_en' => $country?->getName('en') ?? 'N/A',
-            'description' => $region->description ?? 'N/A',
-            'keywords' => is_array($region->keywords) ? implode(', ', $region->keywords) : 'N/A',
-            'lat' => $region->lat ?? 'N/A',
-            'lng' => $region->lng ?? 'N/A',
-            'cities_count' => $region->cities()->count(),
+            'name' => $this->nameDe,
+            'name_en' => $this->nameEn,
+            'code' => $this->code,
+            'country' => $this->countryOptions->firstWhere('id', (int) $this->countryId)?->getName('de'),
+            'description' => $this->description,
+            'keywords' => $this->keywords,
+            'lat' => $this->lat,
+            'lng' => $this->lng,
+            'cities_count' => $cities['count'] ?? 0,
+            'cities' => $cities ? $cities['items']->map(fn ($city) => $city->getName('de'))->all() : [],
         ];
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        switch ($key) {
+            case 'name': $this->nameDe = $value;
+
+                return true;
+            case 'name_en': $this->nameEn = $value;
+
+                return true;
+            case 'code': $this->code = mb_strtoupper($value);
+
+                return true;
+            case 'description': $this->description = $value;
+
+                return true;
+            case 'keywords': $this->keywords = $value;
+
+                return true;
+            case 'lat': $this->lat = $this->aiNumber($value);
+
+                return true;
+            case 'lng': $this->lng = $this->aiNumber($value);
+
+                return true;
+            case 'country':
+                $country = $this->aiMatch($this->countryOptions, $value, fn ($country) => $country->getName('de'))
+                    ?? $this->aiMatch($this->countryOptions, $value, fn ($country) => (string) $country->iso_code);
+                if ($country) {
+                    $this->countryId = (string) $country->id;
+                }
+
+                return $country !== null;
+        }
+
+        return false;
     }
 
     public function render()

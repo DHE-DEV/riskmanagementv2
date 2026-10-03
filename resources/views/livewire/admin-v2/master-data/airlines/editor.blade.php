@@ -20,23 +20,30 @@
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Airline">
+                <x-slot:actions><x-adminv2.ai-check-button section="basics" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
-                    <flux:input wire:model="name" label="Name der Airline" maxlength="255" />
+                    <div>
+                        <flux:input wire:model="name" label="Name der Airline" maxlength="255" />
+                        <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                    </div>
 
                     <div class="grid gap-5 sm:grid-cols-4">
                         <flux:field>
                             <flux:label>IATA-Code</flux:label>
                             <flux:input wire:model="iataCode" maxlength="2" class="font-mono uppercase" placeholder="LH" />
+                            <x-adminv2.ai-field-hint key="iata_code" :review="$aiReview" />
                             <flux:error name="iataCode" />
                         </flux:field>
                         <flux:field>
                             <flux:label>ICAO-Code</flux:label>
                             <flux:input wire:model="icaoCode" maxlength="3" class="font-mono uppercase" placeholder="DLH" />
+                            <x-adminv2.ai-field-hint key="icao_code" :review="$aiReview" />
                             <flux:error name="icaoCode" />
                         </flux:field>
                         <flux:field class="sm:col-span-2">
                             <flux:label>Heimatland</flux:label>
                             <x-adminv2.search-select :options="$countryOptions" model="homeCountryId" :selected="$homeCountryId" placeholder="Kein Heimatland" search-placeholder="Land oder ISO-Code …" label="Heimatland" live clearable />
+                            <x-adminv2.ai-field-hint key="home_country" :review="$aiReview" />
                             <flux:error name="homeCountryId" />
                         </flux:field>
                     </div>
@@ -45,19 +52,25 @@
                         <flux:field>
                             <flux:label>Hauptsitz</flux:label>
                             <flux:input wire:model="headquarters" maxlength="255" placeholder="z. B. Köln" />
+                            <x-adminv2.ai-field-hint key="headquarters" :review="$aiReview" />
                             <flux:error name="headquarters" />
                         </flux:field>
                         <div class="flex items-end pb-2">
-                            <flux:switch wire:model="isActive" label="Aktiv" align="left" />
+                            <div>
+                                <flux:switch wire:model="isActive" label="Aktiv" align="left" />
+                                <x-adminv2.ai-field-hint key="is_active" :review="$aiReview" />
+                            </div>
                         </div>
                         <flux:field>
                             <flux:label>Website</flux:label>
                             <flux:input wire:model="website" placeholder="https://…" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="website" :review="$aiReview" />
                             <flux:error name="website" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Buchungslink</flux:label>
                             <flux:input wire:model="bookingUrl" placeholder="https://…" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="booking_url" :review="$aiReview" />
                             <flux:error name="bookingUrl" />
                         </flux:field>
                     </div>
@@ -78,6 +91,7 @@
             </x-adminv2.card>
 
             <x-adminv2.card heading="Tarifarten / Kabinenklassen" :description="$cabinClasses ? implode(', ', array_intersect_key($classes, array_flip($cabinClasses))) : 'Noch keine Klasse markiert.'">
+                <x-slot:actions><x-adminv2.ai-check-button section="cabin_classes" /></x-slot:actions>
                 <div class="flex flex-wrap gap-x-8 gap-y-3">
                     @foreach ($classes as $value => $label)
                         <flux:checkbox wire:model.live="cabinClasses" value="{{ $value }}" :label="$label" />
@@ -86,6 +100,7 @@
             </x-adminv2.card>
 
             <x-adminv2.card heading="Freigepäck & Handgepäck" collapsible :collapsed="! $hasBaggage" collapse-key="airline-baggage">
+                <x-slot:actions><x-adminv2.ai-check-button section="baggage" /></x-slot:actions>
                 <div class="flex flex-col gap-6">
                     <div>
                         <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Freigepäck (Aufgabegepäck)</p>
@@ -121,6 +136,7 @@
             </x-adminv2.card>
 
             <x-adminv2.card heading="Haustiermitnahme" :description="$petsAllowed ? 'Haustiere dürfen mitreisen.' : 'Keine Haustiermitnahme hinterlegt.'" collapsible :collapsed="! $petsAllowed" collapse-key="airline-pets">
+                <x-slot:actions><x-adminv2.ai-check-button section="pets" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
                     <flux:switch wire:model.live="petsAllowed" label="Haustiermitnahme erlaubt" align="left" />
 
@@ -206,4 +222,6 @@
     </div>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    <x-adminv2.ai-check-modal area="airlines" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
 </form>

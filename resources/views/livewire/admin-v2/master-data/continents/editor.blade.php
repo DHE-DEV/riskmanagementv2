@@ -13,10 +13,17 @@
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Kontinent">
+                <x-slot:actions><x-adminv2.ai-check-button section="basics" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
                     <div class="grid gap-5 sm:grid-cols-2">
-                        <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
-                        <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
+                        <div>
+                            <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                        </div>
+                        <div>
+                            <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="name_en" :review="$aiReview" />
+                        </div>
                     </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
@@ -24,28 +31,46 @@
                             <flux:label>Code</flux:label>
                             <flux:description>Eindeutiges Kürzel mit höchstens 5 Zeichen, z. B. EU für Europa.</flux:description>
                             <flux:input wire:model="code" maxlength="5" class="font-mono" />
+                            <x-adminv2.ai-field-hint key="code" :review="$aiReview" />
                             <flux:error name="code" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Sortierung</flux:label>
                             <flux:description>Niedrigere Werte stehen in Auswahllisten weiter oben.</flux:description>
                             <flux:input wire:model="sortOrder" type="number" min="0" step="1" />
+                            <x-adminv2.ai-field-hint key="sort_order" :review="$aiReview" />
                             <flux:error name="sortOrder" />
                         </flux:field>
                     </div>
 
-                    <flux:textarea wire:model="description" label="Beschreibung" rows="3" maxlength="1000" />
+                    <div>
+                        <flux:textarea wire:model="description" label="Beschreibung" rows="3" maxlength="1000" />
+                        <x-adminv2.ai-field-hint key="description" :review="$aiReview" />
+                    </div>
 
                     <flux:field>
                         <flux:label>Schlagwörter</flux:label>
                         <flux:description>Weitere Bezeichnungen, unter denen der Kontinent gefunden wird – mit Komma getrennt.</flux:description>
                         <flux:input wire:model="keywords" placeholder="z. B. Europa, Europe, EU" maxlength="1000" />
+                        <x-adminv2.ai-field-hint key="keywords" :review="$aiReview" />
                         <flux:error name="keywords" />
                     </flux:field>
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" description="Mittelpunkt des Kontinents für die Darstellung auf der Karte." />
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt des Kontinents für die Darstellung auf der Karte.">
+                @if ($record)
+                    <x-slot:map>
+                        <x-adminv2.master-data.boundary-map
+                            :url="route('adminv2.master-data.boundaries.continent', $record->id)"
+                            :lat="$lat"
+                            :lng="$lng"
+                            height="h-[28rem]"
+                            empty-text="Für die Länder dieses Kontinents liegen keine Grenzdaten vor – die Karte zeigt nur den Mittelpunkt."
+                        />
+                    </x-slot:map>
+                @endif
+            </x-adminv2.master-data.coordinates>
         </div>
 
         <div class="flex flex-col gap-6">
@@ -54,6 +79,7 @@
 
                 <x-adminv2.master-data.related-list
                     heading="Länder"
+                    ai-section="countries"
                     :count="$countries->count()"
                     :shown="$countries->count()"
                     :all-url="route('adminv2.master-data.countries.index', ['continent' => $record->id])"
@@ -69,7 +95,6 @@
                     @endforeach
                 </x-adminv2.master-data.related-list>
 
-                <x-adminv2.master-data.ai-assistant :prompts="$this->aiPrompts" :prompt-id="$aiPromptId" :result="$aiResult" :error="$aiError" noun="Kontinente" />
             @else
                 <x-adminv2.card heading="Nach dem Speichern">
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Sobald der Kontinent angelegt ist, lassen sich ihm Länder zuordnen – hier oder in der Bearbeitung eines Landes.</p>
@@ -79,4 +104,6 @@
     </div>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    <x-adminv2.ai-check-modal area="continents" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->getName('de')" />
 </form>

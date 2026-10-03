@@ -2,6 +2,7 @@
 
 namespace App\Livewire\AdminV2\Concerns;
 
+use App\Models\MasterDataChange;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Computed;
@@ -40,8 +41,20 @@ trait EditsMasterData
         return [];
     }
 
-    protected function finishSave(Model $record, bool $created, bool $another = false): void
+    /**
+     * @param  array<int, string>  $unchanged  Felder, die nur technisch neu geschrieben wurden (z. B. vereinheitlichtes JSON)
+     */
+    protected function finishSave(Model $record, bool $created, bool $another = false, array $unchanged = []): void
     {
+        // Ins Protokoll: neu angelegt bzw. welche Felder sich inhaltlich geaendert haben.
+        $changed = array_values(array_diff(array_keys($record->getChanges()), ['updated_at', 'updated_by', 'created_by', 'source'], $unchanged));
+
+        if ($created) {
+            MasterData::logChange($record, MasterDataChange::ACTION_CREATED);
+        } elseif ($changed !== []) {
+            MasterData::logChange($record, MasterDataChange::ACTION_UPDATED, $changed);
+        }
+
         if (! $created) {
             unset($this->record);
             $this->dispatch('adminv2-toast', message: 'Gespeichert.');

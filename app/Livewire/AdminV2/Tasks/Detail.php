@@ -47,6 +47,13 @@ class Detail extends Component
     #[Locked]
     public ?string $subjectToken = null;
 
+    /** Hauptaufgabe, zu der eine neue Unteraufgabe gehoert (?parent=ID). */
+    #[Locked]
+    public ?int $parentId = null;
+
+    /** Titel fuer eine schnell angelegte Unteraufgabe. */
+    public string $subtaskTitle = '';
+
     public string $title = '';
 
     public string $description = '';
@@ -79,6 +86,21 @@ class Detail extends Component
 
             $this->taskId = $task->id;
             $this->fillFrom($task);
+
+            return;
+        }
+
+        // Neue Unteraufgabe: Rubrik, Prioritaet, Faelligkeit, Verantwortung und
+        // Bezug kommen von der Hauptaufgabe.
+        if ($parent = AdminTask::find((int) request()->query('parent'))) {
+            $this->parentId = $parent->id;
+            $this->subjectKind = $parent->subject_id ? 'event' : null;
+            $this->subjectId = $parent->subject_id;
+            $this->subjectToken = $parent->subject_token;
+            $this->categoryId = (string) $parent->category_id;
+            $this->priority = $parent->priority ?: AdminTask::PRIORITY_NORMAL;
+            $this->dueDate = $parent->due_date?->format('Y-m-d') ?? '';
+            $this->responsibleId = AdminTask::assigneeValue($parent->responsible_id, $parent->responsible_team_id);
 
             return;
         }
@@ -126,8 +148,25 @@ class Detail extends Component
     public function task(): ?AdminTask
     {
         return $this->taskId
-            ? AdminTask::with(['creator', 'subject', 'category', 'recurrence', 'responsibleTeam', 'nextAssigneeTeam'])->find($this->taskId)
+            ? AdminTask::with(['creator', 'subject', 'category', 'recurrence', 'responsibleTeam', 'nextAssigneeTeam', 'parent'])->find($this->taskId)
             : null;
+    }
+
+    /**
+     * Die Hauptaufgabe – der geoeffneten Unteraufgabe oder der gerade neu angelegten.
+     */
+    #[Computed]
+    public function parentTask(): ?AdminTask
+    {
+        return $this->task?->parent ?? ($this->parentId ? AdminTask::find($this->parentId) : null);
+    }
+
+    #[Computed]
+    public function subtasks(): Collection
+    {
+        return $this->task
+            ? $this->task->subtasks()->with(['responsible', 'responsibleTeam', 'nextAssignee', 'nextAssigneeTeam'])->get()
+            : collect();
     }
 
     #[Computed]
@@ -282,6 +321,7 @@ class Detail extends Component
             $message = 'Aufgabe gespeichert.';
         } else {
             $task = AdminTask::create($attributes + [
+                'parent_id' => $this->parentId,
                 'created_by' => auth('web')->id(),
                 'subject_type' => $this->subjectId ? (new (self::SUBJECTS[$this->subjectKind]))->getMorphClass() : null,
                 'subject_id' => $this->subjectId,
@@ -300,6 +340,50 @@ class Detail extends Component
         unset($this->task, $this->timeline);
 
         $this->dispatch('adminv2-toast', message: $message);
+    }
+
+    /**
+     * Unteraufgabe mit nur einem Titel anlegen – alles Weitere kommt von der
+     * Hauptaufgabe und laesst sich auf der eigenen Seite der Unteraufgabe aendern.
+     */
+    public function addSubtask(): void
+    {
+        $this->validate(['subtaskTitle' => ['required', 'string', 'max:255']], ['subtaskTitle.required' => 'Bitte einen Titel für die Unteraufgabe eingeben.']);
+
+        if (! $this->task) {
+            return;
+        }
+
+        AdminTask::create($this->task->subtaskDefaults() + [
+            'title' => trim($this->subtaskTitle),
+            'created_by' => auth('web')->id(),
+        ]);
+        $this->task->touch();
+
+        $this->subtaskTitle = '';
+        unset($this->subtasks, $this->task, $this->timeline);
+    }
+
+    /**
+     * Unteraufgabe direkt aus der Liste erledigen bzw. wieder oeffnen.
+     */
+    public function toggleSubtask(int $subtaskId): void
+    {
+        $subtask = $this->task?->subtasks()->whereKey($subtaskId)->first();
+
+        if (! $subtask) {
+            return;
+        }
+
+        $subtask->update(['status' => $subtask->isDone() ? AdminTask::STATUS_OPEN : AdminTask::STATUS_DONE]);
+
+        unset($this->subtasks);
+
+        [$done, $total] = $this->task->fresh()->subtaskProgress();
+
+        if ($done === $total && ! $this->task->isDone()) {
+            $this->dispatch('adminv2-toast', message: 'Alle Unteraufgaben sind erledigt – die Hauptaufgabe ist noch offen.');
+        }
     }
 
     public function addNote(): void
@@ -340,11 +424,19 @@ class Detail extends Component
 
     public function delete()
     {
+        $parent = $this->task?->parent;
+        $subtasks = $this->task ? $this->task->subtasks()->count() : 0;
+
         $this->task?->delete();
 
-        session()->flash('adminv2-toast', 'Aufgabe gelöscht.');
+        session()->flash('adminv2-toast', $subtasks > 0
+            ? 'Aufgabe samt '.$subtasks.' '.($subtasks === 1 ? 'Unteraufgabe' : 'Unteraufgaben').' gelöscht.'
+            : 'Aufgabe gelöscht.');
 
-        return $this->redirectRoute('adminv2.tasks.index');
+        // Von einer Unteraufgabe zurueck zur Hauptaufgabe.
+        return $parent
+            ? $this->redirectRoute('adminv2.tasks.show', $parent)
+            : $this->redirectRoute('adminv2.tasks.index');
     }
 
     public function render()

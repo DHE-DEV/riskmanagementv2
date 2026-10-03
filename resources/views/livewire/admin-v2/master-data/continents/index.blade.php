@@ -19,59 +19,43 @@
         @endif
     </div>
 
-    <x-adminv2.card flush>
-        @if ($rows->isEmpty())
-            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Kontinente" />
-        @else
-            <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search, trashed, sortBy, resetFilters, gotoPage, nextPage, previousPage">
-                <table class="w-full min-w-[720px] text-left text-sm">
-                    <thead class="border-b border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800">
-                        <tr>
-                            <x-adminv2.sort-th column="sort_order" :sort="$sort" :direction="$direction" class="w-20 ps-5">#</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="name" :sort="$sort" :direction="$direction">Name</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="code" :sort="$sort" :direction="$direction">Code</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="countries_count" :sort="$sort" :direction="$direction" align="end">Länder</x-adminv2.sort-th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Koordinaten</th>
-                            <th class="px-3 py-3 pe-5"><span class="sr-only">Aktionen</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @foreach ($rows as $continent)
-                            @php $editUrl = route('adminv2.master-data.continents.edit', $continent->id); @endphp
-                            <tr wire:key="continent-{{ $continent->id }}" @class(['bg-zinc-50/70 text-zinc-500 dark:bg-zinc-900/40' => $continent->trashed()])>
-                                <td class="px-3 py-3 ps-5 tabular-nums text-zinc-500">{{ $continent->sort_order }}</td>
-                                <td class="px-3 py-3">
-                                    <a href="{{ $editUrl }}" class="font-medium text-zinc-900 hover:underline dark:text-white">{{ $continent->getName('de') }}</a>
-                                    @if ($continent->trashed())
-                                        <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">Papierkorb</flux:badge>
-                                    @endif
-                                    @if (($continent->name_translations['en'] ?? '') !== '')
-                                        <div class="text-xs text-zinc-500">{{ $continent->name_translations['en'] }}</div>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{{ $continent->code ?: '–' }}</td>
-                                <td class="px-3 py-3 text-end tabular-nums">
-                                    @if ($continent->countries_count > 0)
-                                        <a href="{{ route('adminv2.master-data.countries.index', ['continent' => $continent->id]) }}" class="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $continent->countries_count }}</a>
-                                    @else
-                                        <span class="text-zinc-400">0</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap tabular-nums text-zinc-600 dark:text-zinc-400">
-                                    {{ $continent->lat !== null && $continent->lng !== null ? Coordinates::format($continent->lat).', '.Coordinates::format($continent->lng) : '–' }}
-                                </td>
-                                <td class="px-3 py-2 pe-5">
-                                    <x-adminv2.master-data.row-actions :id="$continent->id" :trashed="$continent->trashed()" :edit-url="$editUrl" :name="$continent->getName('de')" />
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <x-adminv2.master-data.sort-bar :options="$this->sortOptions()" :sort="$sort" :direction="$direction" :total="$rows->total()" :noun="['Kontinent', 'Kontinente']" />
 
-            <x-adminv2.pagination :paginator="$rows" class="border-t border-zinc-100 px-5 py-3 dark:border-zinc-800" />
-        @endif
-    </x-adminv2.card>
+    @if ($rows->isEmpty())
+        <x-adminv2.card flush>
+            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Kontinente" />
+        </x-adminv2.card>
+    @else
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+            @foreach ($rows as $continent)
+                <x-adminv2.master-data.record-card
+                    wire:key="continent-{{ $continent->id }}"
+                    :id="$continent->id"
+                    :edit-url="route('adminv2.master-data.continents.edit', $continent->id)"
+                    :title="$continent->getName('de')"
+                    :tags="array_filter([$continent->code, 'Sortierung '.$continent->sort_order])"
+                    :trashed="$continent->trashed()"
+                >
+                    <x-slot:aside><x-adminv2.master-data.coordinates-mark :lat="$continent->lat" :lng="$continent->lng" /></x-slot:aside>
+                    @if (($continent->name_translations['en'] ?? '') !== '' && $continent->name_translations['en'] !== $continent->getName('de'))
+                        <x-adminv2.master-data.card-row icon="language" label="Englisch">{{ $continent->name_translations['en'] }}</x-adminv2.master-data.card-row>
+                    @endif
+                    <x-adminv2.master-data.card-row icon="flag" label="Länder">
+                        @if ($continent->countries_count > 0)
+                            <a href="{{ route('adminv2.master-data.countries.index', ['continent' => $continent->id]) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $continent->countries_count }} {{ $continent->countries_count === 1 ? 'Land' : 'Länder' }}</a>
+                        @else
+                            Keine Länder
+                        @endif
+                    </x-adminv2.master-data.card-row>
+                    <x-slot:footer>
+                        <span class="tabular-nums">geändert {{ $continent->updated_at?->format('d.m.Y') ?? '–' }}</span>
+                    </x-slot:footer>
+                </x-adminv2.master-data.record-card>
+            @endforeach
+        </div>
+
+        <x-adminv2.pagination :paginator="$rows" />
+    @endif
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 </div>

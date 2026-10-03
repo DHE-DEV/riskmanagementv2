@@ -8,7 +8,7 @@ use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
 use App\Livewire\AdminV2\MasterData\Countries\Index as CountryIndex;
 use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
 use App\Livewire\AdminV2\MasterData\Regions\Index as RegionIndex;
-use App\Models\AiPrompt;
+use App\Models\AiCheck;
 use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Support\AdminV2\Coordinates;
 use App\Support\AdminV2\CountryRiskProfile;
 use App\Support\AdminV2\MasterData;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
@@ -73,7 +74,7 @@ it('zeigt die vier umgezogenen Bereiche als Listen und die uebrigen weiter als H
     city('München', $germany, ['population' => 1500000]);
 
     $this->get('/adminv2/master-data/continents')->assertOk()->assertSee('Kontinente')->assertSee('Europa')->assertDontSee('An dieser Seite wird aktuell gearbeitet');
-    $this->get('/adminv2/master-data/countries')->assertOk()->assertSee('Deutschland')->assertSee('DE · DEX');
+    $this->get('/adminv2/master-data/countries')->assertOk()->assertSee('Deutschland')->assertSee('DEX');
     $this->get('/adminv2/master-data/regions')->assertOk()->assertSee('Bayern');
     $this->get('/adminv2/master-data/cities')->assertOk()->assertSee('München')->assertSee('1.500.000');
 
@@ -133,6 +134,10 @@ it('filtert Laender nach Kontinent, Mitgliedschaft, Risikostufe und fehlenden Ko
         ->assertSee('Deutschland')->assertDontSee('Schweiz')
         ->set('membership', 'schengen')
         ->assertSee('Schweiz')->assertSee('Deutschland')->assertDontSee('Japan')
+        ->set('membership', 'both')
+        ->assertSee('Deutschland')->assertDontSee('Schweiz')
+        ->set('membership', 'none')
+        ->assertSee('Japan')->assertDontSee('Schweiz')->assertDontSee('Deutschland')
         ->set('membership', '')
         ->set('risk', '4')
         ->assertSee('Japan')->assertDontSee('Deutschland')
@@ -568,63 +573,207 @@ it('weist eine Region eines anderen Landes zurueck', function () {
         ->assertHasErrors(['regionId']);
 });
 
-// ── KI-Assistent ─────────────────────────────────────────────────────────
+// ── KI-Pruefungen ────────────────────────────────────────────────────────
 
-it('fuehrt eine hinterlegte KI-Aufgabe mit den Daten des Landes aus und zeigt Verbrauch und Kosten', function () {
+it('fuehrt eine KI-Pruefung mit den Daten des Abschnitts aus und zeigt Verbrauch und Kosten', function () {
     config(['services.openai.key' => 'test-key']);
 
     Http::fake([
         'api.openai.com/*' => Http::response([
             'model' => 'gpt-4o-2024-08-06',
-            'choices' => [['message' => ['content' => "Die Hauptstadt ist **Berlin**.\n\n<script>alert(1)</script>Weitere Angaben folgen."]]],
+            'choices' => [['message' => ['content' => "Die Währung ist der **Euro**.\n\n<script>alert(1)</script>Alles plausibel."]]],
             'usage' => ['prompt_tokens' => 120, 'completion_tokens' => 30, 'total_tokens' => 150],
         ]),
     ]);
 
     $europe = continent('Europa', 'EU');
-    $germany = country('Deutschland', 'DE', $europe);
-    $prompt = AiPrompt::create([
-        'name' => 'Hauptstadt des Landes',
-        'model_type' => 'Country',
-        'prompt_template' => 'Nenne die Hauptstadt von {name} ({iso_code}).',
-        'is_active' => true,
-        'sort_order' => 0,
-    ]);
-    AiPrompt::create(['name' => 'Für Städte', 'model_type' => 'City', 'prompt_template' => 'x', 'is_active' => true, 'sort_order' => 0]);
+    $germany = country('Deutschland', 'DE', $europe, ['currency_code' => 'EUR', 'population' => 83000000]);
+
+    // Eine Pruefung fuer "Weitere Informationen", eine bereichsweite, eine fuer einen anderen Abschnitt, eine ausgeschaltete.
+    $currency = AiCheck::create(['name' => 'Währung prüfen', 'area' => 'countries', 'section' => 'details', 'prompt' => 'Stimmt die Währung {currency_code} für {name}? Weitere Angaben: {daten}', 'model' => 'gpt-4o-mini']);
+    AiCheck::create(['name' => 'Allgemeine Plausibilität', 'area' => 'countries', 'section' => null, 'prompt' => 'Prüfe die Angaben auf Plausibilität.']);
+    AiCheck::create(['name' => 'Koordinaten prüfen', 'area' => 'countries', 'section' => 'coordinates', 'prompt' => 'Liegt {lat}, {lng} in {name}?']);
+    AiCheck::create(['name' => 'Alt', 'area' => 'countries', 'section' => 'details', 'prompt' => 'Alter Prompt.', 'is_active' => false]);
+    AiCheck::create(['name' => 'Stadt', 'area' => 'cities', 'section' => null, 'prompt' => 'Städte-Prompt.']);
 
     $component = Livewire::test(CountryEditor::class, ['country' => $germany->id])
-        ->assertSee('Hauptstadt des Landes')
-        ->assertDontSee('Für Städte')
-        ->call('runAiAssistant')
-        ->assertSet('aiError', 'Bitte zuerst eine Aufgabe auswählen.')
-        ->set('aiPromptId', (string) $prompt->id)
-        ->call('runAiAssistant')
+        ->assertSee('KI-Prüfung')
+        ->call('openAiCheck', 'details')
+        ->assertSet('aiSection', 'details')
+        ->assertSee('Währung prüfen')
+        ->assertSee('Allgemeine Plausibilität')
+        ->assertDontSee('Koordinaten prüfen')
+        ->assertDontSee('Städte-Prompt')
+        ->assertDontSee('Alter Prompt');
+
+    // Die Daten des Abschnitts – und nur die – gehen mit.
+    expect(array_keys($component->get('aiData')))->toBe(['currency_code', 'currency_name', 'currency_symbol', 'phone_prefix', 'timezone', 'population', 'area_km2'])
+        ->and($component->get('aiData')['currency_code']['value'])->toBe('EUR')
+        ->and($component->get('aiData')['currency_name']['value'])->toBe('–');
+
+    $component
+        ->call('runAiCheck')
+        ->assertSet('aiError', 'Bitte zuerst eine Prüfung auswählen oder einen eigenen Prompt eingeben.')
+        // Noch nicht gespeicherte Eingaben zaehlen bereits.
+        ->set('phonePrefix', '+49')
+        ->set('aiCheckId', (string) $currency->id)
+        ->call('runAiCheck')
         ->assertSet('aiError', null)
         ->assertSee('150 Token')
-        ->assertSee('Die Hauptstadt ist');
+        ->assertSee('Die Währung ist');
 
-    expect($component->get('aiResult.html'))->not->toContain('<script>');
+    expect($component->get('aiResult.html'))->not->toContain('<script>')
+        ->and($component->get('aiResult.usage.model'))->toBe('gpt-4o-2024-08-06');
 
-    Http::assertSent(fn ($request) => str_contains(json_encode($request->data()), 'Nenne die Hauptstadt von Deutschland (DE).'));
+    // Platzhalter ersetzt, {daten} mit allen Angaben des Abschnitts, das Modell der Pruefung verwendet.
+    Http::assertSent(function ($request) {
+        $content = $request->data()['messages'][0]['content'] ?? '';
+
+        return ($request->data()['model'] ?? null) === 'gpt-4o-mini'
+            && str_contains($content, 'Stimmt die Währung EUR für Deutschland?')
+            && str_contains($content, 'Telefonvorwahl: +49')
+            && str_contains($content, 'Bevölkerung: 83000000')
+            && ! str_contains($content, 'ISO-Code');
+    });
+
+    // Im Kopf des Eintrags stehen alle Pruefungen des Bereichs, mit allen Daten.
+    $component->call('openAiCheck', 'general')
+        ->assertSee('Koordinaten prüfen')
+        ->assertSee('Währung prüfen');
+
+    expect(array_keys($component->get('aiData')))->toContain('iso_code', 'currency_code', 'lat', 'risk_profile');
 });
 
-it('weist ohne hinterlegte Aufgabe auf die KI-Prompts hin und faengt Fehler der KI ab', function () {
+it('haengt die Abschnittsdaten an, wenn der Prompt keine Platzhalter nutzt, und faengt Fehler ab', function () {
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response(['error' => ['message' => 'Rate limit']], 429)]);
 
     $europe = continent('Europa', 'EU');
+    $check = AiCheck::create(['name' => 'Übersicht', 'area' => 'continents', 'section' => 'basics', 'prompt' => 'Beschreibe den Kontinent in zwei Sätzen.']);
 
-    Livewire::test(ContinentEditor::class, ['continent' => $europe->id])
-        ->assertSee('ist noch keine KI-Aufgabe hinterlegt');
+    $service = app(\App\Services\AiCheckService::class);
+    $prompt = $service->buildPrompt($check->prompt, ['name' => 'Europa', 'code' => 'EU', 'keywords' => ['Europa', 'EU'], 'is_x' => true], ['name' => 'Name', 'code' => 'Code', 'keywords' => 'Schlagwörter', 'is_x' => 'X']);
 
-    $prompt = AiPrompt::create(['name' => 'Übersicht', 'model_type' => 'Continent', 'prompt_template' => 'Beschreibe {name}.', 'is_active' => true, 'sort_order' => 0]);
+    expect($prompt)->toBe("Beschreibe den Kontinent in zwei Sätzen.\n\nDaten des Eintrags:\nName: Europa\nCode: EU\nSchlagwörter: Europa, EU\nX: Ja");
 
     $component = Livewire::test(ContinentEditor::class, ['continent' => $europe->id])
-        ->set('aiPromptId', (string) $prompt->id)
-        ->call('runAiAssistant')
+        ->call('openAiCheck', 'basics')
+        ->assertSet('aiCheckId', (string) $check->id)
+        ->call('runAiCheck')
         ->assertSet('aiResult', null);
 
     expect($component->get('aiError'))->toContain('ChatGPT');
+
+    // Ohne Pruefung: Hinweis mit Weg zur Verwaltung – und der eigene Prompt ist vorgewaehlt.
+    Livewire::test(ContinentEditor::class, ['continent' => $europe->id])
+        ->call('openAiCheck', 'coordinates')
+        ->assertSee('ist noch keine KI-Prüfung hinterlegt')
+        ->assertSee(route('adminv2.system.ai', ['tab' => 'continents']))
+        ->assertSet('aiCheckId', 'custom')
+        ->assertSee('Eigener Prompt');
+});
+
+it('stellt mit einem eigenen Prompt eine einmalige Frage und speichert ihn auf Wunsch als Pruefung', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-mini',
+        'choices' => [['message' => ['content' => 'Passt.']]],
+        'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 2, 'total_tokens' => 12],
+    ])]);
+
+    $europe = continent('Europa', 'EU');
+    $germany = country('Deutschland', 'DE', $europe, ['currency_code' => 'EUR']);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $germany->id])
+        ->call('openAiCheck', 'details')
+        ->set('aiCheckId', 'custom')
+        ->call('runAiCheck')
+        ->assertHasErrors(['aiCustomPrompt'])
+        ->set('aiCustomPrompt', 'Ist {currency_code} die Währung von {name}?')
+        ->set('aiCustomModel', 'gpt-4o-mini')
+        ->call('runAiCheck')
+        ->assertHasNoErrors()
+        ->assertSet('aiError', null)
+        ->assertSee('Passt.')
+        ->assertSee('12 Token');
+
+    expect($component->get('aiResult.title'))->toBe('Eigener Prompt')
+        ->and(AiCheck::count())->toBe(0);
+
+    // (Neben der Anfrage ruft die Seite auch die Modell-Liste ab.)
+    Http::assertSent(fn ($request) => ($request->data()['model'] ?? null) === 'gpt-4o-mini'
+        && str_contains($request->data()['messages'][0]['content'] ?? '', 'Ist EUR die Währung von Deutschland?'));
+
+    // Auf Wunsch wird der Prompt zur Pruefung dieses Abschnitts.
+    $component
+        ->set('aiSaveAsCheck', true)
+        ->call('runAiCheck')
+        ->assertHasErrors(['aiCheckName'])
+        ->set('aiCheckName', 'Währung plausibel?')
+        ->call('runAiCheck')
+        ->assertHasNoErrors()
+        ->assertSet('aiSaveAsCheck', false)
+        ->assertSee('Währung plausibel?');
+
+    $saved = AiCheck::first();
+
+    expect($saved->area)->toBe('countries')
+        ->and($saved->section)->toBe('details')
+        ->and($saved->model)->toBe('gpt-4o-mini')
+        ->and($saved->prompt)->toBe('Ist {currency_code} die Währung von {name}?')
+        ->and($saved->created_by)->toBe(auth()->id());
+});
+
+it('verwaltet die KI-Pruefungen je Bereich unter System > KI', function () {
+    config(['services.openai.key' => 'test-key']);
+
+    $page = Livewire::withQueryParams(['tab' => 'countries'])
+        ->test(\App\Livewire\AdminV2\System\Ai::class)
+        ->assertSee('KI-Prüfungen · Länder')
+        ->assertSee('Stammdaten – Flughäfen')
+        ->call('createCheck')
+        ->assertSet('checkArea', 'countries')
+        ->call('saveCheck')
+        ->assertHasErrors(['checkName', 'checkPrompt'])
+        ->set('checkName', 'Währung prüfen')
+        ->set('checkSection', 'details')
+        ->set('checkDescription', 'Prüft Währungscode und -name.')
+        ->set('checkPrompt', 'Stimmt {currency_code} für {name}?')
+        ->set('checkModel', 'gpt-4o-mini')
+        ->call('saveCheck')
+        ->assertHasNoErrors()
+        ->assertSee('Währung prüfen')
+        ->assertSee('Weitere Informationen')
+        ->assertSee('gpt-4o-mini');
+    Livewire::withQueryParams([]);
+
+    $check = AiCheck::where('name', 'Währung prüfen')->first();
+
+    expect($check->area)->toBe('countries')
+        ->and($check->section)->toBe('details')
+        ->and($check->model)->toBe('gpt-4o-mini')
+        ->and($check->is_active)->toBeTrue()
+        ->and($check->created_by)->toBe(auth()->id());
+
+    // Ein Abschnitt eines anderen Bereichs wird abgelehnt; Bearbeiten, Ausschalten, Loeschen.
+    $page->call('editCheck', $check->id)
+        ->assertSet('checkName', 'Währung prüfen')
+        ->set('checkSection', 'lounges')
+        ->call('saveCheck')
+        ->assertHasErrors(['checkSection'])
+        ->set('checkSection', '')
+        ->call('saveCheck')
+        ->assertHasNoErrors()
+        ->assertSee('Alle Abschnitte')
+        ->call('toggleCheck', $check->id)
+        ->assertSee('ausgeschaltet')
+        ->call('deleteCheck', $check->id);
+
+    expect(AiCheck::count())->toBe(0);
+
+    // Die Reiter zaehlen die Pruefungen je Bereich.
+    AiCheck::create(['name' => 'A', 'area' => 'cities', 'prompt' => 'Prompt A.']);
+    expect(Livewire::test(\App\Livewire\AdminV2\System\Ai::class)->get('tabCounts'))->toBe(['cities' => 1]);
 });
 
 // ── Koordinaten ──────────────────────────────────────────────────────────
@@ -652,4 +801,269 @@ it('baut das Risikoprofil aus dem Formular und zurueck', function () {
         ->and($form['security']['overall_risk_level'])->toBe('')
         ->and(CountryRiskProfile::fromForm($form, null)['health'])->toEqual(['malaria_risk' => true, 'drinking_water_safe' => false, 'required_vaccinations' => ['Gelbfieber'], 'recommended_vaccinations' => []])
         ->and(CountryRiskProfile::fromForm(CountryRiskProfile::toForm(null), null))->toBeNull();
+});
+
+// ── Karte mit Laendergrenzen ─────────────────────────────────────────────
+
+it('liefert die Laendergrenzen eines Kontinents und eines Landes als GeoJSON fuer die Karte', function () {
+    $europe = continent('Europa', 'EU');
+    $germany = country('Deutschland', 'DE', $europe, ['lat' => 51.1, 'lng' => 10.4]);
+    country('Frankreich', 'FR', $europe);
+
+    DB::statement(
+        'insert into country_boundaries (country_id, iso_a2, iso_a3, name, source, source_features, boundary, created_at, updated_at)
+         values (?, ?, ?, ?, ?, 1, ST_GeomFromGeoJSON(?, 1, 4326), now(), now())',
+        [$germany->id, 'DE', 'DEU', 'Germany', 'test', json_encode([
+            'type' => 'MultiPolygon',
+            'coordinates' => [[[[6.0, 47.0], [15.0, 47.0], [15.0, 55.0], [6.0, 55.0], [6.0, 47.0]]]],
+        ])],
+    );
+
+    $continentJson = $this->get(route('adminv2.master-data.boundaries.continent', $europe->id))
+        ->assertOk()
+        ->assertJsonPath('type', 'FeatureCollection')
+        ->assertJsonCount(1, 'features')
+        ->assertJsonPath('features.0.properties.name', 'Deutschland')
+        ->assertJsonPath('features.0.properties.iso', 'DE')
+        ->assertJsonPath('features.0.geometry.type', 'MultiPolygon')
+        ->json();
+
+    // Koordinaten als Laenge/Breite, wie GeoJSON es verlangt (die Reihenfolge der Punkte darf MySQL aendern).
+    $ring = $continentJson['features'][0]['geometry']['coordinates'][0][0];
+    expect(collect($ring)->pluck(0)->min())->toEqual(6)
+        ->and(collect($ring)->pluck(0)->max())->toEqual(15)
+        ->and(collect($ring)->pluck(1)->min())->toEqual(47)
+        ->and(collect($ring)->pluck(1)->max())->toEqual(55);
+
+    $this->get(route('adminv2.master-data.boundaries.country', $germany->id))
+        ->assertOk()
+        ->assertJsonCount(1, 'features');
+
+    // Ein Land ohne Grenze liefert eine leere Sammlung.
+    $this->get(route('adminv2.master-data.boundaries.country', Country::where('iso_code', 'FR')->first()->id))
+        ->assertOk()
+        ->assertJsonCount(0, 'features');
+
+    // Die Bearbeitungsseiten binden die Karte mit der passenden Quelle ein (als JavaScript-Zeichenkette).
+    $asJs = fn (string $url) => str_replace('/', '\\/', $url);
+    $this->get('/adminv2/master-data/continents/'.$europe->id)
+        ->assertOk()
+        ->assertSee($asJs(route('adminv2.master-data.boundaries.continent', $europe->id)), false);
+    $this->get('/adminv2/master-data/countries/'.$germany->id)
+        ->assertOk()
+        ->assertSee($asJs(route('adminv2.master-data.boundaries.country', $germany->id)), false);
+
+    auth()->logout();
+    $this->get(route('adminv2.master-data.boundaries.continent', $europe->id))->assertRedirect(route('adminv2.login'));
+});
+
+it('laesst die KI die Felder eines Abschnitts pruefen und uebernimmt Vorschlaege einzeln oder alle', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-2024-08-06',
+        'choices' => [['message' => ['content' => "```json\n".json_encode([
+            'summary' => 'Zwei Angaben weichen ab.',
+            'fields' => [
+                'currency_code' => ['status' => 'ok', 'note' => 'EUR ist richtig.'],
+                'currency_name' => ['status' => 'change', 'value' => 'Euro', 'note' => 'Der Name fehlt.'],
+                'currency_symbol' => ['status' => 'change', 'value' => '€'],
+                'phone_prefix' => ['status' => 'unknown', 'note' => 'Nicht geprüft.'],
+                'timezone' => ['status' => 'change', 'value' => 'Europe/Berlin'],
+                'population' => ['status' => 'change', 'value' => '83.200.000', 'note' => 'Stand 2024.'],
+                'area_km2' => ['status' => 'change'],
+            ],
+        ], JSON_UNESCAPED_UNICODE)."\n```"]]],
+        'usage' => ['prompt_tokens' => 200, 'completion_tokens' => 80, 'total_tokens' => 280],
+    ])]);
+
+    $europe = continent('Europa', 'EU');
+    $germany = country('Deutschland', 'DE', $europe, ['currency_code' => 'EUR']);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $germany->id])
+        ->call('openAiCheck', 'general')
+        ->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiReview', null);
+    expect($component->get('aiError'))->toContain('je Abschnitt');
+
+    $component->call('openAiCheck', 'details')
+        ->assertSee('Felder automatisch prüfen')
+        ->set('aiCheckId', 'review')
+        ->set('aiCustomModel', 'gpt-4o-mini')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->assertSee('Zwei Angaben weichen ab.')
+        ->assertSee('Alle 4 Vorschläge übernehmen')
+        ->assertSee('280 Token')
+        // Hinweise stehen unter den Feldern.
+        ->assertSee('KI: korrekt')
+        ->assertSee('KI-Vorschlag:');
+
+    $review = $component->get('aiReview');
+
+    expect($review['section'])->toBe('details')
+        ->and($review['fields']['currency_code']['status'])->toBe('ok')
+        ->and($review['fields']['currency_name'])->toMatchArray(['status' => 'change', 'value' => 'Euro', 'note' => 'Der Name fehlt.'])
+        ->and($review['fields']['phone_prefix']['status'])->toBe('unknown')
+        // Ein "change" ohne Wert ist kein Vorschlag.
+        ->and($review['fields']['area_km2']['status'])->toBe('unknown');
+
+    Http::assertSent(fn ($request) => ($request->data()['model'] ?? null) === 'gpt-4o-mini'
+        && str_contains($request->data()['messages'][0]['content'] ?? '', 'currency_code („Währungscode“): EUR')
+        && str_contains($request->data()['messages'][0]['content'] ?? '', 'Name: Deutschland')
+        && str_contains($request->data()['messages'][0]['content'] ?? '', 'Antworte ausschließlich mit JSON'));
+
+    // Einzeln uebernehmen – Zahlen ohne Tausenderpunkte.
+    $component->call('applyAiSuggestion', 'population')
+        ->assertSet('population', '83200000')
+        ->assertSet('aiReview.fields.population.applied', true)
+        ->call('applyAiSuggestion', 'currency_code')
+        ->assertSet('currencyCode', 'EUR');
+
+    // Alle uebrigen uebernehmen.
+    $component->call('applyAllAiSuggestions')
+        ->assertSet('currencyName', 'Euro')
+        ->assertSet('currencySymbol', '€')
+        ->assertSet('timezone', 'Europe/Berlin')
+        ->assertDispatched('adminv2-toast')
+        ->assertDontSee('Alle 4 Vorschläge übernehmen');
+
+    // Noch nicht gespeichert – erst "Speichern" schreibt.
+    expect($germany->fresh()->currency_name)->toBeNull();
+
+    $component->call('save')->assertHasNoErrors();
+
+    expect($germany->fresh()->currency_name)->toBe('Euro')
+        ->and($germany->fresh()->population)->toBe(83200000);
+
+    $component->call('dismissAiReview')->assertSet('aiReview', null);
+});
+
+it('bietet Pruefungen "nur gesamter Eintrag" ausschliesslich im Kopf des Eintrags an', function () {
+    $europe = continent('Europa', 'EU');
+    $germany = country('Deutschland', 'DE', $europe);
+
+    AiCheck::create(['name' => 'Gesamtbild', 'area' => 'countries', 'section' => 'general', 'prompt' => 'Beurteile den ganzen Eintrag.']);
+    AiCheck::create(['name' => 'Überall', 'area' => 'countries', 'section' => null, 'prompt' => 'Überall.']);
+    AiCheck::create(['name' => 'Nur Details', 'area' => 'countries', 'section' => 'details', 'prompt' => 'Details.']);
+
+    Livewire::test(CountryEditor::class, ['country' => $germany->id])
+        ->call('openAiCheck', 'details')
+        ->assertSee('Überall')->assertSee('Nur Details')->assertDontSee('Gesamtbild')
+        ->call('openAiCheck', 'basics')
+        ->assertSee('Überall')->assertDontSee('Nur Details')->assertDontSee('Gesamtbild')
+        ->call('openAiCheck', 'general')
+        ->assertSee('Gesamtbild')->assertSee('Überall')->assertSee('Nur Details');
+
+    // Unter System > KI laesst sich das so hinterlegen.
+    Livewire::withQueryParams(['tab' => 'countries'])
+        ->test(\App\Livewire\AdminV2\System\Ai::class)
+        ->assertSee('Nur gesamter Eintrag')
+        ->call('createCheck')
+        ->set('checkName', 'Nur oben')
+        ->set('checkSection', 'general')
+        ->set('checkPrompt', 'Prüfe alles zusammen.')
+        ->call('saveCheck')
+        ->assertHasNoErrors();
+    Livewire::withQueryParams([]);
+
+    expect(AiCheck::where('name', 'Nur oben')->value('section'))->toBe('general');
+});
+
+it('speichert Notizen zu den Punkten des Risikoprofils je Sprache und uebersetzt sie per DeepL', function () {
+    config(['services.deepl.api_key' => 'test-key', 'app.event_languages' => 'de,en,nl', 'app.event_source_language' => 'de']);
+    Http::fake(['api.deepl.com/*' => fn ($request) => Http::response(['translations' => [['text' => '['.$request['target_lang'].'] '.$request['text']]]])]);
+
+    $europe = continent('Europa', 'EU');
+    $country = country('Testland', 'TL', $europe, ['risk_profile' => ['security' => ['crime_level' => 2]]]);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->assertSet('riskProfile.security.notes.crime_level.de', '')
+        ->set('riskProfile.security.notes.crime_level.de', ' Taschendiebstahl in Großstädten. ')
+        ->set('riskProfile.health.notes.malaria_risk.de', 'Kein Risiko.')
+        ->set('riskProfile.health.notes.malaria_risk.en', 'No risk.')
+        ->call('translateRiskNotes')
+        ->assertDispatched('adminv2-toast')
+        ->assertSet('riskProfile.security.notes.crime_level.en', '[EN-GB] Taschendiebstahl in Großstädten.')
+        ->assertSet('riskProfile.security.notes.crime_level.nl', '[NL] Taschendiebstahl in Großstädten.')
+        // Ausgefuellte Sprachen bleiben ohne "ueberschreiben" stehen.
+        ->assertSet('riskProfile.health.notes.malaria_risk.en', 'No risk.');
+
+    // Erst "Speichern" schreibt.
+    expect($country->fresh()->risk_profile['security'])->not->toHaveKey('notes');
+
+    $component->call('save')->assertHasNoErrors();
+
+    expect($country->fresh()->risk_profile['security']['notes'])->toEqual(['crime_level' => [
+        'de' => 'Taschendiebstahl in Großstädten.',
+        'en' => '[EN-GB] Taschendiebstahl in Großstädten.',
+        'nl' => '[NL] Taschendiebstahl in Großstädten.',
+    ]])->and($country->fresh()->risk_profile['health']['notes']['malaria_risk']['en'])->toBe('No risk.');
+
+    // Geleerte Notizen fallen wieder heraus.
+    Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->assertSet('riskProfile.security.notes.crime_level.nl', '[NL] Taschendiebstahl in Großstädten.')
+        ->set('riskProfile.security.notes.crime_level', ['de' => '', 'en' => '', 'nl' => ''])
+        ->call('save')->assertHasNoErrors();
+
+    expect($country->fresh()->risk_profile['security'])->toEqual(['crime_level' => 2]);
+});
+
+it('prueft das Risikoprofil Feld fuer Feld und uebernimmt Stufen, Schalter und Listen', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-2024-08-06',
+        'choices' => [['message' => ['content' => json_encode([
+            'summary' => 'Weitgehend plausibel.',
+            'fields' => [
+                'risk_security_overall_risk_level' => ['status' => 'change', 'value' => '3 – Mittel'],
+                'risk_security_crime_level' => ['status' => 'change', 'value' => 'Hoch'],
+                'risk_health_malaria_risk' => ['status' => 'change', 'value' => 'Ja', 'note' => 'In Teilen des Landes.'],
+                'risk_health_required_vaccinations' => ['status' => 'change', 'value' => 'Gelbfieber, Polio'],
+                'risk_entry_passport_validity_months' => ['status' => 'change', 'value' => '6 Monate'],
+                'risk_climate_climate_zone' => ['status' => 'ok'],
+                'risk_natural_hazards_flood_risk' => ['status' => 'change', 'value' => 'extrem'],
+            ],
+        ], JSON_UNESCAPED_UNICODE)]]],
+        'usage' => ['prompt_tokens' => 300, 'completion_tokens' => 120, 'total_tokens' => 420],
+    ])]);
+
+    $europe = continent('Europa', 'EU');
+    $country = country('Testland', 'TL', $europe, ['risk_profile' => ['climate' => ['climate_zone' => 'tropisch']]]);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('openAiCheck', 'risk_profile')
+        ->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->assertSee('Sicherheit › Gesamt-Sicherheitsrisiko')
+        ->assertSee('KI-Vorschlag:');
+
+    // Die KI bekommt jedes Feld einzeln, lesbar beschriftet.
+    Http::assertSent(fn ($request) => str_contains($request->data()['messages'][0]['content'] ?? '', 'risk_climate_climate_zone („Klima › Klimazone“): tropisch'));
+
+    // Die Begruendung der KI laesst sich in die Notiz des Punktes uebernehmen.
+    $component->assertSee('Text in Notiz übernehmen')
+        ->set('riskProfile.health.notes.malaria_risk.de', 'Eigene Notiz.')
+        ->call('applyAiNote', 'risk_health_malaria_risk')
+        ->assertSet('riskProfile.health.notes.malaria_risk.de', "Eigene Notiz.\nIn Teilen des Landes.")
+        ->assertSet('aiReview.fields.risk_health_malaria_risk.note_applied', true)
+        ->call('applyAllAiNotes')
+        ->assertSet('riskProfile.health.notes.malaria_risk.de', "Eigene Notiz.\nIn Teilen des Landes.");
+
+    $component->call('applyAllAiSuggestions')
+        ->assertSet('riskProfile.security.overall_risk_level', '3')
+        ->assertSet('riskProfile.security.crime_level', '4')
+        ->assertSet('riskProfile.health.malaria_risk', true)
+        ->assertSet('riskProfile.health.required_vaccinations', 'Gelbfieber, Polio')
+        ->assertSet('riskProfile.entry.passport_validity_months', '6')
+        // "extrem" ist keine Stufe – bleibt offen.
+        ->assertSet('riskProfile.natural_hazards.flood_risk', '')
+        ->assertSet('aiReview.fields.risk_natural_hazards_flood_risk.applied', null)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($country->fresh()->risk_profile['security']['crime_level'])->toBe(4)
+        ->and($country->fresh()->risk_profile['health']['required_vaccinations'])->toBe(['Gelbfieber', 'Polio'])
+        ->and($country->fresh()->overall_risk_level)->toBe(3);
 });

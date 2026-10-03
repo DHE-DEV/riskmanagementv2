@@ -6,6 +6,8 @@
     'lat' => '',
     'lng' => '',
     'description' => 'Mittelpunkt für die Darstellung auf der Karte.',
+    // Ergebnis der KI-Feldpruefung ($aiReview) fuer die Hinweise unter den Feldern
+    'review' => null,
 ])
 
 @php
@@ -13,6 +15,7 @@
 @endphp
 
 <x-adminv2.card heading="Koordinaten" :description="$description">
+    <x-slot:actions><x-adminv2.ai-check-button section="coordinates" /></x-slot:actions>
     <div class="flex flex-col gap-5">
         <flux:field>
             <flux:label>Aus Google Maps übernehmen</flux:label>
@@ -22,9 +25,18 @@
         </flux:field>
 
         <div class="grid gap-5 sm:grid-cols-2">
-            <flux:input wire:model.blur="lat" label="Breitengrad" placeholder="z. B. 48.1351" inputmode="decimal" autocomplete="off" />
-            <flux:input wire:model.blur="lng" label="Längengrad" placeholder="z. B. 11.5820" inputmode="decimal" autocomplete="off" />
+            <div>
+                <flux:input wire:model.blur="lat" label="Breitengrad" placeholder="z. B. 48.1351" inputmode="decimal" autocomplete="off" />
+                <x-adminv2.ai-field-hint key="lat" :review="$review" />
+            </div>
+            <div>
+                <flux:input wire:model.blur="lng" label="Längengrad" placeholder="z. B. 11.5820" inputmode="decimal" autocomplete="off" />
+                <x-adminv2.ai-field-hint key="lng" :review="$review" />
+            </div>
         </div>
+
+        {{-- Optional eine Karte, z. B. mit den Laendergrenzen. --}}
+        {{ $map ?? '' }}
 
         @if ($hasPoint)
             <a

@@ -4,17 +4,21 @@ namespace App\Livewire\AdminV2\System;
 
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\StartsAiEventSearch;
+use App\Models\AiCheck;
 use App\Models\AiEventSearchProfile;
 use App\Models\AiEventSearchPrompt;
 use App\Models\SystemSetting;
 use App\Services\ChatGptService;
 use App\Services\OpenAiModelService;
+use App\Support\AdminV2\AiAreas;
 use App\Support\AiSettings;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -32,6 +36,28 @@ class Ai extends Component
     use StartsAiEventSearch;
 
     // KI-Vorlage (Formular im Dialog)
+    /** Reiter: general, events oder ein Stammdaten-Bereich (AiAreas) */
+    #[Url(except: 'general')]
+    public string $tab = 'general';
+
+    /** KI-Pruefung, die gerade bearbeitet wird; null = neue */
+    #[Locked]
+    public ?int $checkId = null;
+
+    public string $checkArea = 'countries';
+
+    public string $checkSection = '';
+
+    public string $checkName = '';
+
+    public string $checkDescription = '';
+
+    public string $checkPrompt = '';
+
+    public string $checkModel = '';
+
+    public bool $checkActive = true;
+
     #[Locked]
     public ?int $promptId = null;
 
@@ -63,6 +89,144 @@ class Ai extends Component
     {
         $this->model = AiSettings::model();
         $this->loadPrices();
+
+        if (! isset($this->tabs()[$this->tab])) {
+            $this->tab = 'general';
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function tabs(): array
+    {
+        return ['general' => 'Allgemein', 'events' => 'Passolution Ereignisse']
+            + array_map(fn (string $label) => 'Stammdaten – '.$label, AiAreas::labels());
+    }
+
+    /**
+     * Anzahl der KI-Pruefungen je Stammdaten-Reiter.
+     *
+     * @return array<string, int>
+     */
+    #[Computed]
+    public function tabCounts(): array
+    {
+        return AiCheck::query()->selectRaw('area, count(*) as count')->groupBy('area')->pluck('count', 'area')->map(fn ($count) => (int) $count)->all();
+    }
+
+    // ------------------------------------------------------------------
+    // KI-Pruefungen der Stammdaten
+    // ------------------------------------------------------------------
+
+    /**
+     * Die Pruefungen des offenen Bereichs.
+     */
+    #[Computed]
+    public function checks(): Collection
+    {
+        if (! isset(AiAreas::areas()[$this->tab])) {
+            return collect();
+        }
+
+        return AiCheck::query()->where('area', $this->tab)->orderBy('sort_order')->orderBy('name')->get();
+    }
+
+    /**
+     * Modelle zur Auswahl fuer eine Pruefung: die verfuegbaren des Schluessels,
+     * ersatzweise die mit hinterlegten Preisen – das gewaehlte bleibt immer dabei.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function checkModelOptions(): array
+    {
+        $ids = array_column($this->models, 'id') ?: array_keys(config('ai_prices.models', []));
+
+        if ($this->checkModel !== '' && ! in_array($this->checkModel, $ids, true)) {
+            array_unshift($ids, $this->checkModel);
+        }
+
+        return array_values($ids);
+    }
+
+    public function createCheck(): void
+    {
+        $this->reset(['checkId', 'checkSection', 'checkName', 'checkDescription', 'checkPrompt', 'checkModel']);
+        $this->checkActive = true;
+        $this->checkArea = isset(AiAreas::areas()[$this->tab]) ? $this->tab : 'countries';
+        $this->resetValidation();
+
+        $this->modal('ai-check-editor')->show();
+    }
+
+    public function editCheck(int $checkId): void
+    {
+        $check = AiCheck::findOrFail($checkId);
+
+        $this->resetValidation();
+        $this->checkId = $check->id;
+        $this->checkArea = $check->area;
+        $this->checkSection = (string) $check->section;
+        $this->checkName = $check->name;
+        $this->checkDescription = (string) $check->description;
+        $this->checkPrompt = $check->prompt;
+        $this->checkModel = (string) $check->model;
+        $this->checkActive = $check->is_active;
+
+        $this->modal('ai-check-editor')->show();
+    }
+
+    public function saveCheck(): void
+    {
+        $this->validate([
+            'checkArea' => ['required', Rule::in(array_keys(AiAreas::areas()))],
+            'checkSection' => ['nullable', Rule::in([AiAreas::GENERAL, ...array_keys(AiAreas::sectionLabels($this->checkArea))])],
+            'checkName' => ['required', 'string', 'max:100'],
+            'checkDescription' => ['nullable', 'string', 'max:255'],
+            'checkPrompt' => ['required', 'string', 'min:10', 'max:6000'],
+            'checkModel' => ['nullable', 'string', 'max:80'],
+        ], [
+            'checkName.required' => 'Bitte einen Namen für die Prüfung eingeben.',
+            'checkPrompt.required' => 'Bitte den Prompt eingeben.',
+            'checkPrompt.min' => 'Der Prompt ist zu kurz.',
+            'checkSection.in' => 'Bitte einen Abschnitt dieses Bereichs wählen.',
+        ]);
+
+        $check = $this->checkId ? AiCheck::findOrFail($this->checkId) : new AiCheck(['created_by' => auth('web')->id()]);
+        $check->fill([
+            'area' => $this->checkArea,
+            'section' => $this->checkSection ?: null,
+            'name' => trim($this->checkName),
+            'description' => trim($this->checkDescription) ?: null,
+            'prompt' => trim($this->checkPrompt),
+            'model' => trim($this->checkModel) ?: null,
+            'is_active' => $this->checkActive,
+        ])->save();
+
+        unset($this->checks, $this->tabCounts);
+        $this->modal('ai-check-editor')->close();
+
+        $this->dispatch('adminv2-toast', message: $this->checkId ? 'Prüfung gespeichert.' : 'Prüfung angelegt.');
+    }
+
+    public function toggleCheck(int $checkId): void
+    {
+        $check = AiCheck::findOrFail($checkId);
+        $check->update(['is_active' => ! $check->is_active]);
+
+        unset($this->checks);
+
+        $this->dispatch('adminv2-toast', message: $check->is_active ? 'Prüfung eingeschaltet.' : 'Prüfung ausgeschaltet.');
+    }
+
+    public function deleteCheck(int $checkId): void
+    {
+        AiCheck::findOrFail($checkId)->delete();
+
+        unset($this->checks, $this->tabCounts);
+
+        $this->dispatch('adminv2-toast', message: 'Prüfung gelöscht.');
     }
 
     /**

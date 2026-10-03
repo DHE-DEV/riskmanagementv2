@@ -2,6 +2,7 @@
 
 namespace App\Livewire\AdminV2\Concerns;
 
+use App\Models\MasterDataChange;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -89,6 +90,7 @@ trait DeletesMasterData
 
         if (! $force) {
             $record->delete();
+            MasterData::logChange($record, MasterDataChange::ACTION_DELETED);
             $this->finishMasterDataChange('deleted', $record, '„'.$label.'“ liegt jetzt im Papierkorb.');
 
             return;
@@ -102,6 +104,7 @@ trait DeletesMasterData
 
         try {
             $record->forceDelete();
+            MasterData::logChange($record, MasterDataChange::ACTION_FORCE_DELETED);
         } catch (QueryException) {
             $this->dispatch('adminv2-toast', message: '„'.$label.'“ wird an anderer Stelle noch verwendet und lässt sich nicht endgültig löschen.', variant: 'danger');
 
@@ -120,6 +123,7 @@ trait DeletesMasterData
         }
 
         $record->restore();
+        MasterData::logChange($record, MasterDataChange::ACTION_RESTORED);
 
         $this->finishMasterDataChange('restored', $record, '„'.MasterData::recordLabel($record).'“ wiederhergestellt.');
     }

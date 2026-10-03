@@ -446,6 +446,26 @@
                             <dd class="min-w-0"><span class="line-clamp-1">{{ $subjectLabel }}</span></dd>
                         </div>
                     @endif
+                    @if ($task->parent)
+                        <div class="flex min-w-0 items-start gap-2">
+                            <dt class="mt-0.5 shrink-0"><flux:icon.arrow-turn-down-right variant="mini" class="text-zinc-400" /><span class="sr-only">Hauptaufgabe</span></dt>
+                            <dd class="min-w-0">
+                                <span class="line-clamp-1">Unteraufgabe von <a href="{{ route('adminv2.tasks.show', $task->parent) }}" target="_blank" class="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $task->parent->title }}</a></span>
+                            </dd>
+                        </div>
+                    @endif
+                    @if ($task->subtasks_count > 0)
+                        @php [$subtasksDone, $subtasksTotal] = $task->subtaskProgress(); @endphp
+                        <div class="flex min-w-0 items-center gap-2">
+                            <dt class="shrink-0"><flux:icon.list-bullet variant="mini" class="text-zinc-400" /><span class="sr-only">Unteraufgaben</span></dt>
+                            <dd class="flex min-w-0 flex-1 items-center gap-2">
+                                <span class="shrink-0 tabular-nums">{{ $subtasksDone }}/{{ $subtasksTotal }} Unteraufgaben</span>
+                                <span class="h-1.5 w-24 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                                    <span class="block h-full rounded-full bg-green-500" style="width: {{ round($subtasksDone / $subtasksTotal * 100) }}%"></span>
+                                </span>
+                            </dd>
+                        </div>
+                    @endif
                 </dl>
 
                 <div class="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-zinc-500">

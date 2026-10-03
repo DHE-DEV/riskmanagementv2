@@ -18,13 +18,18 @@
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Flugplatz">
+                <x-slot:actions><x-adminv2.ai-check-button section="basics" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
-                    <flux:input wire:model="name" label="Name" maxlength="255" />
+                    <div>
+                        <flux:input wire:model="name" label="Name" maxlength="255" />
+                        <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                    </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Land (verknüpft)</flux:label>
                             <x-adminv2.search-select :options="$countryOptions" model="countryId" :selected="$countryId" placeholder="Kein Land verknüpft" search-placeholder="Land oder ISO-Code …" label="Land" live clearable />
+                            <x-adminv2.ai-field-hint key="country" :review="$aiReview" />
                             <flux:error name="countryId" />
                         </flux:field>
                         <flux:field>
@@ -41,6 +46,7 @@
                                 clearable
                                 wire:key="city-select-{{ $countryId }}"
                             />
+                            <x-adminv2.ai-field-hint key="city" :review="$aiReview" />
                             <flux:error name="cityId" />
                         </flux:field>
                     </div>
@@ -49,16 +55,19 @@
                         <flux:field>
                             <flux:label>Land (ISO)</flux:label>
                             <flux:input wire:model="isoCountry" maxlength="5" class="font-mono uppercase" placeholder="DE" />
+                            <x-adminv2.ai-field-hint key="iso_country" :review="$aiReview" />
                             <flux:error name="isoCountry" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Region (ISO)</flux:label>
                             <flux:input wire:model="isoRegion" maxlength="10" class="font-mono uppercase" placeholder="DE-BY" />
+                            <x-adminv2.ai-field-hint key="iso_region" :review="$aiReview" />
                             <flux:error name="isoRegion" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Stadt/Gemeinde</flux:label>
                             <flux:input wire:model="municipality" maxlength="100" />
+                            <x-adminv2.ai-field-hint key="municipality" :review="$aiReview" />
                             <flux:error name="municipality" />
                         </flux:field>
                     </div>
@@ -67,48 +76,62 @@
                         <flux:field>
                             <flux:label>Website</flux:label>
                             <flux:input wire:model="website" placeholder="https://…" />
+                            <x-adminv2.ai-field-hint key="website" :review="$aiReview" />
                             <flux:error name="website" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Zeitfenster-Reservierung für die Sicherheitskontrolle</flux:label>
                             <flux:input wire:model="securityTimeslotUrl" placeholder="https://…" />
+                            <x-adminv2.ai-field-hint key="security_timeslot_url" :review="$aiReview" />
                             <flux:error name="securityTimeslotUrl" />
                         </flux:field>
                     </div>
 
                     <div class="flex flex-wrap gap-x-8 gap-y-3">
-                        <flux:switch wire:model="isActive" label="Aktiv" align="left" />
-                        <flux:switch wire:model="operates24h" label="24-Stunden-Betrieb für Passagierflüge" align="left" />
+                        <div>
+                            <flux:switch wire:model="isActive" label="Aktiv" align="left" />
+                            <x-adminv2.ai-field-hint key="is_active" :review="$aiReview" />
+                        </div>
+                        <div>
+                            <flux:switch wire:model="operates24h" label="24-Stunden-Betrieb für Passagierflüge" align="left" />
+                            <x-adminv2.ai-field-hint key="operates_24h" :review="$aiReview" />
+                        </div>
                     </div>
                 </div>
             </x-adminv2.card>
 
             <x-adminv2.card heading="Codes und Einstufung">
+                <x-slot:actions><x-adminv2.ai-check-button section="codes" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
                     <div class="grid gap-5 sm:grid-cols-5">
                         <flux:field>
                             <flux:label>Ident</flux:label>
                             <flux:input wire:model="ident" maxlength="10" class="font-mono uppercase" />
+                            <x-adminv2.ai-field-hint key="ident" :review="$aiReview" />
                             <flux:error name="ident" />
                         </flux:field>
                         <flux:field>
                             <flux:label>IATA</flux:label>
                             <flux:input wire:model="iataCode" maxlength="10" class="font-mono uppercase" />
+                            <x-adminv2.ai-field-hint key="iata_code" :review="$aiReview" />
                             <flux:error name="iataCode" />
                         </flux:field>
                         <flux:field>
                             <flux:label>ICAO</flux:label>
                             <flux:input wire:model="icaoCode" maxlength="10" class="font-mono uppercase" />
+                            <x-adminv2.ai-field-hint key="icao_code" :review="$aiReview" />
                             <flux:error name="icaoCode" />
                         </flux:field>
                         <flux:field>
                             <flux:label>GPS-Code</flux:label>
                             <flux:input wire:model="gpsCode" maxlength="10" class="font-mono uppercase" />
+                            <x-adminv2.ai-field-hint key="gps_code" :review="$aiReview" />
                             <flux:error name="gpsCode" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Lokaler Code</flux:label>
                             <flux:input wire:model="localCode" maxlength="20" class="font-mono uppercase" />
+                            <x-adminv2.ai-field-hint key="local_code" :review="$aiReview" />
                             <flux:error name="localCode" />
                         </flux:field>
                     </div>
@@ -121,6 +144,7 @@
                                     <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                                 @endforeach
                             </flux:select>
+                            <x-adminv2.ai-field-hint key="type" :review="$aiReview" />
                             <flux:error name="type" />
                         </flux:field>
                         <flux:field>
@@ -131,6 +155,7 @@
                                     <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                                 @endforeach
                             </flux:select>
+                            <x-adminv2.ai-field-hint key="continent" :review="$aiReview" />
                             <flux:error name="continent" />
                         </flux:field>
                         <flux:field>
@@ -140,55 +165,65 @@
                                     <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                                 @endforeach
                             </flux:select>
+                            <x-adminv2.ai-field-hint key="scheduled_service" :review="$aiReview" />
                             <flux:error name="scheduledService" />
                         </flux:field>
                     </div>
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" description="Lage des Flugplatzes." />
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Lage des Flugplatzes." />
 
             <x-adminv2.card heading="Höhe und Zeitzone">
+                <x-slot:actions><x-adminv2.ai-check-button section="altitude" /></x-slot:actions>
                 <div class="grid gap-5 sm:grid-cols-3">
                     <flux:field>
                         <flux:label>Höhe (Fuß)</flux:label>
                         <flux:input wire:model="elevationFt" inputmode="numeric" placeholder="z. B. 1487" />
+                        <x-adminv2.ai-field-hint key="elevation_ft" :review="$aiReview" />
                         <flux:error name="elevationFt" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Zeitzone</flux:label>
                         <flux:input wire:model="timezone" placeholder="Europe/Berlin" maxlength="255" />
+                        <x-adminv2.ai-field-hint key="timezone" :review="$aiReview" />
                         <flux:error name="timezone" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Sommerzeit-Zeitzone</flux:label>
                         <flux:input wire:model="dstTimezone" maxlength="255" />
+                        <x-adminv2.ai-field-hint key="dst_timezone" :review="$aiReview" />
                         <flux:error name="dstTimezone" />
                     </flux:field>
                 </div>
             </x-adminv2.card>
 
             <x-adminv2.card heading="Links und Suchbegriffe" collapsible :collapsed="$homeLink === '' && $wikipediaLink === '' && $keywords === ''">
+                <x-slot:actions><x-adminv2.ai-check-button section="links" /></x-slot:actions>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <flux:field>
                         <flux:label>Home-Link</flux:label>
                         <flux:input wire:model="homeLink" placeholder="https://…" />
+                        <x-adminv2.ai-field-hint key="home_link" :review="$aiReview" />
                         <flux:error name="homeLink" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Wikipedia-Link</flux:label>
                         <flux:input wire:model="wikipediaLink" placeholder="https://…" />
+                        <x-adminv2.ai-field-hint key="wikipedia_link" :review="$aiReview" />
                         <flux:error name="wikipediaLink" />
                     </flux:field>
                     <flux:field class="sm:col-span-2">
                         <flux:label>Suchbegriffe</flux:label>
                         <flux:description>Weitere Namen und Schreibweisen, mit Komma getrennt.</flux:description>
                         <flux:textarea wire:model="keywords" rows="2" />
+                        <x-adminv2.ai-field-hint key="keywords" :review="$aiReview" />
                         <flux:error name="keywords" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Datenquelle</flux:label>
                         <flux:input wire:model="source" maxlength="50" placeholder="z. B. ourairports" />
+                        <x-adminv2.ai-field-hint key="source" :review="$aiReview" />
                         <flux:error name="source" />
                     </flux:field>
                 </div>
@@ -230,4 +265,6 @@
     </div>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    <x-adminv2.ai-check-modal area="airport-codes" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
 </form>

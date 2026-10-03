@@ -18,13 +18,18 @@
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Flughafen">
+                <x-slot:actions><x-adminv2.ai-check-button section="basics" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
-                    <flux:input wire:model="name" label="Name" maxlength="255" placeholder="z. B. Flughafen München" />
+                    <div>
+                        <flux:input wire:model="name" label="Name" maxlength="255" placeholder="z. B. Flughafen München" />
+                        <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                    </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Land</flux:label>
                             <x-adminv2.search-select :options="$countryOptions" model="countryId" :selected="$countryId" placeholder="Land wählen …" search-placeholder="Land oder ISO-Code …" label="Land" live />
+                            <x-adminv2.ai-field-hint key="country" :review="$aiReview" />
                             <flux:error name="countryId" />
                         </flux:field>
                         <flux:field>
@@ -40,6 +45,7 @@
                                 live
                                 wire:key="city-select-{{ $countryId }}"
                             />
+                            <x-adminv2.ai-field-hint key="city" :review="$aiReview" />
                             <flux:error name="cityId" />
                             @if ($countryId !== '')
                                 <flux:description>Fehlt die Stadt? <a href="{{ route('adminv2.master-data.cities.create', ['country' => $countryId]) }}" target="_blank" class="underline underline-offset-2">Neue Stadt anlegen</a></flux:description>
@@ -51,11 +57,13 @@
                         <flux:field>
                             <flux:label>IATA-Code</flux:label>
                             <flux:input wire:model="iataCode" maxlength="3" class="font-mono uppercase" placeholder="MUC" />
+                            <x-adminv2.ai-field-hint key="iata_code" :review="$aiReview" />
                             <flux:error name="iataCode" />
                         </flux:field>
                         <flux:field>
                             <flux:label>ICAO-Code</flux:label>
                             <flux:input wire:model="icaoCode" maxlength="4" class="font-mono uppercase" placeholder="EDDM" />
+                            <x-adminv2.ai-field-hint key="icao_code" :review="$aiReview" />
                             <flux:error name="icaoCode" />
                         </flux:field>
                         <flux:field>
@@ -65,6 +73,7 @@
                                     <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                                 @endforeach
                             </flux:select>
+                            <x-adminv2.ai-field-hint key="type" :review="$aiReview" />
                             <flux:error name="type" />
                         </flux:field>
                     </div>
@@ -74,40 +83,52 @@
                             <flux:label>Website</flux:label>
                             <flux:description>Offizielle Website des Flughafens.</flux:description>
                             <flux:input wire:model="website" placeholder="https://…" />
+                            <x-adminv2.ai-field-hint key="website" :review="$aiReview" />
                             <flux:error name="website" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Zeitfenster-Reservierung für die Sicherheitskontrolle</flux:label>
                             <flux:description>Link zum Buchungssystem, falls der Flughafen eines anbietet.</flux:description>
                             <flux:input wire:model="securityTimeslotUrl" placeholder="https://…" />
+                            <x-adminv2.ai-field-hint key="security_timeslot_url" :review="$aiReview" />
                             <flux:error name="securityTimeslotUrl" />
                         </flux:field>
                     </div>
 
                     <div class="flex flex-wrap gap-x-8 gap-y-3">
-                        <flux:switch wire:model="isActive" label="Aktiv" align="left" />
-                        <flux:switch wire:model="operates24h" label="24-Stunden-Betrieb für Passagierflüge" align="left" />
+                        <div>
+                            <flux:switch wire:model="isActive" label="Aktiv" align="left" />
+                            <x-adminv2.ai-field-hint key="is_active" :review="$aiReview" />
+                        </div>
+                        <div>
+                            <flux:switch wire:model="operates24h" label="24-Stunden-Betrieb für Passagierflüge" align="left" />
+                            <x-adminv2.ai-field-hint key="operates_24h" :review="$aiReview" />
+                        </div>
                     </div>
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" description="Lage des Flughafens – daran werden Reisen und Ereignisse in der Nähe erkannt." />
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Lage des Flughafens – daran werden Reisen und Ereignisse in der Nähe erkannt." />
 
             <x-adminv2.card heading="Höhe und Zeitzone">
+                <x-slot:actions><x-adminv2.ai-check-button section="altitude" /></x-slot:actions>
                 <div class="grid gap-5 sm:grid-cols-3">
                     <flux:field>
                         <flux:label>Höhe (Meter)</flux:label>
                         <flux:input wire:model="altitude" inputmode="numeric" placeholder="z. B. 453" />
+                        <x-adminv2.ai-field-hint key="altitude" :review="$aiReview" />
                         <flux:error name="altitude" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Zeitzone</flux:label>
                         <flux:input wire:model="timezone" placeholder="Europe/Berlin" maxlength="255" />
+                        <x-adminv2.ai-field-hint key="timezone" :review="$aiReview" />
                         <flux:error name="timezone" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Sommerzeit-Zeitzone</flux:label>
                         <flux:input wire:model="dstTimezone" placeholder="z. B. CEST" maxlength="255" />
+                        <x-adminv2.ai-field-hint key="dst_timezone" :review="$aiReview" />
                         <flux:error name="dstTimezone" />
                     </flux:field>
                 </div>
@@ -149,7 +170,6 @@
                     :editing-link-id="$editingLinkId"
                 />
 
-                <x-adminv2.master-data.ai-assistant :prompts="$this->aiPrompts" :prompt-id="$aiPromptId" :result="$aiResult" :error="$aiError" noun="Flughäfen" />
             @else
                 <x-adminv2.card heading="Nach dem Speichern">
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Sobald der Flughafen angelegt ist, lassen sich hier die Airlines verknüpfen, die ihn anfliegen, und der KI-Assistent nutzen.</p>
@@ -159,4 +179,6 @@
     </div>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    <x-adminv2.ai-check-modal area="airports" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
 </form>

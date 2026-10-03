@@ -42,6 +42,7 @@ class AdminTask extends Model
     public const PRIORITY_URGENT = 'urgent';
 
     protected $fillable = [
+        'parent_id',
         'title',
         'description',
         'category_id',
@@ -172,6 +173,13 @@ class AdminTask extends Model
             // Die Mail zur Faelligkeit geht erneut raus, wenn das Datum verschoben wird.
             if ($task->isDirty('due_date')) {
                 $task->due_notified_at = null;
+            }
+        });
+
+        // Mit der Hauptaufgabe gehen auch ihre Unteraufgaben in den Papierkorb.
+        static::deleting(function (AdminTask $task) {
+            if (! $task->isForceDeleting()) {
+                $task->subtasks()->get()->each->delete();
             }
         });
 
@@ -312,6 +320,65 @@ class AdminTask extends Model
             'subject_id' => $this->subjectLabel(),
             default => (string) $value,
         };
+    }
+
+    /**
+     * Die uebergeordnete Aufgabe, wenn dies eine Unteraufgabe ist.
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * Unteraufgaben – offene zuerst, dann nach Faelligkeit und Reihenfolge der Anlage.
+     */
+    public function subtasks(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')
+            ->orderByRaw('status = ? asc', [self::STATUS_DONE])
+            ->orderByRaw('due_date is null asc')
+            ->orderBy('due_date')
+            ->orderBy('id');
+    }
+
+    public function isSubtask(): bool
+    {
+        return $this->parent_id !== null;
+    }
+
+    /**
+     * Stand der Unteraufgaben: [erledigt, gesamt]. Nutzt subtasks_count und
+     * done_subtasks_count, wenn die Liste sie mitgeladen hat.
+     *
+     * @return array{0: int, 1: int}
+     */
+    public function subtaskProgress(): array
+    {
+        $total = $this->subtasks_count ?? $this->subtasks()->count();
+        $done = $this->done_subtasks_count ?? $this->subtasks()->where('status', self::STATUS_DONE)->count();
+
+        return [(int) $done, (int) $total];
+    }
+
+    /**
+     * Felder, die eine neue Unteraufgabe von der Hauptaufgabe uebernimmt.
+     *
+     * @return array<string, mixed>
+     */
+    public function subtaskDefaults(): array
+    {
+        return [
+            'parent_id' => $this->id,
+            'category_id' => $this->category_id,
+            'priority' => $this->priority,
+            'due_date' => $this->due_date?->format('Y-m-d'),
+            'responsible_id' => $this->responsible_id,
+            'responsible_team_id' => $this->responsible_team_id,
+            'subject_type' => $this->subject_type,
+            'subject_id' => $this->subject_id,
+            'subject_token' => $this->subject_token,
+        ];
     }
 
     public function category(): BelongsTo

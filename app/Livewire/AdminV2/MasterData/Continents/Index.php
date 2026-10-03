@@ -33,9 +33,9 @@ class Index extends Component
         return Continent::class;
     }
 
-    protected function sortable(): array
+    public function sortOptions(): array
     {
-        return ['sort_order', 'name', 'code', 'countries_count'];
+        return ['sort_order' => 'Sortierung', 'name' => 'Name', 'code' => 'Code', 'countries_count' => 'Anzahl Länder'];
     }
 
     #[Computed]

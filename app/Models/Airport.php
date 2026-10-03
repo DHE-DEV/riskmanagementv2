@@ -32,6 +32,8 @@ class Airport extends Model
         'lounges',
         'nearby_hotels',
         'mobility_options',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -48,6 +50,16 @@ class Airport extends Model
     /**
      * Get the city for this airport.
      */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
     public function city(): BelongsTo
     {
         return $this->belongsTo(City::class);

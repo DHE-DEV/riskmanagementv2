@@ -16,6 +16,7 @@
 {{-- Lounges --}}
 <x-adminv2.card heading="Lounges" :description="count($lounges) ? count($lounges).' '.(count($lounges) === 1 ? 'Lounge' : 'Lounges') : 'Noch keine Lounge eingetragen.'" collapsible :collapsed="count($lounges) === 0">
     <x-slot:actions>
+        <x-adminv2.ai-check-button section="lounges" />
         <flux:button size="sm" icon="plus" wire:click="addLounge">Lounge</flux:button>
     </x-slot:actions>
 
@@ -42,6 +43,7 @@
 
 {{-- Mobilitaet --}}
 <x-adminv2.card heading="Mobilitätsangebote" :description="$available ? $available.' von '.count($definitions).' Angeboten verfügbar' : 'Mietwagen, ÖPNV, Shuttle, Taxi und Parken – noch nichts als verfügbar markiert.'" collapsible :collapsed="$available === 0">
+    <x-slot:actions><x-adminv2.ai-check-button section="mobility" /></x-slot:actions>
     <div class="flex flex-col gap-4">
         @foreach ($definitions as $key => $definition)
             @php $on = (bool) ($mobility[$key]['available'] ?? false); @endphp
@@ -81,6 +83,7 @@
 {{-- Hotels --}}
 <x-adminv2.card heading="Hotels in der Nähe" :description="count($hotels) ? count($hotels).' '.(count($hotels) === 1 ? 'Hotel' : 'Hotels') : 'Noch kein Hotel eingetragen.'" collapsible :collapsed="count($hotels) === 0">
     <x-slot:actions>
+        <x-adminv2.ai-check-button section="hotels" />
         <flux:button size="sm" icon="plus" wire:click="addHotel">Hotel</flux:button>
     </x-slot:actions>
 

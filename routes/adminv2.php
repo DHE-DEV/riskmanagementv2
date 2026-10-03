@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminV2\BoundaryGeoJsonController;
 use App\Livewire\AdminV2\Auth\Login;
 use App\Livewire\AdminV2\Dashboard;
 use App\Livewire\AdminV2\Events\AiResults as EventAiResults;
@@ -94,6 +95,10 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('airlines', AirlineIndex::class)->name('airlines.index');
             Route::get('airlines/create', AirlineEditor::class)->name('airlines.create');
             Route::get('airlines/{airline}', AirlineEditor::class)->whereNumber('airline')->name('airlines.edit');
+
+            // Laendergrenzen fuer die Karten der Bearbeitungsseiten.
+            Route::get('boundaries/continent/{continent}', [BoundaryGeoJsonController::class, 'continent'])->whereNumber('continent')->name('boundaries.continent');
+            Route::get('boundaries/country/{country}', [BoundaryGeoJsonController::class, 'country'])->whereNumber('country')->name('boundaries.country');
 
             // Bereiche, die noch nicht umgezogen sind, zeigen einen Hinweis.
             Route::get('{section}', MasterDataSection::class)

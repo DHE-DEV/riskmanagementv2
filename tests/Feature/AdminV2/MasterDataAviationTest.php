@@ -12,6 +12,7 @@ use App\Models\AirportCode;
 use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
+use App\Models\MasterDataChange;
 use App\Models\User;
 use App\Support\AdminV2\AirportExtras;
 use Illuminate\Support\Facades\DB;
@@ -82,7 +83,9 @@ it('zeigt Flughaefen, Flughafen-Codes und Airlines als Listen statt als Hinweis'
     $lh = airline('Lufthansa', 'LH', ['home_country_id' => $germany->id, 'cabin_classes' => ['economy', 'business']]);
     $code = airportCode('Munich Airport', 'EDDM', ['iata_code' => 'MUC', 'icao_code' => 'EDDM', 'municipality' => 'Munich', 'iso_country' => 'DE', 'continent' => 'EU']);
 
-    $this->get('/adminv2/master-data/airports')->assertOk()->assertSee('Flughafen München')->assertSee('MUC · EMUC')->assertDontSee('An dieser Seite wird aktuell gearbeitet');
+    $this->get('/adminv2/master-data/airports')->assertOk()->assertSee('Flughafen München')->assertSee('MUC')->assertSee('EMUC')->assertDontSee('An dieser Seite wird aktuell gearbeitet')
+        // Kennzahlen wie im bisherigen Admin
+        ->assertSee('Diesen Monat angelegt')->assertSee('Datenqualität')->assertSee('Airlines verknüpft')->assertSee('Flughäfen angelegt pro Monat')->assertSee('Datenvollständigkeit');
     $this->get('/adminv2/master-data/airport-codes')->assertOk()->assertSee('Munich Airport')->assertSee('EDDM');
     $this->get('/adminv2/master-data/airlines')->assertOk()->assertSee('Lufthansa')->assertSee('Business Class');
 
@@ -175,6 +178,8 @@ it('legt einen Flughafen mit Lounges, Mobilitaet und Hotels an', function () {
         ->and($airport->altitude)->toBe(453)
         ->and(round((float) $airport->lat, 4))->toBe(48.3538)
         ->and($airport->source)->toBe('manual')
+        ->and($airport->created_by)->toBe(auth()->id())
+        ->and($airport->updated_by)->toBe(auth()->id())
         // Die leere zweite Lounge faellt weg.
         ->and($airport->lounges)->toEqual([['name' => 'Airport Lounge World', 'location' => 'Terminal 1', 'access' => null, 'children_welcome' => true, 'price_per_person' => 45.5, 'url' => null]])
         ->and($airport->mobility_options['car_rental'])->toEqual(['available' => true, 'providers' => [['name' => 'Sixt', 'url' => 'https://www.sixt.de']]])
@@ -187,6 +192,21 @@ it('legt einen Flughafen mit Lounges, Mobilitaet und Hotels an', function () {
         ->assertSet('lounges.0.price_per_person', '45.5')
         ->assertSet('mobility.car_rental.providers.0.name', 'Sixt')
         ->assertSet('hotels.0.shuttle', true);
+
+    // Aenderungsprotokoll: 1 angelegt, danach 2 Aenderungen (Feld + Airline-Verknuepfung);
+    // ein unveraendertes Speichern zaehlt nicht.
+    $lh = airline('Lufthansa', 'LH');
+    Livewire::test(AirportEditor::class, ['airport' => $airport->id])
+        ->call('save')
+        ->set('website', 'https://www.munich-airport.com')
+        ->call('save')
+        ->set('linkId', (string) $lh->id)
+        ->call('addLink');
+
+    expect(MasterDataChange::where('model_id', $airport->id)->pluck('action')->all())->toBe(['created', 'updated', 'updated'])
+        ->and(MasterDataChange::where('model_id', $airport->id)->where('action', 'updated')->pluck('changes')->all())->toEqual([['website'], ['airlines']]);
+
+    expect(MasterDataChange::where('model_id', $airport->id)->first()->user_id)->toBe(auth()->id());
 });
 
 it('prueft beim Flughafen Codes und die Stadt zum Land', function () {
@@ -492,4 +512,67 @@ it('bringt Lounges, Mobilitaet und Hotels ins Formular und zurueck', function ()
         ->and(AirportExtras::mobilityFromForm($form)['parking'])->toEqual($stored['parking'])
         ->and(AirportExtras::loungesFromForm([['name' => '  ']]))->toBe([])
         ->and(AirportExtras::hotelsToForm(null))->toBe([]);
+});
+
+it('zeigt die Prueflisten der Flughaefen und filtert danach', function () {
+    $germany = aviationCountry('Deutschland', 'DE');
+    $france = aviationCountry('Frankreich', 'FR');
+    $munich = aviationCity('München', $germany);
+    $paris = aviationCity('Paris', $france);
+
+    // Im Verzeichnis: MUC mit korrekter Lage, CDG weit daneben; FRA fehlt dort, ist aber gross und mit Linienverkehr.
+    airportCode('Munich Airport', 'EDDM', ['iata_code' => 'MUC', 'latitude_deg' => 48.3538, 'longitude_deg' => 11.7861, 'type' => 'large_airport', 'scheduled_service' => 'yes']);
+    airportCode('Charles de Gaulle', 'LFPG', ['iata_code' => 'CDG', 'latitude_deg' => 49.0097, 'longitude_deg' => 2.5479, 'type' => 'large_airport', 'scheduled_service' => 'yes']);
+    airportCode('Frankfurt Airport', 'EDDF', ['iata_code' => 'FRA', 'type' => 'large_airport', 'scheduled_service' => 'yes']);
+    airportCode('Kleiner Platz', 'EDXX', ['iata_code' => 'XXA', 'type' => 'small_airport', 'scheduled_service' => 'no']);
+
+    $muc = airport('Flughafen München', 'MUC', $munich, ['lat' => 48.3538, 'lng' => 11.7861]);
+    $cdg = airport('Charles de Gaulle', 'CDG', $paris, ['lat' => 43.0, 'lng' => 2.5]);
+    $zzz = airport('Phantasie-Flughafen', 'ZZZ', $munich);
+    airline('Lufthansa', 'LH')->airports()->attach($muc->id, ['direction' => 'both']);
+    // Lange nicht geaendert – direkt in der Tabelle, sonst setzt Eloquent updated_at neu.
+    DB::table('airports')->where('id', $zzz->id)->update(['updated_at' => now()->subDays(400)]);
+
+    $component = Livewire::test(AirportIndex::class);
+    $stats = $component->get('stats');
+
+    expect($stats['checks'])->toEqual(['no-airlines' => 2, 'unknown-iata' => 1, 'coordinates-off' => 1, 'stale' => 1])
+        ->and($stats['unmanaged'])->toBe(1)
+        ->and($stats['countriesWithAirport'])->toBe(2)
+        ->and($stats['countries'])->toBe(2)
+        ->and(collect($component->get('byContinent'))->pluck('count', 'label')->all())->toBe(['Europa' => 3])
+        ->and(collect($component->get('topCountries'))->pluck('count', 'label')->all())->toBe(['Deutschland' => 2, 'Frankreich' => 1]);
+
+    $component
+        ->assertSee('Große Flughäfen, die fehlen')
+        ->set('check', 'coordinates-off')
+        ->assertSee('Charles de Gaulle')->assertDontSee('Flughafen München')->assertDontSee('Phantasie-Flughafen')
+        ->set('check', 'unknown-iata')
+        ->assertSee('Phantasie-Flughafen')->assertDontSee('Charles de Gaulle')
+        ->set('check', 'no-airlines')
+        ->assertSee('Charles de Gaulle')->assertSee('Phantasie-Flughafen')->assertDontSee('Flughafen München')
+        ->set('check', 'stale')
+        ->assertSee('Phantasie-Flughafen')->assertDontSee('Charles de Gaulle')
+        ->set('check', '')
+        ->set('continent', (string) $germany->continent_id)
+        ->assertSee('Flughafen München')
+        ->set('feature', 'lounges')
+        ->assertDontSee('Flughafen München')
+        // Die Kennzahlen verlinken in einen neuen Tab – mit genau einem Filter.
+        ->assertSee(route('adminv2.master-data.airports.index', ['type' => 'international']))
+        ->assertSee(route('adminv2.master-data.airports.index', ['feature' => 'hotels']))
+        ->assertSee('Statistiken einblenden');
+
+    // Die Kachel "Grosse Flughaefen, die fehlen" fuehrt in die Code-Liste – nur FRA.
+    Livewire::test(AirportCodeIndex::class)
+        ->set('managed', 'unmanaged')
+        ->assertSee('Frankfurt Airport')->assertDontSee('Munich Airport')->assertDontSee('Kleiner Platz');
+
+    // … und "Laender ohne Flughafen" in die Laenderliste.
+    aviationCountry('Österreich', 'AT');
+    Livewire::test(\App\Livewire\AdminV2\MasterData\Countries\Index::class)
+        ->set('airports', 'none')
+        ->assertSee('Österreich')->assertDontSee('Deutschland')
+        ->set('airports', 'any')
+        ->assertSee('Deutschland')->assertDontSee('Österreich');
 });

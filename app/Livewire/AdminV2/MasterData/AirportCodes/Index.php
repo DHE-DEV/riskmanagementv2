@@ -50,19 +50,23 @@ class Index extends Component
     #[Url(except: '')]
     public string $active = '';
 
+    /** 'unmanaged' = grosse Flughaefen mit Linienverkehr ohne gepflegten Flughafen */
+    #[Url(except: '')]
+    public string $managed = '';
+
     protected function masterDataModel(): string
     {
         return AirportCode::class;
     }
 
-    protected function sortable(): array
+    public function sortOptions(): array
     {
-        return ['name', 'ident', 'iata_code', 'icao_code', 'municipality', 'iso_country', 'type'];
+        return ['name' => 'Name', 'ident' => 'Ident', 'iata_code' => 'IATA-Code', 'icao_code' => 'ICAO-Code', 'municipality' => 'Ort', 'iso_country' => 'Land', 'type' => 'Typ'];
     }
 
     protected function filterProperties(): array
     {
-        return ['type', 'continent', 'isoCountry', 'scheduled', 'codes', 'active'];
+        return ['type', 'continent', 'isoCountry', 'scheduled', 'codes', 'active', 'managed'];
     }
 
     #[Computed]
@@ -119,6 +123,10 @@ class Index extends Component
             'inactive' => $query->where('is_active', false),
             default => null,
         };
+
+        if ($this->managed === 'unmanaged') {
+            $query->unmanagedLarge();
+        }
 
         $direction = $this->sortDirection();
         $column = $this->sortColumn();

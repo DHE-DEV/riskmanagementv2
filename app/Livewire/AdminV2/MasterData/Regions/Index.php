@@ -43,9 +43,9 @@ class Index extends Component
         return Region::class;
     }
 
-    protected function sortable(): array
+    public function sortOptions(): array
     {
-        return ['name', 'code', 'country', 'cities_count'];
+        return ['name' => 'Name', 'code' => 'Code', 'country' => 'Land', 'cities_count' => 'Anzahl Städte'];
     }
 
     protected function filterProperties(): array

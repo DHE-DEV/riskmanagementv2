@@ -123,6 +123,21 @@ class AirportCode extends Model
     /**
      * Scope a query to only include airports by country.
      */
+    /**
+     * Grosse Flughaefen mit Linienverkehr, die noch nicht als gepflegter
+     * Flughafen (Tabelle airports) angelegt sind.
+     */
+    public function scopeUnmanagedLarge($query)
+    {
+        return $query
+            ->where('type', 'large_airport')
+            ->where('scheduled_service', 'yes')
+            ->whereNotNull('iata_code')->where('iata_code', '<>', '')
+            ->whereNotExists(fn ($sub) => $sub->selectRaw('1')->from('airports')
+                ->whereRaw('airports.iata_code collate utf8mb4_unicode_ci = airport_codes_1.iata_code collate utf8mb4_unicode_ci')
+                ->whereNull('airports.deleted_at'));
+    }
+
     public function scopeByCountry($query, $countryId)
     {
         return $query->where('country_id', $countryId);

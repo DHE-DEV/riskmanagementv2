@@ -1,4 +1,5 @@
 @php
+    use App\Support\AdminV2\AiAreas;
     use App\Support\AiSettings;
 
     $keySource = AiSettings::apiKeySource();
@@ -11,11 +12,37 @@
 <div class="flex flex-col gap-6">
     <div>
         <flux:heading size="xl" level="1">KI</flux:heading>
-        <flux:subheading>System · Schlüssel und Modell für den KI-Assistenten und die Quellen-Prüfung.</flux:subheading>
+        <flux:subheading>System · Schlüssel und Modell, KI-Suche nach Ereignissen und KI-Prüfungen in den Stammdaten.</flux:subheading>
     </div>
 
-    <div class="grid items-start gap-6 xl:grid-cols-2">
-        {{-- Linke Spalte: Schluessel, darunter die KI-Vorlagen --}}
+
+    {{-- Reiter: Allgemeines, Ereignisse, je Stammdaten-Bereich die KI-Pruefungen --}}
+    <div class="flex flex-wrap gap-1">
+        @foreach ($this->tabs() as $key => $label)
+            <button
+                type="button"
+                wire:click="$set('tab', '{{ $key }}')"
+                wire:key="tab-{{ $key }}"
+                @class([
+                    'inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition',
+                    'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' => $tab === $key,
+                    'text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800' => $tab !== $key,
+                ])
+            >
+                {{ $label }}
+                @if (isset($this->tabCounts[$key]))
+                    <span @class(['rounded-full px-1.5 text-xs tabular-nums', 'bg-white/20 dark:bg-zinc-900/10' => $tab === $key, 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' => $tab !== $key])>{{ $this->tabCounts[$key] }}</span>
+                @endif
+            </button>
+        @endforeach
+    </div>
+
+    {{-- Je Reiter ein eigener, mit Schluessel versehener Block: beim Wechsel wird er komplett
+         ersetzt statt Stueck fuer Stueck abgeglichen – das vertraegt der DOM-Abgleich sonst nicht. --}}
+    <div wire:key="tab-content-{{ $tab }}" class="flex flex-col gap-6">
+    @if ($tab === 'general')
+    <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-6">
         <div class="flex flex-col gap-6">
             {{-- API-Schluessel --}}
             <x-adminv2.card heading="API-Schlüssel" description="Zugang zu OpenAI. Der Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.">
@@ -82,45 +109,6 @@
                 </div>
             </x-adminv2.card>
 
-            {{-- KI-Vorlagen: die Auftraege fuer die Suche nach Ereignissen --}}
-            <x-adminv2.card heading="KI Vorlagen" description="Die Aufträge (Prompts) für die KI-Suche nach Ereignissen. Jede hinterlegte Suche wählt eine Vorlage; ohne Auswahl gilt die Standard-Vorlage.">
-                <x-slot:actions>
-                    <flux:button size="sm" variant="primary" icon="plus" wire:click="createPrompt">Neue Vorlage</flux:button>
-                </x-slot:actions>
-
-                <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800" wire:loading.class="opacity-60" wire:target="makeDefaultPrompt, deletePrompt, savePrompt">
-                    @foreach ($this->prompts as $prompt)
-                        <li wire:key="prompt-{{ $prompt->id }}" class="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="font-medium text-zinc-900 dark:text-white">{{ $prompt->name }}</span>
-                                    @if ($prompt->is_default)
-                                        <flux:badge size="sm" color="green" inset="top bottom">Standard</flux:badge>
-                                    @endif
-                                    <span class="text-xs text-zinc-500">
-                                        {{ $prompt->is_default ? 'gilt für alle Suchen ohne eigene Vorlage' : ($prompt->profiles_count === 0 ? 'von keiner Suche gewählt' : 'gewählt von '.$prompt->profiles_count.' '.($prompt->profiles_count === 1 ? 'Suche' : 'Suchen')) }}
-                                    </span>
-                                </div>
-                                <p class="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">{{ $prompt->prompt }}</p>
-                            </div>
-
-                            <div class="flex shrink-0 items-center gap-1">
-                                @unless ($prompt->is_default)
-                                    <flux:button size="sm" variant="ghost" wire:click="makeDefaultPrompt({{ $prompt->id }})">Als Standard</flux:button>
-                                @endunless
-                                <flux:button size="sm" icon="pencil-square" wire:click="editPrompt({{ $prompt->id }})">Bearbeiten</flux:button>
-                                @unless ($prompt->is_default)
-                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="deletePrompt({{ $prompt->id }})" wire:confirm="Die Vorlage „{{ $prompt->name }}“ löschen? Suchen, die sie nutzen, laufen danach mit der Standard-Vorlage." aria-label="Vorlage löschen" />
-                                @endunless
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
-
-                <p class="mt-4 text-xs text-zinc-500">
-                    Die Vorlage beschreibt, wonach gesucht wird. Datum, Kategorien, Filter der Suche, die Liste des bereits Erfassten und das Antwortformat ergänzt die Plattform selbst.
-                </p>
-            </x-adminv2.card>
         </div>
 
         {{-- Modell --}}
@@ -147,31 +135,43 @@
                 @if ($this->models !== [])
                     <flux:input wire:model.live.debounce.200ms="modelSearch" icon="magnifying-glass" placeholder="Modell suchen …" clearable />
 
-                    <div class="max-h-[28rem] overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700" wire:loading.class="opacity-60" wire:target="refreshModels, modelSearch">
+                    {{-- Ein Modell je Karte; die gewaehlte ist markiert --}}
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="refreshModels, modelSearch">
                         @forelse ($models as $option)
+                            @php $optionPrices = AiSettings::prices($option['id']); @endphp
                             <label
                                 wire:key="model-{{ $option['id'] }}"
-                                class="flex cursor-pointer items-center gap-3 border-b border-zinc-100 px-3 py-2.5 text-sm last:border-0 hover:bg-zinc-50 has-[:checked]:bg-[var(--color-accent)]/10 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                                class="flex cursor-pointer flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs transition hover:border-zinc-300 has-[:checked]:border-[var(--color-accent)] has-[:checked]:bg-[var(--color-accent)]/5 has-[:checked]:ring-1 has-[:checked]:ring-[var(--color-accent)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
                             >
-                                <input type="radio" wire:model="model" value="{{ $option['id'] }}" class="size-4 shrink-0 accent-[var(--color-accent)]" />
-                                <span class="min-w-0 flex-1 truncate font-mono text-zinc-900 dark:text-white">{{ $option['id'] }}</span>
-                                @if ($option['id'] === $activeModel)
-                                    <flux:badge color="green" size="sm" inset="top bottom">aktiv</flux:badge>
-                                @endif
-                                {{-- Preis je 1 Mio. Token: Eingabe / Ausgabe --}}
-                                @if ($optionPrices = AiSettings::prices($option['id']))
-                                    <span class="shrink-0 text-xs text-zinc-600 tabular-nums dark:text-zinc-400" title="US-Dollar je 1 Mio. Token: Eingabe / Ausgabe{{ AiSettings::priceSource($option['id']) === 'admin' ? ' (von Hand hinterlegt)' : '' }}">
-                                        {{ rtrim(rtrim(number_format($optionPrices['input'], 2, ',', '.'), '0'), ',') }} $ / {{ rtrim(rtrim(number_format($optionPrices['output'], 2, ',', '.'), '0'), ',') }} $
+                                <div class="flex items-start justify-between gap-3">
+                                    <span class="flex min-w-0 items-center gap-2">
+                                        <input type="radio" wire:model="model" value="{{ $option['id'] }}" class="size-4 shrink-0 accent-[var(--color-accent)]" />
+                                        <span class="truncate font-mono text-sm font-medium text-zinc-900 dark:text-white">{{ $option['id'] }}</span>
                                     </span>
-                                @else
-                                    <span class="shrink-0 text-xs text-zinc-400" title="Für dieses Modell ist kein Preis bekannt">kein Preis</span>
-                                @endif
-                                @if ($option['created'])
-                                    <span class="shrink-0 text-xs text-zinc-500 tabular-nums">seit {{ $option['created'] }}</span>
-                                @endif
+                                    @if ($option['id'] === $activeModel)
+                                        <flux:badge color="green" size="sm" inset="top bottom">aktiv</flux:badge>
+                                    @endif
+                                </div>
+                                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-zinc-600 dark:text-zinc-400">
+                                    <dt>Eingabe</dt>
+                                    <dd class="text-end tabular-nums text-zinc-900 dark:text-white">{{ $optionPrices ? rtrim(rtrim(number_format($optionPrices['input'], 2, ',', '.'), '0'), ',').' $' : '–' }}</dd>
+                                    <dt>Ausgabe</dt>
+                                    <dd class="text-end tabular-nums text-zinc-900 dark:text-white">{{ $optionPrices ? rtrim(rtrim(number_format($optionPrices['output'], 2, ',', '.'), '0'), ',').' $' : '–' }}</dd>
+                                    @if ($option['created'])
+                                        <dt>Verfügbar seit</dt>
+                                        <dd class="text-end tabular-nums">{{ $option['created'] }}</dd>
+                                    @endif
+                                </dl>
+                                <span class="text-[0.7rem] text-zinc-400">
+                                    @if ($optionPrices)
+                                        US-Dollar je 1 Mio. Token{{ AiSettings::priceSource($option['id']) === 'admin' ? ' · eigener Preis' : ' · Preisliste' }}
+                                    @else
+                                        kein Preis bekannt
+                                    @endif
+                                </span>
                             </label>
                         @empty
-                            <p class="px-3 py-6 text-center text-sm text-zinc-500">Kein Modell passt zu „{{ $modelSearch }}“.</p>
+                            <p class="col-span-full px-3 py-6 text-center text-sm text-zinc-500">Kein Modell passt zu „{{ $modelSearch }}“.</p>
                         @endforelse
                     </div>
 
@@ -230,6 +230,54 @@
             </form>
         </x-adminv2.card>
     </div>
+    @elseif ($tab === 'events')
+    <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-6">
+            {{-- KI-Vorlagen: die Auftraege fuer die Suche nach Ereignissen --}}
+            <x-adminv2.card heading="KI Vorlagen" description="Die Aufträge (Prompts) für die KI-Suche nach Ereignissen. Jede hinterlegte Suche wählt eine Vorlage; ohne Auswahl gilt die Standard-Vorlage.">
+                <x-slot:actions>
+                    <flux:button size="sm" variant="primary" icon="plus" wire:click="createPrompt">Neue Vorlage</flux:button>
+                </x-slot:actions>
+
+                {{-- Eine Vorlage je Karte --}}
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" wire:loading.class="opacity-60" wire:target="makeDefaultPrompt, deletePrompt, savePrompt">
+                    @foreach ($this->prompts as $prompt)
+                        <article wire:key="prompt-{{ $prompt->id }}" @class(['flex flex-col rounded-2xl border bg-white p-4 shadow-xs dark:bg-zinc-950', 'border-green-300 dark:border-green-500/40' => $prompt->is_default, 'border-zinc-200 dark:border-zinc-800' => ! $prompt->is_default])>
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <h3 class="text-base font-semibold leading-snug text-zinc-900 dark:text-white">{{ $prompt->name }}</h3>
+                                    @if ($prompt->is_default)
+                                        <flux:badge size="sm" color="green" inset="top bottom" class="mt-1">Standard</flux:badge>
+                                    @endif
+                                </div>
+                                <div class="-me-1.5 -mt-1 shrink-0">
+                                    <flux:dropdown align="end">
+                                        <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" aria-label="Aktionen für {{ $prompt->name }}" />
+                                        <flux:menu>
+                                            <flux:menu.item icon="pencil-square" wire:click="editPrompt({{ $prompt->id }})">Bearbeiten</flux:menu.item>
+                                            @unless ($prompt->is_default)
+                                                <flux:menu.item icon="star" wire:click="makeDefaultPrompt({{ $prompt->id }})">Als Standard verwenden</flux:menu.item>
+                                                <flux:menu.separator />
+                                                <flux:menu.item icon="trash" variant="danger" wire:click="deletePrompt({{ $prompt->id }})" wire:confirm="Die Vorlage „{{ $prompt->name }}“ löschen? Suchen, die sie gewählt haben, verwenden dann die Standard-Vorlage.">Löschen</flux:menu.item>
+                                            @endunless
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-zinc-500">
+                                {{ $prompt->is_default ? 'gilt für alle Suchen ohne eigene Vorlage' : ($prompt->profiles_count === 0 ? 'von keiner Suche gewählt' : 'gewählt von '.$prompt->profiles_count.' '.($prompt->profiles_count === 1 ? 'Suche' : 'Suchen')) }}
+                            </p>
+                            <p class="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{{ $prompt->prompt }}</p>
+
+                        </article>
+                    @endforeach
+                </div>
+
+                <p class="mt-4 text-xs text-zinc-500">
+                    Die Vorlage beschreibt, wonach gesucht wird. Datum, Kategorien, Filter der Suche, die Liste des bereits Erfassten und das Antwortformat ergänzt die Plattform selbst.
+                </p>
+            </x-adminv2.card>
+        </div>
 
     @php $latestSearch = $this->latestAiSearch; @endphp
 
@@ -340,7 +388,137 @@
             </div>
         @endif
     </x-adminv2.card>
+    </div>
+    @else
+    {{-- KI-Pruefungen eines Stammdaten-Bereichs --}}
+    @php
+        $areaLabel = AiAreas::label($tab);
+        $sections = AiAreas::sectionLabels($tab);
+    @endphp
+    <x-adminv2.card :heading="'KI-Prüfungen · '.$areaLabel" description="Jede Prüfung erscheint an ihrem Abschnitt im Formular hinter der Schaltfläche „KI“ – bereichsweite Prüfungen an jedem Abschnitt und im Kopf des Eintrags. Ausgeführt wird sie mit den Daten des Abschnitts.">
+        <x-slot:actions>
+            <flux:button size="sm" variant="primary" icon="plus" wire:click="createCheck">Neue Prüfung</flux:button>
+        </x-slot:actions>
 
+        <div class="rounded-xl bg-zinc-50 p-4 text-xs leading-relaxed text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+            <p class="font-medium text-zinc-800 dark:text-zinc-200">So bekommt die KI die Daten</p>
+            <div class="mt-1">Im Prompt stehen Platzhalter wie <x-adminv2.placeholder name="name" label="Name" class="!bg-white" /> oder <x-adminv2.placeholder name="daten" label="Alle Angaben des Abschnitts als Liste" class="!bg-white" />. Nutzt ein Prompt keinen Platzhalter, werden die Angaben des Abschnitts automatisch angehängt. Ein Klick auf einen Platzhalter kopiert ihn.</div>
+            <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                @foreach ($sections as $sectionKey => $sectionLabel)
+                    <div>
+                        <dt class="font-medium text-zinc-800 dark:text-zinc-200">{{ $sectionLabel }}</dt>
+                        <dd class="mt-0.5 flex flex-wrap gap-1">
+                            @foreach (AiAreas::placeholders($tab, $sectionKey) as $key => $label)
+                                <x-adminv2.placeholder :name="$key" :label="$label" class="!bg-white" />
+                            @endforeach
+                        </dd>
+                    </div>
+                @endforeach
+            </dl>
+        </div>
+    </x-adminv2.card>
+
+    {{-- Die Pruefungen des Bereichs als Karten --}}
+    @if ($this->checks->isEmpty())
+        <x-adminv2.card>
+            <p class="text-sm text-zinc-500">Für {{ $areaLabel }} ist noch keine KI-Prüfung hinterlegt. Mit „Neue Prüfung“ die erste anlegen.</p>
+        </x-adminv2.card>
+    @else
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" wire:loading.class="opacity-60" wire:target="toggleCheck, deleteCheck, saveCheck">
+            @foreach ($this->checks as $check)
+                <article wire:key="check-{{ $check->id }}" @class(['flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-950', 'opacity-70' => ! $check->is_active])>
+                    <div class="flex items-start justify-between gap-3">
+                        <h3 class="min-w-0 text-base font-semibold leading-snug text-zinc-900 dark:text-white">{{ $check->name }}</h3>
+                        <div class="-me-1.5 -mt-1 shrink-0">
+                            <flux:dropdown align="end">
+                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" aria-label="Aktionen für {{ $check->name }}" />
+                                <flux:menu>
+                                    <flux:menu.item icon="pencil-square" wire:click="editCheck({{ $check->id }})">Bearbeiten</flux:menu.item>
+                                    <flux:menu.item :icon="$check->is_active ? 'pause' : 'play'" wire:click="toggleCheck({{ $check->id }})">{{ $check->is_active ? 'Ausschalten' : 'Einschalten' }}</flux:menu.item>
+                                    <flux:menu.separator />
+                                    <flux:menu.item icon="trash" variant="danger" wire:click="deleteCheck({{ $check->id }})" wire:confirm="Die Prüfung „{{ $check->name }}“ löschen?">Löschen</flux:menu.item>
+                                </flux:menu>
+                            </flux:dropdown>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                        <flux:badge size="sm" color="zinc" inset="top bottom">{{ $check->sectionLabel() }}</flux:badge>
+                        <flux:badge size="sm" color="zinc" inset="top bottom" class="font-mono">{{ $check->model ?: AiSettings::model().' (Standard)' }}</flux:badge>
+                        @unless ($check->is_active)
+                            <flux:badge size="sm" color="amber" inset="top bottom">ausgeschaltet</flux:badge>
+                        @endunless
+                    </div>
+
+                    @if ($check->description)
+                        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{{ $check->description }}</p>
+                    @endif
+                    <p class="mt-2 line-clamp-3 font-mono text-xs leading-relaxed text-zinc-500">{{ $check->prompt }}</p>
+                </article>
+            @endforeach
+        </div>
+    @endif
+    @endif
+    </div>
+
+    {{-- KI-Pruefung anlegen / bearbeiten – nur in den Stammdaten-Reitern --}}
+    @if (isset(AiAreas::areas()[$tab]))
+    <flux:modal name="ai-check-editor" class="md:w-[46rem]">
+        <form wire:submit="saveCheck" class="flex flex-col gap-5">
+            <flux:heading size="lg">{{ $checkId ? 'Prüfung bearbeiten' : 'Neue Prüfung' }} · {{ AiAreas::label($checkArea) }}</flux:heading>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="checkName" label="Name" placeholder="z. B. Währung prüfen" maxlength="100" />
+                <flux:field>
+                    <flux:label>Abschnitt</flux:label>
+                    <flux:description>Wo im Formular die Prüfung angeboten wird: an einem Abschnitt, an allen Abschnitten oder nur über „KI-Prüfung“ im Kopf des Eintrags (mit allen Daten).</flux:description>
+                    <flux:select wire:model.live="checkSection">
+                        <flux:select.option value="">Alle Abschnitte</flux:select.option>
+                        <flux:select.option value="general">Nur gesamter Eintrag</flux:select.option>
+                        @foreach (AiAreas::sectionLabels($checkArea) as $value => $label)
+                            <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <flux:error name="checkSection" />
+                </flux:field>
+            </div>
+
+            <flux:input wire:model="checkDescription" label="Kurzbeschreibung" placeholder="Was die Prüfung liefert – erscheint in der Auswahl" maxlength="255" />
+
+            <flux:field>
+                <flux:label>Prompt</flux:label>
+                <flux:description>
+                    Verfügbare Platzhalter (Klick kopiert):
+                    @foreach (AiAreas::placeholders($checkArea, $checkSection ?: null) as $key => $label)
+                        <x-adminv2.placeholder :name="$key" :label="$label" />
+                    @endforeach
+                    <x-adminv2.placeholder name="daten" label="Alle Angaben des Abschnitts als Liste" />
+                </flux:description>
+                <flux:textarea wire:model="checkPrompt" rows="10" placeholder="z. B. Prüfe, ob die Währungsangaben zu {name} stimmen: {daten}. Nenne Abweichungen mit Quelle." />
+                <flux:error name="checkPrompt" />
+            </flux:field>
+
+            <flux:field>
+                <flux:label>Modell</flux:label>
+                <flux:description>Nur für diese Prüfung; ohne Auswahl gilt das Standardmodell ({{ AiSettings::model() }}).</flux:description>
+                <flux:select wire:model="checkModel">
+                    <flux:select.option value="">Standardmodell</flux:select.option>
+                    @foreach ($this->checkModelOptions as $modelId)
+                        <flux:select.option value="{{ $modelId }}">{{ $modelId }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:error name="checkModel" />
+            </flux:field>
+
+            <flux:switch wire:model="checkActive" label="Eingeschaltet" description="Ausgeschaltete Prüfungen erscheinen nicht im Formular." align="left" />
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
+                <flux:button type="submit" variant="primary">{{ $checkId ? 'Speichern' : 'Prüfung anlegen' }}</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+    @endif
 
     {{-- KI-Vorlage anlegen / bearbeiten --}}
     <flux:modal name="ai-prompt" class="md:w-[44rem]">

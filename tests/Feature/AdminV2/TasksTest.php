@@ -615,3 +615,85 @@ it('fuehrt eine Prioritaet an der Aufgabe – mit Filter und Sortierung', functi
         ->and($change['old'])->toBe('Normal')
         ->and($change['new'])->toBe('Dringend');
 });
+
+it('legt Unteraufgaben an, die Rubrik, Verantwortung und Bezug der Hauptaufgabe uebernehmen', function () {
+    Mail::fake();
+    $anna = employee('Anna');
+    $dennis = employee('Dennis');
+    $this->actingAs($anna);
+
+    $parent = makeTask([
+        'title' => 'Messe vorbereiten',
+        'category_id' => taskCategory('Stammdaten')->id,
+        'priority' => AdminTask::PRIORITY_HIGH,
+        'due_date' => '2026-10-20',
+        'responsible_id' => $dennis->id,
+        'created_by' => $anna->id,
+    ]);
+
+    // Schnell per Titel auf der Seite der Hauptaufgabe …
+    $component = Livewire::test(Detail::class, ['task' => $parent->id])
+        ->assertSee('Unteraufgaben')
+        ->call('addSubtask')
+        ->assertHasErrors(['subtaskTitle'])
+        ->set('subtaskTitle', 'Standfläche buchen')
+        ->call('addSubtask')
+        ->assertHasNoErrors()
+        ->assertSet('subtaskTitle', '')
+        ->assertSee('Standfläche buchen')
+        ->assertSee('0 von 1 erledigt');
+
+    $subtask = AdminTask::where('title', 'Standfläche buchen')->first();
+
+    expect($subtask->parent_id)->toBe($parent->id)
+        ->and($subtask->category_id)->toBe($parent->category_id)
+        ->and($subtask->priority)->toBe(AdminTask::PRIORITY_HIGH)
+        ->and($subtask->due_date->format('Y-m-d'))->toBe('2026-10-20')
+        ->and($subtask->responsible_id)->toBe($dennis->id)
+        ->and($subtask->created_by)->toBe($anna->id);
+
+    // … oder ausfuehrlich ueber die eigene Seite mit ?parent=.
+    Livewire::withQueryParams(['parent' => $parent->id])
+        ->test(Detail::class)
+        ->assertSet('parentId', $parent->id)
+        ->assertSet('categoryId', (string) $parent->category_id)
+        ->assertSet('responsibleId', (string) $dennis->id)
+        ->assertSee('Hauptaufgabe: Messe vorbereiten')
+        ->set('title', 'Flyer drucken')
+        ->call('save')
+        ->assertHasNoErrors();
+    Livewire::withQueryParams([]);
+
+    expect(AdminTask::where('title', 'Flyer drucken')->value('parent_id'))->toBe($parent->id);
+
+    // Erledigen aus der Liste; sind alle erledigt, gibt es den Hinweis zur offenen Hauptaufgabe.
+    $component->call('toggleSubtask', $subtask->id)
+        ->assertSee('1 von 2 erledigt')
+        ->assertNotDispatched('adminv2-toast')
+        ->call('toggleSubtask', AdminTask::where('title', 'Flyer drucken')->value('id'))
+        ->assertSee('2 von 2 erledigt')
+        ->assertDispatched('adminv2-toast');
+
+    expect($subtask->fresh()->isDone())->toBeTrue();
+
+    // Die Unteraufgabe fuehrt zurueck zur Hauptaufgabe; die Liste zeigt den Stand.
+    Livewire::test(Detail::class, ['task' => $subtask->id])
+        ->assertSee('Hauptaufgabe: Messe vorbereiten')
+        ->assertSee('Unteraufgabe');
+
+    // Die Liste zeigt standardmaessig nur Offenes – die erledigten Unteraufgaben erst mit Status "alle".
+    Livewire::test(Index::class)
+        ->set('tab', 'all')
+        ->assertSee('2/2 Unteraufgaben')
+        ->assertDontSee('Unteraufgabe von')
+        ->set('status', 'all')
+        ->assertSee('Unteraufgabe von');
+
+    // Mit der Hauptaufgabe gehen die Unteraufgaben in den Papierkorb.
+    Livewire::test(Detail::class, ['task' => $parent->id])
+        ->call('delete')
+        ->assertRedirect(route('adminv2.tasks.index'));
+
+    expect(AdminTask::find($subtask->id))->toBeNull()
+        ->and(AdminTask::withTrashed()->find($subtask->id))->not->toBeNull();
+});

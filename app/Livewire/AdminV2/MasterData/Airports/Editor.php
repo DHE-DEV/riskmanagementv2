@@ -7,7 +7,7 @@ use App\Livewire\AdminV2\Concerns\EditsAirportExtras;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
 use App\Livewire\AdminV2\Concerns\ManagesAirlineLinks;
-use App\Livewire\AdminV2\Concerns\RunsAiAssistant;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Airport;
 use App\Models\City;
 use App\Models\Country;
@@ -27,7 +27,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsAirportExtras, EditsCoordinates, EditsMasterData, ManagesAirlineLinks, RunsAiAssistant;
+    use AuthorizesAdminV2, EditsAirportExtras, EditsCoordinates, EditsMasterData, ManagesAirlineLinks, RunsAiChecks;
 
     public string $name = '';
 
@@ -194,6 +194,7 @@ class Editor extends Component
 
         $record ??= new Airport;
         $created = ! $record->exists;
+        $unchanged = $this->unchangedAirportExtras($this->record);
 
         $record->fill([
             'name' => trim($this->name),
@@ -210,40 +211,117 @@ class Editor extends Component
             'timezone' => trim($this->timezone) ?: null,
             'dst_timezone' => trim($this->dstTimezone) ?: null,
             'source' => $record->source ?? 'manual',
+            'created_by' => $record->created_by ?? auth('web')->id(),
+            'updated_by' => auth('web')->id(),
         ] + $this->coordinateValues() + $this->airportExtrasValues())->save();
 
         $this->fillAirportExtras($record);
 
-        $this->finishSave($record, $created, $another);
+        $this->finishSave($record, $created, $another, $unchanged);
     }
 
-    protected function aiModelType(): string
+    protected function aiArea(): string
     {
-        return 'Airport';
+        return 'airports';
     }
 
-    protected function aiPlaceholderData(): array
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
     {
-        $airport = $this->record;
-        $city = $airport->city()->withTrashed()->first();
-        $country = $airport->country()->withTrashed()->first();
-
         return [
-            'name' => $airport->name,
-            'iata_code' => $airport->iata_code ?? 'N/A',
-            'icao_code' => $airport->icao_code ?? 'N/A',
-            'city' => $city?->getName('de') ?? 'N/A',
-            'city_en' => $city?->getName('en') ?? 'N/A',
-            'country' => $country?->getName('de') ?? 'N/A',
-            'country_en' => $country?->getName('en') ?? 'N/A',
-            'country_code' => $country?->iso_code ?? 'N/A',
-            'timezone' => $airport->timezone ?? 'N/A',
-            'dst_timezone' => $airport->dst_timezone ?? 'N/A',
-            'altitude' => $airport->altitude ?? 'N/A',
-            'type' => $airport->type ?? 'N/A',
-            'lat' => $airport->lat ?? 'N/A',
-            'lng' => $airport->lng ?? 'N/A',
+            'name' => $this->name,
+            'iata_code' => $this->iataCode,
+            'icao_code' => $this->icaoCode,
+            'country' => $this->countryOptions->firstWhere('id', (int) $this->countryId)?->getName('de'),
+            'city' => $this->cityOptions->firstWhere('id', (int) $this->cityId)?->getName('de'),
+            'type' => Airport::getTypeOptions()[$this->type] ?? $this->type,
+            'website' => $this->website,
+            'security_timeslot_url' => $this->securityTimeslotUrl,
+            'is_active' => $this->isActive,
+            'operates_24h' => $this->operates24h,
+            'lat' => $this->lat,
+            'lng' => $this->lng,
+            'altitude' => $this->altitude,
+            'timezone' => $this->timezone,
+            'dst_timezone' => $this->dstTimezone,
+        ] + $this->airportExtrasContext() + [
+            'airlines' => $this->links->map(fn ($airline) => $airline->name.($airline->iata_code ? ' ('.$airline->iata_code.')' : '').' – '.(MasterData::LINK_DIRECTIONS[$airline->pivot->direction] ?? $airline->pivot->direction).($airline->pivot->terminal ? ', Terminal '.$airline->pivot->terminal : ''))->all(),
         ];
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        switch ($key) {
+            case 'name': $this->name = $value;
+
+                return true;
+            case 'iata_code': $this->iataCode = mb_strtoupper($value);
+
+                return true;
+            case 'icao_code': $this->icaoCode = mb_strtoupper($value);
+
+                return true;
+            case 'website': $this->website = $value;
+
+                return true;
+            case 'security_timeslot_url': $this->securityTimeslotUrl = $value;
+
+                return true;
+            case 'is_active': $this->isActive = $this->aiBool($value);
+
+                return true;
+            case 'operates_24h': $this->operates24h = $this->aiBool($value);
+
+                return true;
+            case 'lat': $this->lat = $this->aiNumber($value);
+
+                return true;
+            case 'lng': $this->lng = $this->aiNumber($value);
+
+                return true;
+            case 'altitude': $this->altitude = $this->aiNumber($value);
+
+                return true;
+            case 'timezone': $this->timezone = $value;
+
+                return true;
+            case 'dst_timezone': $this->dstTimezone = $value;
+
+                return true;
+            case 'type':
+                $type = $this->aiMatch(array_keys(Airport::getTypeOptions()), $value, fn ($type) => Airport::getTypeOptions()[$type])
+                    ?? $this->aiMatch(array_keys(Airport::getTypeOptions()), $value, fn ($type) => $type);
+                if ($type) {
+                    $this->type = $type;
+                }
+
+                return $type !== null;
+            case 'country':
+                $country = $this->aiMatch($this->countryOptions, $value, fn ($country) => $country->getName('de'))
+                    ?? $this->aiMatch($this->countryOptions, $value, fn ($country) => (string) $country->iso_code);
+                if ($country) {
+                    $this->countryId = (string) $country->id;
+                    $this->updatedCountryId();
+                }
+
+                return $country !== null;
+            case 'city':
+                unset($this->cityOptions);
+                $city = $this->aiMatch($this->cityOptions, $value, fn ($city) => $city->getName('de'))
+                    ?? $this->aiMatch($this->cityOptions, $value, fn ($city) => $city->getName('en'));
+                if ($city) {
+                    $this->cityId = (string) $city->id;
+                }
+
+                return $city !== null;
+        }
+
+        return false;
     }
 
     public function render()

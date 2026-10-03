@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Airlines;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
 use App\Livewire\AdminV2\Concerns\ManagesAirlineLinks;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Airline;
 use App\Models\Country;
 use App\Support\AdminV2\MasterData;
@@ -23,7 +24,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsMasterData, ManagesAirlineLinks;
+    use AuthorizesAdminV2, EditsMasterData, ManagesAirlineLinks, RunsAiChecks;
 
     public const PET_RESTRICTIONS = [
         'specific_species' => 'Nur bestimmte Tierarten',
@@ -289,6 +290,116 @@ class Editor extends Component
         ])->save();
 
         $this->finishSave($record, $created, $another);
+    }
+
+    protected function aiArea(): string
+    {
+        return 'airlines';
+    }
+
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
+    {
+        $classes = Airline::getCabinClassOptions();
+        $baggage = [];
+        foreach ($classes as $class => $label) {
+            $dims = $this->handDimensions[$class] ?? [];
+            $parts = array_filter([
+                ($this->checkedBaggage[$class] ?? '') !== '' ? 'Freigepäck '.$this->checkedBaggage[$class] : null,
+                ($this->handBaggage[$class] ?? '') !== '' ? 'Handgepäck '.$this->handBaggage[$class] : null,
+                array_filter($dims) ? 'Maße '.implode(' × ', array_map(fn ($side) => ($dims[$side] ?? '') ?: '–', ['length', 'width', 'height'])).' cm' : null,
+            ]);
+            if ($parts) {
+                $baggage[] = $label.': '.implode(', ', $parts);
+            }
+        }
+        if ($this->handBaggageNotes !== '') {
+            $baggage[] = 'Hinweise: '.$this->handBaggageNotes;
+        }
+        if ($this->handBaggageInfoUrl !== '') {
+            $baggage[] = 'Info-URL: '.$this->handBaggageInfoUrl;
+        }
+
+        $pets = ['Erlaubt: '.($this->petsAllowed ? 'Ja' : 'Nein')];
+        if ($this->petsAllowed) {
+            $pets[] = 'In der Kabine: '.(($this->petCabin['allowed'] ?? false) ? 'Ja' : 'Nein').
+                (($this->petCabin['max_weight'] ?? '') !== '' ? ', max. '.$this->petCabin['max_weight'] : '').
+                (($this->petCabin['weight_includes_bag'] ?? false) ? ' inkl. Tasche' : '').
+                (array_filter([$this->petCabin['carrier_length'] ?? '', $this->petCabin['carrier_width'] ?? '', $this->petCabin['carrier_height'] ?? '']) ? ', Transportbox '.($this->petCabin['carrier_length'] ?: '–').' × '.($this->petCabin['carrier_width'] ?: '–').' × '.($this->petCabin['carrier_height'] ?: '–').' cm' : '').
+                (($this->petCabin['advance_notice_required'] ?? false) ? ', Voranmeldung erforderlich' : '').
+                (($this->petCabin['notes'] ?? '') !== '' ? ' – '.$this->petCabin['notes'] : '');
+            $pets[] = 'Im Frachtraum: '.(($this->petHold['allowed'] ?? false) ? 'Ja' : 'Nein').
+                (($this->petHold['max_weight'] ?? '') !== '' ? ', max. '.$this->petHold['max_weight'] : '').
+                (($this->petHold['advance_notice_required'] ?? false) ? ', Voranmeldung erforderlich' : '').
+                (($this->petHold['notes'] ?? '') !== '' ? ' – '.$this->petHold['notes'] : '');
+            if ($this->petRestrictions) {
+                $pets[] = 'Einschränkungen: '.implode(', ', array_map(fn ($key) => self::PET_RESTRICTIONS[$key] ?? $key, $this->petRestrictions));
+            }
+            if ($this->petInfoUrl !== '') {
+                $pets[] = 'Info-URL: '.$this->petInfoUrl;
+            }
+            if ($this->petNotes !== '') {
+                $pets[] = 'Hinweise: '.$this->petNotes;
+            }
+        }
+
+        return [
+            'name' => $this->name,
+            'iata_code' => $this->iataCode,
+            'icao_code' => $this->icaoCode,
+            'home_country' => $this->countryOptions->firstWhere('id', (int) $this->homeCountryId)?->getName('de'),
+            'headquarters' => $this->headquarters,
+            'is_active' => $this->isActive,
+            'website' => $this->website,
+            'booking_url' => $this->bookingUrl,
+            'contact' => collect(self::CONTACT_FIELDS)->map(fn ($label, $field) => ($this->contact[$field] ?? '') !== '' ? $label.': '.$this->contact[$field] : null)->filter()->values()->all(),
+            'cabin_classes' => array_values(array_intersect_key($classes, array_flip($this->cabinClasses))),
+            'baggage' => $baggage,
+            'pets' => $pets,
+            'airports' => $this->links->map(fn ($airport) => $airport->name.($airport->iata_code ? ' ('.$airport->iata_code.')' : '').' – '.(MasterData::LINK_DIRECTIONS[$airport->pivot->direction] ?? $airport->pivot->direction).($airport->pivot->terminal ? ', Terminal '.$airport->pivot->terminal : ''))->all(),
+        ];
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        switch ($key) {
+            case 'name': $this->name = $value;
+
+                return true;
+            case 'iata_code': $this->iataCode = mb_strtoupper($value);
+
+                return true;
+            case 'icao_code': $this->icaoCode = mb_strtoupper($value);
+
+                return true;
+            case 'headquarters': $this->headquarters = $value;
+
+                return true;
+            case 'is_active': $this->isActive = $this->aiBool($value);
+
+                return true;
+            case 'website': $this->website = $value;
+
+                return true;
+            case 'booking_url': $this->bookingUrl = $value;
+
+                return true;
+            case 'home_country':
+                $country = $this->aiMatch($this->countryOptions, $value, fn ($country) => $country->getName('de'))
+                    ?? $this->aiMatch($this->countryOptions, $value, fn ($country) => (string) $country->iso_code);
+                if ($country) {
+                    $this->homeCountryId = (string) $country->id;
+                }
+
+                return $country !== null;
+        }
+
+        return false;
     }
 
     public function render()

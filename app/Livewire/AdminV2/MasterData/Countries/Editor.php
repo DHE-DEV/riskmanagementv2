@@ -5,9 +5,11 @@ namespace App\Livewire\AdminV2\MasterData\Countries;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
-use App\Livewire\AdminV2\Concerns\RunsAiAssistant;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Continent;
 use App\Models\Country;
+use App\Models\CustomEvent;
+use App\Services\DeepLTranslationService;
 use App\Support\AdminV2\CountryRiskProfile;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Support\Collection;
@@ -25,7 +27,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiAssistant;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
 
     /** So viele Eintraege zeigt die Seitenspalte je Liste. */
     public const RELATED_LIMIT = 12;
@@ -63,6 +65,9 @@ class Editor extends Component
 
     /** @var array<string, array<string, mixed>> Formularwerte, siehe CountryRiskProfile */
     public array $riskProfile = [];
+
+    /** Beim Uebersetzen der Notizen bereits ausgefuellte Sprachen ueberschreiben */
+    public bool $overwriteNoteTranslations = false;
 
     public function mount(?int $country = null): void
     {
@@ -306,6 +311,9 @@ class Editor extends Component
 
         $record ??= new Country;
         $created = ! $record->exists;
+        // Das Risikoprofil wird beim Speichern vereinheitlicht – nur inhaltliche Aenderungen zaehlen im Protokoll.
+        $riskProfile = CountryRiskProfile::fromForm($this->riskProfile, $record->risk_profile);
+        $unchanged = $record->exists && $riskProfile == CountryRiskProfile::fromForm(CountryRiskProfile::toForm($record->risk_profile), $record->risk_profile) ? ['risk_profile'] : [];
 
         $names = ['de' => trim($this->nameDe), 'en' => trim($this->nameEn)];
         foreach ($this->extraNames as $row) {
@@ -326,37 +334,217 @@ class Editor extends Component
             'timezone' => trim($this->timezone) ?: null,
             'population' => $this->population === '' ? null : (int) $this->population,
             'area_km2' => $this->areaKm2 === '' ? null : (float) $this->areaKm2,
-            'risk_profile' => CountryRiskProfile::fromForm($this->riskProfile, $record->risk_profile),
+            'risk_profile' => $riskProfile,
         ] + $this->coordinateValues())->save();
 
         unset($this->related, $this->boundary, $this->overallRisk);
 
-        $this->finishSave($record, $created, $another);
+        $this->finishSave($record, $created, $another, $unchanged);
     }
 
-    protected function aiModelType(): string
+    /**
+     * Uebersetzt die Notizen des Risikoprofils per DeepL aus der Ausgangssprache
+     * in die uebrigen Sprachen – im Formular, gespeichert wird erst mit "Speichern".
+     */
+    public function translateRiskNotes(): void
     {
-        return 'Country';
+        $deepl = app(DeepLTranslationService::class);
+        $this->modal('translate-risk-notes')->close();
+
+        if (! $deepl->isConfigured()) {
+            $this->dispatch('adminv2-toast', message: 'DeepL ist nicht konfiguriert (DEEPL_KEY fehlt).', variant: 'danger');
+
+            return;
+        }
+
+        set_time_limit(120);
+
+        $source = CustomEvent::sourceLocale();
+        $translated = 0;
+        $errors = [];
+
+        foreach ($this->riskProfile as $category => $values) {
+            foreach ($values['notes'] ?? [] as $field => $texts) {
+                if (blank($texts[$source] ?? null)) {
+                    continue;
+                }
+
+                foreach (CountryRiskProfile::noteLocales() as $locale) {
+                    if ($locale === $source || (! $this->overwriteNoteTranslations && filled($texts[$locale] ?? null))) {
+                        continue;
+                    }
+
+                    try {
+                        $this->riskProfile[$category]['notes'][$field][$locale] = $deepl->translate(trim($texts[$source]), $locale, $source);
+                        $translated++;
+                    } catch (\Throwable $e) {
+                        $errors[strtoupper($locale)] = strtoupper($locale).': '.$e->getMessage();
+                    }
+                }
+            }
+        }
+
+        $this->dispatch('adminv2-toast', ...match (true) {
+            $errors !== [] => ['message' => 'Übersetzung teilweise fehlgeschlagen – '.implode(' | ', $errors), 'variant' => 'danger'],
+            $translated > 0 => ['message' => $translated.' '.($translated === 1 ? 'Notiz' : 'Notizen').' übersetzt – noch nicht gespeichert.'],
+            default => ['message' => 'Nichts zu übersetzen – alle Sprachen waren bereits ausgefüllt.'],
+        });
     }
 
-    protected function aiPlaceholderData(): array
+    protected function aiArea(): string
     {
-        $country = $this->record;
+        return 'countries';
+    }
 
-        return [
-            'name' => $country->getName('de'),
-            'name_en' => $country->getName('en'),
-            'iso_code' => $country->iso_code,
-            'iso3_code' => $country->iso3_code,
-            'continent' => $country->continent?->getName('de') ?? 'N/A',
-            'is_eu_member' => $country->is_eu_member ? 'Ja' : 'Nein',
-            'is_schengen_member' => $country->is_schengen_member ? 'Ja' : 'Nein',
-            'currency_code' => $country->currency_code ?? 'N/A',
-            'currency_name' => $country->currency_name ?? 'N/A',
-            'phone_prefix' => $country->phone_prefix ?? 'N/A',
-            'population' => $country->population ?? 'N/A',
-            'area_km2' => $country->area_km2 ?? 'N/A',
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
+    {
+        $riskProfile = [];
+        foreach (CountryRiskProfile::categories() as $category => $definition) {
+            foreach ($definition['fields'] as $field => $meta) {
+                $value = $this->riskProfile[$category][$field] ?? null;
+                if ($value === null || $value === '' || $value === false) {
+                    continue;
+                }
+                $riskProfile[] = $definition['label'].' › '.$meta['label'].': '.match ($meta['type']) {
+                    'level' => $value.' – '.(CountryRiskProfile::LEVELS[(int) $value] ?? ''),
+                    'bool' => 'Ja',
+                    default => $value,
+                };
+            }
+        }
+
+        // Jedes Feld des Risikoprofils einzeln – damit die Feldpruefung je Feld urteilen kann.
+        $riskFields = [];
+        foreach (CountryRiskProfile::categories() as $category => $definition) {
+            foreach ($definition['fields'] as $field => $meta) {
+                $riskFields[CountryRiskProfile::placeholderKey($category, $field)] = CountryRiskProfile::describe($meta, $this->riskProfile[$category][$field] ?? null);
+            }
+        }
+
+        return $riskFields + [
+            'name' => $this->nameDe,
+            'name_en' => $this->nameEn,
+            'names' => collect($this->extraNames)->filter(fn (array $row) => ($row['name'] ?? '') !== '')->map(fn (array $row) => ($row['code'] ?? '').': '.$row['name'])->values()->all(),
+            'iso_code' => $this->isoCode,
+            'iso3_code' => $this->iso3Code,
+            'continent' => $this->continents->firstWhere('id', (int) $this->continentId)?->getName('de'),
+            'is_eu_member' => $this->isEuMember,
+            'is_schengen_member' => $this->isSchengenMember,
+            'currency_code' => $this->currencyCode,
+            'currency_name' => $this->currencyName,
+            'currency_symbol' => $this->currencySymbol,
+            'phone_prefix' => $this->phonePrefix,
+            'timezone' => $this->timezone,
+            'population' => $this->population,
+            'area_km2' => $this->areaKm2,
+            'lat' => $this->lat,
+            'lng' => $this->lng,
+            'risk_profile' => $riskProfile,
         ];
+    }
+
+    /**
+     * Die Begruendung der KI kommt in die Notiz des Punktes (Ausgangssprache);
+     * eine vorhandene Notiz bleibt stehen, der Text wird angehaengt.
+     */
+    protected function aiApplyNote(string $key, string $text): bool
+    {
+        $resolved = CountryRiskProfile::resolvePlaceholder($key);
+
+        if (! $resolved || ! CountryRiskProfile::hasNote($resolved[2])) {
+            return false;
+        }
+
+        [$category, $field] = $resolved;
+        $locale = CustomEvent::sourceLocale();
+        $current = trim((string) ($this->riskProfile[$category]['notes'][$field][$locale] ?? ''));
+
+        if (! str_contains($current, $text)) {
+            $this->riskProfile[$category]['notes'][$field][$locale] = ltrim($current."\n".$text);
+        }
+
+        return true;
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        if ($resolved = CountryRiskProfile::resolvePlaceholder($key)) {
+            [$category, $field, $meta] = $resolved;
+            $parsed = CountryRiskProfile::parseSuggestion($meta, $value);
+
+            if ($parsed === null) {
+                return false;
+            }
+
+            $this->riskProfile[$category][$field] = $parsed;
+            unset($this->overallRisk);
+
+            return true;
+        }
+
+        switch ($key) {
+            case 'name': $this->nameDe = $value;
+
+                return true;
+            case 'name_en': $this->nameEn = $value;
+
+                return true;
+            case 'iso_code': $this->isoCode = mb_strtoupper($value);
+
+                return true;
+            case 'iso3_code': $this->iso3Code = mb_strtoupper($value);
+
+                return true;
+            case 'is_eu_member': $this->isEuMember = $this->aiBool($value);
+
+                return true;
+            case 'is_schengen_member': $this->isSchengenMember = $this->aiBool($value);
+
+                return true;
+            case 'currency_code': $this->currencyCode = mb_strtoupper($value);
+
+                return true;
+            case 'currency_name': $this->currencyName = $value;
+
+                return true;
+            case 'currency_symbol': $this->currencySymbol = $value;
+
+                return true;
+            case 'phone_prefix': $this->phonePrefix = $value;
+
+                return true;
+            case 'timezone': $this->timezone = $value;
+
+                return true;
+            case 'population': $this->population = $this->aiNumber($value);
+
+                return true;
+            case 'area_km2': $this->areaKm2 = $this->aiNumber($value);
+
+                return true;
+            case 'lat': $this->lat = $this->aiNumber($value);
+
+                return true;
+            case 'lng': $this->lng = $this->aiNumber($value);
+
+                return true;
+            case 'continent':
+                $continent = $this->aiMatch($this->continents, $value, fn ($continent) => $continent->getName('de'))
+                    ?? $this->aiMatch($this->continents, $value, fn ($continent) => $continent->getName('en'));
+                if ($continent) {
+                    $this->continentId = (string) $continent->id;
+                }
+
+                return $continent !== null;
+        }
+
+        return false;
     }
 
     public function render()

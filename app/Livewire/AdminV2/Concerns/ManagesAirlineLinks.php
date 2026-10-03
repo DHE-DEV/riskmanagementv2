@@ -4,6 +4,7 @@ namespace App\Livewire\AdminV2\Concerns;
 
 use App\Models\Airline;
 use App\Models\Airport;
+use App\Models\MasterDataChange;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
@@ -84,6 +85,7 @@ trait ManagesAirlineLinks
         $relation->syncWithoutDetaching([
             (int) $this->linkId => ['direction' => $this->linkDirection, 'terminal' => trim($this->linkTerminal) ?: null],
         ]);
+        $this->logLinkChange($relation);
 
         $this->reset('linkId', 'linkDirection', 'linkTerminal');
         unset($this->links, $this->availableLinkOptions);
@@ -128,6 +130,7 @@ trait ManagesAirlineLinks
             'direction' => $this->linkDirection,
             'terminal' => trim($this->linkTerminal) ?: null,
         ]);
+        $this->logLinkChange($relation);
 
         $this->cancelEditLink();
         unset($this->links);
@@ -145,6 +148,7 @@ trait ManagesAirlineLinks
 
         $link = $this->links->firstWhere('id', $id);
         $relation->detach($id);
+        $this->logLinkChange($relation);
 
         if ($this->editingLinkId === $id) {
             $this->cancelEditLink();
@@ -153,6 +157,14 @@ trait ManagesAirlineLinks
         unset($this->links, $this->availableLinkOptions);
 
         $this->dispatch('adminv2-toast', message: $link ? '„'.MasterData::recordLabel($link).'“ entfernt.' : 'Verknüpfung entfernt.');
+    }
+
+    /**
+     * Verknuepfungen zaehlen als Aenderung am Eintrag.
+     */
+    protected function logLinkChange(BelongsToMany $relation): void
+    {
+        MasterData::logChange($relation->getParent(), MasterDataChange::ACTION_UPDATED, [$relation->getRelationName()]);
     }
 
     /**

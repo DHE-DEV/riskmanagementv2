@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Support\AiSettings;
 use Exception;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -61,7 +62,7 @@ class ChatGptService
      * Sendet einen Prompt an ChatGPT und gibt die Antwort zurück
      *
      * @param string $prompt Der zu sendende Prompt
-     * @param array $options Optionale Konfiguration (model, temperature, max_tokens)
+     * @param array $options Optionale Konfiguration (model, temperature, max_tokens, timeout)
      * @return string Die Antwort von ChatGPT
      * @throws Exception Bei API-Fehlern
      */
@@ -72,7 +73,7 @@ class ChatGptService
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])
-            ->timeout(60)
+            ->timeout($options['timeout'] ?? 60)
             ->post($this->apiUrl, [
                 'model' => $model = $options['model'] ?? $this->model,
                 'messages' => [
@@ -118,6 +119,71 @@ class ChatGptService
 
             throw new Exception('Fehler bei der Kommunikation mit ChatGPT: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Sendet mehrere Prompts gleichzeitig und gibt die Antworten unter denselben
+     * Schluesseln zurueck. lastUsage() nennt danach den Verbrauch aller zusammen.
+     *
+     * @param  array<string, string>  $prompts
+     * @param  array  $options  wie bei sendPrompt()
+     * @return array<string, string>
+     *
+     * @throws Exception Bei API-Fehlern
+     */
+    public function sendPrompts(array $prompts, array $options = []): array
+    {
+        $model = $options['model'] ?? $this->model;
+
+        $responses = Http::pool(fn (Pool $pool) => array_map(
+            fn (string $key) => $pool->as($key)
+                ->withHeaders([
+                    'Authorization' => 'Bearer '.$this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->timeout($options['timeout'] ?? 60)
+                ->post($this->apiUrl, [
+                    'model' => $model,
+                    'messages' => [['role' => 'user', 'content' => $prompts[$key]]],
+                ] + $this->completionParameters($model, $options)),
+            array_map('strval', array_keys($prompts)),
+        ));
+
+        $answers = [];
+        $usage = ['model' => $model, 'input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
+
+        foreach (array_keys($prompts) as $key) {
+            $response = $responses[$key];
+
+            if ($response instanceof \Throwable) {
+                Log::error('ChatGPT Service Exception', ['message' => $response->getMessage()]);
+
+                throw new Exception('Fehler bei der Kommunikation mit ChatGPT: '.$response->getMessage());
+            }
+
+            $data = $response->json();
+
+            if (! $response->successful()) {
+                Log::error('ChatGPT API Error', ['status' => $response->status(), 'error' => $data]);
+
+                throw new Exception('Fehler bei der Kommunikation mit ChatGPT: ChatGPT API Fehler: '.($data['error']['message'] ?? 'Unbekannter Fehler'));
+            }
+
+            if (! isset($data['choices'][0]['message']['content'])) {
+                throw new Exception('Fehler bei der Kommunikation mit ChatGPT: Ungültige API-Antwort von ChatGPT');
+            }
+
+            $answers[$key] = trim($data['choices'][0]['message']['content']);
+
+            $usage['model'] = (string) ($data['model'] ?? $model);
+            $usage['input_tokens'] += (int) ($data['usage']['prompt_tokens'] ?? 0);
+            $usage['output_tokens'] += (int) ($data['usage']['completion_tokens'] ?? 0);
+            $usage['total_tokens'] += (int) ($data['usage']['total_tokens'] ?? 0);
+        }
+
+        $this->lastUsage = $usage;
+
+        return $answers;
     }
 
     /**

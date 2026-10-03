@@ -29,66 +29,51 @@
         @endif
     </div>
 
-    <x-adminv2.card flush>
-        @if ($rows->isEmpty())
-            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Regionen" />
-        @else
-            <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search, countryIds, coordinates, trashed, sortBy, resetFilters, gotoPage, nextPage, previousPage">
-                <table class="w-full min-w-[760px] text-left text-sm">
-                    <thead class="border-b border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800">
-                        <tr>
-                            <x-adminv2.sort-th column="name" :sort="$sort" :direction="$direction" class="ps-5">Name</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="code" :sort="$sort" :direction="$direction">Code</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="country" :sort="$sort" :direction="$direction">Land</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="cities_count" :sort="$sort" :direction="$direction" align="end">Städte</x-adminv2.sort-th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Koordinaten</th>
-                            <th class="px-3 py-3 pe-5"><span class="sr-only">Aktionen</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @foreach ($rows as $region)
-                            @php $editUrl = route('adminv2.master-data.regions.edit', $region->id); @endphp
-                            <tr wire:key="region-{{ $region->id }}" @class(['bg-zinc-50/70 text-zinc-500 dark:bg-zinc-900/40' => $region->trashed()])>
-                                <td class="px-3 py-3 ps-5">
-                                    <a href="{{ $editUrl }}" class="font-medium text-zinc-900 hover:underline dark:text-white">{{ $region->getName('de') }}</a>
-                                    @if ($region->trashed())
-                                        <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">Papierkorb</flux:badge>
-                                    @endif
-                                    @if (($region->name_translations['en'] ?? '') !== '' && $region->name_translations['en'] !== ($region->name_translations['de'] ?? null))
-                                        <div class="text-xs text-zinc-500">{{ $region->name_translations['en'] }}</div>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{{ $region->code ?: '–' }}</td>
-                                <td class="px-3 py-3">
-                                    @if ($region->country)
-                                        <a href="{{ route('adminv2.master-data.countries.edit', $region->country->id) }}" class="text-zinc-700 hover:underline dark:text-zinc-300">{{ $region->country->getName('de') }}</a>
-                                        @if ($region->country->trashed()) <span class="text-xs text-zinc-400">(Papierkorb)</span> @endif
-                                    @else
-                                        <span class="text-zinc-400">–</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 text-end tabular-nums">
-                                    @if ($region->cities_count > 0)
-                                        <a href="{{ route('adminv2.master-data.cities.index', ['country' => [$region->country_id], 'region' => $region->id]) }}" class="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ number_format($region->cities_count, 0, ',', '.') }}</a>
-                                    @else
-                                        <span class="text-zinc-400">0</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap tabular-nums text-zinc-600 dark:text-zinc-400">
-                                    {{ $region->lat !== null && $region->lng !== null ? Coordinates::format($region->lat).', '.Coordinates::format($region->lng) : '–' }}
-                                </td>
-                                <td class="px-3 py-2 pe-5">
-                                    <x-adminv2.master-data.row-actions :id="$region->id" :trashed="$region->trashed()" :edit-url="$editUrl" :name="$region->getName('de')" />
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <x-adminv2.master-data.sort-bar :options="$this->sortOptions()" :sort="$sort" :direction="$direction" :total="$rows->total()" :noun="['Region', 'Regionen']" />
 
-            <x-adminv2.pagination :paginator="$rows" class="border-t border-zinc-100 px-5 py-3 dark:border-zinc-800" />
-        @endif
-    </x-adminv2.card>
+    @if ($rows->isEmpty())
+        <x-adminv2.card flush>
+            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Regionen" />
+        </x-adminv2.card>
+    @else
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, coordinates, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+            @foreach ($rows as $region)
+                <x-adminv2.master-data.record-card
+                    wire:key="region-{{ $region->id }}"
+                    :id="$region->id"
+                    :edit-url="route('adminv2.master-data.regions.edit', $region->id)"
+                    :title="$region->getName('de')"
+                    :tags="array_filter([$region->code])"
+                    :trashed="$region->trashed()"
+                >
+                    <x-slot:aside><x-adminv2.master-data.coordinates-mark :lat="$region->lat" :lng="$region->lng" /></x-slot:aside>
+                    @if (($region->name_translations['en'] ?? '') !== '' && $region->name_translations['en'] !== $region->getName('de'))
+                        <x-adminv2.master-data.card-row icon="language" label="Englisch">{{ $region->name_translations['en'] }}</x-adminv2.master-data.card-row>
+                    @endif
+                    <x-adminv2.master-data.card-row icon="flag" label="Land">
+                        @if ($region->country)
+                            <a href="{{ route('adminv2.master-data.countries.edit', $region->country->id) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $region->country->getName('de') }}</a>
+                            @if ($region->country->trashed()) <span class="text-xs text-zinc-400">(Papierkorb)</span> @endif
+                        @else
+                            –
+                        @endif
+                    </x-adminv2.master-data.card-row>
+                    <x-adminv2.master-data.card-row icon="building-office-2" label="Städte">
+                        @if ($region->cities_count > 0)
+                            <a href="{{ route('adminv2.master-data.cities.index', ['country' => [$region->country_id], 'region' => $region->id]) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ number_format($region->cities_count, 0, ',', '.') }} {{ $region->cities_count === 1 ? 'Stadt' : 'Städte' }}</a>
+                        @else
+                            Keine Städte
+                        @endif
+                    </x-adminv2.master-data.card-row>
+                    <x-slot:footer>
+                        <span class="tabular-nums">geändert {{ $region->updated_at?->format('d.m.Y') ?? '–' }}</span>
+                    </x-slot:footer>
+                </x-adminv2.master-data.record-card>
+            @endforeach
+        </div>
+
+        <x-adminv2.pagination :paginator="$rows" />
+    @endif
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 </div>

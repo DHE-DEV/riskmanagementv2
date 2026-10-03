@@ -45,74 +45,51 @@
         @endif
     </div>
 
-    <x-adminv2.card flush>
-        @if ($rows->isEmpty())
-            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Airlines" />
-        @else
-            <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search, countryIds, cabinClass, pets, active, trashed, sortBy, resetFilters, gotoPage, nextPage, previousPage">
-                <table class="w-full min-w-[900px] text-left text-sm">
-                    <thead class="border-b border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800">
-                        <tr>
-                            <x-adminv2.sort-th column="name" :sort="$sort" :direction="$direction" class="ps-5">Name</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="iata_code" :sort="$sort" :direction="$direction">Codes</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="country" :sort="$sort" :direction="$direction">Heimatland</x-adminv2.sort-th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Hauptsitz</th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Kabinenklassen</th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Haustiere</th>
-                            <x-adminv2.sort-th column="airports_count" :sort="$sort" :direction="$direction" align="end">Direktverbindungen</x-adminv2.sort-th>
-                            <th class="px-3 py-3 pe-5"><span class="sr-only">Aktionen</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @foreach ($rows as $airline)
-                            @php $editUrl = route('adminv2.master-data.airlines.edit', $airline->id); @endphp
-                            <tr wire:key="airline-{{ $airline->id }}" @class(['bg-zinc-50/70 text-zinc-500 dark:bg-zinc-900/40' => $airline->trashed()])>
-                                <td class="px-3 py-3 ps-5">
-                                    <a href="{{ $editUrl }}" class="font-medium text-zinc-900 hover:underline dark:text-white">{{ $airline->name }}</a>
-                                    @unless ($airline->is_active) <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">inaktiv</flux:badge> @endunless
-                                    @if ($airline->trashed()) <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">Papierkorb</flux:badge> @endif
-                                </td>
-                                <td class="px-3 py-3 font-mono text-xs whitespace-nowrap text-zinc-700 dark:text-zinc-300">{{ $airline->iata_code ?: '–' }} · {{ $airline->icao_code ?: '–' }}</td>
-                                <td class="px-3 py-3">
-                                    @if ($airline->homeCountry)
-                                        <a href="{{ route('adminv2.master-data.countries.edit', $airline->homeCountry->id) }}" class="text-zinc-700 hover:underline dark:text-zinc-300">{{ $airline->homeCountry->getName('de') }}</a>
-                                    @else
-                                        <span class="text-zinc-400">–</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 text-zinc-700 dark:text-zinc-300">{{ $airline->headquarters ?: '–' }}</td>
-                                <td class="px-3 py-3">
-                                    @php $classes = array_intersect_key($cabinClasses, array_flip($airline->cabin_classes ?? [])); @endphp
-                                    @if ($classes)
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach ($classes as $label)
-                                                <flux:badge size="sm" color="zinc" inset="top bottom">{{ $label }}</flux:badge>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <span class="text-zinc-400">–</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3">
-                                    @if ($airline->pet_policy['allowed'] ?? false)
-                                        <flux:badge size="sm" color="green" inset="top bottom">erlaubt</flux:badge>
-                                    @else
-                                        <span class="text-zinc-400">–</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 text-end tabular-nums text-zinc-700 dark:text-zinc-300">{{ $airline->airports_count ?: '–' }}</td>
-                                <td class="px-3 py-2 pe-5">
-                                    <x-adminv2.master-data.row-actions :id="$airline->id" :trashed="$airline->trashed()" :edit-url="$editUrl" :name="$airline->name" />
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <x-adminv2.master-data.sort-bar :options="$this->sortOptions()" :sort="$sort" :direction="$direction" :total="$rows->total()" :noun="['Airline', 'Airlines']" />
 
-            <x-adminv2.pagination :paginator="$rows" class="border-t border-zinc-100 px-5 py-3 dark:border-zinc-800" />
-        @endif
-    </x-adminv2.card>
+    @if ($rows->isEmpty())
+        <x-adminv2.card flush>
+            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Airlines" />
+        </x-adminv2.card>
+    @else
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, cabinClass, pets, active, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+            @foreach ($rows as $airline)
+                @php $classes = array_intersect_key($cabinClasses, array_flip($airline->cabin_classes ?? [])); @endphp
+                <x-adminv2.master-data.record-card
+                    wire:key="airline-{{ $airline->id }}"
+                    :id="$airline->id"
+                    :edit-url="route('adminv2.master-data.airlines.edit', $airline->id)"
+                    :title="$airline->name"
+                    :tags="array_filter([$airline->iata_code, $airline->icao_code])"
+                    :trashed="$airline->trashed()"
+                    :inactive="! $airline->is_active"
+                >
+                    @if ($classes || ($airline->pet_policy['allowed'] ?? false))
+                        <x-slot:badges>
+                            @foreach ($classes as $label)
+                                <flux:badge size="sm" color="zinc" inset="top bottom">{{ $label }}</flux:badge>
+                            @endforeach
+                            @if ($airline->pet_policy['allowed'] ?? false) <flux:badge size="sm" color="green" inset="top bottom">Haustiere erlaubt</flux:badge> @endif
+                        </x-slot:badges>
+                    @endif
+                    <x-adminv2.master-data.card-row icon="flag" label="Heimatland und Hauptsitz">
+                        @if ($airline->homeCountry)
+                            <a href="{{ route('adminv2.master-data.countries.edit', $airline->homeCountry->id) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $airline->homeCountry->getName('de') }}</a>
+                        @else
+                            –
+                        @endif
+                        @if ($airline->headquarters) <span class="text-zinc-400">·</span> {{ $airline->headquarters }} @endif
+                    </x-adminv2.master-data.card-row>
+                    <x-adminv2.master-data.card-row icon="paper-airplane" label="Direktverbindungen">{{ $airline->airports_count > 0 ? $airline->airports_count.' '.($airline->airports_count === 1 ? 'Direktverbindung' : 'Direktverbindungen') : 'Keine Direktverbindung hinterlegt' }}</x-adminv2.master-data.card-row>
+                    <x-slot:footer>
+                        <span class="tabular-nums">geändert {{ $airline->updated_at?->format('d.m.Y') ?? '–' }}</span>
+                    </x-slot:footer>
+                </x-adminv2.master-data.record-card>
+            @endforeach
+        </div>
+
+        <x-adminv2.pagination :paginator="$rows" />
+    @endif
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 </div>

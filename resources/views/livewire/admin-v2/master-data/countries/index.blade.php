@@ -1,5 +1,4 @@
 @php
-    use App\Models\Country;
     use App\Support\AdminV2\CountryRiskProfile;
 
     $rows = $this->rows;
@@ -22,10 +21,12 @@
             </flux:select>
         </div>
         <div class="w-44">
-            <flux:select wire:model.live="membership" aria-label="Mitgliedschaft">
-                <flux:select.option value="">EU / Schengen: alle</flux:select.option>
-                <flux:select.option value="eu">EU-Mitglieder</flux:select.option>
-                <flux:select.option value="schengen">Schengen-Mitglieder</flux:select.option>
+            <flux:select wire:model.live="membership" aria-label="EU / Schengen">
+                <flux:select.option value="">Alle</flux:select.option>
+                <flux:select.option value="eu">EU-Länder</flux:select.option>
+                <flux:select.option value="schengen">Schengen-Länder</flux:select.option>
+                <flux:select.option value="both">EU- und Schengen-Länder</flux:select.option>
+                <flux:select.option value="none">Weder EU noch Schengen</flux:select.option>
             </flux:select>
         </div>
         <div class="w-48">
@@ -43,6 +44,13 @@
                 <flux:select.option value="missing">Ohne Koordinaten</flux:select.option>
             </flux:select>
         </div>
+        <div class="w-52">
+            <flux:select wire:model.live="airports" aria-label="Flughäfen">
+                <flux:select.option value="">Flughäfen: alle</flux:select.option>
+                <flux:select.option value="any">Mit gepflegtem Flughafen</flux:select.option>
+                <flux:select.option value="none">Ohne gepflegten Flughafen</flux:select.option>
+            </flux:select>
+        </div>
         <div class="w-48">
             <x-adminv2.master-data.trashed-filter />
         </div>
@@ -51,90 +59,61 @@
         @endif
     </div>
 
-    <x-adminv2.card flush>
-        @if ($rows->isEmpty())
-            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Länder" />
-        @else
-            <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search, continent, membership, risk, coordinates, trashed, sortBy, resetFilters, gotoPage, nextPage, previousPage">
-                <table class="w-full min-w-[1040px] text-left text-sm">
-                    <thead class="border-b border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800">
-                        <tr>
-                            <x-adminv2.sort-th column="name" :sort="$sort" :direction="$direction" class="ps-5">Name</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="iso_code" :sort="$sort" :direction="$direction">ISO</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="continent" :sort="$sort" :direction="$direction">Kontinent</x-adminv2.sort-th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Mitglied</th>
-                            <x-adminv2.sort-th column="risk" :sort="$sort" :direction="$direction">Risiko</x-adminv2.sort-th>
-                            <th class="px-3 py-3 font-medium uppercase tracking-wide">Währung</th>
-                            <x-adminv2.sort-th column="population" :sort="$sort" :direction="$direction" align="end">Bevölkerung</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="regions_count" :sort="$sort" :direction="$direction" align="end">Regionen</x-adminv2.sort-th>
-                            <x-adminv2.sort-th column="cities_count" :sort="$sort" :direction="$direction" align="end">Städte</x-adminv2.sort-th>
-                            <th class="px-3 py-3 pe-5"><span class="sr-only">Aktionen</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @foreach ($rows as $country)
-                            @php
-                                $editUrl = route('adminv2.master-data.countries.edit', $country->id);
-                                $riskLevel = $country->overall_risk_level;
-                            @endphp
-                            <tr wire:key="country-{{ $country->id }}" @class(['bg-zinc-50/70 text-zinc-500 dark:bg-zinc-900/40' => $country->trashed()])>
-                                <td class="px-3 py-3 ps-5">
-                                    <a href="{{ $editUrl }}" class="font-medium text-zinc-900 hover:underline dark:text-white">{{ $country->getName('de') }}</a>
-                                    @if ($country->trashed())
-                                        <flux:badge size="sm" color="zinc" inset="top bottom" class="ms-1">Papierkorb</flux:badge>
-                                    @endif
-                                    @if ($country->lat === null || $country->lng === null)
-                                        <flux:badge size="sm" color="amber" inset="top bottom" class="ms-1">ohne Koordinaten</flux:badge>
-                                    @endif
-                                    @if (($country->name_translations['en'] ?? '') !== '')
-                                        <div class="text-xs text-zinc-500">{{ $country->name_translations['en'] }}</div>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 font-mono text-xs whitespace-nowrap text-zinc-700 dark:text-zinc-300">{{ $country->iso_code ?: '–' }} · {{ $country->iso3_code ?: '–' }}</td>
-                                <td class="px-3 py-3 text-zinc-700 dark:text-zinc-300">{{ $country->continent?->getName('de') ?? '–' }}</td>
-                                <td class="px-3 py-3 whitespace-nowrap">
-                                    @if ($country->is_eu_member) <flux:badge size="sm" color="blue" inset="top bottom">EU</flux:badge> @endif
-                                    @if ($country->is_schengen_member) <flux:badge size="sm" color="sky" inset="top bottom">Schengen</flux:badge> @endif
-                                    @if (! $country->is_eu_member && ! $country->is_schengen_member) <span class="text-zinc-400">–</span> @endif
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap">
-                                    @if ($riskLevel)
-                                        <flux:badge size="sm" :color="CountryRiskProfile::color($riskLevel)" inset="top bottom">{{ $riskLevel }} – {{ Country::getRiskLevelLabel($riskLevel) }}</flux:badge>
-                                    @else
-                                        <span class="text-zinc-400">Nicht bewertet</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-300">
-                                    {{ $country->currency_code ?: '–' }}
-                                    @if ($country->currency_symbol) <span class="text-zinc-400">({{ $country->currency_symbol }})</span> @endif
-                                </td>
-                                <td class="px-3 py-3 text-end tabular-nums text-zinc-700 dark:text-zinc-300">{{ $number($country->population) }}</td>
-                                <td class="px-3 py-3 text-end tabular-nums">
-                                    @if ($country->regions_count > 0)
-                                        <a href="{{ route('adminv2.master-data.regions.index', ['country' => [$country->id]]) }}" class="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $number($country->regions_count) }}</a>
-                                    @else
-                                        <span class="text-zinc-400">0</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 text-end tabular-nums">
-                                    @if ($country->cities_count > 0)
-                                        <a href="{{ route('adminv2.master-data.cities.index', ['country' => [$country->id]]) }}" class="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $number($country->cities_count) }}</a>
-                                    @else
-                                        <span class="text-zinc-400">0</span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-2 pe-5">
-                                    <x-adminv2.master-data.row-actions :id="$country->id" :trashed="$country->trashed()" :edit-url="$editUrl" :name="$country->getName('de')" />
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <x-adminv2.master-data.sort-bar :options="$this->sortOptions()" :sort="$sort" :direction="$direction" :total="$rows->total()" :noun="['Land', 'Länder']" />
 
-            <x-adminv2.pagination :paginator="$rows" class="border-t border-zinc-100 px-5 py-3 dark:border-zinc-800" />
-        @endif
-    </x-adminv2.card>
+    @if ($rows->isEmpty())
+        <x-adminv2.card flush>
+            <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Länder" />
+        </x-adminv2.card>
+    @else
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, continent, membership, risk, coordinates, airports, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+            @foreach ($rows as $country)
+                <x-adminv2.master-data.record-card
+                    wire:key="country-{{ $country->id }}"
+                    :id="$country->id"
+                    :edit-url="route('adminv2.master-data.countries.edit', $country->id)"
+                    :title="$country->getName('de')"
+                    :tags="array_filter([$country->iso_code, $country->iso3_code])"
+                    :trashed="$country->trashed()"
+                >
+                    <x-slot:aside><x-adminv2.master-data.coordinates-mark :lat="$country->lat" :lng="$country->lng" /></x-slot:aside>
+                    @if ($country->is_eu_member || $country->is_schengen_member)
+                        <x-slot:badges>
+                            @if ($country->is_eu_member) <flux:badge size="sm" color="blue" inset="top bottom">EU</flux:badge> @endif
+                            @if ($country->is_schengen_member) <flux:badge size="sm" color="sky" inset="top bottom">Schengen</flux:badge> @endif
+                        </x-slot:badges>
+                    @endif
+                    @if (($country->name_translations['en'] ?? '') !== '' && $country->name_translations['en'] !== $country->getName('de'))
+                        <x-adminv2.master-data.card-row icon="language" label="Englisch">{{ $country->name_translations['en'] }}</x-adminv2.master-data.card-row>
+                    @endif
+                    <x-adminv2.master-data.card-row icon="globe-europe-africa" label="Kontinent">{{ $country->continent?->getName('de') ?? '–' }}</x-adminv2.master-data.card-row>
+                    <x-adminv2.master-data.card-row icon="map" label="Regionen und Städte">
+                        @if ($country->regions_count > 0)
+                            <a href="{{ route('adminv2.master-data.regions.index', ['country' => [$country->id]]) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $number($country->regions_count) }} {{ $country->regions_count === 1 ? 'Region' : 'Regionen' }}</a>
+                        @else
+                            Keine Regionen
+                        @endif
+                        <span class="text-zinc-400">·</span>
+                        @if ($country->cities_count > 0)
+                            <a href="{{ route('adminv2.master-data.cities.index', ['country' => [$country->id]]) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ $number($country->cities_count) }} {{ $country->cities_count === 1 ? 'Stadt' : 'Städte' }}</a>
+                        @else
+                            keine Städte
+                        @endif
+                    </x-adminv2.master-data.card-row>
+                    <x-adminv2.master-data.card-row icon="banknotes" label="Währung und Bevölkerung">
+                        {{ $country->currency_code ?: 'Währung –' }}@if ($country->currency_symbol) <span class="text-zinc-400">({{ $country->currency_symbol }})</span>@endif
+                        <span class="text-zinc-400">·</span>
+                        {{ $country->population === null ? 'Bevölkerung –' : $number($country->population).' Einwohner' }}
+                    </x-adminv2.master-data.card-row>
+                    <x-slot:footer>
+                        <span class="tabular-nums">geändert {{ $country->updated_at?->format('d.m.Y') ?? '–' }}</span>
+                    </x-slot:footer>
+                </x-adminv2.master-data.record-card>
+            @endforeach
+        </div>
+
+        <x-adminv2.pagination :paginator="$rows" />
+    @endif
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 </div>

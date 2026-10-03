@@ -16,19 +16,27 @@
     'createLabel' => 'Neu',
     'emptyText' => 'Noch nichts zugeordnet.',
     'external' => false,
+    'scroll' => false,
+    // Abschnitt fuer die KI-Pruefung (Schaltflaeche in der Kopfzeile)
+    'aiSection' => null,
 ])
 
 <x-adminv2.card :heading="$heading.' ('.number_format($count, 0, ',', '.').')'" collapsible :collapsed="$count === 0">
-    @if ($createUrl)
+    @if ($createUrl || $aiSection)
         <x-slot:actions>
-            <flux:button size="sm" variant="ghost" icon="plus" :href="$createUrl">{{ $createLabel }}</flux:button>
+            @if ($aiSection)
+                <x-adminv2.ai-check-button :section="$aiSection" />
+            @endif
+            @if ($createUrl)
+                <flux:button size="sm" variant="ghost" icon="plus" :href="$createUrl">{{ $createLabel }}</flux:button>
+            @endif
         </x-slot:actions>
     @endif
 
     @if ($count === 0)
         <p class="text-sm text-zinc-500">{{ $emptyText }}</p>
     @else
-        <ul class="flex max-h-96 flex-col divide-y divide-zinc-100 overflow-y-auto text-sm dark:divide-zinc-800">
+        <ul @class(['flex flex-col divide-y divide-zinc-100 text-sm dark:divide-zinc-800', 'max-h-96 overflow-y-auto' => $scroll])>
             {{ $slot }}
         </ul>
 

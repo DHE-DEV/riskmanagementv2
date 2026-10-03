@@ -7,6 +7,7 @@ use App\Livewire\AdminV2\Concerns\EditsAirportExtras;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
 use App\Livewire\AdminV2\Concerns\ManagesAirlineLinks;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\AirportCode;
 use App\Models\City;
 use App\Models\Country;
@@ -26,7 +27,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsAirportExtras, EditsCoordinates, EditsMasterData, ManagesAirlineLinks;
+    use AuthorizesAdminV2, EditsAirportExtras, EditsCoordinates, EditsMasterData, ManagesAirlineLinks, RunsAiChecks;
 
     public const SCHEDULED = ['yes' => 'Ja', 'no' => 'Nein'];
 
@@ -223,6 +224,7 @@ class Editor extends Component
 
         $record = $this->record ?? new AirportCode;
         $created = ! $record->exists;
+        $unchanged = $this->unchangedAirportExtras($this->record);
         $coordinates = $this->coordinateValues();
 
         $record->fill([
@@ -257,7 +259,164 @@ class Editor extends Component
 
         $this->fillAirportExtras($record);
 
-        $this->finishSave($record, $created, $another);
+        $this->finishSave($record, $created, $another, $unchanged);
+    }
+
+    protected function aiArea(): string
+    {
+        return 'airport-codes';
+    }
+
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
+    {
+        return [
+            'name' => $this->name,
+            'country' => $this->countryOptions->firstWhere('id', (int) $this->countryId)?->getName('de'),
+            'city' => $this->cityOptions->firstWhere('id', (int) $this->cityId)?->getName('de'),
+            'iso_country' => $this->isoCountry,
+            'iso_region' => $this->isoRegion,
+            'municipality' => $this->municipality,
+            'website' => $this->website,
+            'security_timeslot_url' => $this->securityTimeslotUrl,
+            'is_active' => $this->isActive,
+            'operates_24h' => $this->operates24h,
+            'ident' => $this->ident,
+            'iata_code' => $this->iataCode,
+            'icao_code' => $this->icaoCode,
+            'gps_code' => $this->gpsCode,
+            'local_code' => $this->localCode,
+            'type' => AirportCode::getTypeOptions()[$this->type] ?? $this->type,
+            'continent' => AirportCode::getContinentOptions()[$this->continent] ?? $this->continent,
+            'scheduled_service' => $this->scheduledService === 'yes',
+            'lat' => $this->lat,
+            'lng' => $this->lng,
+            'elevation_ft' => $this->elevationFt,
+            'timezone' => $this->timezone,
+            'dst_timezone' => $this->dstTimezone,
+            'home_link' => $this->homeLink,
+            'wikipedia_link' => $this->wikipediaLink,
+            'keywords' => $this->keywords,
+            'source' => $this->source,
+        ] + $this->airportExtrasContext() + [
+            'airlines' => $this->links->map(fn ($airline) => $airline->name.($airline->iata_code ? ' ('.$airline->iata_code.')' : '').' – '.(MasterData::LINK_DIRECTIONS[$airline->pivot->direction] ?? $airline->pivot->direction).($airline->pivot->terminal ? ', Terminal '.$airline->pivot->terminal : ''))->all(),
+        ];
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        switch ($key) {
+            case 'name': $this->name = $value;
+
+                return true;
+            case 'iso_country': $this->isoCountry = mb_strtoupper($value);
+
+                return true;
+            case 'iso_region': $this->isoRegion = mb_strtoupper($value);
+
+                return true;
+            case 'municipality': $this->municipality = $value;
+
+                return true;
+            case 'website': $this->website = $value;
+
+                return true;
+            case 'security_timeslot_url': $this->securityTimeslotUrl = $value;
+
+                return true;
+            case 'is_active': $this->isActive = $this->aiBool($value);
+
+                return true;
+            case 'operates_24h': $this->operates24h = $this->aiBool($value);
+
+                return true;
+            case 'ident': $this->ident = mb_strtoupper($value);
+
+                return true;
+            case 'iata_code': $this->iataCode = mb_strtoupper($value);
+
+                return true;
+            case 'icao_code': $this->icaoCode = mb_strtoupper($value);
+
+                return true;
+            case 'gps_code': $this->gpsCode = mb_strtoupper($value);
+
+                return true;
+            case 'local_code': $this->localCode = mb_strtoupper($value);
+
+                return true;
+            case 'scheduled_service': $this->scheduledService = $this->aiBool($value) ? 'yes' : 'no';
+
+                return true;
+            case 'lat': $this->lat = $this->aiNumber($value);
+
+                return true;
+            case 'lng': $this->lng = $this->aiNumber($value);
+
+                return true;
+            case 'elevation_ft': $this->elevationFt = $this->aiNumber($value);
+
+                return true;
+            case 'timezone': $this->timezone = $value;
+
+                return true;
+            case 'dst_timezone': $this->dstTimezone = $value;
+
+                return true;
+            case 'home_link': $this->homeLink = $value;
+
+                return true;
+            case 'wikipedia_link': $this->wikipediaLink = $value;
+
+                return true;
+            case 'keywords': $this->keywords = $value;
+
+                return true;
+            case 'source': $this->source = $value;
+
+                return true;
+            case 'type':
+                $type = $this->aiMatch(array_keys(AirportCode::getTypeOptions()), $value, fn ($type) => AirportCode::getTypeOptions()[$type])
+                    ?? $this->aiMatch(array_keys(AirportCode::getTypeOptions()), $value, fn ($type) => $type);
+                if ($type) {
+                    $this->type = $type;
+                }
+
+                return $type !== null;
+            case 'continent':
+                $continent = $this->aiMatch(array_keys(AirportCode::getContinentOptions()), $value, fn ($code) => AirportCode::getContinentOptions()[$code])
+                    ?? $this->aiMatch(array_keys(AirportCode::getContinentOptions()), $value, fn ($code) => $code);
+                if ($continent) {
+                    $this->continent = $continent;
+                }
+
+                return $continent !== null;
+            case 'country':
+                $country = $this->aiMatch($this->countryOptions, $value, fn ($country) => $country->getName('de'))
+                    ?? $this->aiMatch($this->countryOptions, $value, fn ($country) => (string) $country->iso_code);
+                if ($country) {
+                    $this->countryId = (string) $country->id;
+                    $this->updatedCountryId();
+                }
+
+                return $country !== null;
+            case 'city':
+                unset($this->cityOptions);
+                $city = $this->aiMatch($this->cityOptions, $value, fn ($city) => $city->getName('de'))
+                    ?? $this->aiMatch($this->cityOptions, $value, fn ($city) => $city->getName('en'));
+                if ($city) {
+                    $this->cityId = (string) $city->id;
+                }
+
+                return $city !== null;
+        }
+
+        return false;
     }
 
     public function render()

@@ -16,37 +16,50 @@
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Region">
+                <x-slot:actions><x-adminv2.ai-check-button section="basics" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
                     <div class="grid gap-5 sm:grid-cols-2">
-                        <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
-                        <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
+                        <div>
+                            <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                        </div>
+                        <div>
+                            <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="name_en" :review="$aiReview" />
+                        </div>
                     </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Land</flux:label>
                             <x-adminv2.search-select :options="$countryOptions" model="countryId" :selected="$countryId" placeholder="Land wählen …" search-placeholder="Land oder ISO-Code …" label="Land" live />
+                            <x-adminv2.ai-field-hint key="country" :review="$aiReview" />
                             <flux:error name="countryId" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Code</flux:label>
                             <flux:input wire:model="code" maxlength="10" class="font-mono" placeholder="z. B. BY für Bayern" />
+                            <x-adminv2.ai-field-hint key="code" :review="$aiReview" />
                             <flux:error name="code" />
                         </flux:field>
                     </div>
 
-                    <flux:textarea wire:model="description" label="Beschreibung" rows="3" maxlength="1000" />
+                    <div>
+                        <flux:textarea wire:model="description" label="Beschreibung" rows="3" maxlength="1000" />
+                        <x-adminv2.ai-field-hint key="description" :review="$aiReview" />
+                    </div>
 
                     <flux:field>
                         <flux:label>Schlagwörter</flux:label>
                         <flux:description>Weitere Bezeichnungen, unter denen die Region gefunden wird – mit Komma getrennt.</flux:description>
                         <flux:input wire:model="keywords" placeholder="z. B. Bayern, Bavaria, Freistaat Bayern" maxlength="1000" />
+                        <x-adminv2.ai-field-hint key="keywords" :review="$aiReview" />
                         <flux:error name="keywords" />
                     </flux:field>
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" description="Mittelpunkt der Region für die Darstellung auf der Karte." />
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt der Region für die Darstellung auf der Karte." />
         </div>
 
         <div class="flex flex-col gap-6">
@@ -61,6 +74,7 @@
 
                 <x-adminv2.master-data.related-list
                     heading="Städte"
+                    ai-section="cities"
                     :count="$cities['count']"
                     :shown="$cities['items']->count()"
                     :all-url="route('adminv2.master-data.cities.index', ['country' => [$record->country_id], 'region' => $record->id])"
@@ -80,7 +94,6 @@
                     @endforeach
                 </x-adminv2.master-data.related-list>
 
-                <x-adminv2.master-data.ai-assistant :prompts="$this->aiPrompts" :prompt-id="$aiPromptId" :result="$aiResult" :error="$aiError" noun="Regionen" />
             @else
                 <x-adminv2.card heading="Nach dem Speichern">
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Sobald die Region angelegt ist, lassen sich ihr Städte zuordnen – hier oder in der Bearbeitung einer Stadt.</p>
@@ -90,4 +103,6 @@
     </div>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    <x-adminv2.ai-check-modal area="regions" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->getName('de')" />
 </form>

@@ -50,9 +50,9 @@ class Index extends Component
         return Airline::class;
     }
 
-    protected function sortable(): array
+    public function sortOptions(): array
     {
-        return ['name', 'iata_code', 'country', 'airports_count'];
+        return ['name' => 'Name', 'iata_code' => 'IATA-Code', 'country' => 'Heimatland', 'airports_count' => 'Direktverbindungen'];
     }
 
     protected function filterProperties(): array

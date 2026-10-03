@@ -5,7 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Continents;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
-use App\Livewire\AdminV2\Concerns\RunsAiAssistant;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Continent;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Support\Collection;
@@ -20,7 +20,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiAssistant;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
 
     public string $nameDe = '';
 
@@ -116,22 +116,63 @@ class Editor extends Component
         $this->finishSave($record, $created, $another);
     }
 
-    protected function aiModelType(): string
+    protected function aiArea(): string
     {
-        return 'Continent';
+        return 'continents';
     }
 
-    protected function aiPlaceholderData(): array
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
     {
-        $continent = $this->record;
-
         return [
-            'name' => $continent->getName('de'),
-            'name_en' => $continent->getName('en'),
-            'code' => $continent->code,
-            'description' => $continent->description ?? 'N/A',
-            'countries_count' => $continent->countries()->count(),
+            'name' => $this->nameDe,
+            'name_en' => $this->nameEn,
+            'code' => $this->code,
+            'sort_order' => $this->sortOrder,
+            'description' => $this->description,
+            'keywords' => $this->keywords,
+            'lat' => $this->lat,
+            'lng' => $this->lng,
+            'countries_count' => $this->countries->count(),
+            'countries' => $this->countries->map(fn ($country) => $country->getName('de').' ('.$country->iso_code.')')->all(),
         ];
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        switch ($key) {
+            case 'name': $this->nameDe = $value;
+
+                return true;
+            case 'name_en': $this->nameEn = $value;
+
+                return true;
+            case 'code': $this->code = mb_strtoupper($value);
+
+                return true;
+            case 'sort_order': $this->sortOrder = $this->aiNumber($value);
+
+                return true;
+            case 'description': $this->description = $value;
+
+                return true;
+            case 'keywords': $this->keywords = $value;
+
+                return true;
+            case 'lat': $this->lat = $this->aiNumber($value);
+
+                return true;
+            case 'lng': $this->lng = $this->aiNumber($value);
+
+                return true;
+        }
+
+        return false;
     }
 
     public function render()

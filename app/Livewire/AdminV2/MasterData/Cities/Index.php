@@ -52,9 +52,9 @@ class Index extends Component
         return City::class;
     }
 
-    protected function sortable(): array
+    public function sortOptions(): array
     {
-        return ['name', 'country', 'region', 'population'];
+        return ['name' => 'Name', 'country' => 'Land', 'region' => 'Region', 'population' => 'Bevölkerung'];
     }
 
     protected function filterProperties(): array

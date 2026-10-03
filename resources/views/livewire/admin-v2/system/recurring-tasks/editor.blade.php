@@ -40,12 +40,12 @@
                 <div class="flex flex-col gap-5">
                     <div>
                         <flux:input wire:model.live.debounce.400ms="title" label="Titel" placeholder="z. B. Quellen der aktiven Ereignisse prüfen – KW {kw}" maxlength="255" />
-                        <p class="mt-2 text-xs text-zinc-500">
+                        <div class="mt-2 text-xs text-zinc-500">
                             Platzhalter für den Termin:
                             @foreach (AdminTaskRecurrence::placeholders() as $placeholder => $meaning)
-                                <span class="whitespace-nowrap"><code class="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.7rem] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{{ $placeholder }}</code> {{ $meaning }}</span>@if (! $loop->last), @endif
+                                <span class="whitespace-nowrap"><x-adminv2.placeholder :name="trim($placeholder, '{}')" :label="$meaning" /> {{ $meaning }}</span>@if (! $loop->last), @endif
                             @endforeach
-                        </p>
+                        </div>
                     </div>
 
                     <flux:textarea wire:model="description" label="Beschreibung" rows="3" placeholder="Was genau ist zu tun? Links, Hinweise …" />

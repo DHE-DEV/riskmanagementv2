@@ -408,8 +408,12 @@ class Index extends Component
     protected function tasks()
     {
         $query = $this->applyFilters($this->scopeTab(AdminTask::query(), $this->tab))
-            ->with(['category', 'responsible', 'responsibleTeam', 'nextAssignee', 'nextAssigneeTeam', 'creator', 'subject', 'reminders'])
-            ->withCount(['activities as notes_count' => fn (Builder $q) => $q->where('type', AdminTaskActivity::TYPE_NOTE)]);
+            ->with(['category', 'responsible', 'responsibleTeam', 'nextAssignee', 'nextAssigneeTeam', 'creator', 'subject', 'reminders', 'parent'])
+            ->withCount([
+                'activities as notes_count' => fn (Builder $q) => $q->where('type', AdminTaskActivity::TYPE_NOTE),
+                'subtasks',
+                'subtasks as done_subtasks_count' => fn (Builder $q) => $q->where('status', AdminTask::STATUS_DONE),
+            ]);
 
         $sort = in_array($this->sort, self::SORTABLE, true) ? $this->sort : 'due_date';
         $direction = $this->direction === 'desc' ? 'desc' : 'asc';

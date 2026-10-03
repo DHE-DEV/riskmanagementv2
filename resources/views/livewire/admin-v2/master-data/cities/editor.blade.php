@@ -18,16 +18,24 @@
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Stadt">
+                <x-slot:actions><x-adminv2.ai-check-button section="basics" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
                     <div class="grid gap-5 sm:grid-cols-2">
-                        <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
-                        <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
+                        <div>
+                            <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                        </div>
+                        <div>
+                            <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
+                            <x-adminv2.ai-field-hint key="name_en" :review="$aiReview" />
+                        </div>
                     </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Land</flux:label>
                             <x-adminv2.search-select :options="$countryOptions" model="countryId" :selected="$countryId" placeholder="Land wählen …" search-placeholder="Land oder ISO-Code …" label="Land" live />
+                            <x-adminv2.ai-field-hint key="country" :review="$aiReview" />
                             <flux:error name="countryId" />
                         </flux:field>
                         <flux:field>
@@ -44,6 +52,7 @@
                                 clearable
                                 wire:key="region-select-{{ $countryId }}"
                             />
+                            <x-adminv2.ai-field-hint key="region" :review="$aiReview" />
                             <flux:error name="regionId" />
                         </flux:field>
                     </div>
@@ -52,12 +61,16 @@
                         <flux:field>
                             <flux:label>Bevölkerung</flux:label>
                             <flux:input wire:model="population" inputmode="numeric" placeholder="z. B. 1500000" />
+                            <x-adminv2.ai-field-hint key="population" :review="$aiReview" />
                             <flux:error name="population" />
                         </flux:field>
                     </div>
 
                     <div class="flex flex-col gap-3">
-                        <flux:switch wire:model.live="isCapital" label="Hauptstadt des Landes" align="left" />
+                        <div>
+                            <flux:switch wire:model.live="isCapital" label="Hauptstadt des Landes" align="left" />
+                            <x-adminv2.ai-field-hint key="is_capital" :review="$aiReview" />
+                        </div>
                         @if ($isCapital && $otherCapitals->isNotEmpty())
                             <p class="rounded-xl bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                                 {{ $country?->getName('de') ?? 'Das Land' }} hat bereits {{ $otherCapitals->count() === 1 ? 'eine Hauptstadt' : $otherCapitals->count().' Hauptstädte' }}:
@@ -67,12 +80,15 @@
                                 Beide bleiben als Hauptstadt markiert, bis eine der Markierungen entfernt wird.
                             </p>
                         @endif
-                        <flux:switch wire:model="isRegionalCapital" label="Hauptstadt der Region" align="left" />
+                        <div>
+                            <flux:switch wire:model="isRegionalCapital" label="Hauptstadt der Region" align="left" />
+                            <x-adminv2.ai-field-hint key="is_regional_capital" :review="$aiReview" />
+                        </div>
                     </div>
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" description="Lage der Stadt – daran werden Ereignisse und Reisen in der Nähe erkannt." />
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Lage der Stadt – daran werden Ereignisse und Reisen in der Nähe erkannt." />
         </div>
 
         <div class="flex flex-col gap-6">
@@ -105,7 +121,6 @@
                     @endforeach
                 </x-adminv2.master-data.related-list>
 
-                <x-adminv2.master-data.ai-assistant :prompts="$this->aiPrompts" :prompt-id="$aiPromptId" :result="$aiResult" :error="$aiError" noun="Städte" />
             @else
                 <x-adminv2.card heading="Hinweis">
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Mit „Speichern &amp; weitere anlegen“ bleiben Land und Region für die nächste Stadt vorbelegt.</p>
@@ -115,4 +130,6 @@
     </div>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    <x-adminv2.ai-check-modal area="cities" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->getName('de')" />
 </form>

@@ -5,7 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Cities;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
-use App\Livewire\AdminV2\Concerns\RunsAiAssistant;
+use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Region;
@@ -23,7 +23,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiAssistant;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
 
     public string $nameDe = '';
 
@@ -179,31 +179,77 @@ class Editor extends Component
         $this->finishSave($record, $created, $another);
     }
 
-    protected function aiModelType(): string
+    protected function aiArea(): string
     {
-        return 'City';
+        return 'cities';
     }
 
-    protected function aiPlaceholderData(): array
+    /**
+     * Die aktuellen Formularwerte zu den Platzhaltern (siehe AiAreas).
+     */
+    protected function aiContext(): array
     {
-        $city = $this->record;
-        $country = $city->country()->withTrashed()->first();
-        $region = $city->region()->withTrashed()->first();
-
         return [
-            'name' => $city->getName('de'),
-            'name_en' => $city->getName('en'),
-            'country' => $country?->getName('de') ?? 'N/A',
-            'country_en' => $country?->getName('en') ?? 'N/A',
-            'country_code' => $country?->iso_code ?? 'N/A',
-            'region' => $region?->getName('de') ?? 'N/A',
-            'region_en' => $region?->getName('en') ?? 'N/A',
-            'population' => $city->population ?? 'N/A',
-            'is_capital' => $city->is_capital ? 'Ja' : 'Nein',
-            'is_regional_capital' => $city->is_regional_capital ? 'Ja' : 'Nein',
-            'lat' => $city->lat ?? 'N/A',
-            'lng' => $city->lng ?? 'N/A',
+            'name' => $this->nameDe,
+            'name_en' => $this->nameEn,
+            'country' => $this->countryOptions->firstWhere('id', (int) $this->countryId)?->getName('de'),
+            'region' => $this->regionOptions->firstWhere('id', (int) $this->regionId)?->getName('de'),
+            'is_capital' => $this->isCapital,
+            'is_regional_capital' => $this->isRegionalCapital,
+            'population' => $this->population,
+            'lat' => $this->lat,
+            'lng' => $this->lng,
         ];
+    }
+
+    /**
+     * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
+     */
+    protected function aiApply(string $key, string $value): bool
+    {
+        switch ($key) {
+            case 'name': $this->nameDe = $value;
+
+                return true;
+            case 'name_en': $this->nameEn = $value;
+
+                return true;
+            case 'is_capital': $this->isCapital = $this->aiBool($value);
+
+                return true;
+            case 'is_regional_capital': $this->isRegionalCapital = $this->aiBool($value);
+
+                return true;
+            case 'population': $this->population = $this->aiNumber($value);
+
+                return true;
+            case 'lat': $this->lat = $this->aiNumber($value);
+
+                return true;
+            case 'lng': $this->lng = $this->aiNumber($value);
+
+                return true;
+            case 'country':
+                $country = $this->aiMatch($this->countryOptions, $value, fn ($country) => $country->getName('de'))
+                    ?? $this->aiMatch($this->countryOptions, $value, fn ($country) => (string) $country->iso_code);
+                if ($country) {
+                    $this->countryId = (string) $country->id;
+                    $this->updatedCountryId();
+                }
+
+                return $country !== null;
+            case 'region':
+                unset($this->regionOptions);
+                $region = $this->aiMatch($this->regionOptions, $value, fn ($region) => $region->getName('de'))
+                    ?? $this->aiMatch($this->regionOptions, $value, fn ($region) => (string) $region->code);
+                if ($region) {
+                    $this->regionId = (string) $region->id;
+                }
+
+                return $region !== null;
+        }
+
+        return false;
     }
 
     public function render()

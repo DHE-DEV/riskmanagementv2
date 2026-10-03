@@ -43,7 +43,7 @@ class Index extends Component
     #[Url(except: '')]
     public string $continent = '';
 
-    /** '' = alle, 'eu', 'schengen' */
+    /** '' = alle, 'eu', 'schengen', 'both' = beides, 'none' = keines von beiden */
     #[Url(except: '')]
     public string $membership = '';
 
@@ -55,19 +55,23 @@ class Index extends Component
     #[Url(except: '')]
     public string $coordinates = '';
 
+    /** '' = alle, 'none' = ohne gepflegten Flughafen, 'any' = mit */
+    #[Url(except: '')]
+    public string $airports = '';
+
     protected function masterDataModel(): string
     {
         return Country::class;
     }
 
-    protected function sortable(): array
+    public function sortOptions(): array
     {
-        return ['name', 'iso_code', 'continent', 'risk', 'population', 'regions_count', 'cities_count'];
+        return ['name' => 'Name', 'iso_code' => 'ISO-Code', 'continent' => 'Kontinent', 'population' => 'Bevölkerung', 'regions_count' => 'Anzahl Regionen', 'cities_count' => 'Anzahl Städte'];
     }
 
     protected function filterProperties(): array
     {
-        return ['continent', 'membership', 'risk', 'coordinates'];
+        return ['continent', 'membership', 'risk', 'coordinates', 'airports'];
     }
 
     #[Computed]
@@ -90,6 +94,11 @@ class Index extends Component
         match ($this->membership) {
             'eu' => $query->where('is_eu_member', true),
             'schengen' => $query->where('is_schengen_member', true),
+            'both' => $query->where('is_eu_member', true)->where('is_schengen_member', true),
+            // Die Spalten duerfen leer sein – leer zaehlt wie "nein".
+            'none' => $query
+                ->where(fn ($query) => $query->where('is_eu_member', false)->orWhereNull('is_eu_member'))
+                ->where(fn ($query) => $query->where('is_schengen_member', false)->orWhereNull('is_schengen_member')),
             default => null,
         };
 
@@ -103,6 +112,12 @@ class Index extends Component
             $query->where(fn ($query) => $query->whereNull('lat')->orWhereNull('lng'));
         }
 
+        match ($this->airports) {
+            'none' => $query->whereDoesntHave('airports'),
+            'any' => $query->whereHas('airports'),
+            default => null,
+        };
+
         $direction = $this->sortDirection();
 
         match ($this->sortColumn()) {
@@ -111,7 +126,6 @@ class Index extends Component
                 Continent::query()->selectRaw(MasterData::nameSql('continents'))->whereColumn('continents.id', 'countries.continent_id')->limit(1),
                 $direction,
             ),
-            'risk' => $query->orderByRaw(self::RISK_SQL.' '.$direction),
             'population' => $query->orderBy('population', $direction),
             'regions_count' => $query->orderBy('regions_count', $direction),
             'cities_count' => $query->orderBy('cities_count', $direction),

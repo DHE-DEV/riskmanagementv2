@@ -4,16 +4,29 @@
 
     $task = $this->task;
     $subjectLabel = $task ? $task->subjectLabel() : $this->pendingSubjectLabel;
+    $parentTask = $this->parentTask;
+    $subtasks = $this->subtasks;
+    [$subtasksDone, $subtasksTotal] = $task ? $task->subtaskProgress() : [0, 0];
 @endphp
 
 <div class="flex flex-col gap-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="min-w-0">
-            <a href="{{ route('adminv2.tasks.index') }}" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
-                <flux:icon.arrow-left variant="micro" /> Aufgaben
-            </a>
+            @if ($parentTask)
+                {{-- Unteraufgabe: der Weg zurueck fuehrt zur Hauptaufgabe. --}}
+                <a href="{{ route('adminv2.tasks.show', $parentTask) }}" class="inline-flex min-w-0 max-w-full items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                    <flux:icon.arrow-left variant="micro" class="shrink-0" /> <span class="truncate">Hauptaufgabe: {{ $parentTask->title }}</span>
+                </a>
+            @else
+                <a href="{{ route('adminv2.tasks.index') }}" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                    <flux:icon.arrow-left variant="micro" /> Aufgaben
+                </a>
+            @endif
             <div class="mt-1 flex flex-wrap items-center gap-3">
-                <flux:heading size="xl" level="1">{{ $task ? $task->title : 'Neue Aufgabe' }}</flux:heading>
+                <flux:heading size="xl" level="1">{{ $task ? $task->title : ($parentTask ? 'Neue Unteraufgabe' : 'Neue Aufgabe') }}</flux:heading>
+                @if ($parentTask)
+                    <flux:badge size="sm" color="zinc" icon="arrow-turn-down-right">Unteraufgabe</flux:badge>
+                @endif
                 @if ($task)
                     <flux:badge
                         size="sm"
@@ -152,12 +165,80 @@
                         <flux:button wire:click="toggleDone" icon="{{ $task->isDone() ? 'arrow-path' : 'check' }}">
                             {{ $task->isDone() ? 'Wieder öffnen' : 'Erledigt' }}
                         </flux:button>
+                        @if (! $task->isDone() && $subtasksTotal > $subtasksDone)
+                            <span class="text-xs text-zinc-500">{{ $subtasksTotal - $subtasksDone }} {{ $subtasksTotal - $subtasksDone === 1 ? 'Unteraufgabe' : 'Unteraufgaben' }} noch offen</span>
+                        @endif
                         <flux:spacer />
                         <flux:button variant="ghost" icon="trash" wire:click="delete" wire:confirm="Diese Aufgabe löschen?" class="!text-red-600 dark:!text-red-400">Löschen</flux:button>
                     @endif
                 </div>
             </form>
         </x-adminv2.card>
+
+        @if ($task)
+            {{-- Unteraufgaben: eigene Aufgaben mit allem Drum und Dran, hier in Kurzform. --}}
+            <x-adminv2.card
+                heading="Unteraufgaben"
+                :description="$subtasksTotal > 0 ? $subtasksDone.' von '.$subtasksTotal.' erledigt' : 'Teilschritte dieser Aufgabe – jede mit eigener Seite, Fälligkeit, Verantwortung und Erinnerungen.'"
+                class="xl:order-last"
+            >
+                <x-slot:actions>
+                    <flux:button size="sm" variant="ghost" icon="arrow-top-right-on-square" :href="route('adminv2.tasks.create', ['parent' => $task->id])" target="_blank">Ausführlich anlegen</flux:button>
+                </x-slot:actions>
+
+                <div class="flex flex-col gap-4">
+                    @if ($subtasksTotal > 0)
+                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $subtasksTotal }}" aria-valuenow="{{ $subtasksDone }}">
+                            <div class="h-full rounded-full bg-green-500 transition-all" style="width: {{ $subtasksTotal ? round($subtasksDone / $subtasksTotal * 100) : 0 }}%"></div>
+                        </div>
+
+                        <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
+                            @foreach ($subtasks as $subtask)
+                                <li wire:key="subtask-{{ $subtask->id }}" class="flex items-start gap-3 py-2.5">
+                                    <button
+                                        type="button"
+                                        wire:click="toggleSubtask({{ $subtask->id }})"
+                                        @class([
+                                            'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border transition',
+                                            'border-green-500 bg-green-500 text-white' => $subtask->isDone(),
+                                            'border-zinc-300 hover:border-zinc-500 dark:border-zinc-600' => ! $subtask->isDone(),
+                                        ])
+                                        aria-label="{{ $subtask->isDone() ? 'Wieder öffnen' : 'Erledigt' }}: {{ $subtask->title }}"
+                                    >
+                                        @if ($subtask->isDone()) <flux:icon.check variant="micro" /> @endif
+                                    </button>
+                                    <div class="min-w-0 flex-1">
+                                        <a href="{{ route('adminv2.tasks.show', $subtask) }}" @class(['text-sm text-zinc-900 hover:underline dark:text-white', 'text-zinc-500 line-through dark:text-zinc-400' => $subtask->isDone()])>{{ $subtask->title }}</a>
+                                        <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500">
+                                            @if ($subtask->due_date)
+                                                <span @class(['tabular-nums', 'font-medium text-red-600 dark:text-red-400' => $subtask->isOverdue()])>Fällig {{ $subtask->due_date->format('d.m.Y') }}</span>
+                                            @endif
+                                            @if ($subtask->handlerLabel())
+                                                <span>Liegt bei {{ $subtask->handlerLabel() }}</span>
+                                            @endif
+                                            @if ($subtask->status === AdminTask::STATUS_IN_PROGRESS)
+                                                <span>in Arbeit</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <form wire:submit="addSubtask" class="flex flex-col gap-2">
+                        <div class="flex items-start gap-2">
+                            <div class="min-w-0 flex-1">
+                                <flux:input wire:model="subtaskTitle" placeholder="Neue Unteraufgabe – Titel eingeben und Enter drücken" aria-label="Titel der Unteraufgabe" maxlength="255" />
+                            </div>
+                            <flux:button type="submit" icon="plus">Hinzufügen</flux:button>
+                        </div>
+                        <flux:error name="subtaskTitle" />
+                        <p class="text-xs text-zinc-500">Rubrik, Priorität, Fälligkeit, Verantwortung und Bezug werden von dieser Aufgabe übernommen und lassen sich auf der Seite der Unteraufgabe ändern.</p>
+                    </form>
+                </div>
+            </x-adminv2.card>
+        @endif
 
         <x-adminv2.card heading="Notizen und Verlauf" :description="$task ? 'Wer wann was notiert oder geändert hat – neueste zuerst.' : null">
             @if ($task)

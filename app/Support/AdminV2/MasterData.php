@@ -8,6 +8,7 @@ use App\Models\AirportCode;
 use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
+use App\Models\MasterDataChange;
 use App\Models\Region;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -157,6 +158,23 @@ class MasterData
                 $query->orWhere($table.'.'.$column, 'like', $like);
             }
         });
+    }
+
+    /**
+     * Aenderung im Protokoll festhalten – fuer die Statistik je Mitarbeiter.
+     *
+     * @param  array<int, string>  $changes  geaenderte Felder bzw. Bereiche
+     */
+    public static function logChange(Model $record, string $action, array $changes = []): void
+    {
+        MasterDataChange::create([
+            'model_type' => $record->getMorphClass(),
+            'model_id' => $record->getKey(),
+            'user_id' => auth('web')->id(),
+            'action' => $action,
+            'changes' => $changes ?: null,
+            'created_at' => now(),
+        ]);
     }
 
     /**
