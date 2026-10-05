@@ -125,7 +125,8 @@ it('legt aus dem KI-Fenster eine Unteraufgabe an, wenn die Bedingung der Pruefun
         ->and($parent->category->name)->toBe('Stammdaten')
         ->and($parent->responsible_id)->toBe($anna->id)
         ->and($subtask->title)->toBe('Cologne Bonn Airport (CGN): Zweite Lounge nachtragen')
-        ->and($subtask->description)->toBe('Laut KI gibt es zusätzlich die Airport Lounge World.')
+        // Was zu tun ist – und darunter, was die KI festgestellt hat.
+        ->and($subtask->description)->toBe("Laut KI gibt es zusätzlich die Airport Lounge World.\n\nBefund der KI:\nEs gibt **zwei** Lounges.")
         ->and($subtask->subject->is($cgn))->toBeTrue()
         ->and($subtask->ai_check_id)->toBe($check->id)
         ->and($subtask->category_id)->toBe($parent->category_id)
@@ -291,8 +292,9 @@ it('hinterlegt Bedingung und Sammelaufgabe an der Pruefung und startet den Samme
         ->set('checkName', 'Lounges prüfen')
         ->set('checkPrompt', 'Prüfe die Lounges von {name} ({iata_code}): {daten}')
         ->set('checkTaskEnabled', true)
+        // Eine eigene Bedingung ist freiwillig – wenn, dann ausformuliert.
+        ->set('checkTaskCondition', 'zu kurz')
         ->call('saveCheck')
-        // Ohne Bedingung laesst sich "Aufgaben anlegen" nicht speichern.
         ->assertHasErrors(['checkTaskCondition'])
         ->set('checkTaskCondition', 'Es gibt Lounges am Flughafen, die nicht eingetragen sind.')
         ->call('saveCheck')
@@ -309,9 +311,14 @@ it('hinterlegt Bedingung und Sammelaufgabe an der Pruefung und startet den Samme
     $page->assertSee('Legt Aufgaben an')
         ->assertSee('Es gibt Lounges am Flughafen, die nicht eingetragen sind.')
         ->assertSee('Sammelaufgabe: KI-Prüfung „Lounges prüfen“ – Flughäfen › Lounges')
-        ->assertSee('Für alle 2 Flughäfen ausführen')
-        ->call('startBatch', $check->id)
+        ->assertSee('Sammellauf starten …')
+        // Der Dialog nennt den Umfang, bevor es losgeht.
+        ->call('openBatch', $check->id)
+        ->assertSet('batchFilters', ['active' => true, 'country' => '', 'type' => ''])
+        ->assertSee('2 Einträge')
+        ->call('startBatch')
         ->assertSee('Sammellauf läuft: 0 von 2 geprüft')
+        ->assertSee('Eingrenzung: Nur aktive Einträge')
         // Die geoeffnete Seite fuehrt den Lauf weiter.
         ->call('advanceBatches')
         ->assertSee('Letzter Sammellauf')
@@ -339,7 +346,7 @@ it('hinterlegt Bedingung und Sammelaufgabe an der Pruefung und startet den Samme
         ->and($other->fresh()->ai_check_id)->toBe($check->id);
 
     // Starten und abbrechen.
-    $page->call('startBatch', $check->id)->call('cancelBatch', $check->id)->assertSee('(abgebrochen)');
+    $page->call('openBatch', $check->id)->call('startBatch')->call('cancelBatch', $check->id)->assertSee('(abgebrochen)');
 
     // Ohne "Aufgaben anlegen" verschwindet der Abschnitt von der Karte.
     $page->call('editCheck', $check->id)->set('checkTaskEnabled', false)->call('saveCheck')->assertHasNoErrors()->assertDontSee('Legt Aufgaben an');
@@ -364,7 +371,9 @@ it('fuehrt den Sammellauf in jedem Stammdaten-Bereich mit den Angaben des jeweil
     $fromForm = Livewire::test(AirportEditor::class, ['airport' => $cgn->id])->call('openAiCheck', 'general')->get('aiData');
     $fromRecord = \App\Support\AdminV2\AiRecordContexts::context('airports', $cgn);
 
-    expect(array_keys($fromRecord))->toEqualCanonicalizing(array_keys($fromForm))
+    // Alles, was das KI-Fenster zeigt, liegt auch im Sammellauf vor (dazu die Felder der einzelnen Lounges und Hotels).
+    expect(array_diff(array_keys($fromForm), array_keys($fromRecord)))->toBe([])
+        ->and($fromRecord['lounge_0_name'])->toBe('Business Lounge')
         ->and($fromRecord['lounges'])->toBe(['Business Lounge, Terminal 1'])
         ->and(\App\Support\AdminV2\AiRecordContexts::context('continents', $europe)['countries'])->toBe(['Deutschland (DE)']);
 
@@ -376,8 +385,12 @@ it('fuehrt den Sammellauf in jedem Stammdaten-Bereich mit den Angaben des jeweil
     Livewire::withQueryParams(['tab' => 'continents'])
         ->test(Ai::class)
         ->assertSee('Legt Aufgaben an')
-        ->assertSee('Für alle 2 Kontinente ausführen')
-        ->call('startBatch', $check->id)
+        // Kontinente lassen sich nicht eingrenzen.
+        ->call('openBatch', $check->id)
+        ->assertSet('batchFilters', [])
+        ->assertSee('In diesem Bereich gibt es keine Eingrenzung')
+        ->assertSee('2 Einträge')
+        ->call('startBatch')
         ->call('advanceBatches')
         ->assertSee('2 von 2 geprüft, 1 auffällig, 1 neue Unteraufgabe');
 
@@ -414,4 +427,321 @@ it('arbeitet im Zeitplan als die Person, die den Sammellauf gestartet hat', func
     expect($stuck->status)->toBe(AiCheckRun::STATUS_FAILED)
         ->and($stuck->error)->toContain('aktiven Admin')
         ->and($stuck->processed)->toBe(0);
+});
+
+it('grenzt einen Sammellauf ein – nur aktive Eintraege, ein Land, ein Typ', function () {
+    $anna = aiTaskAdmin();
+    $this->actingAs($anna);
+
+    $cgn = aiTaskAirport('Cologne Bonn Airport', 'CGN');
+    aiTaskAirport('Flughafen München', 'MUC', ['type' => 'large_airport']);
+    aiTaskAirport('Stillgelegter Flughafen', 'OFF', ['is_active' => false]);
+
+    $europe = Continent::firstWhere('code', 'EU');
+    $germany = Country::firstWhere('iso_code', 'DE');
+    $austria = Country::create(['name_translations' => ['de' => 'Österreich', 'en' => 'Austria'], 'iso_code' => 'AT', 'iso3_code' => 'AUT', 'continent_id' => $europe->id]);
+    $vie = aiTaskAirport('Flughafen Wien', 'VIE');
+    $vie->update(['country_id' => $austria->id]);
+
+    $contexts = \App\Support\AdminV2\AiRecordContexts::class;
+
+    // Welche Eingrenzungen es gibt, haengt vom Bereich ab.
+    expect(array_keys($contexts::filters('airports')))->toBe(['active', 'country', 'type'])
+        ->and(array_keys($contexts::filters('airport-codes')))->toBe(['scheduled', 'type', 'country', 'active'])
+        ->and(array_keys($contexts::filters('cities')))->toBe(['country', 'capital'])
+        ->and(array_keys($contexts::filters('countries')))->toBe(['continent'])
+        ->and($contexts::filters('continents'))->toBe([])
+        // Unbekanntes und Leeres faellt weg.
+        ->and($contexts::sanitizeFilters('airports', ['active' => false, 'country' => '', 'type' => 'erfunden', 'capital' => true]))->toBe([])
+        ->and($contexts::query('airports')->count())->toBe(4)
+        ->and($contexts::query('airports', ['active' => true])->count())->toBe(3)
+        ->and($contexts::query('airports', ['active' => true, 'country' => $germany->id])->count())->toBe(2)
+        ->and($contexts::query('airports', ['type' => 'large_airport'])->count())->toBe(1)
+        ->and($contexts::query('countries', ['continent' => $europe->id])->count())->toBe(2)
+        ->and($contexts::describeFilters('airports', ['active' => '1', 'country' => (string) $germany->id, 'type' => 'large_airport']))->toBe(['Nur aktive Einträge', 'Land: Deutschland', 'Typ: Großer Flughafen']);
+
+    aiTaskFake(fn () => ['answer' => 'Es fehlt eine Lounge.', 'met' => true, 'title' => 'Lounge nachtragen', 'description' => 'Bitte prüfen.']);
+    $check = loungeCheck();
+
+    $page = Livewire::withQueryParams(['tab' => 'airports'])
+        ->test(Ai::class)
+        ->call('openBatch', $check->id)
+        // Vorgabe: nur aktive.
+        ->assertSee('3 Einträge')
+        ->set('batchFilters.active', false)
+        ->assertSee('4 Einträge')
+        ->set('batchFilters.active', true)
+        ->set('batchFilters.country', (string) $austria->id)
+        ->assertSee('1 Eintrag')
+        ->set('batchFilters.type', 'heliport')
+        ->assertSee('0 Einträge')
+        // Ohne Eintraege startet nichts.
+        ->call('startBatch')
+        ->assertDispatched('adminv2-toast', message: 'Mit dieser Eingrenzung gibt es keine Einträge.', variant: 'danger')
+        ->set('batchFilters.type', '')
+        ->call('startBatch')
+        ->assertSee('Eingrenzung: Nur aktive Einträge · Land: Österreich')
+        ->assertSee('Sammellauf läuft: 0 von 1 geprüft')
+        ->call('advanceBatches')
+        ->assertSee('1 von 1 geprüft, 1 auffällig, 1 neue Unteraufgabe');
+
+    $run = AiCheckRun::sole();
+
+    // Die Eingrenzung gilt fuer den ganzen Lauf: geprueft wurde nur Wien.
+    expect($run->filters)->toBe(['active' => true, 'country' => $austria->id])
+        ->and($run->total)->toBe(1)
+        ->and(AdminTask::whereNotNull('parent_id')->sole()->subject->is($vie))->toBeTrue();
+
+    Http::assertNotSent(fn ($request) => str_contains($request->body(), '(CGN)') || str_contains($request->body(), '(OFF)'));
+});
+
+it('legt ohne eigene Bedingung eine Aufgabe an, sobald die Pruefung Aenderungen am Datensatz vorschlaegt', function () {
+    $anna = aiTaskAdmin();
+    $this->actingAs($anna);
+
+    $cgn = aiTaskAirport('Cologne Bonn Airport', 'CGN', ['lounges' => [['name' => 'Business Lounge', 'location' => 'Terminal 1']]]);
+
+    // "Aufgaben anlegen" ohne Bedingung – unter System > KI so speicherbar.
+    Livewire::withQueryParams(['tab' => 'airports'])
+        ->test(Ai::class)
+        ->call('createCheck')
+        ->set('checkSection', 'lounges')
+        ->set('checkName', 'Lounges prüfen')
+        ->set('checkPrompt', 'Prüfe die Lounges von {name} ({iata_code}): {daten}')
+        ->set('checkTaskEnabled', true)
+        ->call('saveCheck')
+        ->assertHasNoErrors()
+        ->assertSee('Legt Aufgaben an')
+        ->assertSee('die Prüfung Änderungen am Eintrag vorschlägt');
+
+    $check = AiCheck::sole();
+
+    expect($check->createsTasks())->toBeTrue()
+        ->and($check->hasTaskCondition())->toBeFalse()
+        ->and($check->taskParent->description)->toContain('Schlägt die Prüfung bei einem Eintrag Änderungen vor');
+
+    $answer = [
+        'answer' => 'Zwei Angaben weichen ab.',
+        'issues' => ['Die Airport Lounge World in Terminal 2 ist nicht eingetragen.', 'Für den Flughafen ist keine Website hinterlegt.', ''],
+        'changes' => [
+            ['field' => 'Lounges', 'current' => 'Business Lounge', 'proposed' => 'Business Lounge, Airport Lounge World', 'reason' => 'Die zweite Lounge fehlt.'],
+            ['field' => 'Website', 'current' => '', 'proposed' => 'https://www.koeln-bonn-airport.de'],
+            // Ohne neuen Wert ist es kein Vorschlag.
+            ['field' => 'Zugang', 'current' => 'alle', 'proposed' => ''],
+        ],
+        'met' => true,
+        'title' => '',
+        'description' => 'Bitte die Angaben prüfen und nachtragen.',
+    ];
+    aiTaskFake(function () use (&$answer) {
+        return $answer;
+    });
+
+    $editor = Livewire::test(AirportEditor::class, ['airport' => $cgn->id])
+        ->call('openAiCheck', 'lounges')
+        ->assertSee('legt Aufgaben an')
+        ->call('runAiCheck')
+        ->assertSet('aiError', null)
+        ->assertSee('Die Prüfung schlägt Änderungen vor – Unteraufgabe angelegt:')
+        ->assertSee('Cologne Bonn Airport (CGN): 2 Änderungen vorgeschlagen');
+
+    // Die KI bekommt die Vorgabe als Bedingung und soll Beanstandungen und Vorschlaege einzeln nennen.
+    Http::assertSent(fn ($request) => str_contains($request->body(), 'etwas ge') && str_contains($request->body(), 'issues') && str_contains($request->body(), 'changes'));
+
+    $subtask = AdminTask::whereNotNull('parent_id')->sole();
+
+    // Die Aufgabe nennt, was zu tun ist, jede Beanstandung und jede vorgeschlagene Aenderung.
+    expect($subtask->subject->is($cgn))->toBeTrue()
+        ->and($subtask->description)->toBe(
+            "Bitte die Angaben prüfen und nachtragen.\n\n"
+            ."Beanstandungen der KI:\n- Die Airport Lounge World in Terminal 2 ist nicht eingetragen.\n- Für den Flughafen ist keine Website hinterlegt.\n\n"
+            ."Vorgeschlagene Änderungen:\n"
+            ."- Lounges: bisher „Business Lounge“, Vorschlag „Business Lounge, Airport Lounge World“ – Die zweite Lounge fehlt.\n"
+            .'- Website: bisher leer, Vorschlag „https://www.koeln-bonn-airport.de“'
+        );
+
+    // Keine Vorschlaege: keine Aufgabe.
+    $answer = ['answer' => 'Alles stimmt.', 'changes' => [], 'met' => false, 'title' => '', 'description' => ''];
+    $subtask->update(['status' => AdminTask::STATUS_DONE]);
+
+    $editor->call('runAiCheck')->assertSee('Die Prüfung schlägt keine Änderungen vor – keine Aufgabe.');
+
+    expect(AdminTask::whereNotNull('parent_id')->count())->toBe(1);
+
+    // Nennt die KI einen Vorschlag, zaehlt er – auch wenn sie "met" dazu nicht setzt.
+    $answer = ['answer' => 'Die Website fehlt.', 'changes' => [['field' => 'Website', 'current' => '', 'proposed' => 'https://www.koeln-bonn-airport.de']], 'met' => false, 'title' => '', 'description' => ''];
+
+    $editor->call('runAiCheck')->assertSee('Cologne Bonn Airport (CGN): Änderung vorgeschlagen: Website');
+
+    expect(AdminTask::whereNotNull('parent_id')->count())->toBe(2);
+
+    // Mit eigener Bedingung entscheidet sie – Vorschlaege allein legen dann nichts an.
+    $check->update(['task_condition' => 'Eine eingetragene Lounge existiert nicht mehr.']);
+    AdminTask::whereNotNull('parent_id')->update(['status' => AdminTask::STATUS_DONE]);
+
+    Livewire::test(AirportEditor::class, ['airport' => $cgn->id])
+        ->call('openAiCheck', 'lounges')
+        ->call('runAiCheck')
+        ->assertSee('Die Bedingung trifft nicht zu – keine Aufgabe.');
+
+    expect(AdminTask::whereNotNull('parent_id')->count())->toBe(2);
+});
+
+it('legt eine neue Sammelaufgabe mit den gewuenschten Einstellungen an', function () {
+    \Illuminate\Support\Carbon::setTestNow('2026-10-05 09:00:00');
+
+    $anna = aiTaskAdmin();
+    $dennis = aiTaskAdmin('Dennis');
+    $this->actingAs($anna);
+
+    $cgn = aiTaskAirport('Cologne Bonn Airport', 'CGN');
+    $alert = AdminTaskCategory::firstOrCreate(['name' => 'Travel Alert']);
+
+    $page = Livewire::withQueryParams(['tab' => 'airports'])
+        ->test(Ai::class)
+        ->call('createCheck')
+        // Vorgaben: neue Sammelaufgabe, Rubrik Stammdaten, verantwortlich ist, wer die Pruefung anlegt.
+        ->assertSet('checkTaskMode', 'new')
+        ->assertSet('checkTaskCategoryId', (string) AdminTaskCategory::firstWhere('name', 'Stammdaten')->id)
+        ->assertSet('checkTaskResponsible', (string) $anna->id)
+        ->set('checkSection', 'lounges')
+        ->set('checkName', 'Lounges prüfen')
+        ->set('checkPrompt', 'Prüfe die Lounges von {name} ({iata_code}): {daten}')
+        ->set('checkTaskEnabled', true)
+        ->set('checkTaskCategoryId', '')
+        ->set('checkTaskResponsible', '')
+        ->set('checkTaskDueDays', 'bald')
+        ->call('saveCheck')
+        ->assertHasErrors(['checkTaskCategoryId', 'checkTaskResponsible', 'checkTaskDueDays'])
+        ->set('checkTaskTitle', 'Lounges aller Flughäfen nachziehen')
+        ->set('checkTaskCategoryId', (string) $alert->id)
+        ->set('checkTaskPriority', AdminTask::PRIORITY_HIGH)
+        ->set('checkTaskResponsible', (string) $dennis->id)
+        ->set('checkTaskNextAssignee', (string) $anna->id)
+        ->set('checkTaskDueDays', '14')
+        ->call('saveCheck')
+        ->assertHasNoErrors()
+        ->assertSee('Sammelaufgabe: Lounges aller Flughäfen nachziehen');
+
+    $check = AiCheck::sole();
+    $parent = $check->taskParent;
+
+    expect($check->task_mode)->toBe(AiCheck::TASK_MODE_PARENT)
+        ->and($parent->title)->toBe('Lounges aller Flughäfen nachziehen')
+        ->and($parent->category_id)->toBe($alert->id)
+        ->and($parent->priority)->toBe(AdminTask::PRIORITY_HIGH)
+        ->and($parent->responsible_id)->toBe($dennis->id)
+        ->and($parent->next_assignee_id)->toBe($anna->id)
+        ->and($parent->due_date->format('Y-m-d'))->toBe('2026-10-19')
+        ->and($parent->created_by)->toBe($anna->id);
+
+    // Die angelegte Sammelaufgabe ist ab dann eine vorhandene Aufgabe – erneutes Speichern legt keine zweite an.
+    $page->call('editCheck', $check->id)
+        ->assertSet('checkTaskMode', 'existing')
+        ->assertSet('checkTaskParentId', (string) $parent->id)
+        ->call('saveCheck')
+        ->assertHasNoErrors();
+
+    expect(AdminTask::count())->toBe(1);
+
+    // "Vorhandene Aufgabe" braucht eine Aufgabe.
+    $page->call('editCheck', $check->id)->set('checkTaskParentId', '')->call('saveCheck')->assertHasErrors(['checkTaskParentId']);
+
+    // Unteraufgaben uebernehmen Rubrik, Prioritaet, Faelligkeit und Verantwortung der Sammelaufgabe.
+    aiTaskFake(fn () => ['answer' => 'Es fehlt eine Lounge.', 'changes' => [], 'met' => true, 'title' => 'Lounge nachtragen', 'description' => 'Bitte prüfen.']);
+
+    Livewire::test(AirportEditor::class, ['airport' => $cgn->id])->call('openAiCheck', 'lounges')->call('runAiCheck')->assertSee('Unteraufgabe angelegt:');
+
+    $subtask = AdminTask::where('parent_id', $parent->id)->sole();
+
+    expect($subtask->category_id)->toBe($alert->id)
+        ->and($subtask->priority)->toBe(AdminTask::PRIORITY_HIGH)
+        ->and($subtask->responsible_id)->toBe($dennis->id)
+        ->and($subtask->due_date->format('Y-m-d'))->toBe('2026-10-19');
+
+    \Illuminate\Support\Carbon::setTestNow();
+});
+
+it('legt je Datensatz eine Einzelaufgabe mit eigenen Einstellungen an', function () {
+    \Illuminate\Support\Carbon::setTestNow('2026-10-05 09:00:00');
+
+    $anna = aiTaskAdmin();
+    $this->actingAs($anna);
+
+    $team = \App\Models\AdminTeam::create(['name' => 'Stammdaten-Team']);
+    $cgn = aiTaskAirport('Cologne Bonn Airport', 'CGN');
+    $fra = aiTaskAirport('Frankfurt Airport', 'FRA');
+
+    aiTaskFake(fn () => ['answer' => 'Es fehlt eine Lounge.', 'changes' => [], 'met' => true, 'title' => 'Lounge nachtragen', 'description' => 'Bitte prüfen.']);
+
+    $page = Livewire::withQueryParams(['tab' => 'airports'])
+        ->test(Ai::class)
+        ->call('createCheck')
+        ->set('checkSection', 'lounges')
+        ->set('checkName', 'Lounges prüfen')
+        ->set('checkPrompt', 'Prüfe die Lounges von {name} ({iata_code}): {daten}')
+        ->set('checkTaskEnabled', true)
+        ->set('checkTaskMode', 'single')
+        ->set('checkTaskPriority', AdminTask::PRIORITY_URGENT)
+        ->set('checkTaskResponsible', 'team:'.$team->id)
+        ->set('checkTaskDueDays', '7')
+        ->call('saveCheck')
+        ->assertHasNoErrors()
+        ->assertSee('Eine Einzelaufgabe je Eintrag · 0 offen');
+
+    $check = AiCheck::sole();
+
+    // Keine Sammelaufgabe – die Einstellungen stehen an der Pruefung.
+    expect($check->task_mode)->toBe(AiCheck::TASK_MODE_SINGLE)
+        ->and($check->task_parent_id)->toBeNull()
+        ->and($check->task_settings)->toMatchArray(['priority' => AdminTask::PRIORITY_URGENT, 'responsible' => 'team:'.$team->id, 'due_days' => 7])
+        ->and(AdminTask::count())->toBe(0);
+
+    // Am einzelnen Eintrag: eine eigenstaendige Aufgabe mit Bezug auf den Flughafen.
+    $editor = Livewire::test(AirportEditor::class, ['airport' => $cgn->id])
+        ->call('openAiCheck', 'lounges')
+        ->call('runAiCheck')
+        ->assertSee('– Aufgabe angelegt:')
+        ->assertSee('Cologne Bonn Airport (CGN): Lounge nachtragen');
+
+    $task = AdminTask::sole();
+
+    expect($task->parent_id)->toBeNull()
+        ->and($task->subject->is($cgn))->toBeTrue()
+        ->and($task->ai_check_id)->toBe($check->id)
+        ->and($task->category->name)->toBe('Stammdaten')
+        ->and($task->priority)->toBe(AdminTask::PRIORITY_URGENT)
+        ->and($task->responsible_team_id)->toBe($team->id)
+        ->and($task->responsible_id)->toBeNull()
+        ->and($task->due_date->format('Y-m-d'))->toBe('2026-10-12');
+
+    // Die Aufgabe nennt ihre Herkunft – sie ist keine Sammelaufgabe.
+    $this->get(route('adminv2.tasks.show', $task))->assertOk()->assertSee('Angelegt von der KI-Prüfung')->assertDontSee('Sammelaufgabe der KI-Prüfung');
+
+    // Erneut auffaellig: keine zweite Aufgabe zum selben Eintrag, sondern eine Notiz.
+    $editor->call('runAiCheck')->assertSee('es gibt bereits eine offene Aufgabe, das Ergebnis steht dort als Notiz');
+
+    expect(AdminTask::count())->toBe(1)
+        ->and($task->activities()->where('type', AdminTaskActivity::TYPE_NOTE)->count())->toBe(1);
+
+    // Der Sammellauf legt ebenfalls Einzelaufgaben an – ohne Sammelaufgabe.
+    $batches = app(AiCheckBatchService::class);
+    $run = $batches->advance($batches->start($check, $anna->id), 60);
+
+    expect($run->status)->toBe(AiCheckRun::STATUS_FINISHED)
+        ->and($run->matched)->toBe(2)
+        ->and($run->created)->toBe(1)
+        ->and(AdminTask::whereNull('parent_id')->count())->toBe(2)
+        ->and(AdminTask::whereNotNull('parent_id')->count())->toBe(0)
+        ->and(AdminTask::latest('id')->first()->subject->is($fra))->toBeTrue()
+        ->and($check->fresh()->task_parent_id)->toBeNull();
+
+    $page->call('editCheck', $check->id)
+        ->assertSet('checkTaskMode', 'single')
+        ->assertSet('checkTaskResponsible', 'team:'.$team->id)
+        ->assertSet('checkTaskDueDays', '7');
+
+    Livewire::withQueryParams(['tab' => 'airports'])->test(Ai::class)->assertSee('Eine Einzelaufgabe je Eintrag · 2 offen');
+
+    \Illuminate\Support\Carbon::setTestNow();
 });

@@ -70,7 +70,7 @@
                             <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $check->name }}</span>
                             <span class="font-mono text-xs text-zinc-500">{{ $check->model ?: AiSettings::model().' (Standard)' }}</span>
                             @if ($check->createsTasks())
-                                <flux:badge size="sm" color="sky" icon="clipboard-document-check" inset="top bottom" title="Wenn: {{ $check->task_condition }}">legt Aufgaben an</flux:badge>
+                                <flux:badge size="sm" color="sky" icon="clipboard-document-check" inset="top bottom" title="Wenn: {{ $check->hasTaskCondition() ? $check->taskCondition() : 'die Prüfung Änderungen am Eintrag vorschlägt' }}">legt Aufgaben an</flux:badge>
                             @endif
                             @if ($section === AiAreas::GENERAL && $check->section !== null && $check->section !== AiAreas::GENERAL)
                                 <flux:badge size="sm" color="zinc" inset="top bottom">{{ AiAreas::sectionLabel($area, $check->section) }}</flux:badge>
@@ -336,9 +336,14 @@
                             @if (! $taskOutcome['parsed'])
                                 <span>Die Bedingung ließ sich aus der Antwort nicht auswerten – es wurde keine Aufgabe angelegt.</span>
                             @elseif (! $taskOutcome['met'])
-                                <span>Die Bedingung trifft nicht zu – keine Aufgabe.</span>
+                                <span>{{ $chosen?->hasTaskCondition() ? 'Die Bedingung trifft nicht zu' : 'Die Prüfung schlägt keine Änderungen vor' }} – keine Aufgabe.</span>
                             @else
-                                <span>{{ $taskOutcome['created'] ? 'Die Bedingung trifft zu – Unteraufgabe angelegt:' : 'Die Bedingung trifft zu – es gibt bereits eine offene Unteraufgabe, das Ergebnis steht dort als Notiz:' }}</span>
+                                @php
+                                    $because = $chosen?->hasTaskCondition() ? 'Die Bedingung trifft zu' : 'Die Prüfung schlägt Änderungen vor';
+                                    // Je Eintrag eine eigenstaendige Aufgabe – oder eine Unteraufgabe der Sammelaufgabe.
+                                    $noun = $chosen?->createsSingleTasks() ? 'Aufgabe' : 'Unteraufgabe';
+                                @endphp
+                                <span>{{ $taskOutcome['created'] ? $because.' – '.$noun.' angelegt:' : $because.' – es gibt bereits eine offene '.$noun.', das Ergebnis steht dort als Notiz:' }}</span>
                                 <a href="{{ $taskOutcome['url'] }}" target="_blank" class="font-medium underline decoration-sky-300 underline-offset-2 hover:decoration-sky-700">{{ $taskOutcome['title'] }}</a>
                             @endif
                         </div>

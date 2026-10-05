@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\System;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\StartsAiEventSearch;
 use App\Models\AdminTask;
+use App\Models\AdminTaskCategory;
 use App\Models\AiCheck;
 use App\Models\AiCheckRun;
 use App\Models\AiEventSearchProfile;
@@ -64,13 +65,41 @@ class Ai extends Component
 
     public bool $checkActive = true;
 
-    /** Die Pruefung legt Aufgaben an: Unteraufgabe je Eintrag, bei dem die Bedingung zutrifft. */
+    /** Die Pruefung legt Aufgaben an: Unteraufgabe je Eintrag, zu dem sie Aenderungen vorschlaegt (bzw. bei dem die eigene Bedingung zutrifft). */
     public bool $checkTaskEnabled = false;
 
     public string $checkTaskCondition = '';
 
-    /** Sammelaufgabe; leer = beim Speichern eine neue anlegen */
+    /** Vorhandene Aufgabe, unter der die Unteraufgaben entstehen (Weg "existing") */
     public string $checkTaskParentId = '';
+
+    /**
+     * Wohin mit den Aufgaben: "new" = neue Sammelaufgabe anlegen, "existing" =
+     * unter einer vorhandenen Aufgabe, "single" = eine eigenstaendige Aufgabe je Eintrag.
+     */
+    public string $checkTaskMode = 'new';
+
+    // Einstellungen der neuen Sammelaufgabe bzw. der Einzelaufgaben
+    public string $checkTaskTitle = '';
+
+    public string $checkTaskCategoryId = '';
+
+    public string $checkTaskPriority = AdminTask::PRIORITY_NORMAL;
+
+    /** Person als ID, Team als "team:ID" */
+    public string $checkTaskResponsible = '';
+
+    public string $checkTaskNextAssignee = '';
+
+    /** Faellig so viele Tage nach dem Anlegen; leer = ohne Faelligkeit */
+    public string $checkTaskDueDays = '';
+
+    /** Pruefung, fuer die gerade ein Sammellauf gestartet wird (Dialog) */
+    #[Locked]
+    public ?int $batchCheckId = null;
+
+    /** @var array<string, bool|string> Eingrenzung des Sammellaufs, siehe AiRecordContexts::filters() */
+    public array $batchFilters = [];
 
     #[Locked]
     public ?int $promptId = null;
@@ -143,17 +172,11 @@ class Ai extends Component
             return collect();
         }
 
-        return AiCheck::query()->where('area', $this->tab)->with(['latestRun', 'taskParent'])->orderBy('sort_order')->orderBy('name')->get();
-    }
-
-    /**
-     * Anzahl der Eintraege, ueber die ein Sammellauf im offenen Bereich ginge;
-     * null, wenn es fuer den Bereich (noch) keinen Sammellauf gibt.
-     */
-    #[Computed]
-    public function batchRecordCount(): ?int
-    {
-        return AiRecordContexts::supports($this->tab) ? AiRecordContexts::query($this->tab)->count() : null;
+        return AiCheck::query()->where('area', $this->tab)
+            ->with(['latestRun', 'taskParent'])
+            // Offene Aufgaben, die die Pruefung an Eintraegen angelegt hat.
+            ->withCount(['tasks as open_tasks_count' => fn ($query) => $query->whereNotNull('subject_id')->where('status', '!=', AdminTask::STATUS_DONE)])
+            ->orderBy('sort_order')->orderBy('name')->get();
     }
 
     /**
@@ -171,19 +194,117 @@ class Ai extends Component
             ->get(['id', 'title']);
     }
 
-    /**
-     * Die Pruefung fuer alle Eintraege ihres Bereichs ausfuehren.
-     */
-    public function startBatch(int $checkId): void
+    #[Computed]
+    public function taskUsers(): Collection
     {
+        return AdminTask::assignableUsers();
+    }
+
+    #[Computed]
+    public function taskTeams(): Collection
+    {
+        return AdminTask::assignableTeams();
+    }
+
+    #[Computed]
+    public function taskCategories(): Collection
+    {
+        return AdminTaskCategory::query()
+            ->where(fn ($query) => $query->where('is_active', true)->orWhere('id', (int) $this->checkTaskCategoryId))
+            ->ordered()
+            ->get();
+    }
+
+    /**
+     * Vorgaben fuer die Einstellungen einer neuen Sammelaufgabe bzw. der Einzelaufgaben.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    protected function fillTaskSettings(array $settings = []): void
+    {
+        $this->checkTaskTitle = '';
+        $this->checkTaskCategoryId = (string) ($settings['category_id'] ?? AdminTaskCategory::query()->where('name', 'Stammdaten')->value('id') ?? '');
+        $this->checkTaskPriority = (string) ($settings['priority'] ?? AdminTask::PRIORITY_NORMAL);
+        $this->checkTaskResponsible = (string) ($settings['responsible'] ?? auth('web')->id());
+        $this->checkTaskNextAssignee = (string) ($settings['next_assignee'] ?? '');
+        $this->checkTaskDueDays = (string) ($settings['due_days'] ?? '');
+        unset($this->taskCategories);
+    }
+
+    /**
+     * Den Dialog zum Starten eines Sammellaufs oeffnen – mit der Eingrenzung des Bereichs.
+     */
+    public function openBatch(int $checkId): void
+    {
+        $check = AiCheck::findOrFail($checkId);
+
+        $this->batchCheckId = $check->id;
+        // Vorgabe: nur aktive Eintraege, sonst keine Eingrenzung.
+        $this->batchFilters = collect(AiRecordContexts::filters($check->area))
+            ->map(fn (array $definition, string $key) => $definition['kind'] === 'switch' ? $key === 'active' : '')
+            ->all();
+        unset($this->batchCheck, $this->batchCount);
+
+        $this->modal('ai-check-batch')->show();
+    }
+
+    #[Computed]
+    public function batchCheck(): ?AiCheck
+    {
+        return $this->batchCheckId ? AiCheck::find($this->batchCheckId) : null;
+    }
+
+    /**
+     * So viele Eintraege – und KI-Anfragen – umfasst der Sammellauf mit der gewaehlten Eingrenzung.
+     */
+    #[Computed]
+    public function batchCount(): int
+    {
+        return $this->batchCheck ? app(AiCheckBatchService::class)->recordCount($this->batchCheck, $this->batchFilters) : 0;
+    }
+
+    /**
+     * Laender fuer die Eingrenzung: ID => deutscher Name.
+     *
+     * @return array<int, array{value: int, label: string, code: string}>
+     */
+    #[Computed]
+    public function batchCountryOptions(): array
+    {
+        return \App\Models\Country::all()
+            ->sortBy(fn ($country) => $country->getName('de'), SORT_NATURAL | SORT_FLAG_CASE)
+            ->map(fn ($country) => ['value' => $country->id, 'label' => (string) $country->getName('de'), 'code' => (string) $country->iso_code])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, string> ID => deutscher Name
+     */
+    #[Computed]
+    public function batchContinentOptions(): array
+    {
+        return \App\Models\Continent::query()->orderBy('sort_order')->get()->mapWithKeys(fn ($continent) => [$continent->id => (string) $continent->getName('de')])->all();
+    }
+
+    /**
+     * Die im Dialog gewaehlte Pruefung fuer die eingegrenzten Eintraege ihres Bereichs ausfuehren.
+     */
+    public function startBatch(): void
+    {
+        if (! $this->batchCheck) {
+            return;
+        }
+
         try {
-            app(AiCheckBatchService::class)->start(AiCheck::findOrFail($checkId), auth('web')->id());
+            app(AiCheckBatchService::class)->start($this->batchCheck, auth('web')->id(), $this->batchFilters);
         } catch (Throwable $exception) {
             $this->dispatch('adminv2-toast', message: $exception->getMessage(), variant: 'danger');
 
             return;
         }
 
+        $this->modal('ai-check-batch')->close();
         unset($this->checks);
 
         $this->dispatch('adminv2-toast', message: 'Sammellauf gestartet. Er läuft im Hintergrund weiter – und solange diese Seite geöffnet ist.');
@@ -241,7 +362,8 @@ class Ai extends Component
 
     public function createCheck(): void
     {
-        $this->reset(['checkId', 'checkSection', 'checkName', 'checkDescription', 'checkPrompt', 'checkModel', 'checkTaskEnabled', 'checkTaskCondition', 'checkTaskParentId']);
+        $this->reset(['checkId', 'checkSection', 'checkName', 'checkDescription', 'checkPrompt', 'checkModel', 'checkTaskEnabled', 'checkTaskCondition', 'checkTaskParentId', 'checkTaskMode']);
+        $this->fillTaskSettings();
         $this->checkActive = true;
         $this->checkArea = isset(AiAreas::areas()[$this->tab]) ? $this->tab : 'countries';
         $this->resetValidation();
@@ -265,6 +387,13 @@ class Ai extends Component
         $this->checkTaskEnabled = (bool) $check->task_enabled;
         $this->checkTaskCondition = (string) $check->task_condition;
         $this->checkTaskParentId = (string) $check->task_parent_id;
+        // Eine einmal angelegte Sammelaufgabe ist ab dann eine "vorhandene Aufgabe".
+        $this->checkTaskMode = match (true) {
+            $check->createsSingleTasks() => 'single',
+            (bool) $check->task_parent_id => 'existing',
+            default => 'new',
+        };
+        $this->fillTaskSettings($check->createsSingleTasks() ? ($check->task_settings ?? []) : []);
         unset($this->taskParentOptions);
 
         $this->modal('ai-check-editor')->show();
@@ -279,10 +408,15 @@ class Ai extends Component
             'checkDescription' => ['nullable', 'string', 'max:255'],
             'checkPrompt' => ['required', 'string', 'min:10', 'max:6000'],
             'checkModel' => ['nullable', 'string', 'max:80'],
-            'checkTaskCondition' => [Rule::requiredIf($this->checkTaskEnabled), 'nullable', 'string', 'min:10', 'max:1000'],
-            'checkTaskParentId' => ['nullable', Rule::exists('admin_tasks', 'id')->whereNull('parent_id')->whereNull('deleted_at')],
+            // Ohne eigene Bedingung entsteht eine Aufgabe, sobald die Pruefung Aenderungen vorschlaegt.
+            'checkTaskCondition' => ['nullable', 'string', 'min:10', 'max:1000'],
+            ...$this->taskRules(),
         ], [
-            'checkTaskCondition.required' => 'Bitte die Bedingung beschreiben, bei der eine Unteraufgabe entstehen soll.',
+            'checkTaskParentId.required' => 'Bitte die Aufgabe wählen, unter der die Unteraufgaben entstehen sollen.',
+            'checkTaskCategoryId.required' => 'Bitte eine Rubrik wählen.',
+            'checkTaskResponsible.required' => 'Bitte festlegen, wer verantwortlich ist.',
+            'checkTaskResponsible.in' => 'Bitte eine Person oder ein Team wählen.',
+            'checkTaskDueDays.integer' => 'Bitte die Zahl der Tage als ganze Zahl angeben.',
             'checkTaskCondition.min' => 'Die Bedingung ist zu kurz.',
             'checkTaskParentId.exists' => 'Bitte eine vorhandene Hauptaufgabe wählen.',
             'checkName.required' => 'Bitte einen Namen für die Prüfung eingeben.',
@@ -302,12 +436,31 @@ class Ai extends Component
             'is_active' => $this->checkActive,
             'task_enabled' => $this->checkTaskEnabled,
             'task_condition' => trim($this->checkTaskCondition) ?: null,
-            // Abgeschaltet bleibt die bisherige Sammelaufgabe verknuepft – fuers Wiedereinschalten.
-            'task_parent_id' => $this->checkTaskEnabled ? ((int) $this->checkTaskParentId ?: null) : $check->task_parent_id,
-        ])->save();
+        ]);
+
+        $settings = [
+            'category_id' => (int) $this->checkTaskCategoryId ?: null,
+            'priority' => $this->checkTaskPriority,
+            'responsible' => $this->checkTaskResponsible,
+            'next_assignee' => $this->checkTaskNextAssignee ?: null,
+            'due_days' => $this->checkTaskDueDays === '' ? null : (int) $this->checkTaskDueDays,
+        ];
+
+        // Abgeschaltet bleibt alles, wie es war – fuers Wiedereinschalten.
+        if ($this->checkTaskEnabled) {
+            $check->fill(match ($this->checkTaskMode) {
+                'single' => ['task_mode' => AiCheck::TASK_MODE_SINGLE, 'task_parent_id' => null, 'task_settings' => $settings],
+                'existing' => ['task_mode' => AiCheck::TASK_MODE_PARENT, 'task_parent_id' => (int) $this->checkTaskParentId, 'task_settings' => null],
+                default => ['task_mode' => AiCheck::TASK_MODE_PARENT, 'task_parent_id' => null, 'task_settings' => null],
+            });
+        }
+
+        $check->save();
 
         // Die Sammelaufgabe steht ab dem Speichern – sie bezieht sich auf alle Eintraege des Bereichs.
-        if ($check->createsTasks()) {
+        if ($this->checkTaskEnabled && $this->checkTaskMode === 'new') {
+            app(AiCheckTaskService::class)->createParent($check, $settings + ['title' => $this->checkTaskTitle], auth('web')->id());
+        } elseif ($this->checkTaskEnabled && $this->checkTaskMode === 'existing') {
             app(AiCheckTaskService::class)->parentTask($check, auth('web')->id());
         }
 
@@ -315,6 +468,40 @@ class Ai extends Component
         $this->modal('ai-check-editor')->close();
 
         $this->dispatch('adminv2-toast', message: $this->checkId ? 'Prüfung gespeichert.' : 'Prüfung angelegt.');
+    }
+
+    /**
+     * Pruefregeln zu "Aufgaben anlegen" – je nach gewaehltem Weg.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function taskRules(): array
+    {
+        if (! $this->checkTaskEnabled) {
+            return [];
+        }
+
+        if ($this->checkTaskMode === 'existing') {
+            return [
+                'checkTaskMode' => [Rule::in(['new', 'existing', 'single'])],
+                'checkTaskParentId' => ['required', Rule::exists('admin_tasks', 'id')->whereNull('parent_id')->whereNull('deleted_at')],
+            ];
+        }
+
+        $assignees = array_merge(
+            $this->taskUsers->map(fn ($user) => (string) $user->id)->all(),
+            $this->taskTeams->map(fn ($team) => 'team:'.$team->id)->all(),
+        );
+
+        return [
+            'checkTaskMode' => [Rule::in(['new', 'existing', 'single'])],
+            'checkTaskTitle' => ['nullable', 'string', 'max:250'],
+            'checkTaskCategoryId' => ['required', Rule::exists('admin_task_categories', 'id')],
+            'checkTaskPriority' => ['required', Rule::in(array_keys(AdminTask::priorityOptions()))],
+            'checkTaskResponsible' => ['required', Rule::in($assignees)],
+            'checkTaskNextAssignee' => ['nullable', Rule::in(['', ...$assignees])],
+            'checkTaskDueDays' => ['nullable', 'integer', 'min:0', 'max:3650'],
+        ];
     }
 
     public function toggleCheck(int $checkId): void

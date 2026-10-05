@@ -20,6 +20,8 @@
     'linkTerminal' => '',
     'editingLinkId' => null,
     'noun' => 'Eintrag',
+    // $aiReview des Formulars: das Ergebnis der Feldpruefung zur Liste bleibt in der Karte stehen
+    'review' => null,
 ])
 
 @php
@@ -29,6 +31,8 @@
 <x-adminv2.card :heading="$heading.' ('.$links->count().')'" description="Mit Richtung und Terminal." collapsible :collapsed="$links->isEmpty()" :collapse-key="'airline-links-'.\Illuminate\Support\Str::slug($heading)">
     <x-slot:actions><x-adminv2.ai-check-button :section="$heading === 'Airlines' ? 'airlines' : 'airports'" /></x-slot:actions>
     <div class="flex flex-col gap-4">
+        <x-adminv2.ai-field-hint :key="$heading === 'Airlines' ? 'airlines' : 'airports'" :review="$review" :applyable="false" class="!mt-0 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
+
         @if ($links->isNotEmpty())
             <div
                 class="flex flex-col gap-2"

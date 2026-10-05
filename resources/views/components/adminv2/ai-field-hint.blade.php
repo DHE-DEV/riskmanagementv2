@@ -5,11 +5,14 @@
     - key: Platzhalter-Schluessel des Feldes
     - review: $aiReview des Formulars
     - noteable: das Feld hat eine Notiz – die Begruendung der KI laesst sich dorthin uebernehmen
+    - applyable: false fuer Sammelangaben (Listen), die sich nicht in ein Feld uebernehmen lassen –
+      der Hinweis bleibt stehen, die Schaltflaeche "Uebernehmen" entfaellt
 --}}
 @props([
     'key',
     'review' => null,
     'noteable' => false,
+    'applyable' => true,
 ])
 
 @php
@@ -29,10 +32,12 @@
             @elseif ($change && $applied)
                 <span class="inline-flex shrink-0 items-center gap-1 text-green-700 dark:text-green-400"><flux:icon.check-circle variant="micro" /> KI: übernommen</span>
             @elseif ($change)
-                <span class="inline-flex shrink-0 items-center gap-1 text-amber-700 dark:text-amber-400"><flux:icon.light-bulb variant="micro" /> KI-Vorschlag: nicht übernommen</span>
-                <button type="button" wire:click="applyAiSuggestion('{{ $key }}')" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-[var(--color-accent)]/10 px-2 py-0.5 font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20">
-                    <flux:icon.arrow-down-tray variant="micro" /> Übernehmen
-                </button>
+                <span class="inline-flex shrink-0 items-center gap-1 text-amber-700 dark:text-amber-400"><flux:icon.light-bulb variant="micro" /> {{ $applyable ? 'KI-Vorschlag: nicht übernommen' : 'KI-Vorschlag' }}</span>
+                @if ($applyable)
+                    <button type="button" wire:click="applyAiSuggestion('{{ $key }}')" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-[var(--color-accent)]/10 px-2 py-0.5 font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20">
+                        <flux:icon.arrow-down-tray variant="micro" /> Übernehmen
+                    </button>
+                @endif
             @else
                 <span class="inline-flex shrink-0 items-center gap-1 text-zinc-500"><flux:icon.question-mark-circle variant="micro" /> KI: nicht prüfbar</span>
             @endif

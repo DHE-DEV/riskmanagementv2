@@ -19,9 +19,10 @@ class AiCheckRun extends Model
 
     public const STATUS_FAILED = 'failed';
 
-    protected $fillable = ['ai_check_id', 'started_by', 'status', 'total', 'processed', 'matched', 'created', 'failed', 'last_record_id', 'total_tokens', 'cost', 'error', 'finished_at'];
+    protected $fillable = ['ai_check_id', 'started_by', 'status', 'filters', 'total', 'processed', 'matched', 'created', 'failed', 'last_record_id', 'total_tokens', 'cost', 'error', 'finished_at'];
 
     protected $casts = [
+        'filters' => 'array',
         'total' => 'integer',
         'processed' => 'integer',
         'matched' => 'integer',

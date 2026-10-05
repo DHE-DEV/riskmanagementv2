@@ -229,7 +229,7 @@
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.airport-extras :lounges="$lounges" :mobility="$mobility" :hotels="$hotels" />
+            <x-adminv2.master-data.airport-extras :lounges="$lounges" :mobility="$mobility" :hotels="$hotels" :review="$aiReview" />
         </div>
 
         <div class="flex flex-col gap-6">
@@ -255,6 +255,7 @@
                     :link-direction="$linkDirection"
                     :link-terminal="$linkTerminal"
                     :editing-link-id="$editingLinkId"
+                    :review="$aiReview"
                 />
             @else
                 <x-adminv2.card heading="Hinweis">

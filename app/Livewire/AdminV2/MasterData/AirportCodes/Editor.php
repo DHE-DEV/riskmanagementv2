@@ -11,6 +11,7 @@ use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\AirportCode;
 use App\Models\City;
 use App\Models\Country;
+use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\Coordinates;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -308,8 +309,25 @@ class Editor extends Component
     /**
      * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
      */
+    /**
+     * Lounges und Hotels werden je Eintrag und Feld geprueft.
+     */
+    protected function aiReviewLabels(string $section): array
+    {
+        return $this->airportExtrasReviewLabels($section) ?? AiAreas::placeholders($this->aiArea(), $section);
+    }
+
+    protected function aiReviewHint(string $section): ?string
+    {
+        return $this->airportExtrasReviewHint($section);
+    }
+
     protected function aiApply(string $key, string $value): bool
     {
+        if (($applied = $this->aiApplyAirportExtras($key, $value)) !== null) {
+            return $applied;
+        }
+
         switch ($key) {
             case 'name': $this->name = $value;
 

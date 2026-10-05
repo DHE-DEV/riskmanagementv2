@@ -84,7 +84,7 @@ class AiFieldReviewService
         foreach ($extra as $key => $value) {
             // Zur Einordnung reichen die Kennzeichen des Eintrags – nicht die Angaben anderer Abschnitte.
             if (! in_array($key, ['risk_profile', 'lounges', 'mobility', 'hotels', 'airlines', 'airports', 'baggage', 'pets', 'countries', 'cities', 'names', 'contact'], true)
-                && ! str_starts_with($key, 'baggage_') && ! str_starts_with($key, 'pets_')) {
+                && ! preg_match('/^(baggage|pets|lounge|lounges|hotel|hotels)_/', $key)) {
                 $identity[] = ($extraLabels[$key] ?? $key).': '.$checks->format($value);
             }
         }

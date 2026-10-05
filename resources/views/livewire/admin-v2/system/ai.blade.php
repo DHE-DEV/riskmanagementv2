@@ -425,7 +425,7 @@
         </x-adminv2.card>
     @else
         @php
-            $batchRecords = $this->batchRecordCount;
+            $batchSupported = \App\Support\AdminV2\AiRecordContexts::supports($tab);
             $batchRunning = $this->checks->contains(fn ($check) => $check->latestRun?->isRunning());
         @endphp
         {{-- Solange ein Sammellauf laeuft, fuehrt die Seite ihn weiter und zeigt den Stand. --}}
@@ -465,11 +465,20 @@
                         {{-- Die Pruefung legt Aufgaben an: Bedingung, Sammelaufgabe, Sammellauf --}}
                         <div class="mt-3 flex flex-col gap-2 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
                             <p class="flex items-center gap-1.5 font-medium text-zinc-900 dark:text-white"><flux:icon.clipboard-document-check variant="mini" class="text-sky-600" /> Legt Aufgaben an</p>
-                            <p class="line-clamp-3 text-xs text-zinc-600 dark:text-zinc-400"><span class="font-medium">Wenn:</span> {{ $check->task_condition }}</p>
-                            @if ($check->taskParent)
+                            <p class="line-clamp-3 text-xs text-zinc-600 dark:text-zinc-400"><span class="font-medium">Wenn:</span> {{ $check->hasTaskCondition() ? $check->taskCondition() : 'die Prüfung Änderungen am Eintrag vorschlägt' }}</p>
+                            @if ($check->createsSingleTasks())
+                                <p class="text-xs text-zinc-600 dark:text-zinc-400">Eine Einzelaufgabe je Eintrag · {{ $check->open_tasks_count }} offen</p>
+                            @elseif ($check->taskParent)
                                 <a href="{{ route('adminv2.tasks.show', $check->taskParent) }}" target="_blank" class="inline-flex w-fit max-w-full items-center gap-1 text-xs text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300">
                                     <flux:icon.arrow-top-right-on-square variant="micro" class="shrink-0" /> <span class="truncate">Sammelaufgabe: {{ $check->taskParent->title }}</span>
                                 </a>
+                                @if ($check->open_tasks_count)
+                                    <p class="text-xs text-zinc-600 dark:text-zinc-400">{{ $check->open_tasks_count }} offene {{ $check->open_tasks_count === 1 ? 'Unteraufgabe' : 'Unteraufgaben' }}</p>
+                                @endif
+                            @endif
+
+                            @if ($run && ($scope = \App\Support\AdminV2\AiRecordContexts::describeFilters($check->area, $run->filters ?? [])))
+                                <p class="text-xs text-zinc-500">Eingrenzung: {{ implode(' · ', $scope) }}</p>
                             @endif
 
                             @if ($run?->isRunning())
@@ -492,16 +501,11 @@
                                     @endif
                                 @endif
 
-                                @if ($batchRecords === null)
+                                @if (! $batchSupported)
                                     <p class="text-xs text-zinc-500">Für {{ $areaLabel }} gibt es noch keinen Sammellauf – Unteraufgaben entstehen, wenn die Prüfung am einzelnen Eintrag ausgeführt wird.</p>
                                 @elseif ($check->is_active)
-                                    <flux:button
-                                        size="xs"
-                                        icon="play"
-                                        wire:click="startBatch({{ $check->id }})"
-                                        wire:confirm="Die Prüfung „{{ $check->name }}“ für alle {{ $batchRecords }} {{ $areaLabel }} ausführen? Das sind {{ $batchRecords }} KI-Anfragen; je Eintrag, bei dem die Bedingung zutrifft, entsteht eine Unteraufgabe."
-                                        class="w-fit"
-                                    >Für alle {{ number_format($batchRecords, 0, ',', '.') }} {{ $areaLabel }} ausführen</flux:button>
+                                    {{-- Der Dialog zeigt die Eingrenzung und wie viele KI-Anfragen der Lauf stellt. --}}
+                                    <flux:button size="xs" icon="play" wire:click="openBatch({{ $check->id }})" class="w-fit">Sammellauf starten …</flux:button>
                                 @endif
                             @endif
                         </div>
@@ -512,6 +516,85 @@
     @endif
     @endif
     </div>
+
+    {{-- Sammellauf starten: Eingrenzung waehlen, Umfang sehen --}}
+    @if (isset(AiAreas::areas()[$tab]))
+    <flux:modal name="ai-check-batch" class="md:w-[36rem]">
+        @php
+            $batchCheck = $this->batchCheck;
+            $batchDefinitions = $batchCheck ? \App\Support\AdminV2\AiRecordContexts::filters($batchCheck->area) : [];
+            $batchCount = $this->batchCount;
+        @endphp
+        <div class="flex flex-col gap-5">
+            <div>
+                <flux:heading size="lg">Sammellauf starten</flux:heading>
+                @if ($batchCheck)
+                    <flux:subheading>„{{ $batchCheck->name }}“ · {{ $batchCheck->areaLabel() }}</flux:subheading>
+                @endif
+            </div>
+
+            @if ($batchDefinitions === [])
+                <p class="text-sm text-zinc-600 dark:text-zinc-400">In diesem Bereich gibt es keine Eingrenzung – der Lauf geht über alle Einträge.</p>
+            @else
+                <div class="flex flex-col gap-4">
+                    <p class="text-sm text-zinc-600 dark:text-zinc-400">Eingrenzung – je enger, desto weniger KI-Anfragen.</p>
+                    @foreach ($batchDefinitions as $key => $definition)
+                        <div wire:key="batch-filter-{{ $key }}">
+                            @if ($definition['kind'] === 'switch')
+                                <flux:switch wire:model.live="batchFilters.{{ $key }}" :label="$definition['label']" align="left" />
+                            @elseif ($definition['kind'] === 'select')
+                                <flux:select wire:model.live="batchFilters.{{ $key }}" :label="$definition['label']">
+                                    <flux:select.option value="">Alle</flux:select.option>
+                                    @foreach ($definition['options'] as $value => $label)
+                                        <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                            @elseif ($definition['kind'] === 'continent')
+                                <flux:select wire:model.live="batchFilters.{{ $key }}" :label="$definition['label']">
+                                    <flux:select.option value="">Alle Kontinente</flux:select.option>
+                                    @foreach ($this->batchContinentOptions as $value => $label)
+                                        <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                            @else
+                                <flux:field>
+                                    <flux:label>{{ $definition['label'] }}</flux:label>
+                                    <x-adminv2.search-select
+                                        :options="$this->batchCountryOptions"
+                                        model="batchFilters.{{ $key }}"
+                                        :selected="$batchFilters[$key] ?? ''"
+                                        placeholder="Alle Länder"
+                                        search-placeholder="Land oder ISO-Code …"
+                                        :label="$definition['label']"
+                                        live
+                                        clearable
+                                    />
+                                </flux:field>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <div @class([
+                'rounded-xl px-4 py-3 text-sm leading-relaxed',
+                'bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200' => $batchCount > 1000,
+                'bg-zinc-50 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300' => $batchCount <= 1000,
+            ]) wire:loading.class="opacity-60" wire:target="batchFilters">
+                <span class="font-semibold tabular-nums">{{ number_format($batchCount, 0, ',', '.') }} {{ $batchCount === 1 ? 'Eintrag' : 'Einträge' }}</span>
+                – so viele KI-Anfragen stellt der Lauf. Je Eintrag, bei dem die Bedingung zutrifft, entsteht eine Unteraufgabe.
+                @if ($batchCount > 1000)
+                    Das ist ein großer Lauf: Er dauert bei etwa 40 Einträgen je Minute rund {{ number_format(ceil($batchCount / 40 / 60), 0, ',', '.') }} {{ ceil($batchCount / 40 / 60) == 1 ? 'Stunde' : 'Stunden' }}.
+                @endif
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
+                <flux:button variant="primary" icon="play" wire:click="startBatch" :disabled="$batchCount === 0">Sammellauf starten</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+    @endif
 
     {{-- KI-Pruefung anlegen / bearbeiten – nur in den Stammdaten-Reitern --}}
     @if (isset(AiAreas::areas()[$tab]))
@@ -566,28 +649,90 @@
 
             {{-- Aufgaben: Unteraufgabe je Eintrag, bei dem die Bedingung zutrifft --}}
             <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-                <flux:switch wire:model.live="checkTaskEnabled" label="Aufgaben anlegen" description="Trifft die Bedingung bei einem Eintrag zu, entsteht unter der Sammelaufgabe eine Unteraufgabe mit Bezug auf diesen Eintrag – je Eintrag höchstens eine offene." align="left" />
+                <flux:switch wire:model.live="checkTaskEnabled" label="Aufgaben anlegen" description="Schlägt die Prüfung Änderungen an einem Eintrag vor, entsteht unter der Sammelaufgabe eine Unteraufgabe mit Bezug auf diesen Eintrag und den Vorschlägen – je Eintrag höchstens eine offene." align="left" />
 
                 @if ($checkTaskEnabled)
                     <div class="mt-4 flex flex-col gap-4">
                         <flux:field>
-                            <flux:label>Bedingung</flux:label>
-                            <flux:description>In eigenen Worten – die KI beurteilt je Eintrag, ob sie zutrifft.</flux:description>
+                            <flux:label>Eigene Bedingung (optional)</flux:label>
+                            <flux:description>Leer: eine Aufgabe entsteht, sobald die Prüfung Änderungen am Eintrag vorschlägt. Mit eigener Bedingung entscheidet stattdessen sie – die KI beurteilt je Eintrag, ob sie zutrifft.</flux:description>
                             <flux:textarea wire:model="checkTaskCondition" rows="3" placeholder="z. B. Es gibt Lounges am Flughafen, die nicht eingetragen sind, oder eine eingetragene Lounge existiert nicht mehr." />
                             <flux:error name="checkTaskCondition" />
                         </flux:field>
 
-                        <flux:field>
-                            <flux:label>Sammelaufgabe</flux:label>
-                            <flux:description>Die Aufgabe, die sich auf alle Einträge bezieht – unter ihr entstehen die Unteraufgaben. Rubrik, Priorität, Fälligkeit und Verantwortung der Unteraufgaben kommen von ihr.</flux:description>
-                            <flux:select wire:model="checkTaskParentId">
-                                <flux:select.option value="">Neue Sammelaufgabe anlegen</flux:select.option>
-                                @foreach ($this->taskParentOptions as $parentOption)
-                                    <flux:select.option value="{{ $parentOption->id }}">{{ $parentOption->title }}</flux:select.option>
-                                @endforeach
-                            </flux:select>
-                            <flux:error name="checkTaskParentId" />
-                        </flux:field>
+                        {{-- Wohin mit den Aufgaben: neue Sammelaufgabe, vorhandene Aufgabe oder je Eintrag eine eigene --}}
+                        <x-adminv2.choice-boxes
+                            label="Wohin mit den Aufgaben?"
+                            model="checkTaskMode"
+                            live
+                            :options="[
+                                ['value' => 'new', 'label' => 'Neue Sammelaufgabe'],
+                                ['value' => 'existing', 'label' => 'Vorhandene Aufgabe'],
+                                ['value' => 'single', 'label' => 'Einzelaufgaben je Eintrag'],
+                            ]"
+                        />
+                        <p class="-mt-2 text-xs leading-relaxed text-zinc-500">
+                            @if ($checkTaskMode === 'existing')
+                                Die Unteraufgaben entstehen unter der gewählten Aufgabe und übernehmen deren Rubrik, Priorität, Fälligkeit und Verantwortung.
+                            @elseif ($checkTaskMode === 'single')
+                                Je Eintrag entsteht eine eigenständige Aufgabe mit den folgenden Einstellungen – ohne Sammelaufgabe.
+                            @else
+                                Beim Speichern entsteht eine Sammelaufgabe mit den folgenden Einstellungen. Sie bezieht sich auf alle Einträge; ihre Unteraufgaben übernehmen die Einstellungen.
+                            @endif
+                        </p>
+
+                        @if ($checkTaskMode === 'existing')
+                            <flux:field>
+                                <flux:label>Aufgabe</flux:label>
+                                <flux:select wire:model="checkTaskParentId">
+                                    <flux:select.option value="">Bitte wählen …</flux:select.option>
+                                    @foreach ($this->taskParentOptions as $parentOption)
+                                        <flux:select.option value="{{ $parentOption->id }}">{{ $parentOption->title }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                                <flux:error name="checkTaskParentId" />
+                            </flux:field>
+                        @else
+                            @if ($checkTaskMode === 'new')
+                                <flux:input wire:model="checkTaskTitle" label="Titel der Sammelaufgabe" placeholder="Leer: KI-Prüfung „Name“ – Bereich › Abschnitt" maxlength="250" />
+                            @endif
+
+                            <div class="grid items-start gap-4 sm:grid-cols-2">
+                                <flux:field>
+                                    <flux:label>Rubrik</flux:label>
+                                    <flux:select wire:model="checkTaskCategoryId">
+                                        <flux:select.option value="">Bitte wählen …</flux:select.option>
+                                        @foreach ($this->taskCategories as $category)
+                                            <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:error name="checkTaskCategoryId" />
+                                </flux:field>
+                                <flux:field>
+                                    <flux:label>Priorität</flux:label>
+                                    <flux:select wire:model="checkTaskPriority">
+                                        @foreach (\App\Models\AdminTask::priorityOptions() as $value => $label)
+                                            <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:error name="checkTaskPriority" />
+                                </flux:field>
+                                <div>
+                                    <x-adminv2.assignee-select model="checkTaskResponsible" label="Verantwortlich" :users="$this->taskUsers" :teams="$this->taskTeams" />
+                                    <flux:error name="checkTaskResponsible" />
+                                </div>
+                                <div>
+                                    <x-adminv2.assignee-select model="checkTaskNextAssignee" label="Nächster Bearbeiter" :users="$this->taskUsers" :teams="$this->taskTeams" empty-label="Niemand – liegt beim Verantwortlichen" clearable />
+                                    <flux:error name="checkTaskNextAssignee" />
+                                </div>
+                                <flux:field>
+                                    <flux:label>Fällig nach (Tagen)</flux:label>
+                                    <flux:input wire:model="checkTaskDueDays" type="number" min="0" max="3650" step="1" placeholder="ohne Fälligkeit" />
+                                    <flux:description>{{ $checkTaskMode === 'single' ? 'Gerechnet ab dem Anlegen der jeweiligen Aufgabe.' : 'Gerechnet ab dem Anlegen der Sammelaufgabe.' }}</flux:description>
+                                    <flux:error name="checkTaskDueDays" />
+                                </flux:field>
+                            </div>
+                        @endif
                     </div>
                 @endif
             </div>

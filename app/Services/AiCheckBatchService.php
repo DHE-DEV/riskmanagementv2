@@ -37,20 +37,25 @@ class AiCheckBatchService
 
     /**
      * Anzahl der Datensaetze, ueber die ein Sammellauf ginge.
+     *
+     * @param  array<string, mixed>  $filters  Eingrenzung, siehe AiRecordContexts::filters()
      */
-    public function recordCount(AiCheck $check): int
+    public function recordCount(AiCheck $check, array $filters = []): int
     {
-        return AiRecordContexts::supports($check->area) ? AiRecordContexts::query($check->area)->count() : 0;
+        return AiRecordContexts::supports($check->area) ? AiRecordContexts::query($check->area, $filters)->count() : 0;
     }
 
-    public function start(AiCheck $check, ?int $userId = null): AiCheckRun
+    /**
+     * @param  array<string, mixed>  $filters  Eingrenzung, siehe AiRecordContexts::filters()
+     */
+    public function start(AiCheck $check, ?int $userId = null, array $filters = []): AiCheckRun
     {
         if (! AiRecordContexts::supports($check->area)) {
             throw new RuntimeException('Für diesen Bereich gibt es noch keinen Sammellauf.');
         }
 
         if (! $check->createsTasks()) {
-            throw new RuntimeException('Die Prüfung legt keine Aufgaben an – bitte zuerst die Bedingung hinterlegen.');
+            throw new RuntimeException('Die Prüfung legt keine Aufgaben an – bitte zuerst „Aufgaben anlegen“ einschalten.');
         }
 
         if ($check->runs()->where('status', AiCheckRun::STATUS_RUNNING)->exists()) {
@@ -58,12 +63,22 @@ class AiCheckBatchService
         }
 
         // Die Sammelaufgabe steht, bevor die ersten Unteraufgaben entstehen.
-        $this->tasks->parentTask($check, $userId);
+        if (! $check->createsSingleTasks()) {
+            $this->tasks->parentTask($check, $userId);
+        }
+
+        $filters = AiRecordContexts::sanitizeFilters($check->area, $filters);
+        $total = $this->recordCount($check, $filters);
+
+        if ($total === 0) {
+            throw new RuntimeException('Mit dieser Eingrenzung gibt es keine Einträge.');
+        }
 
         return $check->runs()->create([
             'started_by' => $userId,
             'status' => AiCheckRun::STATUS_RUNNING,
-            'total' => $this->recordCount($check),
+            'filters' => $filters ?: null,
+            'total' => $total,
         ]);
     }
 
@@ -148,7 +163,7 @@ class AiCheckBatchService
             return false;
         }
 
-        $query = AiRecordContexts::query($check->area);
+        $query = AiRecordContexts::query($check->area, $run->filters ?? []);
         $key = $query->getModel()->getQualifiedKeyName();
         $records = $query->where($key, '>', $run->last_record_id)->orderBy($key)->limit(self::PARALLEL)->get();
 

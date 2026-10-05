@@ -19,6 +19,8 @@
     'scroll' => false,
     // Abschnitt fuer die KI-Pruefung (Schaltflaeche in der Kopfzeile)
     'aiSection' => null,
+    // $aiReview des Formulars: das Ergebnis der Feldpruefung zur Liste bleibt in der Karte stehen
+    'review' => null,
 ])
 
 <x-adminv2.card :heading="$heading.' ('.number_format($count, 0, ',', '.').')'" collapsible :collapsed="$count === 0">
@@ -31,6 +33,12 @@
                 <flux:button size="sm" variant="ghost" icon="plus" :href="$createUrl">{{ $createLabel }}</flux:button>
             @endif
         </x-slot:actions>
+    @endif
+
+    @if ($aiSection)
+        {{-- Ergebnis der Feldpruefung zur Liste und zu ihrer Anzahl – bleibt stehen, auch wenn das KI-Fenster zu ist. --}}
+        <x-adminv2.ai-field-hint :key="$aiSection" :review="$review" :applyable="false" class="!mt-0 mb-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
+        <x-adminv2.ai-field-hint :key="$aiSection.'_count'" :review="$review" :applyable="false" class="!mt-0 mb-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
     @endif
 
     @if ($count === 0)

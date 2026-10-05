@@ -679,6 +679,126 @@ it('laesst die KI jedes Feld der Haustiermitnahme pruefen und uebernimmt die Vor
         ->assertDispatched('adminv2-toast', message: 'Dieser Vorschlag lässt sich nicht automatisch übernehmen – bitte von Hand eintragen.', variant: 'danger');
 });
 
+it('prueft Lounges und Hotels je Eintrag und Feld und zeigt die Hinweise unter den Feldern', function () {
+    $ok = ['status' => 'ok'];
+
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-mini',
+        'choices' => [['message' => ['content' => json_encode(['summary' => 'Eine Lounge fehlt.', 'fields' => [
+            'lounge_0_name' => $ok,
+            'lounge_0_location' => ['status' => 'change', 'value' => 'Terminal 2, Ebene 3', 'note' => 'Die Lounge ist umgezogen.'],
+            'lounge_0_access' => $ok,
+            'lounge_0_price_per_person' => ['status' => 'change', 'value' => '39,50 €'],
+            'lounge_0_url' => $ok,
+            'lounge_0_children_welcome' => ['status' => 'change', 'value' => 'Ja'],
+            'lounge_1_name' => ['status' => 'unknown', 'note' => 'Die Lounge gibt es laut Website nicht mehr.'],
+            'lounges_new' => ['status' => 'change', 'value' => "Airport Lounge World; Terminal 1; Priority Pass; 35; https://lounge.example\n- Business Lounge; Terminal 2\nSenator Lounge", 'note' => 'Zwei Lounges fehlen.'],
+        ]], JSON_UNESCAPED_UNICODE)]]],
+        'usage' => ['prompt_tokens' => 200, 'completion_tokens' => 80, 'total_tokens' => 280],
+    ])]);
+
+    $germany = aviationCountry('Deutschland', 'DE');
+    $cgn = airport('Cologne Bonn Airport', 'CGN', aviationCity('Köln', $germany), ['lounges' => [
+        ['name' => 'Business Lounge', 'location' => 'Terminal 1'],
+        ['name' => 'Alte Lounge'],
+    ]]);
+
+    $editor = Livewire::test(AirportEditor::class, ['airport' => $cgn->id])->call('openAiCheck', 'lounges');
+
+    // Jedes Feld jeder Lounge geht einzeln an die KI – dazu die Frage nach fehlenden Lounges.
+    expect(array_keys($editor->get('aiData')))->toContain('lounge_0_name', 'lounge_0_location', 'lounge_1_children_welcome', 'lounges_new')
+        ->and($editor->get('aiData')['lounge_0_location'])->toBe(['label' => 'Lounge 1 – Business Lounge › Standort', 'value' => 'Terminal 1']);
+
+    $editor->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        // Im Fenster je Lounge gegliedert …
+        ->assertSee('Lounge 1 – Business Lounge')
+        ->assertSee('Fehlende Lounges')
+        // … und unter den Feldern im Formular, auch nach dem Schliessen des Fensters.
+        ->assertSee('Die Lounge ist umgezogen.')
+        ->assertSee('Die Lounge gibt es laut Website nicht mehr.')
+        ->assertSee('Fehlende Lounges laut KI')
+        ->assertSeeHtml("applyAiSuggestion('lounge_0_location')")
+        ->assertSeeHtml("applyAiSuggestion('lounges_new')");
+
+    // Eine Anfrage: die Felder der Lounges haengen zusammen. Die Sammelangabe geht nicht noch einmal mit.
+    $requests = Http::recorded(fn ($request) => str_contains($request->body(), 'lounge_0_location'));
+
+    expect($requests->count())->toBe(1)
+        ->and($requests->first()[0]->body())->toContain('lounges_new', 'Die Felder geh')
+        ->not->toContain('- lounges (');
+
+    // Einzelne Vorschlaege uebernehmen.
+    $editor->call('applyAiSuggestion', 'lounge_0_location')
+        ->assertSet('lounges.0.location', 'Terminal 2, Ebene 3')
+        ->call('applyAiSuggestion', 'lounge_0_price_per_person')
+        ->assertSet('lounges.0.price_per_person', '39.50')
+        ->call('applyAiSuggestion', 'lounge_0_children_welcome')
+        ->assertSet('lounges.0.children_welcome', true)
+        // Fehlende Lounges als neue Eintraege – schon vorhandene werden nicht doppelt angelegt.
+        ->call('applyAiSuggestion', 'lounges_new');
+
+    expect($editor->get('lounges'))->toHaveCount(4)
+        ->and($editor->get('lounges')[2])->toMatchArray(['name' => 'Airport Lounge World', 'location' => 'Terminal 1', 'access' => 'Priority Pass', 'price_per_person' => '35', 'url' => 'https://lounge.example', 'children_welcome' => false])
+        ->and($editor->get('lounges')[3]['name'])->toBe('Senator Lounge')
+        ->and($editor->get('aiReview.fields.lounges_new.applied'))->toBeTrue();
+
+    $editor->call('save')->assertHasNoErrors();
+
+    expect(collect($cgn->fresh()->lounges)->pluck('name')->all())->toBe(['Business Lounge', 'Alte Lounge', 'Airport Lounge World', 'Senator Lounge'])
+        ->and($cgn->fresh()->lounges[0]['location'])->toBe('Terminal 2, Ebene 3');
+
+    // Mit dem Entfernen einer Lounge verschieben sich die Eintraege – die Hinweise werden verworfen.
+    $editor->call('removeLounge', 1)->assertSet('aiReview', null)->assertDontSee('Die Lounge ist umgezogen.');
+
+    // Hotels: dieselbe Pruefung je Eintrag.
+    $hotels = Livewire::test(AirportEditor::class, ['airport' => $cgn->id])
+        ->call('addHotel')
+        ->set('hotels.0.name', 'Airport Hotel')
+        ->call('openAiCheck', 'hotels');
+
+    expect(array_keys($hotels->get('aiData')))->toContain('hotel_0_name', 'hotel_0_distance_km', 'hotel_0_shuttle', 'hotels_new');
+
+    $hotels->set('aiReview', ['section' => 'hotels', 'summary' => null, 'usage' => null, 'fields' => [
+        'hotel_0_distance_km' => ['status' => 'change', 'value' => '0,4 km', 'note' => null],
+        'hotels_new' => ['status' => 'change', 'value' => 'Stadthotel; 2,5; https://hotel.example; Shuttle auf Anfrage', 'note' => null],
+    ]])
+        ->call('applyAllAiSuggestions')
+        ->assertSet('hotels.0.distance_km', '0.4')
+        ->assertSet('hotels.1.name', 'Stadthotel')
+        ->assertSet('hotels.1.distance_km', '2.5')
+        ->assertSet('hotels.1.notes', 'Shuttle auf Anfrage');
+});
+
+it('laesst das Ergebnis der Feldpruefung zu Listen im Abschnitt stehen', function () {
+    $germany = aviationCountry('Deutschland', 'DE');
+    $cgn = airport('Cologne Bonn Airport', 'CGN', aviationCity('Köln', $germany));
+
+    // Sammelangaben lassen sich nicht in ein Feld uebernehmen – der Hinweis bleibt trotzdem im Abschnitt sichtbar.
+    Livewire::test(AirportEditor::class, ['airport' => $cgn->id])
+        ->set('aiReview', ['section' => 'mobility', 'summary' => null, 'usage' => null, 'fields' => [
+            'mobility' => ['status' => 'change', 'value' => "Taxi: verfügbar\nÖPNV: S-Bahn S19", 'note' => 'Der Taxistand fehlt.'],
+        ]])
+        ->assertSee('Der Taxistand fehlt.')
+        ->assertSeeHtml('<span class="font-semibold">Taxi:</span>')
+        ->assertDontSeeHtml("applyAiSuggestion('mobility')")
+        ->set('aiReview', ['section' => 'airlines', 'summary' => null, 'usage' => null, 'fields' => [
+            'airlines' => ['status' => 'change', 'value' => 'Eurowings (EW)', 'note' => 'Eurowings fehlt in der Liste.'],
+        ]])
+        ->assertSee('Eurowings fehlt in der Liste.');
+
+    $lh = airline('Lufthansa', 'LH');
+
+    Livewire::test(AirlineEditor::class, ['airline' => $lh->id])
+        ->set('aiReview', ['section' => 'cabin_classes', 'summary' => null, 'usage' => null, 'fields' => [
+            'cabin_classes' => ['status' => 'change', 'value' => 'Economy, Business Class', 'note' => 'Die Kabinenklassen fehlen.'],
+        ]])
+        ->assertSee('Die Kabinenklassen fehlen.')
+        ->assertDontSeeHtml("applyAiSuggestion('cabin_classes')");
+});
+
 // ── Support ──────────────────────────────────────────────────────────────
 
 it('bringt Lounges, Mobilitaet und Hotels ins Formular und zurueck', function () {

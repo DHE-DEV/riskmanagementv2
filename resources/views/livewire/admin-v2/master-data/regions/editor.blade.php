@@ -75,6 +75,7 @@
                 <x-adminv2.master-data.related-list
                     heading="Städte"
                     ai-section="cities"
+                    :review="$aiReview"
                     :count="$cities['count']"
                     :shown="$cities['items']->count()"
                     :all-url="route('adminv2.master-data.cities.index', ['country' => [$record->country_id], 'region' => $record->id])"

@@ -73,7 +73,7 @@
                 <flux:subheading class="mt-1 flex items-center gap-1.5">
                     <flux:icon.sparkles variant="micro" class="shrink-0" />
                     <a href="{{ route('adminv2.system.ai', ['tab' => $aiCheck->area]) }}" target="_blank" class="truncate underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">
-                        {{ $task->parent_id ? 'Angelegt von der KI-Prüfung' : 'Sammelaufgabe der KI-Prüfung' }} „{{ $aiCheck->name }}“ · {{ $task->parent_id ? '' : 'alle ' }}{{ app(\App\Services\AiCheckTaskService::class)->scopeLabel($aiCheck) }}
+                        {{ $aiCheck->task_parent_id === $task->id ? 'Sammelaufgabe der KI-Prüfung' : 'Angelegt von der KI-Prüfung' }} „{{ $aiCheck->name }}“ · {{ $aiCheck->task_parent_id === $task->id ? 'alle ' : '' }}{{ app(\App\Services\AiCheckTaskService::class)->scopeLabel($aiCheck) }}
                     </a>
                 </flux:subheading>
             @endif

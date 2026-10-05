@@ -13,26 +13,65 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * Eine KI-Pruefung: ein Prompt, der an einem Abschnitt eines Stammdaten-
  * Formulars mit den Daten dieses Abschnitts ausgefuehrt wird.
  *
- * Auf Wunsch legt sie Aufgaben an: trifft die Bedingung (task_condition) bei
- * einem Datensatz zu, entsteht unter der Sammelaufgabe (task_parent_id) eine
- * Unteraufgabe mit Bezug auf diesen Datensatz.
+ * Auf Wunsch legt sie Aufgaben an: schlaegt sie Aenderungen an einem Datensatz
+ * vor, entsteht unter der Sammelaufgabe (task_parent_id) eine Unteraufgabe mit
+ * Bezug auf diesen Datensatz. Eine eigene Bedingung (task_condition) ersetzt
+ * diese Vorgabe.
  */
 class AiCheck extends Model
 {
-    protected $fillable = ['name', 'description', 'area', 'section', 'prompt', 'model', 'is_active', 'task_enabled', 'task_condition', 'task_parent_id', 'sort_order', 'created_by'];
+    protected $fillable = ['name', 'description', 'area', 'section', 'prompt', 'model', 'is_active', 'task_enabled', 'task_mode', 'task_condition', 'task_parent_id', 'task_settings', 'sort_order', 'created_by'];
+
+    /** Unteraufgaben unter einer Sammelaufgabe */
+    public const TASK_MODE_PARENT = 'parent';
+
+    /** Eine eigenstaendige Aufgabe je Datensatz */
+    public const TASK_MODE_SINGLE = 'single';
+
+    protected $attributes = [
+        'task_mode' => self::TASK_MODE_PARENT,
+    ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'task_enabled' => 'boolean',
+        'task_settings' => 'array',
         'sort_order' => 'integer',
     ];
+
+    /** Wann eine Aufgabe entsteht, solange keine eigene Bedingung hinterlegt ist. */
+    public const DEFAULT_TASK_CONDITION = 'Die Prüfung ergibt, dass an diesem Eintrag etwas geändert werden sollte – eine Angabe ist falsch, veraltet oder fehlt.';
 
     /**
      * Legt die Pruefung Aufgaben an?
      */
     public function createsTasks(): bool
     {
-        return $this->exists && $this->task_enabled && filled($this->task_condition);
+        return $this->exists && $this->task_enabled;
+    }
+
+    /**
+     * Entsteht je Datensatz eine eigenstaendige Aufgabe – statt einer Unteraufgabe der Sammelaufgabe?
+     */
+    public function createsSingleTasks(): bool
+    {
+        return $this->task_mode === self::TASK_MODE_SINGLE;
+    }
+
+    /**
+     * Hat die Pruefung eine eigene Bedingung? Sonst gilt: Aufgabe, sobald sie Aenderungen vorschlaegt.
+     */
+    public function hasTaskCondition(): bool
+    {
+        return filled($this->task_condition);
+    }
+
+    /**
+     * Die Bedingung, die die KI je Datensatz beurteilt.
+     */
+    public function taskCondition(): string
+    {
+        return $this->hasTaskCondition() ? trim((string) $this->task_condition) : self::DEFAULT_TASK_CONDITION;
     }
 
     /**
@@ -41,6 +80,14 @@ class AiCheck extends Model
     public function taskParent(): BelongsTo
     {
         return $this->belongsTo(AdminTask::class, 'task_parent_id');
+    }
+
+    /**
+     * Aufgaben, die zur Pruefung gehoeren: die Sammelaufgabe und alles, was die Pruefung angelegt hat.
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(AdminTask::class, 'ai_check_id');
     }
 
     public function runs(): HasMany

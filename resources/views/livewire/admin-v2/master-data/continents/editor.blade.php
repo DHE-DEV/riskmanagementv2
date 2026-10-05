@@ -80,6 +80,7 @@
                 <x-adminv2.master-data.related-list
                     heading="Länder"
                     ai-section="countries"
+                    :review="$aiReview"
                     :count="$countries->count()"
                     :shown="$countries->count()"
                     :all-url="route('adminv2.master-data.countries.index', ['continent' => $record->id])"

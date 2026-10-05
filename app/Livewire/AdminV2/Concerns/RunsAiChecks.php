@@ -157,7 +157,7 @@ trait RunsAiChecks
             return [];
         }
 
-        $labels = AiAreas::placeholders($this->aiArea(), $this->aiSection);
+        $labels = $this->aiReviewLabels($this->aiSection);
         $context = array_intersect_key($this->aiContext(), $labels);
         $service = app(AiCheckService::class);
 
@@ -182,7 +182,7 @@ trait RunsAiChecks
         // Viele Felder brauchen laenger als die ueblichen 30 Sekunden.
         set_time_limit(120);
 
-        $labels = AiAreas::placeholders($this->aiArea(), $this->aiSection);
+        $labels = $this->aiReviewLabels($this->aiSection);
 
         // Die Sammelangabe des Abschnitts (z. B. "Risikoprofil (alle Angaben)") waere neben ihren Einzelfeldern doppelt.
         if (count($labels) > 1) {
@@ -301,6 +301,18 @@ trait RunsAiChecks
     protected function aiApply(string $key, string $value): bool
     {
         return false;
+    }
+
+    /**
+     * Die Felder eines Abschnitts fuer die Feldpruefung: Schluessel => Bezeichnung.
+     * Ueblicherweise die Platzhalter des Abschnitts; Formulare mit Listen
+     * (Lounges, Hotels) nennen hier zusaetzlich die Felder jedes Eintrags.
+     *
+     * @return array<string, string>
+     */
+    protected function aiReviewLabels(string $section): array
+    {
+        return AiAreas::placeholders($this->aiArea(), $section);
     }
 
     /**

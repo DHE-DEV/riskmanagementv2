@@ -77,6 +77,7 @@
 
                     <div>
                         <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Kontaktmöglichkeiten</p>
+                        <x-adminv2.ai-field-hint key="contact" :review="$aiReview" :applyable="false" class="!mt-0 mb-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
                         <div class="grid gap-5 sm:grid-cols-2">
                             @foreach (Editor::CONTACT_FIELDS as $field => $label)
                                 <flux:field>
@@ -96,6 +97,7 @@
 
             <x-adminv2.card heading="Tarifarten / Kabinenklassen" :description="$cabinClasses ? implode(', ', array_intersect_key($classes, array_flip($cabinClasses))) : 'Noch keine Klasse markiert.'">
                 <x-slot:actions><x-adminv2.ai-check-button section="cabin_classes" /></x-slot:actions>
+                <x-adminv2.ai-field-hint key="cabin_classes" :review="$aiReview" :applyable="false" class="!mt-0 mb-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
                 <div class="flex flex-wrap gap-x-8 gap-y-3">
                     @foreach ($classes as $value => $label)
                         <flux:checkbox wire:model.live="cabinClasses" value="{{ $value }}" :label="$label" />
@@ -225,6 +227,7 @@
                     :link-direction="$linkDirection"
                     :link-terminal="$linkTerminal"
                     :editing-link-id="$editingLinkId"
+                    :review="$aiReview"
                 />
             @else
                 <x-adminv2.card heading="Nach dem Speichern">

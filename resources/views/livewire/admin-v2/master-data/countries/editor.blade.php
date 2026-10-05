@@ -47,6 +47,8 @@
                             <flux:button size="sm" icon="plus" wire:click="addName">Sprache</flux:button>
                         </div>
 
+                        <x-adminv2.ai-field-hint key="names" :review="$aiReview" :applyable="false" class="!mt-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
+
                         @if ($extraNames !== [])
                             <div class="mt-3 flex flex-col gap-2">
                                 @foreach ($extraNames as $index => $row)
