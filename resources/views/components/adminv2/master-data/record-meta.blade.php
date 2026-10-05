@@ -1,4 +1,4 @@
-{{-- Seitenspalte: Angaben zum Eintrag und Loeschen. --}}
+{{-- Seitenspalte: Angaben zum Eintrag und Loeschen, darunter seine Aufgaben. --}}
 @props(['record'])
 
 <x-adminv2.card heading="Eintrag">
@@ -27,3 +27,5 @@
         @endif
     </div>
 </x-adminv2.card>
+
+<x-adminv2.record-tasks :record="$record" />

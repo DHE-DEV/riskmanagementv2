@@ -424,7 +424,12 @@
             <p class="text-sm text-zinc-500">Für {{ $areaLabel }} ist noch keine KI-Prüfung hinterlegt. Mit „Neue Prüfung“ die erste anlegen.</p>
         </x-adminv2.card>
     @else
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" wire:loading.class="opacity-60" wire:target="toggleCheck, deleteCheck, saveCheck">
+        @php
+            $batchRecords = $this->batchRecordCount;
+            $batchRunning = $this->checks->contains(fn ($check) => $check->latestRun?->isRunning());
+        @endphp
+        {{-- Solange ein Sammellauf laeuft, fuehrt die Seite ihn weiter und zeigt den Stand. --}}
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" wire:loading.class="opacity-60" wire:target="toggleCheck, deleteCheck, saveCheck" @if ($batchRunning) wire:poll.4s="advanceBatches" @endif>
             @foreach ($this->checks as $check)
                 <article wire:key="check-{{ $check->id }}" @class(['flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-950', 'opacity-70' => ! $check->is_active])>
                     <div class="flex items-start justify-between gap-3">
@@ -454,6 +459,53 @@
                         <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{{ $check->description }}</p>
                     @endif
                     <p class="mt-2 line-clamp-3 font-mono text-xs leading-relaxed text-zinc-500">{{ $check->prompt }}</p>
+
+                    @if ($check->createsTasks())
+                        @php $run = $check->latestRun; @endphp
+                        {{-- Die Pruefung legt Aufgaben an: Bedingung, Sammelaufgabe, Sammellauf --}}
+                        <div class="mt-3 flex flex-col gap-2 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
+                            <p class="flex items-center gap-1.5 font-medium text-zinc-900 dark:text-white"><flux:icon.clipboard-document-check variant="mini" class="text-sky-600" /> Legt Aufgaben an</p>
+                            <p class="line-clamp-3 text-xs text-zinc-600 dark:text-zinc-400"><span class="font-medium">Wenn:</span> {{ $check->task_condition }}</p>
+                            @if ($check->taskParent)
+                                <a href="{{ route('adminv2.tasks.show', $check->taskParent) }}" target="_blank" class="inline-flex w-fit max-w-full items-center gap-1 text-xs text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300">
+                                    <flux:icon.arrow-top-right-on-square variant="micro" class="shrink-0" /> <span class="truncate">Sammelaufgabe: {{ $check->taskParent->title }}</span>
+                                </a>
+                            @endif
+
+                            @if ($run?->isRunning())
+                                <div>
+                                    <p class="text-xs text-zinc-600 tabular-nums dark:text-zinc-400">Sammellauf läuft: {{ $run->processed }} von {{ $run->total }} geprüft · {{ $run->created }} {{ $run->created === 1 ? 'Unteraufgabe' : 'Unteraufgaben' }}</p>
+                                    <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $run->total }}" aria-valuenow="{{ $run->processed }}">
+                                        <div class="h-full rounded-full bg-sky-500 transition-all" style="width: {{ $run->total ? round($run->processed / $run->total * 100) : 0 }}%"></div>
+                                    </div>
+                                </div>
+                                <flux:button size="xs" variant="ghost" icon="stop" wire:click="cancelBatch({{ $check->id }})" wire:confirm="Den Sammellauf abbrechen? Bereits angelegte Unteraufgaben bleiben bestehen." class="w-fit">Abbrechen</flux:button>
+                            @else
+                                @if ($run)
+                                    <p class="text-xs text-zinc-500 tabular-nums">
+                                        Letzter Sammellauf {{ ($run->finished_at ?? $run->updated_at)->format('d.m.Y H:i') }}{{ ['cancelled' => ' (abgebrochen)', 'failed' => ' (fehlgeschlagen)'][$run->status] ?? '' }}:
+                                        {{ $run->processed }} von {{ $run->total }} geprüft, {{ $run->matched }} auffällig, {{ $run->created }} neue {{ $run->created === 1 ? 'Unteraufgabe' : 'Unteraufgaben' }}@if ($run->failed), {{ $run->failed }} ohne Ergebnis @endif
+                                        @if ($run->total_tokens) · {{ number_format($run->total_tokens, 0, ',', '.') }} Token @if ($run->cost !== null) (ca. {{ number_format($run->cost, 2, ',', '.') }} $) @endif @endif
+                                    </p>
+                                    @if ($run->error)
+                                        <p class="text-xs text-red-600 dark:text-red-400">{{ $run->error }}</p>
+                                    @endif
+                                @endif
+
+                                @if ($batchRecords === null)
+                                    <p class="text-xs text-zinc-500">Für {{ $areaLabel }} gibt es noch keinen Sammellauf – Unteraufgaben entstehen, wenn die Prüfung am einzelnen Eintrag ausgeführt wird.</p>
+                                @elseif ($check->is_active)
+                                    <flux:button
+                                        size="xs"
+                                        icon="play"
+                                        wire:click="startBatch({{ $check->id }})"
+                                        wire:confirm="Die Prüfung „{{ $check->name }}“ für alle {{ $batchRecords }} {{ $areaLabel }} ausführen? Das sind {{ $batchRecords }} KI-Anfragen; je Eintrag, bei dem die Bedingung zutrifft, entsteht eine Unteraufgabe."
+                                        class="w-fit"
+                                    >Für alle {{ number_format($batchRecords, 0, ',', '.') }} {{ $areaLabel }} ausführen</flux:button>
+                                @endif
+                            @endif
+                        </div>
+                    @endif
                 </article>
             @endforeach
         </div>
@@ -511,6 +563,34 @@
             </flux:field>
 
             <flux:switch wire:model="checkActive" label="Eingeschaltet" description="Ausgeschaltete Prüfungen erscheinen nicht im Formular." align="left" />
+
+            {{-- Aufgaben: Unteraufgabe je Eintrag, bei dem die Bedingung zutrifft --}}
+            <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+                <flux:switch wire:model.live="checkTaskEnabled" label="Aufgaben anlegen" description="Trifft die Bedingung bei einem Eintrag zu, entsteht unter der Sammelaufgabe eine Unteraufgabe mit Bezug auf diesen Eintrag – je Eintrag höchstens eine offene." align="left" />
+
+                @if ($checkTaskEnabled)
+                    <div class="mt-4 flex flex-col gap-4">
+                        <flux:field>
+                            <flux:label>Bedingung</flux:label>
+                            <flux:description>In eigenen Worten – die KI beurteilt je Eintrag, ob sie zutrifft.</flux:description>
+                            <flux:textarea wire:model="checkTaskCondition" rows="3" placeholder="z. B. Es gibt Lounges am Flughafen, die nicht eingetragen sind, oder eine eingetragene Lounge existiert nicht mehr." />
+                            <flux:error name="checkTaskCondition" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>Sammelaufgabe</flux:label>
+                            <flux:description>Die Aufgabe, die sich auf alle Einträge bezieht – unter ihr entstehen die Unteraufgaben. Rubrik, Priorität, Fälligkeit und Verantwortung der Unteraufgaben kommen von ihr.</flux:description>
+                            <flux:select wire:model="checkTaskParentId">
+                                <flux:select.option value="">Neue Sammelaufgabe anlegen</flux:select.option>
+                                @foreach ($this->taskParentOptions as $parentOption)
+                                    <flux:select.option value="{{ $parentOption->id }}">{{ $parentOption->title }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                            <flux:error name="checkTaskParentId" />
+                        </flux:field>
+                    </div>
+                @endif
+            </div>
 
             <div class="flex justify-end gap-2">
                 <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>

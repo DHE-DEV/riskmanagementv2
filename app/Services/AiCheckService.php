@@ -6,6 +6,7 @@ use App\Models\AiCheck;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\RichText;
 use App\Support\AiSettings;
+use Illuminate\Support\Str;
 
 /**
  * Fuehrt eine KI-Pruefung mit den Daten eines Formular-Abschnitts aus.
@@ -30,14 +31,34 @@ class AiCheckService
         $answer = $ai->sendPrompt($prompt, ['model' => $check->model ?: AiSettings::model()]);
         $usage = $ai->lastUsage();
 
-        // Reiner Text behaelt seine Zeilenumbrueche; HTML wird bereinigt.
-        $html = $answer === strip_tags($answer) ? nl2br(e(trim($answer))) : (string) RichText::sanitize($answer);
-
         return [
-            'html' => $html,
+            'html' => $this->toHtml($answer),
             'prompt' => $prompt,
             'usage' => $usage ? $usage + ['cost' => AiSettings::cost($usage['model'], $usage['input_tokens'], $usage['output_tokens'])] : null,
         ];
+    }
+
+    /**
+     * Antwort der KI fuer die Anzeige. Die Modelle antworten in aller Regel in
+     * Markdown – Ueberschriften, Listen, Tabellen und Fettdruck werden umgesetzt,
+     * statt als Rohtext hintereinander zu stehen; Zeilenumbrueche bleiben.
+     * Antwortet das Modell mit HTML, wird es bereinigt.
+     */
+    public function toHtml(string $answer): string
+    {
+        $answer = trim($answer);
+
+        if (preg_match('/<(p|ul|ol|li|h[1-6]|table|div|br)\b/i', $answer)) {
+            return (string) RichText::sanitize($answer);
+        }
+
+        $html = Str::markdown($answer, [
+            'html_input' => 'escape',
+            'allow_unsafe_links' => false,
+            'renderer' => ['soft_break' => "<br>\n"],
+        ]);
+
+        return (string) RichText::sanitize($html);
     }
 
     /**
@@ -99,9 +120,13 @@ class AiCheckService
         }
 
         if (is_array($value)) {
-            // Einfache Listen zeilenweise, Strukturen als lesbares JSON.
+            // Einfache Listen mit Komma; Strukturen als lesbares JSON.
             if (array_is_list($value) && collect($value)->every(fn ($item) => is_scalar($item) || $item === null)) {
-                return implode(', ', array_map(fn ($item) => $this->format($item), $value));
+                $items = array_map(fn ($item) => $this->format($item), $value);
+
+                // Enthalten die Eintraege selbst Kommas ("Economy: Freigepäck 23 kg, Handgepäck 8 kg"),
+                // waere eine Komma-Liste nicht mehr lesbar – dann je Eintrag eine Zeile.
+                return implode(collect($items)->contains(fn ($item) => str_contains($item, ', ')) ? "\n" : ', ', $items);
             }
 
             return (string) json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

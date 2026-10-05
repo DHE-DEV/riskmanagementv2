@@ -4,6 +4,8 @@
 
     $task = $this->task;
     $subjectLabel = $task ? $task->subjectLabel() : $this->pendingSubjectLabel;
+    // Seite des Datensatzes, an dem die Aufgabe haengt – auch schon bei einer neuen Aufgabe.
+    $subjectUrl = $task ? $task->subjectUrl() : $this->pendingSubjectUrl;
     $parentTask = $this->parentTask;
     $subtasks = $this->subtasks;
     [$subtasksDone, $subtasksTotal] = $task ? $task->subtaskProgress() : [0, 0];
@@ -18,9 +20,17 @@
                     <flux:icon.arrow-left variant="micro" class="shrink-0" /> <span class="truncate">Hauptaufgabe: {{ $parentTask->title }}</span>
                 </a>
             @else
-                <a href="{{ route('adminv2.tasks.index') }}" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
-                    <flux:icon.arrow-left variant="micro" /> Aufgaben
-                </a>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <a href="{{ route('adminv2.tasks.index') }}" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                        <flux:icon.arrow-left variant="micro" /> Aufgaben
+                    </a>
+                    @if ($subjectUrl)
+                        {{-- Die Aufgabe wurde von einem Datensatz aus angelegt: der Weg dorthin zurueck. --}}
+                        <a href="{{ $subjectUrl }}" class="inline-flex min-w-0 max-w-full items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                            <flux:icon.arrow-left variant="micro" class="shrink-0" /> <span class="truncate">Zurück zu {{ $subjectLabel }}</span>
+                        </a>
+                    @endif
+                </div>
             @endif
             <div class="mt-1 flex flex-wrap items-center gap-3">
                 <flux:heading size="xl" level="1">{{ $task ? $task->title : ($parentTask ? 'Neue Unteraufgabe' : 'Neue Aufgabe') }}</flux:heading>
@@ -51,11 +61,20 @@
             @if ($subjectLabel)
                 <flux:subheading class="mt-1 flex items-center gap-1.5">
                     <flux:icon.link variant="micro" class="shrink-0" />
-                    @if ($task?->subject instanceof \App\Models\CustomEvent)
-                        <a href="{{ route('adminv2.events.edit', $task->subject_id) }}" target="_blank" class="truncate underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">{{ $subjectLabel }}</a>
+                    @if ($subjectUrl)
+                        <a href="{{ $subjectUrl }}" target="_blank" class="truncate underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">{{ $subjectLabel }}</a>
                     @else
                         <span class="truncate">{{ $subjectLabel }}</span>
                     @endif
+                </flux:subheading>
+            @endif
+            @if ($aiCheck = $task?->aiCheck)
+                {{-- Sammelaufgabe einer KI-Pruefung bzw. eine Unteraufgabe, die die Pruefung angelegt hat. --}}
+                <flux:subheading class="mt-1 flex items-center gap-1.5">
+                    <flux:icon.sparkles variant="micro" class="shrink-0" />
+                    <a href="{{ route('adminv2.system.ai', ['tab' => $aiCheck->area]) }}" target="_blank" class="truncate underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">
+                        {{ $task->parent_id ? 'Angelegt von der KI-Prüfung' : 'Sammelaufgabe der KI-Prüfung' }} „{{ $aiCheck->name }}“ · {{ $task->parent_id ? '' : 'alle ' }}{{ app(\App\Services\AiCheckTaskService::class)->scopeLabel($aiCheck) }}
+                    </a>
                 </flux:subheading>
             @endif
         </div>
@@ -175,12 +194,13 @@
             </form>
         </x-adminv2.card>
 
+        {{-- Rechte Spalte: Unteraufgaben, darunter Notizen und Verlauf. --}}
+        <div class="flex min-w-0 flex-col gap-6">
         @if ($task)
             {{-- Unteraufgaben: eigene Aufgaben mit allem Drum und Dran, hier in Kurzform. --}}
             <x-adminv2.card
                 heading="Unteraufgaben"
                 :description="$subtasksTotal > 0 ? $subtasksDone.' von '.$subtasksTotal.' erledigt' : 'Teilschritte dieser Aufgabe – jede mit eigener Seite, Fälligkeit, Verantwortung und Erinnerungen.'"
-                class="xl:order-last"
             >
                 <x-slot:actions>
                     <flux:button size="sm" variant="ghost" icon="arrow-top-right-on-square" :href="route('adminv2.tasks.create', ['parent' => $task->id])" target="_blank">Ausführlich anlegen</flux:button>
@@ -301,5 +321,6 @@
                 <p class="text-sm text-zinc-500">Notizen und der Verlauf der Änderungen erscheinen hier, sobald die Aufgabe angelegt ist.</p>
             @endif
         </x-adminv2.card>
+        </div>
     </div>
 </div>

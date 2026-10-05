@@ -2,6 +2,8 @@
 
 namespace App\Support\AdminV2;
 
+use App\Models\Airline;
+
 /**
  * Wo KI-Pruefungen eingebunden sind: Bereiche (Stammdaten-Arten), ihre
  * Abschnitte im Formular und die Platzhalter, die dort zur Verfuegung stehen.
@@ -84,11 +86,63 @@ class AiAreas
                 'sections' => [
                     'basics' => ['label' => 'Airline', 'placeholders' => ['name' => 'Name', 'iata_code' => 'IATA-Code', 'icao_code' => 'ICAO-Code', 'home_country' => 'Heimatland', 'headquarters' => 'Hauptsitz', 'is_active' => 'Aktiv', 'website' => 'Website', 'booking_url' => 'Buchungslink', 'contact' => 'Kontaktmöglichkeiten']],
                     'cabin_classes' => ['label' => 'Kabinenklassen', 'placeholders' => ['cabin_classes' => 'Kabinenklassen']],
-                    'baggage' => ['label' => 'Freigepäck & Handgepäck', 'placeholders' => ['baggage' => 'Gepäckregeln (alle Angaben)']],
-                    'pets' => ['label' => 'Haustiermitnahme', 'placeholders' => ['pets' => 'Haustiermitnahme (alle Angaben)']],
+                    'baggage' => ['label' => 'Freigepäck & Handgepäck', 'placeholders' => ['baggage' => 'Gepäckregeln (alle Angaben)'] + self::baggagePlaceholders()],
+                    'pets' => ['label' => 'Haustiermitnahme', 'placeholders' => ['pets' => 'Haustiermitnahme (alle Angaben)'] + self::petPlaceholders()],
                     'airports' => ['label' => 'Flughäfen', 'placeholders' => ['airports' => 'Direktverbindungen (Liste)']],
                 ],
             ],
+        ];
+    }
+
+    /**
+     * Die Gepaeckfelder einer Airline, einzeln – je Kabinenklasse Freigepaeck,
+     * Handgepaeck und dessen Masse, dazu Hinweise und Info-URL.
+     *
+     * @return array<string, string>
+     */
+    public static function baggagePlaceholders(): array
+    {
+        $classes = Airline::getCabinClassOptions();
+        $fields = [];
+
+        foreach ($classes as $class => $label) {
+            $fields['baggage_checked_'.$class] = 'Freigepäck › '.$label;
+        }
+
+        foreach ($classes as $class => $label) {
+            $fields['baggage_hand_'.$class] = 'Handgepäck › '.$label.' – Gewicht';
+            $fields['baggage_hand_'.$class.'_length'] = 'Handgepäck › '.$label.' – Länge (cm)';
+            $fields['baggage_hand_'.$class.'_width'] = 'Handgepäck › '.$label.' – Breite (cm)';
+            $fields['baggage_hand_'.$class.'_height'] = 'Handgepäck › '.$label.' – Höhe (cm)';
+        }
+
+        return $fields + ['baggage_notes' => 'Allgemeine Hinweise', 'baggage_info_url' => 'Info-URL'];
+    }
+
+    /**
+     * Die Felder der Haustiermitnahme einer Airline, einzeln – so wie sie im Formular stehen.
+     *
+     * @return array<string, string>
+     */
+    public static function petPlaceholders(): array
+    {
+        return [
+            'pets_allowed' => 'Haustiermitnahme erlaubt',
+            'pets_cabin_allowed' => 'In der Kabine › Erlaubt',
+            'pets_cabin_max_weight' => 'In der Kabine › Maximales Gewicht',
+            'pets_cabin_weight_includes_bag' => 'In der Kabine › Gewicht inklusive Tasche',
+            'pets_cabin_carrier_length' => 'In der Kabine › Transportbox-Länge (cm)',
+            'pets_cabin_carrier_width' => 'In der Kabine › Transportbox-Breite (cm)',
+            'pets_cabin_carrier_height' => 'In der Kabine › Transportbox-Höhe (cm)',
+            'pets_cabin_advance_notice_required' => 'In der Kabine › Voranmeldung erforderlich',
+            'pets_cabin_notes' => 'In der Kabine › Zusätzliche Hinweise',
+            'pets_hold_allowed' => 'Im Frachtraum › Erlaubt',
+            'pets_hold_max_weight' => 'Im Frachtraum › Maximales Gewicht',
+            'pets_hold_advance_notice_required' => 'Im Frachtraum › Voranmeldung erforderlich',
+            'pets_hold_notes' => 'Im Frachtraum › Zusätzliche Hinweise',
+            'pets_restrictions' => 'Allgemeine Einschränkungen',
+            'pets_info_url' => 'Info-URL',
+            'pets_notes' => 'Allgemeine Hinweise',
         ];
     }
 

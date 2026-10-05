@@ -211,4 +211,52 @@ class AirportExtras
 
         return $value === '' ? null : $value;
     }
+
+    /**
+     * Lounges, Mobilitaet und Hotels in lesbarer Form fuer die KI-Pruefungen –
+     * aus den Formularwerten (siehe loungesToForm(), mobilityToForm(), hotelsToForm()).
+     *
+     * @return array{lounges: array<int, string>, mobility: array<int, string>, hotels: array<int, string>}
+     */
+    public static function describe(array $loungeRows, array $mobilityForm, array $hotelRows): array
+    {
+        $lounges = [];
+        foreach (self::loungesFromForm($loungeRows) as $lounge) {
+            $lounges[] = $lounge['name']
+                .($lounge['location'] ? ', '.$lounge['location'] : '')
+                .($lounge['access'] ? ', Zugang: '.$lounge['access'] : '')
+                .($lounge['price_per_person'] !== null ? ', ab '.$lounge['price_per_person'].' pro Person' : '')
+                .($lounge['children_welcome'] ? ', Kinder willkommen' : '')
+                .($lounge['url'] ? ', '.$lounge['url'] : '');
+        }
+
+        $mobility = [];
+        foreach (self::mobility() as $key => $definition) {
+            $values = self::mobilityFromForm($mobilityForm)[$key];
+            $line = $definition['label'].': '.($values['available'] ? 'verfügbar' : 'nicht verfügbar');
+            if ($values['available'] && isset($definition['list'])) {
+                $items = array_map(fn (array $row) => implode(', ', array_filter($row)), $values[$definition['list']['key']]);
+                $line .= $items ? ' – '.implode('; ', $items) : '';
+            }
+            if ($values['available']) {
+                foreach ($definition['fields'] ?? [] as $field => $meta) {
+                    if ($values[$field] !== null) {
+                        $line .= ' – '.$meta['label'].': '.$values[$field];
+                    }
+                }
+            }
+            $mobility[] = $line;
+        }
+
+        $hotels = [];
+        foreach (self::hotelsFromForm($hotelRows) as $hotel) {
+            $hotels[] = $hotel['name']
+                .($hotel['distance_km'] !== null ? ', '.$hotel['distance_km'].' km' : '')
+                .($hotel['shuttle'] ? ', Shuttle' : '')
+                .($hotel['booking_url'] ? ', '.$hotel['booking_url'] : '')
+                .($hotel['notes'] ? ' – '.$hotel['notes'] : '');
+        }
+
+        return ['lounges' => $lounges, 'mobility' => $mobility, 'hotels' => $hotels];
+    }
 }

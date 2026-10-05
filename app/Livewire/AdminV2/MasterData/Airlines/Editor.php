@@ -322,6 +322,16 @@ class Editor extends Component
             $baggage[] = 'Info-URL: '.$this->handBaggageInfoUrl;
         }
 
+        // Jedes Gepaeckfeld einzeln – so kann die KI je Feld antworten und der Vorschlag uebernommen werden.
+        $baggageFields = ['baggage_notes' => $this->handBaggageNotes, 'baggage_info_url' => $this->handBaggageInfoUrl];
+        foreach (array_keys($classes) as $class) {
+            $baggageFields['baggage_checked_'.$class] = $this->checkedBaggage[$class] ?? '';
+            $baggageFields['baggage_hand_'.$class] = $this->handBaggage[$class] ?? '';
+            foreach (['length', 'width', 'height'] as $side) {
+                $baggageFields['baggage_hand_'.$class.'_'.$side] = $this->handDimensions[$class][$side] ?? '';
+            }
+        }
+
         $pets = ['Erlaubt: '.($this->petsAllowed ? 'Ja' : 'Nein')];
         if ($this->petsAllowed) {
             $pets[] = 'In der Kabine: '.(($this->petCabin['allowed'] ?? false) ? 'Ja' : 'Nein').
@@ -358,8 +368,153 @@ class Editor extends Component
             'cabin_classes' => array_values(array_intersect_key($classes, array_flip($this->cabinClasses))),
             'baggage' => $baggage,
             'pets' => $pets,
+            ...$baggageFields,
+            // Jedes Feld der Haustiermitnahme einzeln – auch solange sie nicht erlaubt ist,
+            // damit die KI zu allen Feldern eine Angabe machen kann.
+            'pets_allowed' => $this->petsAllowed,
+            'pets_cabin_allowed' => (bool) ($this->petCabin['allowed'] ?? false),
+            'pets_cabin_max_weight' => $this->petCabin['max_weight'] ?? '',
+            'pets_cabin_weight_includes_bag' => (bool) ($this->petCabin['weight_includes_bag'] ?? false),
+            'pets_cabin_carrier_length' => $this->petCabin['carrier_length'] ?? '',
+            'pets_cabin_carrier_width' => $this->petCabin['carrier_width'] ?? '',
+            'pets_cabin_carrier_height' => $this->petCabin['carrier_height'] ?? '',
+            'pets_cabin_advance_notice_required' => (bool) ($this->petCabin['advance_notice_required'] ?? false),
+            'pets_cabin_notes' => $this->petCabin['notes'] ?? '',
+            'pets_hold_allowed' => (bool) ($this->petHold['allowed'] ?? false),
+            'pets_hold_max_weight' => $this->petHold['max_weight'] ?? '',
+            'pets_hold_advance_notice_required' => (bool) ($this->petHold['advance_notice_required'] ?? false),
+            'pets_hold_notes' => $this->petHold['notes'] ?? '',
+            'pets_restrictions' => array_values(array_intersect_key(self::PET_RESTRICTIONS, array_flip($this->petRestrictions))),
+            'pets_info_url' => $this->petInfoUrl,
+            'pets_notes' => $this->petNotes,
             'airports' => $this->links->map(fn ($airport) => $airport->name.($airport->iata_code ? ' ('.$airport->iata_code.')' : '').' – '.(MasterData::LINK_DIRECTIONS[$airport->pivot->direction] ?? $airport->pivot->direction).($airport->pivot->terminal ? ', Terminal '.$airport->pivot->terminal : ''))->all(),
         ];
+    }
+
+    protected function aiReviewHint(string $section): ?string
+    {
+        if ($section === 'baggage') {
+            return 'Die Felder hängen zusammen: Bewerte nur die Kabinenklassen, die die Airline anbietet; für nicht angebotene Klassen ist der Status "ok" und das Feld bleibt leer. '
+                .'Gib zu jeder angebotenen Klasse die zutreffende Angabe an – auch zu bisher leeren Feldern. '
+                .'Freigepäck und Handgepäck so, wie es im Feld stehen soll, z. B. „1 × 23 kg“ bzw. „8 kg“; ist im günstigsten Tarif kein Aufgabegepäck enthalten, „nicht inklusive“. '
+                .'Maße des Handgepäcks als Zahl in Zentimetern.';
+        }
+
+        if ($section !== 'pets') {
+            return null;
+        }
+
+        return 'Die Felder hängen zusammen: Prüfe zuerst, ob die Airline Haustiere befördert („Haustiermitnahme erlaubt“). '
+            .'Wenn ja, gib zu allen weiteren Feldern die zutreffende Angabe an – auch zu bisher leeren Feldern und auch dann, wenn die Mitnahme im Eintrag bisher nicht erlaubt ist. '
+            .'Wenn nein, ist der Status der weiteren Felder "ok". '
+            .'Gewichte mit Einheit (z. B. „8 kg“), Maße der Transportbox als Zahl in Zentimetern. '
+            .'Für „Allgemeine Einschränkungen“ nur diese Werte verwenden, mit Komma getrennt: '.implode(', ', self::PET_RESTRICTIONS).' – trifft keiner zu: „keine“.';
+    }
+
+    /**
+     * Vorschlag der KI zu einem Gepaeckfeld in das Formular schreiben.
+     */
+    protected function aiApplyBaggage(string $key, string $value): bool
+    {
+        if ($key === 'baggage_notes') {
+            $this->handBaggageNotes = $value;
+
+            return true;
+        }
+
+        if ($key === 'baggage_info_url') {
+            $this->handBaggageInfoUrl = $value;
+
+            return true;
+        }
+
+        foreach (array_keys(Airline::getCabinClassOptions()) as $class) {
+            if ($key === 'baggage_checked_'.$class) {
+                $this->checkedBaggage[$class] = mb_substr($value, 0, 100);
+
+                return true;
+            }
+
+            if ($key === 'baggage_hand_'.$class) {
+                $this->handBaggage[$class] = mb_substr($value, 0, 100);
+
+                return true;
+            }
+
+            foreach (['length', 'width', 'height'] as $side) {
+                if ($key === 'baggage_hand_'.$class.'_'.$side) {
+                    $this->handDimensions[$class][$side] = $this->aiNumber($value);
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Vorschlag der KI zur Haustiermitnahme in das passende Feld schreiben.
+     */
+    protected function aiApplyPets(string $key, string $value): bool
+    {
+        $field = substr($key, 5);
+
+        foreach (['cabin' => 'petCabin', 'hold' => 'petHold'] as $prefix => $property) {
+            if (! str_starts_with($field, $prefix.'_')) {
+                continue;
+            }
+
+            $name = substr($field, strlen($prefix) + 1);
+
+            if (! array_key_exists($name, $this->{$property})) {
+                return false;
+            }
+
+            $this->{$property}[$name] = match (true) {
+                is_bool($this->{$property}[$name]) => $this->aiBool($value),
+                str_starts_with($name, 'carrier_') => $this->aiNumber($value),
+                $name === 'max_weight' => mb_substr($value, 0, 50),
+                default => $value,
+            };
+
+            return true;
+        }
+
+        switch ($field) {
+            case 'allowed': $this->petsAllowed = $this->aiBool($value);
+
+                return true;
+            case 'info_url': $this->petInfoUrl = $value;
+
+                return true;
+            case 'notes': $this->petNotes = $value;
+
+                return true;
+            case 'restrictions':
+                $names = array_filter(array_map('trim', preg_split('/[,;\n]+/', $value) ?: []));
+                $keys = [];
+
+                foreach ($names as $name) {
+                    $match = $this->aiMatch(array_keys(self::PET_RESTRICTIONS), $name, fn ($restriction) => self::PET_RESTRICTIONS[$restriction])
+                        ?? $this->aiMatch(array_keys(self::PET_RESTRICTIONS), $name, fn ($restriction) => $restriction);
+
+                    if ($match !== null) {
+                        $keys[] = $match;
+                    }
+                }
+
+                // "keine" leert die Auswahl; unbekannte Angaben lassen sich nicht zuordnen.
+                if ($keys === [] && ! in_array(mb_strtolower(trim($value)), ['keine', 'keine.', '–', '-'], true)) {
+                    return false;
+                }
+
+                $this->petRestrictions = array_values(array_unique($keys));
+
+                return true;
+        }
+
+        return false;
     }
 
     /**
@@ -367,6 +522,14 @@ class Editor extends Component
      */
     protected function aiApply(string $key, string $value): bool
     {
+        if (str_starts_with($key, 'pets_')) {
+            return $this->aiApplyPets($key, $value);
+        }
+
+        if (str_starts_with($key, 'baggage_')) {
+            return $this->aiApplyBaggage($key, $value);
+        }
+
         switch ($key) {
             case 'name': $this->name = $value;
 

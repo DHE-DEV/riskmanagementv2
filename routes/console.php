@@ -105,6 +105,12 @@ Schedule::command('ai:run-event-searches')
     ->withoutOverlapping(30)
     ->runInBackground();
 
+// Sammelläufe von KI-Prüfungen weiterführen, die Aufgaben anlegen (System > KI)
+Schedule::command('ai:run-check-batches')
+    ->everyMinute()
+    ->withoutOverlapping(10)
+    ->runInBackground();
+
 // Wiederkehrende Aufgaben anlegen, sobald ihr Termin erreicht ist (Admin-Bereich)
 Schedule::command('tasks:create-recurring')
     ->everyFiveMinutes()

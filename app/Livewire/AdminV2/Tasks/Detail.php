@@ -8,6 +8,7 @@ use App\Models\AdminTaskActivity;
 use App\Models\AdminTaskCategory;
 use App\Models\AdminTaskReminder;
 use App\Models\CustomEvent;
+use App\Support\AdminV2\TaskSubjects;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -18,22 +19,19 @@ use Livewire\Component;
 
 /**
  * Eigene Seite zum Anlegen und Bearbeiten einer Aufgabe – samt Notizen und
- * Verlauf. Sie wird aus der Aufgabenliste und aus dem Ereignis-Formular in
- * einem neuen Browser-Tab geoeffnet.
+ * Verlauf. Aus der Aufgabenliste und aus dem Ereignis-Formular oeffnet sie sich
+ * in einem neuen Browser-Tab, von der Seite eines anderen Datensatzes aus im
+ * selben Tab – nach dem Anlegen geht es dorthin zurueck.
  *
  * Eine neue Aufgabe kann ueber die Adresse einen Bezug mitbekommen:
- * ?event=ID (gespeichertes Ereignis) oder ?token=… (noch nicht gespeichertes
- * Ereignis) sowie ?category=Name fuer die vorbelegte Rubrik.
+ * ?event=ID (gespeichertes Ereignis), ?token=… (noch nicht gespeichertes
+ * Ereignis) oder ?subject=Art&subject_id=ID (jeder andere Datensatz, siehe
+ * TaskSubjects) sowie ?category=Name fuer die vorbelegte Rubrik.
  */
 #[Layout('components.layouts.adminv2.app')]
 class Detail extends Component
 {
     use AuthorizesAdminV2;
-
-    /** Datensaetze, an die eine Aufgabe gehaengt werden kann. */
-    private const SUBJECTS = [
-        'event' => CustomEvent::class,
-    ];
 
     #[Locked]
     public ?int $taskId = null;
@@ -94,7 +92,7 @@ class Detail extends Component
         // Bezug kommen von der Hauptaufgabe.
         if ($parent = AdminTask::find((int) request()->query('parent'))) {
             $this->parentId = $parent->id;
-            $this->subjectKind = $parent->subject_id ? 'event' : null;
+            $this->subjectKind = TaskSubjects::kindOf($parent->subject_type) ?? ($parent->subject_token ? 'event' : null);
             $this->subjectId = $parent->subject_id;
             $this->subjectToken = $parent->subject_token;
             $this->categoryId = (string) $parent->category_id;
@@ -115,6 +113,10 @@ class Detail extends Component
         } elseif (preg_match('/^[A-Za-z0-9-]{8,64}$/', $token)) {
             $this->subjectKind = 'event';
             $this->subjectToken = $token;
+        } elseif ($subject = TaskSubjects::find((string) request()->query('subject', ''), (int) request()->query('subject_id'))) {
+            // Bezug auf einen anderen Datensatz, z. B. eine Airline oder einen Kunden.
+            $this->subjectKind = TaskSubjects::kindOf($subject);
+            $this->subjectId = $subject->getKey();
         }
 
         $this->responsibleId = (string) auth('web')->id();
@@ -148,7 +150,7 @@ class Detail extends Component
     public function task(): ?AdminTask
     {
         return $this->taskId
-            ? AdminTask::with(['creator', 'subject', 'category', 'recurrence', 'responsibleTeam', 'nextAssigneeTeam', 'parent'])->find($this->taskId)
+            ? AdminTask::with(['creator', 'subject', 'category', 'recurrence', 'responsibleTeam', 'nextAssigneeTeam', 'parent', 'aiCheck'])->find($this->taskId)
             : null;
     }
 
@@ -208,13 +210,22 @@ class Detail extends Component
     #[Computed]
     public function pendingSubjectLabel(): ?string
     {
-        if ($this->subjectKind !== 'event') {
+        if ($this->subjectKind === null) {
             return null;
         }
 
         return $this->subjectId
-            ? 'Ereignis: '.(CustomEvent::withTrashed()->find($this->subjectId)?->getTitle('de') ?: 'Ohne Titel')
+            ? TaskSubjects::label(TaskSubjects::find($this->subjectKind, $this->subjectId))
             : 'Ereignis (wird beim Speichern des Ereignisses zugeordnet)';
+    }
+
+    /**
+     * Seite des Datensatzes, zu dem die neue Aufgabe gehoert – fuer den Weg zurueck.
+     */
+    #[Computed]
+    public function pendingSubjectUrl(): ?string
+    {
+        return $this->subjectId ? TaskSubjects::url(TaskSubjects::find($this->subjectKind, $this->subjectId)) : null;
     }
 
     protected function rules(): array
@@ -323,17 +334,23 @@ class Detail extends Component
             $task = AdminTask::create($attributes + [
                 'parent_id' => $this->parentId,
                 'created_by' => auth('web')->id(),
-                'subject_type' => $this->subjectId ? (new (self::SUBJECTS[$this->subjectKind]))->getMorphClass() : null,
+                'subject_type' => $this->subjectId ? TaskSubjects::morphClass($this->subjectKind) : null,
                 'subject_id' => $this->subjectId,
                 'subject_token' => $this->subjectToken,
             ]);
 
             $task->syncReminders($this->reminderRows(), log: false);
 
-            // Weiter auf der Seite der neuen Aufgabe – so stimmt die Adresse
-            // und es laesst sich direkt eine erste Notiz ergaenzen.
             session()->flash('adminv2-toast', 'Aufgabe angelegt.');
 
+            // Von der Seite eines Datensatzes aus angelegt (im selben Tab): zurueck dorthin.
+            // Ereignisse oeffnen die Aufgabe in einem eigenen Tab – dort bleibt es bei der Aufgabe.
+            if ($this->subjectKind !== 'event' && ! $this->parentId && ($returnUrl = $this->pendingSubjectUrl)) {
+                return $this->redirect($returnUrl);
+            }
+
+            // Sonst weiter auf der Seite der neuen Aufgabe – so stimmt die Adresse
+            // und es laesst sich direkt eine erste Notiz ergaenzen.
             return $this->redirectRoute('adminv2.tasks.show', $task);
         }
 

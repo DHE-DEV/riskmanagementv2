@@ -14,8 +14,11 @@ use App\Models\Continent;
 use App\Models\Country;
 use App\Models\MasterDataChange;
 use App\Models\User;
+use App\Services\AiCheckService;
+use App\Services\AiFieldReviewService;
 use App\Support\AdminV2\AirportExtras;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 /**
@@ -494,9 +497,186 @@ it('verknuepft Flughaefen mit einer Airline', function () {
         ->call('addLink')
         ->assertHasNoErrors()
         ->assertSee('Flughäfen (1)')
-        ->assertSee('Flughafen München');
+        ->assertSee('Flughafen München')
+        // Liste mit Suchfeld; je Eintrag ein Menue statt einzelner Symbole.
+        ->assertSee('Flughafen suchen …')
+        ->assertSeeHtml('data-search="flughafen münchen muc"')
+        ->assertSee('Aktionen für Flughafen München')
+        ->assertSee('Flughafen öffnen')
+        ->assertSee('Verknüpfung bearbeiten')
+        ->assertSee('Verknüpfung entfernen')
+        // Link-Felder (Website, Buchungslink, …) haben vorn das Symbol, das die Seite in einem neuen Tab oeffnet.
+        ->assertSeeHtml('aria-label="Seite in neuem Tab öffnen"')
+        ->assertSeeHtml('wire:model="website"')
+        ->assertSeeHtml('wire:model="contact.help_url"');
 
     expect($lh->airports()->first()->pivot->direction)->toBe('both');
+});
+
+// ── KI ───────────────────────────────────────────────────────────────────
+
+it('gliedert Ergebnisse der KI statt alles hintereinander zu schreiben', function () {
+    $checks = app(AiCheckService::class);
+
+    // Antworten in Markdown werden zu Ueberschriften, Listen und Tabellen; Zeilenumbrueche bleiben.
+    $html = $checks->toHtml("## Freigepäck\n\n- **Economy:** 23 kg\n- **Business:** 2 × 32 kg\n\n| Klasse | Handgepäck |\n|---|---|\n| Economy | 8 kg |\n\nZeile eins\nZeile zwei <script>alert(1)</script>");
+
+    expect($html)->toContain('<h2>Freigepäck</h2>')
+        ->toContain('<strong>Economy:</strong> 23 kg')
+        ->toContain('<table>')
+        ->toContain('Zeile eins<br')
+        ->not->toContain('<script>');
+
+    // Listen, deren Eintraege selbst Kommas enthalten, stehen zeilenweise.
+    expect($checks->format(['Economy: Freigepäck 23 kg, Handgepäck 8 kg', 'Business: Freigepäck 32 kg']))->toBe("Economy: Freigepäck 23 kg, Handgepäck 8 kg\nBusiness: Freigepäck 32 kg")
+        ->and($checks->format(['Europa', 'EU']))->toBe('Europa, EU');
+
+    // Eine strukturierte Antwort wird zu lesbaren Zeilen statt zu rohem JSON.
+    $parsed = app(AiFieldReviewService::class)->parse(json_encode(['fields' => ['baggage' => ['status' => 'change', 'value' => [
+        'economy' => ['checked_baggage' => '23 kg', 'hand_baggage' => '8 kg'],
+        'hinweise' => ['Sperrgepäck anmelden'],
+    ]]]], JSON_UNESCAPED_UNICODE), ['baggage']);
+
+    expect($parsed['fields']['baggage']['value'])->toBe("Economy › Checked baggage: 23 kg\nEconomy › Hand baggage: 8 kg\nHinweise: Sperrgepäck anmelden");
+
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-mini',
+        'choices' => [['message' => ['content' => json_encode(['summary' => 'Gepäckregeln fehlen.', 'fields' => [
+            'baggage_checked_economy' => ['status' => 'change', 'value' => '1 × 23 kg', 'note' => 'Stand laut Website.'],
+            'baggage_checked_business' => ['status' => 'change', 'value' => '2 × 32 kg'],
+            'baggage_checked_first' => ['status' => 'ok', 'note' => 'Wird nicht angeboten.'],
+            'baggage_hand_economy' => ['status' => 'change', 'value' => '8 kg'],
+            'baggage_hand_economy_length' => ['status' => 'change', 'value' => '55 cm'],
+            'baggage_hand_premium_economy_width' => ['status' => 'change', 'value' => '40'],
+            'baggage_notes' => ['status' => 'change', 'value' => "Sperrgepäck: vorher anmelden\nSportgepäck: gegen Gebühr"],
+            'baggage_info_url' => ['status' => 'change', 'value' => 'https://www.eurowings.com/gepaeck'],
+        ]], JSON_UNESCAPED_UNICODE)]]],
+        'usage' => ['prompt_tokens' => 100, 'completion_tokens' => 40, 'total_tokens' => 140],
+    ])]);
+
+    $ew = airline('Eurowings', 'EW');
+
+    $editor = Livewire::test(AirlineEditor::class, ['airline' => $ew->id])
+        ->call('openAiCheck', 'baggage')
+        ->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        // Im Fenster nach Freigepaeck und Handgepaeck gegliedert, je Klasse ein Feld.
+        ->assertSee('Economy – Länge (cm)')
+        ->assertSee('1 × 23 kg')
+        // Mehrere Angaben in einem Feld: je Angabe eine Zeile, die Bezeichnung hervorgehoben.
+        ->assertSeeHtml('<span class="font-semibold">Sperrgepäck:</span>')
+        ->assertSeeHtml('<span class="font-semibold">Sportgepäck:</span>');
+
+    // Eine Anfrage mit allen Feldern und dem Hinweis, wie sie zusammenhaengen.
+    expect(Http::recorded(fn ($request) => str_contains($request->body(), 'baggage_hand_first_height') && str_contains($request->body(), 'Die Felder h'))->count())->toBe(1);
+
+    // Jeder Vorschlag laesst sich in sein Feld uebernehmen.
+    $editor->call('applyAllAiSuggestions')
+        ->assertSet('checkedBaggage.economy', '1 × 23 kg')
+        ->assertSet('checkedBaggage.business', '2 × 32 kg')
+        ->assertSet('checkedBaggage.first', '')
+        ->assertSet('handBaggage.economy', '8 kg')
+        ->assertSet('handDimensions.economy.length', '55')
+        ->assertSet('handDimensions.premium_economy.width', '40')
+        ->assertSet('handBaggageNotes', "Sperrgepäck: vorher anmelden\nSportgepäck: gegen Gebühr")
+        ->assertSet('handBaggageInfoUrl', 'https://www.eurowings.com/gepaeck')
+        ->assertDispatched('adminv2-toast', message: '7 Vorschläge übernommen – noch nicht gespeichert.')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($ew->fresh()->baggage_rules['checked_baggage']['economy'])->toBe('1 × 23 kg')
+        ->and((float) $ew->fresh()->baggage_rules['hand_baggage_dimensions']['economy']['length'])->toBe(55.0);
+});
+
+it('laesst die KI jedes Feld der Haustiermitnahme pruefen und uebernimmt die Vorschlaege', function () {
+    $change = fn (string $value) => ['status' => 'change', 'value' => $value, 'note' => 'Laut Website.'];
+
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-mini',
+        'choices' => [['message' => ['content' => json_encode(['summary' => 'Haustiere dürfen mitreisen.', 'fields' => [
+            'pets_allowed' => $change('Ja'),
+            'pets_cabin_allowed' => $change('Ja'),
+            'pets_cabin_max_weight' => $change('8 kg'),
+            'pets_cabin_weight_includes_bag' => $change('Ja'),
+            'pets_cabin_carrier_length' => $change('55 cm'),
+            'pets_cabin_carrier_width' => $change('40'),
+            'pets_cabin_carrier_height' => $change('23'),
+            'pets_cabin_advance_notice_required' => $change('Ja'),
+            'pets_cabin_notes' => $change('Nur Hunde und Katzen.'),
+            'pets_hold_allowed' => ['status' => 'ok'],
+            'pets_hold_max_weight' => ['status' => 'unknown'],
+            'pets_hold_advance_notice_required' => ['status' => 'ok'],
+            'pets_hold_notes' => ['status' => 'ok'],
+            'pets_restrictions' => $change('Rasseeinschränkungen, Assistenztiere erlaubt'),
+            'pets_info_url' => $change('https://www.eurowings.com/tiere'),
+            'pets_notes' => $change('Anmeldung spätestens 48 Stunden vor Abflug.'),
+        ]], JSON_UNESCAPED_UNICODE)]]],
+        'usage' => ['prompt_tokens' => 300, 'completion_tokens' => 120, 'total_tokens' => 420],
+    ])]);
+
+    $ew = airline('Eurowings', 'EW');
+
+    $editor = Livewire::test(AirlineEditor::class, ['airline' => $ew->id])
+        ->assertSet('petsAllowed', false)
+        ->call('openAiCheck', 'pets');
+
+    // Alle Felder gehen an die KI – auch solange die Mitnahme nicht erlaubt ist.
+    expect(array_keys($editor->get('aiData')))->toContain('pets_allowed', 'pets_cabin_max_weight', 'pets_cabin_carrier_length', 'pets_hold_allowed', 'pets_restrictions', 'pets_info_url', 'pets_notes');
+
+    $editor->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->assertSee('Haustiere dürfen mitreisen.')
+        // Im Fenster nach Bereich gegliedert.
+        ->assertSee('In der Kabine')
+        ->assertSee('Im Frachtraum')
+        ->assertSee('Transportbox-Länge (cm)')
+        ->assertSee('Alle 12 Vorschläge übernehmen');
+
+    // Die Felder haengen zusammen: eine Anfrage mit allen Feldern und dem Hinweis dazu.
+    $requests = Http::recorded(fn ($request) => str_contains($request->body(), 'pets_cabin_max_weight'));
+
+    expect($requests->count())->toBe(1)
+        ->and($requests->first()[0]->body())->toContain('pets_hold_notes', 'Die Felder h', 'Assistenztiere erlaubt')
+        // Die Sammelangabe waere neben den Einzelfeldern doppelt; Gepaeckfelder gehoeren nicht dazu.
+        ->not->toContain('- pets (')
+        ->not->toContain('baggage_checked_economy');
+
+    $editor->call('applyAllAiSuggestions')
+        ->assertSet('petsAllowed', true)
+        ->assertSet('petCabin.allowed', true)
+        ->assertSet('petCabin.max_weight', '8 kg')
+        ->assertSet('petCabin.weight_includes_bag', true)
+        ->assertSet('petCabin.carrier_length', '55')
+        ->assertSet('petCabin.carrier_width', '40')
+        ->assertSet('petCabin.carrier_height', '23')
+        ->assertSet('petCabin.advance_notice_required', true)
+        ->assertSet('petCabin.notes', 'Nur Hunde und Katzen.')
+        ->assertSet('petHold.allowed', false)
+        ->assertSet('petRestrictions', ['breed_restrictions', 'service_animals_allowed'])
+        ->assertSet('petInfoUrl', 'https://www.eurowings.com/tiere')
+        ->assertSet('petNotes', 'Anmeldung spätestens 48 Stunden vor Abflug.')
+        // Mit erlaubter Mitnahme stehen die Hinweise auch unter den Feldern.
+        ->assertSee('KI: übernommen')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $policy = $ew->fresh()->pet_policy;
+
+    expect($policy['allowed'])->toBeTrue()
+        ->and($policy['in_cabin']['max_weight'])->toBe('8 kg')
+        ->and((float) $policy['in_cabin']['carrier_length'])->toBe(55.0)
+        ->and($policy['restrictions'])->toBe(['breed_restrictions', 'service_animals_allowed'])
+        ->and($policy['info_url'])->toBe('https://www.eurowings.com/tiere');
+
+    // Eine Einschraenkung, die es nicht gibt, laesst sich nicht zuordnen.
+    $editor->set('aiReview.fields.pets_restrictions', ['status' => 'change', 'value' => 'Nur montags', 'note' => null])
+        ->call('applyAiSuggestion', 'pets_restrictions')
+        ->assertSet('petRestrictions', ['breed_restrictions', 'service_animals_allowed'])
+        ->assertDispatched('adminv2-toast', message: 'Dieser Vorschlag lässt sich nicht automatisch übernehmen – bitte von Hand eintragen.', variant: 'danger');
 });
 
 // ── Support ──────────────────────────────────────────────────────────────

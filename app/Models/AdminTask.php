@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Mail\AdminTaskAssignedMail;
+use App\Support\AdminV2\TaskSubjects;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -58,7 +59,30 @@ class AdminTask extends Model
         'subject_id',
         'subject_token',
         'recurrence_id',
+        'ai_check_id',
     ];
+
+    /**
+     * Schaltet die Mail "Aufgabe fuer dich" ab – fuer Aufgaben, die in einem
+     * Sammellauf in grosser Zahl entstehen (siehe withoutAssignmentMails()).
+     */
+    protected static bool $muteAssignmentMails = false;
+
+    /**
+     * Fuehrt $callback aus, ohne dass angelegte oder geaenderte Aufgaben die
+     * Mail "Aufgabe fuer dich" verschicken.
+     */
+    public static function withoutAssignmentMails(callable $callback): mixed
+    {
+        $before = static::$muteAssignmentMails;
+        static::$muteAssignmentMails = true;
+
+        try {
+            return $callback();
+        } finally {
+            static::$muteAssignmentMails = $before;
+        }
+    }
 
     protected $casts = [
         'due_date' => 'date',
@@ -224,7 +248,7 @@ class AdminTask extends Model
      */
     protected function notifyAssigned(array $emails, bool $isNew): void
     {
-        if ($this->isDone()) {
+        if (static::$muteAssignmentMails || $this->isDone()) {
             return;
         }
 
@@ -379,6 +403,15 @@ class AdminTask extends Model
             'subject_id' => $this->subject_id,
             'subject_token' => $this->subject_token,
         ];
+    }
+
+    /**
+     * KI-Pruefung, zu der die Aufgabe gehoert – an der Sammelaufgabe und an
+     * den Unteraufgaben, die die Pruefung angelegt hat.
+     */
+    public function aiCheck(): BelongsTo
+    {
+        return $this->belongsTo(AiCheck::class, 'ai_check_id');
     }
 
     public function category(): BelongsTo
@@ -604,12 +637,25 @@ class AdminTask extends Model
      */
     public function subjectLabel(): ?string
     {
-        $subject = $this->subject;
+        return TaskSubjects::label($this->subject);
+    }
 
-        return match (true) {
-            $subject instanceof CustomEvent => 'Ereignis: '.($subject->getTitle('de') ?: 'Ohne Titel'),
-            default => null,
-        };
+    /**
+     * Seite des Datensatzes, an dem die Aufgabe haengt.
+     */
+    public function subjectUrl(): ?string
+    {
+        return TaskSubjects::url($this->subject);
+    }
+
+    /**
+     * Aufgaben zu genau diesem Datensatz.
+     */
+    public function scopeForSubject(Builder $query, Model $subject): Builder
+    {
+        return $query
+            ->where('subject_type', $subject->getMorphClass())
+            ->where('subject_id', $subject->getKey());
     }
 
     public function scopeOpen(Builder $query): Builder

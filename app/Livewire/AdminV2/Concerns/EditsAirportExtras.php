@@ -69,44 +69,7 @@ trait EditsAirportExtras
      */
     protected function airportExtrasContext(): array
     {
-        $lounges = [];
-        foreach (AirportExtras::loungesFromForm($this->lounges) as $lounge) {
-            $lounges[] = $lounge['name']
-                .($lounge['location'] ? ', '.$lounge['location'] : '')
-                .($lounge['access'] ? ', Zugang: '.$lounge['access'] : '')
-                .($lounge['price_per_person'] !== null ? ', ab '.$lounge['price_per_person'].' pro Person' : '')
-                .($lounge['children_welcome'] ? ', Kinder willkommen' : '')
-                .($lounge['url'] ? ', '.$lounge['url'] : '');
-        }
-
-        $mobility = [];
-        foreach (AirportExtras::mobility() as $key => $definition) {
-            $values = AirportExtras::mobilityFromForm($this->mobility)[$key];
-            $line = $definition['label'].': '.($values['available'] ? 'verfügbar' : 'nicht verfügbar');
-            if ($values['available'] && isset($definition['list'])) {
-                $items = array_map(fn (array $row) => implode(', ', array_filter($row)), $values[$definition['list']['key']]);
-                $line .= $items ? ' – '.implode('; ', $items) : '';
-            }
-            if ($values['available']) {
-                foreach ($definition['fields'] ?? [] as $field => $meta) {
-                    if ($values[$field] !== null) {
-                        $line .= ' – '.$meta['label'].': '.$values[$field];
-                    }
-                }
-            }
-            $mobility[] = $line;
-        }
-
-        $hotels = [];
-        foreach (AirportExtras::hotelsFromForm($this->hotels) as $hotel) {
-            $hotels[] = $hotel['name']
-                .($hotel['distance_km'] !== null ? ', '.$hotel['distance_km'].' km' : '')
-                .($hotel['shuttle'] ? ', Shuttle' : '')
-                .($hotel['booking_url'] ? ', '.$hotel['booking_url'] : '')
-                .($hotel['notes'] ? ' – '.$hotel['notes'] : '');
-        }
-
-        return ['lounges' => $lounges, 'mobility' => $mobility, 'hotels' => $hotels];
+        return AirportExtras::describe($this->lounges, $this->mobility, $this->hotels);
     }
 
     /**

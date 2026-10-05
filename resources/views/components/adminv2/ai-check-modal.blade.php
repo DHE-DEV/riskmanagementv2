@@ -6,6 +6,8 @@
     - checkId / result / error: Zustand
     - title: Bezeichnung des Eintrags, z. B. "Deutschland"
     - noteKeys: Felder mit Notiz – die Begruendung der KI laesst sich dorthin uebernehmen
+    - promptDraft: Prompt der gewaehlten Pruefung fuer diesen Lauf ($aiPromptDraft) – anpassbar,
+      ohne die hinterlegte Pruefung zu aendern
 --}}
 @props([
     'area',
@@ -20,6 +22,7 @@
     'saveAsCheck' => false,
     'review' => null,
     'noteKeys' => [],
+    'promptDraft' => '',
 ])
 
 @php
@@ -27,6 +30,7 @@
     use App\Support\AiSettings;
 
     $chosen = $checkId === 'custom' ? null : $checks->firstWhere('id', (int) $checkId);
+    $promptEdited = $chosen && trim((string) $promptDraft) !== trim((string) $chosen->prompt);
     $custom = $checkId === 'custom';
     $reviewMode = $checkId === 'review';
     $canReview = $section !== '' && $section !== AiAreas::GENERAL;
@@ -65,6 +69,9 @@
                         <span class="flex flex-wrap items-center gap-2">
                             <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $check->name }}</span>
                             <span class="font-mono text-xs text-zinc-500">{{ $check->model ?: AiSettings::model().' (Standard)' }}</span>
+                            @if ($check->createsTasks())
+                                <flux:badge size="sm" color="sky" icon="clipboard-document-check" inset="top bottom" title="Wenn: {{ $check->task_condition }}">legt Aufgaben an</flux:badge>
+                            @endif
                             @if ($section === AiAreas::GENERAL && $check->section !== null && $check->section !== AiAreas::GENERAL)
                                 <flux:badge size="sm" color="zinc" inset="top bottom">{{ AiAreas::sectionLabel($area, $check->section) }}</flux:badge>
                             @elseif ($check->section === null)
@@ -160,10 +167,30 @@
         @endif
 
         @if ($chosen)
-            <details class="text-sm">
-                <summary class="cursor-pointer text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">KI Prompt ansehen</summary>
-                <pre class="mt-2 max-h-56 overflow-y-auto rounded-xl bg-zinc-50 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">{{ $chosen->prompt }}</pre>
-            </details>
+            {{-- Der Prompt laesst sich fuer diesen einen Lauf anpassen; aufgeklappt bleibt er auch ueber Aktualisierungen hinweg. --}}
+            <div wire:key="ai-prompt-{{ $chosen->id }}" class="text-sm" x-data="{ open: @js($promptEdited || $errors->has('aiPromptDraft')) }">
+                <button type="button" x-on:click="open = ! open" x-bind:aria-expanded="open" class="inline-flex flex-wrap items-center gap-1.5 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
+                    <flux:icon.chevron-right variant="micro" class="transition-transform" x-bind:class="open && 'rotate-90'" />
+                    KI Prompt ansehen und anpassen
+                    @if ($promptEdited)
+                        <flux:badge size="sm" color="amber" inset="top bottom">für diesen Lauf angepasst</flux:badge>
+                    @endif
+                </button>
+
+                <div x-show="open" x-cloak class="mt-2 flex flex-col gap-2">
+                    <flux:textarea wire:model.blur="aiPromptDraft" rows="8" aria-label="KI Prompt" x-bind:disabled="busy" class="font-mono text-xs" />
+                    <flux:error name="aiPromptDraft" />
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
+                        <span>
+                            Änderungen gelten nur für diesen Lauf – die hinterlegte Prüfung „{{ $chosen->name }}“ bleibt unverändert.
+                            @if ($promptEdited && $chosen->createsTasks()) Mit angepasstem Prompt entsteht keine Aufgabe. @endif
+                        </span>
+                        @if ($promptEdited)
+                            <flux:button size="xs" variant="ghost" icon="arrow-uturn-left" wire:click="resetAiPrompt">Hinterlegten Prompt wiederherstellen</flux:button>
+                        @endif
+                    </div>
+                </div>
+            </div>
         @endif
 
             {{-- Was an die KI geht --}}
@@ -246,15 +273,15 @@
                                                 @if ($field['status'] === 'ok')
                                                     <span class="inline-flex items-center gap-1 text-green-700 dark:text-green-400"><flux:icon.check-circle variant="micro" /> korrekt</span>
                                                 @elseif ($field['status'] === 'change')
-                                                    <span @class(['block break-words text-zinc-900 dark:text-white', 'font-medium' => mb_strlen($field['value']) <= 80])>{{ $field['value'] }}</span>
+                                                    <x-adminv2.ai-value :text="$field['value']" @class(['text-zinc-900 dark:text-white', 'font-medium' => mb_strlen($field['value']) <= 80]) />
                                                     @if (! in_array($data[$key]['value'] ?? '–', ['', '–'], true))
-                                                        <span class="block text-xs break-words text-zinc-500">Bisher: {{ $data[$key]['value'] }}</span>
+                                                        <x-adminv2.ai-value :text="$data[$key]['value']" prefix="Bisher:" class="mt-1 text-xs text-zinc-500" />
                                                     @endif
                                                 @else
                                                     <span class="inline-flex items-center gap-1 text-zinc-500"><flux:icon.question-mark-circle variant="micro" /> nicht prüfbar</span>
                                                 @endif
                                                 @if ($field['note'])
-                                                    <span class="block text-xs text-zinc-500">{{ $field['note'] }}</span>
+                                                    <span class="mt-1 block text-xs break-words whitespace-pre-line text-zinc-500">{{ $field['note'] }}</span>
                                                 @endif
                                             </span>
                                             <span class="flex flex-col items-end gap-1">
@@ -295,7 +322,27 @@
             @if ($result)
                 <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
                     <p class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $result['title'] }}</p>
-                    <div class="mt-2 max-h-[24rem] overflow-y-auto text-sm leading-relaxed break-words text-zinc-700 dark:text-zinc-300 [&_a]:underline [&_h1]:mt-3 [&_h1]:font-semibold [&_h2]:mt-3 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:mt-2 [&_ul]:list-disc">{!! $result['html'] !!}</div>
+                    {{-- Die Antwort kommt als Markdown bzw. HTML: Ueberschriften, Listen und Tabellen bekommen hier ihre Form. --}}
+                    <div class="mt-2 max-h-[32rem] overflow-y-auto text-sm leading-relaxed break-words text-zinc-700 dark:text-zinc-300 [&_a]:underline [&_blockquote]:mt-2 [&_blockquote]:border-s-2 [&_blockquote]:border-zinc-200 [&_blockquote]:ps-3 [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 [&_code]:font-mono [&_code]:text-xs dark:[&_code]:bg-zinc-800 [&_h1]:mt-4 [&_h1]:font-semibold [&_h1]:text-zinc-900 dark:[&_h1]:text-white [&_h2]:mt-4 [&_h2]:font-semibold [&_h2]:text-zinc-900 dark:[&_h2]:text-white [&_h3]:mt-3 [&_h3]:font-semibold [&_h3]:text-zinc-900 dark:[&_h3]:text-white [&_h4]:mt-3 [&_h4]:font-semibold [&_hr]:my-3 [&_hr]:border-zinc-200 dark:[&_hr]:border-zinc-800 [&_li]:ms-5 [&_li]:mt-0.5 [&_ol]:mt-1 [&_ol]:list-decimal [&_p]:mt-2 [&_strong]:font-semibold [&_strong]:text-zinc-900 dark:[&_strong]:text-white [&_table]:mt-2 [&_table]:w-full [&_td]:border-b [&_td]:border-zinc-100 [&_td]:py-1.5 [&_td]:pe-3 [&_td]:align-top dark:[&_td]:border-zinc-800 [&_th]:border-b [&_th]:border-zinc-200 [&_th]:py-1.5 [&_th]:pe-3 [&_th]:text-start [&_th]:font-semibold dark:[&_th]:border-zinc-700 [&_ul]:mt-1 [&_ul]:list-disc [&>*:first-child]:mt-0">{!! $result['html'] !!}</div>
+
+                    {{-- Die Pruefung legt Aufgaben an: was aus ihrer Bedingung fuer diesen Eintrag wurde. --}}
+                    @if ($taskOutcome = $result['task'] ?? null)
+                        <div @class([
+                            'mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-3 py-2 text-sm',
+                            'bg-sky-50 text-sky-900 dark:bg-sky-500/10 dark:text-sky-200' => $taskOutcome['met'],
+                            'bg-zinc-50 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400' => ! $taskOutcome['met'],
+                        ])>
+                            <flux:icon.clipboard-document-check variant="mini" class="shrink-0" />
+                            @if (! $taskOutcome['parsed'])
+                                <span>Die Bedingung ließ sich aus der Antwort nicht auswerten – es wurde keine Aufgabe angelegt.</span>
+                            @elseif (! $taskOutcome['met'])
+                                <span>Die Bedingung trifft nicht zu – keine Aufgabe.</span>
+                            @else
+                                <span>{{ $taskOutcome['created'] ? 'Die Bedingung trifft zu – Unteraufgabe angelegt:' : 'Die Bedingung trifft zu – es gibt bereits eine offene Unteraufgabe, das Ergebnis steht dort als Notiz:' }}</span>
+                                <a href="{{ $taskOutcome['url'] }}" target="_blank" class="font-medium underline decoration-sky-300 underline-offset-2 hover:decoration-sky-700">{{ $taskOutcome['title'] }}</a>
+                            @endif
+                        </div>
+                    @endif
 
                     @if ($result['usage'])
                         <p class="mt-3 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800">

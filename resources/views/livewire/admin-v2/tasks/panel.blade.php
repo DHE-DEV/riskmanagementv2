@@ -1,30 +1,49 @@
 @php
     $open = $this->tasks->reject->isDone();
-    // Neue Aufgabe mit Bezug: gespeichertes Ereignis ueber die ID, sonst ueber das Kennzeichen.
-    $createUrl = route('adminv2.tasks.create', array_filter([
-        'event' => $eventId,
-        'token' => $eventId ? null : $token,
-        'category' => 'Global Travel Monitor',
-    ]));
+    $forEvent = $eventId || $token;
+    $noun = $forEvent ? 'Ereignis' : 'Eintrag';
+    // Ereignisse: Aufgaben in einem eigenen Tab (das Formular kann noch ungespeichert sein).
+    // Alle anderen Datensaetze: im selben Tab – nach dem Anlegen geht es zurueck auf ihre Seite.
+    $target = $forEvent ? '_blank' : null;
+    // Neue Aufgabe mit Bezug: gespeichertes Ereignis ueber die ID, sonst ueber das Kennzeichen;
+    // jeder andere Datensatz ueber Art und ID.
+    $createUrl = route('adminv2.tasks.create', array_filter($forEvent
+        ? ['event' => $eventId, 'token' => $eventId ? null : $token, 'category' => \App\Support\AdminV2\TaskSubjects::category('event')]
+        : ['subject' => $kind, 'subject_id' => $recordId, 'category' => \App\Support\AdminV2\TaskSubjects::category($kind)]));
 @endphp
 
 @php
     $total = $this->tasks->count();
     $summary = $total === 0
-        ? 'Noch keine Aufgaben zu diesem Ereignis.'
+        ? 'Noch keine Aufgaben zu diesem '.$noun.'.'
         : $total.' '.($total === 1 ? 'Aufgabe' : 'Aufgaben').', '.$open->count().' offen';
 @endphp
 
-{{-- Aufgaben werden in einem eigenen Tab bearbeitet – beim Zurueckkehren neu laden. --}}
-<div x-data x-on:visibilitychange.document="document.visibilityState === 'visible' && $wire.refresh()">
+{{--
+    Beim Zurueckkehren in den Tab neu laden. "leave" fragt nach, bevor die Seite im selben Tab
+    verlassen wird und dabei ungespeicherte Eingaben des Formulars verloren gingen.
+--}}
+<div
+    x-data="{
+        leave(event) {
+            if (event.currentTarget.target === '_blank') return;
+            const form = $wire.$parent?.__instance;
+            const dirty = form && JSON.stringify(form.canonical) !== JSON.stringify(form.reactive);
+            if (dirty && ! confirm('Auf dieser Seite gibt es ungespeicherte Änderungen. Sie gehen verloren, wenn du jetzt zur Aufgabe wechselst. Trotzdem wechseln?')) {
+                event.preventDefault();
+            }
+        },
+    }"
+    x-on:visibilitychange.document="document.visibilityState === 'visible' && $wire.refresh()"
+>
 <x-adminv2.card heading="Aufgaben" :description="$summary">
     <x-slot:actions>
-        <flux:button size="sm" icon="plus" :href="$createUrl" target="_blank">Aufgabe</flux:button>
+        <flux:button size="sm" icon="plus" :href="$createUrl" :target="$target" x-on:click="leave($event)">Aufgabe</flux:button>
     </x-slot:actions>
 
     @if ($this->tasks->isEmpty())
         <p class="text-sm text-zinc-500">
-            Hier lassen sich Aufgaben zu diesem Ereignis festhalten – für dich oder für Kolleginnen und Kollegen.
+            Hier lassen sich Aufgaben zu diesem {{ $noun }} festhalten – für dich oder für Kolleginnen und Kollegen.
         </p>
     @else
         <ul class="-my-1 flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -43,7 +62,7 @@
                         <flux:icon.check variant="micro" />
                     </button>
 
-                    <a href="{{ route('adminv2.tasks.show', $task) }}" target="_blank" class="block min-w-0 flex-1">
+                    <a href="{{ route('adminv2.tasks.show', $task) }}" @if ($target) target="{{ $target }}" @endif x-on:click="leave($event)" class="block min-w-0 flex-1">
                         <span @class([
                             'block text-sm font-medium break-words',
                             'text-zinc-900 hover:underline dark:text-white' => ! $task->isDone(),

@@ -63,13 +63,13 @@
                         </div>
                         <flux:field>
                             <flux:label>Website</flux:label>
-                            <flux:input wire:model="website" placeholder="https://…" maxlength="255" />
+                            <x-adminv2.url-input wire:model="website" maxlength="255" />
                             <x-adminv2.ai-field-hint key="website" :review="$aiReview" />
                             <flux:error name="website" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Buchungslink</flux:label>
-                            <flux:input wire:model="bookingUrl" placeholder="https://…" maxlength="255" />
+                            <x-adminv2.url-input wire:model="bookingUrl" maxlength="255" />
                             <x-adminv2.ai-field-hint key="booking_url" :review="$aiReview" />
                             <flux:error name="bookingUrl" />
                         </flux:field>
@@ -81,7 +81,11 @@
                             @foreach (Editor::CONTACT_FIELDS as $field => $label)
                                 <flux:field>
                                     <flux:label>{{ $label }}</flux:label>
-                                    <flux:input wire:model="contact.{{ $field }}" :placeholder="str_ends_with($field, '_url') ? 'https://…' : ''" />
+                                    @if (str_ends_with($field, '_url'))
+                                        <x-adminv2.url-input wire:model="contact.{{ $field }}" />
+                                    @else
+                                        <flux:input wire:model="contact.{{ $field }}" />
+                                    @endif
                                     <flux:error name="contact.{{ $field }}" />
                                 </flux:field>
                             @endforeach
@@ -104,9 +108,12 @@
                 <div class="flex flex-col gap-6">
                     <div>
                         <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Freigepäck (Aufgabegepäck)</p>
-                        <div class="grid gap-4 sm:grid-cols-4">
+                        <div class="grid items-start gap-4 sm:grid-cols-4">
                             @foreach ($classes as $value => $label)
-                                <flux:input wire:model="checkedBaggage.{{ $value }}" :label="$label" placeholder="z. B. 23 kg" maxlength="100" />
+                                <div wire:key="checked-{{ $value }}">
+                                    <flux:input wire:model="checkedBaggage.{{ $value }}" :label="$label" placeholder="z. B. 23 kg" maxlength="100" />
+                                    <x-adminv2.ai-field-hint :key="'baggage_checked_'.$value" :review="$aiReview" />
+                                </div>
                             @endforeach
                         </div>
                     </div>
@@ -115,22 +122,23 @@
                         <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Handgepäck</p>
                         <div class="flex flex-col gap-4">
                             @foreach ($classes as $value => $label)
-                                <div wire:key="hand-{{ $value }}" class="grid gap-3 rounded-xl border border-zinc-200 p-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] dark:border-zinc-800">
-                                    <flux:input wire:model="handBaggage.{{ $value }}" :label="$label.' – Gewicht'" placeholder="z. B. 8 kg" maxlength="100" />
-                                    <flux:input wire:model="handDimensions.{{ $value }}.length" label="Länge (cm)" inputmode="decimal" />
-                                    <flux:input wire:model="handDimensions.{{ $value }}.width" label="Breite (cm)" inputmode="decimal" />
-                                    <flux:input wire:model="handDimensions.{{ $value }}.height" label="Höhe (cm)" inputmode="decimal" />
+                                <div wire:key="hand-{{ $value }}" class="grid items-start gap-3 rounded-xl border border-zinc-200 p-3 sm:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] dark:border-zinc-800">
+                                    <div><flux:input wire:model="handBaggage.{{ $value }}" :label="$label.' – Gewicht'" placeholder="z. B. 8 kg" maxlength="100" /><x-adminv2.ai-field-hint :key="'baggage_hand_'.$value" :review="$aiReview" /></div>
+                                    <div><flux:input wire:model="handDimensions.{{ $value }}.length" label="Länge (cm)" inputmode="decimal" /><x-adminv2.ai-field-hint :key="'baggage_hand_'.$value.'_length'" :review="$aiReview" /></div>
+                                    <div><flux:input wire:model="handDimensions.{{ $value }}.width" label="Breite (cm)" inputmode="decimal" /><x-adminv2.ai-field-hint :key="'baggage_hand_'.$value.'_width'" :review="$aiReview" /></div>
+                                    <div><flux:input wire:model="handDimensions.{{ $value }}.height" label="Höhe (cm)" inputmode="decimal" /><x-adminv2.ai-field-hint :key="'baggage_hand_'.$value.'_height'" :review="$aiReview" /></div>
                                     <flux:error name="handDimensions.{{ $value }}.length" />
                                 </div>
                             @endforeach
                         </div>
                     </div>
 
-                    <flux:textarea wire:model="handBaggageNotes" label="Allgemeine Hinweise" rows="3" />
+                    <div><flux:textarea wire:model="handBaggageNotes" label="Allgemeine Hinweise" rows="3" /><x-adminv2.ai-field-hint key="baggage_notes" :review="$aiReview" /></div>
                     <flux:field>
                         <flux:label>Info-URL</flux:label>
-                        <flux:input wire:model="handBaggageInfoUrl" placeholder="https://…" />
+                        <x-adminv2.url-input wire:model="handBaggageInfoUrl" />
                         <flux:error name="handBaggageInfoUrl" />
+                        <x-adminv2.ai-field-hint key="baggage_info_url" :review="$aiReview" />
                     </flux:field>
                 </div>
             </x-adminv2.card>
@@ -138,25 +146,28 @@
             <x-adminv2.card heading="Haustiermitnahme" :description="$petsAllowed ? 'Haustiere dürfen mitreisen.' : 'Keine Haustiermitnahme hinterlegt.'" collapsible :collapsed="! $petsAllowed" collapse-key="airline-pets">
                 <x-slot:actions><x-adminv2.ai-check-button section="pets" /></x-slot:actions>
                 <div class="flex flex-col gap-5">
-                    <flux:switch wire:model.live="petsAllowed" label="Haustiermitnahme erlaubt" align="left" />
+                    <div>
+                        <flux:switch wire:model.live="petsAllowed" label="Haustiermitnahme erlaubt" align="left" />
+                        <x-adminv2.ai-field-hint key="pets_allowed" :review="$aiReview" />
+                    </div>
 
                     @if ($petsAllowed)
                         <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
                             <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">In der Kabine</p>
                             <div class="flex flex-col gap-4">
                                 <div class="flex flex-wrap gap-x-8 gap-y-3">
-                                    <flux:switch wire:model="petCabin.allowed" label="Erlaubt" align="left" />
-                                    <flux:switch wire:model="petCabin.weight_includes_bag" label="Gewicht inklusive Tasche" align="left" />
-                                    <flux:switch wire:model="petCabin.advance_notice_required" label="Voranmeldung erforderlich" align="left" />
+                                    <div><flux:switch wire:model="petCabin.allowed" label="Erlaubt" align="left" /><x-adminv2.ai-field-hint key="pets_cabin_allowed" :review="$aiReview" /></div>
+                                    <div><flux:switch wire:model="petCabin.weight_includes_bag" label="Gewicht inklusive Tasche" align="left" /><x-adminv2.ai-field-hint key="pets_cabin_weight_includes_bag" :review="$aiReview" /></div>
+                                    <div><flux:switch wire:model="petCabin.advance_notice_required" label="Voranmeldung erforderlich" align="left" /><x-adminv2.ai-field-hint key="pets_cabin_advance_notice_required" :review="$aiReview" /></div>
                                 </div>
-                                <div class="grid gap-4 sm:grid-cols-4">
-                                    <flux:input wire:model="petCabin.max_weight" label="Maximales Gewicht" placeholder="z. B. 8 kg" maxlength="50" />
-                                    <flux:input wire:model="petCabin.carrier_length" label="Transportbox-Länge (cm)" inputmode="decimal" />
-                                    <flux:input wire:model="petCabin.carrier_width" label="Transportbox-Breite (cm)" inputmode="decimal" />
-                                    <flux:input wire:model="petCabin.carrier_height" label="Transportbox-Höhe (cm)" inputmode="decimal" />
+                                <div class="grid items-start gap-4 sm:grid-cols-4">
+                                    <div><flux:input wire:model="petCabin.max_weight" label="Maximales Gewicht" placeholder="z. B. 8 kg" maxlength="50" /><x-adminv2.ai-field-hint key="pets_cabin_max_weight" :review="$aiReview" /></div>
+                                    <div><flux:input wire:model="petCabin.carrier_length" label="Transportbox-Länge (cm)" inputmode="decimal" /><x-adminv2.ai-field-hint key="pets_cabin_carrier_length" :review="$aiReview" /></div>
+                                    <div><flux:input wire:model="petCabin.carrier_width" label="Transportbox-Breite (cm)" inputmode="decimal" /><x-adminv2.ai-field-hint key="pets_cabin_carrier_width" :review="$aiReview" /></div>
+                                    <div><flux:input wire:model="petCabin.carrier_height" label="Transportbox-Höhe (cm)" inputmode="decimal" /><x-adminv2.ai-field-hint key="pets_cabin_carrier_height" :review="$aiReview" /></div>
                                 </div>
                                 <flux:error name="petCabin.carrier_length" />
-                                <flux:textarea wire:model="petCabin.notes" label="Zusätzliche Hinweise" rows="3" />
+                                <div><flux:textarea wire:model="petCabin.notes" label="Zusätzliche Hinweise" rows="3" /><x-adminv2.ai-field-hint key="pets_cabin_notes" :review="$aiReview" /></div>
                             </div>
                         </div>
 
@@ -164,13 +175,13 @@
                             <p class="mb-3 text-sm font-medium text-zinc-800 dark:text-white">Im Frachtraum</p>
                             <div class="flex flex-col gap-4">
                                 <div class="flex flex-wrap gap-x-8 gap-y-3">
-                                    <flux:switch wire:model="petHold.allowed" label="Erlaubt" align="left" />
-                                    <flux:switch wire:model="petHold.advance_notice_required" label="Voranmeldung erforderlich" align="left" />
+                                    <div><flux:switch wire:model="petHold.allowed" label="Erlaubt" align="left" /><x-adminv2.ai-field-hint key="pets_hold_allowed" :review="$aiReview" /></div>
+                                    <div><flux:switch wire:model="petHold.advance_notice_required" label="Voranmeldung erforderlich" align="left" /><x-adminv2.ai-field-hint key="pets_hold_advance_notice_required" :review="$aiReview" /></div>
                                 </div>
-                                <div class="grid gap-4 sm:grid-cols-4">
-                                    <flux:input wire:model="petHold.max_weight" label="Maximales Gewicht" placeholder="z. B. 32 kg" maxlength="50" />
+                                <div class="grid items-start gap-4 sm:grid-cols-4">
+                                    <div><flux:input wire:model="petHold.max_weight" label="Maximales Gewicht" placeholder="z. B. 32 kg" maxlength="50" /><x-adminv2.ai-field-hint key="pets_hold_max_weight" :review="$aiReview" /></div>
                                 </div>
-                                <flux:textarea wire:model="petHold.notes" label="Zusätzliche Hinweise" rows="3" />
+                                <div><flux:textarea wire:model="petHold.notes" label="Zusätzliche Hinweise" rows="3" /><x-adminv2.ai-field-hint key="pets_hold_notes" :review="$aiReview" /></div>
                             </div>
                         </div>
 
@@ -181,14 +192,16 @@
                                     <flux:checkbox wire:model="petRestrictions" value="{{ $value }}" :label="$label" />
                                 @endforeach
                             </div>
+                            <x-adminv2.ai-field-hint key="pets_restrictions" :review="$aiReview" />
                         </div>
 
                         <flux:field>
                             <flux:label>Info-URL</flux:label>
-                            <flux:input wire:model="petInfoUrl" placeholder="https://…" />
+                            <x-adminv2.url-input wire:model="petInfoUrl" />
                             <flux:error name="petInfoUrl" />
+                            <x-adminv2.ai-field-hint key="pets_info_url" :review="$aiReview" />
                         </flux:field>
-                        <flux:textarea wire:model="petNotes" label="Allgemeine Hinweise" rows="3" />
+                        <div><flux:textarea wire:model="petNotes" label="Allgemeine Hinweise" rows="3" /><x-adminv2.ai-field-hint key="pets_notes" :review="$aiReview" /></div>
                     @endif
                 </div>
             </x-adminv2.card>
@@ -223,5 +236,5 @@
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 
-    <x-adminv2.ai-check-modal area="airlines" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
+    <x-adminv2.ai-check-modal area="airlines" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :prompt-draft="$aiPromptDraft" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
 </form>

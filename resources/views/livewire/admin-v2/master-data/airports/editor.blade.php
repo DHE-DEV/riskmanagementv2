@@ -82,14 +82,14 @@
                         <flux:field>
                             <flux:label>Website</flux:label>
                             <flux:description>Offizielle Website des Flughafens.</flux:description>
-                            <flux:input wire:model="website" placeholder="https://…" />
+                            <x-adminv2.url-input wire:model="website" />
                             <x-adminv2.ai-field-hint key="website" :review="$aiReview" />
                             <flux:error name="website" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Zeitfenster-Reservierung für die Sicherheitskontrolle</flux:label>
                             <flux:description>Link zum Buchungssystem, falls der Flughafen eines anbietet.</flux:description>
-                            <flux:input wire:model="securityTimeslotUrl" placeholder="https://…" />
+                            <x-adminv2.url-input wire:model="securityTimeslotUrl" />
                             <x-adminv2.ai-field-hint key="security_timeslot_url" :review="$aiReview" />
                             <flux:error name="securityTimeslotUrl" />
                         </flux:field>
@@ -180,5 +180,5 @@
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 
-    <x-adminv2.ai-check-modal area="airports" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
+    <x-adminv2.ai-check-modal area="airports" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :prompt-draft="$aiPromptDraft" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
 </form>

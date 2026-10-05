@@ -75,6 +75,18 @@
                     @endforeach
                 </flux:navlist.group>
 
+                <flux:navlist.group heading="Kundenverwaltung" class="mt-4">
+                    @foreach (\App\Support\AdminV2\CustomerManagement::sections() as $sectionDefinition)
+                        <flux:navlist.item
+                            :icon="$sectionDefinition['icon']"
+                            :href="route($sectionDefinition['routes'].'.index')"
+                            :current="request()->routeIs($sectionDefinition['routes'].'.*')"
+                        >
+                            {{ $sectionDefinition['label'] }}
+                        </flux:navlist.item>
+                    @endforeach
+                </flux:navlist.group>
+
                 <flux:navlist.group heading="System" class="mt-4">
                     <flux:navlist.item icon="sparkles" :href="route('adminv2.system.ai')" :current="request()->routeIs('adminv2.system.ai', 'adminv2.system.ai.*')">
                         KI

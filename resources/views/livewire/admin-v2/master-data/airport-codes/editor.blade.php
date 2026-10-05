@@ -75,13 +75,13 @@
                     <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Website</flux:label>
-                            <flux:input wire:model="website" placeholder="https://…" />
+                            <x-adminv2.url-input wire:model="website" />
                             <x-adminv2.ai-field-hint key="website" :review="$aiReview" />
                             <flux:error name="website" />
                         </flux:field>
                         <flux:field>
                             <flux:label>Zeitfenster-Reservierung für die Sicherheitskontrolle</flux:label>
-                            <flux:input wire:model="securityTimeslotUrl" placeholder="https://…" />
+                            <x-adminv2.url-input wire:model="securityTimeslotUrl" />
                             <x-adminv2.ai-field-hint key="security_timeslot_url" :review="$aiReview" />
                             <flux:error name="securityTimeslotUrl" />
                         </flux:field>
@@ -203,13 +203,13 @@
                 <div class="grid gap-5 sm:grid-cols-2">
                     <flux:field>
                         <flux:label>Home-Link</flux:label>
-                        <flux:input wire:model="homeLink" placeholder="https://…" />
+                        <x-adminv2.url-input wire:model="homeLink" />
                         <x-adminv2.ai-field-hint key="home_link" :review="$aiReview" />
                         <flux:error name="homeLink" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Wikipedia-Link</flux:label>
-                        <flux:input wire:model="wikipediaLink" placeholder="https://…" />
+                        <x-adminv2.url-input wire:model="wikipediaLink" />
                         <x-adminv2.ai-field-hint key="wikipedia_link" :review="$aiReview" />
                         <flux:error name="wikipediaLink" />
                     </flux:field>
@@ -266,5 +266,5 @@
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 
-    <x-adminv2.ai-check-modal area="airport-codes" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
+    <x-adminv2.ai-check-modal area="airport-codes" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :prompt-draft="$aiPromptDraft" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :title="$record?->name" />
 </form>

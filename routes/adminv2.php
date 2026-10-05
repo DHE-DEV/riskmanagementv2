@@ -2,6 +2,18 @@
 
 use App\Http\Controllers\AdminV2\BoundaryGeoJsonController;
 use App\Livewire\AdminV2\Auth\Login;
+use App\Livewire\AdminV2\CustomerManagement\ApiClients\Editor as ApiClientEditor;
+use App\Livewire\AdminV2\CustomerManagement\ApiClients\Index as ApiClientIndex;
+use App\Livewire\AdminV2\CustomerManagement\Customers\Editor as CustomerEditor;
+use App\Livewire\AdminV2\CustomerManagement\Customers\Index as CustomerIndex;
+use App\Livewire\AdminV2\CustomerManagement\FeaturePreauthorizations\Editor as FeaturePreauthorizationEditor;
+use App\Livewire\AdminV2\CustomerManagement\FeaturePreauthorizations\Index as FeaturePreauthorizationIndex;
+use App\Livewire\AdminV2\CustomerManagement\PluginClients\Editor as PluginClientEditor;
+use App\Livewire\AdminV2\CustomerManagement\PluginClients\Index as PluginClientIndex;
+use App\Livewire\AdminV2\CustomerManagement\PluginRegistrations\Index as PluginRegistrationIndex;
+use App\Livewire\AdminV2\CustomerManagement\PluginRegistrations\Show as PluginRegistrationShow;
+use App\Livewire\AdminV2\CustomerManagement\TravelAlertOrders\Index as TravelAlertOrderIndex;
+use App\Livewire\AdminV2\CustomerManagement\TravelAlertOrders\Show as TravelAlertOrderShow;
 use App\Livewire\AdminV2\Dashboard;
 use App\Livewire\AdminV2\Events\AiResults as EventAiResults;
 use App\Livewire\AdminV2\Events\Editor as EventEditor;
@@ -104,6 +116,31 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('{section}', MasterDataSection::class)
                 ->whereIn('section', MasterData::placeholderKeys())
                 ->name('section');
+        });
+
+        // Kundenverwaltung – je Bereich Liste und Bearbeiten bzw. Ansehen.
+        Route::prefix('customer-management')->name('customer-management.')->group(function () {
+            Route::get('customers', CustomerIndex::class)->name('customers.index');
+            Route::get('customers/create', CustomerEditor::class)->name('customers.create');
+            Route::get('customers/{customer}', CustomerEditor::class)->whereNumber('customer')->name('customers.edit');
+
+            Route::get('feature-preauthorizations', FeaturePreauthorizationIndex::class)->name('feature-preauthorizations.index');
+            Route::get('feature-preauthorizations/create', FeaturePreauthorizationEditor::class)->name('feature-preauthorizations.create');
+            Route::get('feature-preauthorizations/{preauthorization}', FeaturePreauthorizationEditor::class)->whereNumber('preauthorization')->name('feature-preauthorizations.edit');
+
+            Route::get('travel-alert-orders', TravelAlertOrderIndex::class)->name('travel-alert-orders.index');
+            Route::get('travel-alert-orders/{order}', TravelAlertOrderShow::class)->whereNumber('order')->name('travel-alert-orders.show');
+
+            Route::get('plugin-clients', PluginClientIndex::class)->name('plugin-clients.index');
+            Route::get('plugin-clients/create', PluginClientEditor::class)->name('plugin-clients.create');
+            Route::get('plugin-clients/{pluginClient}', PluginClientEditor::class)->whereNumber('pluginClient')->name('plugin-clients.edit');
+
+            Route::get('plugin-registrations', PluginRegistrationIndex::class)->name('plugin-registrations.index');
+            Route::get('plugin-registrations/{registration}', PluginRegistrationShow::class)->whereNumber('registration')->name('plugin-registrations.show');
+
+            Route::get('api-clients', ApiClientIndex::class)->name('api-clients.index');
+            Route::get('api-clients/create', ApiClientEditor::class)->name('api-clients.create');
+            Route::get('api-clients/{apiClient}', ApiClientEditor::class)->whereNumber('apiClient')->name('api-clients.edit');
         });
 
         Route::get('system/ai', SystemAi::class)->name('system.ai');

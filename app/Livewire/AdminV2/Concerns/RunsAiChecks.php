@@ -4,10 +4,12 @@ namespace App\Livewire\AdminV2\Concerns;
 
 use App\Models\AiCheck;
 use App\Services\AiCheckService;
+use App\Services\AiCheckTaskService;
 use App\Services\AiFieldReviewService;
 use App\Services\OpenAiModelService;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AiSettings;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -28,6 +30,12 @@ trait RunsAiChecks
 
     public string $aiCustomPrompt = '';
 
+    /**
+     * Prompt der gewaehlten hinterlegten Pruefung fuer diesen Lauf. Er laesst
+     * sich vor dem Ausfuehren anpassen – die hinterlegte Pruefung bleibt, wie sie ist.
+     */
+    public string $aiPromptDraft = '';
+
     /** Modell fuer den eigenen Prompt; leer = Standardmodell */
     public string $aiCustomModel = '';
 
@@ -44,7 +52,7 @@ trait RunsAiChecks
      */
     public ?array $aiReview = null;
 
-    /** @var array{title: string, html: string, prompt: string, usage: ?array}|null */
+    /** @var array{title: string, html: string, prompt: string, usage: ?array, task?: array{met: bool, created: bool, parsed: bool, id: ?int, title: ?string, url: ?string}}|null */
     public ?array $aiResult = null;
 
     public ?string $aiError = null;
@@ -78,6 +86,7 @@ trait RunsAiChecks
             1 => (string) $this->aiChecks->first()->id,
             default => '',
         };
+        $this->loadAiPromptDraft();
         $this->resetValidation();
 
         $this->modal('ai-check')->show();
@@ -87,7 +96,27 @@ trait RunsAiChecks
     {
         $this->aiResult = null;
         $this->aiError = null;
+        $this->loadAiPromptDraft();
         $this->resetValidation();
+    }
+
+    /**
+     * Den Prompt der gewaehlten Pruefung als Entwurf fuer diesen Lauf laden.
+     */
+    protected function loadAiPromptDraft(): void
+    {
+        $check = ctype_digit($this->aiCheckId) ? $this->aiChecks->firstWhere('id', (int) $this->aiCheckId) : null;
+
+        $this->aiPromptDraft = (string) ($check?->prompt ?? '');
+    }
+
+    /**
+     * Anpassungen am Prompt verwerfen – zurueck zum hinterlegten Text.
+     */
+    public function resetAiPrompt(): void
+    {
+        $this->loadAiPromptDraft();
+        $this->resetValidation('aiPromptDraft');
     }
 
     /**
@@ -172,6 +201,7 @@ trait RunsAiChecks
                 array_diff_key($all, $context),
                 AiAreas::placeholders($this->aiArea(), null),
                 trim($this->aiCustomModel) ?: null,
+                $this->aiReviewHint($this->aiSection),
             );
         } catch (Throwable $exception) {
             $this->aiError = $exception->getMessage();
@@ -274,6 +304,24 @@ trait RunsAiChecks
     }
 
     /**
+     * Der gespeicherte Datensatz des Formulars – an ihn haengt eine Pruefung,
+     * die Aufgaben anlegt, ihre Unteraufgabe. Ohne ihn (neuer Eintrag) entsteht keine.
+     */
+    protected function aiSubject(): ?Model
+    {
+        return property_exists($this, 'recordId') && $this->recordId ? $this->record : null;
+    }
+
+    /**
+     * Hinweis an die KI fuer die Feldpruefung eines Abschnitts – etwa wie seine
+     * Felder zusammenhaengen oder welche Werte ein Feld annehmen darf.
+     */
+    protected function aiReviewHint(string $section): ?string
+    {
+        return null;
+    }
+
+    /**
      * Die Begruendung der KI in die Notiz des Feldes schreiben. Liefert false,
      * wenn das Feld keine Notiz hat.
      */
@@ -359,6 +407,20 @@ trait RunsAiChecks
             }
         } else {
             $check = $this->aiChecks->firstWhere('id', (int) $this->aiCheckId);
+
+            if ($check && trim($this->aiPromptDraft) !== trim((string) $check->prompt)) {
+                $this->validate([
+                    'aiPromptDraft' => ['required', 'string', 'min:10', 'max:6000'],
+                ], [
+                    'aiPromptDraft.required' => 'Bitte einen Prompt eingeben – oder den hinterlegten wiederherstellen.',
+                    'aiPromptDraft.min' => 'Der Prompt ist zu kurz.',
+                    'aiPromptDraft.max' => 'Der Prompt ist zu lang (höchstens 6000 Zeichen).',
+                ]);
+
+                // Nur fuer diesen Lauf: eine Kopie, die nicht gespeichert wird. Die hinterlegte Pruefung bleibt unveraendert.
+                $name = $check->name.' (Prompt angepasst)';
+                $check = $check->replicate()->fill(['prompt' => trim($this->aiPromptDraft), 'name' => $name]);
+            }
         }
 
         if (! $check) {
@@ -373,9 +435,15 @@ trait RunsAiChecks
         $all = $this->aiContext();
         $context = array_intersect_key($all, $labels);
 
+        // Legt die Pruefung Aufgaben an, beurteilt die KI zugleich ihre Bedingung fuer diesen Eintrag.
+        // Ein fuer diesen Lauf angepasster Prompt und ein eigener Prompt legen keine Aufgaben an.
+        $subject = $check->createsTasks() ? $this->aiSubject() : null;
+
         try {
             // Platzhalter wie {name} funktionieren in jedem Abschnitt; die Datenliste bleibt beim Abschnitt.
-            $result = app(AiCheckService::class)->run($check, $context, $labels, array_diff_key($all, $context));
+            $result = $subject
+                ? app(AiCheckTaskService::class)->run($check, $subject, $context, $labels, array_diff_key($all, $context), auth('web')->id())
+                : app(AiCheckService::class)->run($check, $context, $labels, array_diff_key($all, $context));
         } catch (Throwable $exception) {
             $this->aiError = $exception->getMessage();
 
@@ -383,5 +451,10 @@ trait RunsAiChecks
         }
 
         $this->aiResult = ['title' => $check->name] + $result;
+
+        if ($result['task']['id'] ?? null) {
+            // Die Karte "Aufgaben" auf der Seite zeigt die neue bzw. ergaenzte Aufgabe.
+            $this->dispatch('adminv2-tasks-changed');
+        }
     }
 }

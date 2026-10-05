@@ -673,6 +673,60 @@ it('haengt die Abschnittsdaten an, wenn der Prompt keine Platzhalter nutzt, und 
         ->assertSee('Eigener Prompt');
 });
 
+it('laesst den Prompt einer hinterlegten Pruefung fuer einen Lauf anpassen, ohne sie zu aendern', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-mini',
+        'choices' => [['message' => ['content' => 'Passt.']]],
+        'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 2, 'total_tokens' => 12],
+    ])]);
+
+    $europe = continent('Europa', 'EU');
+    $check = AiCheck::create(['name' => 'Übersicht', 'area' => 'continents', 'section' => 'basics', 'prompt' => 'Beschreibe den Kontinent {name} in zwei Sätzen.']);
+    $second = AiCheck::create(['name' => 'Code', 'area' => 'continents', 'section' => 'basics', 'prompt' => 'Ist der Code {code} richtig?']);
+
+    $component = Livewire::test(ContinentEditor::class, ['continent' => $europe->id])
+        ->call('openAiCheck', 'basics')
+        ->assertSet('aiPromptDraft', '')
+        // Mit der Wahl einer Pruefung steht ihr Prompt zum Anpassen bereit.
+        ->set('aiCheckId', (string) $check->id)
+        ->assertSet('aiPromptDraft', 'Beschreibe den Kontinent {name} in zwei Sätzen.')
+        ->assertSee('KI Prompt ansehen und anpassen')
+        ->assertDontSee('für diesen Lauf angepasst')
+        ->set('aiPromptDraft', 'Zu kurz')
+        ->assertSee('für diesen Lauf angepasst')
+        ->call('runAiCheck')
+        ->assertHasErrors(['aiPromptDraft'])
+        ->set('aiPromptDraft', 'Nenne drei Nachbarkontinente von {name}.')
+        ->call('runAiCheck')
+        ->assertHasNoErrors()
+        ->assertSet('aiError', null)
+        ->assertSee('Passt.');
+
+    expect($component->get('aiResult.title'))->toBe('Übersicht (Prompt angepasst)')
+        ->and($component->get('aiResult.prompt'))->toBe('Nenne drei Nachbarkontinente von Europa.')
+        // Die hinterlegte Pruefung bleibt, wie sie ist – und es entsteht keine weitere.
+        ->and($check->fresh()->prompt)->toBe('Beschreibe den Kontinent {name} in zwei Sätzen.')
+        ->and($check->fresh()->name)->toBe('Übersicht')
+        ->and(AiCheck::count())->toBe(2);
+
+    Http::assertSent(fn ($request) => str_contains($request->body(), 'Nenne drei Nachbarkontinente von Europa.') && ! str_contains($request->body(), 'in zwei S'));
+
+    // Zurueck zum hinterlegten Text – der Lauf nutzt ihn wieder unveraendert.
+    $component->call('resetAiPrompt')
+        ->assertSet('aiPromptDraft', 'Beschreibe den Kontinent {name} in zwei Sätzen.')
+        ->assertDontSee('für diesen Lauf angepasst')
+        ->call('runAiCheck');
+
+    expect($component->get('aiResult.title'))->toBe('Übersicht')
+        ->and($component->get('aiResult.prompt'))->toBe('Beschreibe den Kontinent Europa in zwei Sätzen.');
+
+    // Eine andere Pruefung bringt ihren eigenen Prompt mit – der Entwurf der vorigen gilt nicht weiter.
+    $component->set('aiPromptDraft', 'Etwas ganz anderes fragen.')
+        ->set('aiCheckId', (string) $second->id)
+        ->assertSet('aiPromptDraft', 'Ist der Code {code} richtig?');
+});
+
 it('stellt mit einem eigenen Prompt eine einmalige Frage und speichert ihn auf Wunsch als Pruefung', function () {
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response([

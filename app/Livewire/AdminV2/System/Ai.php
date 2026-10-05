@@ -4,16 +4,22 @@ namespace App\Livewire\AdminV2\System;
 
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\StartsAiEventSearch;
+use App\Models\AdminTask;
 use App\Models\AiCheck;
+use App\Models\AiCheckRun;
 use App\Models\AiEventSearchProfile;
 use App\Models\AiEventSearchPrompt;
 use App\Models\SystemSetting;
+use App\Services\AiCheckBatchService;
+use App\Services\AiCheckTaskService;
 use App\Services\ChatGptService;
 use App\Services\OpenAiModelService;
 use App\Support\AdminV2\AiAreas;
+use App\Support\AdminV2\AiRecordContexts;
 use App\Support\AiSettings;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Throwable;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
@@ -57,6 +63,14 @@ class Ai extends Component
     public string $checkModel = '';
 
     public bool $checkActive = true;
+
+    /** Die Pruefung legt Aufgaben an: Unteraufgabe je Eintrag, bei dem die Bedingung zutrifft. */
+    public bool $checkTaskEnabled = false;
+
+    public string $checkTaskCondition = '';
+
+    /** Sammelaufgabe; leer = beim Speichern eine neue anlegen */
+    public string $checkTaskParentId = '';
 
     #[Locked]
     public ?int $promptId = null;
@@ -129,7 +143,82 @@ class Ai extends Component
             return collect();
         }
 
-        return AiCheck::query()->where('area', $this->tab)->orderBy('sort_order')->orderBy('name')->get();
+        return AiCheck::query()->where('area', $this->tab)->with(['latestRun', 'taskParent'])->orderBy('sort_order')->orderBy('name')->get();
+    }
+
+    /**
+     * Anzahl der Eintraege, ueber die ein Sammellauf im offenen Bereich ginge;
+     * null, wenn es fuer den Bereich (noch) keinen Sammellauf gibt.
+     */
+    #[Computed]
+    public function batchRecordCount(): ?int
+    {
+        return AiRecordContexts::supports($this->tab) ? AiRecordContexts::query($this->tab)->count() : null;
+    }
+
+    /**
+     * Aufgaben, die sich als Sammelaufgabe waehlen lassen: offene Hauptaufgaben –
+     * die bereits gewaehlte bleibt immer dabei.
+     */
+    #[Computed]
+    public function taskParentOptions(): Collection
+    {
+        return AdminTask::query()
+            ->whereNull('parent_id')
+            ->where(fn ($query) => $query->where('status', '!=', AdminTask::STATUS_DONE)->orWhere('id', (int) $this->checkTaskParentId))
+            ->latest('id')
+            ->limit(200)
+            ->get(['id', 'title']);
+    }
+
+    /**
+     * Die Pruefung fuer alle Eintraege ihres Bereichs ausfuehren.
+     */
+    public function startBatch(int $checkId): void
+    {
+        try {
+            app(AiCheckBatchService::class)->start(AiCheck::findOrFail($checkId), auth('web')->id());
+        } catch (Throwable $exception) {
+            $this->dispatch('adminv2-toast', message: $exception->getMessage(), variant: 'danger');
+
+            return;
+        }
+
+        unset($this->checks);
+
+        $this->dispatch('adminv2-toast', message: 'Sammellauf gestartet. Er läuft im Hintergrund weiter – und solange diese Seite geöffnet ist.');
+    }
+
+    public function cancelBatch(int $checkId): void
+    {
+        $run = AiCheckRun::query()->where('ai_check_id', $checkId)->where('status', AiCheckRun::STATUS_RUNNING)->first();
+
+        if ($run) {
+            app(AiCheckBatchService::class)->cancel($run);
+            unset($this->checks);
+
+            $this->dispatch('adminv2-toast', message: 'Sammellauf abgebrochen. Bereits angelegte Unteraufgaben bleiben bestehen.');
+        }
+    }
+
+    /**
+     * Von der Seite regelmaessig aufgerufen, solange ein Sammellauf laeuft:
+     * fuehrt ihn ein Stueck weiter – so kommt er auch ohne Zeitplan voran.
+     */
+    public function advanceBatches(): void
+    {
+        $run = AiCheckRun::query()
+            ->where('status', AiCheckRun::STATUS_RUNNING)
+            ->whereIn('ai_check_id', $this->checks->pluck('id'))
+            ->orderBy('id')
+            ->first();
+
+        if ($run) {
+            set_time_limit(120);
+            app(AiCheckBatchService::class)->advance($run, 12);
+        }
+
+        unset($this->checks);
     }
 
     /**
@@ -152,7 +241,7 @@ class Ai extends Component
 
     public function createCheck(): void
     {
-        $this->reset(['checkId', 'checkSection', 'checkName', 'checkDescription', 'checkPrompt', 'checkModel']);
+        $this->reset(['checkId', 'checkSection', 'checkName', 'checkDescription', 'checkPrompt', 'checkModel', 'checkTaskEnabled', 'checkTaskCondition', 'checkTaskParentId']);
         $this->checkActive = true;
         $this->checkArea = isset(AiAreas::areas()[$this->tab]) ? $this->tab : 'countries';
         $this->resetValidation();
@@ -173,6 +262,10 @@ class Ai extends Component
         $this->checkPrompt = $check->prompt;
         $this->checkModel = (string) $check->model;
         $this->checkActive = $check->is_active;
+        $this->checkTaskEnabled = (bool) $check->task_enabled;
+        $this->checkTaskCondition = (string) $check->task_condition;
+        $this->checkTaskParentId = (string) $check->task_parent_id;
+        unset($this->taskParentOptions);
 
         $this->modal('ai-check-editor')->show();
     }
@@ -186,7 +279,12 @@ class Ai extends Component
             'checkDescription' => ['nullable', 'string', 'max:255'],
             'checkPrompt' => ['required', 'string', 'min:10', 'max:6000'],
             'checkModel' => ['nullable', 'string', 'max:80'],
+            'checkTaskCondition' => [Rule::requiredIf($this->checkTaskEnabled), 'nullable', 'string', 'min:10', 'max:1000'],
+            'checkTaskParentId' => ['nullable', Rule::exists('admin_tasks', 'id')->whereNull('parent_id')->whereNull('deleted_at')],
         ], [
+            'checkTaskCondition.required' => 'Bitte die Bedingung beschreiben, bei der eine Unteraufgabe entstehen soll.',
+            'checkTaskCondition.min' => 'Die Bedingung ist zu kurz.',
+            'checkTaskParentId.exists' => 'Bitte eine vorhandene Hauptaufgabe wählen.',
             'checkName.required' => 'Bitte einen Namen für die Prüfung eingeben.',
             'checkPrompt.required' => 'Bitte den Prompt eingeben.',
             'checkPrompt.min' => 'Der Prompt ist zu kurz.',
@@ -202,7 +300,16 @@ class Ai extends Component
             'prompt' => trim($this->checkPrompt),
             'model' => trim($this->checkModel) ?: null,
             'is_active' => $this->checkActive,
+            'task_enabled' => $this->checkTaskEnabled,
+            'task_condition' => trim($this->checkTaskCondition) ?: null,
+            // Abgeschaltet bleibt die bisherige Sammelaufgabe verknuepft – fuers Wiedereinschalten.
+            'task_parent_id' => $this->checkTaskEnabled ? ((int) $this->checkTaskParentId ?: null) : $check->task_parent_id,
         ])->save();
+
+        // Die Sammelaufgabe steht ab dem Speichern – sie bezieht sich auf alle Eintraege des Bereichs.
+        if ($check->createsTasks()) {
+            app(AiCheckTaskService::class)->parentTask($check, auth('web')->id());
+        }
 
         unset($this->checks, $this->tabCounts);
         $this->modal('ai-check-editor')->close();

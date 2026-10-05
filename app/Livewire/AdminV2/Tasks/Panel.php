@@ -5,16 +5,20 @@ namespace App\Livewire\AdminV2\Tasks;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Models\AdminTask;
 use App\Models\CustomEvent;
+use App\Support\AdminV2\TaskSubjects;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
- * Aufgaben zu einem Ereignis – fuer die Seitenspalte des Ereignis-Formulars.
+ * Aufgaben zu einem Datensatz – fuer die Seitenspalte seines Formulars.
  *
- * Bei einem noch nicht gespeicherten Ereignis laufen die Aufgaben ueber ein
- * Kennzeichen (token) und werden beim ersten Speichern zugeordnet.
+ * Ein Ereignis kommt ueber eventId (seine Aufgaben gelten fuer alle Versionen);
+ * bei einem noch nicht gespeicherten Ereignis laufen die Aufgaben ueber ein
+ * Kennzeichen (token) und werden beim ersten Speichern zugeordnet. Jeder andere
+ * Datensatz kommt ueber Art und ID (siehe TaskSubjects).
  */
 class Panel extends Component
 {
@@ -26,10 +30,18 @@ class Panel extends Component
     #[Locked]
     public ?string $token = null;
 
+    /** Art des Datensatzes, z. B. "airline" (siehe TaskSubjects). */
+    #[Locked]
+    public ?string $kind = null;
+
+    #[Locked]
+    public ?int $recordId = null;
+
     /**
-     * Neu laden, wenn der Tab wieder sichtbar wird – Aufgaben werden in einem
-     * eigenen Tab angelegt und bearbeitet.
+     * Neu laden, wenn der Tab wieder sichtbar wird (Aufgaben werden auch in
+     * einem eigenen Tab bearbeitet) oder eine KI-Pruefung eine Aufgabe angelegt hat.
      */
+    #[On('adminv2-tasks-changed')]
     public function refresh(): void
     {
         unset($this->tasks);
@@ -53,6 +65,8 @@ class Panel extends Component
             $query->forEvent($event);
         } elseif ($this->token) {
             $query->where('subject_token', $this->token);
+        } elseif ($subject = TaskSubjects::find($this->kind, $this->recordId)) {
+            $query->forSubject($subject);
         } else {
             return collect();
         }

@@ -3,6 +3,7 @@
 namespace App\Livewire\AdminV2\Tasks;
 
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
+use App\Support\AdminV2\TaskSubjects;
 use App\Models\AdminTask;
 use App\Models\AdminTaskActivity;
 use App\Models\AdminTaskCategory;
@@ -69,7 +70,7 @@ class Index extends Component
     #[Url(as: 'role', except: '')]
     public string $personRole = '';
 
-    /** Bezug: event (haengt an einem Ereignis) | none (ohne Bezug) */
+    /** Bezug: event (haengt an einem Ereignis) | record (an einem anderen Datensatz) | none (ohne Bezug) */
     #[Url(except: '')]
     public string $subject = '';
 
@@ -164,6 +165,7 @@ class Index extends Component
     {
         return [
             'event' => 'Mit Ereignis',
+            'record' => 'Mit anderem Datensatz',
             'none' => 'Ohne Bezug',
         ];
     }
@@ -371,7 +373,9 @@ class Index extends Component
         }
 
         match ($this->subject) {
-            'event' => $query->whereNotNull('subject_id'),
+            'event' => $query->whereNotNull('subject_id')->where('subject_type', TaskSubjects::morphClass('event')),
+            // Stammdaten, Kunden usw. – alles ausser Ereignissen.
+            'record' => $query->whereNotNull('subject_id')->where('subject_type', '!=', TaskSubjects::morphClass('event')),
             'none' => $query->whereNull('subject_id'),
             default => null,
         };

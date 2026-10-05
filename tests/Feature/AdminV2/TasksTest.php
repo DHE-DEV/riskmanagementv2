@@ -10,10 +10,13 @@ use App\Mail\AdminTaskReminderMail;
 use App\Models\AdminTask;
 use App\Models\AdminTaskActivity;
 use App\Models\AdminTaskCategory;
+use App\Models\Airline;
+use App\Models\Customer;
 use App\Models\CustomEvent;
 use App\Models\EventType;
 use App\Models\User;
 use App\Services\CustomEventVersionService;
+use App\Support\AdminV2\TaskSubjects;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -696,4 +699,100 @@ it('legt Unteraufgaben an, die Rubrik, Verantwortung und Bezug der Hauptaufgabe 
 
     expect(AdminTask::find($subtask->id))->toBeNull()
         ->and(AdminTask::withTrashed()->find($subtask->id))->not->toBeNull();
+});
+
+it('haengt eine Aufgabe an den Datensatz, der gerade bearbeitet wird', function () {
+    $anna = employee('Anna');
+    $this->actingAs($anna);
+
+    $eurowings = Airline::create(['name' => 'Eurowings', 'iata_code' => 'EW', 'is_active' => true]);
+    $condor = Airline::create(['name' => 'Condor', 'iata_code' => 'DE', 'is_active' => true]);
+    $customer = Customer::factory()->create(['name' => 'Bernd Berg', 'company_name' => 'Berg Reisen GmbH']);
+
+    // Bei Stammdaten ist die Rubrik "Stammdaten" vorbelegt.
+    $createUrl = route('adminv2.tasks.create', ['subject' => 'airline', 'subject_id' => $eurowings->id, 'category' => 'Stammdaten']);
+
+    // Die Bearbeitungsseite zeigt die Aufgaben des Eintrags und fuehrt zur neuen Aufgabe mit Bezug.
+    $this->get(route('adminv2.master-data.airlines.edit', $eurowings->id))
+        ->assertOk()
+        ->assertSee('Noch keine Aufgaben zu diesem Eintrag.')
+        ->assertSee($createUrl);
+
+    $this->get(route('adminv2.customer-management.customers.edit', $customer->id))
+        ->assertOk()
+        ->assertSee(route('adminv2.tasks.create', ['subject' => 'customer', 'subject_id' => $customer->id]));
+
+    // Schon die neue Aufgabe nennt den Bezug und fuehrt zurueck zum Datensatz.
+    $this->get($createUrl)
+        ->assertOk()
+        ->assertSee('Zurück zu Airline: Eurowings (EW)')
+        ->assertSee(route('adminv2.master-data.airlines.edit', $eurowings->id), false);
+
+    Livewire::withQueryParams(['subject' => 'airline', 'subject_id' => $eurowings->id, 'category' => 'Stammdaten'])
+        ->test(Detail::class)
+        ->assertSet('subjectKind', 'airline')
+        ->assertSet('subjectId', $eurowings->id)
+        ->assertSet('categoryId', (string) taskCategory('Stammdaten')->id)
+        ->set('title', 'Gepäckregeln nachtragen')
+        ->call('save')
+        ->assertHasNoErrors()
+        // Nach dem Anlegen geht es zurueck auf die Seite des Datensatzes.
+        ->assertRedirect(route('adminv2.master-data.airlines.edit', $eurowings->id));
+
+    $task = AdminTask::firstWhere('title', 'Gepäckregeln nachtragen');
+
+    expect($task->subject->is($eurowings))->toBeTrue()
+        ->and($task->subjectLabel())->toBe('Airline: Eurowings (EW)')
+        ->and($task->subjectUrl())->toBe(route('adminv2.master-data.airlines.edit', $eurowings->id))
+        ->and(TaskSubjects::kindOf($task->subject_type))->toBe('airline');
+
+    // Die Karte oeffnet Aufgaben im selben Tab – am Ereignis bleibt es beim eigenen Tab.
+    Livewire::withQueryParams([]);
+    $this->get(route('adminv2.master-data.airlines.edit', $eurowings->id))
+        ->assertOk()
+        ->assertSee('Gepäckregeln nachtragen')
+        ->assertDontSee('href="'.e($createUrl).'" target="_blank"', false)
+        ->assertDontSee('href="'.route('adminv2.tasks.show', $task).'" target="_blank"', false);
+
+    // Auf der Seite der Aufgabe fuehrt der Bezug zurueck zum Datensatz.
+    $this->get(route('adminv2.tasks.show', $task))
+        ->assertOk()
+        ->assertSee('Zurück zu Airline: Eurowings (EW)')
+        ->assertSee(route('adminv2.master-data.airlines.edit', $eurowings->id), false);
+
+    // Eine Aufgabe ohne Bezug hat nur den Weg zur Aufgabenliste.
+    $this->get(route('adminv2.tasks.show', makeTask(['title' => 'Frei'])))->assertOk()->assertDontSee('Zurück zu');
+    AdminTask::where('title', 'Frei')->forceDelete();
+
+    // Die Karte zeigt nur die Aufgaben dieses Eintrags und hakt sie ab.
+    Livewire::test(Panel::class, ['kind' => 'airline', 'recordId' => $condor->id])->assertDontSee('Gepäckregeln nachtragen');
+
+    Livewire::test(Panel::class, ['kind' => 'airline', 'recordId' => $eurowings->id])
+        ->assertSee('Gepäckregeln nachtragen')
+        ->assertSee('1 Aufgabe, 1 offen')
+        ->call('toggleDone', $task->id)
+        ->assertSee('1 Aufgabe, 0 offen');
+
+    expect($task->fresh()->isDone())->toBeTrue();
+
+    // Eine Unteraufgabe uebernimmt den Bezug der Hauptaufgabe.
+    Livewire::withQueryParams(['parent' => $task->id])
+        ->test(Detail::class)
+        ->assertSet('subjectKind', 'airline')
+        ->assertSet('subjectId', $eurowings->id);
+
+    // Unbekannte Arten und nicht vorhandene Eintraege ergeben keinen Bezug.
+    Livewire::withQueryParams(['subject' => 'user', 'subject_id' => $anna->id])->test(Detail::class)->assertSet('subjectKind', null);
+    Livewire::withQueryParams(['subject' => 'airline', 'subject_id' => 999999])->test(Detail::class)->assertSet('subjectKind', null)->assertSet('subjectId', null);
+    Livewire::withQueryParams([]);
+
+    // In der Aufgabenliste laesst sich nach dem Bezug filtern.
+    makeTask(['title' => 'Ohne Bezug']);
+    $titles = fn ($list) => collect($list->viewData('tasks')->items())->pluck('title')->all();
+    // Auch die oben abgehakte Aufgabe zaehlt.
+    $list = Livewire::test(Index::class)->set('tab', 'all')->set('status', 'all');
+
+    expect($titles($list->set('subject', 'record')))->toBe(['Gepäckregeln nachtragen'])
+        ->and($titles($list->set('subject', 'event')))->toBe([])
+        ->and($titles($list->set('subject', 'none')))->toBe(['Ohne Bezug']);
 });

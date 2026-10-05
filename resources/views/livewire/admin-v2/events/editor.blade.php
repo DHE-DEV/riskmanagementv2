@@ -542,7 +542,7 @@
                                     <div class="grid gap-3 sm:grid-cols-[1fr_1.5fr] sm:items-start">
                                         <flux:input wire:model.blur="sources.{{ $index }}.link_text" placeholder="Link-Text, z. B. Auswärtiges Amt" aria-label="Link-Text" />
                                         <div>
-                                            <flux:input wire:model.blur="sources.{{ $index }}.link_url" type="url" placeholder="https://…" aria-label="Link-Adresse" />
+                                            <x-adminv2.url-input wire:model.blur="sources.{{ $index }}.link_url" type="url" aria-label="Link-Adresse" />
                                             <flux:error name="sources.{{ $index }}.link_url" />
                                         </div>
                                     </div>

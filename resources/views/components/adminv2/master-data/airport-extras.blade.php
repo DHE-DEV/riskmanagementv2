@@ -22,13 +22,13 @@
 
     <div class="flex flex-col gap-4">
         @forelse ($lounges as $index => $lounge)
-            <div wire:key="lounge-{{ $index }}" class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+            <div wire:key="lounge-{{ $index }}" class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <div class="grid gap-4 sm:grid-cols-2">
                     <flux:input wire:model="lounges.{{ $index }}.name" label="Name der Lounge" maxlength="255" />
                     <flux:input wire:model="lounges.{{ $index }}.location" label="Standort" placeholder="z. B. Terminal 2" maxlength="255" />
                     <flux:input wire:model="lounges.{{ $index }}.access" label="Zugang" placeholder="z. B. alle Passagiere mit Bordkarte" maxlength="255" />
                     <flux:input wire:model="lounges.{{ $index }}.price_per_person" label="Preis pro Person ab" placeholder="z. B. 45" inputmode="decimal" />
-                    <flux:input wire:model="lounges.{{ $index }}.url" label="Website/Info-URL" placeholder="https://…" class="sm:col-span-2" />
+                    <x-adminv2.url-input wire:model="lounges.{{ $index }}.url" label="Website/Info-URL" class="sm:col-span-2" />
                 </div>
                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <flux:switch wire:model="lounges.{{ $index }}.children_welcome" label="Kinder willkommen" align="left" />
@@ -47,7 +47,7 @@
     <div class="flex flex-col gap-4">
         @foreach ($definitions as $key => $definition)
             @php $on = (bool) ($mobility[$key]['available'] ?? false); @endphp
-            <div wire:key="mobility-{{ $key }}" class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+            <div wire:key="mobility-{{ $key }}" class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <flux:switch wire:model.live="mobility.{{ $key }}.available" :label="$definition['label']" align="left" />
 
                 @if ($on)
@@ -57,7 +57,11 @@
                                 <div wire:key="mobility-{{ $key }}-{{ $index }}" class="flex flex-wrap items-end gap-2">
                                     @foreach ($definition['list']['fields'] as $field => $label)
                                         <div class="min-w-40 flex-1">
-                                            <flux:input wire:model="mobility.{{ $key }}.{{ $definition['list']['key'] }}.{{ $index }}.{{ $field }}" :label="$label" />
+                                            @if ($field === 'url')
+                                                <x-adminv2.url-input wire:model="mobility.{{ $key }}.{{ $definition['list']['key'] }}.{{ $index }}.{{ $field }}" :label="$label" />
+                                            @else
+                                                <flux:input wire:model="mobility.{{ $key }}.{{ $definition['list']['key'] }}.{{ $index }}.{{ $field }}" :label="$label" />
+                                            @endif
                                         </div>
                                     @endforeach
                                     <flux:button variant="ghost" icon="x-mark" wire:click="removeMobilityRow('{{ $key }}', {{ $index }})" aria-label="Zeile entfernen" />
@@ -69,8 +73,10 @@
                         @foreach ($definition['fields'] ?? [] as $field => $meta)
                             @if ($meta['type'] === 'textarea')
                                 <flux:textarea wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" rows="2" />
+                            @elseif ($meta['type'] === 'url')
+                                <x-adminv2.url-input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" />
                             @else
-                                <flux:input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" :placeholder="$meta['type'] === 'url' ? 'https://…' : ''" />
+                                <flux:input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" />
                             @endif
                         @endforeach
                     </div>
@@ -89,11 +95,11 @@
 
     <div class="flex flex-col gap-4">
         @forelse ($hotels as $index => $hotel)
-            <div wire:key="hotel-{{ $index }}" class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+            <div wire:key="hotel-{{ $index }}" class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <div class="grid gap-4 sm:grid-cols-2">
                     <flux:input wire:model="hotels.{{ $index }}.name" label="Name des Hotels" maxlength="255" />
                     <flux:input wire:model="hotels.{{ $index }}.distance_km" label="Entfernung (km)" placeholder="z. B. 0,5" inputmode="decimal" />
-                    <flux:input wire:model="hotels.{{ $index }}.booking_url" label="Buchungs-URL" placeholder="https://…" class="sm:col-span-2" />
+                    <x-adminv2.url-input wire:model="hotels.{{ $index }}.booking_url" label="Buchungs-URL" class="sm:col-span-2" />
                     <flux:textarea wire:model="hotels.{{ $index }}.notes" label="Zusätzliche Informationen" rows="2" class="sm:col-span-2" />
                 </div>
                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
