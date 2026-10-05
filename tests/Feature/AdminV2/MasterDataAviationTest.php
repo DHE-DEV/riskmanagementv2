@@ -772,22 +772,99 @@ it('prueft Lounges und Hotels je Eintrag und Feld und zeigt die Hinweise unter d
         ->assertSet('hotels.1.notes', 'Shuttle auf Anfrage');
 });
 
+it('prueft die Mobilitaetsangebote je Angebot und Feld', function () {
+    $ok = ['status' => 'ok'];
+
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-mini',
+        'choices' => [['message' => ['content' => json_encode(['summary' => 'Taxi und Parken fehlen.', 'fields' => [
+            'mobility_car_rental_available' => $ok,
+            'mobility_car_rental_0_url' => ['status' => 'change', 'value' => 'https://www.sixt.de/cgn', 'note' => 'Die Adresse fehlt.'],
+            'mobility_car_rental_new' => ['status' => 'change', 'value' => "Europcar; https://www.europcar.de\nSixt; https://doppelt.example"],
+            'mobility_taxi_available' => ['status' => 'change', 'value' => 'Ja', 'note' => 'Vor Terminal 1 gibt es einen Taxistand.'],
+            'mobility_taxi_info' => ['status' => 'change', 'value' => 'Taxistand vor Terminal 1'],
+            'mobility_taxi_approx_cost' => ['status' => 'change', 'value' => '30–40 € in die Innenstadt'],
+            'mobility_parking_available' => ['status' => 'change', 'value' => 'Ja'],
+            'mobility_parking_new' => ['status' => 'change', 'value' => 'P1; 2 Minuten; ab 5 € je Stunde; https://parken.example'],
+            'mobility_public_transport_available' => ['status' => 'unknown', 'note' => 'Nicht geprüft.'],
+        ]], JSON_UNESCAPED_UNICODE)]]],
+        'usage' => ['prompt_tokens' => 200, 'completion_tokens' => 80, 'total_tokens' => 280],
+    ])]);
+
+    $germany = aviationCountry('Deutschland', 'DE');
+    $cgn = airport('Cologne Bonn Airport', 'CGN', aviationCity('Köln', $germany), ['mobility_options' => [
+        'car_rental' => ['available' => true, 'providers' => [['name' => 'Sixt', 'url' => null]]],
+    ]]);
+
+    $editor = Livewire::test(AirportEditor::class, ['airport' => $cgn->id])->call('openAiCheck', 'mobility');
+    $data = $editor->get('aiData');
+
+    // Je Angebot: verfuegbar, feste Felder, jede Zeile der Liste und was fehlt.
+    expect(array_keys($data))->toContain('mobility_car_rental_available', 'mobility_car_rental_0_name', 'mobility_car_rental_0_url', 'mobility_car_rental_new', 'mobility_airport_shuttle_info', 'mobility_taxi_approx_cost', 'mobility_parking_new')
+        ->and($data['mobility_car_rental_0_url']['label'])->toBe('Mietwagen › Zeile 1 (Sixt): Website/Buchungs-URL')
+        ->and($data['mobility_taxi_available'])->toBe(['label' => 'Taxi › Verfügbar', 'value' => 'Nein']);
+
+    $editor->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        // Unter den Feldern im Formular, auch nach dem Schliessen des Fensters.
+        ->assertSee('Vor Terminal 1 gibt es einen Taxistand.')
+        ->assertSee('Die Adresse fehlt.')
+        ->assertSeeHtml("applyAiSuggestion('mobility_car_rental_0_url')")
+        ->assertSeeHtml("applyAiSuggestion('mobility_taxi_available')");
+
+    // Eine Anfrage mit dem Hinweis, wie die Felder zusammenhaengen und wie fehlende Eintraege zu nennen sind.
+    $requests = Http::recorded(fn ($request) => str_contains($request->body(), 'mobility_taxi_available'));
+
+    expect($requests->count())->toBe(1)
+        ->and($requests->first()[0]->body())->toContain('mobility_parking_new', 'Name; Entfernung; Preisinformation; Website')
+        ->not->toContain('- mobility (');
+
+    $editor->call('applyAllAiSuggestions')
+        ->assertSet('mobility.car_rental.providers.0.url', 'https://www.sixt.de/cgn')
+        // Fehlende Anbieter kommen dazu – der schon eingetragene nicht noch einmal.
+        ->assertSet('mobility.car_rental.providers.1', ['name' => 'Europcar', 'url' => 'https://www.europcar.de'])
+        ->assertCount('mobility.car_rental.providers', 2)
+        ->assertSet('mobility.taxi.available', true)
+        ->assertSet('mobility.taxi.info', 'Taxistand vor Terminal 1')
+        ->assertSet('mobility.taxi.approx_cost', '30–40 € in die Innenstadt')
+        ->assertSet('mobility.parking.available', true)
+        ->assertSet('mobility.parking.options.0', ['name' => 'P1', 'distance' => '2 Minuten', 'price_info' => 'ab 5 € je Stunde', 'url' => 'https://parken.example'])
+        // Mit "verfuegbar" stehen die Hinweise auch unter den Feldern des Angebots.
+        ->assertSeeHtml("mobility.taxi.info")
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $stored = $cgn->fresh()->mobility_options;
+
+    expect($stored['taxi'])->toMatchArray(['available' => true, 'info' => 'Taxistand vor Terminal 1'])
+        ->and(collect($stored['car_rental']['providers'])->pluck('name')->all())->toBe(['Sixt', 'Europcar'])
+        ->and($stored['parking']['options'][0]['price_info'])->toBe('ab 5 € je Stunde');
+
+    // Mit dem Entfernen einer Zeile verschieben sich die folgenden – die Hinweise werden verworfen.
+    $editor->call('removeMobilityRow', 'car_rental', 0)->assertSet('aiReview', null);
+
+    // Ein unbekanntes Feld laesst sich nicht uebernehmen.
+    $editor->set('aiReview', ['section' => 'mobility', 'summary' => null, 'usage' => null, 'fields' => [
+        'mobility_taxi_farbe' => ['status' => 'change', 'value' => 'gelb', 'note' => null],
+    ]])
+        ->call('applyAiSuggestion', 'mobility_taxi_farbe')
+        ->assertDispatched('adminv2-toast', message: 'Dieser Vorschlag lässt sich nicht automatisch übernehmen – bitte von Hand eintragen.', variant: 'danger');
+});
+
 it('laesst das Ergebnis der Feldpruefung zu Listen im Abschnitt stehen', function () {
     $germany = aviationCountry('Deutschland', 'DE');
     $cgn = airport('Cologne Bonn Airport', 'CGN', aviationCity('Köln', $germany));
 
     // Sammelangaben lassen sich nicht in ein Feld uebernehmen – der Hinweis bleibt trotzdem im Abschnitt sichtbar.
     Livewire::test(AirportEditor::class, ['airport' => $cgn->id])
-        ->set('aiReview', ['section' => 'mobility', 'summary' => null, 'usage' => null, 'fields' => [
-            'mobility' => ['status' => 'change', 'value' => "Taxi: verfügbar\nÖPNV: S-Bahn S19", 'note' => 'Der Taxistand fehlt.'],
-        ]])
-        ->assertSee('Der Taxistand fehlt.')
-        ->assertSeeHtml('<span class="font-semibold">Taxi:</span>')
-        ->assertDontSeeHtml("applyAiSuggestion('mobility')")
         ->set('aiReview', ['section' => 'airlines', 'summary' => null, 'usage' => null, 'fields' => [
-            'airlines' => ['status' => 'change', 'value' => 'Eurowings (EW)', 'note' => 'Eurowings fehlt in der Liste.'],
+            'airlines' => ['status' => 'change', 'value' => "Eurowings (EW)\nCondor (DE)", 'note' => 'Eurowings fehlt in der Liste.'],
         ]])
-        ->assertSee('Eurowings fehlt in der Liste.');
+        ->assertSee('Eurowings fehlt in der Liste.')
+        ->assertSee('Condor (DE)')
+        ->assertDontSeeHtml("applyAiSuggestion('airlines')");
 
     $lh = airline('Lufthansa', 'LH');
 

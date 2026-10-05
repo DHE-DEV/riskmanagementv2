@@ -57,18 +57,18 @@
 <x-adminv2.card heading="Mobilitätsangebote" :description="$available ? $available.' von '.count($definitions).' Angeboten verfügbar' : 'Mietwagen, ÖPNV, Shuttle, Taxi und Parken – noch nichts als verfügbar markiert.'" collapsible :collapsed="$available === 0">
     <x-slot:actions><x-adminv2.ai-check-button section="mobility" /></x-slot:actions>
     <div class="flex flex-col gap-4">
-        {{-- Ergebnis der Feldpruefung zum ganzen Abschnitt – bleibt stehen, auch wenn das KI-Fenster zu ist. --}}
-        <x-adminv2.ai-field-hint key="mobility" :review="$review" :applyable="false" class="!mt-0 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
         @foreach ($definitions as $key => $definition)
             @php $on = (bool) ($mobility[$key]['available'] ?? false); @endphp
             <div wire:key="mobility-{{ $key }}" class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <flux:switch wire:model.live="mobility.{{ $key }}.available" :label="$definition['label']" align="left" />
+                <x-adminv2.ai-field-hint :key="'mobility_'.$key.'_available'" :review="$review" />
 
                 @if ($on)
                     <div class="mt-4 flex flex-col gap-3">
                         @if (isset($definition['list']))
                             @foreach ($mobility[$key][$definition['list']['key']] ?? [] as $index => $row)
-                                <div wire:key="mobility-{{ $key }}-{{ $index }}" class="flex flex-wrap items-end gap-2">
+                                {{-- Die Schaltflaeche zum Entfernen steht auf Hoehe der Eingabefelder (unter der Bezeichnung), nicht unter den KI-Hinweisen. --}}
+                                <div wire:key="mobility-{{ $key }}-{{ $index }}" class="flex flex-wrap items-start gap-2">
                                     @foreach ($definition['list']['fields'] as $field => $label)
                                         <div class="min-w-40 flex-1">
                                             @if ($field === 'url')
@@ -76,22 +76,34 @@
                                             @else
                                                 <flux:input wire:model="mobility.{{ $key }}.{{ $definition['list']['key'] }}.{{ $index }}.{{ $field }}" :label="$label" />
                                             @endif
+                                            <x-adminv2.ai-field-hint :key="'mobility_'.$key.'_'.$index.'_'.$field" :review="$review" />
                                         </div>
                                     @endforeach
-                                    <flux:button variant="ghost" icon="x-mark" wire:click="removeMobilityRow('{{ $key }}', {{ $index }})" aria-label="Zeile entfernen" />
+                                    <flux:button variant="ghost" icon="x-mark" wire:click="removeMobilityRow('{{ $key }}', {{ $index }})" aria-label="Zeile entfernen" class="mt-7" />
                                 </div>
                             @endforeach
                             <flux:button size="sm" icon="plus" wire:click="addMobilityRow('{{ $key }}')" class="w-fit">{{ $definition['list']['label'] }}</flux:button>
+                            {{-- Eintraege, die laut KI fehlen – "Uebernehmen" haengt sie an. --}}
+                            @php $missing = $review['fields']['mobility_'.$key.'_new'] ?? null; @endphp
+                            @if ($missing && ($missing['status'] === 'change' || $missing['note']))
+                                <div class="rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
+                                    <p class="text-sm font-medium text-zinc-800 dark:text-white">Fehlende {{ $definition['list']['label'] }} laut KI</p>
+                                    <x-adminv2.ai-field-hint :key="'mobility_'.$key.'_new'" :review="$review" />
+                                </div>
+                            @endif
                         @endif
 
                         @foreach ($definition['fields'] ?? [] as $field => $meta)
-                            @if ($meta['type'] === 'textarea')
-                                <flux:textarea wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" rows="2" />
-                            @elseif ($meta['type'] === 'url')
-                                <x-adminv2.url-input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" />
-                            @else
-                                <flux:input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" />
-                            @endif
+                            <div>
+                                @if ($meta['type'] === 'textarea')
+                                    <flux:textarea wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" rows="2" />
+                                @elseif ($meta['type'] === 'url')
+                                    <x-adminv2.url-input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" />
+                                @else
+                                    <flux:input wire:model="mobility.{{ $key }}.{{ $field }}" :label="$meta['label']" />
+                                @endif
+                                <x-adminv2.ai-field-hint :key="'mobility_'.$key.'_'.$field" :review="$review" />
+                            </div>
                         @endforeach
                     </div>
                 @endif

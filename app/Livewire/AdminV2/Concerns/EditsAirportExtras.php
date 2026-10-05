@@ -94,6 +94,10 @@ trait EditsAirportExtras
      */
     protected function airportExtrasReviewLabels(string $section): ?array
     {
+        if ($section === 'mobility') {
+            return $this->mobilityReviewLabels();
+        }
+
         [$kind, $rows, $noun, $plural] = match ($section) {
             'lounges' => ['lounge', $this->lounges, 'Lounge', 'Lounges'],
             'hotels' => ['hotel', $this->hotels, 'Hotel', 'Hotels'],
@@ -119,13 +123,149 @@ trait EditsAirportExtras
     }
 
     /**
+     * Die Felder des Abschnitts "mobility" fuer die Feldpruefung – je Angebot:
+     * verfuegbar ("mobility_taxi_available"), seine festen Felder
+     * ("mobility_taxi_info"), jede Zeile seiner Liste
+     * ("mobility_parking_0_name") und was in der Liste fehlt ("mobility_parking_new").
+     *
+     * @return array<string, string>
+     */
+    protected function mobilityReviewLabels(): array
+    {
+        // Die Sammelangabe bleibt fuer hinterlegte Pruefungen und eigene Prompts.
+        $labels = ['mobility' => 'Mobilitätsangebote (Liste)'];
+
+        foreach (AirportExtras::mobility() as $option => $definition) {
+            $group = $definition['label'].' › ';
+            $labels['mobility_'.$option.'_available'] = $group.'Verfügbar';
+
+            foreach ($definition['fields'] ?? [] as $field => $meta) {
+                $labels['mobility_'.$option.'_'.$field] = $group.$meta['label'];
+            }
+
+            if ($list = $definition['list'] ?? null) {
+                foreach ($this->mobility[$option][$list['key']] ?? [] as $index => $row) {
+                    $name = trim((string) ($row['name'] ?? ''));
+
+                    foreach ($list['fields'] as $field => $label) {
+                        $labels['mobility_'.$option.'_'.$index.'_'.$field] = $group.'Zeile '.($index + 1).($name !== '' ? ' ('.$name.')' : '').': '.$label;
+                    }
+                }
+
+                $labels['mobility_'.$option.'_new'] = $group.'Fehlende '.$list['label'];
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * Die Werte zu mobilityReviewLabels().
+     *
+     * @return array<string, mixed>
+     */
+    protected function mobilityReviewContext(): array
+    {
+        $context = [];
+
+        foreach (AirportExtras::mobility() as $option => $definition) {
+            $values = $this->mobility[$option] ?? [];
+            $context['mobility_'.$option.'_available'] = (bool) ($values['available'] ?? false);
+
+            foreach ($definition['fields'] ?? [] as $field => $meta) {
+                $context['mobility_'.$option.'_'.$field] = $values[$field] ?? '';
+            }
+
+            if ($list = $definition['list'] ?? null) {
+                foreach ($values[$list['key']] ?? [] as $index => $row) {
+                    foreach (array_keys($list['fields']) as $field) {
+                        $context['mobility_'.$option.'_'.$index.'_'.$field] = $row[$field] ?? '';
+                    }
+                }
+
+                $context['mobility_'.$option.'_new'] = '';
+            }
+        }
+
+        return $context;
+    }
+
+    /**
+     * Vorschlag der KI zu einem Feld der Mobilitaetsangebote uebernehmen.
+     * null, wenn der Schluessel nicht hierher gehoert.
+     */
+    protected function aiApplyMobility(string $key, string $value): ?bool
+    {
+        foreach (AirportExtras::mobility() as $option => $definition) {
+            if (! str_starts_with($key, 'mobility_'.$option.'_')) {
+                continue;
+            }
+
+            $field = substr($key, strlen('mobility_'.$option.'_'));
+            $list = $definition['list'] ?? null;
+
+            if ($field === 'available') {
+                $this->mobility[$option]['available'] = $this->aiBool($value);
+
+                return true;
+            }
+
+            if (isset($definition['fields'][$field])) {
+                $this->mobility[$option][$field] = $value;
+
+                return true;
+            }
+
+            // Fehlende Zeilen der Liste: je Zeile eine, die Angaben durch Strichpunkt getrennt.
+            if ($list && $field === 'new') {
+                $known = array_map(fn ($row) => mb_strtolower(trim((string) ($row['name'] ?? ''))), $this->mobility[$option][$list['key']] ?? []);
+                $added = 0;
+
+                foreach (preg_split('/\R/u', $value) ?: [] as $line) {
+                    $parts = array_map('trim', explode(';', preg_replace('/^\s*(?:[-*•]\s+|\d+[.)]\s+)/u', '', $line)));
+
+                    if (($parts[0] ?? '') === '' || in_array(mb_strtolower($parts[0]), $known, true)) {
+                        continue;
+                    }
+
+                    $row = [];
+                    foreach (array_keys($list['fields']) as $position => $name) {
+                        $row[$name] = $parts[$position] ?? '';
+                    }
+
+                    $this->mobility[$option][$list['key']][] = $row;
+                    $known[] = mb_strtolower($parts[0]);
+                    $added++;
+                }
+
+                // Mit einem Eintrag ist das Angebot auch verfuegbar.
+                if ($added > 0) {
+                    $this->mobility[$option]['available'] = true;
+                }
+
+                return $added > 0;
+            }
+
+            if ($list && preg_match('/^(\d+)_([a-z_]+)$/', $field, $match) && isset($list['fields'][$match[2]], $this->mobility[$option][$list['key']][(int) $match[1]])) {
+                $this->mobility[$option][$list['key']][(int) $match[1]][$match[2]] = $value;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        return null;
+    }
+
+    /**
      * Die Werte zu airportExtrasReviewLabels().
      *
      * @return array<string, mixed>
      */
     protected function airportExtrasRowContext(): array
     {
-        $context = ['lounges_new' => '', 'hotels_new' => ''];
+        $context = ['lounges_new' => '', 'hotels_new' => ''] + $this->mobilityReviewContext();
 
         foreach (['lounge' => $this->lounges, 'hotel' => $this->hotels] as $kind => $rows) {
             foreach ($rows as $index => $row) {
@@ -152,6 +292,11 @@ trait EditsAirportExtras
                 .'Gibt es ein eingetragenes Hotel nicht mehr, vermerke das in der Begründung („note“) zu seinem Namen. '
                 .'Nenne unter „Fehlende Hotels“ wichtige Hotels in unmittelbarer Nähe des Flughafens, die nicht eingetragen sind – je Hotel eine Zeile in der Form „Name; Entfernung in km; Buchungs-URL; Hinweise“ (Unbekanntes leer lassen); fehlt keines, ist der Status "ok". '
                 .'Entfernungen als Zahl in Kilometern.',
+            'mobility' => 'Die Felder gehören zu den Mobilitätsangeboten am Flughafen ('.implode(', ', array_column(AirportExtras::mobility(), 'label')).'). '
+                .'Prüfe je Angebot zuerst „Verfügbar“. Ist es verfügbar, gib zu seinen weiteren Feldern die zutreffende Angabe an – auch zu bisher leeren und auch dann, wenn es im Eintrag bisher nicht als verfügbar markiert ist; ist es nicht verfügbar, ist der Status seiner weiteren Felder "ok". '
+                .'Nenne unter „Fehlende …“ jeden Eintrag, der in der jeweiligen Liste fehlt – je Eintrag eine Zeile, die Angaben mit Strichpunkt getrennt (Unbekanntes leer lassen): '
+                .collect(AirportExtras::mobility())->filter(fn (array $definition) => isset($definition['list']))->map(fn (array $definition) => $definition['label'].' „'.implode('; ', $definition['list']['fields']).'“')->implode(', ')
+                .'. Fehlt nichts, ist der Status "ok".',
             default => null,
         };
     }
@@ -162,6 +307,10 @@ trait EditsAirportExtras
      */
     protected function aiApplyAirportExtras(string $key, string $value): ?bool
     {
+        if (str_starts_with($key, 'mobility_')) {
+            return $this->aiApplyMobility($key, $value);
+        }
+
         // Fehlende Eintraege: je Zeile einer, die Angaben durch Strichpunkt getrennt.
         if (in_array($key, ['lounges_new', 'hotels_new'], true)) {
             $property = $key === 'lounges_new' ? 'lounges' : 'hotels';
@@ -280,5 +429,6 @@ trait EditsAirportExtras
 
         unset($this->mobility[$option][$list['key']][$index]);
         $this->mobility[$option][$list['key']] = array_values($this->mobility[$option][$list['key']]);
+        $this->dismissAirportExtrasReview('mobility');
     }
 }
