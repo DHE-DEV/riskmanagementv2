@@ -74,6 +74,9 @@ class Index extends Component
     #[Url(except: '')]
     public string $subject = '';
 
+    /** @var array<int, string> IDs der angehakten Aufgaben (zum gemeinsamen Loeschen) */
+    public array $selected = [];
+
     #[Url(except: 'due_date')]
     public string $sort = 'due_date';
 
@@ -108,6 +111,8 @@ class Index extends Component
 
         if (in_array(Str::before($property, '.'), ['tab', 'sort', ...self::FILTERS], true)) {
             $this->resetPage();
+            // Die Auswahl gilt fuer das, was gerade zu sehen ist.
+            $this->selected = [];
         }
     }
 
@@ -247,6 +252,99 @@ class Index extends Component
     public function users(): Collection
     {
         return AdminTask::assignableUsers();
+    }
+
+    /**
+     * Eine Aufgabe loeschen – ihre Unteraufgaben gehen mit.
+     */
+    public function delete(int $taskId): void
+    {
+        $task = AdminTask::find($taskId);
+
+        if (! $task) {
+            return;
+        }
+
+        $removed = $this->deleteTasks(collect([$task]));
+        $this->selected = array_values(array_diff($this->selected, [(string) $taskId]));
+
+        $this->dispatch('adminv2-toast', message: $removed > 1
+            ? 'Aufgabe „'.$task->title.'“ samt '.($removed - 1).' '.($removed === 2 ? 'Unteraufgabe' : 'Unteraufgaben').' gelöscht.'
+            : 'Aufgabe „'.$task->title.'“ gelöscht.');
+    }
+
+    /**
+     * Alle Aufgaben der aktuellen Seite an- bzw. wieder abwaehlen.
+     */
+    public function togglePage(): void
+    {
+        $pageIds = collect($this->tasks()->items())->map(fn (AdminTask $task) => (string) $task->id)->all();
+
+        $this->selected = $pageIds !== [] && array_diff($pageIds, $this->selected) === []
+            ? array_values(array_diff($this->selected, $pageIds))
+            : array_values(array_unique([...$this->selected, ...$pageIds]));
+    }
+
+    public function clearSelection(): void
+    {
+        $this->selected = [];
+    }
+
+    /**
+     * Die angehakten Aufgaben loeschen.
+     */
+    public function deleteSelected(): void
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $this->selected))));
+        $removed = $ids === [] ? 0 : $this->deleteTasks(AdminTask::query()->whereKey($ids)->get());
+
+        $this->selected = [];
+
+        $this->dispatch('adminv2-toast', message: $removed === 1 ? '1 Aufgabe gelöscht.' : $removed.' Aufgaben gelöscht.');
+    }
+
+    /**
+     * Alle Aufgaben loeschen, die zu Reiter, Suche und Filtern passen – nicht
+     * nur die der aktuellen Seite.
+     */
+    public function deleteAll(): void
+    {
+        $removed = 0;
+
+        // Stueckweise, damit auch sehr viele Aufgaben nicht auf einmal im Speicher liegen.
+        $this->applyFilters($this->scopeTab(AdminTask::query(), $this->tab))
+            ->select('admin_tasks.*')
+            ->chunkById(200, function ($tasks) use (&$removed) {
+                $removed += $this->deleteTasks($tasks);
+            }, 'admin_tasks.id', 'id');
+
+        $this->selected = [];
+        $this->resetPage();
+        $this->modal('tasks-delete-all')->close();
+
+        $this->dispatch('adminv2-toast', message: $removed === 1 ? '1 Aufgabe gelöscht.' : $removed.' Aufgaben gelöscht.');
+    }
+
+    /**
+     * Aufgaben einzeln loeschen – so gehen ihre Unteraufgaben mit (siehe
+     * AdminTask). Liefert, wie viele Aufgaben dadurch insgesamt verschwunden sind.
+     *
+     * @param  iterable<AdminTask>  $tasks
+     */
+    protected function deleteTasks(iterable $tasks): int
+    {
+        $before = AdminTask::count();
+
+        foreach ($tasks as $task) {
+            // Eine Unteraufgabe kann mit ihrer Hauptaufgabe schon geloescht sein.
+            if (AdminTask::whereKey($task->getKey())->exists()) {
+                $task->delete();
+            }
+        }
+
+        unset($this->tabCounts);
+
+        return $before - AdminTask::count();
     }
 
     public function toggleDone(int $taskId): void

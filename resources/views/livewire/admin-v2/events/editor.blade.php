@@ -333,7 +333,7 @@
             </x-adminv2.card>
 
             {{-- Standorte --}}
-            <x-adminv2.card heading="Standorte" description="Mindestens ein Land. Region oder Stadt verfeinern die Position auf der Karte; pro Land sind mehrere Standorte möglich.">
+            <x-adminv2.card heading="Standorte" description="Mindestens ein Land. Region oder Stadt verfeinern die Position auf der Karte; pro Land sind mehrere Standorte möglich. Je Standort lassen sich die Standard-Koordinaten ausschalten und eigene Koordinaten eintragen.">
                 <div class="flex flex-col gap-5">
                     <div class="relative" x-data="{ open: false }" x-on:click.outside="open = false" x-on:keydown.escape="open = false">
                         <flux:input
@@ -381,7 +381,7 @@
 
                     @if ($locations === [])
                         <div class="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-                            Noch kein Standort zugeordnet. Über die Suche oben einen Ort hinzufügen.
+                            Noch kein Standort zugeordnet. Über die Suche oben einen Ort hinzufügen – danach lassen sich für ihn auch eigene Koordinaten eintragen.
                         </div>
                     @else
                         <ul class="flex flex-col gap-3">
@@ -411,8 +411,8 @@
                                     <div class="mt-3 flex flex-col gap-4">
                                         <flux:switch
                                             wire:model.live="locations.{{ $index }}.use_default_coordinates"
-                                            label="Standard-Koordinaten"
-                                            description="Stadt, sonst Region, sonst Hauptstadt des Landes."
+                                            label="Standard-Koordinaten verwenden"
+                                            description="Ausschalten, um eigene Koordinaten einzutragen. Standard ist die Stadt, sonst die Region, sonst die Hauptstadt des Landes."
                                             align="left"
                                         />
 

@@ -331,11 +331,44 @@
         </span>
     </div>
 
+    {{-- Auswahl und Loeschen: einzelne, die angehakten oder alle, die zu Reiter und Filtern passen --}}
+    @if ($tasks->total() > 0)
+        @php
+            $pageIds = collect($tasks->items())->map(fn ($task) => (string) $task->id)->all();
+            $pageSelected = $pageIds !== [] && array_diff($pageIds, $selected) === [];
+            $selectedCount = count($selected);
+        @endphp
+        <div class="-mb-2 flex min-h-9 flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <label class="inline-flex cursor-pointer items-center gap-2">
+                <input type="checkbox" wire:click="togglePage" @checked($pageSelected) wire:key="tasks-page-toggle-{{ $pageSelected ? 'on' : 'off' }}" class="size-4 rounded border-zinc-300 accent-[var(--color-accent)]" />
+                Alle auf dieser Seite auswählen
+            </label>
+
+            @if ($selectedCount > 0)
+                <span class="font-medium tabular-nums text-zinc-900 dark:text-white">{{ $selectedCount }} ausgewählt</span>
+                <flux:button
+                    size="sm"
+                    variant="danger"
+                    icon="trash"
+                    wire:click="deleteSelected"
+                    wire:confirm="{{ $selectedCount === 1 ? 'Die ausgewählte Aufgabe' : 'Die '.$selectedCount.' ausgewählten Aufgaben' }} löschen? Unteraufgaben werden mit gelöscht."
+                >Ausgewählte löschen</flux:button>
+                <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="clearSelection">Auswahl aufheben</flux:button>
+            @endif
+
+            <flux:spacer />
+
+            <flux:modal.trigger name="tasks-delete-all">
+                <flux:button size="sm" variant="ghost" icon="trash" class="!text-red-600">{{ $tasks->total() === 1 ? 'Die Aufgabe löschen …' : 'Alle '.number_format($tasks->total(), 0, ',', '.').' löschen …' }}</flux:button>
+            </flux:modal.trigger>
+        </div>
+    @endif
+
     {{-- Ergebnisse als Karten --}}
     <div
         class="grid gap-4 lg:grid-cols-2"
         wire:loading.class="opacity-60"
-        wire:target="tab, search, status, priorities, categories, due, dueFrom, dueTo, persons, personRole, teams, subject, sort, toggleDirection, removeFilter, resetFilters, toggleDone, gotoPage, nextPage, previousPage"
+        wire:target="tab, search, status, priorities, categories, due, dueFrom, dueTo, persons, personRole, teams, subject, sort, toggleDirection, removeFilter, resetFilters, toggleDone, delete, deleteSelected, deleteAll, gotoPage, nextPage, previousPage"
     >
         @forelse ($tasks as $task)
             @php
@@ -354,8 +387,9 @@
             >
                 {{-- Ueberschrift zuerst, daneben der Erledigt-Schalter --}}
                 <div class="flex items-start justify-between gap-3">
-                    <h2 class="min-w-0 text-base font-semibold leading-snug">
-                        {{-- Die ganze Karte oeffnet die Aufgabe in einem neuen Tab; nur der Schalter liegt darueber. --}}
+                    <input type="checkbox" wire:model.live="selected" value="{{ $task->id }}" aria-label="{{ $task->title }} auswählen" class="relative z-10 mt-1 size-4 shrink-0 rounded border-zinc-300 accent-[var(--color-accent)]" />
+                    <h2 class="min-w-0 flex-1 text-base font-semibold leading-snug">
+                        {{-- Die ganze Karte oeffnet die Aufgabe in einem neuen Tab; nur Auswahl, Menue und Schalter liegen darueber. --}}
                         <a
                             href="{{ route('adminv2.tasks.show', $task) }}"
                             target="_blank"
@@ -366,6 +400,23 @@
                             ])
                         >{{ $task->title }}</a>
                     </h2>
+
+                    <div class="relative z-10 -my-1 shrink-0">
+                        <flux:dropdown align="end">
+                            <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" aria-label="Aktionen für {{ $task->title }}" />
+
+                            <flux:menu>
+                                <flux:menu.item icon="arrow-top-right-on-square" :href="route('adminv2.tasks.show', $task)" target="_blank">Öffnen</flux:menu.item>
+                                <flux:menu.separator />
+                                <flux:menu.item
+                                    icon="trash"
+                                    variant="danger"
+                                    wire:click="delete({{ $task->id }})"
+                                    wire:confirm="Die Aufgabe „{{ $task->title }}“ löschen?{{ $task->subtasks_count ? ' Ihre '.$task->subtasks_count.' '.($task->subtasks_count === 1 ? 'Unteraufgabe wird' : 'Unteraufgaben werden').' mit gelöscht.' : '' }}"
+                                >Löschen</flux:menu.item>
+                            </flux:menu>
+                        </flux:dropdown>
+                    </div>
 
                     <button
                         type="button"
@@ -544,4 +595,26 @@
         </div>
     </flux:modal>
 
+    {{-- Rueckfrage: alle Aufgaben loeschen, die zu Reiter, Suche und Filtern passen --}}
+    <flux:modal name="tasks-delete-all" class="md:w-[34rem]">
+        <div class="flex flex-col gap-5">
+            <div>
+                <flux:heading size="lg">{{ $tasks->total() === 1 ? 'Die angezeigte Aufgabe löschen' : 'Alle '.number_format($tasks->total(), 0, ',', '.').' angezeigten Aufgaben löschen' }}</flux:heading>
+                <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    Gelöscht werden alle Aufgaben, die zum gewählten Reiter, zur Suche und zu den Filtern passen – auf allen Seiten, nicht nur auf dieser. Unteraufgaben gehen mit ihrer Hauptaufgabe.
+                </p>
+                <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    Reiter: <span class="font-medium text-zinc-900 dark:text-white">{{ $this->tabs()[$tab] ?? $tab }}</span>
+                    · Status: <span class="font-medium text-zinc-900 dark:text-white">{{ $this->statusOptions()[$status] ?? 'Offen' }}</span>
+                    @if (trim($search) !== '' || ! empty($badges)) · Suche bzw. Filter sind gesetzt @endif
+                </p>
+                <p class="mt-2 text-sm font-medium text-red-600 dark:text-red-400">Das lässt sich in der Oberfläche nicht rückgängig machen.</p>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
+                <flux:button variant="danger" icon="trash" wire:click="deleteAll">{{ $tasks->total() === 1 ? 'Aufgabe löschen' : 'Alle '.number_format($tasks->total(), 0, ',', '.').' löschen' }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </div>

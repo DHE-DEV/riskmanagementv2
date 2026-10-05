@@ -796,3 +796,77 @@ it('haengt eine Aufgabe an den Datensatz, der gerade bearbeitet wird', function 
         ->and($titles($list->set('subject', 'event')))->toBe([])
         ->and($titles($list->set('subject', 'none')))->toBe(['Ohne Bezug']);
 });
+
+it('loescht einzelne, ausgewaehlte und alle angezeigten Aufgaben', function () {
+    $anna = employee('Anna');
+    $dennis = employee('Dennis');
+    $this->actingAs($anna);
+
+    $titles = fn ($list) => collect($list->viewData('tasks')->items())->pluck('title')->all();
+    $mine = ['responsible_id' => $anna->id, 'created_by' => $anna->id];
+
+    $alpha = makeTask($mine + ['title' => 'Alpha']);
+    $bravo = makeTask($mine + ['title' => 'Bravo']);
+    $charlie = makeTask($mine + ['title' => 'Charlie']);
+    $delta = makeTask($mine + ['title' => 'Delta erledigt', 'status' => AdminTask::STATUS_DONE]);
+    $other = makeTask(['title' => 'Echo von Dennis', 'responsible_id' => $dennis->id, 'created_by' => $dennis->id]);
+    $sub = makeTask($mine + ['title' => 'Alpha Teil 1', 'parent_id' => $alpha->id]);
+
+    $this->get(route('adminv2.tasks.index'))
+        ->assertOk()
+        ->assertSee('Alle auf dieser Seite auswählen')
+        ->assertSee('löschen …');
+
+    // Einzeln – die Unteraufgabe geht mit.
+    $list = Livewire::test(Index::class)
+        ->call('delete', $alpha->id)
+        ->assertDispatched('adminv2-toast', message: 'Aufgabe „Alpha“ samt 1 Unteraufgabe gelöscht.');
+
+    expect(AdminTask::find($alpha->id))->toBeNull()
+        ->and(AdminTask::find($sub->id))->toBeNull()
+        // Geloescht heisst: im Papierkorb der Tabelle.
+        ->and(AdminTask::withTrashed()->find($alpha->id))->not->toBeNull()
+        ->and($titles($list))->toBe(['Charlie', 'Bravo']);
+
+    // Auswahl: ganze Seite an- und abwaehlen, dann die angehakten loeschen.
+    $list->call('togglePage')
+        ->assertSet('selected', [(string) $charlie->id, (string) $bravo->id])
+        ->assertSee('2 ausgewählt')
+        ->call('togglePage')
+        ->assertSet('selected', [])
+        ->set('selected', [(string) $bravo->id])
+        // Ein Filter hebt die Auswahl auf.
+        ->set('search', 'Bra')
+        ->assertSet('selected', [])
+        ->set('search', '')
+        ->set('selected', [(string) $bravo->id])
+        ->call('deleteSelected')
+        ->assertSet('selected', [])
+        ->assertDispatched('adminv2-toast', message: '1 Aufgabe gelöscht.');
+
+    expect(AdminTask::find($bravo->id))->toBeNull()
+        ->and($titles($list))->toBe(['Charlie']);
+
+    // "Alle loeschen" meint, was zu Reiter und Filtern passt: hier meine offenen Aufgaben.
+    makeTask($mine + ['title' => 'Foxtrott']);
+
+    $list->call('refresh')
+        ->assertSee('Alle 2 angezeigten Aufgaben löschen')
+        ->call('deleteAll')
+        ->assertDispatched('adminv2-toast', message: '2 Aufgaben gelöscht.');
+
+    // Erledigte und die Aufgaben anderer bleiben.
+    expect(AdminTask::pluck('title')->sort()->values()->all())->toBe(['Delta erledigt', 'Echo von Dennis']);
+
+    // Im Reiter "Alle" mit Status "Alle" verschwindet wirklich alles.
+    $list->set('tab', 'all')->set('status', 'all')
+        ->assertSee('Alle 2 angezeigten Aufgaben löschen')
+        ->call('deleteAll')
+        ->assertDispatched('adminv2-toast', message: '2 Aufgaben gelöscht.');
+
+    expect(AdminTask::count())->toBe(0)
+        ->and(AdminTask::withTrashed()->count())->toBe(7);
+
+    // Eine nicht mehr vorhandene Aufgabe loescht nichts.
+    $list->call('delete', $other->id)->call('deleteSelected')->assertDispatched('adminv2-toast', message: '0 Aufgaben gelöscht.');
+});
