@@ -264,14 +264,26 @@ class NotificationSettingsController extends Controller
             '{affected_trips_count}' => $affectedTripsCount,
         ];
 
+        // Die Test-Mail geht an genau die Empfaenger der Regel – wie der echte Versand.
+        // Die Login-Adresse des Kundenkontos gehoert nicht dazu (sie kann z. B. eine
+        // technische Adresse aus dem SSO sein). Den ersten TO-Empfaenger setzt Mail::to(),
+        // die uebrigen TO sowie CC und BCC ergaenzt die Mailable selbst.
+        $toRecipient = $rule->recipients->where('recipient_type', 'to')->first();
+
+        if (! $toRecipient) {
+            return response()->json(['success' => false, 'message' => 'Die Regel hat keinen Empfänger (An). Bitte zuerst einen eintragen.'], 422);
+        }
+
+        $recipientList = $rule->recipients->pluck('email')->implode(', ');
+
         try {
-            \Illuminate\Support\Facades\Mail::to($customer->email)
+            \Illuminate\Support\Facades\Mail::to($toRecipient->email)
                 ->send(new \App\Mail\RiskEventMail($template, $placeholders, $rule));
 
             NotificationLog::create([
                 'customer_id' => $customer->id,
                 'notification_rule_id' => $rule->id,
-                'recipient_email' => $customer->email,
+                'recipient_email' => $toRecipient->email,
                 'subject' => str_replace(array_keys($placeholders), array_values($placeholders), $template->subject),
                 'template_name' => $template->name,
                 'rule_name' => $rule->name,
@@ -279,7 +291,7 @@ class NotificationSettingsController extends Controller
                 'status' => 'sent',
             ]);
 
-            return response()->json(['success' => true, 'message' => 'Test-Mail für Regel "' . $rule->name . '" an ' . $customer->email . ' gesendet.']);
+            return response()->json(['success' => true, 'message' => 'Test-Mail für Regel "' . $rule->name . '" an ' . $recipientList . ' gesendet.']);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()], 500);
         }
