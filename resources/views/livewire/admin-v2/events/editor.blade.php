@@ -25,11 +25,11 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/de.js"></script>
     <style>
-        /* Doppelt so gross wie der Standard-Kalender; die Position rechnet
+        /* Anderthalbfache Groesse des Standard-Kalenders; die Position rechnet
            adminv2DateTimePicker selbst, damit der vergroesserte Kalender im
            Fenster bleibt. */
         .flatpickr-calendar.adminv2-calendar {
-            --adminv2-calendar-scale: 2;
+            --adminv2-calendar-scale: 1.5;
             transform: scale(var(--adminv2-calendar-scale));
             border-radius: 0.75rem;
             box-shadow: 0 0 0 1px rgb(228 228 231), 0 10px 25px rgb(0 0 0 / 0.15);
