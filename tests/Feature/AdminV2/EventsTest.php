@@ -137,7 +137,7 @@ it('filtert nach mehreren Prioritaeten, Typen und Laendern zugleich', function (
     $strike = eventType('strike');
     $health = eventType('health');
     $safety = eventType('safety');
-    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA', 'lat' => 41.9028, 'lng' => 12.4964]);
     $spain = Country::factory()->create(['iso_code' => 'ES', 'iso3_code' => 'ESP']);
     $japan = Country::factory()->create(['iso_code' => 'JP', 'iso3_code' => 'JPN']);
 
@@ -210,7 +210,7 @@ it('findet ueber das Zeitfenster alle Ereignisse, die sich damit ueberschneiden'
 
 it('speichert ein neues Ereignis als Entwurf und veroeffentlicht es erst mit Standort', function () {
     $type = eventType('safety');
-    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA', 'lat' => 41.9028, 'lng' => 12.4964]);
 
     $this->actingAs($admin = adminUser());
 
@@ -262,7 +262,7 @@ it('speichert ein neues Ereignis als Entwurf und veroeffentlicht es erst mit Sta
 
 it('aendert ein veroeffentlichtes Ereignis still und loest es erst ueber eine neue Version ab', function () {
     $type = eventType('travel');
-    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA', 'lat' => 41.9028, 'lng' => 12.4964]);
 
     $event = storedEvent();
     $event->eventTypes()->attach($type->id);
@@ -329,7 +329,7 @@ it('aendert ein veroeffentlichtes Ereignis still und loest es erst ueber eine ne
 
 it('verlangt eigene Koordinaten in lesbarer Form', function () {
     $type = eventType('health');
-    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA', 'lat' => 41.9028, 'lng' => 12.4964]);
 
     $this->actingAs(adminUser());
 
@@ -352,6 +352,115 @@ it('verlangt eigene Koordinaten in lesbarer Form', function () {
     expect((float) $pivot->latitude)->toBe(45.4642)
         ->and((float) $pivot->longitude)->toBe(9.19)
         ->and((bool) $pivot->use_default_coordinates)->toBeFalse();
+});
+
+it('nimmt fuer eine Region die Koordinaten ihrer Hauptstadt, nicht die der Landeshauptstadt', function () {
+    $type = eventType('weather');
+    $spain = Country::factory()->create(['iso_code' => 'ES', 'iso3_code' => 'ESP', 'lat' => 40.0, 'lng' => -4.0]);
+    \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => null, 'name_translations' => ['de' => 'Madrid'], 'is_capital' => true, 'lat' => 40.4168, 'lng' => -3.7038]);
+    $catalonia = \App\Models\Region::factory()->create(['country_id' => $spain->id, 'name_translations' => ['de' => 'Katalonien'], 'lat' => null, 'lng' => null]);
+    \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => $catalonia->id, 'name_translations' => ['de' => 'Girona'], 'is_capital' => false, 'is_regional_capital' => false, 'lat' => 41.9794, 'lng' => 2.8214]);
+    \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => $catalonia->id, 'name_translations' => ['de' => 'Barcelona'], 'is_capital' => false, 'is_regional_capital' => true, 'lat' => 41.3874, 'lng' => 2.1686]);
+
+    $this->actingAs(adminUser());
+
+    Livewire::test(Editor::class)
+        ->set('titles.de', 'Unwetter')
+        ->set('eventTypeIds', [(string) $type->id])
+        ->set('startDate', '2026-10-09T08:00')
+        ->call('addLocation', 'region', $catalonia->id)
+        ->assertSet('locations.0.coordinates', '41.3874, 2.1686')
+        ->assertSet('locations.0.coordinate_issue', null)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $pivot = CustomEvent::firstWhere('title', 'Unwetter')->countries()->first()->pivot;
+
+    expect((float) $pivot->latitude)->toBe(41.3874)
+        ->and((float) $pivot->longitude)->toBe(2.1686)
+        ->and((int) $pivot->region_id)->toBe($catalonia->id);
+});
+
+it('meldet eine Region ohne Hauptstadt statt still die Landeshauptstadt zu nehmen', function () {
+    $type = eventType('weather');
+    $spain = Country::factory()->create(['iso_code' => 'ES', 'iso3_code' => 'ESP', 'lat' => 40.0, 'lng' => -4.0]);
+    \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => null, 'name_translations' => ['de' => 'Madrid'], 'is_capital' => true, 'lat' => 40.4168, 'lng' => -3.7038]);
+    $aragon = \App\Models\Region::factory()->create(['country_id' => $spain->id, 'name_translations' => ['de' => 'Aragonien'], 'lat' => null, 'lng' => null]);
+    \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => $aragon->id, 'name_translations' => ['de' => 'Huesca'], 'is_capital' => false, 'is_regional_capital' => false, 'lat' => 42.14, 'lng' => -0.41]);
+
+    $this->actingAs(adminUser());
+
+    $editor = Livewire::test(Editor::class)
+        ->set('titles.de', 'Unwetter')
+        ->set('eventTypeIds', [(string) $type->id])
+        ->set('startDate', '2026-10-09T08:00')
+        ->call('addLocation', 'region', $aragon->id)
+        ->assertDispatched('adminv2-toast', variant: 'danger')
+        ->assertSet('locations.0.coordinates', '')
+        ->assertSee('Der Region Aragonien ist keine Hauptstadt zugeordnet')
+        ->call('save')
+        ->assertHasErrors('locations.0.coordinates');
+
+    expect(CustomEvent::where('title', 'Unwetter')->exists())->toBeFalse();
+
+    // Eigene Koordinaten sind der Ausweg, bis die Stammdaten gepflegt sind.
+    $editor->set('locations.0.use_default_coordinates', false)
+        ->set('locations.0.coordinates', '41.65, -0.88')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    // Und das Land selbst bekommt weiterhin seine Hauptstadt.
+    expect(app(\App\Services\CustomEventLocationService::class)->defaultCoordinatesFor($spain->id))->toBe([40.4168, -3.7038]);
+});
+
+it('klappt unter einem Land seine Regionen und unter einer Region ihre Staedte auf', function () {
+    $spain = Country::factory()->create(['iso_code' => 'ES', 'iso3_code' => 'ESP', 'name_translations' => ['de' => 'Spanien', 'en' => 'Spain']]);
+    $catalonia = \App\Models\Region::factory()->create(['country_id' => $spain->id, 'name_translations' => ['de' => 'Katalonien']]);
+    $andalusia = \App\Models\Region::factory()->create(['country_id' => $spain->id, 'name_translations' => ['de' => 'Andalusien']]);
+    $girona = \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => $catalonia->id, 'name_translations' => ['de' => 'Girona'], 'is_capital' => false, 'is_regional_capital' => false, 'population' => 100000, 'lat' => 41.9794, 'lng' => 2.8214]);
+    $barcelona = \App\Models\City::factory()->create(['country_id' => $spain->id, 'region_id' => $catalonia->id, 'name_translations' => ['de' => 'Barcelona'], 'is_capital' => false, 'is_regional_capital' => true, 'population' => 1600000, 'lat' => 41.3874, 'lng' => 2.1686]);
+
+    $this->actingAs(adminUser());
+
+    $editor = Livewire::test(Editor::class)
+        ->set('locationSearch', 'Spanien')
+        ->assertSee('Zuordnen')
+        ->assertDontSee('Andalusien')
+        ->call('browseCountry', $spain->id)
+        ->assertSet('browseCountryId', $spain->id)
+        ->assertSee('Andalusien')
+        ->assertSee('Katalonien')
+        ->assertDontSee('Barcelona')
+        ->call('browseRegion', $catalonia->id)
+        ->assertSee('Nur die Region zuordnen')
+        ->assertSee('Barcelona')
+        ->assertSee('Girona');
+
+    // Die Hauptstadt steht vorn, danach nach Groesse.
+    expect(array_column($editor->instance()->browseCities, 'id'))->toBe([$barcelona->id, $girona->id])
+        ->and(array_column($editor->instance()->browseRegions, 'name'))->toBe(['Andalusien', 'Katalonien']);
+
+    // Ein Klick auf die Stadt ordnet sie zu und raeumt die Suche auf.
+    $editor->call('addLocation', 'city', $girona->id)
+        ->assertSet('locations.0.city_id', $girona->id)
+        ->assertSet('locations.0.region_id', $catalonia->id)
+        ->assertSet('locations.0.coordinates', '41.9794, 2.8214')
+        ->assertSet('locationSearch', '')
+        ->assertSet('browseCountryId', null)
+        ->assertSet('browseRegionId', null);
+
+    // Nur die Region, ohne Stadt – und nur das Land, ohne Region – geht ebenso.
+    $editor->call('addLocation', 'region', $catalonia->id)
+        ->assertSet('locations.1.region_id', $catalonia->id)
+        ->assertSet('locations.1.city_id', null)
+        ->call('addLocation', 'country', $spain->id)
+        ->assertSet('locations.2.country_id', $spain->id)
+        ->assertSet('locations.2.region_id', null);
+
+    // Eine neue Suche klappt alles wieder zu.
+    $editor->call('browseCountry', $spain->id)
+        ->set('locationSearch', 'Kata')
+        ->assertSet('browseCountryId', null);
 });
 
 it('zeigt im Reiter "Heute angelegt" nur die heute erfassten Ereignisse', function () {
@@ -384,7 +493,7 @@ it('zeigt im Reiter "Heute angelegt" nur die heute erfassten Ereignisse', functi
 
 it('legt Ereignisse so an, dass die Kunden-Ansicht sie nach dem Veroeffentlichen zeigt', function () {
     $type = eventType('safety');
-    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA', 'lat' => 41.9028, 'lng' => 12.4964]);
 
     $this->actingAs(adminUser());
 

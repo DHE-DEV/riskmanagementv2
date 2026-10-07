@@ -82,6 +82,12 @@ class Editor extends Component
 
     public string $locationSearch = '';
 
+    /** Land, dessen Regionen unter dem Suchtreffer aufgeklappt sind. */
+    public ?int $browseCountryId = null;
+
+    /** Region, deren Staedte unter dem Suchtreffer aufgeklappt sind. */
+    public ?int $browseRegionId = null;
+
     public string $newVersionNote = '';
 
     public string $newVersionInternalNote = '';
@@ -229,6 +235,32 @@ class Editor extends Component
     }
 
     /**
+     * Regionen des aufgeklappten Landes.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    #[Computed]
+    public function browseRegions(): array
+    {
+        return $this->browseCountryId
+            ? app(CustomEventLocationService::class)->regionsOf($this->browseCountryId)
+            : [];
+    }
+
+    /**
+     * Staedte der aufgeklappten Region.
+     *
+     * @return array<int, array{id: int, name: string, is_regional_capital: bool}>
+     */
+    #[Computed]
+    public function browseCities(): array
+    {
+        return $this->browseRegionId
+            ? app(CustomEventLocationService::class)->citiesOf($this->browseRegionId)
+            : [];
+    }
+
+    /**
      * Alle Versionen dieses Ereignisses, neueste zuerst.
      */
     #[Computed]
@@ -257,6 +289,30 @@ class Editor extends Component
     // Standorte
     // ------------------------------------------------------------------
 
+    public function updatedLocationSearch(): void
+    {
+        $this->browseCountryId = null;
+        $this->browseRegionId = null;
+    }
+
+    /**
+     * Unter einem Land in den Suchtreffern seine Regionen zeigen – oder wieder
+     * einklappen.
+     */
+    public function browseCountry(int $countryId): void
+    {
+        $this->browseRegionId = null;
+        $this->browseCountryId = $this->browseCountryId === $countryId ? null : $countryId;
+    }
+
+    /**
+     * Unter einer Region ihre Staedte zeigen – oder wieder einklappen.
+     */
+    public function browseRegion(int $regionId): void
+    {
+        $this->browseRegionId = $this->browseRegionId === $regionId ? null : $regionId;
+    }
+
     public function addLocation(string $type, int $id): void
     {
         $service = app(CustomEventLocationService::class);
@@ -271,6 +327,8 @@ class Editor extends Component
             && (int) ($row['city_id'] ?? 0) === (int) $resolved['city_id']);
 
         $this->locationSearch = '';
+        $this->browseCountryId = null;
+        $this->browseRegionId = null;
 
         if ($alreadyListed) {
             $this->dispatch('adminv2-toast', message: 'Dieser Standort ist bereits zugeordnet.');
@@ -278,17 +336,42 @@ class Editor extends Component
             return;
         }
 
-        $coordinates = $service->defaultCoordinatesFor($resolved['country_id'], $resolved['region_id'], $resolved['city_id']);
-
-        $this->locations[] = $resolved + [
+        $row = $this->withDefaultCoordinates($resolved + [
             'label' => $service->label($resolved['country_id'], $resolved['region_id'], $resolved['city_id']),
             'iso_code' => \App\Models\Country::whereKey($resolved['country_id'])->value('iso_code'),
             'use_default_coordinates' => true,
-            'coordinates' => $coordinates ? $coordinates[0].', '.$coordinates[1] : '',
             'location_note' => '',
-        ];
+        ]);
+
+        $this->locations[] = $row;
+
+        if ($row['coordinate_issue']) {
+            $this->dispatch('adminv2-toast', message: $row['coordinate_issue'], variant: 'danger');
+        }
 
         $this->resetValidation('locations');
+    }
+
+    /**
+     * Standard-Koordinaten der Zeile ermitteln; gibt es keine, steht der Grund
+     * in "coordinate_issue", damit die Zeile ihn zeigen kann.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    protected function withDefaultCoordinates(array $row): array
+    {
+        $service = app(CustomEventLocationService::class);
+        $countryId = (int) $row['country_id'];
+        $regionId = ! empty($row['region_id']) ? (int) $row['region_id'] : null;
+        $cityId = ! empty($row['city_id']) ? (int) $row['city_id'] : null;
+
+        $coordinates = $service->defaultCoordinatesFor($countryId, $regionId, $cityId);
+
+        $row['coordinates'] = $coordinates ? $coordinates[0].', '.$coordinates[1] : '';
+        $row['coordinate_issue'] = $coordinates ? null : $service->missingDefaultCoordinatesReason($countryId, $regionId, $cityId);
+
+        return $row;
     }
 
     public function removeLocation(int $index): void
@@ -299,24 +382,24 @@ class Editor extends Component
 
     /**
      * Wird auf Standard-Koordinaten zurueckgeschaltet, zeigt die Zeile wieder
-     * die Koordinaten aus der Kaskade Stadt > Region > Hauptstadt > Land.
+     * die Koordinaten der Stadt, der Regionshauptstadt oder der Landeshauptstadt.
      */
     public function updatedLocations($value, string $key): void
     {
         [$index, $field] = array_pad(explode('.', $key, 2), 2, null);
 
-        if ($field !== 'use_default_coordinates' || ! $value || ! isset($this->locations[$index])) {
+        if ($field !== 'use_default_coordinates' || ! isset($this->locations[$index])) {
             return;
         }
 
-        $row = $this->locations[$index];
-        $coordinates = app(CustomEventLocationService::class)->defaultCoordinatesFor(
-            (int) $row['country_id'],
-            $row['region_id'] ? (int) $row['region_id'] : null,
-            $row['city_id'] ? (int) $row['city_id'] : null,
-        );
+        if (! $value) {
+            $this->locations[$index]['coordinate_issue'] = null;
 
-        $this->locations[$index]['coordinates'] = $coordinates ? $coordinates[0].', '.$coordinates[1] : '';
+            return;
+        }
+
+        $this->locations[$index] = $this->withDefaultCoordinates($this->locations[$index]);
+        $this->resetValidation("locations.{$index}.coordinates");
     }
 
     // ------------------------------------------------------------------
@@ -561,8 +644,8 @@ class Editor extends Component
     }
 
     /**
-     * Eigene Koordinaten muessen lesbar sein – sonst haette der Standort
-     * nach dem Speichern keine Position auf der Karte.
+     * Jeder Standort braucht eine Position auf der Karte: eigene Koordinaten
+     * muessen lesbar sein, Standard-Koordinaten muessen sich ermitteln lassen.
      */
     protected function validateLocations(bool $requireAtLeastOne): void
     {
@@ -570,8 +653,24 @@ class Editor extends Component
         $errors = [];
 
         foreach ($this->locations as $index => $row) {
-            if (empty($row['use_default_coordinates']) && ! $service->parseCoordinates($row['coordinates'] ?? '')) {
-                $errors["locations.{$index}.coordinates"] = 'Koordinaten nicht lesbar. Erwartet wird z. B. „50.1109, 8.6821“.';
+            if (empty($row['use_default_coordinates'])) {
+                if (! $service->parseCoordinates($row['coordinates'] ?? '')) {
+                    $errors["locations.{$index}.coordinates"] = 'Koordinaten nicht lesbar. Erwartet wird z. B. „50.1109, 8.6821“.';
+                }
+
+                continue;
+            }
+
+            // Ohne Standard-Koordinaten haette der Standort keine Position auf der
+            // Karte – der Grund (z. B. Region ohne Hauptstadt) steht in der Meldung.
+            $reason = $service->missingDefaultCoordinatesReason(
+                (int) $row['country_id'],
+                ! empty($row['region_id']) ? (int) $row['region_id'] : null,
+                ! empty($row['city_id']) ? (int) $row['city_id'] : null,
+            );
+
+            if ($reason) {
+                $errors["locations.{$index}.coordinates"] = $reason.' Bis dahin lassen sich eigene Koordinaten eintragen.';
             }
         }
 

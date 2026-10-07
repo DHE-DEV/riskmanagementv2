@@ -20,6 +20,124 @@
     {{-- Leaflet wie im uebrigen Projekt (Karten-Vorschau der Standorte) --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {{-- Kalender fuer Beginn und Ende – der Kalender des Browsers ist zu klein. --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/de.js"></script>
+    <style>
+        /* Doppelt so gross wie der Standard-Kalender; die Position rechnet
+           adminv2DateTimePicker selbst, damit der vergroesserte Kalender im
+           Fenster bleibt. */
+        .flatpickr-calendar.adminv2-calendar {
+            --adminv2-calendar-scale: 2;
+            transform: scale(var(--adminv2-calendar-scale));
+            border-radius: 0.75rem;
+            box-shadow: 0 0 0 1px rgb(228 228 231), 0 10px 25px rgb(0 0 0 / 0.15);
+        }
+        .flatpickr-calendar.adminv2-calendar:before,
+        .flatpickr-calendar.adminv2-calendar:after { display: none; }
+        .flatpickr-calendar.adminv2-calendar .flatpickr-day.selected,
+        .flatpickr-calendar.adminv2-calendar .flatpickr-day.selected:hover {
+            background: #171717; border-color: #171717; color: #fff;
+        }
+        .flatpickr-calendar.adminv2-calendar .flatpickr-day.today { border-color: #a3a3a3; }
+        .dark .flatpickr-calendar.adminv2-calendar {
+            background: #171717; color: #f5f5f5;
+            box-shadow: 0 0 0 1px rgb(63 63 70), 0 10px 25px rgb(0 0 0 / 0.5);
+        }
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-months .flatpickr-month,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-current-month,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-current-month input.cur-year,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-weekday,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-time input,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-time .flatpickr-time-separator,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-months .flatpickr-prev-month svg,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-months .flatpickr-next-month svg { color: #f5f5f5; fill: #f5f5f5; background: transparent; }
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day.prevMonthDay,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day.nextMonthDay,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day.flatpickr-disabled { color: #525252; }
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day:hover,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day.today:hover,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-time input:hover,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-time .numInputWrapper:hover { background: #262626; border-color: #262626; }
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day.selected,
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-day.selected:hover { background: #fff; border-color: #fff; color: #171717; }
+        .dark .flatpickr-calendar.adminv2-calendar .flatpickr-time,
+        .dark .flatpickr-calendar.adminv2-calendar.hasTime .flatpickr-time { border-top-color: #3f3f46; }
+    </style>
+    <script>
+        // Datum mit Uhrzeit: Livewire haelt "Y-m-d\TH:i" (wie datetime-local),
+        // angezeigt wird "TT.MM.JJJJ HH:MM". Aenderungen gehen als verzoegerte
+        // Aktualisierung mit der naechsten Anfrage mit; setzt der Server den
+        // Wert (z. B. aus einem KI-Vorschlag), folgt der Kalender.
+        window.adminv2DateTimePicker = (property) => {
+            const pad = (n) => String(n).padStart(2, '0');
+            const toIso = (date) => date
+                ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+                : '';
+            const toDate = (iso) => {
+                const date = iso ? new Date(iso) : null;
+
+                return date && ! Number.isNaN(date.getTime()) ? date : null;
+            };
+            let picker = null;
+
+            return {
+                init() {
+                    picker = flatpickr(this.$refs.input, {
+                        enableTime: true,
+                        time_24hr: true,
+                        allowInput: true,
+                        disableMobile: true,
+                        locale: 'de',
+                        dateFormat: 'd.m.Y H:i',
+                        defaultDate: toDate(this.$wire.get(property)),
+                        position: (self) => this.position(self),
+                        onReady: (dates, value, self) => self.calendarContainer.classList.add('adminv2-calendar'),
+                        onChange: (dates) => {
+                            const iso = toIso(dates[0]);
+
+                            if (iso !== (this.$wire.get(property) || '')) {
+                                this.$wire.set(property, iso, false);
+                            }
+                        },
+                    });
+
+                    this.$wire.$watch(property, (value) => {
+                        if (toIso(picker.selectedDates[0]) !== (value || '')) {
+                            picker.setDate(toDate(value), false);
+                        }
+                    });
+                },
+
+                // Der Kalender ist per transform vergroessert; flatpickr rechnet mit
+                // der unvergroesserten Box. Deshalb hier: unter das Feld, sonst
+                // darueber; linksbuendig, sonst rechtsbuendig – so bleibt er im Fenster.
+                position(self) {
+                    const calendar = self.calendarContainer;
+                    const scale = parseFloat(getComputedStyle(calendar).getPropertyValue('--adminv2-calendar-scale')) || 1;
+                    const field = self._input.getBoundingClientRect();
+                    const width = calendar.offsetWidth;
+                    const height = calendar.offsetHeight;
+                    const fitsRight = field.left + width * scale <= window.innerWidth - 8;
+                    const fitsBelow = field.bottom + 4 + height * scale <= window.innerHeight - 8 || field.top - 4 - height * scale < 8;
+
+                    calendar.style.transformOrigin = `${fitsBelow ? 'top' : 'bottom'} ${fitsRight ? 'left' : 'right'}`;
+                    calendar.style.left = `${window.scrollX + (fitsRight ? field.left : field.right - width)}px`;
+                    calendar.style.top = `${window.scrollY + (fitsBelow ? field.bottom + 4 : field.top - 4 - height)}px`;
+                    calendar.classList.toggle('arrowTop', fitsBelow);
+                    calendar.classList.toggle('arrowBottom', ! fitsBelow);
+                },
+
+                destroy() {
+                    picker?.destroy();
+                    picker = null;
+                },
+            };
+        };
+    </script>
     <script>
         // Kleine Karten-Vorschau mit Pin. Die Karte selbst liegt ausserhalb der
         // Alpine-Daten; aendern sich die Koordinaten, baut Livewire das Element neu auf.
@@ -327,8 +445,8 @@
             {{-- Zeitraum --}}
             <x-adminv2.card heading="Zeitraum" description="Reisen gelten als betroffen, wenn sich ihr Reisezeitraum mit diesem Zeitraum überschneidet.">
                 <div class="grid items-start gap-5 sm:grid-cols-2">
-                    <flux:input wire:model="startDate" type="datetime-local" label="Beginn" />
-                    <flux:input wire:model="endDate" type="datetime-local" label="Ende" description:trailing="Leer lassen für ein Ereignis ohne absehbares Ende." />
+                    <x-adminv2.datetime-picker property="startDate" label="Beginn" />
+                    <x-adminv2.datetime-picker property="endDate" label="Ende" description="Leer lassen für ein Ereignis ohne absehbares Ende." />
                 </div>
             </x-adminv2.card>
 
@@ -349,23 +467,70 @@
                             <div
                                 x-show="open"
                                 x-cloak
-                                class="absolute z-20 mt-1 max-h-80 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                                class="absolute z-20 mt-1 max-h-[32rem] w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
                             >
                                 @forelse ($this->locationResults as $result)
-                                    <button
-                                        type="button"
-                                        wire:key="result-{{ $result['type'] }}-{{ $result['id'] }}"
-                                        wire:click="addLocation('{{ $result['type'] }}', {{ $result['id'] }})"
-                                        class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-start text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                                    >
-                                        <span class="min-w-0">
-                                            <span class="font-medium text-zinc-900 dark:text-white">{{ $result['name'] }}</span>
-                                            @if ($result['context'] !== '')
-                                                <span class="text-zinc-500"> – {{ $result['context'] }}</span>
-                                            @endif
-                                        </span>
-                                        <span class="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{{ $typeLabels[$result['type']] }}</span>
-                                    </button>
+                                    @php
+                                        $isCity = $result['type'] === 'city';
+                                        $expanded = ($result['type'] === 'country' && $browseCountryId === $result['id'])
+                                            || ($result['type'] === 'region' && $browseRegionId === $result['id']);
+                                    @endphp
+                                    <div wire:key="result-{{ $result['type'] }}-{{ $result['id'] }}" @class(['rounded-lg', 'bg-zinc-50 dark:bg-zinc-800/60' => $expanded])>
+                                        <div class="flex items-center gap-2 pe-2">
+                                            {{-- Stadt: anklicken ordnet zu. Land/Region: anklicken klappt die
+                                                 Regionen bzw. Staedte auf, zugeordnet wird ueber den Knopf rechts. --}}
+                                            <button
+                                                type="button"
+                                                wire:click="{{ $isCity ? "addLocation('city', {$result['id']})" : ($result['type'] === 'country' ? "browseCountry({$result['id']})" : "browseRegion({$result['id']})") }}"
+                                                class="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-start text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                @if (! $isCity) aria-expanded="{{ $expanded ? 'true' : 'false' }}" @endif
+                                            >
+                                                @unless ($isCity)
+                                                    <flux:icon.chevron-right variant="micro" class="shrink-0 text-zinc-400 transition-transform {{ $expanded ? 'rotate-90' : '' }}" />
+                                                @endunless
+                                                <span class="min-w-0 truncate">
+                                                    <span class="font-medium text-zinc-900 dark:text-white">{{ $result['name'] }}</span>
+                                                    @if ($result['context'] !== '')
+                                                        <span class="text-zinc-500"> – {{ $result['context'] }}</span>
+                                                    @endif
+                                                </span>
+                                                <span class="ms-auto shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{{ $typeLabels[$result['type']] }}</span>
+                                            </button>
+                                            @unless ($isCity)
+                                                <flux:button size="xs" variant="subtle" icon="plus" wire:click="addLocation('{{ $result['type'] }}', {{ $result['id'] }})">Zuordnen</flux:button>
+                                            @endunless
+                                        </div>
+
+                                        @if ($expanded)
+                                            <div class="flex flex-col gap-2 px-3 pb-3 pt-1">
+                                                @if ($result['type'] === 'country')
+                                                    <x-adminv2.location-tags
+                                                        heading="Regionen"
+                                                        empty="Zu diesem Land sind keine Regionen hinterlegt."
+                                                        :items="$this->browseRegions"
+                                                        :active="$browseRegionId"
+                                                        click="browseRegion"
+                                                    />
+                                                @endif
+
+                                                @if ($browseRegionId && ($result['type'] === 'region' || collect($this->browseRegions)->contains('id', $browseRegionId)))
+                                                    @php $browsedRegion = $result['type'] === 'region' ? $result['name'] : collect($this->browseRegions)->firstWhere('id', $browseRegionId)['name']; @endphp
+                                                    <x-adminv2.location-tags
+                                                        wire:key="cities-{{ $browseRegionId }}"
+                                                        heading="Städte in {{ $browsedRegion }}"
+                                                        empty="Zu dieser Region sind keine Städte hinterlegt."
+                                                        :items="$this->browseCities"
+                                                        click="addLocation('city', :id)"
+                                                        :nested="$result['type'] === 'country'"
+                                                    >
+                                                        @if ($result['type'] === 'country')
+                                                            <flux:button size="xs" variant="subtle" icon="plus" wire:click="addLocation('region', {{ $browseRegionId }})">Nur die Region zuordnen</flux:button>
+                                                        @endif
+                                                    </x-adminv2.location-tags>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
                                 @empty
                                     <p class="px-3 py-2 text-sm text-zinc-500">Kein Ort gefunden für „{{ $locationSearch }}“.</p>
                                 @endforelse
@@ -412,7 +577,7 @@
                                         <flux:switch
                                             wire:model.live="locations.{{ $index }}.use_default_coordinates"
                                             label="Standard-Koordinaten verwenden"
-                                            description="Ausschalten, um eigene Koordinaten einzutragen. Standard ist die Stadt, sonst die Region, sonst die Hauptstadt des Landes."
+                                            description="Ausschalten, um eigene Koordinaten einzutragen. Standard ist die Stadt, bei einer Region ihre Hauptstadt, bei einem Land die Landeshauptstadt."
                                             align="left"
                                         />
 
@@ -458,7 +623,11 @@
                                                     @endif
                                                 </div>
                                             @else
-                                                <div class="text-sm text-amber-600 dark:text-amber-400">Für diesen Ort sind keine Koordinaten hinterlegt.</div>
+                                                <div class="text-sm text-red-600 dark:text-red-400">{{ $location['coordinate_issue'] ?? 'Für diesen Ort sind keine Koordinaten hinterlegt.' }}</div>
+                                            @endif
+
+                                            @if (! empty($location['use_default_coordinates']))
+                                                <flux:error name="locations.{{ $index }}.coordinates" />
                                             @endif
                                         </div>
 
