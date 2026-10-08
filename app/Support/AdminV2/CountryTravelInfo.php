@@ -143,6 +143,14 @@ class CountryTravelInfo
         ], array_filter((array) ($info['plug_types'] ?? []), fn ($type) => isset(self::PLUG_TYPES[$type]))));
     }
 
+    /** Deutsche Wochentage, Montag = 1 */
+    public const WEEKDAYS = [1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag', 5 => 'Freitag', 6 => 'Samstag', 7 => 'Sonntag'];
+
+    public static function weekday(\DateTimeInterface $date): string
+    {
+        return self::WEEKDAYS[(int) $date->format('N')] ?? '';
+    }
+
     /**
      * @return array<int, string>
      */

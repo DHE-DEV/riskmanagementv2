@@ -107,6 +107,14 @@ class Country extends Model
         return $this->belongsToMany(MobileOperator::class, 'country_mobile_operator')->orderBy('sort_order')->orderBy('name');
     }
 
+    /**
+     * Feiertage des Landes, nach Datum.
+     */
+    public function holidays(): HasMany
+    {
+        return $this->hasMany(CountryHoliday::class)->orderBy('date');
+    }
+
     public function heroImage(): HasOne
     {
         return $this->hasOne(CountryImage::class)->where('kind', CountryImage::KIND_HERO);

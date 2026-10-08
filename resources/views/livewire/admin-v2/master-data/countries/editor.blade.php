@@ -657,6 +657,167 @@
                 </div>
             </x-adminv2.card>
 
+            {{-- Feiertage: je Jahr mit Datum, Name und Kommentar je Sprache --}}
+            <x-adminv2.card
+                heading="Feiertage"
+                description="Gesetzliche Feiertage je Jahr, landesweit oder nur in einer Region – bewegliche Feiertage stehen mit ihrem Datum. Änderungen werden je Zeile gespeichert."
+                collapsible
+                collapse-key="country-holidays"
+            >
+                <x-slot:actions>
+                    @if ($record && $this->holidays->isNotEmpty())
+                        <flux:modal.trigger name="translate-holidays">
+                            <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
+                        </flux:modal.trigger>
+                    @endif
+                    <x-adminv2.ai-check-button section="holidays" />
+                </x-slot:actions>
+                @if ($record)
+                    @php
+                        $holidays = $this->holidays;
+                        $holidayInput = 'w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-[var(--color-accent)] dark:border-zinc-700 dark:bg-zinc-900 dark:text-white';
+                    @endphp
+                    <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Jahr</span>
+                                <div class="w-28">
+                                    <flux:select wire:model.live="holidayYear" size="sm" aria-label="Jahr">
+                                        @foreach ($this->holidayYears as $year)
+                                            <flux:select.option value="{{ $year }}">{{ $year }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                </div>
+                                @php $regional = $holidays->filter(fn ($holiday) => $holiday->regions->isNotEmpty())->count(); @endphp
+                                <span class="text-sm text-zinc-500 tabular-nums">{{ $holidays->count() }} {{ $holidays->count() === 1 ? 'Feiertag' : 'Feiertage' }}@if ($regional > 0), davon {{ $regional }} regional @endif</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Sprache</span>
+                                <div class="inline-flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+                                    @foreach ($noteLocales as $locale)
+                                        <button type="button" x-on:click="locale = @js($locale)" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="locale === @js($locale) ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-950 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'">
+                                            {{ CustomEvent::localeLabel($locale) }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
+                            @foreach ($holidays as $holiday)
+                                <li wire:key="holiday-{{ $holiday->id }}" class="flex flex-col gap-2 py-3">
+                                    <div class="grid items-start gap-2 sm:grid-cols-[9rem_minmax(0,1fr)_auto]">
+                                        <div>
+                                            <input type="date" wire:model="holidayRows.{{ $holiday->id }}.date" class="{{ $holidayInput }} tabular-nums" aria-label="Datum" />
+                                            <span class="mt-1 block text-xs text-zinc-500">{{ CountryTravelInfo::weekday($holiday->date) }}, {{ $holiday->date->format('d.m.Y') }}</span>
+                                            <flux:error name="holidayRows.{{ $holiday->id }}.date" />
+                                        </div>
+                                        <div>
+                                            @foreach ($noteLocales as $locale)
+                                                <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif>
+                                                    <input type="text" wire:model="holidayRows.{{ $holiday->id }}.name.{{ $locale }}" maxlength="255" class="{{ $holidayInput }} font-medium" placeholder="Name ({{ strtoupper($locale) }})" aria-label="Name ({{ strtoupper($locale) }})" />
+                                                    <flux:error name="holidayRows.{{ $holiday->id }}.name.{{ $locale }}" />
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <div class="flex items-center gap-1 whitespace-nowrap">
+                                            <flux:button size="xs" variant="ghost" icon="check" wire:click="saveHoliday({{ $holiday->id }})" aria-label="Feiertag speichern" />
+                                            <flux:button size="xs" variant="ghost" icon="trash" class="!text-red-600" wire:click="deleteHoliday({{ $holiday->id }})" wire:confirm="Feiertag „{{ $holiday->getName($sourceLocale) }}“ löschen?" aria-label="Feiertag löschen" />
+                                        </div>
+                                    </div>
+                                    @foreach ($noteLocales as $locale)
+                                        <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif>
+                                            <input type="text" wire:model="holidayRows.{{ $holiday->id }}.comment.{{ $locale }}" maxlength="2000" class="{{ $holidayInput }} text-zinc-600" placeholder="Kommentar ({{ strtoupper($locale) }}) – z. B. Geschäfte geschlossen, Brückentag" aria-label="Kommentar ({{ strtoupper($locale) }})" />
+                                        </div>
+                                    @endforeach
+                                    @php $assigned = (array) ($holidayRows[$holiday->id]['region_ids'] ?? []); @endphp
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        @if ($assigned === [])
+                                            <flux:badge size="sm" color="green" inset="top bottom">Landesweit</flux:badge>
+                                        @else
+                                            <span class="text-xs text-zinc-500">Gilt in:</span>
+                                            @foreach ($assigned as $regionId)
+                                                @php $regionLabel = collect($this->holidayRegionOptions)->firstWhere('value', (int) $regionId)['label'] ?? $regionId; @endphp
+                                                <span wire:key="holiday-{ $holiday->id }-region-{ $regionId }" class="inline-flex items-center gap-1 rounded-full bg-zinc-100 py-0.5 ps-2.5 pe-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                                    {{ $regionLabel }}
+                                                    <button type="button" wire:click="removeHolidayRegion('{ $holiday->id }', { $regionId })" class="rounded-full p-0.5 text-zinc-400 hover:text-red-600" aria-label="{{ $regionLabel }} entfernen"><flux:icon.x-mark variant="micro" /></button>
+                                                </span>
+                                            @endforeach
+                                        @endif
+                                        @if ($this->holidayRegionOptions !== [])
+                                            <select wire:model="holidayRows.{ $holiday->id }.add_region" wire:change="addHolidayRegion('{ $holiday->id }')" class="rounded-full border border-dashed border-zinc-300 bg-transparent py-0.5 ps-2 pe-6 text-xs text-zinc-600 dark:border-zinc-600 dark:text-zinc-400" aria-label="Region hinzufügen">
+                                                <option value="">+ Region</option>
+                                                @foreach ($this->holidayRegionOptions as $option)
+                                                    @if (! in_array((string) $option['value'], $assigned, true))
+                                                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                        <flux:error name="holidayRows.{ $holiday->id }.region_ids.*" />
+                                    </div>
+                                </li>
+                            @endforeach
+
+                            {{-- Neue Zeile --}}
+                            <li wire:key="holiday-new" class="-mx-5 flex flex-col gap-2 bg-zinc-50 px-5 py-3 dark:bg-zinc-900/40">
+                                <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Neuer Feiertag</p>
+                                <div class="grid items-start gap-2 sm:grid-cols-[9rem_minmax(0,1fr)_auto]">
+                                    <div>
+                                        <input type="date" wire:model="holidayRows.new.date" class="{{ $holidayInput }} tabular-nums" aria-label="Datum des neuen Feiertags" />
+                                        <flux:error name="holidayRows.new.date" />
+                                    </div>
+                                    <div>
+                                        @foreach ($noteLocales as $locale)
+                                            <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif>
+                                                <input type="text" wire:model="holidayRows.new.name.{{ $locale }}" maxlength="255" class="{{ $holidayInput }}" placeholder="Name ({{ strtoupper($locale) }})" aria-label="Name des neuen Feiertags ({{ strtoupper($locale) }})" />
+                                                <flux:error name="holidayRows.new.name.{{ $locale }}" />
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <flux:button size="sm" icon="plus" wire:click="addHoliday">Anlegen</flux:button>
+                                </div>
+                                @foreach ($noteLocales as $locale)
+                                    <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif>
+                                        <input type="text" wire:model="holidayRows.new.comment.{{ $locale }}" maxlength="2000" class="{{ $holidayInput }}" placeholder="Kommentar ({{ strtoupper($locale) }})" aria-label="Kommentar des neuen Feiertags ({{ strtoupper($locale) }})" />
+                                    </div>
+                                @endforeach
+                                    @php $assigned = (array) ($holidayRows['new']['region_ids'] ?? []); @endphp
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        @if ($assigned === [])
+                                            <flux:badge size="sm" color="green" inset="top bottom">Landesweit</flux:badge>
+                                        @else
+                                            <span class="text-xs text-zinc-500">Gilt in:</span>
+                                            @foreach ($assigned as $regionId)
+                                                @php $regionLabel = collect($this->holidayRegionOptions)->firstWhere('value', (int) $regionId)['label'] ?? $regionId; @endphp
+                                                <span wire:key="holiday-{ 'new' }-region-{ $regionId }" class="inline-flex items-center gap-1 rounded-full bg-zinc-100 py-0.5 ps-2.5 pe-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                                    {{ $regionLabel }}
+                                                    <button type="button" wire:click="removeHolidayRegion('{ 'new' }', { $regionId })" class="rounded-full p-0.5 text-zinc-400 hover:text-red-600" aria-label="{{ $regionLabel }} entfernen"><flux:icon.x-mark variant="micro" /></button>
+                                                </span>
+                                            @endforeach
+                                        @endif
+                                        @if ($this->holidayRegionOptions !== [])
+                                            <select wire:model="holidayRows.{ 'new' }.add_region" wire:change="addHolidayRegion('{ 'new' }')" class="rounded-full border border-dashed border-zinc-300 bg-transparent py-0.5 ps-2 pe-6 text-xs text-zinc-600 dark:border-zinc-600 dark:text-zinc-400" aria-label="Region hinzufügen">
+                                                <option value="">+ Region</option>
+                                                @foreach ($this->holidayRegionOptions as $option)
+                                                    @if (! in_array((string) $option['value'], $assigned, true))
+                                                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                        <flux:error name="holidayRows.{ 'new' }.region_ids.*" />
+                                    </div>
+                            </li>
+                        </ul>
+
+                        <x-adminv2.ai-field-hint key="holidays" :review="$aiReview" :applyable="false" />
+                    </div>
+                @else
+                    <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Feiertage lassen sich erfassen, sobald das Land gespeichert ist.</p>
+                @endif
+            </x-adminv2.card>
+
             {{-- Bilder: Flagge, Titelbild und Galerie --}}
             <x-adminv2.card
                 heading="Bilder"
@@ -1052,6 +1213,7 @@
     <x-adminv2.master-data.translate-modal section="tipping" what="die Trinkgeld-Beschreibungen" />
     <x-adminv2.master-data.translate-modal section="power" what="die Bemerkung zum Strom" />
     <x-adminv2.master-data.translate-modal section="images" what="Alt-Texte und Bildunterschriften aller Bilder" saved />
+    <x-adminv2.master-data.translate-modal section="holidays" what="Namen und Kommentare der Feiertage des gewählten Jahres" saved />
 
     <flux:modal name="translate-risk-notes" class="md:w-[32rem]">
         <div class="flex flex-col gap-5">

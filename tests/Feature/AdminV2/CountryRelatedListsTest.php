@@ -77,14 +77,17 @@ it('sucht in Regionen, Staedten und Flughaefen und schlaegt Treffer zur Autoverv
 
     $this->actingAs(relatedAdmin());
 
+    // Die Regionen stehen auch in der Auswahl der Feiertage – daher die Liste selbst pruefen.
+    $regionNames = fn ($editor) => $editor->instance()->related['regions']['items']->map(fn ($region) => $region->getName('de'))->all();
+
     $editor = Livewire::test(CountryEditor::class, ['country' => $germany->id])
         // Regionen: nach Name in beiden Sprachen und nach Code
-        ->set('relatedSearch.regions', 'bavar')
-        ->assertSee('Bayern')
-        ->assertDontSee('Hessen')
-        ->set('relatedSearch.regions', 'HE')
-        ->assertSee('Hessen')
-        ->assertDontSee('Bayern')
+        ->set('relatedSearch.regions', 'bavar');
+    expect($regionNames($editor))->toBe(['Bayern']);
+    $editor->set('relatedSearch.regions', 'HE');
+    expect($regionNames($editor))->toBe(['Hessen']);
+
+    $editor
         // Staedte
         ->set('relatedSearch.cities', 'münch')
         ->assertSee('München')

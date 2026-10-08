@@ -9,6 +9,7 @@ use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
+use App\Models\CountryHoliday;
 use App\Models\CountryImage;
 use App\Models\Currency;
 use App\Models\CustomEvent;
@@ -108,6 +109,18 @@ class Editor extends Component
     /** Suche in den verfuegbaren Mobilfunkanbietern */
     public string $mobileOperatorSearch = '';
 
+    // Feiertage
+    /** Jahr, dessen Feiertage die Karte zeigt */
+    public int $holidayYear = 0;
+
+    /**
+     * Feiertage im Formular: Feiertag-ID => date, name je Sprache, comment je
+     * Sprache, is_national. Der Schluessel "new" ist die Zeile zum Anlegen.
+     *
+     * @var array<int|string, array<string, mixed>>
+     */
+    public array $holidayRows = [];
+
     // Bilder
     /** @var array<int, \Livewire\Features\SupportFileUploads\TemporaryUploadedFile> gerade hochgeladene Dateien */
     public array $newImages = [];
@@ -166,6 +179,8 @@ class Editor extends Component
         $this->travelInfo = CountryTravelInfo::toForm($record->travel_info);
         $this->taxiAppIds = $record->taxiApps()->pluck('taxi_apps.id')->map(fn ($id) => (string) $id)->all();
         $this->mobileOperatorIds = $record->mobileOperators()->pluck('mobile_operators.id')->map(fn ($id) => (string) $id)->all();
+        $this->holidayYear = (int) now()->year;
+        $this->fillHolidayRows();
         $this->fillImageMeta();
         $this->fillCoordinates($record);
     }
@@ -311,6 +326,198 @@ class Editor extends Component
     {
         $this->taxiAppIds = array_values(array_diff($this->taxiAppIds, [(string) $appId]));
         unset($this->selectedTaxiApps);
+    }
+
+    // ------------------------------------------------------------------
+    // Feiertage
+    // ------------------------------------------------------------------
+
+    /**
+     * Die Feiertage des gewaehlten Jahres.
+     */
+    #[Computed]
+    public function holidays(): Collection
+    {
+        return $this->record ? $this->record->holidays()->with('regions')->inYear($this->holidayYear)->get() : collect();
+    }
+
+    /**
+     * Regionen des Landes fuer die Auswahl "gilt nur in …".
+     *
+     * @return array<int, array{value: int, label: string}>
+     */
+    #[Computed]
+    public function holidayRegionOptions(): array
+    {
+        return $this->record
+            ? $this->record->regions()->orderByRaw(MasterData::nameSql('regions'))->get()->map(fn ($region) => ['value' => $region->id, 'label' => $region->getName('de')])->all()
+            : [];
+    }
+
+    /**
+     * Jahre, zu denen Feiertage hinterlegt sind – plus das aktuelle und das naechste.
+     *
+     * @return array<int, int>
+     */
+    #[Computed]
+    public function holidayYears(): array
+    {
+        // Ohne die Sortierung der Relation – DISTINCT vertraegt kein ORDER BY nach einer anderen Spalte.
+        $years = $this->record ? $this->record->holidays()->reorder()->selectRaw('YEAR(date) as y')->distinct()->orderBy('y')->pluck('y')->map(fn ($y) => (int) $y)->all() : [];
+        $years = array_unique([...$years, (int) now()->year, (int) now()->year + 1]);
+        sort($years);
+
+        return $years;
+    }
+
+    public function updatedHolidayYear(): void
+    {
+        $this->holidayYear = max(1900, min(2100, (int) $this->holidayYear));
+        unset($this->holidays);
+        $this->fillHolidayRows();
+    }
+
+    protected function fillHolidayRows(): void
+    {
+        $this->holidayRows = ['new' => $this->emptyHolidayRow()];
+
+        foreach ($this->holidays as $holiday) {
+            $row = ['date' => $holiday->date->format('Y-m-d'), 'region_ids' => $holiday->regions->map(fn ($region) => (string) $region->id)->all(), 'add_region' => '', 'name' => [], 'comment' => []];
+            foreach (CountryTravelInfo::locales() as $locale) {
+                $row['name'][$locale] = (string) ($holiday->name_translations[$locale] ?? '');
+                $row['comment'][$locale] = (string) ($holiday->comment_translations[$locale] ?? '');
+            }
+            $this->holidayRows[$holiday->id] = $row;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function emptyHolidayRow(): array
+    {
+        $row = ['date' => '', 'region_ids' => [], 'add_region' => '', 'name' => [], 'comment' => []];
+        foreach (CountryTravelInfo::locales() as $locale) {
+            $row['name'][$locale] = '';
+            $row['comment'][$locale] = '';
+        }
+
+        return $row;
+    }
+
+    /**
+     * Regeln fuer eine Feiertagszeile.
+     *
+     * @return array{0: array<string, mixed>, 1: array<string, string>}
+     */
+    protected function holidayRules(string $key): array
+    {
+        $source = CustomEvent::sourceLocale();
+
+        return [[
+            'holidayRows.'.$key.'.date' => ['required', 'date_format:Y-m-d'],
+            'holidayRows.'.$key.'.region_ids' => ['array'],
+            'holidayRows.'.$key.'.region_ids.*' => [Rule::exists('regions', 'id')->where('country_id', $this->recordId)->whereNull('deleted_at')],
+            'holidayRows.'.$key.'.name.'.$source => ['required', 'string', 'max:255'],
+            'holidayRows.'.$key.'.name.*' => ['nullable', 'string', 'max:255'],
+            'holidayRows.'.$key.'.comment.*' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'holidayRows.'.$key.'.date.required' => 'Bitte ein Datum angeben.',
+            'holidayRows.'.$key.'.date.date_format' => 'Bitte ein gültiges Datum angeben.',
+            'holidayRows.'.$key.'.name.'.$source.'.required' => 'Bitte den Namen in der Ausgangssprache angeben.',
+            'holidayRows.'.$key.'.region_ids.*.exists' => 'Bitte Regionen dieses Landes wählen.',
+        ]];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function holidayAttributes(array $row): array
+    {
+        $clean = fn (array $texts) => array_filter(array_map(fn ($text) => trim((string) $text), $texts), fn ($text) => $text !== '');
+
+        return [
+            'date' => $row['date'],
+            'name_translations' => $clean((array) ($row['name'] ?? [])),
+            'comment_translations' => $clean((array) ($row['comment'] ?? [])) ?: null,
+            'is_national' => ($row['region_ids'] ?? []) === [],
+        ];
+    }
+
+    /**
+     * Einen Feiertag anlegen – aus der Zeile "new".
+     */
+    public function addHoliday(): void
+    {
+        abort_unless($this->record, 404);
+
+        [$rules, $messages] = $this->holidayRules('new');
+        $this->validate($rules, $messages);
+
+        $holiday = $this->record->holidays()->create($this->holidayAttributes($this->holidayRows['new']) + ['source' => CountryHoliday::SOURCE_MANUAL]);
+        $holiday->regions()->sync(array_map('intval', (array) ($this->holidayRows['new']['region_ids'] ?? [])));
+
+        $this->holidayYear = (int) $holiday->date->year;
+        $this->refreshHolidays();
+        $this->dispatch('adminv2-toast', message: 'Feiertag „'.$holiday->getName(CustomEvent::sourceLocale()).'“ angelegt.');
+    }
+
+    public function saveHoliday(int $holidayId): void
+    {
+        $holiday = $this->ownHoliday($holidayId);
+
+        [$rules, $messages] = $this->holidayRules((string) $holidayId);
+        $this->validate($rules, $messages);
+
+        $holiday->update($this->holidayAttributes($this->holidayRows[$holidayId]));
+        $holiday->regions()->sync(array_map('intval', (array) ($this->holidayRows[$holidayId]['region_ids'] ?? [])));
+
+        $this->holidayYear = (int) $holiday->date->year;
+        $this->refreshHolidays();
+        $this->dispatch('adminv2-toast', message: 'Feiertag gespeichert.');
+    }
+
+    /**
+     * Eine Region zur Zeile hinzufuegen (Auswahl "Region hinzufuegen") –
+     * gespeichert wird mit dem Haken der Zeile bzw. mit "Anlegen".
+     */
+    public function addHolidayRegion(string $key): void
+    {
+        $regionId = (string) ($this->holidayRows[$key]['add_region'] ?? '');
+        $this->holidayRows[$key]['add_region'] = '';
+
+        if ($regionId === '' || in_array($regionId, $this->holidayRows[$key]['region_ids'] ?? [], true)) {
+            return;
+        }
+
+        $this->holidayRows[$key]['region_ids'][] = $regionId;
+    }
+
+    public function removeHolidayRegion(string $key, int $regionId): void
+    {
+        $this->holidayRows[$key]['region_ids'] = array_values(array_diff((array) ($this->holidayRows[$key]['region_ids'] ?? []), [(string) $regionId]));
+    }
+
+    public function deleteHoliday(int $holidayId): void
+    {
+        $holiday = $this->ownHoliday($holidayId);
+        $holiday->delete();
+
+        $this->refreshHolidays();
+        $this->dispatch('adminv2-toast', message: 'Feiertag gelöscht.');
+    }
+
+    protected function ownHoliday(int $holidayId): CountryHoliday
+    {
+        abort_unless($this->record, 404);
+
+        return $this->record->holidays()->findOrFail($holidayId);
+    }
+
+    protected function refreshHolidays(): void
+    {
+        unset($this->holidays, $this->holidayYears);
+        $this->fillHolidayRows();
     }
 
     // ------------------------------------------------------------------
@@ -910,7 +1117,8 @@ class Editor extends Component
      *
      * details: Einleitung, "Bekannt fuer", Bezeichnung des Nationaltags.
      * power: Bemerkung zum Strom. tipping: Beschreibungen je Bereich. images: Alt-Texte und
-     * Bildunterschriften – die werden sofort am Bild gespeichert.
+     * Bildunterschriften, holidays: Namen und Kommentare der Feiertage des
+     * gewaehlten Jahres – beide werden sofort gespeichert.
      */
     public function translateTexts(string $section): void
     {
@@ -949,6 +1157,19 @@ class Editor extends Component
                 }
                 break;
 
+            case 'holidays':
+                foreach ($this->holidays as $holiday) {
+                    $before = $translated;
+                    $this->holidayRows[$holiday->id]['name'] = $this->translateMap((array) ($this->holidayRows[$holiday->id]['name'] ?? []), $deepl, $translated, $errors);
+                    $this->holidayRows[$holiday->id]['comment'] = $this->translateMap((array) ($this->holidayRows[$holiday->id]['comment'] ?? []), $deepl, $translated, $errors);
+
+                    if ($translated > $before) {
+                        $holiday->update($this->holidayAttributes($this->holidayRows[$holiday->id]));
+                    }
+                }
+                unset($this->holidays);
+                break;
+
             case 'images':
                 foreach ($this->images as $image) {
                     $before = $translated;
@@ -970,7 +1191,7 @@ class Editor extends Component
                 return;
         }
 
-        $saved = $section === 'images';
+        $saved = in_array($section, ['images', 'holidays'], true);
 
         $this->dispatch('adminv2-toast', ...match (true) {
             $errors !== [] => ['message' => 'Übersetzung teilweise fehlgeschlagen – '.implode(' | ', $errors), 'variant' => 'danger'],
@@ -1085,7 +1306,13 @@ class Editor extends Component
             .', Urheber: '.(($this->imageMeta[$image->id]['credit'] ?? '') ?: '–')
             .', Lizenz: '.(($this->imageMeta[$image->id]['license'] ?? '') ?: '–'))->values()->all();
 
+        $holidays = $this->holidays->map(fn (CountryHoliday $holiday) => $holiday->date->format('d.m.Y').' ('.CountryTravelInfo::weekday($holiday->date).')'.($holiday->regions->isNotEmpty() ? ' [nur '.$holiday->regions->map(fn ($region) => $region->getName('de'))->implode(', ').']' : '').': '.json_encode($this->holidayRows[$holiday->id]['name'] ?? [], JSON_UNESCAPED_UNICODE)
+            .(($this->holidayRows[$holiday->id]['comment'][CustomEvent::sourceLocale()] ?? '') !== '' ? ' – '.$this->holidayRows[$holiday->id]['comment'][CustomEvent::sourceLocale()] : ''))->values()->all();
+
         return $riskFields + $travel + [
+            'holidays_year' => $this->holidayYear,
+            'holidays_count' => $this->holidays->count(),
+            'holidays' => $holidays,
             'taxi_apps' => $this->selectedTaxiApps->map(fn (TaxiApp $app) => $app->name.($app->website_url ? ' – '.$app->website_url : ''))->values()->all(),
             'taxi_apps_available' => $this->taxiAppOptions->pluck('name')->values()->all(),
             'mobile_operators' => $this->selectedMobileOperators->map(fn (MobileOperator $operator) => $operator->name.($operator->website_url ? ' – '.$operator->website_url : ''))->values()->all(),

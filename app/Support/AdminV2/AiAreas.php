@@ -50,6 +50,7 @@ class AiAreas
                     'power' => ['label' => 'Strom', 'placeholders' => CountryTravelInfo::powerPlaceholders()],
                     'taxi_apps' => ['label' => 'Taxi-Apps', 'placeholders' => ['taxi_apps' => 'Zugeordnete Taxi-Apps (Liste)', 'taxi_apps_available' => 'Verfügbare Taxi-Apps (Liste)']],
                     'mobile_operators' => ['label' => 'Mobilfunkanbieter', 'placeholders' => ['mobile_operators' => 'Zugeordnete Mobilfunkanbieter (Liste)', 'mobile_operators_available' => 'Verfügbare Mobilfunkanbieter (Liste)']],
+                    'holidays' => ['label' => 'Feiertage', 'placeholders' => ['holidays_year' => 'Jahr', 'holidays_count' => 'Anzahl Feiertage', 'holidays' => 'Feiertage (Liste mit Datum, Namen, Kommentar)']],
                     'images' => ['label' => 'Bilder', 'placeholders' => ['flag' => 'Flagge', 'images_count' => 'Anzahl Bilder', 'images' => 'Bilder (Liste mit Alt-Text, Bildunterschrift, Urheber)']],
                 ],
             ],
