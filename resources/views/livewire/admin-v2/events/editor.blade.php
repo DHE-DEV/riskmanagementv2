@@ -293,6 +293,15 @@
         @endunless
     </div>
 
+    @if ($this->infosystemEntry)
+        <flux:callout icon="information-circle" heading="Aus dem Passolution Infosystem übernommen">
+            <flux:callout.text>
+                Titel, Beschreibung, Datum, Land und Event-Typen stammen aus dem Eintrag „{{ $this->infosystemEntry->header }}“ (API-ID {{ $this->infosystemEntry->api_id }}) und lassen sich vor dem Speichern anpassen. Mit dem Speichern gilt der Eintrag als veröffentlicht.
+                <a href="{{ route('adminv2.events.infosystem') }}" class="font-medium underline">Zum Infosystem</a>
+            </flux:callout.text>
+        </flux:callout>
+    @endif
+
     @if ($errors->any())
         <flux:callout variant="danger" icon="exclamation-triangle" heading="Bitte die markierten Angaben prüfen.">
             <flux:callout.text>

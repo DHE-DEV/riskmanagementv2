@@ -10,11 +10,13 @@ use App\Models\CustomEvent;
 use App\Models\CustomEventSourceCheck;
 use App\Models\EventDisplaySetting;
 use App\Models\EventType;
+use App\Models\InfosystemEntry;
 use App\Services\CustomEventLocationService;
 use App\Services\CustomEventVersionService;
 use App\Services\DeepLTranslationService;
 use App\Services\EventSourceCheckService;
 use App\Support\AdminV2\EventState;
+use App\Support\AdminV2\Infosystem;
 use App\Support\AdminV2\RichText;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -106,6 +108,13 @@ class Editor extends Component
     #[Locked]
     public ?string $taskToken = null;
 
+    /**
+     * API-ID des Infosystem-Eintrags, aus dem dieses Ereignis entsteht. Beim
+     * ersten Speichern wird der Eintrag als veroeffentlicht markiert.
+     */
+    #[Locked]
+    public ?int $infosystemApiId = null;
+
     public function mount($event = null): void
     {
         foreach (CustomEvent::translationLocales() as $locale) {
@@ -121,6 +130,10 @@ class Editor extends Component
             // schon bereit. Bleibt sie leer, wird sie beim Speichern verworfen.
             $this->addSource();
 
+            if (($apiId = (int) request()->query('infosystem')) > 0) {
+                $this->prefillFromInfosystem($apiId);
+            }
+
             return;
         }
 
@@ -128,6 +141,56 @@ class Editor extends Component
         $this->eventId = $record->id;
 
         $this->fillFrom($record);
+    }
+
+    /**
+     * Ein neues Ereignis aus einem Eintrag des Passolution Infosystems: Titel,
+     * Beschreibung, Datum, Land und Event-Typen sind vorbelegt – wie im
+     * bisherigen Admin. Ist der Eintrag schon veroeffentlicht, bleibt das
+     * Formular leer.
+     */
+    protected function prefillFromInfosystem(int $apiId): void
+    {
+        $entry = InfosystemEntry::query()->where('api_id', $apiId)->first();
+
+        if (! $entry || $entry->is_published) {
+            return;
+        }
+
+        $this->infosystemApiId = $entry->api_id;
+
+        $source = CustomEvent::sourceLocale();
+        $this->titles[$source] = Str::limit(Infosystem::title($entry->header), 255, '');
+        $this->contents[$source] = Infosystem::contentHtml($entry->content);
+
+        if ($entry->tagdate) {
+            $this->startDate = $entry->tagdate->format('Y-m-d\T00:00');
+        }
+
+        $this->eventTypeIds = array_map('strval', Infosystem::eventTypeIds($entry));
+
+        $country = $entry->country_code
+            ? \App\Models\Country::query()
+                ->where('iso_code', strtoupper($entry->country_code))
+                ->orWhere('iso3_code', strtoupper($entry->country_code))
+                ->first()
+            : null;
+
+        if (! $country && ($name = $entry->getCountryName('de'))) {
+            $country = \App\Models\Country::query()->where('name_translations->de', $name)->first();
+        }
+
+        if ($country) {
+            $this->addLocation('country', $country->id);
+        }
+    }
+
+    #[Computed]
+    public function infosystemEntry(): ?InfosystemEntry
+    {
+        return $this->infosystemApiId
+            ? InfosystemEntry::query()->where('api_id', $this->infosystemApiId)->first()
+            : null;
     }
 
     protected function fillFrom(CustomEvent $event): void
@@ -692,7 +755,8 @@ class Editor extends Component
             $event = $this->event ?? new CustomEvent([
                 // Ein neues Ereignis ist ein Entwurf, bis es veroeffentlicht wird.
                 'is_active' => false,
-                'data_source' => 'manual',
+                'data_source' => $this->infosystemApiId ? 'passolution_infosystem' : 'manual',
+                'data_source_id' => $this->infosystemApiId ? (string) $this->infosystemApiId : null,
                 'created_by' => auth()->id(),
             ]);
 
@@ -744,6 +808,18 @@ class Editor extends Component
                     'subject_token' => null,
                 ]);
                 $this->taskToken = null;
+            }
+
+            // Der Infosystem-Eintrag gilt ab jetzt als veroeffentlicht – wie im
+            // bisherigen Admin schon beim Anlegen, nicht erst beim Veroeffentlichen.
+            if ($this->infosystemApiId !== null) {
+                InfosystemEntry::query()->where('api_id', $this->infosystemApiId)->update([
+                    'is_published' => true,
+                    'published_at' => now(),
+                    'published_as_event_id' => $event->id,
+                ]);
+                $this->infosystemApiId = null;
+                unset($this->infosystemEntry);
             }
 
             $this->eventId = $event->id;

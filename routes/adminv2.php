@@ -18,6 +18,7 @@ use App\Livewire\AdminV2\Dashboard;
 use App\Livewire\AdminV2\Events\AiResults as EventAiResults;
 use App\Livewire\AdminV2\Events\Editor as EventEditor;
 use App\Livewire\AdminV2\Events\Index as EventIndex;
+use App\Livewire\AdminV2\Events\Infosystem as EventInfosystem;
 use App\Livewire\AdminV2\Events\Overview as EventOverview;
 use App\Livewire\AdminV2\Events\RuleCheck as EventRuleCheck;
 use App\Livewire\AdminV2\MasterData\Airlines\Editor as AirlineEditor;
@@ -38,9 +39,13 @@ use App\Livewire\AdminV2\MasterData\Section as MasterDataSection;
 use App\Livewire\AdminV2\Rules\Show as RuleShow;
 use App\Livewire\AdminV2\System\Ai as SystemAi;
 use App\Livewire\AdminV2\System\AiSearchEditor as SystemAiSearchEditor;
+use App\Livewire\AdminV2\System\Automator\Index as AutomatorIndex;
+use App\Livewire\AdminV2\System\Automator\Monitor as AutomatorMonitor;
 use App\Livewire\AdminV2\System\RecurringTasks\Editor as RecurringTaskEditor;
 use App\Livewire\AdminV2\System\RecurringTasks\Index as RecurringTaskIndex;
 use App\Livewire\AdminV2\System\Teams as SystemTeams;
+use App\Livewire\AdminV2\System\Templates\Editor as TemplateEditor;
+use App\Livewire\AdminV2\System\Templates\Index as TemplateIndex;
 use App\Livewire\AdminV2\Tasks\Detail as TaskDetail;
 use App\Livewire\AdminV2\Tasks\Index as TaskIndex;
 use App\Support\AdminV2\MasterData;
@@ -67,6 +72,7 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('events/overview', EventOverview::class)->name('events.overview');
         Route::get('events', EventIndex::class)->name('events.index');
         Route::get('events/ai-results', EventAiResults::class)->name('events.ai-results');
+        Route::get('events/infosystem', EventInfosystem::class)->name('events.infosystem');
         Route::get('events/create', EventEditor::class)->name('events.create');
         Route::get('events/{event}', EventEditor::class)->whereNumber('event')->name('events.edit');
         Route::get('events/{event}/rules', EventRuleCheck::class)->whereNumber('event')->name('events.rules');
@@ -150,6 +156,10 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('system/recurring-tasks', RecurringTaskIndex::class)->name('system.recurring-tasks.index');
         Route::get('system/recurring-tasks/create', RecurringTaskEditor::class)->name('system.recurring-tasks.create');
         Route::get('system/recurring-tasks/{recurrence}', RecurringTaskEditor::class)->whereNumber('recurrence')->name('system.recurring-tasks.edit');
+        Route::get('system/automator', AutomatorIndex::class)->name('system.automator.index');
+        Route::get('system/automator/monitor', AutomatorMonitor::class)->name('system.automator.monitor');
+        Route::get('system/templates', TemplateIndex::class)->name('system.templates.index');
+        Route::get('system/templates/{template}', TemplateEditor::class)->whereNumber('template')->name('system.templates.edit');
 
         Route::post('logout', function (Request $request) {
             Auth::guard('web')->logout();

@@ -8,6 +8,8 @@
     // Offene KI-Vorschlaege fuer Ereignisse.
     $openAiSuggestions = \App\Models\AiEventSuggestion::query()->open()->count();
     $myOpenTasks = $user ? \App\Models\AdminTask::query()->open()->handledBy($user->id)->count() : 0;
+    // Automator: wartende Jobs, rot sobald etwas fehlgeschlagen ist.
+    $automator = \App\Livewire\AdminV2\System\Automator\Index::counts();
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -15,7 +17,8 @@
         @include('components.layouts.adminv2.head')
     </head>
     <body class="min-h-screen bg-zinc-50 antialiased dark:bg-zinc-900">
-        <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        {{-- Ein Fuenftel breiter als die Vorgabe (16rem), damit lange Eintraege nicht abgeschnitten werden. --}}
+        <flux:sidebar sticky stashable class="w-[19.2rem] border-e border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('adminv2.dashboard') }}" class="flex items-center gap-3 px-2 py-1">
@@ -40,9 +43,17 @@
                     Aufgaben
                 </flux:navlist.item>
 
-                <flux:navlist.group heading="Ereignisse" class="mt-4">
+                <x-adminv2.nav-group heading="Ereignisse" key="events" class="mt-4">
                     <flux:navlist.item icon="chart-bar" :href="route('adminv2.events.overview')" :current="request()->routeIs('adminv2.events.overview')">
                         Übersicht
+                    </flux:navlist.item>
+                    <flux:navlist.item
+                        icon="sparkles"
+                        :href="route('adminv2.events.ai-results')"
+                        :current="request()->routeIs('adminv2.events.ai-results')"
+                        :badge="$openAiSuggestions ?: null"
+                    >
+                        KI Suchergebnisse
                     </flux:navlist.item>
                     <flux:navlist.item
                         icon="map-pin"
@@ -53,17 +64,12 @@
                     >
                         Passolution Ereignisse
                     </flux:navlist.item>
-                    <flux:navlist.item
-                        icon="sparkles"
-                        :href="route('adminv2.events.ai-results')"
-                        :current="request()->routeIs('adminv2.events.ai-results')"
-                        :badge="$openAiSuggestions ?: null"
-                    >
-                        KI Suchergebnisse
+                    <flux:navlist.item icon="information-circle" :href="route('adminv2.events.infosystem')" :current="request()->routeIs('adminv2.events.infosystem')">
+                        Passolution Infosystem
                     </flux:navlist.item>
-                </flux:navlist.group>
+                </x-adminv2.nav-group>
 
-                <flux:navlist.group heading="Stammdaten" class="mt-4">
+                <x-adminv2.nav-group heading="Stammdaten" key="master-data" class="mt-4">
                     @foreach (\App\Support\AdminV2\MasterData::sections() as $sectionKey => $sectionDefinition)
                         <flux:navlist.item
                             :icon="$sectionDefinition['icon']"
@@ -73,9 +79,9 @@
                             {{ $sectionDefinition['label'] }}
                         </flux:navlist.item>
                     @endforeach
-                </flux:navlist.group>
+                </x-adminv2.nav-group>
 
-                <flux:navlist.group heading="Kundenverwaltung" class="mt-4">
+                <x-adminv2.nav-group heading="Kundenverwaltung" key="customer-management" class="mt-4">
                     @foreach (\App\Support\AdminV2\CustomerManagement::sections() as $sectionDefinition)
                         <flux:navlist.item
                             :icon="$sectionDefinition['icon']"
@@ -85,9 +91,9 @@
                             {{ $sectionDefinition['label'] }}
                         </flux:navlist.item>
                     @endforeach
-                </flux:navlist.group>
+                </x-adminv2.nav-group>
 
-                <flux:navlist.group heading="System" class="mt-4">
+                <x-adminv2.nav-group heading="System" key="system" class="mt-4">
                     <flux:navlist.item icon="sparkles" :href="route('adminv2.system.ai')" :current="request()->routeIs('adminv2.system.ai', 'adminv2.system.ai.*')">
                         KI
                     </flux:navlist.item>
@@ -97,7 +103,19 @@
                     <flux:navlist.item icon="user-group" :href="route('adminv2.system.teams')" :current="request()->routeIs('adminv2.system.teams')">
                         Teams
                     </flux:navlist.item>
-                </flux:navlist.group>
+                    <flux:navlist.item icon="envelope" :href="route('adminv2.system.templates.index')" :current="request()->routeIs('adminv2.system.templates.*')">
+                        Vorlagen
+                    </flux:navlist.item>
+                    <flux:navlist.item
+                        icon="queue-list"
+                        :href="route('adminv2.system.automator.index')"
+                        :current="request()->routeIs('adminv2.system.automator.*')"
+                        :badge="$automator['failed'] > 0 ? $automator['pending'].' / '.$automator['failed'] : ($automator['pending'] ?: null)"
+                        :badge-color="$automator['failed'] > 0 ? 'red' : 'green'"
+                    >
+                        Automator
+                    </flux:navlist.item>
+                </x-adminv2.nav-group>
             </flux:navlist>
 
             <flux:spacer />
