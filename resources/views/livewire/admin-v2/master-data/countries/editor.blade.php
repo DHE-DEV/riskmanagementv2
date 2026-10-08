@@ -26,6 +26,12 @@
         :subtitle="$record ? trim($record->iso_code.' · '.$record->iso3_code, ' ·') : null"
         :record="$record"
     >
+        @if ($record)
+            {{-- API-Test: zeigt, was GET /v1/countries/{code} fuer dieses Land liefert --}}
+            <flux:modal.trigger name="api-test">
+                <flux:button variant="ghost" icon="code-bracket" wire:click="loadApiPreview">API-Test</flux:button>
+            </flux:modal.trigger>
+        @endif
         <x-adminv2.cards-toggle />
     </x-adminv2.master-data.editor-header>
 
@@ -1256,6 +1262,69 @@
     <x-adminv2.master-data.translate-modal section="power" what="die Bemerkung zum Strom" />
     <x-adminv2.master-data.translate-modal section="images" what="Alt-Texte und Bildunterschriften aller Bilder" saved />
     <x-adminv2.master-data.translate-modal section="holidays" what="Namen und Kommentare der Feiertage des gewählten Jahres" saved />
+
+    {{-- API-Test: Antwort des Endpunkts GET /v1/countries/{code} als JSON --}}
+    @if ($record)
+        <flux:modal name="api-test" class="md:w-[64rem] md:max-w-5xl">
+            <div class="flex flex-col gap-5" x-data="{ copied: false }">
+                <div>
+                    <flux:heading size="lg">API-Test · Länderinformationen</flux:heading>
+                    <flux:text class="mt-2">
+                        So liefert die Global Travel Monitor API die Angaben zu {{ $record->getName('de') }} – gespeicherter Stand, Änderungen auf dieser Seite zählen erst nach „Speichern“.
+                        Abruf mit einem Kunden-Token mit der Berechtigung <code class="rounded bg-zinc-100 px-1 dark:bg-zinc-800">gtm:read</code>.
+                    </flux:text>
+                </div>
+
+                <div class="flex flex-wrap items-end gap-3">
+                    <flux:field class="w-40">
+                        <flux:label>Sprache</flux:label>
+                        <flux:select wire:model="apiPreviewLang" wire:change="loadApiPreview">
+                            <flux:select.option value="">Alle Sprachen</flux:select.option>
+                            @foreach (CountryTravelInfo::locales() as $locale)
+                                <flux:select.option value="{{ $locale }}">{{ CustomEvent::localeLabel($locale, false) }} ({{ strtoupper($locale) }})</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    </flux:field>
+                    <flux:field class="w-32">
+                        <flux:label>Feiertage Jahr</flux:label>
+                        <flux:input wire:model="apiPreviewYear" wire:change="loadApiPreview" inputmode="numeric" placeholder="{{ now()->year }}" />
+                    </flux:field>
+                    <flux:button icon="arrow-path" wire:click="loadApiPreview" wire:loading.attr="disabled" wire:target="loadApiPreview">Neu abrufen</flux:button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                    <span class="rounded bg-emerald-100 px-1.5 py-0.5 font-semibold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">GET</span>
+                    <span class="min-w-0 flex-1 break-all" x-ref="url">{{ $this->apiPreviewUrl() }}</span>
+                </div>
+
+                <div class="flex flex-col gap-2" wire:loading.class="opacity-50" wire:target="loadApiPreview">
+                    @if ($apiPreviewError)
+                        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">{{ $apiPreviewError }}</div>
+                    @elseif ($apiPreview !== null)
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-zinc-600 dark:text-zinc-400">Antwort · {{ number_format(strlen($apiPreview), 0, ',', '.') }} Zeichen</span>
+                            <flux:button
+                                size="sm"
+                                variant="ghost"
+                                icon="clipboard"
+                                x-on:click="navigator.clipboard.writeText($refs.json.textContent).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"
+                            >
+                                <span x-text="copied ? 'Kopiert' : 'JSON kopieren'"></span>
+                            </flux:button>
+                        </div>
+                        <pre x-ref="json" class="max-h-[60vh] overflow-auto rounded-xl border border-zinc-200 bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-100 dark:border-zinc-800">{{ $apiPreview }}</pre>
+                    @else
+                        <div class="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800" wire:loading.remove wire:target="loadApiPreview">Noch nichts abgerufen.</div>
+                        <div class="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800" wire:loading wire:target="loadApiPreview">Wird abgerufen …</div>
+                    @endif
+                </div>
+
+                <div class="flex justify-end">
+                    <flux:modal.close><flux:button variant="ghost">Schließen</flux:button></flux:modal.close>
+                </div>
+            </div>
+        </flux:modal>
+    @endif
 
     <flux:modal name="translate-risk-notes" class="md:w-[32rem]">
         <div class="flex flex-col gap-5">

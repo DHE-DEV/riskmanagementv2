@@ -349,6 +349,57 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /countries/{code}:
+    get:
+      tags: [Basisdaten]
+      summary: Alle Angaben eines Landes
+      description: |
+        Liefert Grunddaten, Länderbeschreibung, Reiseinformationen, Strom, Trinkgeld,
+        Taxi-Apps, Mobilfunkanbieter, Feiertage, Bilder und Risikoprofil eines Landes.
+        Mehrsprachige Texte kommen als Objekt je Sprache; mit `lang` als String in dieser Sprache.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Za-z]{2,3}$'
+          description: "ISO 3166-1 alpha-2 oder alpha-3 Code (z.B. DE oder DEU)"
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [de, en, nl]
+          description: "Nur diese Sprache statt aller Sprachen"
+        - name: year
+          in: query
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+          description: "Jahr der Feiertage (Standard: laufendes Jahr)"
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CountryDetail'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
   /regions:
     get:
       tags: [Basisdaten]
@@ -613,6 +664,243 @@ components:
         is_schengen_member:
           type: boolean
           example: true
+
+    TranslatedText:
+      description: "Text je Sprache; mit ?lang= ein einzelner String"
+      oneOf:
+        - type: object
+          additionalProperties:
+            type: string
+          example: {de: "Deutschland", en: "Germany", nl: "Duitsland"}
+        - type: string
+
+    CountryDetail:
+      type: object
+      properties:
+        iso_code:
+          type: string
+          example: DE
+        iso3_code:
+          type: string
+          example: DEU
+        name:
+          $ref: '#/components/schemas/TranslatedText'
+        continent:
+          type: object
+          nullable: true
+          properties:
+            code: {type: string, example: EU}
+            name: {$ref: '#/components/schemas/TranslatedText'}
+        territory:
+          type: object
+          properties:
+            type: {type: string, enum: [sovereign, dependent, disputed, special], nullable: true}
+            type_label: {type: string, nullable: true}
+            parent_country:
+              type: object
+              nullable: true
+              properties:
+                iso_code: {type: string}
+                name: {$ref: '#/components/schemas/TranslatedText'}
+        membership:
+          type: object
+          properties:
+            eu: {type: boolean}
+            schengen: {type: boolean}
+        currency:
+          type: object
+          nullable: true
+          properties:
+            code: {type: string, example: EUR}
+            name: {type: string, nullable: true}
+            symbol: {type: string, nullable: true}
+        phone_prefix: {type: string, nullable: true, example: "+49"}
+        timezone: {type: string, nullable: true, example: Europe/Berlin}
+        languages:
+          type: array
+          items: {type: string}
+        population: {type: integer, nullable: true}
+        area_km2: {type: number, nullable: true}
+        coordinates:
+          type: object
+          nullable: true
+          properties:
+            lat: {type: number}
+            lng: {type: number}
+        flag:
+          type: object
+          properties:
+            svg_url: {type: string, nullable: true}
+            emoji: {type: string, nullable: true}
+        description:
+          type: object
+          properties:
+            short: {$ref: '#/components/schemas/TranslatedText'}
+            long: {$ref: '#/components/schemas/TranslatedText'}
+            known_for:
+              description: "Stichworte je Sprache; mit ?lang= ein Array"
+              oneOf:
+                - type: object
+                  additionalProperties:
+                    type: array
+                    items: {type: string}
+                - type: array
+                  items: {type: string}
+        travel_info:
+          type: object
+          properties:
+            intro: {$ref: '#/components/schemas/TranslatedText'}
+            driving_side: {type: string, enum: [right, left], nullable: true}
+            driving_side_label: {type: string, nullable: true}
+            emergency:
+              type: object
+              properties:
+                general: {type: string, nullable: true}
+                police: {type: string, nullable: true}
+                ambulance: {type: string, nullable: true}
+                fire: {type: string, nullable: true}
+            religions:
+              type: array
+              items:
+                type: object
+                properties:
+                  key: {type: string, example: christianity}
+                  name: {$ref: '#/components/schemas/TranslatedText'}
+            national_day:
+              type: object
+              nullable: true
+              properties:
+                date: {type: string, format: date, description: "Jahr kann das historische sein"}
+                day_month: {type: string, example: "10-03"}
+                name: {$ref: '#/components/schemas/TranslatedText'}
+        power:
+          type: object
+          properties:
+            voltage: {type: integer, nullable: true, example: 230}
+            frequency: {type: integer, nullable: true, example: 50}
+            plug_types:
+              type: array
+              items:
+                type: object
+                properties:
+                  type: {type: string, example: F}
+                  description: {type: string}
+                  image: {type: string, format: uri}
+            notes: {$ref: '#/components/schemas/TranslatedText'}
+        tipping:
+          type: object
+          description: "Je Bereich hotels, guides, restaurants, taxi eine Angabe oder null"
+          additionalProperties:
+            type: object
+            nullable: true
+            properties:
+              mode: {type: string, enum: [range, fixed]}
+              from: {type: number, nullable: true}
+              to: {type: number, nullable: true}
+              unit: {type: string, enum: [percent, amount], nullable: true}
+              currency: {type: string, nullable: true}
+              description: {$ref: '#/components/schemas/TranslatedText'}
+        taxi_apps:
+          type: array
+          items:
+            type: object
+            properties:
+              name: {type: string}
+              description: {$ref: '#/components/schemas/TranslatedText'}
+              logo_url: {type: string, nullable: true}
+              website_url: {type: string, nullable: true}
+              app_store_url: {type: string, nullable: true}
+              play_store_url: {type: string, nullable: true}
+        mobile_operators:
+          type: array
+          items:
+            type: object
+            properties:
+              name: {type: string}
+              description: {$ref: '#/components/schemas/TranslatedText'}
+              logo_url: {type: string, nullable: true}
+              website_url: {type: string, nullable: true}
+              prepaid_url: {type: string, nullable: true}
+              offers_esim: {type: boolean}
+        holidays:
+          type: object
+          properties:
+            year: {type: integer, example: 2026}
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: {type: integer}
+                  date: {type: string, format: date}
+                  weekday: {type: integer, description: "ISO-Wochentag, 1 = Montag"}
+                  name: {$ref: '#/components/schemas/TranslatedText'}
+                  comment: {$ref: '#/components/schemas/TranslatedText'}
+                  is_national: {type: boolean}
+                  regions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: {type: integer}
+                        code: {type: string, nullable: true}
+                        name: {$ref: '#/components/schemas/TranslatedText'}
+        images:
+          type: object
+          properties:
+            hero: {$ref: '#/components/schemas/CountryImage'}
+            hero_url: {type: string, nullable: true}
+            gallery:
+              type: array
+              items: {$ref: '#/components/schemas/CountryImage'}
+        risk_profile:
+          type: object
+          nullable: true
+          properties:
+            overall:
+              type: object
+              properties:
+                level: {type: integer, nullable: true, minimum: 1, maximum: 5}
+                label: {type: string, nullable: true}
+            categories:
+              type: object
+              description: "security, health, natural_hazards, infrastructure, entry, climate, culture_law"
+              additionalProperties:
+                type: object
+                properties:
+                  label: {type: string}
+                  fields:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        value:
+                          nullable: true
+                          description: "Stufe 1–5, Ja/Nein, Zahl, Liste oder Text"
+                        label: {type: string, nullable: true, description: "nur bei Stufen"}
+                        note: {$ref: '#/components/schemas/TranslatedText'}
+        updated_at: {type: string, format: date-time}
+
+    CountryImage:
+      type: object
+      nullable: true
+      properties:
+        id: {type: integer}
+        kind: {type: string, enum: [hero, gallery]}
+        url: {type: string, format: uri}
+        thumb_url: {type: string, format: uri}
+        width: {type: integer, nullable: true}
+        height: {type: integer, nullable: true}
+        focal:
+          type: object
+          properties:
+            x: {type: number, nullable: true}
+            y: {type: number, nullable: true}
+        alt: {$ref: '#/components/schemas/TranslatedText'}
+        caption: {$ref: '#/components/schemas/TranslatedText'}
+        credit: {type: string, nullable: true}
+        license: {type: string, nullable: true}
+        source_url: {type: string, nullable: true}
 
     CountryWithEvents:
       type: object

@@ -33,6 +33,7 @@ Route::get('/v1', function () {
             'Basisdaten' => [
                 'Kontinente' => '/v1/continents',
                 'Länder' => '/v1/countries',
+                'Länderinformationen' => '/v1/countries/{code}',
                 'Regionen' => '/v1/regions',
                 'Event-Kategorien' => '/v1/event-categories',
             ],
@@ -117,6 +118,7 @@ Route::prefix('v1')->middleware([
     // Basisdaten
     Route::get('/continents', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'continents'])->name('sub.v1.continents');
     Route::get('/countries', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'countries'])->name('sub.v1.countries');
+    Route::get('/countries/{code}', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'country'])->name('sub.v1.countries.show');
     Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('sub.v1.regions');
     Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('sub.v1.event-categories');
 });

@@ -90,6 +90,15 @@ class Editor extends Component
     /** Beim Uebersetzen der Notizen bereits ausgefuellte Sprachen ueberschreiben */
     public bool $overwriteNoteTranslations = false;
 
+    /** API-Test: Antwort von GET /v1/countries/{code} als formatiertes JSON */
+    public ?string $apiPreview = null;
+
+    public ?string $apiPreviewError = null;
+
+    public string $apiPreviewLang = '';
+
+    public string $apiPreviewYear = '';
+
     // Reiseinformationen (siehe CountryTravelInfo)
     public string $territoryType = 'sovereign';
 
@@ -1120,6 +1129,53 @@ class Editor extends Component
      * Bildunterschriften, holidays: Namen und Kommentare der Feiertage des
      * gewaehlten Jahres – beide werden sofort gespeichert.
      */
+    /**
+     * API-Test: ruft die Laenderinformationen ueber den API-Controller ab
+     * (dieselbe Antwort wie GET /v1/countries/{code}) und zeigt sie als JSON.
+     */
+    public function loadApiPreview(): void
+    {
+        $this->apiPreview = null;
+        $this->apiPreviewError = null;
+
+        if (! $this->record) {
+            $this->apiPreviewError = 'Die API liefert nur gespeicherte Länder – bitte zuerst speichern.';
+
+            return;
+        }
+
+        $query = array_filter([
+            'lang' => $this->apiPreviewLang ?: null,
+            'year' => trim($this->apiPreviewYear) !== '' ? (int) $this->apiPreviewYear : null,
+        ]);
+
+        $request = \Illuminate\Http\Request::create($this->apiPreviewUrl(), 'GET', $query);
+        $request->headers->set('Accept', 'application/json');
+
+        try {
+            $response = app(\App\Http\Controllers\Api\V1\BaseDataController::class)->country($request, (string) $this->record->iso_code);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->apiPreviewError = implode(' ', array_map(fn (array $messages) => implode(' ', $messages), $exception->errors()));
+
+            return;
+        }
+
+        $this->apiPreview = json_encode($response->getData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Oeffentliche Adresse des Endpunkts fuer dieses Land.
+     */
+    public function apiPreviewUrl(): string
+    {
+        $query = array_filter([
+            'lang' => $this->apiPreviewLang ?: null,
+            'year' => trim($this->apiPreviewYear) !== '' ? trim($this->apiPreviewYear) : null,
+        ]);
+
+        return 'https://'.config('app.api_domain').'/v1/countries/'.($this->record?->iso_code ?? '{code}').($query ? '?'.http_build_query($query) : '');
+    }
+
     public function translateTexts(string $section): void
     {
         $this->modal('translate-'.$section)->close();

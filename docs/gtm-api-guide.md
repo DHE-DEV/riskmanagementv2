@@ -369,11 +369,115 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "lat": 51.1657,
       "lng": 10.4515,
       "is_eu_member": true,
-      "is_schengen_member": true
+      "is_schengen_member": true,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "hero_image_url": "https://global-travel-monitor.eu/images/countries/de.jpg"
     }
   ]
 }
 ```
+
+---
+
+### Länderinformationen
+
+```
+GET /v1/countries/{code}
+```
+
+Liefert alle Angaben eines Landes strukturiert: Grunddaten, Länderbeschreibung, Reiseinformationen, Strom, Trinkgeld, Taxi-Apps, Mobilfunkanbieter, Feiertage, Bilder und Risikoprofil. `{code}` ist der ISO-3166-1-Code mit zwei (`DE`) oder drei Buchstaben (`DEU`), Groß-/Kleinschreibung spielt keine Rolle.
+
+Mehrsprachige Texte kommen als Objekt je Sprache (`{"de": "…", "en": "…", "nl": "…"}`). Mit `lang` wird daraus der Text in dieser Sprache; fehlt er, kommt die deutsche Fassung.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `lang` | string | Nein | Nur diese Sprache (`de`, `en`, `nl`) statt aller Sprachen |
+| `year` | integer | Nein | Jahr der Feiertage (Standard: laufendes Jahr) |
+
+**Beispiele:**
+
+```bash
+# Alle Angaben zu Deutschland, alle Sprachen
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/countries/DE"
+
+# Nur Englisch, Feiertage 2027
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/countries/DEU?lang=en&year=2027"
+```
+
+**Response (200 OK, gekürzt):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "iso_code": "DE",
+    "iso3_code": "DEU",
+    "name": {"de": "Deutschland", "en": "Germany", "nl": "Duitsland"},
+    "continent": {"code": "EU", "name": {"de": "Europa", "en": "Europe"}},
+    "territory": {"type": "sovereign", "type_label": "Souveräner Staat", "parent_country": null},
+    "membership": {"eu": true, "schengen": true},
+    "currency": {"code": "EUR", "name": "Euro", "symbol": "€"},
+    "phone_prefix": "+49",
+    "timezone": "Europe/Berlin",
+    "languages": ["de"],
+    "population": 84000000,
+    "area_km2": 357588,
+    "coordinates": {"lat": 51.1657, "lng": 10.4515},
+    "flag": {"svg_url": "https://flagcdn.com/de.svg", "emoji": "🇩🇪"},
+    "description": {
+      "short": {"de": "…", "en": "…", "nl": "…"},
+      "long": {"de": "…", "en": "…", "nl": "…"},
+      "known_for": {"de": ["Berlin", "Oktoberfest"], "en": ["Berlin", "Oktoberfest"]}
+    },
+    "travel_info": {
+      "intro": {"de": "…"},
+      "driving_side": "right",
+      "driving_side_label": "Rechtsverkehr",
+      "emergency": {"general": "112", "police": "110", "ambulance": "112", "fire": "112"},
+      "religions": [{"key": "christianity", "name": {"de": "Christentum", "en": "Christianity"}}],
+      "national_day": {"date": "1990-10-03", "day_month": "10-03", "name": {"de": "Tag der Deutschen Einheit"}}
+    },
+    "power": {
+      "voltage": 230,
+      "frequency": 50,
+      "plug_types": [{"type": "F", "description": "Schuko (Deutschland)", "image": "https://…/images/plug-types/f.svg"}],
+      "notes": {}
+    },
+    "tipping": {
+      "hotels": {"mode": "range", "from": 1, "to": 2, "unit": "amount", "currency": "EUR", "description": {"de": "…"}},
+      "guides": null,
+      "restaurants": {"mode": "range", "from": 5, "to": 10, "unit": "percent", "currency": null, "description": {"de": "…"}},
+      "taxi": {"mode": "fixed", "from": 1, "to": null, "unit": "amount", "currency": "EUR", "description": {}}
+    },
+    "taxi_apps": [{"name": "FREENOW", "description": {"de": "…"}, "logo_url": "…", "website_url": "…", "app_store_url": "…", "play_store_url": "…"}],
+    "mobile_operators": [{"name": "Telekom", "description": {}, "logo_url": "…", "website_url": "…", "prepaid_url": null, "offers_esim": true}],
+    "holidays": {
+      "year": 2026,
+      "items": [{"id": 1, "date": "2026-10-03", "weekday": 6, "name": {"de": "Tag der Deutschen Einheit"}, "comment": {}, "is_national": true, "regions": []}]
+    },
+    "images": {"hero": null, "hero_url": "https://…/images/countries/de.jpg", "gallery": []},
+    "risk_profile": {
+      "overall": {"level": 2, "label": "Niedrig"},
+      "categories": {
+        "security": {"label": "Sicherheit", "fields": {"overall_risk_level": {"value": 2, "label": "Niedrig", "note": {}}, "...": "…"}},
+        "...": "…"
+      }
+    },
+    "updated_at": "2026-10-08T15:20:11+00:00"
+  }
+}
+```
+
+Hinweise zu einzelnen Feldern:
+
+- `tipping.*.mode`: `range` (von–bis) oder `fixed` (fester Wert, dann ist `to` leer); `unit`: `percent` oder `amount` in `currency`.
+- `holidays.items[].weekday`: ISO-Wochentag, 1 = Montag; `regions` leer bedeutet landesweit.
+- `risk_profile.categories.*.fields.*.value`: Stufen 1–5 (mit `label`), Ja/Nein, Zahlen, Listen oder Text; `note` nur bei Punkten mit Notiz.
+- Fehlt ein Bereich (z. B. kein Risikoprofil), ist der Wert `null`; leere mehrsprachige Texte sind `{}`.
 
 ---
 
@@ -528,7 +632,40 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `lng` | number / null | Längengrad (Zentroid) |
 | `is_eu_member` | boolean | EU-Mitglied |
 | `is_schengen_member` | boolean | Schengen-Mitglied |
+| `name_nl` | string / null | Ländername (niederländisch) |
+| `flag_url` | string / null | Flagge als SVG |
+| `hero_image_url` | string / null | Titelbild für Listen |
 | `active_events_count` | integer | Anzahl aktiver Events |
+
+---
+
+### Länderinformationen (Countries/{code}-Endpoint)
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `iso_code`, `iso3_code` | string | ISO-3166-1-Codes |
+| `name` | Text | Ländername je Sprache |
+| `continent` | object / null | `code`, `name` (Text) |
+| `territory` | object | `type` (`sovereign`, `dependent`, `disputed`, `special`), `type_label`, `parent_country` (`iso_code`, `name`) |
+| `membership` | object | `eu`, `schengen` (boolean) |
+| `currency` | object / null | `code`, `name`, `symbol` |
+| `phone_prefix`, `timezone` | string / null | Vorwahl, IANA-Zeitzone |
+| `languages` | string[] | Sprachcodes |
+| `population`, `area_km2` | number / null | Einwohner, Fläche |
+| `coordinates` | object / null | `lat`, `lng` (Mittelpunkt) |
+| `flag` | object | `svg_url`, `emoji` |
+| `description` | object | `short` (Text), `long` (Text, Absätze durch Leerzeilen), `known_for` (Liste je Sprache) |
+| `travel_info` | object | `intro` (Text), `driving_side` (`right`/`left`), `emergency` (`general`, `police`, `ambulance`, `fire`), `religions[]` (`key`, `name`), `national_day` (`date`, `day_month`, `name`) |
+| `power` | object | `voltage`, `frequency`, `plug_types[]` (`type`, `description`, `image`), `notes` (Text) |
+| `tipping` | object | je `hotels`, `guides`, `restaurants`, `taxi`: `mode`, `from`, `to`, `unit`, `currency`, `description` oder `null` |
+| `taxi_apps[]` | object | `name`, `description`, `logo_url`, `website_url`, `app_store_url`, `play_store_url` |
+| `mobile_operators[]` | object | `name`, `description`, `logo_url`, `website_url`, `prepaid_url`, `offers_esim` |
+| `holidays` | object | `year`, `items[]` (`id`, `date`, `weekday`, `name`, `comment`, `is_national`, `regions[]`) |
+| `images` | object | `hero` (Bild oder null), `hero_url`, `gallery[]` (Bilder mit `url`, `thumb_url`, `width`, `height`, `focal`, `alt`, `caption`, `credit`, `license`) |
+| `risk_profile` | object / null | `overall` (`level`, `label`), `categories` je Bereich mit `label` und `fields` (`value`, bei Stufen `label`, `note`) |
+| `updated_at` | string | Letzte Änderung (ISO 8601) |
+
+„Text“ steht für ein Objekt je Sprache, mit `?lang=` für einen String.
 
 ---
 

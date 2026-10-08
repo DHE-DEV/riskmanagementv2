@@ -14,12 +14,16 @@ class CountryResource extends JsonResource
             'iso3_code' => $this->iso3_code,
             'name_de' => $this->getName('de'),
             'name_en' => $this->getName('en'),
+            'name_nl' => $this->name_translations['nl'] ?? null,
             'continent' => $this->whenLoaded('continent', fn () => $this->continent?->getName('en')),
             'continent_de' => $this->whenLoaded('continent', fn () => $this->continent?->getName('de')),
             'lat' => $this->lat ? (float) $this->lat : null,
             'lng' => $this->lng ? (float) $this->lng : null,
             'is_eu_member' => (bool) $this->is_eu_member,
             'is_schengen_member' => (bool) $this->is_schengen_member,
+            // Fuer Listen in Apps: Flagge und Titelbild, Details unter /countries/{code}.
+            'flag_url' => $this->flag_url,
+            'hero_image_url' => $this->hero_image_url,
         ];
     }
 }

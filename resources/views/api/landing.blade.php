@@ -329,6 +329,7 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/countries</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/continents</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/regions</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-categories</span></li>
                 </ul>
