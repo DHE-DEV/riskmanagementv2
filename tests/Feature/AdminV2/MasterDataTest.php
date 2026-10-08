@@ -14,6 +14,7 @@ use App\Models\Continent;
 use App\Models\Country;
 use App\Models\Region;
 use App\Models\User;
+use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\Coordinates;
 use App\Support\AdminV2\CountryRiskProfile;
 use App\Support\AdminV2\MasterData;
@@ -644,7 +645,7 @@ it('fuehrt eine KI-Pruefung mit den Daten des Abschnitts aus und zeigt Verbrauch
         ->assertSee('Koordinaten prüfen')
         ->assertSee('Währung prüfen');
 
-    expect(array_keys($component->get('aiData')))->toContain('iso_code', 'currency_code', 'lat', 'risk_profile');
+    expect(array_keys($component->get('aiData')))->toContain('iso_code', 'currency_code', 'lat', 'risk_security_overall_risk_level');
 });
 
 it('haengt die Abschnittsdaten an, wenn der Prompt keine Platzhalter nutzt, und faengt Fehler ab', function () {
@@ -1066,8 +1067,9 @@ it('speichert Notizen zu den Punkten des Risikoprofils je Sprache und uebersetzt
     expect($country->fresh()->risk_profile['security'])->toEqual(['crime_level' => 2]);
 });
 
-it('prueft das Risikoprofil Feld fuer Feld und uebernimmt Stufen, Schalter und Listen', function () {
+it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Schalter und Listen', function () {
     config(['services.openai.key' => 'test-key']);
+    // Die KI bekommt nur die Felder des geoeffneten Bereichs – Antworten zu anderen Bereichen bleiben unberuecksichtigt.
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-2024-08-06',
         'choices' => [['message' => ['content' => json_encode([
@@ -1088,16 +1090,30 @@ it('prueft das Risikoprofil Feld fuer Feld und uebernimmt Stufen, Schalter und L
     $europe = continent('Europa', 'EU');
     $country = country('Testland', 'TL', $europe, ['risk_profile' => ['climate' => ['climate_zone' => 'tropisch']]]);
 
-    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
-        ->call('openAiCheck', 'risk_profile')
+    // Jeder Bereich des Risikoprofils ist ein eigener KI-Abschnitt.
+    expect(array_keys(AiAreas::sectionLabels('countries')))->toContain('risk_security', 'risk_health', 'risk_climate', 'risk_culture_law')
+        ->and(AiAreas::placeholders('countries', 'risk_climate'))->toHaveKey('risk_climate_climate_zone')
+        ->and(AiAreas::placeholders('countries', 'risk_climate'))->not->toHaveKey('risk_health_malaria_risk');
+
+    Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('openAiCheck', 'risk_climate')
         ->set('aiCheckId', 'review')
         ->call('reviewAiFields')
         ->assertSet('aiError', null)
-        ->assertSee('Sicherheit › Gesamt-Sicherheitsrisiko')
-        ->assertSee('KI-Vorschlag:');
+        ->assertSet('aiReview.fields.risk_security_overall_risk_level', null);
 
-    // Die KI bekommt jedes Feld einzeln, lesbar beschriftet.
-    Http::assertSent(fn ($request) => str_contains($request->data()['messages'][0]['content'] ?? '', 'risk_climate_climate_zone („Klima › Klimazone“): tropisch'));
+    // Die KI bekommt jedes Feld des Bereichs einzeln, lesbar beschriftet – und nur diese.
+    Http::assertSent(fn ($request) => str_contains($content = $request->data()['messages'][0]['content'] ?? '', 'risk_climate_climate_zone („Klima › Klimazone“): tropisch')
+        && str_contains($content, 'Abschnitt: Klima')
+        && ! str_contains($content, 'risk_health_malaria_risk'));
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('openAiCheck', 'risk_health')
+        ->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->assertSee('Gesundheit › Malaria-Risiko')
+        ->assertSee('KI-Vorschlag:');
 
     // Die Begruendung der KI laesst sich in die Notiz des Punktes uebernehmen.
     $component->assertSee('Text in Notiz übernehmen')
@@ -1109,10 +1125,22 @@ it('prueft das Risikoprofil Feld fuer Feld und uebernimmt Stufen, Schalter und L
         ->assertSet('riskProfile.health.notes.malaria_risk.de', "Eigene Notiz.\nIn Teilen des Landes.");
 
     $component->call('applyAllAiSuggestions')
-        ->assertSet('riskProfile.security.overall_risk_level', '3')
-        ->assertSet('riskProfile.security.crime_level', '4')
         ->assertSet('riskProfile.health.malaria_risk', true)
         ->assertSet('riskProfile.health.required_vaccinations', 'Gelbfieber, Polio')
+        // Andere Bereiche bleiben von dieser Pruefung unberuehrt.
+        ->assertSet('riskProfile.security.overall_risk_level', '')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    // Stufen, Zahlen und ungueltige Werte in den anderen Bereichen.
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id]);
+
+    foreach (['risk_security', 'risk_entry', 'risk_natural_hazards'] as $section) {
+        $component->call('openAiCheck', $section)->set('aiCheckId', 'review')->call('reviewAiFields')->assertSet('aiError', null)->call('applyAllAiSuggestions');
+    }
+
+    $component->assertSet('riskProfile.security.overall_risk_level', '3')
+        ->assertSet('riskProfile.security.crime_level', '4')
         ->assertSet('riskProfile.entry.passport_validity_months', '6')
         // "extrem" ist keine Stufe – bleibt offen.
         ->assertSet('riskProfile.natural_hazards.flood_risk', '')

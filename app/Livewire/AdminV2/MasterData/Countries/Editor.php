@@ -1138,6 +1138,12 @@ class Editor extends Component
         $errors = [];
 
         switch ($section) {
+            case 'description':
+                foreach (array_keys(CountryTravelInfo::DESCRIPTION_TEXTS) as $field) {
+                    $this->travelInfo['texts'][$field] = $this->translateMap((array) ($this->travelInfo['texts'][$field] ?? []), $deepl, $translated, $errors);
+                }
+                break;
+
             case 'details':
                 foreach (array_keys(CountryTravelInfo::TEXTS) as $field) {
                     $this->travelInfo['texts'][$field] = $this->translateMap((array) ($this->travelInfo['texts'][$field] ?? []), $deepl, $translated, $errors);
@@ -1243,21 +1249,6 @@ class Editor extends Component
      */
     protected function aiContext(): array
     {
-        $riskProfile = [];
-        foreach (CountryRiskProfile::categories() as $category => $definition) {
-            foreach ($definition['fields'] as $field => $meta) {
-                $value = $this->riskProfile[$category][$field] ?? null;
-                if ($value === null || $value === '' || $value === false) {
-                    continue;
-                }
-                $riskProfile[] = $definition['label'].' › '.$meta['label'].': '.match ($meta['type']) {
-                    'level' => $value.' – '.(CountryRiskProfile::LEVELS[(int) $value] ?? ''),
-                    'bool' => 'Ja',
-                    default => $value,
-                };
-            }
-        }
-
         // Jedes Feld des Risikoprofils einzeln – damit die Feldpruefung je Feld urteilen kann.
         $riskFields = [];
         foreach (CountryRiskProfile::categories() as $category => $definition) {
@@ -1337,13 +1328,13 @@ class Editor extends Component
             'area_km2' => $this->areaKm2,
             'lat' => $this->lat,
             'lng' => $this->lng,
-            'risk_profile' => $riskProfile,
         ];
     }
 
     protected function aiReviewHint(string $section): ?string
     {
         return match ($section) {
+            'description' => CountryTravelInfo::descriptionReviewHint(),
             'details' => CountryTravelInfo::reviewHint(),
             'tipping' => CountryTravelInfo::tippingReviewHint(),
             'power' => CountryTravelInfo::powerReviewHint(),

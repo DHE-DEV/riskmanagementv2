@@ -24,7 +24,7 @@ class CountryRiskProfile
     ];
 
     /**
-     * @return array<string, array{label: string, icon: string, fields: array<string, array{label: string, type: string, wide?: bool, placeholder?: string}>}>
+     * @return array<string, array{label: string, icon: string, description: string, fields: array<string, array{label: string, type: string, wide?: bool, placeholder?: string}>}>
      */
     public static function categories(): array
     {
@@ -32,6 +32,7 @@ class CountryRiskProfile
             'security' => [
                 'label' => 'Sicherheit',
                 'icon' => 'shield-check',
+                'description' => 'Lage im Land von Stabilität bis Terrorgefahr, je Punkt als Stufe mit Notiz. Aus Sicherheit, Gesundheit und Naturgefahren ergibt sich das Gesamt-Risiko.',
                 'fields' => [
                     'overall_risk_level' => ['label' => 'Gesamt-Sicherheitsrisiko', 'type' => 'level'],
                     'political_stability' => ['label' => 'Politische Stabilität', 'type' => 'level'],
@@ -43,6 +44,7 @@ class CountryRiskProfile
             'health' => [
                 'label' => 'Gesundheit',
                 'icon' => 'heart',
+                'description' => 'Versorgung, Malaria, Trinkwasser und Impfungen – Pflicht und Empfehlung getrennt.',
                 'fields' => [
                     'health_risk_level' => ['label' => 'Gesundheitsrisiko', 'type' => 'level'],
                     'healthcare_quality' => ['label' => 'Gesundheitsversorgung', 'type' => 'level'],
@@ -57,6 +59,7 @@ class CountryRiskProfile
             'natural_hazards' => [
                 'label' => 'Naturgefahren',
                 'icon' => 'bolt',
+                'description' => 'Erdbeben, Überschwemmungen, Stürme, Vulkane, Waldbrände und Tsunamis – je Gefahr als Stufe mit Notiz.',
                 'fields' => [
                     'natural_hazard_level' => ['label' => 'Gesamt-Naturgefahren', 'type' => 'level', 'wide' => true],
                     'earthquake_risk' => ['label' => 'Erdbeben', 'type' => 'level'],
@@ -71,6 +74,7 @@ class CountryRiskProfile
             'infrastructure' => [
                 'label' => 'Infrastruktur',
                 'icon' => 'building-office',
+                'description' => 'Straßen, öffentlicher Verkehr, medizinische Versorgung und Internet – wie verlässlich Reisende unterwegs versorgt sind.',
                 'fields' => [
                     'infrastructure_level' => ['label' => 'Infrastruktur-Niveau', 'type' => 'level'],
                     'road_safety' => ['label' => 'Straßensicherheit', 'type' => 'level'],
@@ -83,6 +87,7 @@ class CountryRiskProfile
             'entry' => [
                 'label' => 'Einreise',
                 'icon' => 'identification',
+                'description' => 'Visumpflicht, Passgültigkeit und besondere Anforderungen bei der Einreise.',
                 'fields' => [
                     'visa_required' => ['label' => 'Visum erforderlich', 'type' => 'bool'],
                     'passport_validity_months' => ['label' => 'Reisepass-Gültigkeit (Monate)', 'type' => 'number'],
@@ -94,6 +99,7 @@ class CountryRiskProfile
             'climate' => [
                 'label' => 'Klima',
                 'icon' => 'sun',
+                'description' => 'Klimazone, Extremwetter, beste Reisemonate und Regenzeit.',
                 'fields' => [
                     'climate_zone' => ['label' => 'Klimazone', 'type' => 'text'],
                     'extreme_weather_risk' => ['label' => 'Extremwetter-Risiko', 'type' => 'level'],
@@ -105,6 +111,7 @@ class CountryRiskProfile
             'culture_law' => [
                 'label' => 'Kultur & Recht',
                 'icon' => 'scale',
+                'description' => 'Gesetze und gesellschaftliche Regeln, die Reisende kennen sollten – von Drogengesetzen bis zu kulturellen Hinweisen.',
                 'fields' => [
                     'drug_laws_severity' => ['label' => 'Drogengesetze (Strenge)', 'type' => 'level'],
                     'lgbtq_safety' => ['label' => 'LGBTQ+-Sicherheit', 'type' => 'level'],
@@ -174,13 +181,36 @@ class CountryRiskProfile
     {
         $placeholders = [];
 
-        foreach (self::categories() as $category => $definition) {
-            foreach ($definition['fields'] as $field => $meta) {
-                $placeholders[self::placeholderKey($category, $field)] = $definition['label'].' › '.$meta['label'];
-            }
+        foreach (array_keys(self::categories()) as $category) {
+            $placeholders += self::placeholdersFor($category);
         }
 
         return $placeholders;
+    }
+
+    /**
+     * Platzhalter eines Bereichs: Schluessel => "Bereich › Feld".
+     *
+     * @return array<string, string>
+     */
+    public static function placeholdersFor(string $category): array
+    {
+        $definition = self::categories()[$category] ?? ['label' => $category, 'fields' => []];
+        $placeholders = [];
+
+        foreach ($definition['fields'] as $field => $meta) {
+            $placeholders[self::placeholderKey($category, $field)] = $definition['label'].' › '.$meta['label'];
+        }
+
+        return $placeholders;
+    }
+
+    /**
+     * KI-Abschnitt eines Bereichs, z. B. risk_security.
+     */
+    public static function section(string $category): string
+    {
+        return 'risk_'.$category;
     }
 
     /**

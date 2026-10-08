@@ -21,6 +21,10 @@
         // aendern sich Mittelpunkt oder Quelle, baut Livewire das Element neu auf.
         window.adminv2BoundaryMap = (url, center) => {
             let map = null;
+            let observer = null;
+            // Ausschnitt, der noch nicht gesetzt werden konnte, weil die Karte
+            // (z. B. in einer zugeklappten Karte) noch keine Groesse hatte.
+            let pendingBounds = null;
 
             // Ringe, die den 180. Laengengrad kreuzen (Russland, USA, Fidschi), bekommen
             // durchgehende Laengen – sonst zieht Leaflet eine Linie einmal um die Welt.
@@ -104,7 +108,13 @@
                             // so waehlen, dass alle Hauptgebiete vollstaendig zu sehen sind.
                             map.invalidateSize();
                             const bounds = mainlandBounds(collection);
-                            map.fitBounds(bounds.isValid() ? bounds : layer.getBounds(), { padding: [16, 16] });
+                            const target = bounds.isValid() ? bounds : layer.getBounds();
+
+                            if (this.$refs.map.clientWidth > 0) {
+                                map.fitBounds(target, { padding: [16, 16] });
+                            } else {
+                                pendingBounds = target;
+                            }
                         })
                         .catch(() => {
                             this.loading = false;
@@ -112,8 +122,24 @@
                         });
 
                     setTimeout(() => map && map.invalidateSize(), 50);
+
+                    // Liegt die Karte in einem zugeklappten Bereich, kennt Leaflet ihre Groesse
+                    // erst nach dem Aufklappen – dann neu vermessen und den Ausschnitt nachholen.
+                    observer = new ResizeObserver(() => {
+                        if (! map || this.$refs.map.clientWidth === 0) return;
+
+                        map.invalidateSize();
+
+                        if (pendingBounds) {
+                            map.fitBounds(pendingBounds, { padding: [16, 16] });
+                            pendingBounds = null;
+                        }
+                    });
+                    observer.observe(this.$refs.map);
                 },
                 destroy() {
+                    observer?.disconnect();
+                    observer = null;
                     map?.remove();
                     map = null;
                 },

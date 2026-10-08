@@ -30,11 +30,12 @@
 <x-adminv2.card :heading="$heading.' ('.number_format($count, 0, ',', '.').')'" collapsible :collapsed="$count === 0">
     @if ($createUrl || $aiSection)
         <x-slot:actions>
-            @if ($aiSection)
-                <x-adminv2.ai-check-button :section="$aiSection" />
-            @endif
             @if ($createUrl)
                 <flux:button size="sm" variant="ghost" icon="plus" :href="$createUrl">{{ $createLabel }}</flux:button>
+            @endif
+            {{-- KI steht immer rechts aussen --}}
+            @if ($aiSection)
+                <x-adminv2.ai-check-button :section="$aiSection" />
             @endif
         </x-slot:actions>
     @endif

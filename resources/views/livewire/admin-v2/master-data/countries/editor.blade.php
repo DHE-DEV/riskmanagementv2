@@ -116,6 +116,64 @@
                 </div>
             </x-adminv2.card>
 
+            {{-- Laenderbeschreibung: das Land allgemein, kurz und ausfuehrlich, je Sprache --}}
+            <x-adminv2.card
+                heading="Länderbeschreibung"
+                description="Das Land allgemein beschrieben – eine Kurzbeschreibung für Übersichten und eine ausführliche Beschreibung für Detailseiten, je Sprache."
+                collapsible
+                collapse-key="country-description"
+            >
+                <x-slot:actions>
+                    <flux:modal.trigger name="translate-description">
+                        <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
+                    </flux:modal.trigger>
+                    <x-adminv2.ai-check-button section="description" />
+                </x-slot:actions>
+                <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-5">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-sm text-zinc-600 dark:text-zinc-400">Sprache der Texte</span>
+                        <div class="inline-flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+                            @foreach ($noteLocales as $locale)
+                                <button type="button" x-on:click="locale = @js($locale)" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="locale === @js($locale) ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-950 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'">
+                                    {{ CustomEvent::localeLabel($locale) }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    @foreach ($noteLocales as $locale)
+                        <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="description-{{ $locale }}" class="flex flex-col gap-5">
+                            <div>
+                                <flux:field>
+                                    <flux:label>Kurzbeschreibung ({{ strtoupper($locale) }})</flux:label>
+                                    <flux:description>Zwei bis drei Sätze, die das Land auf den Punkt bringen – für Übersichten und Teaser.</flux:description>
+                                    <flux:textarea wire:model="travelInfo.texts.short_description.{{ $locale }}" rows="3" />
+                                    <flux:error name="travelInfo.texts.short_description.{{ $locale }}" />
+                                </flux:field>
+                                <x-adminv2.ai-field-hint key="short_description_{{ $locale }}" :review="$aiReview" />
+                            </div>
+                            <div>
+                                <flux:field>
+                                    <flux:label>Beschreibung ({{ strtoupper($locale) }})</flux:label>
+                                    <flux:description>Ausführlich zu Lage, Landschaft, Kultur, Geschichte und Reisecharakter – Absätze durch Leerzeilen trennen.</flux:description>
+                                    <flux:textarea wire:model="travelInfo.texts.description.{{ $locale }}" rows="14" />
+                                    <flux:error name="travelInfo.texts.description.{{ $locale }}" />
+                                </flux:field>
+                                <x-adminv2.ai-field-hint key="description_{{ $locale }}" :review="$aiReview" />
+                            </div>
+                            <div>
+                                <flux:field>
+                                    <flux:label>Bekannt für ({{ strtoupper($locale) }})</flux:label>
+                                    <flux:description>3–6 Stichworte, mit Komma getrennt – z. B. Strände, Küche, Geschichte.</flux:description>
+                                    <flux:input wire:model="travelInfo.texts.known_for.{{ $locale }}" />
+                                    <flux:error name="travelInfo.texts.known_for.{{ $locale }}" />
+                                </flux:field>
+                                <x-adminv2.ai-field-hint key="known_for_{{ $locale }}" :review="$aiReview" />
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </x-adminv2.card>
+
             {{-- Weitere Informationen: Waehrung, Vorwahl, Zeitzone, Groesse – und was Reisende vor Ort brauchen --}}
             <x-adminv2.card heading="Weitere Informationen" description="Währung, Vorwahl, Zeitzone, Größe – und was Reisende vor Ort brauchen." collapsible collapse-key="country-details">
                 <x-slot:actions>
@@ -525,8 +583,8 @@
                 collapse-key="country-taxi-apps"
             >
                 <x-slot:actions>
-                    <x-adminv2.ai-check-button section="taxi_apps" />
                     <flux:button size="sm" variant="ghost" icon="cog-6-tooth" :href="route('adminv2.system.taxi-apps.index')">Anbieter verwalten</flux:button>
+                    <x-adminv2.ai-check-button section="taxi_apps" />
                 </x-slot:actions>
                 <div class="flex flex-col gap-4">
                     @if ($this->taxiAppOptions->isEmpty())
@@ -570,8 +628,8 @@
                 collapse-key="country-mobile-operators"
             >
                 <x-slot:actions>
-                    <x-adminv2.ai-check-button section="mobile_operators" />
                     <flux:button size="sm" variant="ghost" icon="cog-6-tooth" :href="route('adminv2.system.mobile-operators.index')">Anbieter verwalten</flux:button>
+                    <x-adminv2.ai-check-button section="mobile_operators" />
                 </x-slot:actions>
                 @php
                     $selectedOperators = $this->selectedMobileOperators;
@@ -818,6 +876,124 @@
                 @endif
             </x-adminv2.card>
 
+            {{-- Risikoprofil: je Bereich eine Karte --}}
+            @foreach ($categories as $key => $category)
+                <x-adminv2.card
+                    :heading="$category['label']"
+                    :description="$category['description'].($loop->first ? ' Gesamt-Risiko: '.($overallRisk ? $overallRisk.' – '.Country::getRiskLevelLabel($overallRisk) : 'noch nicht bewertet').'.' : '')"
+                    collapsible
+                    collapsed
+                    :collapse-key="'country-risk-'.$key"
+                    wire:key="risk-card-{{ $key }}"
+                >
+                    <x-slot:actions>
+                        <flux:modal.trigger name="translate-risk-notes">
+                            <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
+                        </flux:modal.trigger>
+                        <x-adminv2.ai-check-button :section="CountryRiskProfile::section($key)" />
+                    </x-slot:actions>
+                    <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-5">
+                        {{-- Sprache der Notizen – Ausgangssprache ist die erste. --}}
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-sm text-zinc-600 dark:text-zinc-400">Sprache der Notizen</span>
+                            <div class="inline-flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+                                @foreach ($noteLocales as $locale)
+                                    <button
+                                        type="button"
+                                        x-on:click="locale = @js($locale)"
+                                        class="rounded-md px-3 py-1 text-sm font-medium transition"
+                                        :class="locale === @js($locale)
+                                            ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-950 dark:text-white'
+                                            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'"
+                                    >
+                                        {{ CustomEvent::localeLabel($locale) }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Je Punkt eine Zeile, darunter die Notiz. --}}
+                        <div class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
+                            @foreach ($category['fields'] as $field => $meta)
+                                @php
+                                    $model = 'riskProfile.'.$key.'.'.$field;
+                                    $hintKey = CountryRiskProfile::placeholderKey($key, $field);
+                                @endphp
+
+                                <div
+                                    wire:key="risk-{{ $key }}-{{ $field }}"
+                                    class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0"
+                                    {{-- Die Malaria-Beschreibung gehoert zum Schalter "Malaria-Risiko". --}}
+                                    @if ($key === 'health' && $field === 'malaria_description') x-show="$wire.riskProfile.health.malaria_risk" @endif
+                                >
+                                    @switch($meta['type'])
+                                        @case('level')
+                                            <flux:field>
+                                                <flux:label>{{ $meta['label'] }}</flux:label>
+                                                <flux:select wire:model="{{ $model }}" class="sm:max-w-xs">
+                                                    <flux:select.option value="">Nicht bewertet</flux:select.option>
+                                                    @foreach (CountryRiskProfile::LEVELS as $level => $label)
+                                                        <flux:select.option value="{{ $level }}">{{ $level }} – {{ $label }}</flux:select.option>
+                                                    @endforeach
+                                                </flux:select>
+                                            </flux:field>
+                                            @break
+
+                                        @case('bool')
+                                            <flux:switch wire:model="{{ $model }}" :label="$meta['label']" align="left" />
+                                            @break
+
+                                        @case('textarea')
+                                            <flux:field>
+                                                <flux:label>{{ $meta['label'] }}</flux:label>
+                                                <flux:textarea wire:model="{{ $model }}" rows="{{ $field === 'description' ? 3 : 2 }}" />
+                                            </flux:field>
+                                            @break
+
+                                        @case('tags')
+                                            <flux:field>
+                                                <flux:label>{{ $meta['label'] }}</flux:label>
+                                                <flux:description>Mehrere mit Komma trennen.</flux:description>
+                                                <flux:input wire:model="{{ $model }}" placeholder="{{ $meta['placeholder'] ?? '' }}" />
+                                            </flux:field>
+                                            @break
+
+                                        @case('number')
+                                            <flux:field>
+                                                <flux:label>{{ $meta['label'] }}</flux:label>
+                                                <flux:input wire:model="{{ $model }}" type="number" min="0" step="1" class="sm:max-w-xs" />
+                                                <flux:error name="{{ $model }}" />
+                                            </flux:field>
+                                            @break
+
+                                        @default
+                                            <flux:field>
+                                                <flux:label>{{ $meta['label'] }}</flux:label>
+                                                <flux:input wire:model="{{ $model }}" />
+                                            </flux:field>
+                                    @endswitch
+
+                                    <x-adminv2.ai-field-hint :key="$hintKey" :review="$aiReview" :noteable="CountryRiskProfile::hasNote($meta)" class="!mt-0" />
+
+                                    @if (CountryRiskProfile::hasNote($meta))
+                                        @foreach ($noteLocales as $locale)
+                                            <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="risk-note-{{ $key }}-{{ $field }}-{{ $locale }}">
+                                                <flux:textarea
+                                                    wire:model="riskProfile.{{ $key }}.notes.{{ $field }}.{{ $locale }}"
+                                                    rows="2"
+                                                    aria-label="Notiz zu {{ $meta['label'] }} ({{ strtoupper($locale) }})"
+                                                    placeholder="Notiz{{ $locale === $sourceLocale ? '' : ' ('.strtoupper($locale).')' }} – Fließtext zu diesem Punkt"
+                                                />
+                                            </div>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </x-adminv2.card>
+            @endforeach
+
             {{-- Bilder: Flagge, Titelbild und Galerie --}}
             <x-adminv2.card
                 heading="Bilder"
@@ -967,141 +1143,6 @@
                 @endif
             </x-adminv2.master-data.coordinates>
 
-            {{-- Risikoprofil --}}
-            <x-adminv2.card
-                heading="Risikoprofil"
-                :description="$overallRisk ? 'Gesamt-Risiko: '.$overallRisk.' – '.Country::getRiskLevelLabel($overallRisk).' (höchste Stufe aus Sicherheit, Gesundheit und Naturgefahren)' : 'Noch nicht bewertet.'"
-                collapsible
-                collapsed
-                collapse-key="country-risk-profile"
-            >
-                <x-slot:actions>
-                    <flux:modal.trigger name="translate-risk-notes">
-                        <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
-                    </flux:modal.trigger>
-                    <x-adminv2.ai-check-button section="risk_profile" />
-                </x-slot:actions>
-                <div x-data="{ tab: 'security', locale: @js($sourceLocale) }" class="flex flex-col gap-5">
-                    <div class="flex flex-wrap gap-1.5" role="tablist">
-                        @foreach ($categories as $key => $category)
-                            <button
-                                type="button"
-                                role="tab"
-                                x-on:click="tab = '{{ $key }}'"
-                                :aria-selected="tab === '{{ $key }}'"
-                                :class="tab === '{{ $key }}'
-                                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-foreground)]'
-                                    : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300'"
-                                class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition"
-                            >
-                                <flux:icon :name="$category['icon']" variant="micro" />
-                                {{ $category['label'] }}
-                            </button>
-                        @endforeach
-                    </div>
-
-                    {{-- Sprache der Notizen – Ausgangssprache ist die erste. --}}
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="text-sm text-zinc-600 dark:text-zinc-400">Sprache der Notizen</span>
-                        <div class="inline-flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
-                            @foreach ($noteLocales as $locale)
-                                <button
-                                    type="button"
-                                    x-on:click="locale = @js($locale)"
-                                    class="rounded-md px-3 py-1 text-sm font-medium transition"
-                                    :class="locale === @js($locale)
-                                        ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-950 dark:text-white'
-                                        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'"
-                                >
-                                    {{ CustomEvent::localeLabel($locale) }}
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    @foreach ($categories as $key => $category)
-                        {{-- Je Punkt eine Zeile, darunter die Notiz. --}}
-                        <div x-show="tab === '{{ $key }}'" @if (! $loop->first) x-cloak @endif role="tabpanel" class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
-                            @foreach ($category['fields'] as $field => $meta)
-                                @php
-                                    $model = 'riskProfile.'.$key.'.'.$field;
-                                    $hintKey = CountryRiskProfile::placeholderKey($key, $field);
-                                @endphp
-
-                                <div
-                                    wire:key="risk-{{ $key }}-{{ $field }}"
-                                    class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0"
-                                    {{-- Die Malaria-Beschreibung gehoert zum Schalter "Malaria-Risiko". --}}
-                                    @if ($key === 'health' && $field === 'malaria_description') x-show="$wire.riskProfile.health.malaria_risk" @endif
-                                >
-                                    @switch($meta['type'])
-                                        @case('level')
-                                            <flux:field>
-                                                <flux:label>{{ $meta['label'] }}</flux:label>
-                                                <flux:select wire:model="{{ $model }}" class="sm:max-w-xs">
-                                                    <flux:select.option value="">Nicht bewertet</flux:select.option>
-                                                    @foreach (CountryRiskProfile::LEVELS as $level => $label)
-                                                        <flux:select.option value="{{ $level }}">{{ $level }} – {{ $label }}</flux:select.option>
-                                                    @endforeach
-                                                </flux:select>
-                                            </flux:field>
-                                            @break
-
-                                        @case('bool')
-                                            <flux:switch wire:model="{{ $model }}" :label="$meta['label']" align="left" />
-                                            @break
-
-                                        @case('textarea')
-                                            <flux:field>
-                                                <flux:label>{{ $meta['label'] }}</flux:label>
-                                                <flux:textarea wire:model="{{ $model }}" rows="{{ $field === 'description' ? 3 : 2 }}" />
-                                            </flux:field>
-                                            @break
-
-                                        @case('tags')
-                                            <flux:field>
-                                                <flux:label>{{ $meta['label'] }}</flux:label>
-                                                <flux:description>Mehrere mit Komma trennen.</flux:description>
-                                                <flux:input wire:model="{{ $model }}" placeholder="{{ $meta['placeholder'] ?? '' }}" />
-                                            </flux:field>
-                                            @break
-
-                                        @case('number')
-                                            <flux:field>
-                                                <flux:label>{{ $meta['label'] }}</flux:label>
-                                                <flux:input wire:model="{{ $model }}" type="number" min="0" step="1" class="sm:max-w-xs" />
-                                                <flux:error name="{{ $model }}" />
-                                            </flux:field>
-                                            @break
-
-                                        @default
-                                            <flux:field>
-                                                <flux:label>{{ $meta['label'] }}</flux:label>
-                                                <flux:input wire:model="{{ $model }}" />
-                                            </flux:field>
-                                    @endswitch
-
-                                    <x-adminv2.ai-field-hint :key="$hintKey" :review="$aiReview" :noteable="CountryRiskProfile::hasNote($meta)" class="!mt-0" />
-
-                                    @if (CountryRiskProfile::hasNote($meta))
-                                        @foreach ($noteLocales as $locale)
-                                            <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="risk-note-{{ $key }}-{{ $field }}-{{ $locale }}">
-                                                <flux:textarea
-                                                    wire:model="riskProfile.{{ $key }}.notes.{{ $field }}.{{ $locale }}"
-                                                    rows="2"
-                                                    aria-label="Notiz zu {{ $meta['label'] }} ({{ strtoupper($locale) }})"
-                                                    placeholder="Notiz{{ $locale === $sourceLocale ? '' : ' ('.strtoupper($locale).')' }} – Fließtext zu diesem Punkt"
-                                                />
-                                            </div>
-                                        @endforeach
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-                    @endforeach
-                </div>
-            </x-adminv2.card>
-
             {{-- Laendergrenze: reine Anzeige --}}
             @if ($record)
                 <x-adminv2.card heading="Ländergrenze" description="Nur Anzeige – gepflegt über den Import aus Natural Earth." collapsible collapsed>
@@ -1209,7 +1250,8 @@
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 
-    <x-adminv2.master-data.translate-modal section="details" what="Einleitung, „Bekannt für“ und die Bezeichnung des Nationaltags" />
+    <x-adminv2.master-data.translate-modal section="description" what="Kurzbeschreibung, Beschreibung und „Bekannt für“" />
+    <x-adminv2.master-data.translate-modal section="details" what="die Einleitung und die Bezeichnung des Nationaltags" />
     <x-adminv2.master-data.translate-modal section="tipping" what="die Trinkgeld-Beschreibungen" />
     <x-adminv2.master-data.translate-modal section="power" what="die Bemerkung zum Strom" />
     <x-adminv2.master-data.translate-modal section="images" what="Alt-Texte und Bildunterschriften aller Bilder" saved />

@@ -72,6 +72,8 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
         ->set('travelInfo.texts.intro.en', 'Caribbean island with French flair.')
         ->set('travelInfo.texts.known_for.de', 'Strände, Rum, Vulkan Pelée, ')
         ->set('travelInfo.texts.power_notes.de', 'Teils 110 V in älteren Hotels.')
+        ->set('travelInfo.texts.short_description.de', 'Karibikinsel mit Vulkan und Rum.')
+        ->set('travelInfo.texts.description.de', "Martinique liegt in den Kleinen Antillen.\n\nDer Mont Pelée prägt den Norden.")
         ->call('save')
         ->assertHasNoErrors();
 
@@ -99,6 +101,8 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
             'intro' => ['de' => 'Karibikinsel mit französischem Flair.', 'en' => 'Caribbean island with French flair.'],
             'known_for' => ['de' => ['Strände', 'Rum', 'Vulkan Pelée']],
             'power_notes' => ['de' => 'Teils 110 V in älteren Hotels.'],
+            'short_description' => ['de' => 'Karibikinsel mit Vulkan und Rum.'],
+            'description' => ['de' => "Martinique liegt in den Kleinen Antillen.\n\nDer Mont Pelée prägt den Norden."],
         ]);
 
     // Ein souveraener Staat verliert sein Mutterland; ohne Angaben bleibt travel_info leer.
@@ -354,11 +358,13 @@ it('bietet die KI-Pruefung fuer Reiseinformationen und Bilder an und uebernimmt 
         ->and($apply('intro_de', 'Karibikinsel.'))->toBeTrue()
         ->and($apply('unbekannt', 'x'))->toBeFalse();
 
-    expect(CountryTravelInfo::placeholders())->toHaveKeys(['territory_type', 'emergency_fire', 'religions', 'national_day_date', 'national_day_name_de', 'intro_de', 'known_for_en'])
+    expect(CountryTravelInfo::placeholders())->toHaveKeys(['territory_type', 'emergency_fire', 'religions', 'national_day_date', 'national_day_name_de', 'intro_de'])
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('plug_types')
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('timezones')
         ->and(\App\Support\AdminV2\AiAreas::placeholders('countries', 'details'))->toHaveKeys(['timezone', 'territory_type', 'emergency_police', 'intro_de'])
         ->and(CountryTravelInfo::powerPlaceholders())->toHaveKeys(['plug_types', 'voltage', 'frequency', 'power_notes_de', 'power_notes_en'])
+        ->and(CountryTravelInfo::descriptionPlaceholders())->toHaveKeys(['short_description_de', 'description_de', 'description_nl'])
+        ->and(CountryTravelInfo::rules()['travelInfo.texts.description.*'])->toContain('max:20000')
         ->and(CountryTravelInfo::tippingPlaceholders())->toHaveKeys(['tipping_hotels_from', 'tipping_taxi_to', 'tipping_guides_unit', 'tipping_guides_currency', 'tipping_restaurants_description_de']);
 });
 
@@ -381,8 +387,17 @@ it('uebersetzt Texte, Trinkgeld-Beschreibungen und Bildtexte per DeepL in die ue
         ->set('travelInfo.national_day.name.de', 'Nationalfeiertag')
         ->set('travelInfo.tipping.taxi.description.de', 'Aufrunden reicht.')
         ->set('travelInfo.texts.power_notes.de', 'Zwei Spannungen im Land.')
+        ->set('travelInfo.texts.short_description.de', 'Kurz gesagt.')
+        ->set('travelInfo.texts.description.de', 'Ausführlich gesagt.')
         ->call('translateTexts', 'details')
         ->assertSet('travelInfo.texts.power_notes.en', '')
+        // Die Laenderbeschreibung (mit „Bekannt für“) ist ein eigener Abschnitt.
+        ->assertSet('travelInfo.texts.short_description.en', '')
+        ->assertSet('travelInfo.texts.known_for.en', '')
+        ->call('translateTexts', 'description')
+        ->assertSet('travelInfo.texts.short_description.en', '[en] Kurz gesagt.')
+        ->assertSet('travelInfo.texts.description.nl', '[nl] Ausführlich gesagt.')
+        ->assertSet('travelInfo.texts.known_for.en', '[en] Strände, Küche')
         ->call('translateTexts', 'power')
         ->assertSet('travelInfo.texts.power_notes.en', '[en] Zwei Spannungen im Land.')
         ->assertSet('travelInfo.texts.power_notes.nl', '[nl] Zwei Spannungen im Land.')
@@ -390,7 +405,6 @@ it('uebersetzt Texte, Trinkgeld-Beschreibungen und Bildtexte per DeepL in die ue
         // Vorhandene Uebersetzungen bleiben, leere werden gefuellt.
         ->assertSet('travelInfo.texts.intro.en', 'Schon vorhanden.')
         ->assertSet('travelInfo.texts.intro.nl', '[nl] Ein Land am Meer.')
-        ->assertSet('travelInfo.texts.known_for.en', '[en] Strände, Küche')
         ->assertSet('travelInfo.national_day.name.en', '[en] Nationalfeiertag')
         // Trinkgeld ist ein eigener Abschnitt und noch unberuehrt.
         ->assertSet('travelInfo.tipping.taxi.description.en', '')

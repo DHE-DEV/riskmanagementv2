@@ -100,12 +100,24 @@ class CountryTravelInfo
     /** Mehrsprachige Texte: Feld => [Bezeichnung, Art (text | textarea | tags)] */
     public const TEXTS = [
         'intro' => ['Einleitung', 'textarea'],
-        'known_for' => ['Bekannt für', 'tags'],
     ];
 
     /** Mehrsprachige Texte des Abschnitts "Strom" */
     public const POWER_TEXTS = [
         'power_notes' => ['Bemerkung zum Strom', 'textarea'],
+    ];
+
+    /** Mehrsprachige Texte des Abschnitts "Länderbeschreibung": das Land allgemein, kurz und ausführlich */
+    public const DESCRIPTION_TEXTS = [
+        'short_description' => ['Kurzbeschreibung', 'textarea'],
+        'description' => ['Beschreibung', 'textarea'],
+        'known_for' => ['Bekannt für', 'tags'],
+    ];
+
+    /** Hoechstlaenge je Textfeld, wenn sie von der Art des Feldes abweicht */
+    public const TEXT_LIMITS = [
+        'short_description' => 1000,
+        'description' => 20000,
     ];
 
     /**
@@ -115,7 +127,7 @@ class CountryTravelInfo
      */
     public static function allTexts(): array
     {
-        return self::TEXTS + self::POWER_TEXTS;
+        return self::DESCRIPTION_TEXTS + self::TEXTS + self::POWER_TEXTS;
     }
 
     /**
@@ -389,7 +401,7 @@ class CountryTravelInfo
         }
 
         foreach (self::allTexts() as $field => [, $type]) {
-            $rules[$prefix.'.texts.'.$field.'.*'] = ['nullable', 'string', $type === 'textarea' ? 'max:5000' : 'max:1000'];
+            $rules[$prefix.'.texts.'.$field.'.*'] = ['nullable', 'string', 'max:'.(self::TEXT_LIMITS[$field] ?? ($type === 'textarea' ? 5000 : 1000))];
         }
 
         return $rules;
@@ -427,6 +439,33 @@ class CountryTravelInfo
     // ------------------------------------------------------------------
     // KI-Pruefung
     // ------------------------------------------------------------------
+
+    /**
+     * Platzhalter des Abschnitts "Länderbeschreibung": Schluessel => Bezeichnung.
+     *
+     * @return array<string, string>
+     */
+    public static function descriptionPlaceholders(): array
+    {
+        $placeholders = [];
+
+        foreach (self::DESCRIPTION_TEXTS as $field => [$label]) {
+            foreach (self::locales() as $locale) {
+                $placeholders[$field.'_'.$locale] = $label.' ('.strtoupper($locale).')';
+            }
+        }
+
+        return $placeholders;
+    }
+
+    /**
+     * Hinweis an die KI fuer den Abschnitt "Länderbeschreibung".
+     */
+    public static function descriptionReviewHint(): string
+    {
+        return 'Kurzbeschreibung: zwei bis drei Sätze, die das Land für Reisende auf den Punkt bringen. Beschreibung: ausführlicher Text zu Lage, Landschaft, Kultur, Geschichte und Reisecharakter, in Absätzen.'
+            .' Jeweils in der angegebenen Sprache; Übersetzungen müssen inhaltlich zur Ausgangssprache passen.';
+    }
 
     /**
      * Platzhalter des Abschnitts "Strom": Schluessel => Bezeichnung.
