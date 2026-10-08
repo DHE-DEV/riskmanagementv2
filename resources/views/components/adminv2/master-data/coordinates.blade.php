@@ -8,13 +8,15 @@
     'description' => 'Mittelpunkt für die Darstellung auf der Karte.',
     // Ergebnis der KI-Feldpruefung ($aiReview) fuer die Hinweise unter den Feldern
     'review' => null,
+    'collapsible' => false,
+    'collapseKey' => null,
 ])
 
 @php
     $hasPoint = is_numeric($lat) && is_numeric($lng);
 @endphp
 
-<x-adminv2.card heading="Koordinaten" :description="$description">
+<x-adminv2.card heading="Koordinaten" :description="$description" :collapsible="$collapsible" :collapse-key="$collapseKey">
     <x-slot:actions><x-adminv2.ai-check-button section="coordinates" /></x-slot:actions>
     <div class="flex flex-col gap-5">
         <flux:field>

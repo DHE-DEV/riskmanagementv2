@@ -5,6 +5,7 @@
     - title: Ueberschrift
     - record: der geoeffnete Eintrag oder null (neuer Eintrag)
     - subtitle: optionale Zeile unter dem Titel
+    - Slot: weitere Schaltflaechen links von der KI-Pruefung
 --}}
 @props([
     'section',
@@ -31,6 +32,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            {{ $slot ?? '' }}
             {{-- KI-Pruefungen fuer den gesamten Eintrag --}}
             <x-adminv2.ai-check-button section="general" label="KI-Prüfung" size="base" class="me-2" />
             <flux:button variant="ghost" :href="$index">{{ $record ? 'Zur Liste' : 'Abbrechen' }}</flux:button>

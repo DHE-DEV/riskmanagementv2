@@ -43,9 +43,14 @@ class AiAreas
                 'label' => 'Länder',
                 'sections' => [
                     'basics' => ['label' => 'Grunddaten', 'placeholders' => ['name' => 'Name', 'name_en' => 'Name (Englisch)', 'names' => 'Weitere Sprachen', 'iso_code' => 'ISO-Code (2)', 'iso3_code' => 'ISO-Code (3)', 'continent' => 'Kontinent', 'is_eu_member' => 'EU-Mitglied', 'is_schengen_member' => 'Schengen-Mitglied']],
-                    'details' => ['label' => 'Weitere Informationen', 'placeholders' => ['currency_code' => 'Währungscode', 'currency_name' => 'Währungsname', 'currency_symbol' => 'Währungssymbol', 'phone_prefix' => 'Telefonvorwahl', 'timezone' => 'Zeitzone', 'population' => 'Bevölkerung', 'area_km2' => 'Fläche (km²)']],
+                    'details' => ['label' => 'Weitere Informationen', 'placeholders' => ['currency_code' => 'Währungscode', 'currency_name' => 'Währungsname', 'currency_symbol' => 'Währungssymbol', 'phone_prefix' => 'Telefonvorwahl', 'timezone' => 'Zeitzone', 'population' => 'Bevölkerung', 'area_km2' => 'Fläche (km²)'] + CountryTravelInfo::placeholders()],
                     'coordinates' => ['label' => 'Koordinaten', 'placeholders' => $coordinates],
                     'risk_profile' => ['label' => 'Risikoprofil', 'placeholders' => ['risk_profile' => 'Risikoprofil (alle Angaben)'] + CountryRiskProfile::placeholders()],
+                    'tipping' => ['label' => 'Trinkgeld', 'placeholders' => CountryTravelInfo::tippingPlaceholders()],
+                    'power' => ['label' => 'Strom', 'placeholders' => CountryTravelInfo::powerPlaceholders()],
+                    'taxi_apps' => ['label' => 'Taxi-Apps', 'placeholders' => ['taxi_apps' => 'Zugeordnete Taxi-Apps (Liste)', 'taxi_apps_available' => 'Verfügbare Taxi-Apps (Liste)']],
+                    'mobile_operators' => ['label' => 'Mobilfunkanbieter', 'placeholders' => ['mobile_operators' => 'Zugeordnete Mobilfunkanbieter (Liste)', 'mobile_operators_available' => 'Verfügbare Mobilfunkanbieter (Liste)']],
+                    'images' => ['label' => 'Bilder', 'placeholders' => ['flag' => 'Flagge', 'images_count' => 'Anzahl Bilder', 'images' => 'Bilder (Liste mit Alt-Text, Bildunterschrift, Urheber)']],
                 ],
             ],
             'regions' => [

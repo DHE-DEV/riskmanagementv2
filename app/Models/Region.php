@@ -20,6 +20,7 @@ class Region extends Model
         'keywords',
         'lat',
         'lng',
+        'is_major',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class Region extends Model
         'keywords' => 'array',
         'lat' => 'decimal:6',
         'lng' => 'decimal:6',
+        'is_major' => 'boolean',
     ];
 
     /**

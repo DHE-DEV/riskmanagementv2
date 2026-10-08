@@ -41,8 +41,12 @@ use App\Livewire\AdminV2\System\Ai as SystemAi;
 use App\Livewire\AdminV2\System\AiSearchEditor as SystemAiSearchEditor;
 use App\Livewire\AdminV2\System\Automator\Index as AutomatorIndex;
 use App\Livewire\AdminV2\System\Automator\Monitor as AutomatorMonitor;
+use App\Livewire\AdminV2\System\MobileOperators\Editor as MobileOperatorEditor;
+use App\Livewire\AdminV2\System\MobileOperators\Index as MobileOperatorIndex;
 use App\Livewire\AdminV2\System\RecurringTasks\Editor as RecurringTaskEditor;
 use App\Livewire\AdminV2\System\RecurringTasks\Index as RecurringTaskIndex;
+use App\Livewire\AdminV2\System\TaxiApps\Editor as TaxiAppEditor;
+use App\Livewire\AdminV2\System\TaxiApps\Index as TaxiAppIndex;
 use App\Livewire\AdminV2\System\Teams as SystemTeams;
 use App\Livewire\AdminV2\System\Templates\Editor as TemplateEditor;
 use App\Livewire\AdminV2\System\Templates\Index as TemplateIndex;
@@ -158,6 +162,12 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('system/recurring-tasks/{recurrence}', RecurringTaskEditor::class)->whereNumber('recurrence')->name('system.recurring-tasks.edit');
         Route::get('system/automator', AutomatorIndex::class)->name('system.automator.index');
         Route::get('system/automator/monitor', AutomatorMonitor::class)->name('system.automator.monitor');
+        Route::get('system/mobile-operators', MobileOperatorIndex::class)->name('system.mobile-operators.index');
+        Route::get('system/mobile-operators/create', MobileOperatorEditor::class)->name('system.mobile-operators.create');
+        Route::get('system/mobile-operators/{operator}', MobileOperatorEditor::class)->whereNumber('operator')->name('system.mobile-operators.edit');
+        Route::get('system/taxi-apps', TaxiAppIndex::class)->name('system.taxi-apps.index');
+        Route::get('system/taxi-apps/create', TaxiAppEditor::class)->name('system.taxi-apps.create');
+        Route::get('system/taxi-apps/{app}', TaxiAppEditor::class)->whereNumber('app')->name('system.taxi-apps.edit');
         Route::get('system/templates', TemplateIndex::class)->name('system.templates.index');
         Route::get('system/templates/{template}', TemplateEditor::class)->whereNumber('template')->name('system.templates.edit');
 

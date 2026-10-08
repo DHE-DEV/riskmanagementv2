@@ -34,6 +34,10 @@ class Country extends Model
         'lat',
         'lng',
         'continent_id',
+        'territory_type',
+        'parent_country_id',
+        'driving_side',
+        'travel_info',
     ];
 
     protected $casts = [
@@ -49,6 +53,7 @@ class Country extends Model
         'area_km2' => 'decimal:2',
         'lat' => 'decimal:6',
         'lng' => 'decimal:6',
+        'travel_info' => 'array',
     ];
 
     /**
@@ -57,6 +62,92 @@ class Country extends Model
     public function continent(): BelongsTo
     {
         return $this->belongsTo(Continent::class);
+    }
+
+    /**
+     * Mutterland eines abhaengigen Gebiets (z. B. Frankreich fuer Martinique).
+     */
+    public function parentCountry(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'parent_country_id');
+    }
+
+    /**
+     * Abhaengige Gebiete dieses Landes.
+     */
+    public function territories(): HasMany
+    {
+        return $this->hasMany(Country::class, 'parent_country_id');
+    }
+
+    /**
+     * Bilder des Landes – Titelbild zuerst, dann die Galerie in ihrer Reihenfolge.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(CountryImage::class)
+            ->orderByRaw("kind = 'hero' desc")
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    /**
+     * Taxi- und Mobilitaets-Apps, die im Land verbreitet sind.
+     */
+    public function taxiApps()
+    {
+        return $this->belongsToMany(TaxiApp::class, 'country_taxi_app')->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * Mobilfunkanbieter, die im Land verbreitet sind.
+     */
+    public function mobileOperators()
+    {
+        return $this->belongsToMany(MobileOperator::class, 'country_mobile_operator')->orderBy('sort_order')->orderBy('name');
+    }
+
+    public function heroImage(): HasOne
+    {
+        return $this->hasOne(CountryImage::class)->where('kind', CountryImage::KIND_HERO);
+    }
+
+    /**
+     * Flagge als SVG – die Flaggen liegen nicht im System, sondern kommen
+     * ueber den ISO-Code von flagcdn.com.
+     */
+    public function getFlagUrlAttribute(): ?string
+    {
+        return $this->iso_code ? 'https://flagcdn.com/'.strtolower($this->iso_code).'.svg' : null;
+    }
+
+    /**
+     * Flagge als Emoji aus den beiden Regional-Indicator-Zeichen des ISO-Codes.
+     */
+    public function getFlagEmojiAttribute(): ?string
+    {
+        $code = strtoupper((string) $this->iso_code);
+
+        if (! preg_match('/^[A-Z]{2}$/', $code)) {
+            return null;
+        }
+
+        return implode('', array_map(fn (string $letter) => mb_chr(0x1F1E6 + ord($letter) - ord('A')), str_split($code)));
+    }
+
+    /**
+     * Titelbild fuer Apps und Feeds: das hochgeladene Titelbild, sonst das
+     * bisherige Standardbild unter public/images/countries, sonst nichts.
+     */
+    public function getHeroImageUrlAttribute(): ?string
+    {
+        if ($hero = $this->heroImage) {
+            return $hero->url();
+        }
+
+        $file = 'images/countries/'.strtolower((string) $this->iso_code).'.jpg';
+
+        return $this->iso_code && file_exists(public_path($file)) ? asset($file) : null;
     }
 
     /**

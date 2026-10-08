@@ -77,12 +77,14 @@
                     :trashed="$country->trashed()"
                 >
                     <x-slot:aside><x-adminv2.master-data.coordinates-mark :lat="$country->lat" :lng="$country->lng" /></x-slot:aside>
-                    @if ($country->is_eu_member || $country->is_schengen_member)
-                        <x-slot:badges>
-                            @if ($country->is_eu_member) <flux:badge size="sm" color="blue" inset="top bottom">EU</flux:badge> @endif
-                            @if ($country->is_schengen_member) <flux:badge size="sm" color="sky" inset="top bottom">Schengen</flux:badge> @endif
-                        </x-slot:badges>
-                    @endif
+                    <x-slot:badges>
+                        @if ($country->flag_url)
+                            <img src="{{ $country->flag_url }}" alt="" class="h-3.5 w-auto rounded-xs border border-zinc-200 dark:border-zinc-700" loading="lazy" />
+                        @endif
+                        @if ($country->is_eu_member) <flux:badge size="sm" color="blue" inset="top bottom">EU</flux:badge> @endif
+                        @if ($country->is_schengen_member) <flux:badge size="sm" color="sky" inset="top bottom">Schengen</flux:badge> @endif
+                        @if ($country->territory_type !== 'sovereign') <flux:badge size="sm" color="zinc" inset="top bottom">{{ \App\Support\AdminV2\CountryTravelInfo::TERRITORY_TYPES[$country->territory_type] ?? $country->territory_type }}</flux:badge> @endif
+                    </x-slot:badges>
                     @if (($country->name_translations['en'] ?? '') !== '' && $country->name_translations['en'] !== $country->getName('de'))
                         <x-adminv2.master-data.card-row icon="language" label="Englisch">{{ $country->name_translations['en'] }}</x-adminv2.master-data.card-row>
                     @endif

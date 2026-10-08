@@ -6,6 +6,9 @@
     - count: Gesamtzahl
     - allUrl / createUrl: Liste mit passendem Filter bzw. neuer Eintrag (optional)
     - Slot: die Eintraege als <li>
+    - toolbar: Suche und Seitengroesse ueber der Liste (optional)
+    - footer: Blaettern unter der Liste (optional)
+    - found: Treffer zur Suche, wenn gesucht wird (Leerhinweis statt Liste bei 0)
 --}}
 @props([
     'heading',
@@ -21,6 +24,7 @@
     'aiSection' => null,
     // $aiReview des Formulars: das Ergebnis der Feldpruefung zur Liste bleibt in der Karte stehen
     'review' => null,
+    'found' => null,
 ])
 
 <x-adminv2.card :heading="$heading.' ('.number_format($count, 0, ',', '.').')'" collapsible :collapsed="$count === 0">
@@ -44,9 +48,21 @@
     @if ($count === 0)
         <p class="text-sm text-zinc-500">{{ $emptyText }}</p>
     @else
-        <ul @class(['flex flex-col divide-y divide-zinc-100 text-sm dark:divide-zinc-800', 'max-h-96 overflow-y-auto' => $scroll])>
-            {{ $slot }}
-        </ul>
+        @isset($toolbar)
+            <div class="mb-3">{{ $toolbar }}</div>
+        @endisset
+
+        @if ($found === 0)
+            <p class="py-3 text-sm text-zinc-500">Nichts gefunden – zur Suche passt kein Eintrag.</p>
+        @else
+            <ul @class(['flex flex-col divide-y divide-zinc-100 text-sm dark:divide-zinc-800', 'max-h-96 overflow-y-auto' => $scroll])>
+                {{ $slot }}
+            </ul>
+        @endif
+
+        @isset($footer)
+            <div class="mt-3">{{ $footer }}</div>
+        @endisset
 
         @if ($allUrl)
             <a

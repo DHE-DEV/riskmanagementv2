@@ -6,11 +6,19 @@ use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
 use App\Livewire\AdminV2\Concerns\RunsAiChecks;
+use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
+use App\Models\CountryImage;
+use App\Models\Currency;
 use App\Models\CustomEvent;
+use App\Models\MobileOperator;
+use App\Models\Region;
+use App\Models\TaxiApp;
+use App\Services\CountryImageService;
 use App\Services\DeepLTranslationService;
 use App\Support\AdminV2\CountryRiskProfile;
+use App\Support\AdminV2\CountryTravelInfo;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +26,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * Stammdaten > Laender: ein Land anlegen oder bearbeiten – Grunddaten,
@@ -27,10 +36,21 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks, WithFileUploads;
 
-    /** So viele Eintraege zeigt die Seitenspalte je Liste. */
-    public const RELATED_LIMIT = 12;
+    /** Seitengroessen der Listen in der Seitenspalte; "all" = alle auf einmal. */
+    public const RELATED_LIMITS = ['15', '30', '100', 'all'];
+
+    public const RELATED_LISTS = ['regions', 'cities', 'airports'];
+
+    /** @var array<string, string> Suchbegriff je Liste der Seitenspalte */
+    public array $relatedSearch = ['regions' => '', 'cities' => '', 'airports' => ''];
+
+    /** @var array<string, string> Seitengroesse je Liste, siehe RELATED_LIMITS */
+    public array $relatedLimit = ['regions' => '15', 'cities' => '15', 'airports' => '15'];
+
+    /** @var array<string, int> aktuelle Seite je Liste */
+    public array $relatedPage = ['regions' => 1, 'cities' => 1, 'airports' => 1];
 
     public string $nameDe = '';
 
@@ -69,10 +89,42 @@ class Editor extends Component
     /** Beim Uebersetzen der Notizen bereits ausgefuellte Sprachen ueberschreiben */
     public bool $overwriteNoteTranslations = false;
 
+    // Reiseinformationen (siehe CountryTravelInfo)
+    public string $territoryType = 'sovereign';
+
+    public string $parentCountryId = '';
+
+    public string $drivingSide = '';
+
+    /** @var array<string, mixed> Formularwerte, siehe CountryTravelInfo::toForm */
+    public array $travelInfo = [];
+
+    /** @var array<int, string> IDs der zugeordneten Taxi-Apps */
+    public array $taxiAppIds = [];
+
+    /** @var array<int, string> IDs der zugeordneten Mobilfunkanbieter */
+    public array $mobileOperatorIds = [];
+
+    /** Suche in den verfuegbaren Mobilfunkanbietern */
+    public string $mobileOperatorSearch = '';
+
+    // Bilder
+    /** @var array<int, \Livewire\Features\SupportFileUploads\TemporaryUploadedFile> gerade hochgeladene Dateien */
+    public array $newImages = [];
+
+    /**
+     * Angaben zu den Bildern im Formular: Bild-ID => alt/caption je Sprache,
+     * Urheber, Lizenz, Quelle, freigegeben.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $imageMeta = [];
+
     public function mount(?int $country = null): void
     {
         if ($country === null) {
             $this->riskProfile = CountryRiskProfile::toForm(null);
+            $this->travelInfo = CountryTravelInfo::toForm(null);
             $continent = (int) request()->query('continent');
             $this->continentId = $continent && Continent::whereKey($continent)->exists() ? (string) $continent : '';
 
@@ -108,7 +160,320 @@ class Editor extends Component
         $this->population = (string) $record->population;
         $this->areaKm2 = $record->area_km2 === null ? '' : rtrim(rtrim(number_format((float) $record->area_km2, 2, '.', ''), '0'), '.');
         $this->riskProfile = CountryRiskProfile::toForm($record->risk_profile);
+        $this->territoryType = isset(CountryTravelInfo::TERRITORY_TYPES[$record->territory_type]) ? $record->territory_type : 'sovereign';
+        $this->parentCountryId = (string) ($record->parent_country_id ?? '');
+        $this->drivingSide = (string) ($record->driving_side ?? '');
+        $this->travelInfo = CountryTravelInfo::toForm($record->travel_info);
+        $this->taxiAppIds = $record->taxiApps()->pluck('taxi_apps.id')->map(fn ($id) => (string) $id)->all();
+        $this->mobileOperatorIds = $record->mobileOperators()->pluck('mobile_operators.id')->map(fn ($id) => (string) $id)->all();
+        $this->fillImageMeta();
         $this->fillCoordinates($record);
+    }
+
+    /**
+     * Alle Waehrungen fuer die Auswahlfelder.
+     *
+     * @return array<int, array{value: string, label: string, code: string}>
+     */
+    #[Computed]
+    public function currencyOptions(): array
+    {
+        return Currency::options('de');
+    }
+
+    /**
+     * Laender, die als Mutterland in Frage kommen – alle ausser dem eigenen.
+     *
+     * @return array<int, array{value: int, label: string, code: string}>
+     */
+    #[Computed]
+    public function parentOptions(): array
+    {
+        return Country::query()
+            ->when($this->recordId, fn ($query) => $query->whereKeyNot($this->recordId))
+            ->orderByRaw(MasterData::nameSql('countries'))
+            ->get(['id', 'iso_code', 'name_translations'])
+            ->map(fn (Country $country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => (string) $country->iso_code])
+            ->all();
+    }
+
+    /**
+     * Alle aktiven Taxi-Apps – plus bereits zugeordnete, auch wenn inaktiv.
+     */
+    #[Computed]
+    public function taxiAppOptions(): Collection
+    {
+        $ids = array_filter(array_map('intval', $this->taxiAppIds));
+
+        return TaxiApp::query()
+            ->where(fn ($query) => $query->where('is_active', true)->when($ids, fn ($q) => $q->orWhereIn('id', $ids)))
+            ->ordered()
+            ->get();
+    }
+
+    /**
+     * Die zugeordneten Apps in der Reihenfolge der Auswahl – fuer die Karte.
+     */
+    #[Computed]
+    public function selectedTaxiApps(): Collection
+    {
+        $ids = array_map('intval', $this->taxiAppIds);
+
+        return $this->taxiAppOptions->whereIn('id', $ids)->values();
+    }
+
+    /**
+     * Eine Religion in der Reihenfolge nach vorn oder hinten schieben – die
+     * Reihenfolge bestimmt die Darstellung fuer Kunden.
+     */
+    public function moveReligion(string $key, string $direction): void
+    {
+        $religions = CountryTravelInfo::religionKeys((array) ($this->travelInfo['religions'] ?? []));
+        $index = array_search($key, $religions, true);
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if ($index === false || $target < 0 || $target >= count($religions)) {
+            return;
+        }
+
+        [$religions[$index], $religions[$target]] = [$religions[$target], $religions[$index]];
+        $this->travelInfo['religions'] = $religions;
+    }
+
+    // ------------------------------------------------------------------
+    // Mobilfunkanbieter
+    // ------------------------------------------------------------------
+
+    /** Hoechstens so viele Treffer zeigt die Suche nach Anbietern. */
+    public const MOBILE_OPERATOR_MATCHES = 24;
+
+    /**
+     * Die zugeordneten Anbieter – auch inaktive bleiben sichtbar.
+     */
+    #[Computed]
+    public function selectedMobileOperators(): Collection
+    {
+        $ids = array_values(array_filter(array_map('intval', $this->mobileOperatorIds)));
+
+        return $ids === [] ? collect() : MobileOperator::query()->whereIn('id', $ids)->ordered()->get();
+    }
+
+    /**
+     * Aktive Anbieter, die zur Suche passen und noch nicht zugeordnet sind.
+     */
+    #[Computed]
+    public function mobileOperatorMatches(): Collection
+    {
+        $term = trim($this->mobileOperatorSearch);
+        $selected = array_values(array_filter(array_map('intval', $this->mobileOperatorIds)));
+
+        return MobileOperator::query()
+            ->active()
+            ->when($selected, fn ($query) => $query->whereKeyNot($selected))
+            ->when($term !== '', fn ($query) => $query->where('name', 'like', '%'.addcslashes($term, '%_\\').'%'))
+            ->ordered()
+            ->limit(self::MOBILE_OPERATOR_MATCHES)
+            ->get();
+    }
+
+    #[Computed]
+    public function mobileOperatorsTotal(): int
+    {
+        return MobileOperator::query()->active()->count();
+    }
+
+    public function updatedMobileOperatorSearch(): void
+    {
+        unset($this->mobileOperatorMatches);
+    }
+
+    public function addMobileOperator(int $operatorId): void
+    {
+        if (! MobileOperator::query()->active()->whereKey($operatorId)->exists()) {
+            return;
+        }
+
+        if (! in_array((string) $operatorId, $this->mobileOperatorIds, true)) {
+            $this->mobileOperatorIds[] = (string) $operatorId;
+        }
+
+        $this->mobileOperatorSearch = '';
+        unset($this->selectedMobileOperators, $this->mobileOperatorMatches);
+    }
+
+    public function removeMobileOperator(int $operatorId): void
+    {
+        $this->mobileOperatorIds = array_values(array_diff($this->mobileOperatorIds, [(string) $operatorId]));
+        unset($this->selectedMobileOperators, $this->mobileOperatorMatches);
+    }
+
+    public function removeTaxiApp(int $appId): void
+    {
+        $this->taxiAppIds = array_values(array_diff($this->taxiAppIds, [(string) $appId]));
+        unset($this->selectedTaxiApps);
+    }
+
+    // ------------------------------------------------------------------
+    // Bilder
+    // ------------------------------------------------------------------
+
+    #[Computed]
+    public function images(): Collection
+    {
+        return $this->record ? $this->record->images()->get() : collect();
+    }
+
+    protected function fillImageMeta(): void
+    {
+        $this->imageMeta = [];
+
+        foreach ($this->images as $image) {
+            $meta = ['alt' => [], 'caption' => [], 'credit' => (string) $image->credit, 'license' => (string) $image->license, 'source_url' => (string) $image->source_url, 'is_published' => (bool) $image->is_published];
+
+            foreach (CountryTravelInfo::locales() as $locale) {
+                $meta['alt'][$locale] = (string) ($image->alt_translations[$locale] ?? '');
+                $meta['caption'][$locale] = (string) ($image->caption_translations[$locale] ?? '');
+            }
+
+            $this->imageMeta[$image->id] = $meta;
+        }
+    }
+
+    /**
+     * Hochgeladene Dateien sofort ablegen – ohne "Speichern"; das erste Bild
+     * eines Landes wird sein Titelbild.
+     */
+    public function updatedNewImages(): void
+    {
+        if (! $this->record) {
+            $this->newImages = [];
+
+            return;
+        }
+
+        $this->validate([
+            'newImages' => ['array', 'max:20'],
+            'newImages.*' => ['file', 'mimetypes:'.implode(',', CountryImageService::MIME_TYPES), 'max:10240'],
+        ], [
+            'newImages.*.mimetypes' => 'Erlaubt sind JPEG, PNG, WebP und SVG.',
+            'newImages.*.max' => 'Ein Bild darf höchstens 10 MB groß sein.',
+        ]);
+
+        $service = app(CountryImageService::class);
+        $stored = 0;
+
+        foreach ($this->newImages as $file) {
+            $kind = $this->record->images()->where('kind', CountryImage::KIND_HERO)->exists() ? CountryImage::KIND_GALLERY : CountryImage::KIND_HERO;
+            $service->store($this->record, $file, $kind, auth('web')->id());
+            $stored++;
+        }
+
+        $this->newImages = [];
+        $this->refreshImages();
+
+        $this->dispatch('adminv2-toast', message: $stored === 1 ? '1 Bild hochgeladen.' : $stored.' Bilder hochgeladen.');
+    }
+
+    public function setHeroImage(int $imageId): void
+    {
+        $image = $this->ownImage($imageId);
+
+        $this->record->images()->where('kind', CountryImage::KIND_HERO)->update(['kind' => CountryImage::KIND_GALLERY]);
+        $image->update(['kind' => CountryImage::KIND_HERO]);
+
+        $this->refreshImages();
+        $this->dispatch('adminv2-toast', message: 'Titelbild gesetzt.');
+    }
+
+    /**
+     * Ein Bild in der Galerie nach oben oder unten schieben.
+     */
+    public function moveImage(int $imageId, string $direction): void
+    {
+        $image = $this->ownImage($imageId);
+        $ordered = $this->record->images()->where('kind', CountryImage::KIND_GALLERY)->get()->values();
+        $index = $ordered->search(fn (CountryImage $item) => $item->id === $image->id);
+
+        if ($index === false) {
+            return;
+        }
+
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if ($target < 0 || $target >= $ordered->count()) {
+            return;
+        }
+
+        $swapped = $ordered->all();
+        [$swapped[$index], $swapped[$target]] = [$swapped[$target], $swapped[$index]];
+
+        foreach ($swapped as $position => $item) {
+            $item->update(['sort_order' => $position + 1]);
+        }
+
+        $this->refreshImages();
+    }
+
+    /**
+     * Alt-Texte, Bildunterschriften, Urheber, Lizenz, Quelle und Freigabe eines Bildes speichern.
+     */
+    public function saveImage(int $imageId): void
+    {
+        $image = $this->ownImage($imageId);
+        $meta = $this->imageMeta[$imageId] ?? [];
+
+        $this->validate([
+            'imageMeta.'.$imageId.'.alt.*' => ['nullable', 'string', 'max:255'],
+            'imageMeta.'.$imageId.'.caption.*' => ['nullable', 'string', 'max:1000'],
+            'imageMeta.'.$imageId.'.credit' => ['nullable', 'string', 'max:255'],
+            'imageMeta.'.$imageId.'.license' => ['nullable', 'string', 'max:100'],
+            'imageMeta.'.$imageId.'.source_url' => ['nullable', 'url', 'max:2048'],
+        ], [
+            'imageMeta.'.$imageId.'.source_url.url' => 'Die Quelle muss eine vollständige Adresse sein (https://…).',
+        ]);
+
+        $clean = fn (array $texts) => array_filter(array_map(fn ($text) => trim((string) $text), $texts), fn ($text) => $text !== '');
+
+        $image->update([
+            'alt_translations' => $clean((array) ($meta['alt'] ?? [])) ?: null,
+            'caption_translations' => $clean((array) ($meta['caption'] ?? [])) ?: null,
+            'credit' => trim((string) ($meta['credit'] ?? '')) ?: null,
+            'license' => trim((string) ($meta['license'] ?? '')) ?: null,
+            'source_url' => trim((string) ($meta['source_url'] ?? '')) ?: null,
+            'is_published' => (bool) ($meta['is_published'] ?? true),
+        ]);
+
+        $this->refreshImages();
+        $this->dispatch('adminv2-toast', message: 'Bildangaben gespeichert.');
+    }
+
+    public function deleteImage(int $imageId): void
+    {
+        $image = $this->ownImage($imageId);
+        $wasHero = $image->isHero();
+
+        app(CountryImageService::class)->delete($image);
+
+        // Ohne Titelbild rueckt das erste Galeriebild nach.
+        if ($wasHero && ($next = $this->record->images()->first())) {
+            $next->update(['kind' => CountryImage::KIND_HERO]);
+        }
+
+        $this->refreshImages();
+        $this->dispatch('adminv2-toast', message: 'Bild gelöscht.');
+    }
+
+    protected function ownImage(int $imageId): CountryImage
+    {
+        abort_unless($this->record, 404);
+
+        return $this->record->images()->findOrFail($imageId);
+    }
+
+    protected function refreshImages(): void
+    {
+        unset($this->images);
+        $this->fillImageMeta();
     }
 
     protected function masterDataModel(): string
@@ -155,9 +520,37 @@ class Editor extends Component
     }
 
     /**
-     * Was am Land haengt: Anzahl und die ersten Eintraege fuer die Seitenspalte.
+     * Neue Suche oder Seitengroesse: zurueck auf Seite 1 der Liste.
+     */
+    public function updatedRelatedSearch(mixed $value, string $list): void
+    {
+        $this->relatedPage[$list] = 1;
+        unset($this->related);
+    }
+
+    public function updatedRelatedLimit(mixed $value, string $list): void
+    {
+        $this->relatedPage[$list] = 1;
+        unset($this->related);
+    }
+
+    /**
+     * In einer Liste der Seitenspalte blaettern.
+     */
+    public function relatedGoto(string $list, int $page): void
+    {
+        if (! in_array($list, self::RELATED_LISTS, true)) {
+            return;
+        }
+
+        $this->relatedPage[$list] = max(1, $page);
+        unset($this->related);
+    }
+
+    /**
+     * Was am Land haengt – je Liste mit Suche und Seiten.
      *
-     * @return array{regions: array{count: int, items: Collection}, cities: array{count: int, items: Collection}, airports: array{count: int, items: Collection}, events: int}|null
+     * @return array{regions: array<string, mixed>, cities: array<string, mixed>, airports: array<string, mixed>, events: int}|null
      */
     #[Computed]
     public function related(): ?array
@@ -168,21 +561,106 @@ class Editor extends Component
             return null;
         }
 
+        // Wichtige Regionen zuerst, dann alphabetisch.
+        $regions = fn () => $country->regions()->orderByDesc('is_major')->orderByRaw(MasterData::nameSql('regions'));
+        // Hauptstadt und wichtige Staedte zuerst, dann die groessten.
+        $cities = fn () => $country->cities()->orderByDesc('is_capital')->orderByDesc('is_major')->orderByDesc('population')->orderByRaw(MasterData::nameSql('cities'));
+        $airports = fn () => $country->airports()->orderBy('name')->select(['id', 'name', 'iata_code', 'icao_code', 'country_id']);
+
         return [
-            'regions' => [
-                'count' => $country->regions()->count(),
-                'items' => $country->regions()->orderByRaw(MasterData::nameSql('regions'))->limit(self::RELATED_LIMIT)->get(),
-            ],
-            'cities' => [
-                'count' => $country->cities()->count(),
-                // Hauptstadt zuerst, dann die groessten Staedte.
-                'items' => $country->cities()->orderByDesc('is_capital')->orderByDesc('population')->limit(self::RELATED_LIMIT)->get(),
-            ],
-            'airports' => [
-                'count' => $country->airports()->count(),
-                'items' => $country->airports()->orderBy('name')->limit(self::RELATED_LIMIT)->get(['id', 'name', 'iata_code', 'icao_code']),
-            ],
+            'regions' => $this->relatedList('regions', $regions, fn ($query, string $term) => MasterData::search($query, $term, ['code']), fn ($region) => $region->getName('de')),
+            'cities' => $this->relatedList('cities', $cities, fn ($query, string $term) => MasterData::search($query, $term), fn ($city) => $city->getName('de')),
+            'airports' => $this->relatedList('airports', $airports, function ($query, string $term) {
+                $like = '%'.addcslashes(trim($term), '%_\\').'%';
+
+                return $query->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('iata_code', 'like', $like)->orWhere('icao_code', 'like', $like));
+            }, fn ($airport) => trim($airport->name.' '.($airport->iata_code ? '('.$airport->iata_code.')' : ''))),
             'events' => DB::table('country_custom_event')->where('country_id', $country->id)->distinct()->count('custom_event_id'),
+        ];
+    }
+
+    /**
+     * Eine Region als "Major Region" des Landes markieren – oder die Markierung
+     * wieder aufheben. Wird sofort gespeichert, unabhaengig vom Formular.
+     */
+    public function toggleMajorRegion(int $regionId): void
+    {
+        $region = $this->record?->regions()->find($regionId);
+
+        if (! $region) {
+            return;
+        }
+
+        $region->update(['is_major' => ! $region->is_major]);
+        MasterData::logChange($region, \App\Models\MasterDataChange::ACTION_UPDATED, ['is_major']);
+
+        unset($this->related);
+        $this->dispatch('adminv2-toast', message: $region->is_major
+            ? '„'.$region->getName('de').'“ ist jetzt eine Major Region.'
+            : '„'.$region->getName('de').'“ ist keine Major Region mehr.');
+    }
+
+    /**
+     * Eine Stadt als "Major City" des Landes markieren – oder die Markierung
+     * wieder aufheben.
+     */
+    public function toggleMajorCity(int $cityId): void
+    {
+        $city = $this->record?->cities()->find($cityId);
+
+        if (! $city) {
+            return;
+        }
+
+        $city->update(['is_major' => ! $city->is_major]);
+        MasterData::logChange($city, \App\Models\MasterDataChange::ACTION_UPDATED, ['is_major']);
+
+        unset($this->related);
+        $this->dispatch('adminv2-toast', message: $city->is_major
+            ? '„'.$city->getName('de').'“ ist jetzt eine Major City.'
+            : '„'.$city->getName('de').'“ ist keine Major City mehr.');
+    }
+
+    /**
+     * Eine Liste der Seitenspalte: Gesamtzahl, Treffer zur Suche, die Eintraege
+     * der aktuellen Seite und Vorschlaege fuer die Autovervollstaendigung.
+     *
+     * @param  callable(): \Illuminate\Database\Eloquent\Relations\HasMany  $query  Grundabfrage mit Sortierung
+     * @param  callable(\Illuminate\Database\Eloquent\Builder, string): \Illuminate\Database\Eloquent\Builder  $search
+     * @param  callable(\Illuminate\Database\Eloquent\Model): string  $label
+     * @return array{count: int, found: int, items: Collection, suggestions: array<int, string>, page: int, last_page: int, limit: string, search: string, from: int, to: int}
+     */
+    protected function relatedList(string $list, callable $query, callable $search, callable $label): array
+    {
+        // Die Suche erwartet einen Eloquent-Builder, die Relation liefert ihn samt Land-Bedingung.
+        $base = fn () => $query()->getQuery();
+        $count = $base()->count();
+        $term = trim((string) ($this->relatedSearch[$list] ?? ''));
+        $limit = in_array($this->relatedLimit[$list] ?? '', self::RELATED_LIMITS, true) ? $this->relatedLimit[$list] : '15';
+
+        $filtered = fn () => $term === '' ? $base() : $search($base(), $term);
+        $found = $term === '' ? $count : $filtered()->count();
+
+        $perPage = $limit === 'all' ? max(1, $found) : (int) $limit;
+        $lastPage = max(1, (int) ceil($found / $perPage));
+        $page = min(max(1, (int) ($this->relatedPage[$list] ?? 1)), $lastPage);
+
+        $items = $filtered()->skip(($page - 1) * $perPage)->take($perPage)->get();
+
+        // Vorschlaege: die ersten Treffer zum Suchbegriff – fuer die Autovervollstaendigung des Feldes.
+        $suggestions = $term === '' ? [] : $filtered()->take(12)->get()->map($label)->unique()->values()->all();
+
+        return [
+            'count' => $count,
+            'found' => $found,
+            'items' => $items,
+            'suggestions' => $suggestions,
+            'page' => $page,
+            'last_page' => $lastPage,
+            'limit' => $limit,
+            'search' => $term,
+            'from' => $found === 0 ? 0 : ($page - 1) * $perPage + 1,
+            'to' => min($found, $page * $perPage),
         ];
     }
 
@@ -282,7 +760,14 @@ class Editor extends Component
             'population' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
             'areaKm2' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
             'riskProfile.entry.passport_validity_months' => ['nullable', 'integer', 'min:0', 'max:120'],
-        ] + $this->coordinateRules(), [
+            'territoryType' => ['required', Rule::in(array_keys(CountryTravelInfo::TERRITORY_TYPES))],
+            'parentCountryId' => ['nullable', Rule::exists('countries', 'id')->whereNull('deleted_at'), Rule::notIn([(string) $this->recordId])],
+            'drivingSide' => ['nullable', Rule::in(array_keys(CountryTravelInfo::DRIVING_SIDES))],
+            'taxiAppIds' => ['array'],
+            'taxiAppIds.*' => [Rule::exists('taxi_apps', 'id')],
+            'mobileOperatorIds' => ['array'],
+            'mobileOperatorIds.*' => [Rule::exists('mobile_operators', 'id')],
+        ] + CountryTravelInfo::rules('travelInfo', $this->travelInfo) + $this->coordinateRules(), [
             'nameDe.required' => 'Bitte den deutschen Namen angeben.',
             'nameEn.required' => 'Bitte den englischen Namen angeben.',
             'extraNames.*.code.required' => 'Bitte das Sprachkürzel angeben, z. B. fr.',
@@ -307,13 +792,21 @@ class Editor extends Component
             'population.integer' => 'Die Bevölkerung muss eine ganze Zahl sein.',
             'areaKm2.numeric' => 'Die Fläche muss eine Zahl sein.',
             'riskProfile.entry.passport_validity_months.integer' => 'Die Gültigkeit des Reisepasses ist eine ganze Zahl von Monaten.',
-        ] + $this->coordinateMessages());
+            'territoryType.in' => 'Bitte einen Gebietstyp wählen.',
+            'parentCountryId.exists' => 'Bitte ein vorhandenes Land als Mutterland wählen.',
+            'parentCountryId.not_in' => 'Ein Land kann nicht sein eigenes Mutterland sein.',
+            'drivingSide.in' => 'Bitte Rechts- oder Linksverkehr wählen.',
+        ] + CountryTravelInfo::messages() + $this->coordinateMessages());
 
         $record ??= new Country;
         $created = ! $record->exists;
         // Das Risikoprofil wird beim Speichern vereinheitlicht – nur inhaltliche Aenderungen zaehlen im Protokoll.
         $riskProfile = CountryRiskProfile::fromForm($this->riskProfile, $record->risk_profile);
         $unchanged = $record->exists && $riskProfile == CountryRiskProfile::fromForm(CountryRiskProfile::toForm($record->risk_profile), $record->risk_profile) ? ['risk_profile'] : [];
+        $travelInfo = CountryTravelInfo::fromForm($this->travelInfo, $record->travel_info);
+        if ($record->exists && $travelInfo == CountryTravelInfo::fromForm(CountryTravelInfo::toForm($record->travel_info), $record->travel_info)) {
+            $unchanged[] = 'travel_info';
+        }
 
         $names = ['de' => trim($this->nameDe), 'en' => trim($this->nameEn)];
         foreach ($this->extraNames as $row) {
@@ -335,9 +828,29 @@ class Editor extends Component
             'population' => $this->population === '' ? null : (int) $this->population,
             'area_km2' => $this->areaKm2 === '' ? null : (float) $this->areaKm2,
             'risk_profile' => $riskProfile,
+            'territory_type' => $this->territoryType,
+            // Ein souveraener Staat hat kein Mutterland.
+            'parent_country_id' => $this->territoryType !== 'sovereign' && $this->parentCountryId !== '' ? (int) $this->parentCountryId : null,
+            'driving_side' => $this->drivingSide ?: null,
+            'travel_info' => $travelInfo,
         ] + $this->coordinateValues())->save();
 
-        unset($this->related, $this->boundary, $this->overallRisk);
+        // Taxi-Apps: nur, was es gibt; die Zuordnung zaehlt im Protokoll als Aenderung.
+        $taxiAppIds = TaxiApp::query()->whereIn('id', array_map('intval', $this->taxiAppIds))->pluck('id')->all();
+        $syncedTaxiApps = $record->taxiApps()->sync($taxiAppIds);
+        if ($syncedTaxiApps['attached'] !== [] || $syncedTaxiApps['detached'] !== []) {
+            $record->syncChanges();
+            MasterData::logChange($record, \App\Models\MasterDataChange::ACTION_UPDATED, ['taxi_apps']);
+        }
+
+        $operatorIds = MobileOperator::query()->whereIn('id', array_map('intval', $this->mobileOperatorIds))->pluck('id')->all();
+        $syncedOperators = $record->mobileOperators()->sync($operatorIds);
+        if ($syncedOperators['attached'] !== [] || $syncedOperators['detached'] !== []) {
+            $record->syncChanges();
+            MasterData::logChange($record, \App\Models\MasterDataChange::ACTION_UPDATED, ['mobile_operators']);
+        }
+
+        unset($this->related, $this->boundary, $this->overallRisk, $this->taxiAppOptions, $this->selectedTaxiApps, $this->selectedMobileOperators, $this->mobileOperatorMatches);
 
         $this->finishSave($record, $created, $another, $unchanged);
     }
@@ -391,6 +904,114 @@ class Editor extends Component
         });
     }
 
+    /**
+     * Uebersetzt die mehrsprachigen Texte eines Abschnitts per DeepL aus der
+     * Ausgangssprache in die uebrigen Sprachen – wie bei den Risiko-Notizen.
+     *
+     * details: Einleitung, "Bekannt fuer", Bezeichnung des Nationaltags.
+     * power: Bemerkung zum Strom. tipping: Beschreibungen je Bereich. images: Alt-Texte und
+     * Bildunterschriften – die werden sofort am Bild gespeichert.
+     */
+    public function translateTexts(string $section): void
+    {
+        $this->modal('translate-'.$section)->close();
+
+        $deepl = app(DeepLTranslationService::class);
+
+        if (! $deepl->isConfigured()) {
+            $this->dispatch('adminv2-toast', message: 'DeepL ist nicht konfiguriert (DEEPL_KEY fehlt).', variant: 'danger');
+
+            return;
+        }
+
+        set_time_limit(120);
+
+        $translated = 0;
+        $errors = [];
+
+        switch ($section) {
+            case 'details':
+                foreach (array_keys(CountryTravelInfo::TEXTS) as $field) {
+                    $this->travelInfo['texts'][$field] = $this->translateMap((array) ($this->travelInfo['texts'][$field] ?? []), $deepl, $translated, $errors);
+                }
+                $this->travelInfo['national_day']['name'] = $this->translateMap((array) ($this->travelInfo['national_day']['name'] ?? []), $deepl, $translated, $errors);
+                break;
+
+            case 'power':
+                foreach (array_keys(CountryTravelInfo::POWER_TEXTS) as $field) {
+                    $this->travelInfo['texts'][$field] = $this->translateMap((array) ($this->travelInfo['texts'][$field] ?? []), $deepl, $translated, $errors);
+                }
+                break;
+
+            case 'tipping':
+                foreach (array_keys(CountryTravelInfo::TIPPING_CATEGORIES) as $category) {
+                    $this->travelInfo['tipping'][$category]['description'] = $this->translateMap((array) ($this->travelInfo['tipping'][$category]['description'] ?? []), $deepl, $translated, $errors);
+                }
+                break;
+
+            case 'images':
+                foreach ($this->images as $image) {
+                    $before = $translated;
+                    $this->imageMeta[$image->id]['alt'] = $this->translateMap((array) ($this->imageMeta[$image->id]['alt'] ?? []), $deepl, $translated, $errors);
+                    $this->imageMeta[$image->id]['caption'] = $this->translateMap((array) ($this->imageMeta[$image->id]['caption'] ?? []), $deepl, $translated, $errors);
+
+                    if ($translated > $before) {
+                        $clean = fn (array $texts) => array_filter(array_map(fn ($text) => trim((string) $text), $texts), fn ($text) => $text !== '');
+                        $image->update([
+                            'alt_translations' => $clean($this->imageMeta[$image->id]['alt']) ?: null,
+                            'caption_translations' => $clean($this->imageMeta[$image->id]['caption']) ?: null,
+                        ]);
+                    }
+                }
+                unset($this->images);
+                break;
+
+            default:
+                return;
+        }
+
+        $saved = $section === 'images';
+
+        $this->dispatch('adminv2-toast', ...match (true) {
+            $errors !== [] => ['message' => 'Übersetzung teilweise fehlgeschlagen – '.implode(' | ', $errors), 'variant' => 'danger'],
+            $translated > 0 => ['message' => $translated.' '.($translated === 1 ? 'Text' : 'Texte').' übersetzt'.($saved ? ' und gespeichert.' : ' – noch nicht gespeichert.')],
+            default => ['message' => 'Nichts zu übersetzen – alle Sprachen waren bereits ausgefüllt oder die Ausgangssprache ist leer.'],
+        });
+    }
+
+    /**
+     * Ein Text je Sprache: die Ausgangssprache in die uebrigen uebersetzen.
+     * Ausgefuellte Sprachen bleiben, ausser "ueberschreiben" ist gewaehlt.
+     *
+     * @param  array<string, string>  $texts
+     * @param  array<string, string>  $errors
+     * @return array<string, string>
+     */
+    protected function translateMap(array $texts, DeepLTranslationService $deepl, int &$translated, array &$errors): array
+    {
+        $source = CustomEvent::sourceLocale();
+        $original = trim((string) ($texts[$source] ?? ''));
+
+        if ($original === '') {
+            return $texts;
+        }
+
+        foreach (CountryTravelInfo::locales() as $locale) {
+            if ($locale === $source || (! $this->overwriteNoteTranslations && filled($texts[$locale] ?? null))) {
+                continue;
+            }
+
+            try {
+                $texts[$locale] = $deepl->translate($original, $locale, $source);
+                $translated++;
+            } catch (\Throwable $e) {
+                $errors[strtoupper($locale)] = strtoupper($locale).': '.$e->getMessage();
+            }
+        }
+
+        return $texts;
+    }
+
     protected function aiArea(): string
     {
         return 'countries';
@@ -424,7 +1045,54 @@ class Editor extends Component
             }
         }
 
-        return $riskFields + [
+        $travel = [
+            'territory_type' => CountryTravelInfo::TERRITORY_TYPES[$this->territoryType] ?? $this->territoryType,
+            'parent_country' => collect($this->parentOptions)->firstWhere('value', (int) $this->parentCountryId)['label'] ?? null,
+            'driving_side' => CountryTravelInfo::DRIVING_SIDES[$this->drivingSide] ?? null,
+            'plug_types' => implode(', ', (array) ($this->travelInfo['plug_types'] ?? [])) ?: null,
+            'voltage' => $this->travelInfo['voltage'] ?: null,
+            'frequency' => $this->travelInfo['frequency'] ?: null,
+        ];
+        foreach (CountryTravelInfo::TIPPING_CATEGORIES as $category => $label) {
+            $row = $this->travelInfo['tipping'][$category] ?? [];
+            $travel['tipping_'.$category.'_mode'] = CountryTravelInfo::TIPPING_MODES[$row['mode'] ?? 'range'] ?? null;
+            $travel['tipping_'.$category.'_from'] = ($row['from'] ?? '') ?: null;
+            $travel['tipping_'.$category.'_to'] = ($row['to'] ?? '') ?: null;
+            $travel['tipping_'.$category.'_unit'] = CountryTravelInfo::TIPPING_UNITS[$row['unit'] ?? ''] ?? null;
+            $travel['tipping_'.$category.'_currency'] = ($row['currency'] ?? '') ?: null;
+            foreach (CountryTravelInfo::locales() as $locale) {
+                $travel['tipping_'.$category.'_description_'.$locale] = ($row['description'][$locale] ?? '') ?: null;
+            }
+        }
+        foreach (CountryTravelInfo::EMERGENCY as $key => $label) {
+            $travel['emergency_'.$key] = ($this->travelInfo['emergency'][$key] ?? '') ?: null;
+        }
+        $travel['religions'] = implode(', ', array_map(fn ($key) => CountryTravelInfo::RELIGIONS[$key][0] ?? $key, (array) ($this->travelInfo['religions'] ?? []))) ?: null;
+        $travel['national_day_date'] = ($this->travelInfo['national_day']['date'] ?? '') ?: null;
+        foreach (CountryTravelInfo::locales() as $locale) {
+            $travel['national_day_name_'.$locale] = ($this->travelInfo['national_day']['name'][$locale] ?? '') ?: null;
+        }
+        foreach (CountryTravelInfo::allTexts() as $field => [$label]) {
+            foreach (CountryTravelInfo::locales() as $locale) {
+                $travel[$field.'_'.$locale] = ($this->travelInfo['texts'][$field][$locale] ?? '') ?: null;
+            }
+        }
+
+        $images = $this->images->map(fn (CountryImage $image) => ($image->isHero() ? 'Titelbild' : 'Galerie').': '
+            .($image->original_name ?: basename($image->path)).' ('.$image->width.'×'.$image->height.')'
+            .' – Alt: '.(json_encode($this->imageMeta[$image->id]['alt'] ?? [], JSON_UNESCAPED_UNICODE) ?: '{}')
+            .', Bildunterschrift: '.(json_encode($this->imageMeta[$image->id]['caption'] ?? [], JSON_UNESCAPED_UNICODE) ?: '{}')
+            .', Urheber: '.(($this->imageMeta[$image->id]['credit'] ?? '') ?: '–')
+            .', Lizenz: '.(($this->imageMeta[$image->id]['license'] ?? '') ?: '–'))->values()->all();
+
+        return $riskFields + $travel + [
+            'taxi_apps' => $this->selectedTaxiApps->map(fn (TaxiApp $app) => $app->name.($app->website_url ? ' – '.$app->website_url : ''))->values()->all(),
+            'taxi_apps_available' => $this->taxiAppOptions->pluck('name')->values()->all(),
+            'mobile_operators' => $this->selectedMobileOperators->map(fn (MobileOperator $operator) => $operator->name.($operator->website_url ? ' – '.$operator->website_url : ''))->values()->all(),
+            'mobile_operators_available' => MobileOperator::query()->active()->ordered()->pluck('name')->values()->all(),
+            'flag' => $this->record?->flag_url,
+            'images_count' => $this->images->count(),
+            'images' => $images,
             'name' => $this->nameDe,
             'name_en' => $this->nameEn,
             'names' => collect($this->extraNames)->filter(fn (array $row) => ($row['name'] ?? '') !== '')->map(fn (array $row) => ($row['code'] ?? '').': '.$row['name'])->values()->all(),
@@ -444,6 +1112,16 @@ class Editor extends Component
             'lng' => $this->lng,
             'risk_profile' => $riskProfile,
         ];
+    }
+
+    protected function aiReviewHint(string $section): ?string
+    {
+        return match ($section) {
+            'details' => CountryTravelInfo::reviewHint(),
+            'tipping' => CountryTravelInfo::tippingReviewHint(),
+            'power' => CountryTravelInfo::powerReviewHint(),
+            default => null,
+        };
     }
 
     /**
@@ -485,6 +1163,10 @@ class Editor extends Component
             $this->riskProfile[$category][$field] = $parsed;
             unset($this->overallRisk);
 
+            return true;
+        }
+
+        if ($this->aiApplyTravel($key, $value)) {
             return true;
         }
 
@@ -542,6 +1224,148 @@ class Editor extends Component
                 }
 
                 return $continent !== null;
+        }
+
+        return false;
+    }
+
+    /**
+     * Vorschlaege zu den Reiseinformationen uebernehmen.
+     */
+    protected function aiApplyTravel(string $key, string $value): bool
+    {
+        if (str_starts_with($key, 'emergency_')) {
+            $field = substr($key, strlen('emergency_'));
+            if (! isset(CountryTravelInfo::EMERGENCY[$field])) {
+                return false;
+            }
+            $this->travelInfo['emergency'][$field] = trim($value);
+
+            return true;
+        }
+
+        if (preg_match('/^tipping_('.implode('|', array_keys(CountryTravelInfo::TIPPING_CATEGORIES)).')_(from|to|unit|mode|currency|description_([a-z]{2}))$/', $key, $match)) {
+            [, $category, $field] = $match;
+            $locale = $match[3] ?? null;
+
+            if ($locale !== null) {
+                if (! in_array($locale, CountryTravelInfo::locales(), true)) {
+                    return false;
+                }
+                $this->travelInfo['tipping'][$category]['description'][$locale] = trim($value);
+
+                return true;
+            }
+
+            if ($field === 'mode') {
+                $mode = CountryTravelInfo::parseOption(CountryTravelInfo::TIPPING_MODES, $value)
+                    ?? (str_contains(mb_strtolower($value), 'fest') || str_contains(mb_strtolower($value), 'fix') ? 'fixed' : (str_contains(mb_strtolower($value), 'bis') || str_contains(mb_strtolower($value), 'spann') ? 'range' : null));
+                if ($mode) {
+                    $this->travelInfo['tipping'][$category]['mode'] = $mode;
+                }
+
+                return $mode !== null;
+            }
+
+            if ($field === 'currency') {
+                // Nur Codes, die es in der Waehrungstabelle gibt.
+                preg_match_all('/\b([A-Za-z]{3})\b/', $value, $codes);
+                foreach ($codes[1] as $code) {
+                    if (Currency::query()->active()->whereKey(strtoupper($code))->exists()) {
+                        $this->travelInfo['tipping'][$category]['currency'] = strtoupper($code);
+
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            if ($field === 'unit') {
+                $unit = CountryTravelInfo::parseOption(CountryTravelInfo::TIPPING_UNITS, $value)
+                    ?? (str_contains($value, '%') || str_contains(mb_strtolower($value), 'prozent') ? 'percent' : null);
+                if ($unit) {
+                    $this->travelInfo['tipping'][$category]['unit'] = $unit;
+                }
+
+                return $unit !== null;
+            }
+
+            $number = CountryTravelInfo::parseNumber(preg_replace('/[^0-9.,]/', '', $value));
+            if ($number === null) {
+                return false;
+            }
+            $this->travelInfo['tipping'][$category][$field] = CountryTravelInfo::number($number);
+
+            return true;
+        }
+
+        if ($key === 'national_day_date') {
+            $date = rescue(fn () => \Illuminate\Support\Carbon::parse(trim($value))->format('Y-m-d'), null, false);
+            if ($date === null) {
+                return false;
+            }
+            $this->travelInfo['national_day']['date'] = $date;
+
+            return true;
+        }
+
+        if (preg_match('/^national_day_name_([a-z]{2})$/', $key, $match) && in_array($match[1], CountryTravelInfo::locales(), true)) {
+            $this->travelInfo['national_day']['name'][$match[1]] = trim($value);
+
+            return true;
+        }
+
+        foreach (CountryTravelInfo::allTexts() as $field => [, $type]) {
+            foreach (CountryTravelInfo::locales() as $locale) {
+                if ($key === $field.'_'.$locale) {
+                    $this->travelInfo['texts'][$field][$locale] = $type === 'tags' ? implode(', ', CountryTravelInfo::tags($value)) : trim($value);
+
+                    return true;
+                }
+            }
+        }
+
+        switch ($key) {
+            case 'territory_type':
+                $type = CountryTravelInfo::parseOption(CountryTravelInfo::TERRITORY_TYPES, $value);
+                if ($type) {
+                    $this->territoryType = $type;
+                }
+
+                return $type !== null;
+            case 'parent_country':
+                $option = $this->aiMatch($this->parentOptions, $value, fn (array $option) => $option['label'])
+                    ?? $this->aiMatch($this->parentOptions, $value, fn (array $option) => $option['code']);
+                if ($option) {
+                    $this->parentCountryId = (string) $option['value'];
+                }
+
+                return $option !== null;
+            case 'driving_side':
+                $side = CountryTravelInfo::parseOption(CountryTravelInfo::DRIVING_SIDES, $value)
+                    ?? (str_contains(mb_strtolower($value), 'link') ? 'left' : (str_contains(mb_strtolower($value), 'recht') ? 'right' : null));
+                if ($side) {
+                    $this->drivingSide = $side;
+                }
+
+                return $side !== null;
+            case 'plug_types':
+                $this->travelInfo['plug_types'] = CountryTravelInfo::parsePlugTypes($value);
+
+                return true;
+            case 'religions':
+                $religions = CountryTravelInfo::parseReligions($value);
+                if ($religions !== []) {
+                    $this->travelInfo['religions'] = $religions;
+                }
+
+                return $religions !== [];
+            case 'voltage':
+            case 'frequency':
+                $this->travelInfo[$key] = $this->aiNumber($value);
+
+                return true;
         }
 
         return false;

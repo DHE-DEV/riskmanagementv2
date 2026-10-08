@@ -4,6 +4,8 @@
     - collapsible: Die Karte laesst sich ueber ihre Kopfzeile auf- und zuklappen.
       Mit "collapse-key" merkt sich der Browser den Zustand.
     - collapsed: zugeklappt starten (solange der Browser nichts anderes gespeichert hat)
+    - Ein Fenster-Ereignis "adminv2-cards" mit { open: true|false } klappt alle
+      klappbaren Karten der Seite auf bzw. zu (siehe x-adminv2.cards-toggle).
 --}}
 @props([
     'heading' => null,
@@ -24,6 +26,8 @@
     {{ $attributes->class('rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950') }}
     @if ($collapsible)
         x-data="{ open: {{ $collapseKey ? '$persist('.$open.').as('.\Illuminate\Support\Js::from('adminv2-card-'.$collapseKey).')' : $open }} }"
+        {{-- "Alle aufklappen / zuklappen" einer Seite (Ereignis adminv2-cards mit { open }) --}}
+        x-on:adminv2-cards.window="open = $event.detail.open"
     @endif
 >
     @if ($heading || $actions)

@@ -21,6 +21,7 @@ class City extends Model
         'lng',
         'is_capital',
         'is_regional_capital',
+        'is_major',
     ];
 
     protected $casts = [
@@ -30,6 +31,7 @@ class City extends Model
         'lng' => 'decimal:6',
         'is_capital' => 'boolean',
         'is_regional_capital' => 'boolean',
+        'is_major' => 'boolean',
     ];
 
     /**
