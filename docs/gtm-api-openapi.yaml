@@ -499,6 +499,62 @@ paths:
                   meta: {type: object, properties: {total: {type: integer}}}
         "404": {description: Land nicht gefunden}
 
+  /countries/{code}/weather:
+    get:
+      summary: Wetter der Hauptstadt eines Landes
+      description: Aktuelles Wetter, 24 Stunden in 3-Stunden-Schritten und bis zu 5 Tage (OpenWeatherMap). Hauptstadt, sonst Landesmitte.
+      tags: [Basisdaten]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+      responses:
+        "200":
+          description: Wetterbericht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data: {$ref: '#/components/schemas/WeatherReport'}
+        "404": {description: Land nicht gefunden oder ohne Koordinaten}
+        "503": {description: Wetterquelle nicht erreichbar}
+
+  /weather:
+    get:
+      summary: Wetter für Koordinaten
+      description: Aktuelles Wetter, 24 Stunden in 3-Stunden-Schritten und bis zu 5 Tage für einen Punkt (OpenWeatherMap).
+      tags: [Basisdaten]
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: {type: number, minimum: -90, maximum: 90}
+        - name: lng
+          in: query
+          required: true
+          schema: {type: number, minimum: -180, maximum: 180}
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+      responses:
+        "200":
+          description: Wetterbericht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data: {$ref: '#/components/schemas/WeatherReport'}
+        "422": {description: Ungültige Koordinaten}
+        "503": {description: Wetterquelle nicht erreichbar}
+
   /boundaries:
     get:
       tags: [Basisdaten]
@@ -860,6 +916,66 @@ components:
         is_capital: {type: boolean}
         is_regional_capital: {type: boolean}
         is_popular: {type: boolean, description: "Markierung „beliebt“ aus der Verwaltung"}
+
+    WeatherReport:
+      type: object
+      properties:
+        location:
+          type: object
+          properties:
+            name: {type: string, nullable: true, example: Berlin}
+            lat: {type: number}
+            lng: {type: number}
+            timezone_offset: {type: integer, description: Versatz zu UTC in Sekunden, example: 7200}
+        current:
+          type: object
+          properties:
+            observed_at: {type: string, format: date-time}
+            temperature: {type: number, description: "°C"}
+            feels_like: {type: number}
+            temp_min: {type: number, nullable: true}
+            temp_max: {type: number, nullable: true}
+            humidity: {type: integer, description: "%"}
+            pressure: {type: integer, description: hPa}
+            wind_speed: {type: number, description: km/h}
+            wind_direction: {type: integer, description: Grad}
+            visibility: {type: number, description: km}
+            clouds: {type: integer, description: "%"}
+            description: {type: string, example: Bedeckt}
+            condition: {type: string, example: Bewölkt}
+            icon: {type: string, example: 04n}
+            icon_url: {type: string}
+            sunrise: {type: string, format: date-time, nullable: true}
+            sunset: {type: string, format: date-time, nullable: true}
+        hourly:
+          type: array
+          description: Nächste 24 Stunden in 3-Stunden-Schritten
+          items:
+            type: object
+            properties:
+              time: {type: string, format: date-time}
+              temperature: {type: number}
+              icon: {type: string}
+              description: {type: string}
+              precipitation_probability: {type: integer, description: "%"}
+              wind_speed: {type: number, description: km/h}
+        daily:
+          type: array
+          description: Bis zu 5 Tage
+          items:
+            type: object
+            properties:
+              date: {type: string, format: date}
+              temp_min: {type: number}
+              temp_max: {type: number}
+              icon: {type: string}
+              description: {type: string}
+              precipitation_probability: {type: integer, description: "%"}
+        source:
+          type: object
+          properties:
+            name: {type: string, example: OpenWeatherMap}
+            url: {type: string}
 
     EventLocation:
       type: object

@@ -21,9 +21,9 @@ class WeatherService
     /**
      * Hole aktuelles Wetter für Koordinaten
      */
-    public function getCurrentWeather(float $latitude, float $longitude): ?array
+    public function getCurrentWeather(float $latitude, float $longitude, string $lang = 'de'): ?array
     {
-        $cacheKey = "weather_{$latitude}_{$longitude}";
+        $cacheKey = "weather_{$latitude}_{$longitude}".($lang === 'de' ? '' : "_{$lang}");
         
         try {
             // Prüfe Cache zuerst
@@ -39,7 +39,7 @@ class WeatherService
                 'lon' => $longitude,
                 'appid' => $this->apiKey,
                 'units' => 'metric',
-                'lang' => 'de'
+                'lang' => $lang
             ]);
 
             if (!$response->successful()) {
@@ -72,6 +72,51 @@ class WeatherService
                 'lat' => $latitude,
                 'lng' => $longitude
             ]);
+            return null;
+        }
+    }
+
+    /**
+     * Vorhersage in 3-Stunden-Schritten fuer fuenf Tage (GET /forecast), roh wie von OpenWeatherMap,
+     * 30 Minuten gecacht. null, wenn die API nicht antwortet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getForecast(float $latitude, float $longitude, string $lang = 'de'): ?array
+    {
+        $cacheKey = "weather_forecast_{$latitude}_{$longitude}_{$lang}";
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached)) {
+                return $cached;
+            }
+
+            $response = Http::timeout(10)->get("{$this->baseUrl}/forecast", [
+                'lat' => $latitude,
+                'lon' => $longitude,
+                'appid' => $this->apiKey,
+                'units' => 'metric',
+                'lang' => $lang,
+            ]);
+
+            if (! $response->successful()) {
+                Log::error('OpenWeatherMap forecast request failed', ['status' => $response->status(), 'lat' => $latitude, 'lng' => $longitude]);
+
+                return null;
+            }
+
+            $data = $response->json();
+            if (! is_array($data) || ! isset($data['list'])) {
+                return null;
+            }
+
+            Cache::put($cacheKey, $data, now()->addMinutes($this->cacheMinutes));
+
+            return $data;
+        } catch (\Exception $e) {
+            Log::error('Weather forecast error', ['message' => $e->getMessage(), 'lat' => $latitude, 'lng' => $longitude]);
+
             return null;
         }
     }
@@ -120,6 +165,8 @@ class WeatherService
             'city_name' => $data['name'] ?? 'Unbekannt',
             'country_code' => $sys['country'] ?? null,
             'timestamp' => $data['dt'] ?? time(),
+            'timezone_offset' => $data['timezone'] ?? 0,
+            'clouds' => $data['clouds']['all'] ?? 0,
             'icon_url' => $this->getWeatherIconUrl($weather['icon'] ?? '01d'),
             'condition' => $this->getWeatherCondition($weather['main'] ?? 'Clear'),
             'severity_color' => $this->getWeatherSeverityColor($weather['main'] ?? 'Clear')

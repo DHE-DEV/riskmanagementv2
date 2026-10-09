@@ -417,6 +417,8 @@ Route::prefix('v1')->middleware([
     Route::get('/boundaries', [\App\Http\Controllers\Api\V1\CountryBoundaryController::class, 'index'])->name('v1.boundaries');
     Route::get('/countries/{code}/regions', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'regions'])->name('v1.countries.regions');
     Route::get('/countries/{code}/cities', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'cities'])->name('v1.countries.cities');
+    Route::get('/countries/{code}/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'country'])->name('v1.countries.weather');
+    Route::get('/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'point'])->name('v1.weather');
     Route::get('/airports', [\App\Http\Controllers\Api\V1\AirportController::class, 'index'])->name('v1.airports');
     Route::get('/airports/{code}', [\App\Http\Controllers\Api\V1\AirportController::class, 'show'])->name('v1.airports.show');
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('v1.airlines');

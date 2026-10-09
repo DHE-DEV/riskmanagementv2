@@ -378,6 +378,8 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/boundaries</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/regions</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/cities</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/weather</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/weather</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airports</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airports/{code}</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airlines</span></li>

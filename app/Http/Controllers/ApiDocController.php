@@ -60,6 +60,8 @@ class ApiDocController extends Controller
                     'Landesgrenze (GeoJSON)' => '/v1/countries/{code}/boundary',
                     'Regionen eines Landes' => '/v1/countries/{code}/regions',
                     'Städte eines Landes' => '/v1/countries/{code}/cities?region={id}',
+                    'Wetter der Hauptstadt' => '/v1/countries/{code}/weather',
+                    'Wetter für Koordinaten' => '/v1/weather?lat=52.52&lng=13.405',
                     'Landesgrenzen mehrerer Länder' => '/v1/boundaries?codes=EG,DE',
                     'Flughäfen' => '/v1/airports?country=EG',
                     'Flughafen mit Lounges, Hotels, Mobilität, Airlines' => '/v1/airports/{code}',

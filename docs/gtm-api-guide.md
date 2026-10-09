@@ -718,6 +718,60 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ---
 
+### Wetter
+
+```
+GET /v1/countries/{code}/weather
+GET /v1/weather?lat=52.52&lng=13.405
+```
+
+Aktuelles Wetter, die nächsten 24 Stunden in 3-Stunden-Schritten und bis zu fünf Tage mit Tiefst- und Höchstwert – dieselbe Quelle wie auf der Plattform (OpenWeatherMap). Beim Länder-Endpoint gilt die Hauptstadt, sonst die Landesmitte. Zeiten sind ISO 8601 in der Ortszeit des Standorts, Temperaturen in °C, Wind in km/h, Sicht in km. `icon` ist der OpenWeatherMap-Symbolcode (z. B. `10d`), `icon_url` das passende Bild. Die Daten werden 30 Minuten gecacht.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `lat`, `lng` | number | Ja (nur `/v1/weather`) | Koordinaten des Standorts |
+| `lang` | string | Nein | Sprache der Beschreibungen (`de`, `en`, `nl`; Standard `de`) |
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/DE/weather?lang=de"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "location": {"name": "Berlin", "lat": 52.52, "lng": 13.405, "timezone_offset": 7200},
+    "current": {
+      "observed_at": "2026-10-09T19:11:45+02:00",
+      "temperature": 10, "feels_like": 6, "temp_min": 10, "temp_max": 10,
+      "humidity": 93, "pressure": 1008, "wind_speed": 30, "wind_direction": 220,
+      "visibility": 6.9, "clouds": 100,
+      "description": "Bedeckt", "condition": "Bewölkt",
+      "icon": "04n", "icon_url": "https://openweathermap.org/img/wn/04n@2x.png",
+      "sunrise": "2026-10-09T07:20:41+02:00", "sunset": "2026-10-09T18:26:26+02:00"
+    },
+    "hourly": [
+      {"time": "2026-10-09T20:00:00+02:00", "temperature": 10, "icon": "10n", "description": "Leichter Regen", "precipitation_probability": 99, "wind_speed": 20}
+    ],
+    "daily": [
+      {"date": "2026-10-10", "temp_min": 12, "temp_max": 17, "icon": "10d", "description": "Leichter Regen", "precipitation_probability": 37}
+    ],
+    "source": {"name": "OpenWeatherMap", "url": "https://openweathermap.org"}
+  }
+}
+```
+
+Antwortet die Wetterquelle nicht, kommt `503` mit `"message": "Weather service unavailable."`.
+
+---
+
 ### Flughäfen
 
 ```
