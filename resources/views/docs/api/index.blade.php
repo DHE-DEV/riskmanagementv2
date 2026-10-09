@@ -288,19 +288,34 @@
                     <tbody class="divide-y divide-gray-100">
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap w-px">
-                                <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://platform.passolution.de/api</code>
+                                <span class="inline-flex items-center gap-2">
+                                    <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://platform.passolution.de/api</code>
+                                    <button type="button" class="copy-url inline-flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-gray-100 transition-colors" data-copy="https://platform.passolution.de/api" title="URL kopieren" aria-label="URL kopieren">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </span>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Haupt-API</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap w-px">
-                                <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://api.global-travel-monitor.de/v1</code>
+                                <span class="inline-flex items-center gap-2">
+                                    <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://api.global-travel-monitor.de/v1</code>
+                                    <button type="button" class="copy-url inline-flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-gray-100 transition-colors" data-copy="https://api.global-travel-monitor.de/v1" title="URL kopieren" aria-label="URL kopieren">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </span>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Events API (GTM), Custom Event API, Folder Import und Plugin Domain API ohne <code class="text-xs">/api</code>-Präfix – empfohlen für neue Integrationen</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap w-px">
-                                <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://global-travel-monitor.eu/feed</code>
+                                <span class="inline-flex items-center gap-2">
+                                    <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://global-travel-monitor.eu/feed</code>
+                                    <button type="button" class="copy-url inline-flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-gray-100 transition-colors" data-copy="https://global-travel-monitor.eu/feed" title="URL kopieren" aria-label="URL kopieren">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </span>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Feed API</td>
                         </tr>
@@ -374,5 +389,21 @@
         </div>
     </footer>
 
+    <script>
+        // Basis-URL in die Zwischenablage kopieren; der Knopf zeigt kurz ein Häkchen.
+        document.querySelectorAll('.copy-url').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var icon = button.querySelector('i');
+                navigator.clipboard.writeText(button.dataset.copy).then(function () {
+                    icon.className = 'fa-solid fa-check text-green-600';
+                    button.title = 'Kopiert';
+                    setTimeout(function () {
+                        icon.className = 'fa-regular fa-copy';
+                        button.title = 'URL kopieren';
+                    }, 1500);
+                });
+            });
+        });
+    </script>
 </body>
 </html>
