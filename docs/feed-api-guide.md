@@ -11,8 +11,10 @@ Die Feed API stellt aktuelle Sicherheits- und Reiserisiko-Events sowie L채nderin
 ## Base-URL
 
 ```
-https://global-travel-monitor.eu/feed
+https://platform.passolution.de/feed
 ```
+
+Die bisherige Adresse `https://global-travel-monitor.eu/feed` bleibt weiterhin g체ltig; bestehende Feed-Abonnements m체ssen nicht umgestellt werden.
 
 ---
 
@@ -35,7 +37,7 @@ Gibt die g체ltigen Werte f체r Priority-Filter und Event-Typ-Filter als JSON zur�
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/events/meta.json
+curl https://platform.passolution.de/feed/events/meta.json
 ```
 
 **Response:**
@@ -76,7 +78,7 @@ Alle Event-Feeds liefern nur **aktive, nicht-archivierte Events**, deren Startda
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/events/all.xml
+curl https://platform.passolution.de/feed/events/all.xml
 ```
 
 ---
@@ -94,7 +96,7 @@ GET /feed/events/priority/{priority}.xml
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/events/priority/high.xml
+curl https://platform.passolution.de/feed/events/priority/high.xml
 ```
 
 ---
@@ -112,7 +114,7 @@ GET /feed/events/countries/{code}.xml
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/events/countries/de.xml
+curl https://platform.passolution.de/feed/events/countries/de.xml
 ```
 
 ---
@@ -130,7 +132,7 @@ GET /feed/events/types/{type}.xml
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/events/types/earthquake.xml
+curl https://platform.passolution.de/feed/events/types/earthquake.xml
 ```
 
 ---
@@ -148,7 +150,7 @@ GET /feed/events/regions/{region}.xml
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/events/regions/3.xml
+curl https://platform.passolution.de/feed/events/regions/3.xml
 ```
 
 ---
@@ -265,7 +267,7 @@ GET /feed/countries/continent/{code}.xml
 **Beispiel:**
 
 ```bash
-curl https://global-travel-monitor.eu/feed/countries/continent/EU.xml
+curl https://platform.passolution.de/feed/countries/continent/EU.xml
 ```
 
 ### EU-Mitgliedsstaaten

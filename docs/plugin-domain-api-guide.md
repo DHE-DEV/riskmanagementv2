@@ -25,10 +25,10 @@ Den Key finden Sie in Ihrem Plugin-Dashboard unter `https://global-travel-monito
 ## Base-URL
 
 ```
-https://api.global-travel-monitor.de/v1/plugin
+https://platform.passolution.de/api/v1/plugin
 ```
 
-Alternativ: `https://global-travel-monitor.eu/api/v1/plugin`
+Die bisherigen Adressen `https://api.global-travel-monitor.de/v1/plugin` und `https://global-travel-monitor.eu/api/v1/plugin` bleiben weiterhin gültig; bestehende Integrationen müssen nicht umgestellt werden.
 
 ---
 
@@ -79,7 +79,7 @@ Gibt eine paginierte Liste aller registrierten Domains zurück.
 
 ```bash
 curl -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains?per_page=100&search=example"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains?per_page=100&search=example"
 ```
 
 **Response (200):**
@@ -116,7 +116,7 @@ GET /v1/plugin/gtm/domains/{uuid}
 
 ```bash
 curl -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200):**
@@ -154,7 +154,7 @@ POST /v1/plugin/gtm/domains
 curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domain": "neue-website.de"}' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains"
 ```
 
 **Response (201):**
@@ -202,7 +202,7 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
       "ungültig..domain"
     ]
   }' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/bulk"
 ```
 
 **Response (201):**
@@ -267,7 +267,7 @@ Aktualisiert eine Domain. Kann zum Umbenennen oder Aktivieren/Deaktivieren verwe
 curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"is_active": false}' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200):**
@@ -298,7 +298,7 @@ Löscht eine einzelne Domain. Es muss immer mindestens eine Domain verbleiben.
 
 ```bash
 curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response:** `204 No Content`
@@ -332,7 +332,7 @@ curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
       "660e8400-e29b-41d4-a716-446655440001"
     ]
   }' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/bulk"
 ```
 
 **Response (200):**
@@ -384,7 +384,7 @@ DOMAINS=$(cat domains.txt | jq -R -s 'split("\n") | map(select(length > 0))')
 curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d "{\"domains\": $DOMAINS}" \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/bulk"
 ```
 
 ### Domains synchronisieren (vollständiger Abgleich)
@@ -392,19 +392,19 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
 ```bash
 # 1. Alle bestehenden Domains abrufen
 EXISTING=$(curl -s -H "Authorization: Bearer pk_live_xxx" \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains?per_page=200")
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains?per_page=200")
 
 # 2. Nicht mehr benötigte Domains löschen
 curl -X DELETE -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"uuids": ["uuid1", "uuid2"]}' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/bulk"
 
 # 3. Neue Domains importieren
 curl -X POST -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"domains": ["new1.com", "new2.com"]}' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/bulk"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/bulk"
 ```
 
 ### Domain vorübergehend deaktivieren
@@ -413,7 +413,7 @@ curl -X POST -H "Authorization: Bearer pk_live_xxx" \
 curl -X PUT -H "Authorization: Bearer pk_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"is_active": false}' \
-  "https://api.global-travel-monitor.de/v1/plugin/gtm/domains/{uuid}"
+  "https://platform.passolution.de/api/v1/plugin/gtm/domains/{uuid}"
 ```
 
 ---

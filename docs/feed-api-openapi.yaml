@@ -12,8 +12,10 @@ info:
     name: Global Travel Monitor Support
 
 servers:
+  - url: https://platform.passolution.de/feed
+    description: Produktionsserver (empfohlen)
   - url: https://global-travel-monitor.eu/feed
-    description: Produktionsserver
+    description: Bisherige Adresse, weiterhin gültig
 
 tags:
   - name: Metadaten

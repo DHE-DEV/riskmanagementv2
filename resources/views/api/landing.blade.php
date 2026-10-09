@@ -415,9 +415,9 @@
                 <h3>Feed API</h3>
                 <p class="description">RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events. Keine Authentifizierung erforderlich.</p>
                 <ul class="endpoints">
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/events</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/countries</span></li>
-                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://global-travel-monitor.eu/feed/events/meta.json</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://platform.passolution.de/feed/events</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://platform.passolution.de/feed/countries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">https://platform.passolution.de/feed/events/meta.json</span></li>
                 </ul>
                 <div class="downloads">
                     <a href="#feed-api-guide" class="btn btn-primary">

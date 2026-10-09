@@ -10,10 +10,12 @@ info:
     name: Global Travel Monitor Support
 
 servers:
+  - url: https://platform.passolution.de/api/v1/plugin/gtm
+    description: Produktionsserver (empfohlen)
   - url: https://api.global-travel-monitor.de/v1/plugin/gtm
-    description: Produktionsserver
+    description: Bisherige Adresse, weiterhin gültig
   - url: https://global-travel-monitor.eu/api/v1/plugin/gtm
-    description: Alternativer Server
+    description: Bisherige Adresse, weiterhin gültig
 
 security:
   - PluginKeyAuth: []

@@ -275,7 +275,7 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-100">
                 <h2 class="text-2xl font-bold text-gray-900">Basis-URLs</h2>
-                <p class="mt-1 text-sm text-gray-500">Alle API-Anfragen verwenden eine der folgenden Basis-URLs.</p>
+                <p class="mt-1 text-sm text-gray-500">Neue Integrationen verwenden die Hauptadresse. Die bisherigen Adressen unter global-travel-monitor bleiben dauerhaft erreichbar.</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
@@ -295,7 +295,18 @@
                                     </button>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-600">Haupt-API</td>
+                            <td class="px-6 py-4 text-gray-600"><span class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 mr-2">Hauptadresse</span>Alle Kunden- und Partner-APIs: Events API (GTM) unter <code class="text-xs">/v1</code>, Custom Event API unter <code class="text-xs">/v1/custom</code>, Folder Import, Customer Settings und Plugin Domain API</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap w-px">
+                                <span class="inline-flex items-center gap-2">
+                                    <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://platform.passolution.de/feed</code>
+                                    <button type="button" class="copy-url inline-flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-brand-600 hover:bg-gray-100 transition-colors" data-copy="https://platform.passolution.de/feed" title="URL kopieren" aria-label="URL kopieren">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-600"><span class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 mr-2">Hauptadresse</span>Feed API (RSS/Atom, öffentlich)</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap w-px">
@@ -306,7 +317,7 @@
                                     </button>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-600">Events API (GTM), Custom Event API, Folder Import und Plugin Domain API ohne <code class="text-xs">/api</code>-Präfix – empfohlen für neue Integrationen</td>
+                            <td class="px-6 py-4 text-gray-600"><span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 mr-2">Weiterhin gültig</span>Bisherige Adresse der Kunden- und Partner-APIs ohne <code class="text-xs">/api</code>-Präfix – entspricht <code class="text-xs">platform.passolution.de/api/v1</code></td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap w-px">
@@ -317,7 +328,7 @@
                                     </button>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-600">Feed API</td>
+                            <td class="px-6 py-4 text-gray-600"><span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 mr-2">Weiterhin gültig</span>Bisherige Adresse der Feed API – entspricht <code class="text-xs">platform.passolution.de/feed</code></td>
                         </tr>
                     </tbody>
                 </table>

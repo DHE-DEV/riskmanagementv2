@@ -9,6 +9,8 @@ it('zeigt die Doku-Übersicht und jede Anleitung aus den Markdown-Dateien', func
     $this->get('/docs/api')
         ->assertOk()
         ->assertSee('16 Endpoints')
+        ->assertSee('https://platform.passolution.de/api')
+        ->assertSee('https://platform.passolution.de/feed')
         ->assertSee('https://api.global-travel-monitor.de/v1')
         ->assertSee('/docs/gtm-api-openapi.yaml')
         ->assertSee('/api/v1/documentation');

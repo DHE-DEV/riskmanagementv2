@@ -23,10 +23,10 @@ Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.
 ## Base-URL
 
 ```
-https://api.global-travel-monitor.de/v1
+https://platform.passolution.de/api/v1
 ```
 
-Alternativ ist die API auch unter `https://global-travel-monitor.eu/api/v1` erreichbar. Wir empfehlen die Verwendung der API-Subdomain für neue Integrationen.
+Die bisherigen Adressen `https://api.global-travel-monitor.de/v1` und `https://global-travel-monitor.eu/api/v1` bleiben weiterhin gültig; bestehende Integrationen müssen nicht umgestellt werden.
 
 ---
 
@@ -61,11 +61,11 @@ Mit dem `source`-Filter können Sie gezielt Events einer bestimmten Herkunft abf
 ```bash
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?source=manual"
+  "https://platform.passolution.de/api/v1/events?source=manual"
 
 # Nur Events von einem bestimmten Partner (nach Name)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?source=Partner%20XY%20GmbH"
+  "https://platform.passolution.de/api/v1/events?source=Partner%20XY%20GmbH"
 ```
 
 ---
@@ -97,31 +97,31 @@ GET /v1/events
 ```bash
 # Alle aktiven Events (paginiert)
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?per_page=25&page=1"
+  "https://platform.passolution.de/api/v1/events?per_page=25&page=1"
 
 # Nur Events mit hoher Risikostufe
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?risk_level=high"
+  "https://platform.passolution.de/api/v1/events?risk_level=high"
 
 # Events für ein bestimmtes Land
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?country=TR"
+  "https://platform.passolution.de/api/v1/events?country=TR"
 
 # Events eines bestimmten Typs
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?event_category=safety"
+  "https://platform.passolution.de/api/v1/events?event_category=safety"
 
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?source=manual"
+  "https://platform.passolution.de/api/v1/events?source=manual"
 
 # Events in einem Zeitraum
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?start_date=2026-03-01&end_date=2026-03-31"
+  "https://platform.passolution.de/api/v1/events?start_date=2026-03-01&end_date=2026-03-31"
 
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?risk_level=high&country=TR&source=manual&per_page=10"
+  "https://platform.passolution.de/api/v1/events?risk_level=high&country=TR&source=manual&per_page=10"
 ```
 
 **Response (200 OK):**
@@ -186,7 +186,7 @@ GET /v1/events/{uuid}
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events/550e8400-e29b-41d4-a716-446655440000"
+  "https://platform.passolution.de/api/v1/events/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response (200 OK):**
@@ -259,11 +259,11 @@ Sucht aktive Events im Umkreis eines Standorts. Der Standort kann entweder über
 ```bash
 # Mit 3-Letter-Code
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events/nearby?code=FRA&radius=500"
+  "https://platform.passolution.de/api/v1/events/nearby?code=FRA&radius=500"
 
 # Mit Geokoordinaten
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events/nearby?latitude=50.0379&longitude=8.5622&radius=500"
+  "https://platform.passolution.de/api/v1/events/nearby?latitude=50.0379&longitude=8.5622&radius=500"
 ```
 
 **Response (200 OK):**
@@ -337,7 +337,7 @@ Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben, z
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events/countries"
+  "https://platform.passolution.de/api/v1/events/countries"
 ```
 
 **Response (200 OK):**
@@ -392,7 +392,7 @@ Gibt eine Liste aller Kontinente zurück.
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/continents"
+  "https://platform.passolution.de/api/v1/continents"
 ```
 
 **Response (200 OK):**
@@ -440,11 +440,11 @@ Gibt eine Liste aller Länder zurück. Optional nach Kontinent filterbar.
 ```bash
 # Alle Länder
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/countries"
+  "https://platform.passolution.de/api/v1/countries"
 
 # Nur europäische Länder
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/countries?continent=EU"
+  "https://platform.passolution.de/api/v1/countries?continent=EU"
 ```
 
 **Response (200 OK):**
@@ -495,11 +495,11 @@ Mehrsprachige Texte kommen als Objekt je Sprache (`{"de": "…", "en": "…", "n
 ```bash
 # Alle Angaben zu Deutschland, alle Sprachen
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/countries/DE"
+  "https://platform.passolution.de/api/v1/countries/DE"
 
 # Nur Englisch, Feiertage 2027
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/countries/DEU?lang=en&year=2027"
+  "https://platform.passolution.de/api/v1/countries/DEU?lang=en&year=2027"
 ```
 
 **Response (200 OK, gekürzt):**
@@ -598,7 +598,7 @@ Grenzen als GeoJSON für Karten – ein Land als `Feature`, mehrere Länder (bis
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/boundaries?codes=EG,DE&lang=de"
+  "https://platform.passolution.de/api/v1/boundaries?codes=EG,DE&lang=de"
 ```
 
 **Response (200 OK):**
@@ -647,7 +647,7 @@ Flughäfen aus der Plattform (Quelle OurAirports plus redaktionelle Pflege). Die
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/airports/CAI?lang=de"
+  "https://platform.passolution.de/api/v1/airports/CAI?lang=de"
 ```
 
 **Response (200 OK, gekürzt):**
@@ -703,7 +703,7 @@ Fluggesellschaften aus der Plattform. Die Liste liefert Kurzdaten, der Einzelabr
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/airlines/MS?lang=de&include=lounges,hotels"
+  "https://platform.passolution.de/api/v1/airlines/MS?lang=de&include=lounges,hotels"
 ```
 
 **Response (200 OK, gekürzt):**
@@ -766,7 +766,7 @@ Aktuelle Wechselkurse für Umrechnungen in Apps. Die Plattform holt die Kurse st
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/exchange-rates?base=EUR&symbols=EGP,USD"
+  "https://platform.passolution.de/api/v1/exchange-rates?base=EUR&symbols=EGP,USD"
 ```
 
 **Response (200 OK):**
@@ -807,11 +807,11 @@ Gibt eine Liste aller Regionen zurück. Optional nach Land filterbar. Nützlich 
 ```bash
 # Alle Regionen
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/regions"
+  "https://platform.passolution.de/api/v1/regions"
 
 # Nur Regionen in Deutschland
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/regions?country=DE"
+  "https://platform.passolution.de/api/v1/regions?country=DE"
 ```
 
 **Response (200 OK):**
@@ -862,7 +862,7 @@ Gibt eine Liste aller verfügbaren Event-Kategorien zurück. Nützlich um die g�
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/event-categories"
+  "https://platform.passolution.de/api/v1/event-categories"
 ```
 
 **Response (200 OK):**
