@@ -625,6 +625,99 @@ Hinweis für Karten: Ringe, die den 180. Längengrad kreuzen (Russland, USA, Fid
 
 ---
 
+### Regionen eines Landes
+
+```
+GET /v1/countries/{code}/regions
+```
+
+Alle Regionen (Bundesländer, Provinzen, Kantone …) eines Landes, alphabetisch nach Name, mit der Anzahl der zugeordneten Städte. `is_popular` ist die Markierung „beliebt“ aus der Verwaltung.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `lang` | string | Nein | Nur diese Sprache (`de`, `en`, `nl`) statt aller Sprachen |
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/DE/regions?lang=de"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 10,
+      "code": "DE-BW",
+      "name": "Baden-Württemberg",
+      "description": null,
+      "is_popular": false,
+      "coordinates": {"lat": 48.6616, "lng": 9.3501},
+      "cities_count": 8
+    }
+  ],
+  "meta": {"total": 16}
+}
+```
+
+---
+
+### Städte eines Landes
+
+```
+GET /v1/countries/{code}/cities
+```
+
+Alle Städte eines Landes, alphabetisch nach Name, mit Region, Einwohnerzahl und Koordinaten. Mit `region` nur die Städte einer Region (ID aus `/v1/countries/{code}/regions`). `is_popular` ist die Markierung „beliebt“ aus der Verwaltung.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `region` | integer | Nein | Nur Städte dieser Region |
+| `lang` | string | Nein | Nur diese Sprache (`de`, `en`, `nl`) statt aller Sprachen |
+
+**Beispiele:**
+
+```bash
+# Alle Städte
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/DE/cities?lang=de"
+
+# Nur Städte einer Region
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/DE/cities?lang=de&region=10"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1382,
+      "name": "Düsseldorf",
+      "region": {"id": 12, "code": "DE-NW", "name": "Nordrhein-Westfalen"},
+      "population": 620000,
+      "coordinates": {"lat": 51.2277, "lng": 6.7735},
+      "is_capital": false,
+      "is_regional_capital": true,
+      "is_popular": true
+    }
+  ],
+  "meta": {"total": 54}
+}
+```
+
+---
+
 ### Flughäfen
 
 ```

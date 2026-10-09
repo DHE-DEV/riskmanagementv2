@@ -435,6 +435,70 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /countries/{code}/regions:
+    get:
+      summary: Regionen eines Landes
+      description: Alle Regionen eines Landes, alphabetisch, mit Anzahl der zugeordneten Städte.
+      tags: [Basisdaten]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+          description: ISO-3166-1-Code (2 oder 3 Buchstaben)
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Regionen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/CountryRegion'}
+                  meta: {type: object, properties: {total: {type: integer}}}
+        "404": {description: Land nicht gefunden}
+
+  /countries/{code}/cities:
+    get:
+      summary: Städte eines Landes
+      description: Alle Städte eines Landes, alphabetisch, optional nur die einer Region.
+      tags: [Basisdaten]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+          description: ISO-3166-1-Code (2 oder 3 Buchstaben)
+        - name: region
+          in: query
+          schema: {type: integer}
+          description: Nur Städte dieser Region (ID aus /countries/{code}/regions)
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Städte
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/CountryCity'}
+                  meta: {type: object, properties: {total: {type: integer}}}
+        "404": {description: Land nicht gefunden}
+
   /boundaries:
     get:
       tags: [Basisdaten]
@@ -444,7 +508,7 @@ paths:
           in: query
           required: true
           description: ISO-Codes, kommagetrennt, höchstens 60
-          schema: {type: string, example: EG,DE,FR}
+          schema: {type: string, example: "EG,DE,FR"}
         - name: lang
           in: query
           required: false
@@ -761,6 +825,41 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    CountryRegion:
+      type: object
+      properties:
+        id: {type: integer, example: 10}
+        code: {type: string, nullable: true, example: DE-BW}
+        name: {description: "Text je Sprache oder – mit ?lang – ein String", example: {de: Baden-Württemberg, en: Baden-Württemberg}}
+        description: {type: string, nullable: true}
+        is_popular: {type: boolean, description: "Markierung „beliebt“ aus der Verwaltung"}
+        coordinates:
+          type: object
+          nullable: true
+          properties: {lat: {type: number}, lng: {type: number}}
+        cities_count: {type: integer, example: 8}
+
+    CountryCity:
+      type: object
+      properties:
+        id: {type: integer, example: 1382}
+        name: {description: "Text je Sprache oder – mit ?lang – ein String", example: {de: Düsseldorf, en: Dusseldorf}}
+        region:
+          type: object
+          nullable: true
+          properties:
+            id: {type: integer}
+            code: {type: string, nullable: true}
+            name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        population: {type: integer, nullable: true}
+        coordinates:
+          type: object
+          nullable: true
+          properties: {lat: {type: number}, lng: {type: number}}
+        is_capital: {type: boolean}
+        is_regional_capital: {type: boolean}
+        is_popular: {type: boolean, description: "Markierung „beliebt“ aus der Verwaltung"}
 
     EventLocation:
       type: object

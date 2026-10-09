@@ -71,6 +71,8 @@ Route::prefix('v1')->middleware([
     Route::get('/countries/{code}', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'country'])->name('sub.v1.countries.show');
     Route::get('/countries/{code}/boundary', [\App\Http\Controllers\Api\V1\CountryBoundaryController::class, 'show'])->name('sub.v1.countries.boundary');
     Route::get('/boundaries', [\App\Http\Controllers\Api\V1\CountryBoundaryController::class, 'index'])->name('sub.v1.boundaries');
+    Route::get('/countries/{code}/regions', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'regions'])->name('sub.v1.countries.regions');
+    Route::get('/countries/{code}/cities', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'cities'])->name('sub.v1.countries.cities');
     Route::get('/airports', [\App\Http\Controllers\Api\V1\AirportController::class, 'index'])->name('sub.v1.airports');
     Route::get('/airports/{code}', [\App\Http\Controllers\Api\V1\AirportController::class, 'show'])->name('sub.v1.airports.show');
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('sub.v1.airlines');
