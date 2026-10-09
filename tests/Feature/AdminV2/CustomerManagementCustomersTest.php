@@ -625,6 +625,8 @@ it('erstellt API Tokens, zeigt sie einmalig und widerruft sie', function () {
 
     $editor = Livewire::test(Editor::class, ['customer' => $customer->id])
         ->call('showTab', 'tokens')
+        ->assertSee('API-Dokumentation für den Kunden')
+        ->assertSee(url('/docs/api'))
         ->assertSee('Keine API Tokens')
         ->call('createToken')
         ->call('saveToken')

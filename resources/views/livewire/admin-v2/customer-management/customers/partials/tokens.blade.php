@@ -11,6 +11,25 @@
         <flux:button size="sm" icon="plus" wire:click="createToken">Token erstellen</flux:button>
     </x-slot:actions>
 
+    @php($docsUrl = url('/docs/api'))
+    {{-- Link zur API-Dokumentation, den man dem Kunden zusammen mit dem Token weitergeben kann --}}
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-zinc-100 bg-zinc-50 px-5 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900" x-data="{ copied: false }">
+        <flux:icon.book-open variant="mini" class="shrink-0 text-zinc-400" />
+        <span class="text-zinc-600 dark:text-zinc-400">API-Dokumentation für den Kunden:</span>
+        <a href="{{ $docsUrl }}" target="_blank" rel="noopener" class="font-mono text-xs text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white dark:decoration-zinc-600 dark:hover:decoration-white">{{ $docsUrl }}</a>
+        <button
+            type="button"
+            class="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
+            x-on:click="navigator.clipboard.writeText(@js($docsUrl)); copied = true; setTimeout(() => copied = false, 1500)"
+            aria-label="Link zur API-Dokumentation kopieren"
+            title="Link kopieren"
+        >
+            <flux:icon.clipboard variant="micro" x-show="! copied" />
+            <flux:icon.check variant="micro" class="text-green-600" x-show="copied" x-cloak />
+            <span x-text="copied ? 'Kopiert' : 'Kopieren'">Kopieren</span>
+        </button>
+    </div>
+
     <div class="px-5 py-4">
         <flux:input wire:model.live.debounce.300ms="tokenSearch" size="sm" icon="magnifying-glass" placeholder="Name des Tokens suchen …" aria-label="API Tokens durchsuchen" clearable />
     </div>
