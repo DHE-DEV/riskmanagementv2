@@ -267,8 +267,9 @@
             margin: 1.5rem 0;
         }
         .doc-section pre {
-            background: var(--navy-dark);
-            color: #e2e8f0;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
             padding: 1rem 1.25rem;
             border-radius: 6px;
             overflow-x: auto;
