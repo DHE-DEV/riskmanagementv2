@@ -122,10 +122,12 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('boundaries/continent/{continent}', [BoundaryGeoJsonController::class, 'continent'])->whereNumber('continent')->name('boundaries.continent');
             Route::get('boundaries/country/{country}', [BoundaryGeoJsonController::class, 'country'])->whereNumber('country')->name('boundaries.country');
 
-            // Bereiche, die noch nicht umgezogen sind, zeigen einen Hinweis.
-            Route::get('{section}', MasterDataSection::class)
-                ->whereIn('section', MasterData::placeholderKeys())
-                ->name('section');
+            // Bereiche, die noch nicht umgezogen sind, zeigen einen Hinweis (derzeit keine).
+            if (MasterData::placeholderKeys() !== []) {
+                Route::get('{section}', MasterDataSection::class)
+                    ->whereIn('section', MasterData::placeholderKeys())
+                    ->name('section');
+            }
         });
 
         // Kundenverwaltung – je Bereich Liste und Bearbeiten bzw. Ansehen.

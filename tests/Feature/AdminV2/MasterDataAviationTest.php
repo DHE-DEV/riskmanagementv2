@@ -100,8 +100,8 @@ it('zeigt Flughaefen, Flughafen-Codes und Airlines als Listen statt als Hinweis'
     $this->get('/adminv2/master-data/airport-codes/'.$code->id)->assertOk()->assertSee('Codes und Einstufung');
     $this->get('/adminv2/master-data/airlines/'.$lh->id)->assertOk()->assertSee('Haustiermitnahme')->assertSee('Flughäfen (0)');
 
-    // Nur die Laenderinformationen zeigen noch den Hinweis.
-    $this->get('/adminv2/master-data/country-information')->assertOk()->assertSee('An dieser Seite wird aktuell gearbeitet');
+    // Die Laenderinformationen sind kein Stammdaten-Bereich mehr; es gibt keine Platzhalter-Seiten.
+    $this->get('/adminv2/master-data/country-information')->assertNotFound();
     $this->get('/adminv2/master-data/airports/999')->assertNotFound();
 });
 

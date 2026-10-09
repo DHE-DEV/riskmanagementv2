@@ -84,12 +84,6 @@ class MasterData
                 'legacy' => '/admin/airlines',
                 'routes' => 'adminv2.master-data.airlines',
             ],
-            'country-information' => [
-                'label' => 'Länderinformationen',
-                'icon' => 'document-text',
-                'description' => 'Informationen zu den einzelnen Ländern.',
-                'legacy' => null,
-            ],
         ];
     }
 
