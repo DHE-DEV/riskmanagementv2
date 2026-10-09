@@ -49,6 +49,10 @@ class Index extends Component
     #[Url(as: 'verified', except: '')]
     public string $emailVerified = '';
 
+    /** '' = alle, 'enabled' = GTM API Zugang aktiv, 'disabled' = inaktiv */
+    #[Url(as: 'gtm', except: '')]
+    public string $gtmApi = '';
+
     #[Url(except: 'created_at')]
     public string $sort = 'created_at';
 
@@ -82,6 +86,8 @@ class Index extends Component
             'email_verified_at' => 'E-Mail verifiziert',
             'branch_management_active' => 'Filialen aktiv',
             'branches_count' => 'Anzahl Filialen',
+            'gtm_api_enabled' => 'GTM API Zugang',
+            'tokens_count' => 'Anzahl API Tokens',
             'passolution_subscription_type' => 'Passolution Abo',
             'deleted_at' => 'Gelöscht am',
         ]);
@@ -100,7 +106,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'trashed', 'customerType', 'emailVerified', 'sort'], true)) {
+        if (in_array($property, ['search', 'trashed', 'customerType', 'emailVerified', 'gtmApi', 'sort'], true)) {
             $this->resetPage();
             // Die Auswahl gilt nur fuer das, was gerade zu sehen ist.
             $this->selected = [];
@@ -115,19 +121,20 @@ class Index extends Component
 
     public function resetFilters(): void
     {
-        $this->reset(['search', 'trashed', 'customerType', 'emailVerified', 'selected']);
+        $this->reset(['search', 'trashed', 'customerType', 'emailVerified', 'gtmApi', 'selected']);
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return $this->search !== '' || $this->trashed !== '' || $this->customerType !== '' || $this->emailVerified !== '';
+        return $this->search !== '' || $this->trashed !== '' || $this->customerType !== '' || $this->emailVerified !== '' || $this->gtmApi !== '';
     }
 
     #[Computed]
     public function rows(): LengthAwarePaginator
     {
-        $query = Customer::query()->withCount('branches');
+        // tokens_count: alle API Tokens des Kunden (Sanctum), unabhaengig von Berechtigung und Ablauf.
+        $query = Customer::query()->withCount(['branches', 'tokens']);
 
         match ($this->trashed) {
             'with' => $query->withTrashed(),
@@ -147,6 +154,12 @@ class Index extends Component
         match ($this->emailVerified) {
             'verified' => $query->whereNotNull('email_verified_at'),
             'unverified' => $query->whereNull('email_verified_at'),
+            default => null,
+        };
+
+        match ($this->gtmApi) {
+            'enabled' => $query->where('gtm_api_enabled', true),
+            'disabled' => $query->where(fn ($q) => $q->where('gtm_api_enabled', false)->orWhereNull('gtm_api_enabled')),
             default => null,
         };
 

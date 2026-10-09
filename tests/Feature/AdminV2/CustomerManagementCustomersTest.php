@@ -132,6 +132,44 @@ it('zeigt die Kunden mit Suche, Filtern und Sortierung', function () {
     expect($list->instance()->hasFilters())->toBeFalse();
 });
 
+it('zeigt GTM API Zugang und Anzahl der API Tokens je Kunde und filtert danach', function () {
+    $this->actingAs(customersAdmin());
+
+    $withApi = managedCustomer(['company_name' => 'Berg Reisen GmbH', 'gtm_api_enabled' => true, 'gtm_api_rate_limit' => 120]);
+    $withApi->createToken('Buchhaltung', ['gtm:read']);
+    $withApi->createToken('Reisebüro', ['gtm:read']);
+    $withoutApi = managedCustomer(['name' => 'Anna Adler', 'email' => 'anna@adler.test', 'gtm_api_enabled' => false]);
+    $withoutApi->createToken('Alt', ['gtm:read']);
+    managedCustomer(['name' => 'Clara Conrad', 'email' => 'clara@conrad.test', 'gtm_api_enabled' => false]);
+
+    $this->get(route('adminv2.customer-management.customers.index'))
+        ->assertOk()
+        ->assertSee('GTM API aktiv')
+        ->assertSee('(120/min)')
+        ->assertSee('2 API Tokens')
+        ->assertSee('1 API Token')
+        ->assertSee('0 API Tokens')
+        ->assertSee('Tokens vorhanden, aber GTM API Zugang nicht aktiv');
+
+    $list = Livewire::test(Index::class);
+
+    $list->set('gtmApi', 'enabled')
+        ->assertSee('Berg Reisen GmbH')
+        ->assertDontSee('Anna Adler')
+        ->assertDontSee('Clara Conrad');
+
+    $list->set('gtmApi', 'disabled')
+        ->assertDontSee('Berg Reisen GmbH')
+        ->assertSee('Anna Adler')
+        ->assertSee('Clara Conrad');
+
+    $list->set('gtmApi', '')->set('sort', 'tokens_count')->set('direction', 'desc')
+        ->assertSeeInOrder(['Berg Reisen GmbH', 'Anna Adler', 'Clara Conrad']);
+
+    $list->set('sort', 'gtm_api_enabled')->set('direction', 'desc')
+        ->assertSeeInOrder(['Berg Reisen GmbH', 'Anna Adler']);
+});
+
 it('loescht einen Kunden, stellt ihn wieder her und loescht ihn endgueltig', function () {
     $this->actingAs(customersAdmin());
 

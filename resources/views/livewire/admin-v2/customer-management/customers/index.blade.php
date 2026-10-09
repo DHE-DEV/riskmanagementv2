@@ -32,6 +32,13 @@
             </flux:select>
         </div>
         <div class="w-48">
+            <flux:select wire:model.live="gtmApi" aria-label="GTM API Zugang">
+                <flux:select.option value="">GTM API: alle</flux:select.option>
+                <flux:select.option value="enabled">GTM API aktiv</flux:select.option>
+                <flux:select.option value="disabled">GTM API inaktiv</flux:select.option>
+            </flux:select>
+        </div>
+        <div class="w-48">
             <flux:select wire:model.live="trashed" aria-label="Papierkorb">
                 <flux:select.option value="">Ohne gelöschte Kunden</flux:select.option>
                 <flux:select.option value="with">Mit gelöschten Kunden</flux:select.option>
@@ -84,7 +91,7 @@
             @endif
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, customerType, emailVerified, trashed, sort, toggleDirection, resetFilters, runPendingAction, gotoPage, nextPage, previousPage">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, customerType, emailVerified, gtmApi, trashed, sort, toggleDirection, resetFilters, runPendingAction, gotoPage, nextPage, previousPage">
             @foreach ($rows as $customer)
                 @php
                     $editUrl = route('adminv2.customer-management.customers.edit', $customer->id);
@@ -144,6 +151,9 @@
                             <flux:badge size="sm" color="blue" inset="top bottom" title="Passolution Abo">{{ $customer->passolution_subscription_type }}</flux:badge>
                         @endif
                         <flux:badge size="sm" inset="top bottom" :color="$customer->provider ? 'amber' : 'zinc'" title="Login via">{{ $customer->provider ? ucfirst($customer->provider) : 'E-Mail' }}</flux:badge>
+                        @if ($customer->gtm_api_enabled)
+                            <flux:badge size="sm" color="green" inset="top bottom" icon="bolt" title="GTM API Zugang aktiv, {{ $customer->gtm_api_rate_limit ?? 60 }} Anfragen pro Minute">GTM API</flux:badge>
+                        @endif
                     </div>
 
                     <dl class="mt-3 flex flex-col gap-1.5 text-sm text-zinc-600 dark:text-zinc-400">
@@ -197,6 +207,20 @@
                         <x-adminv2.master-data.card-row icon="building-storefront" label="Filialen">
                             {{ $customer->branches_count }} {{ $customer->branches_count === 1 ? 'Filiale' : 'Filialen' }}
                             <span class="text-zinc-400">·</span> Filialen {{ $customer->branch_management_active ? 'aktiv' : 'inaktiv' }}
+                        </x-adminv2.master-data.card-row>
+
+                        <x-adminv2.master-data.card-row icon="key" label="API-Zugang">
+                            @if ($customer->gtm_api_enabled)
+                                <span class="text-green-700 dark:text-green-400">GTM API aktiv</span>
+                                <span class="text-zinc-400">({{ $customer->gtm_api_rate_limit ?? 60 }}/min)</span>
+                            @else
+                                <span>GTM API inaktiv</span>
+                            @endif
+                            <span class="text-zinc-400">·</span>
+                            <span @class(['font-medium text-zinc-900 dark:text-white' => $customer->tokens_count > 0])>{{ $customer->tokens_count }} {{ $customer->tokens_count === 1 ? 'API Token' : 'API Tokens' }}</span>
+                            @if ($customer->tokens_count > 0 && ! $customer->gtm_api_enabled)
+                                <flux:icon.exclamation-triangle variant="micro" class="inline shrink-0 text-amber-500" title="Tokens vorhanden, aber GTM API Zugang nicht aktiv" />
+                            @endif
                         </x-adminv2.master-data.card-row>
                     </dl>
 
