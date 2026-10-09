@@ -590,16 +590,21 @@
             flex: 1;
             min-height: 0;
             overflow: auto;
-            background: var(--navy-dark);
-            color: #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
             margin: 0;
             padding: 14px 16px;
             font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-            font-size: 0.78rem;
-            line-height: 1.55;
+            font-size: 0.8rem;
+            line-height: 1.6;
             white-space: pre;
         }
         .test-panel .result-body.empty { color: #64748b; white-space: normal; font-family: 'Archivo', sans-serif; font-size: 0.85rem; }
+        /* JSON dezent einfaerben: Schluessel navy, Zeichenketten gruen, Zahlen/Boolesche blau */
+        .test-panel .result-body .j-key { color: var(--navy); font-weight: 600; }
+        .test-panel .result-body .j-str { color: #15803d; }
+        .test-panel .result-body .j-num { color: #1d4ed8; }
+        .test-panel .result-body .j-lit { color: #b45309; }
         .test-panel .result-headers { font-size: 0.7rem; color: #6b7280; padding: 6px 16px; border-top: 1px solid #e5e7eb; background: #f9fafb; white-space: pre-wrap; max-height: 90px; overflow: auto; font-family: 'JetBrains Mono', monospace; }
         .test-panel .result-headers:empty { display: none; }
         .test-toggle {
@@ -1063,6 +1068,17 @@
                 resultHeadersEl.textContent = '';
             }
 
+            // Formatiertes JSON dezent einfaerben; der Text wird vorher HTML-sicher gemacht.
+            function highlightJson(text) {
+                var safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return safe.replace(/("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, function (match) {
+                    var cls = 'j-num';
+                    if (match.charAt(0) === '"') { cls = /:$/.test(match) ? 'j-key' : 'j-str'; }
+                    else if (/^(true|false|null)$/.test(match)) { cls = 'j-lit'; }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+            }
+
             function fillPlaceholders(value) {
                 var token = tokenInput.value.trim();
                 return token ? value.replace(/\{(TOKEN|API_TOKEN|API_KEY)\}/g, token) : value;
@@ -1104,10 +1120,10 @@
                     statusEl.textContent = r.response.status + ' ' + r.response.statusText;
                     statusEl.className = 'status ' + (r.response.ok ? 'ok' : (r.response.status >= 500 ? 'err' : 'warn'));
                     metaEl.textContent = ms + ' ms · ' + (size > 1024 ? (size / 1024).toFixed(1) + ' KB' : size + ' B');
-                    var body = r.text;
-                    try { body = JSON.stringify(JSON.parse(r.text), null, 2); } catch (err) {}
+                    var body = r.text, isJson = false;
+                    try { body = JSON.stringify(JSON.parse(r.text), null, 2); isJson = true; } catch (err) {}
                     resultEl.className = 'result-body';
-                    resultEl.textContent = body;
+                    if (isJson) { resultEl.innerHTML = highlightJson(body); } else { resultEl.textContent = body; }
                     var shown = ['content-type', 'x-ratelimit-limit', 'x-ratelimit-remaining', 'retry-after', 'cache-control'];
                     resultHeadersEl.textContent = shown.filter(function (h) { return r.response.headers.get(h); })
                         .map(function (h) { return h + ': ' + r.response.headers.get(h); }).join('\n');
