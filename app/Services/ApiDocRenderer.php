@@ -25,12 +25,12 @@ class ApiDocRenderer
      * @var array<string, array{file: string, title: string, color: string, openapi: ?string, anchor: string}>
      */
     public const GUIDES = [
-        'gtm' => ['file' => 'gtm-api-guide.md', 'title' => 'Events API (GTM)', 'color' => '#ef4444', 'openapi' => 'gtm-api-openapi.yaml', 'anchor' => 'events-api-guide'],
-        'events' => ['file' => 'event-api-guide.md', 'title' => 'Custom Event API', 'color' => '#f97316', 'openapi' => 'event-api-openapi.yaml', 'anchor' => 'event-api-guide'],
-        'folders' => ['file' => 'folder-import-api-guide.md', 'title' => 'Folder Import API', 'color' => '#3b82f6', 'openapi' => 'folder-import-api-openapi.yaml', 'anchor' => 'folder-import-api-guide'],
-        'feeds' => ['file' => 'feed-api-guide.md', 'title' => 'Feed API', 'color' => '#22c55e', 'openapi' => 'feed-api-openapi.yaml', 'anchor' => 'feed-api-guide'],
-        'plugin' => ['file' => 'plugin-domain-api-guide.md', 'title' => 'Plugin Domain API', 'color' => '#14b8a6', 'openapi' => 'plugin-domain-api-openapi.yaml', 'anchor' => 'plugin-domain-api-guide'],
-        'organisation' => ['file' => 'customer-settings-api-guide.md', 'title' => 'Customer Settings API', 'color' => '#a855f7', 'openapi' => null, 'anchor' => 'customer-settings-api-guide'],
+        'gtm' => ['file' => 'gtm-api-guide.md', 'title' => 'Events API (GTM)', 'color' => '#002742', 'openapi' => 'gtm-api-openapi.yaml', 'anchor' => 'events-api-guide'],
+        'events' => ['file' => 'event-api-guide.md', 'title' => 'Custom Event API', 'color' => '#002742', 'openapi' => 'event-api-openapi.yaml', 'anchor' => 'event-api-guide'],
+        'folders' => ['file' => 'folder-import-api-guide.md', 'title' => 'Folder Import API', 'color' => '#002742', 'openapi' => 'folder-import-api-openapi.yaml', 'anchor' => 'folder-import-api-guide'],
+        'feeds' => ['file' => 'feed-api-guide.md', 'title' => 'Feed API', 'color' => '#002742', 'openapi' => 'feed-api-openapi.yaml', 'anchor' => 'feed-api-guide'],
+        'plugin' => ['file' => 'plugin-domain-api-guide.md', 'title' => 'Plugin Domain API', 'color' => '#002742', 'openapi' => 'plugin-domain-api-openapi.yaml', 'anchor' => 'plugin-domain-api-guide'],
+        'organisation' => ['file' => 'customer-settings-api-guide.md', 'title' => 'Customer Settings API', 'color' => '#002742', 'openapi' => null, 'anchor' => 'customer-settings-api-guide'],
     ];
 
     /** Anleitungen, die auf der API-Startseite eingebettet werden (in dieser Reihenfolge). */

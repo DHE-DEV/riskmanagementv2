@@ -6,21 +6,27 @@
     <title>API Dokumentation - Passolution Travel Information Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
+        // Passolution-Farben wie auf der Plattform: Navy als Marke, Lime als Akzent, Hellblau auf dunklem Grund.
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Archivo', 'sans-serif'] },
                     colors: {
                         brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
+                            50: '#eef6fa',
+                            100: '#b8e6f7',
+                            200: '#91daf2',
+                            500: '#065272',
+                            600: '#043451',
+                            700: '#002742',
+                            800: '#021a2b',
+                            900: '#010f1a',
+                        },
+                        lime: { DEFAULT: '#cee741', dark: '#a8c421' },
                     }
                 }
             }
@@ -28,12 +34,14 @@
     </script>
     <style>
         html { scroll-behavior: smooth; }
+        body { font-family: 'Archivo', sans-serif; }
         .api-card {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .api-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 24px -8px rgba(0, 39, 66, 0.2);
+            border-color: #cee741;
         }
     </style>
 </head>
@@ -43,14 +51,14 @@
     <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <a href="/docs/api" class="flex items-center space-x-2 text-gray-900 hover:text-brand-600 transition-colors">
-                    <i class="fa-solid fa-book text-brand-600 text-lg"></i>
-                    <span class="text-xl font-bold tracking-tight">Passolution</span>
-                    <span class="text-sm text-gray-400 font-medium ml-2 hidden sm:inline">Docs</span>
+                <a href="/docs/api" class="flex items-center gap-4 sm:gap-7 text-gray-800">
+                    <img src="/logo.png" alt="Passolution" class="h-8 w-auto" style="margin-left:-5px">
+                    <span class="text-xl font-light tracking-wide hidden sm:inline">Passolution Travel Information Platform</span>
+                    <span class="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-2.5 py-0.5 text-xs font-semibold tracking-wide">API</span>
                 </a>
-                <a href="/customer/dashboard" class="inline-flex items-center space-x-2 text-sm font-medium text-gray-600 hover:text-brand-600 transition-colors">
+                <a href="/customer/dashboard" class="inline-flex items-center gap-2 text-sm font-medium bg-brand-700 text-white px-4 py-2 rounded-lg hover:bg-brand-600 transition-colors">
                     <span>Zur Plattform</span>
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
                 </a>
             </div>
         </div>
@@ -61,7 +69,8 @@
         <div class="bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
                 <div class="max-w-3xl">
-                    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">API Dokumentation</h1>
+                    <span class="inline-flex items-center rounded-full border border-lime/40 bg-lime/10 text-lime px-3 py-1 text-xs font-semibold tracking-wide mb-5">Entwickler</span>
+                    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">API-<span class="text-lime">Dokumentation</span></h1>
                     <p class="mt-3 text-brand-200 text-lg font-medium">Passolution Travel Information Platform</p>
                     <p class="mt-6 text-lg text-brand-100 leading-relaxed">
                         Umfassende API-Referenz für die Integration mit der Passolution Travel Information Platform.
@@ -382,8 +391,16 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="md:flex md:items-start md:justify-between">
                 <div>
-                    <p class="text-base font-semibold text-gray-900">Passolution Travel Information Platform</p>
-                    <p class="mt-1 text-sm text-gray-500">&copy; {{ date('Y') }} Passolution. Alle Rechte vorbehalten.</p>
+                    <div class="flex items-center gap-3">
+                        <img src="/logo.png" alt="Passolution" class="h-8 w-auto" style="margin-left:-5px">
+                        <p class="text-base font-semibold text-gray-900">Passolution Travel Information Platform</p>
+                    </div>
+                    <p class="mt-3 text-sm text-gray-500">&copy; {{ date('Y') }} Passolution GmbH</p>
+                    <p class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500">
+                        <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition-colors">Impressum</a>
+                    <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition-colors">Datenschutz</a>
+                    <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition-colors">AGB</a>
+                    </p>
                 </div>
                 <div class="mt-6 md:mt-0">
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">API-Referenzen</p>

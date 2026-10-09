@@ -6,9 +6,17 @@
     <title>@yield('title') - Passolution API Dokumentation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Passolution-Farben wie auf der Plattform: Navy als Marke, Lime als Akzent. */
         :root {
-            --api-color: @yield('api_color', '#3b82f6');
+            --api-color: @yield('api_color', '#002742');
+            --navy: #002742;
+            --navy-dark: #021a2b;
+            --lime: #cee741;
+            --sky: #91daf2;
         }
 
         html {
@@ -16,7 +24,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         /* ── Sidebar ── */
@@ -49,9 +57,9 @@
         }
 
         .sidebar a.active {
-            color: var(--api-color);
-            border-left-color: var(--api-color);
-            background: color-mix(in srgb, var(--api-color) 8%, white);
+            color: var(--navy);
+            border-left-color: var(--lime);
+            background: color-mix(in srgb, var(--lime) 18%, white);
             font-weight: 600;
         }
 
@@ -98,7 +106,7 @@
         .prose h1 {
             font-size: 2rem;
             font-weight: 800;
-            color: #111827;
+            color: var(--navy);
             margin: 2rem 0 1rem;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #e5e7eb;
@@ -111,7 +119,7 @@
         .prose h2 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #1f2937;
+            color: var(--navy);
             margin: 2.5rem 0 0.75rem;
             padding-bottom: 0.35rem;
             border-bottom: 1px solid #e5e7eb;
@@ -177,7 +185,7 @@
         }
 
         .prose blockquote {
-            border-left: 4px solid var(--api-color);
+            border-left: 4px solid var(--lime);
             background: #f9fafb;
             padding: 12px 16px;
             margin: 1rem 0;
@@ -199,7 +207,7 @@
         /* ── Code Block ── */
         .code-block {
             position: relative;
-            background: #1e293b;
+            background: var(--navy-dark);
             border-radius: 8px;
             margin: 1rem 0;
             overflow: hidden;
@@ -241,15 +249,15 @@
         }
 
         .code-block .copy-btn.copied {
-            background: rgba(34,197,94,0.2);
-            color: #4ade80;
-            border-color: rgba(34,197,94,0.3);
+            background: rgba(206,231,65,0.2);
+            color: var(--lime);
+            border-color: rgba(206,231,65,0.35);
         }
 
         .code-block .code-label {
             display: inline-block;
-            background: rgba(255,255,255,0.08);
-            color: #94a3b8;
+            background: rgba(206,231,65,0.14);
+            color: var(--lime);
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -261,11 +269,11 @@
         /* ── Response Block (alias for code-block with JSON styling) ── */
         .response-block {
             position: relative;
-            background: #1e293b;
+            background: var(--navy-dark);
             border-radius: 8px;
             margin: 1rem 0;
             overflow: hidden;
-            border-left: 4px solid #22c55e;
+            border-left: 4px solid var(--lime);
         }
 
         .response-block pre {
@@ -449,6 +457,8 @@
             margin: 0;
         }
 
+        .docs-footer { margin-left: 280px; }
+        @media (max-width: 1023px) { .docs-footer { margin-left: 0; } }
         /* ── Sidebar overlay on mobile ── */
         .sidebar-overlay {
             display: none;
@@ -484,7 +494,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: var(--api-color);
+            background: var(--navy);
             color: #fff;
             display: flex;
             align-items: center;
@@ -512,9 +522,10 @@
                 <i class="fas fa-bars text-lg"></i>
             </button>
 
-            <a href="/docs/api" class="flex items-center gap-2 text-gray-900 hover:text-gray-600 transition font-semibold text-lg no-underline">
-                <i class="fas fa-book text-blue-500"></i>
-                <span>Passolution</span>
+            <a href="/docs/api" class="flex items-center gap-4 lg:gap-7 text-gray-800 no-underline">
+                <img src="/logo.png" alt="Passolution" class="h-8 w-auto" style="margin-left:-5px">
+                <span class="text-xl font-light tracking-wide hidden md:inline">Passolution Travel Information Platform</span>
+                <span class="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2.5 py-0.5 text-xs font-semibold tracking-wide">API</span>
             </a>
         </div>
 
@@ -523,7 +534,7 @@
                 <i class="fas fa-arrow-left text-xs"></i>
                 Zurück zur Übersicht
             </a>
-            <a href="/customer/dashboard" class="inline-flex items-center gap-1.5 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition no-underline">
+            <a href="/customer/dashboard" class="inline-flex items-center gap-1.5 text-sm text-white px-4 py-2 rounded-lg transition no-underline" style="background: var(--navy);">
                 <i class="fas fa-external-link-alt text-xs"></i>
                 Zur Plattform
             </a>
@@ -553,9 +564,13 @@
     </button>
 
     {{-- ── Footer ── --}}
-    <footer class="border-t border-gray-200 bg-gray-50 py-8 text-center text-sm text-gray-400" style="margin-left: 280px;">
-        <div class="px-6">
-            &copy; {{ date('Y') }} Passolution Travel Information Platform &mdash; API Dokumentation
+    <footer class="border-t border-gray-200 bg-gray-50 py-6 text-sm text-gray-500 docs-footer">
+        <div class="px-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span>&copy; {{ date('Y') }} Passolution GmbH</span>
+            <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer" class="hover:text-gray-900 no-underline">Impressum</a>
+            <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer" class="hover:text-gray-900 no-underline">Datenschutz</a>
+            <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer" class="hover:text-gray-900 no-underline">AGB</a>
+            <span class="ml-auto text-gray-400">API-Dokumentation</span>
         </div>
     </footer>
 

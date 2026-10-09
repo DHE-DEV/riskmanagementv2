@@ -4,38 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passolution Travel Information Platform - REST API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Passolution-Farben wie auf der Plattform: Navy als Marke, Lime als Akzent, Hellblau auf dunklem Grund. */
+        :root { --navy: #002742; --navy-dark: #021a2b; --navy-mid: #043451; --lime: #cee741; --sky: #91daf2; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #f8fafc;
             color: #1e293b;
             line-height: 1.6;
         }
+        .topbar {
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+        }
+        .topbar .brand { display: flex; align-items: center; gap: 28px; color: #1f2937; text-decoration: none; }
+        .topbar .brand img { height: 32px; width: auto; margin-left: -5px; }
+        .topbar .brand span { font-size: 1.25rem; font-weight: 300; letter-spacing: 0.025em; }
+        .topbar .platform-link {
+            background: var(--navy); color: #fff; text-decoration: none; font-size: 0.875rem; font-weight: 500;
+            padding: 0.5rem 1rem; border-radius: 8px;
+        }
+        .topbar .platform-link:hover { background: var(--navy-mid); }
+        @media (max-width: 640px) { .topbar .brand span { display: none; } }
         .header {
-            background: #0f172a;
+            background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-mid) 100%);
             color: #fff;
-            padding: 3rem 1.5rem;
+            padding: 3.5rem 1.5rem;
             text-align: center;
         }
         .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
             margin-bottom: 0.5rem;
         }
+        .header h1 em { font-style: normal; color: var(--lime); }
         .header p {
-            color: #94a3b8;
+            color: var(--sky);
             font-size: 1.1rem;
         }
         .header .base-url {
             display: inline-block;
             margin-top: 1.25rem;
-            background: #1e293b;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(206,231,65,0.35);
             padding: 0.5rem 1.25rem;
             border-radius: 6px;
             font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 0.95rem;
-            color: #38bdf8;
+            color: var(--lime);
         }
         .container {
             max-width: 960px;
@@ -82,6 +108,7 @@
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
+            transition: border-color 0.15s;
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
@@ -163,10 +190,10 @@
             transition: background 0.15s;
         }
         .btn-primary {
-            background: #0f172a;
+            background: var(--navy);
             color: #fff;
         }
-        .btn-primary:hover { background: #1e293b; }
+        .btn-primary:hover { background: var(--navy-mid); }
         .btn-outline {
             background: #fff;
             color: #334155;
@@ -201,12 +228,13 @@
         .doc-section h1 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--navy);
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #e2e8f0;
         }
         .doc-section h2 {
+            color: var(--navy);
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 0.25rem;
@@ -239,7 +267,7 @@
             margin: 1.5rem 0;
         }
         .doc-section pre {
-            background: #1e293b;
+            background: var(--navy-dark);
             color: #e2e8f0;
             padding: 1rem 1.25rem;
             border-radius: 6px;
@@ -311,9 +339,16 @@
     </style>
 </head>
 <body>
+    <div class="topbar">
+        <a href="/docs/api" class="brand">
+            <img src="/logo.png" alt="Passolution">
+            <span>Passolution Travel Information Platform</span>
+        </a>
+        <a href="https://platform.passolution.de/customer/dashboard" class="platform-link">Zur Plattform</a>
+    </div>
     <div class="header">
-        <h1>Global Travel Monitor (GTM) - REST API</h1>
-        <p>Dokumentation REST API</p>
+        <h1>REST <em>API</em></h1>
+        <p>Dokumentation der Passolution Travel Information Platform</p>
         <div class="base-url">{{ $apiBase }}</div>
     </div>
 
@@ -467,7 +502,11 @@
     </div>
 
     <div class="footer">
-        <p>&copy; {{ date('Y') }} <a href="https://passolution.de" target="_blank">Passolution GmbH</a> &middot; <a href="https://global-travel-monitor.eu">Global Travel Monitor</a></p>
+        <p>&copy; {{ date('Y') }} <a href="https://passolution.de" target="_blank">Passolution GmbH</a>
+            &middot; <a href="https://www.passolution.de/impressum/" target="_blank" rel="noopener noreferrer">Impressum</a>
+            &middot; <a href="https://www.passolution.de/datenschutz/" target="_blank" rel="noopener noreferrer">Datenschutz</a>
+            &middot; <a href="https://www.passolution.de/agb/" target="_blank" rel="noopener noreferrer">AGB</a>
+            &middot; <a href="https://global-travel-monitor.eu">Global Travel Monitor</a></p>
     </div>
 </body>
 </html>
