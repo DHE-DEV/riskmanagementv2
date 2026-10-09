@@ -207,7 +207,8 @@
         /* ── Code Block ── */
         .code-block {
             position: relative;
-            background: var(--navy-dark);
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             margin: 1rem 0;
             overflow: hidden;
@@ -223,16 +224,16 @@
             font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
             font-size: 0.82rem;
             line-height: 1.6;
-            color: #e2e8f0;
+            color: #1e293b;
         }
 
         .code-block .copy-btn {
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #94a3b8;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
             padding: 4px 10px;
             border-radius: 6px;
             cursor: pointer;
@@ -244,19 +245,19 @@
         }
 
         .code-block .copy-btn:hover {
-            background: rgba(255,255,255,0.2);
-            color: #e2e8f0;
+            background: #e2e8f0;
+            color: #0f172a;
         }
 
         .code-block .copy-btn.copied {
-            background: rgba(206,231,65,0.2);
-            color: var(--lime);
-            border-color: rgba(206,231,65,0.35);
+            background: rgba(206,231,65,0.35);
+            color: var(--navy);
+            border-color: var(--lime);
         }
 
         .code-block .code-label {
             display: inline-block;
-            background: rgba(206,231,65,0.14);
+            background: var(--navy);
             color: var(--lime);
             font-size: 0.7rem;
             text-transform: uppercase;
@@ -269,7 +270,8 @@
         /* ── Response Block (alias for code-block with JSON styling) ── */
         .response-block {
             position: relative;
-            background: var(--navy-dark);
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             margin: 1rem 0;
             overflow: hidden;
@@ -286,7 +288,7 @@
             font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
             font-size: 0.82rem;
             line-height: 1.6;
-            color: #e2e8f0;
+            color: #1e293b;
         }
 
         .response-block .copy-btn {
@@ -461,7 +463,7 @@
         @media (max-width: 1023px) { .docs-footer { margin-left: 0; } }
         .code-block .code-caption {
             display: inline-block;
-            color: #cbd5e1;
+            color: #475569;
             font-size: 0.78rem;
             font-weight: 500;
             padding: 5px 12px;
@@ -479,9 +481,9 @@
             position: static;
         }
         .code-block .try-btn {
-            background: var(--lime);
-            border: 1px solid var(--lime);
-            color: var(--navy);
+            background: var(--navy);
+            border: 1px solid var(--navy);
+            color: var(--lime);
             padding: 4px 10px;
             border-radius: 6px;
             cursor: pointer;
@@ -492,7 +494,7 @@
             gap: 4px;
             transition: all 0.15s ease;
         }
-        .code-block .try-btn:hover { background: #dff26a; }
+        .code-block .try-btn:hover { background: #043451; }
         /* ── Testbereich rechts: volle Hoehe unter der Navigation ── */
         .test-panel {
             position: fixed;
