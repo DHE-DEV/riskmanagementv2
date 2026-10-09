@@ -281,25 +281,25 @@
                 <table class="w-full text-sm text-left">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-100">
-                            <th class="px-6 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Basis-URL</th>
+                            <th class="px-6 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs whitespace-nowrap w-px">Basis-URL</th>
                             <th class="px-6 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Beschreibung</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <tr>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 whitespace-nowrap w-px">
                                 <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://platform.passolution.de/api</code>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Haupt-API</td>
                         </tr>
                         <tr>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 whitespace-nowrap w-px">
                                 <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://api.global-travel-monitor.de/v1</code>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Events API (GTM), Custom Event API, Folder Import und Plugin Domain API ohne <code class="text-xs">/api</code>-Präfix – empfohlen für neue Integrationen</td>
                         </tr>
                         <tr>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 whitespace-nowrap w-px">
                                 <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://global-travel-monitor.eu/feed</code>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Feed API</td>
@@ -307,16 +307,16 @@
                     </tbody>
                 </table>
             </div>
-            <p class="mt-4 text-sm text-gray-500">
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 text-sm text-gray-500">
                 Eine Endpoint-Übersicht als JSON liefert <a href="/api/v1" class="text-brand-600 hover:underline">/api/v1</a>,
                 alle Anleitungen auf einer Seite gibt es unter <a href="/api/v1/documentation" class="text-brand-600 hover:underline">/api/v1/documentation</a>
                 und auf <a href="https://api.global-travel-monitor.de/" class="text-brand-600 hover:underline">api.global-travel-monitor.de</a>.
-            </p>
+            </div>
         </div>
     </section>
 
     {{-- Downloads: Anleitungen (Markdown) und OpenAPI-Spezifikationen --}}
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 pb-16">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-100">
                 <h2 class="text-2xl font-bold text-gray-900">Downloads</h2>
