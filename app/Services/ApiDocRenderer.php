@@ -91,7 +91,8 @@ class ApiDocRenderer
             return ['html' => '', 'toc' => []];
         }
 
-        $cacheKey = sprintf('api-docs:%s:%d:%d', $key, (int) $richCode, filemtime($path));
+        // Schluessel aendert sich mit der Markdown-Datei und mit diesem Renderer, damit nach Deploys nichts Altes bleibt.
+        $cacheKey = sprintf('api-docs:%s:%d:%d:%d', $key, (int) $richCode, filemtime($path), filemtime(__FILE__));
 
         return Cache::remember($cacheKey, now()->addDay(), function () use ($path, $richCode) {
             return $this->convert((string) file_get_contents($path), $richCode);
@@ -151,13 +152,77 @@ class ApiDocRenderer
             $html = preg_replace_callback('/<pre><code(?: class="language-([\w-]+)")?>(.*?)<\/code><\/pre>/s', function (array $m) {
                 $language = $m[1] ?? '';
                 $label = $language !== '' ? '<span class="code-label">'.e($language).'</span>' : '';
+                $raw = html_entity_decode(strip_tags($m[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                return '<div class="code-block">'.$label
-                    .'<button class="copy-btn" type="button"><i class="fas fa-copy"></i> Kopieren</button>'
+                $actions = '';
+                $requests = $this->requestsIn($raw);
+                foreach ($requests as $i => $request) {
+                    $text = count($requests) > 1 ? 'Testen '.($i + 1) : 'Testen';
+                    $actions .= '<button class="try-btn" type="button" data-request="'.e($request['command']).'" title="'.e($request['title'] ?: 'Anfrage in den Testbereich laden').'"><i class="fas fa-play"></i> '.$text.'</button>';
+                }
+                $actions .= '<button class="copy-btn" type="button"><i class="fas fa-copy"></i> Kopieren</button>';
+
+                return '<div class="code-block'.($requests !== [] ? ' is-request' : '').'">'.$label
+                    .'<div class="code-actions">'.$actions.'</div>'
                     .'<pre><code'.($language !== '' ? ' class="language-'.e($language).'"' : '').'>'.$m[2].'</code></pre></div>';
             }, $html) ?? $html;
         }
 
         return ['html' => $html, 'toc' => $toc];
+    }
+
+    /**
+     * Anfragen in einem Codeblock: jeder curl-Befehl (mit Zeilenfortsetzungen) oder eine
+     * Zeile "GET /v1/..."; der Kommentar davor wird zum Titel.
+     *
+     * @return array<int, array{command: string, title: string}>
+     */
+    protected function requestsIn(string $code): array
+    {
+        $lines = preg_split('/\r?\n/', trim($code)) ?: [];
+        $requests = [];
+        $comment = '';
+        $current = null;
+
+        foreach ($lines as $line) {
+            if ($current !== null) {
+                $current['command'] .= "\n".$line;
+                if (! str_ends_with(rtrim($line), '\\')) {
+                    $requests[] = $current;
+                    $current = null;
+                }
+                continue;
+            }
+            $trimmed = trim($line);
+            if ($trimmed === '') {
+                continue;
+            }
+            if (str_starts_with($trimmed, '#')) {
+                $comment = trim(ltrim($trimmed, '# '));
+                continue;
+            }
+            if (preg_match('/^curl\s/', $trimmed)) {
+                $current = ['command' => $trimmed, 'title' => $comment];
+                if (! str_ends_with($trimmed, '\\')) {
+                    $requests[] = $current;
+                    $current = null;
+                }
+                $comment = '';
+                continue;
+            }
+            if (preg_match('/^(GET|POST|PUT|PATCH|DELETE)\s+\/\S*$/', $trimmed)) {
+                $requests[] = ['command' => $trimmed, 'title' => $comment];
+                $comment = '';
+                continue;
+            }
+            // Jede andere Zeile (JSON, Text) - kein Anfrageblock.
+            return [];
+        }
+
+        if ($current !== null) {
+            $requests[] = $current;
+        }
+
+        return $requests;
     }
 }

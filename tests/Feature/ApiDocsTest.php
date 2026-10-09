@@ -32,6 +32,15 @@ it('nennt in der Events-Anleitung die echten Kategorie-Codes und den Nearby-Endp
         ->assertDontSee('event_category=security');
 });
 
+it('bietet auf den Anleitungsseiten einen Testbereich und Testen-Knöpfe an den Beispielen', function () {
+    $this->get('/docs/api/gtm')
+        ->assertOk()
+        ->assertSee('id="test-panel"', false)
+        ->assertSee('class="try-btn"', false)
+        ->assertSee('data-request="GET /v1/events"', false)
+        ->assertSee('Testen 2');
+});
+
 it('liefert die API-Dokumentation auch auf der Plattform unter /api/v1/documentation', function () {
     $this->get('/api/v1/documentation')
         ->assertOk()
