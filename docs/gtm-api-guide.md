@@ -521,7 +521,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "population": 84000000,
     "area_km2": 357588,
     "coordinates": {"lat": 51.1657, "lng": 10.4515},
-    "capital": {"name": {"de": "Berlin", "en": "Berlin"}, "lat": 52.52, "lng": 13.405},
+    "capital": {"id": 1380, "name": {"de": "Berlin", "en": "Berlin"}, "lat": 52.52, "lng": 13.405},
     "flag": {"svg_url": "https://flagcdn.com/de.svg", "emoji": "🇩🇪"},
     "description": {
       "short": {"de": "…", "en": "…", "nl": "…"},
@@ -1059,7 +1059,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `languages` | string[] | Sprachcodes |
 | `population`, `area_km2` | number / null | Einwohner, Fläche |
 | `coordinates` | object / null | `lat`, `lng` (Mittelpunkt) |
-| `capital` | object / null | `name` (Text), `lat`, `lng` der Hauptstadt |
+| `capital` | object / null | `id` (Stadt-ID wie in `/v1/countries/{code}/cities`), `name` (Text), `lat`, `lng` der Hauptstadt |
 | `flag` | object | `svg_url`, `emoji` |
 | `description` | object | `short` (Text), `long` (Text, Absätze durch Leerzeilen), `known_for` (Liste je Sprache) |
 | `travel_info` | object | `intro` (Text), `driving_side` (`right`/`left`), `emergency` (`general`, `police`, `ambulance`, `fire`), `religions[]` (`key`, `name`), `national_day` (`date`, `day_month`, `name`) |

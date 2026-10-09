@@ -104,7 +104,7 @@ it('liefert alle Angaben eines Landes strukturiert als JSON', function () {
         ->and($data['membership'])->toBe(['eu' => true, 'schengen' => false])
         ->and($data['currency']['code'])->toBe('EUR')
         ->and($data['coordinates'])->toBe(['lat' => 14.6415, 'lng' => -61.0242])
-        ->and($data['capital'])->toBe(['name' => ['de' => 'Fort-de-France', 'en' => 'Fort-de-France'], 'lat' => 14.6037, 'lng' => -61.0732])
+        ->and($data['capital'])->toBe(['id' => City::where('is_capital', true)->value('id'), 'name' => ['de' => 'Fort-de-France', 'en' => 'Fort-de-France'], 'lat' => 14.6037, 'lng' => -61.0732])
         ->and($data['flag']['svg_url'])->toContain('mq.svg')
         ->and($data['description']['short'])->toBe(['de' => 'Die Blumeninsel.', 'en' => 'The island of flowers.'])
         ->and($data['description']['long']['de'])->toBe("Absatz eins.\n\nAbsatz zwei.")

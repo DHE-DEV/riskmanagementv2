@@ -71,6 +71,7 @@ class CountryDetailResource extends JsonResource
                 'lng' => (float) $country->lng,
             ] : null,
             'capital' => $country->capital ? [
+                'id' => $country->capital->id,
                 'name' => $this->text($country->capital->name_translations),
                 'lat' => $country->capital->lat !== null ? (float) $country->capital->lat : null,
                 'lng' => $country->capital->lng !== null ? (float) $country->capital->lng : null,

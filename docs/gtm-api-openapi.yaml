@@ -1308,6 +1308,7 @@ components:
           type: object
           nullable: true
           properties:
+            id: {type: integer, description: "Stadt-ID wie in /countries/{code}/cities"}
             name: {$ref: '#/components/schemas/TranslatedText'}
             lat: {type: number, nullable: true}
             lng: {type: number, nullable: true}
