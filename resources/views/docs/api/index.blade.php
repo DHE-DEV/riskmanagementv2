@@ -87,10 +87,11 @@
                             <h3 class="text-lg font-semibold text-gray-900 group-hover:text-brand-600 transition-colors">Events API (GTM)</h3>
                         </div>
                     </div>
-                    <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">7 Endpoints</span>
+                    <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">16 Endpoints</span>
                 </div>
                 <p class="mt-4 text-sm text-gray-600 leading-relaxed">
-                    Read-only Zugriff auf aktive Sicherheits- und Reiserisiko-Events mit Filtern nach Risikostufe, Land, Kategorie und Region.
+                    Read-only Zugriff auf aktive Sicherheits- und Reiserisiko-Events (Filter nach Risikostufe, Land, Kategorie, Region und Umkreis)
+                    sowie Basisdaten: Länderinformationen mit Feiertagen und Risikoprofil, Landesgrenzen, Flughäfen, Airlines und Wechselkurse.
                 </p>
                 <div class="mt-4 flex items-center text-xs text-gray-400">
                     <i class="fa-solid fa-lock mr-1.5"></i>
@@ -293,10 +294,57 @@
                         </tr>
                         <tr>
                             <td class="px-6 py-4">
+                                <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://api.global-travel-monitor.de/v1</code>
+                            </td>
+                            <td class="px-6 py-4 text-gray-600">Events API (GTM), Custom Event API, Folder Import und Plugin Domain API ohne <code class="text-xs">/api</code>-Präfix – empfohlen für neue Integrationen</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4">
                                 <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">https://global-travel-monitor.eu/feed</code>
                             </td>
                             <td class="px-6 py-4 text-gray-600">Feed API</td>
                         </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="mt-4 text-sm text-gray-500">
+                Eine Endpoint-Übersicht als JSON liefert <a href="/api/v1" class="text-brand-600 hover:underline">/api/v1</a>,
+                alle Anleitungen auf einer Seite gibt es unter <a href="/api/v1/documentation" class="text-brand-600 hover:underline">/api/v1/documentation</a>
+                und auf <a href="https://api.global-travel-monitor.de/" class="text-brand-600 hover:underline">api.global-travel-monitor.de</a>.
+            </p>
+        </div>
+    </section>
+
+    {{-- Downloads: Anleitungen (Markdown) und OpenAPI-Spezifikationen --}}
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-900">Downloads</h2>
+                <p class="mt-1 text-sm text-gray-500">Jede Anleitung als Markdown, dazu die OpenAPI-Spezifikation (YAML) zum Import in Postman, Insomnia oder Code-Generatoren.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-6 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">API</th>
+                            <th class="px-6 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Anleitung</th>
+                            <th class="px-6 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">OpenAPI</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach (\App\Services\ApiDocRenderer::GUIDES as $key => $guide)
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-gray-900"><a href="/docs/api/{{ $key }}" class="hover:text-brand-600">{{ $guide['title'] }}</a></td>
+                                <td class="px-6 py-4"><a href="/docs/{{ $guide['file'] }}" class="text-brand-600 hover:underline"><i class="fa-solid fa-file-lines mr-1.5"></i>{{ $guide['file'] }}</a></td>
+                                <td class="px-6 py-4">
+                                    @if ($guide['openapi'])
+                                        <a href="/docs/{{ $guide['openapi'] }}" class="text-brand-600 hover:underline"><i class="fa-solid fa-file-code mr-1.5"></i>{{ $guide['openapi'] }}</a>
+                                    @else
+                                        <span class="text-gray-400">–</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>

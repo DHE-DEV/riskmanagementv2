@@ -50,7 +50,7 @@ paths:
           schema:
             type: string
             maxLength: 50
-          description: "Filter nach Event-Typ-Code (z.B. security)"
+          description: "Filter nach Event-Typ-Code (z.B. safety)"
         - name: region
           in: query
           schema:
@@ -732,6 +732,10 @@ components:
           format: float
           nullable: true
           example: 35.3214
+        is_nationwide:
+          type: boolean
+          description: "Landesweite Geltung: /events/nearby liefert das Event unabhängig vom Radius, sobald der Abfragepunkt in einem der betroffenen Länder liegt"
+          example: false
         event_categories:
           type: array
           items:
@@ -740,6 +744,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EventCountry'
+        locations:
+          type: array
+          description: Alle Standorte des Events mit Land, Region, Stadt und Koordinaten
+          items:
+            $ref: '#/components/schemas/EventLocation'
         source:
           $ref: '#/components/schemas/EventSource'
         created_at:
@@ -749,12 +758,26 @@ components:
           type: string
           format: date-time
 
+    EventLocation:
+      type: object
+      properties:
+        country_name: {type: string, example: Deutschland}
+        iso_code: {type: string, example: DE}
+        region_id: {type: integer, nullable: true}
+        region_name: {type: string, nullable: true, example: Nordrhein-Westfalen}
+        city_id: {type: integer, nullable: true}
+        city_name: {type: string, nullable: true, example: Düsseldorf}
+        latitude: {type: number, format: float, nullable: true}
+        longitude: {type: number, format: float, nullable: true}
+        location_note: {type: string, nullable: true}
+        label: {type: string, example: "Deutschland – Nordrhein-Westfalen – Düsseldorf"}
+
     EventCategory:
       type: object
       properties:
         code:
           type: string
-          example: security
+          example: safety
         name:
           type: string
           example: Sicherheit

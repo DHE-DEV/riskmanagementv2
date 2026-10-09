@@ -49,11 +49,12 @@ GET /v1/custom/event-categories
 | Code | Name |
 |------|------|
 | `environment` | Umweltereignisse |
-| `traffic` | Reiseverkehr |
-| `security` | Sicherheit |
+| `travel` | Reiseverkehr |
+| `safety` | Sicherheit |
 | `entry` | Einreisebestimmungen |
 | `general` | Allgemein |
 | `health` | Gesundheit |
+| `strike` | Streik |
 
 > **Hinweis:** Diese Liste kann sich ändern. Nutzen Sie den Endpoint `GET /v1/custom/event-categories`, um stets die aktuellen Kategorien abzurufen.
 
@@ -77,7 +78,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "icon": "fa-leaf"
     },
     {
-      "code": "security",
+      "code": "safety",
       "name": "Sicherheit",
       "color": "#DC2626",
       "icon": "fa-shield-alt"
@@ -142,7 +143,7 @@ POST /v1/custom/events
 | `risk_level` | string | Nein | Risikostufe: `info`, `low`, `medium` (Standard), `high` |
 | `start_date` | datetime | Ja | Startdatum (ISO 8601, z.B. `2026-02-11T08:00:00Z`) |
 | `end_date` | datetime | Nein | Enddatum (muss gleich oder nach start_date liegen) |
-| `event_category_codes` | array | Ja | Event-Kategorie-Codes (mindestens 1, z.B. `["security", "environment"]`, siehe Tabelle oben) |
+| `event_category_codes` | array | Ja | Event-Kategorie-Codes (mindestens 1, z.B. `["safety", "environment"]`, siehe Tabelle oben) |
 | `country_codes` | array | Ja | ISO-2-Ländercodes (mindestens 1, z.B. `["DE", "AT"]`) |
 | `latitude` | number | Nein | Breitengrad (-90 bis 90) |
 | `longitude` | number | Nein | Längengrad (-180 bis 180) |

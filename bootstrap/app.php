@@ -34,6 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
             '192.168.0.0/16',
         ]);
 
+        // Alias-Hostnamen der API (z. B. api.global-travel-monitor.eu) auf app.api_domain umleiten.
+        $middleware->prepend(\App\Http\Middleware\RedirectApiDomainAliases::class);
+
         $middleware->alias([
             'allow.embedding' => \App\Http\Middleware\AllowEmbedding::class,
             'plugin.onboarded' => \App\Http\Middleware\EnsurePluginOnboarded::class,

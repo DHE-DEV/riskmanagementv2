@@ -32,7 +32,7 @@ Alternativ ist die API auch unter `https://global-travel-monitor.eu/api/v1` erre
 
 ## Rate Limit
 
-Standardmäßig sind **60 Requests pro Minute** erlaubt. Bei Überschreitung erhalten Sie einen `429 Too Many Requests`-Response. Prüfen Sie den `Retry-After`-Header für die Wartezeit in Sekunden.
+Standardmäßig sind **60 Requests pro Minute** erlaubt. Das Limit kann je Kunde höher eingestellt sein; den aktuellen Wert liefern die Antwort-Header `X-RateLimit-Limit` und `X-RateLimit-Remaining`. Bei Überschreitung erhalten Sie einen `429 Too Many Requests`-Response. Prüfen Sie den `Retry-After`-Header für die Wartezeit in Sekunden.
 
 ---
 
@@ -84,7 +84,7 @@ GET /v1/events
 |-----------|-----|---------|--------------|
 | `risk_level` | string | Nein | Filter nach Risikostufe: `high`, `medium`, `low`, `info` |
 | `country` | string | Nein | Filter nach Ländercode – ISO alpha-2 (z.B. `DE`) oder alpha-3 (z.B. `DEU`) |
-| `event_category` | string | Nein | Filter nach Event-Kategorie-Code (z.B. `security`, siehe Tabelle unten) |
+| `event_category` | string | Nein | Filter nach Event-Kategorie-Code (z.B. `safety`, siehe Tabelle unten) |
 | `region` | integer | Nein | Filter nach Region-ID (numerische ID) |
 | `source` | string | Nein | Filter nach Event-Herkunft (z.B. `manual`, `passolution_infosystem` oder Name des API-Partners) |
 | `start_date` | date | Nein | Nur Events ab diesem Datum (z.B. `2026-03-01`) |
@@ -109,7 +109,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 # Events eines bestimmten Typs
 curl -H "Authorization: Bearer {TOKEN}" \
-  "https://api.global-travel-monitor.de/v1/events?event_category=security"
+  "https://api.global-travel-monitor.de/v1/events?event_category=safety"
 
 # Nur manuell erstellte Events
 curl -H "Authorization: Bearer {TOKEN}" \
@@ -139,9 +139,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "end_date": null,
       "latitude": 37.7749,
       "longitude": 35.3214,
+      "is_nationwide": false,
       "event_categories": [
         {
-          "code": "security",
+          "code": "safety",
           "name": "Sicherheit"
         }
       ],
@@ -202,9 +203,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "end_date": null,
     "latitude": 37.7749,
     "longitude": 35.3214,
+    "is_nationwide": false,
     "event_categories": [
       {
-        "code": "security",
+        "code": "safety",
         "name": "Sicherheit"
       }
     ],
@@ -225,6 +227,98 @@ curl -H "Authorization: Bearer {TOKEN}" \
     },
     "created_at": "2025-03-15T09:00:00Z",
     "updated_at": "2025-03-15T10:15:00Z"
+  }
+}
+```
+
+---
+
+### Events im Umkreis suchen (Nearby)
+
+```
+GET /v1/events/nearby
+```
+
+Sucht aktive Events im Umkreis eines Standorts. Der Standort kann entweder über einen **3-Letter IATA-Code** (z.B. Flughafen) oder über **Geokoordinaten** angegeben werden. Events mit `is_nationwide: true` werden unabhängig vom Radius geliefert, sobald der Abfragepunkt in einem der betroffenen Länder liegt.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `code` | string | Ja* | 3-Letter IATA-Code (z.B. `FRA`, `MUC`, `JFK`) |
+| `latitude` | numeric | Ja* | Breitengrad (-90 bis 90) |
+| `longitude` | numeric | Ja* | Längengrad (-180 bis 180) |
+| `radius` | numeric | Ja | Umkreis in Kilometern (1–20.000) |
+| `per_page` | integer | Nein | Ergebnisse pro Seite (1–100, Standard: 25) |
+| `page` | integer | Nein | Seitennummer (Standard: 1) |
+
+\* Entweder `code` oder `latitude` + `longitude` muss angegeben werden.
+
+**Beispiele:**
+
+```bash
+# Mit 3-Letter-Code
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events/nearby?code=FRA&radius=500"
+
+# Mit Geokoordinaten
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/events/nearby?latitude=50.0379&longitude=8.5622&radius=500"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "title": "Storm Warning Central Europe",
+      "description": "Severe storm warning for the Frankfurt area.",
+      "risk_level": "medium",
+      "is_nationwide": false,
+      "start_date": "2026-03-20T06:00:00+00:00",
+      "end_date": "2026-03-21T18:00:00+00:00",
+      "latitude": 50.1109,
+      "longitude": 8.6821,
+      "event_categories": [
+        {
+          "code": "environment",
+          "name": "Umweltereignisse"
+        }
+      ],
+      "countries": [
+        {
+          "iso_code": "DE",
+          "iso3_code": "DEU",
+          "name_de": "Deutschland",
+          "name_en": "Germany",
+          "continent": "Europe",
+          "latitude": 50.1109,
+          "longitude": 8.6821
+        }
+      ],
+      "source": {
+        "type": "manual",
+        "name": null
+      },
+      "created_at": "2026-03-20T07:00:00+00:00",
+      "updated_at": "2026-03-20T07:00:00+00:00"
+    }
+  ],
+  "location": {
+    "code": "FRA",
+    "name": "Frankfurt Airport",
+    "latitude": 50.030241,
+    "longitude": 8.561096,
+    "radius_km": 500
+  },
+  "meta": {
+    "current_page": 1,
+    "per_page": 25,
+    "total": 3,
+    "last_page": 1
   }
 }
 ```
@@ -755,11 +849,12 @@ Gibt eine Liste aller verfügbaren Event-Kategorien zurück. Nützlich um die g�
 | Code | Name |
 |------|------|
 | `environment` | Umweltereignisse |
-| `traffic` | Reiseverkehr |
-| `security` | Sicherheit |
+| `travel` | Reiseverkehr |
+| `safety` | Sicherheit |
 | `entry` | Einreisebestimmungen |
 | `general` | Allgemein |
 | `health` | Gesundheit |
+| `strike` | Streik |
 
 > **Hinweis:** Diese Liste kann sich ändern. Nutzen Sie den Endpoint `GET /v1/event-categories`, um stets die aktuellen Kategorien abzurufen.
 
@@ -781,7 +876,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "name": "Umweltereignisse"
     },
     {
-      "code": "security",
+      "code": "safety",
       "name": "Sicherheit"
     }
   ]
@@ -804,8 +899,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `end_date` | datetime / null | Enddatum (null = andauernd) |
 | `latitude` | number / null | Breitengrad |
 | `longitude` | number / null | Längengrad |
+| `is_nationwide` | boolean | Landesweite Geltung. Bei `true` liefert `/events/nearby` das Event unabhängig vom Radius, sobald der Abfragepunkt in einem der unter `countries` genannten Länder liegt |
 | `event_categories` | array | Liste der zugewiesenen Event-Typen |
 | `countries` | array | Liste betroffener Länder |
+| `locations` | array | Alle Standorte des Events: je Eintrag `country_name`, `iso_code`, `region_id`, `region_name`, `city_id`, `city_name`, `latitude`, `longitude`, `location_note`, `label` |
 | `source` | object | Herkunft des Events |
 | `source.type` | string | Quelle: `manual`, `api_client`, `passolution_infosystem`, etc. |
 | `source.name` | string / null | Name des API-Partners (bei API-Client-Events) |
@@ -816,7 +913,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
-| `code` | string | Maschinenlesbarer Code (z.B. `security`) |
+| `code` | string | Maschinenlesbarer Code (z.B. `safety`) |
 | `name` | string | Anzeigename |
 
 ### Land (Event-Kontext)
@@ -830,6 +927,9 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `continent` | string | Kontinent |
 | `latitude` | number / null | Breitengrad (Event-Standort im Land) |
 | `longitude` | number / null | Längengrad (Event-Standort im Land) |
+| `region` | object / null | Betroffene Region: `id`, `name_de`, `name_en` |
+| `city` | object / null | Betroffene Stadt: `id`, `name_de`, `name_en` |
+| `location_note` | string / null | Freitext zum Standort |
 
 ### Land (Countries-Endpoint)
 
@@ -896,12 +996,20 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `422` | Validierungsfehler (ungültige Filter-Parameter) |
 | `429` | Rate Limit überschritten |
 
-**Beispiel Fehler-Response:**
+**Beispiel Fehler-Response (401):**
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+**Beispiel Fehler-Response (404):**
 
 ```json
 {
   "success": false,
-  "message": "Unauthenticated."
+  "message": "Event not found"
 }
 ```
 

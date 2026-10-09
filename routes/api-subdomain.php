@@ -5,11 +5,11 @@
 | API Subdomain Routes
 |--------------------------------------------------------------------------
 |
-| These routes are registered on the API subdomain (api.global-travel-monitor.eu)
+| These routes are registered on the API subdomain (api.global-travel-monitor.de, config app.api_domain)
 | and mirror the external-facing API routes without the /api prefix.
 |
-| Subdomain:  api.global-travel-monitor.eu/v1/events
-| Main domain: global-travel-monitor.eu/api/v1/events  (still works)
+| Subdomain:  api.global-travel-monitor.de/v1/events
+| Main domain: platform.passolution.de/api/v1/events  (still works)
 |
 */
 
@@ -18,72 +18,15 @@
 | Landing Page, Docs & Fallback
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => view('api.landing'))->withoutMiddleware('api')->name('sub.root');
+Route::get('/', [\App\Http\Controllers\ApiDocController::class, 'landing'])->withoutMiddleware('api')->name('sub.root');
 
-Route::get('/v1', function () {
-    return response()->json([
-        'name' => 'Global Travel Monitor API',
-        'version' => 'v1',
-        'documentation' => '/',
-        'endpoints' => [
-            'Events (alle)' => '/v1/events',
-            'Länder mit aktiven Events' => '/v1/events/countries',
-            'Custom Events (Partner)' => '/v1/custom/events',
-            'Folder Import API' => '/v1/folders',
-            'Basisdaten' => [
-                'Kontinente' => '/v1/continents',
-                'Länder' => '/v1/countries',
-                'Länderinformationen' => '/v1/countries/{code}',
-                'Landesgrenze (GeoJSON)' => '/v1/countries/{code}/boundary',
-                'Landesgrenzen mehrerer Länder' => '/v1/boundaries?codes=EG,DE',
-                'Flughäfen' => '/v1/airports?country=EG',
-                'Flughafen mit Lounges, Hotels, Mobilität, Airlines' => '/v1/airports/{code}',
-                'Airlines' => '/v1/airlines?country=EG',
-                'Airline mit Kontakt, Gepäck, Tieren, Flughäfen' => '/v1/airlines/{code}',
-                'Wechselkurse' => '/v1/exchange-rates',
-                'Regionen' => '/v1/regions',
-                'Event-Kategorien' => '/v1/event-categories',
-            ],
-            'Referenzdaten (Partner)' => ['/v1/custom/event-categories', '/v1/custom/countries'],
-            'Plugin GTM Domain Management' => '/v1/plugin/gtm/domains',
-        ],
-        'authentication' => 'Bearer Token via Authorization header',
-    ]);
-})->name('sub.v1.root');
+// Endpoint-Uebersicht als JSON (ohne Token)
+Route::get('/v1', [\App\Http\Controllers\ApiDocController::class, 'overview'])->name('sub.v1.root');
 
-// Documentation file downloads
-Route::get('/docs/{file}', function (string $file) {
-    $allowed = [
-        'event-api-openapi.yaml',
-        'event-api-guide.md',
-        'gtm-api-openapi.yaml',
-        'gtm-api-guide.md',
-        'feed-api-openapi.yaml',
-        'feed-api-guide.md',
-        'folder-import-api-openapi.yaml',
-        'folder-import-api-guide.md',
-        'plugin-domain-api-openapi.yaml',
-        'plugin-domain-api-guide.md',
-        'customer-settings-api-guide.md',
-    ];
-
-    if (!in_array($file, $allowed)) {
-        abort(404);
-    }
-
-    $path = base_path("docs/{$file}");
-
-    if (!file_exists($path)) {
-        abort(404);
-    }
-
-    $contentType = str_ends_with($file, '.yaml') ? 'application/x-yaml' : 'text/markdown';
-
-    return response()->file($path, [
-        'Content-Type' => $contentType,
-        'Content-Disposition' => "attachment; filename=\"{$file}\"",
-    ]);
-})->where('file', '[a-z0-9\-]+\.(yaml|md)')->name('sub.docs.download');
+// Anleitungen und OpenAPI-Dateien zum Download
+Route::get('/docs/{file}', [\App\Http\Controllers\ApiDocController::class, 'download'])
+    ->where('file', '[a-z0-9\-]+\.(yaml|md)')
+    ->name('sub.docs.download');
 
 Route::fallback(function () {
     return response()->json([

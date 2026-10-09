@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     // API subdomain → API description page
     if (request()->getHost() === config('app.api_domain')) {
-        return view('api.landing');
+        return app(\App\Http\Controllers\ApiDocController::class)->landing(request());
     }
 
     $eventId = request()->query('event');
@@ -448,16 +448,18 @@ Route::get('/doc-plugin', function () {
     return view('livewire.pages.doc-plugin');
 })->name('doc-plugin');
 
-// API Dokumentation
+// API Dokumentation: Uebersicht und je Anleitung eine Seite, gerendert aus docs/*.md
 Route::prefix('docs/api')->name('docs.api.')->group(function () {
     Route::get('/', fn () => view('docs.api.index'))->name('index');
-    Route::get('/gtm', fn () => view('docs.api.gtm'))->name('gtm');
-    Route::get('/events', fn () => view('docs.api.events'))->name('events');
-    Route::get('/feeds', fn () => view('docs.api.feeds'))->name('feeds');
-    Route::get('/folders', fn () => view('docs.api.folders'))->name('folders');
-    Route::get('/organisation', fn () => view('docs.api.organisation'))->name('organisation');
-    Route::get('/plugin', fn () => view('docs.api.plugin'))->name('plugin');
+    Route::get('/{guide}', [\App\Http\Controllers\ApiDocController::class, 'show'])
+        ->where('guide', implode('|', array_keys(\App\Services\ApiDocRenderer::GUIDES)))
+        ->name('show');
 });
+
+// Anleitungen und OpenAPI-Dateien zum Download (wie /docs/{file} auf der API-Subdomain)
+Route::get('/docs/{file}', [\App\Http\Controllers\ApiDocController::class, 'download'])
+    ->where('file', '[a-z0-9\-]+\.(yaml|md)')
+    ->name('docs.download');
 
 // Meine Reisenden - nur für eingeloggte Kunden mit gültigem Token
 Route::get('/my-travelers', [\App\Http\Controllers\Customer\MyTravelersController::class, 'index'])

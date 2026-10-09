@@ -389,6 +389,14 @@ Route::prefix('v1/plugin/gtm/domains')->middleware([
 | Protected by Sanctum token authentication with GTM API permissions.
 |
 */
+// API-Dokumentation auf der Plattform: /api/v1 (Uebersicht), /api/v1/documentation (Anleitungen),
+// /api/v1/documentation/{file} (Markdown/OpenAPI zum Download) - ohne Token
+Route::get('/v1', [\App\Http\Controllers\ApiDocController::class, 'overview'])->name('v1.root');
+Route::get('/v1/documentation', [\App\Http\Controllers\ApiDocController::class, 'landing'])->name('v1.documentation');
+Route::get('/v1/documentation/{file}', [\App\Http\Controllers\ApiDocController::class, 'download'])
+    ->where('file', '[a-z0-9\-]+\.(yaml|md)')
+    ->name('v1.documentation.download');
+
 Route::prefix('v1')->middleware([
     'auth:sanctum',
     \App\Http\Middleware\GtmApiAuthenticate::class,

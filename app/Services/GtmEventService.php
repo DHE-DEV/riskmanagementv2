@@ -109,8 +109,9 @@ class GtmEventService
 
         if ($source !== null) {
             $events = $events->filter(function (CustomEvent $event) use ($source) {
-                // Filter by data_source value or by API client name/slug
-                if ($event->data_source === $source) {
+                // Filter by data_source value or by API client name/slug.
+                // Events ohne data_source sind manuell angelegt - so gibt sie auch GtmEventResource aus.
+                if (($event->data_source ?? 'manual') === $source) {
                     return true;
                 }
 

@@ -325,6 +325,12 @@ return [
     'api_domain' => env('API_DOMAIN', 'api.global-travel-monitor.de'),
 
     /*
+    | Weitere Hostnamen, die dauerhaft (301) auf die API-Domain umgeleitet werden,
+    | kommagetrennt - z. B. api.global-travel-monitor.eu.
+    */
+    'api_domain_aliases' => array_values(array_filter(array_map('trim', explode(',', (string) env('API_DOMAIN_ALIASES', 'api.global-travel-monitor.eu'))))),
+
+    /*
     |--------------------------------------------------------------------------
     | Super Admin Emails
     |--------------------------------------------------------------------------
