@@ -192,6 +192,14 @@ class Country extends Model
     }
 
     /**
+     * Fluggesellschaften mit Sitz in diesem Land.
+     */
+    public function airlines(): HasMany
+    {
+        return $this->hasMany(Airline::class, 'home_country_id');
+    }
+
+    /**
      * Get the airports for this country.
      */
     public function airports(): HasMany

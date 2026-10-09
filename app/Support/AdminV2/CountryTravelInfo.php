@@ -152,6 +152,8 @@ class CountryTravelInfo
             'type' => $type,
             'description' => self::PLUG_TYPES[$type] ?? '',
             'image' => self::plugImage($type),
+            // PNG fuer Apps ohne SVG-Unterstuetzung (iOS)
+            'image_png' => asset('images/plug-types/png/'.strtolower($type).'.png'),
         ], array_filter((array) ($info['plug_types'] ?? []), fn ($type) => isset(self::PLUG_TYPES[$type]))));
     }
 

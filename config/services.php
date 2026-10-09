@@ -39,6 +39,12 @@ return [
     // DeepL Translation API (Pro) – used to translate Event titles/descriptions
     // DeepL Übersetzungs-API (Pro) – übersetzt Event-Titel/-Beschreibungen
     // Nutzt den vorhandenen DEEPL_KEY (Fallback: DEEPL_API_KEY).
+    // Wechselkurse fuer Apps (ExchangeRateService); offener Endpunkt ohne Schluessel, Basis EUR
+    'exchange_rates' => [
+        'url' => env('EXCHANGE_RATES_URL', 'https://open.er-api.com/v6/latest'),
+        'attribution' => env('EXCHANGE_RATES_ATTRIBUTION', 'Rates by ExchangeRate-API (https://www.exchangerate-api.com)'),
+    ],
+
     'deepl' => [
         'api_key' => env('DEEPL_KEY', env('DEEPL_API_KEY')),
         'api_url' => env('DEEPL_API_URL', 'https://api.deepl.com/v2/translate'),

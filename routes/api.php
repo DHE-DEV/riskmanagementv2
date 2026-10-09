@@ -405,6 +405,13 @@ Route::prefix('v1')->middleware([
     Route::get('/continents', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'continents'])->name('v1.continents');
     Route::get('/countries', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'countries'])->name('v1.countries');
     Route::get('/countries/{code}', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'country'])->name('v1.countries.show');
+    Route::get('/countries/{code}/boundary', [\App\Http\Controllers\Api\V1\CountryBoundaryController::class, 'show'])->name('v1.countries.boundary');
+    Route::get('/boundaries', [\App\Http\Controllers\Api\V1\CountryBoundaryController::class, 'index'])->name('v1.boundaries');
+    Route::get('/airports', [\App\Http\Controllers\Api\V1\AirportController::class, 'index'])->name('v1.airports');
+    Route::get('/airports/{code}', [\App\Http\Controllers\Api\V1\AirportController::class, 'show'])->name('v1.airports.show');
+    Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('v1.airlines');
+    Route::get('/airlines/{code}', [\App\Http\Controllers\Api\V1\AirlineController::class, 'show'])->name('v1.airlines.show');
+    Route::get('/exchange-rates', [\App\Http\Controllers\Api\V1\ExchangeRateController::class, 'latest'])->name('v1.exchange-rates');
     Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('v1.regions');
     Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('v1.event-categories');
 });

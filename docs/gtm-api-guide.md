@@ -427,6 +427,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "population": 84000000,
     "area_km2": 357588,
     "coordinates": {"lat": 51.1657, "lng": 10.4515},
+    "capital": {"name": {"de": "Berlin", "en": "Berlin"}, "lat": 52.52, "lng": 13.405},
     "flag": {"svg_url": "https://flagcdn.com/de.svg", "emoji": "🇩🇪"},
     "description": {
       "short": {"de": "…", "en": "…", "nl": "…"},
@@ -444,7 +445,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "power": {
       "voltage": 230,
       "frequency": 50,
-      "plug_types": [{"type": "F", "description": "Schuko (Deutschland)", "image": "https://…/images/plug-types/f.svg"}],
+      "plug_types": [{"type": "F", "description": "Schuko (Deutschland)", "image": "https://…/images/plug-types/f.svg", "image_png": "https://…/images/plug-types/png/f.png"}],
       "notes": {}
     },
     "tipping": {
@@ -453,6 +454,8 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "restaurants": {"mode": "range", "from": 5, "to": 10, "unit": "percent", "currency": null, "description": {"de": "…"}},
       "taxi": {"mode": "fixed", "from": 1, "to": null, "unit": "amount", "currency": "EUR", "description": {}}
     },
+    "airlines": [{"name": "Lufthansa", "iata_code": "LH", "icao_code": "DLH", "headquarters": "Köln", "website_url": "https://www.lufthansa.com", "booking_url": "…"}],
+    "airports": [{"iata_code": "FRA", "icao_code": "EDDF", "name": "Frankfurt Airport", "type": "international", "city": {"de": "Frankfurt am Main", "en": "Frankfurt"}}],
     "taxi_apps": [{"name": "FREENOW", "description": {"de": "…"}, "logo_url": "…", "website_url": "…", "app_store_url": "…", "play_store_url": "…"}],
     "mobile_operators": [{"name": "Telekom", "description": {}, "logo_url": "…", "website_url": "…", "prepaid_url": null, "offers_esim": true}],
     "holidays": {
@@ -476,8 +479,218 @@ Hinweise zu einzelnen Feldern:
 
 - `tipping.*.mode`: `range` (von–bis) oder `fixed` (fester Wert, dann ist `to` leer); `unit`: `percent` oder `amount` in `currency`.
 - `holidays.items[].weekday`: ISO-Wochentag, 1 = Montag; `regions` leer bedeutet landesweit.
-- `risk_profile.categories.*.fields.*.value`: Stufen 1–5 (mit `label`), Ja/Nein, Zahlen, Listen oder Text; `note` nur bei Punkten mit Notiz.
+- `risk_profile.categories.*.fields.*`: `name` (Bezeichnung des Punkts), `type` (`level`, `bool`, `number`, `tags`, `text`, `textarea`), `value` (Stufen 1–5 mit `label`, Ja/Nein, Zahlen, Listen oder Text); `note` nur bei Punkten mit Notiz.
 - Fehlt ein Bereich (z. B. kein Risikoprofil), ist der Wert `null`; leere mehrsprachige Texte sind `{}`.
+
+---
+
+### Landesgrenzen (GeoJSON)
+
+```
+GET /v1/countries/{code}/boundary
+GET /v1/boundaries?codes=EG,DE,FR
+```
+
+Grenzen als GeoJSON für Karten – ein Land als `Feature`, mehrere Länder (bis zu 60 je Abruf) als `FeatureCollection`. Die Geometrie (`Polygon` oder `MultiPolygon`, Koordinaten als `[lng, lat]`) ist auf rund 5 km vereinfacht und damit für Landes- und Kontinentkarten gedacht; `bbox` ist `[min_lng, min_lat, max_lng, max_lat]`. Quelle: Natural Earth. Länder ohne Grenzdaten fehlen in der Sammlung bzw. liefern 404.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `codes` | string | Ja (nur `/v1/boundaries`) | ISO-Codes, kommagetrennt |
+| `lang` | string | Nein | Sprache für `properties.name` (`de`, `en`, `nl`) |
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/boundaries?codes=EG,DE&lang=de"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {"iso_code": "EG", "iso3_code": "EGY", "name": "Ägypten"},
+        "bbox": [24.7, 21.99, 36.87, 31.65],
+        "geometry": {"type": "MultiPolygon", "coordinates": [[[[34.9, 29.49], [34.26, 31.22], "…"]]]}
+      }
+    ]
+  },
+  "meta": {"requested": 2, "found": 1}
+}
+```
+
+Hinweis für Karten: Ringe, die den 180. Längengrad kreuzen (Russland, USA, Fidschi), sollten vor dem Zeichnen auf durchgehende Längen umgerechnet werden (negative Längen + 360).
+
+---
+
+### Flughäfen
+
+```
+GET /v1/airports
+GET /v1/airports/{code}
+```
+
+Flughäfen aus der Plattform (Quelle OurAirports plus redaktionelle Pflege). Die Liste liefert Kurzdaten und Zähler, der Einzelabruf per IATA-Code (3 Zeichen) oder ICAO-Code (4 Zeichen) zusätzlich Lounges, Hotels in der Nähe, Mobilität und die dort fliegenden Airlines. Nur aktive Einträge.
+
+**Query-Parameter (Liste):**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `country` | string | Nein | ISO-2- oder ISO-3-Code des Landes |
+| `q` | string | Nein | Suche in Name, IATA- oder ICAO-Code |
+| `type` | string | Nein | `international`, `large_airport`, `medium_airport`, `small_airport` |
+| `lang` | string | Nein | Sprache für Stadt- und Ländernamen (`de`, `en`, `nl`) |
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/airports/CAI?lang=de"
+```
+
+**Response (200 OK, gekürzt):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "iata_code": "CAI", "icao_code": "HECA", "name": "Cairo International Airport",
+    "type": "international", "type_label": "Internationaler Flughafen",
+    "city": "Kairo", "country": {"iso_code": "EG", "name": "Ägypten"},
+    "coordinates": {"lat": 30.1219, "lng": 31.4056}, "timezone": "Africa/Cairo", "altitude_m": 116,
+    "operates_24h": true, "website_url": "…", "security_timeslot_url": null,
+    "counts": {"lounges": 3, "nearby_hotels": 2, "airlines": 48},
+    "lounges": [{"name": "Ahlan Lounge", "location": "Terminal 3", "access": "Alle Passagiere mit Bordkarte", "price_per_person": 40, "children_welcome": true, "url": "…"}],
+    "nearby_hotels": [{"name": "Le Méridien Cairo Airport", "distance_km": 0.2, "shuttle": true, "booking_url": "…", "notes": null}],
+    "mobility": {
+      "taxi": {"available": true, "info": "Vor allen Terminals", "approx_cost": null},
+      "parking": {"available": true, "options": [{"name": "P1", "url": "…", "distance": "100m"}]},
+      "car_rental": {"available": true, "providers": [{"name": "Hertz", "url": "…"}]},
+      "airport_shuttle": {"available": false, "info": null, "url": null},
+      "public_transport": {"available": true, "types": [{"name": "Metro", "url": "…"}]}
+    },
+    "airlines": [{"iata_code": "MS", "icao_code": "MSR", "name": "EgyptAir", "terminal": "3", "direction": "both", "cabin_classes": [{"key": "economy", "label": "Economy"}]}],
+    "updated_at": "2026-02-08T09:55:19+00:00"
+  }
+}
+```
+
+Die Liste (`/v1/airports`) enthält je Flughafen dieselben Felder bis einschließlich `counts`; `meta.total` ist die Trefferzahl.
+
+---
+
+### Airlines
+
+```
+GET /v1/airlines
+GET /v1/airlines/{code}
+```
+
+Fluggesellschaften aus der Plattform. Die Liste liefert Kurzdaten, der Einzelabruf per IATA-Code (2 Zeichen) oder ICAO-Code (3 Zeichen) zusätzlich Kontakt, Gepäckregeln je Kabinenklasse, Tierregelung und die angeflogenen Flughäfen. Nur aktive Einträge.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `country` | string | Nein | Liste: nur Airlines mit Sitz in diesem Land (ISO-2 oder ISO-3) |
+| `q` | string | Nein | Liste: Suche in Name, IATA- oder ICAO-Code |
+| `include` | string | Nein | Einzelabruf: `lounges`, `hotels` (kommagetrennt) hängt Lounges bzw. Hotels an jeden Flughafen |
+| `lang` | string | Nein | Sprache für Stadt- und Ländernamen (`de`, `en`, `nl`) |
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/airlines/MS?lang=de&include=lounges,hotels"
+```
+
+**Response (200 OK, gekürzt):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "iata_code": "MS", "icao_code": "MSR", "name": "EgyptAir",
+    "home_country": {"iso_code": "EG", "name": "Ägypten"}, "headquarters": "Kairo",
+    "website_url": "…", "booking_url": "…",
+    "cabin_classes": [{"key": "economy", "label": "Economy"}, {"key": "business", "label": "Business Class"}],
+    "counts": {"airports": 62},
+    "contact": {"hotline": "+20 2 2696 6300", "email": null, "chat_url": null, "help_url": "…"},
+    "baggage": {
+      "classes": {
+        "economy": {"hand": {"allowance": "1x8kg", "dimensions_cm": {"length": 55, "width": 40, "height": 20}}, "checked": {"allowance": "23kg"}},
+        "premium_economy": {"hand": {"allowance": null, "dimensions_cm": null}, "checked": {"allowance": null}},
+        "business": {"…": "…"}, "first": {"…": "…"}
+      },
+      "notes": null, "info_url": "…"
+    },
+    "pet_policy": {
+      "allowed": true,
+      "in_cabin": {"allowed": true, "max_weight": "8kg", "carrier_dimensions_cm": {"length": 55, "width": 40, "height": 26}, "weight_includes_bag": true, "advance_notice_required": true},
+      "in_hold": {"allowed": true, "advance_notice_required": true, "notes": "…"},
+      "restrictions": [{"key": "breed_restrictions", "label": "Rasseeinschränkungen"}],
+      "info_url": "…", "notes": null
+    },
+    "airports": [
+      {"iata_code": "CAI", "icao_code": "HECA", "name": "Cairo International Airport", "city": "Kairo", "country": "EG", "terminal": "3", "direction": "both",
+       "lounges": [{"name": "Ahlan Lounge", "location": "Terminal 3", "access": "…", "price_per_person": 40, "children_welcome": true, "url": "…"}],
+       "nearby_hotels": [{"name": "Le Méridien Cairo Airport", "distance_km": 0.2, "shuttle": true, "booking_url": "…", "notes": null}]}
+    ],
+    "updated_at": "2026-02-08T09:55:19+00:00"
+  }
+}
+```
+
+Gepäckangaben (`allowance`) sind Freitext, wie in der Plattform gepflegt (z. B. `1x8kg`, `23kg`); fehlende Werte sind `null`. Lounges hängen immer am Flughafen; `/v1/countries/{code}` liefert `airlines[]` und `airports[]` nur als Kurzliste mit Codes für den Absprung in diese Endpunkte.
+
+---
+
+### Wechselkurse
+
+```
+GET /v1/exchange-rates
+```
+
+Aktuelle Wechselkurse für Umrechnungen in Apps. Die Plattform holt die Kurse stündlich beim Anbieter (ExchangeRate-API, Stand jeweils in `updated_at`) und liefert sie aus dem Cache; bei einem Ausfall des Anbieters bleiben die letzten Kurse bis zu einem Tag verfügbar. Basis ist der Euro, andere Basiswährungen werden als Kreuzkurs berechnet.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `base` | string | Nein | Basiswährung (ISO 4217), Standard `EUR` |
+| `symbols` | string | Nein | Nur diese Währungen, kommagetrennt (z.B. `EGP,THB`) |
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://api.global-travel-monitor.de/v1/exchange-rates?base=EUR&symbols=EGP,USD"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "base": "EUR",
+    "rates": {"EGP": 54.21, "USD": 1.08},
+    "updated_at": "2026-10-09T00:02:31+00:00",
+    "next_update_at": "2026-10-10T00:02:31+00:00",
+    "source": "Rates by ExchangeRate-API (https://www.exchangerate-api.com)"
+  }
+}
+```
+
+`source` ist bei Anzeige der Kurse zu nennen (Bedingung des Anbieters). Unbekannte Basiswährung: 422, Anbieter nicht erreichbar und kein Cache: 503.
 
 ---
 
@@ -653,11 +866,14 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `languages` | string[] | Sprachcodes |
 | `population`, `area_km2` | number / null | Einwohner, Fläche |
 | `coordinates` | object / null | `lat`, `lng` (Mittelpunkt) |
+| `capital` | object / null | `name` (Text), `lat`, `lng` der Hauptstadt |
 | `flag` | object | `svg_url`, `emoji` |
 | `description` | object | `short` (Text), `long` (Text, Absätze durch Leerzeilen), `known_for` (Liste je Sprache) |
 | `travel_info` | object | `intro` (Text), `driving_side` (`right`/`left`), `emergency` (`general`, `police`, `ambulance`, `fire`), `religions[]` (`key`, `name`), `national_day` (`date`, `day_month`, `name`) |
-| `power` | object | `voltage`, `frequency`, `plug_types[]` (`type`, `description`, `image`), `notes` (Text) |
+| `power` | object | `voltage`, `frequency`, `plug_types[]` (`type`, `description`, `image` als SVG, `image_png`), `notes` (Text) |
 | `tipping` | object | je `hotels`, `guides`, `restaurants`, `taxi`: `mode`, `from`, `to`, `unit`, `currency`, `description` oder `null` |
+| `airlines[]` | object | Aktive Fluggesellschaften mit Sitz im Land, nach Name sortiert: `name`, `iata_code`, `icao_code`, `headquarters`, `website_url`, `booking_url` |
+| `airports[]` | object | Aktive Flughäfen im Land, nach Name sortiert: `iata_code`, `icao_code`, `name`, `type`, `city` (Text) – Details über `/v1/airports/{code}` |
 | `taxi_apps[]` | object | `name`, `description`, `logo_url`, `website_url`, `app_store_url`, `play_store_url` |
 | `mobile_operators[]` | object | `name`, `description`, `logo_url`, `website_url`, `prepaid_url`, `offers_esim` |
 | `holidays` | object | `year`, `items[]` (`id`, `date`, `weekday`, `name`, `comment`, `is_national`, `regions[]`) |

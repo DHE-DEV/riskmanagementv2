@@ -1,6 +1,9 @@
 <?php
 
 use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
+use App\Models\Airline;
+use App\Models\Airport;
+use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
 use App\Models\CountryHoliday;
@@ -73,6 +76,10 @@ function apiCountry(): Country
     $regional->regions()->attach($region->id);
     CountryHoliday::create(['country_id' => $country->id, 'date' => '2027-07-14', 'name_translations' => ['de' => 'Nationalfeiertag'], 'is_national' => true, 'source' => 'manual']);
 
+    Airline::create(['name' => 'Air Caraïbes', 'iata_code' => 'TX', 'icao_code' => 'FWI', 'home_country_id' => $country->id, 'headquarters' => 'Le Lamentin', 'website' => 'https://www.aircaraibes.com', 'booking_url' => 'https://www.aircaraibes.com/book', 'is_active' => true]);
+    $capital = City::create(['country_id' => $country->id, 'name_translations' => ['de' => 'Fort-de-France', 'en' => 'Fort-de-France'], 'lat' => 14.6037, 'lng' => -61.0732, 'is_capital' => true]);
+    Airport::create(['name' => 'Martinique Aimé Césaire', 'iata_code' => 'FDF', 'icao_code' => 'TFFF', 'city_id' => $capital->id, 'country_id' => $country->id, 'type' => 'international', 'is_active' => true]);
+    Airline::create(['name' => 'Alte Linie', 'iata_code' => 'XX', 'home_country_id' => $country->id, 'is_active' => false]);
     $country->taxiApps()->attach(TaxiApp::create(['name' => 'Uber', 'description_translations' => ['de' => 'Fahrdienst', 'en' => 'Ride hailing'], 'website_url' => 'https://uber.com', 'is_active' => true, 'sort_order' => 1])->id);
     $country->mobileOperators()->attach(MobileOperator::create(['name' => 'Orange', 'website_url' => 'https://orange.fr', 'offers_esim' => true, 'is_active' => true, 'sort_order' => 1])->id);
 
@@ -97,6 +104,7 @@ it('liefert alle Angaben eines Landes strukturiert als JSON', function () {
         ->and($data['membership'])->toBe(['eu' => true, 'schengen' => false])
         ->and($data['currency']['code'])->toBe('EUR')
         ->and($data['coordinates'])->toBe(['lat' => 14.6415, 'lng' => -61.0242])
+        ->and($data['capital'])->toBe(['name' => ['de' => 'Fort-de-France', 'en' => 'Fort-de-France'], 'lat' => 14.6037, 'lng' => -61.0732])
         ->and($data['flag']['svg_url'])->toContain('mq.svg')
         ->and($data['description']['short'])->toBe(['de' => 'Die Blumeninsel.', 'en' => 'The island of flowers.'])
         ->and($data['description']['long']['de'])->toBe("Absatz eins.\n\nAbsatz zwei.")
@@ -108,10 +116,13 @@ it('liefert alle Angaben eines Landes strukturiert als JSON', function () {
         ->and($data['power']['voltage'])->toBe(220)
         ->and(array_column($data['power']['plug_types'], 'type'))->toBe(['C', 'E'])
         ->and($data['power']['plug_types'][0]['image'])->toContain('plug-types/c.svg')
+        ->and($data['power']['plug_types'][0]['image_png'])->toContain('plug-types/png/c.png')
         ->and($data['tipping']['restaurants'])->toMatchArray(['mode' => 'range', 'from' => 5.0, 'to' => 10.0, 'unit' => 'percent'])
         ->and($data['tipping']['taxi'])->toMatchArray(['mode' => 'fixed', 'from' => 2.0, 'to' => null, 'currency' => 'EUR'])
         ->and($data['tipping']['hotels'])->toBeNull()
         ->and($data['taxi_apps'][0])->toMatchArray(['name' => 'Uber', 'website_url' => 'https://uber.com'])
+        ->and($data['airports'])->toBe([['iata_code' => 'FDF', 'icao_code' => 'TFFF', 'name' => 'Martinique Aimé Césaire', 'type' => 'international', 'city' => ['de' => 'Fort-de-France', 'en' => 'Fort-de-France']]])
+        ->and($data['airlines'])->toBe([['name' => 'Air Caraïbes', 'iata_code' => 'TX', 'icao_code' => 'FWI', 'headquarters' => 'Le Lamentin', 'website_url' => 'https://www.aircaraibes.com', 'booking_url' => 'https://www.aircaraibes.com/book']])
         ->and($data['mobile_operators'][0])->toMatchArray(['name' => 'Orange', 'offers_esim' => true])
         ->and($data['holidays']['year'])->toBe(2026)
         ->and(array_column($data['holidays']['items'], 'date'))->toBe(['2026-05-22', '2026-07-14'])
@@ -121,7 +132,7 @@ it('liefert alle Angaben eines Landes strukturiert als JSON', function () {
         ->and($data['images']['hero'])->toBeNull()
         ->and($data['images']['gallery'])->toBe([])
         ->and($data['risk_profile']['overall'])->toBe(['level' => 4, 'label' => 'Hoch'])
-        ->and($data['risk_profile']['categories']['security']['fields']['crime_level'])->toBe(['value' => 2, 'label' => 'Niedrig', 'note' => ['de' => 'Taschendiebstahl in Fort-de-France.']])
+        ->and($data['risk_profile']['categories']['security']['fields']['crime_level'])->toBe(['name' => 'Kriminalitätsniveau', 'type' => 'level', 'value' => 2, 'label' => 'Niedrig', 'note' => ['de' => 'Taschendiebstahl in Fort-de-France.']])
         ->and($data['risk_profile']['categories']['health']['fields']['malaria_risk']['value'])->toBeFalse()
         ->and($data['risk_profile']['categories']['health']['fields']['required_vaccinations']['value'])->toBe(['Gelbfieber'])
         ->and($data['risk_profile']['categories']['climate']['fields']['climate_zone']['value'])->toBeNull();

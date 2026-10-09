@@ -67,7 +67,11 @@ class BaseDataController extends Controller
             ], 404);
         }
 
-        $country->load(['continent', 'parentCountry', 'images', 'taxiApps', 'mobileOperators', 'holidays.regions']);
+        $country->load([
+            'continent', 'parentCountry', 'capital', 'images', 'taxiApps', 'mobileOperators', 'holidays.regions',
+            'airlines' => fn ($query) => $query->where('is_active', true)->orderBy('name'),
+            'airports' => fn ($query) => $query->where('is_active', true)->with('city')->orderBy('name'),
+        ]);
 
         return response()->json([
             'success' => true,

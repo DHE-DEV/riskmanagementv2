@@ -330,6 +330,13 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/continents</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/boundary</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/boundaries</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airports</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airports/{code}</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airlines</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airlines/{code}</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/exchange-rates</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/regions</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/event-categories</span></li>
                 </ul>

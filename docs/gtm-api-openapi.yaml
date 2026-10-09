@@ -400,6 +400,229 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /countries/{code}/boundary:
+    get:
+      tags: [Basisdaten]
+      summary: Landesgrenze eines Landes als GeoJSON-Feature
+      description: Auf rund 5 km vereinfachte Grenze (Quelle Natural Earth), Koordinaten als [lng, lat].
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string, example: EG}
+        - name: lang
+          in: query
+          required: false
+          schema: {type: string, enum: [de, en, nl]}
+      responses:
+        '200':
+          description: Feature
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data: {$ref: '#/components/schemas/BoundaryFeature'}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /boundaries:
+    get:
+      tags: [Basisdaten]
+      summary: Landesgrenzen mehrerer Länder als GeoJSON-FeatureCollection
+      parameters:
+        - name: codes
+          in: query
+          required: true
+          description: ISO-Codes, kommagetrennt, höchstens 60
+          schema: {type: string, example: EG,DE,FR}
+        - name: lang
+          in: query
+          required: false
+          schema: {type: string, enum: [de, en, nl]}
+      responses:
+        '200':
+          description: FeatureCollection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: object
+                    properties:
+                      type: {type: string, example: FeatureCollection}
+                      features:
+                        type: array
+                        items: {$ref: '#/components/schemas/BoundaryFeature'}
+                  meta:
+                    type: object
+                    properties:
+                      requested: {type: integer}
+                      found: {type: integer}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /airports:
+    get:
+      tags: [Basisdaten]
+      summary: Flughäfen (Kurzdaten)
+      parameters:
+        - {name: country, in: query, required: false, schema: {type: string, example: EG}}
+        - {name: q, in: query, required: false, schema: {type: string}}
+        - {name: type, in: query, required: false, schema: {type: string, enum: [international, large_airport, medium_airport, small_airport]}}
+        - {name: lang, in: query, required: false, schema: {type: string, enum: [de, en, nl]}}
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/AirportSummary'}
+                  meta:
+                    type: object
+                    properties:
+                      total: {type: integer}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /airports/{code}:
+    get:
+      tags: [Basisdaten]
+      summary: Flughafen mit Lounges, Hotels, Mobilität und Airlines
+      parameters:
+        - {name: code, in: path, required: true, description: IATA (3) oder ICAO (4), schema: {type: string, example: CAI}}
+        - {name: lang, in: query, required: false, schema: {type: string, enum: [de, en, nl]}}
+      responses:
+        '200':
+          description: Flughafen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data: {$ref: '#/components/schemas/AirportDetail'}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /airlines:
+    get:
+      tags: [Basisdaten]
+      summary: Airlines (Kurzdaten)
+      parameters:
+        - {name: country, in: query, required: false, description: Sitzland (ISO-2 oder ISO-3), schema: {type: string, example: EG}}
+        - {name: q, in: query, required: false, schema: {type: string}}
+        - {name: lang, in: query, required: false, schema: {type: string, enum: [de, en, nl]}}
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/AirlineSummary'}
+                  meta:
+                    type: object
+                    properties:
+                      total: {type: integer}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /airlines/{code}:
+    get:
+      tags: [Basisdaten]
+      summary: Airline mit Kontakt, Gepäck, Tierregelung und Flughäfen
+      parameters:
+        - {name: code, in: path, required: true, description: IATA (2) oder ICAO (3), schema: {type: string, example: MS}}
+        - {name: include, in: query, required: false, description: "lounges, hotels (kommagetrennt) je Flughafen", schema: {type: string, example: "lounges,hotels"}}
+        - {name: lang, in: query, required: false, schema: {type: string, enum: [de, en, nl]}}
+      responses:
+        '200':
+          description: Airline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data: {$ref: '#/components/schemas/AirlineDetail'}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /exchange-rates:
+    get:
+      tags: [Basisdaten]
+      summary: Aktuelle Wechselkurse
+      description: Stündlich aktualisierte Kurse (Basis EUR, andere Basis als Kreuzkurs). `source` ist bei Anzeige zu nennen.
+      parameters:
+        - name: base
+          in: query
+          schema: {type: string, pattern: '^[A-Za-z]{3}$', default: EUR}
+        - name: symbols
+          in: query
+          schema: {type: string}
+          description: "Nur diese Währungen, kommagetrennt"
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data:
+                    type: object
+                    properties:
+                      base: {type: string, example: EUR}
+                      rates:
+                        type: object
+                        additionalProperties: {type: number}
+                        example: {EGP: 54.21, USD: 1.08}
+                      updated_at: {type: string, format: date-time, nullable: true}
+                      next_update_at: {type: string, format: date-time, nullable: true}
+                      source: {type: string}
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          description: Anbieter nicht erreichbar und keine Kurse im Cache
+
   /regions:
     get:
       tags: [Basisdaten]
@@ -674,6 +897,234 @@ components:
           example: {de: "Deutschland", en: "Germany", nl: "Duitsland"}
         - type: string
 
+    Lounge:
+      type: object
+      properties:
+        name: {type: string}
+        location: {type: string, nullable: true}
+        access: {type: string, nullable: true}
+        price_per_person: {type: number, nullable: true}
+        children_welcome: {type: boolean, nullable: true}
+        url: {type: string, nullable: true}
+    NearbyHotel:
+      type: object
+      properties:
+        name: {type: string}
+        distance_km: {type: number, nullable: true}
+        shuttle: {type: boolean, nullable: true}
+        booking_url: {type: string, nullable: true}
+        notes: {type: string, nullable: true}
+    NamedLink:
+      type: object
+      properties:
+        name: {type: string}
+        url: {type: string, nullable: true}
+        distance: {type: string, nullable: true}
+        price_info: {type: string, nullable: true}
+    CabinClass:
+      type: object
+      properties:
+        key: {type: string, enum: [economy, premium_economy, business, first]}
+        label: {type: string}
+    AirportSummary:
+      type: object
+      properties:
+        iata_code: {type: string, nullable: true}
+        icao_code: {type: string, nullable: true}
+        name: {type: string}
+        type: {type: string, nullable: true}
+        type_label: {type: string, nullable: true}
+        city: {$ref: '#/components/schemas/TranslatedText'}
+        country:
+          type: object
+          nullable: true
+          properties:
+            iso_code: {type: string}
+            name: {$ref: '#/components/schemas/TranslatedText'}
+        coordinates:
+          type: object
+          nullable: true
+          properties:
+            lat: {type: number}
+            lng: {type: number}
+        timezone: {type: string, nullable: true}
+        operates_24h: {type: boolean}
+        website_url: {type: string, nullable: true}
+        security_timeslot_url: {type: string, nullable: true}
+        counts:
+          type: object
+          properties:
+            lounges: {type: integer}
+            nearby_hotels: {type: integer}
+            airlines: {type: integer, nullable: true}
+    AirportDetail:
+      allOf:
+        - $ref: '#/components/schemas/AirportSummary'
+        - type: object
+          properties:
+            altitude_m: {type: integer, nullable: true}
+            lounges:
+              type: array
+              items: {$ref: '#/components/schemas/Lounge'}
+            nearby_hotels:
+              type: array
+              items: {$ref: '#/components/schemas/NearbyHotel'}
+            mobility:
+              type: object
+              properties:
+                taxi: {type: object, properties: {available: {type: boolean}, info: {type: string, nullable: true}, approx_cost: {type: string, nullable: true}}}
+                parking: {type: object, properties: {available: {type: boolean}, options: {type: array, items: {$ref: '#/components/schemas/NamedLink'}}}}
+                car_rental: {type: object, properties: {available: {type: boolean}, providers: {type: array, items: {$ref: '#/components/schemas/NamedLink'}}}}
+                airport_shuttle: {type: object, properties: {available: {type: boolean}, info: {type: string, nullable: true}, url: {type: string, nullable: true}}}
+                public_transport: {type: object, properties: {available: {type: boolean}, types: {type: array, items: {$ref: '#/components/schemas/NamedLink'}}}}
+            airlines:
+              type: array
+              items:
+                type: object
+                properties:
+                  iata_code: {type: string, nullable: true}
+                  icao_code: {type: string, nullable: true}
+                  name: {type: string}
+                  terminal: {type: string, nullable: true}
+                  direction: {type: string, nullable: true}
+                  cabin_classes:
+                    type: array
+                    items: {$ref: '#/components/schemas/CabinClass'}
+            updated_at: {type: string, format: date-time, nullable: true}
+    AirlineSummary:
+      type: object
+      properties:
+        iata_code: {type: string, nullable: true}
+        icao_code: {type: string, nullable: true}
+        name: {type: string}
+        home_country:
+          type: object
+          nullable: true
+          properties:
+            iso_code: {type: string}
+            name: {$ref: '#/components/schemas/TranslatedText'}
+        headquarters: {type: string, nullable: true}
+        website_url: {type: string, nullable: true}
+        booking_url: {type: string, nullable: true}
+        cabin_classes:
+          type: array
+          items: {$ref: '#/components/schemas/CabinClass'}
+        counts:
+          type: object
+          properties:
+            airports: {type: integer, nullable: true}
+    BaggageClass:
+      type: object
+      properties:
+        hand:
+          type: object
+          properties:
+            allowance: {type: string, nullable: true, example: 1x8kg}
+            dimensions_cm:
+              type: object
+              nullable: true
+              properties:
+                length: {type: number}
+                width: {type: number}
+                height: {type: number}
+        checked:
+          type: object
+          properties:
+            allowance: {type: string, nullable: true, example: 23kg}
+    AirlineDetail:
+      allOf:
+        - $ref: '#/components/schemas/AirlineSummary'
+        - type: object
+          properties:
+            contact:
+              type: object
+              properties:
+                hotline: {type: string, nullable: true}
+                email: {type: string, nullable: true}
+                chat_url: {type: string, nullable: true}
+                help_url: {type: string, nullable: true}
+            baggage:
+              type: object
+              properties:
+                classes:
+                  type: object
+                  properties:
+                    economy: {$ref: '#/components/schemas/BaggageClass'}
+                    premium_economy: {$ref: '#/components/schemas/BaggageClass'}
+                    business: {$ref: '#/components/schemas/BaggageClass'}
+                    first: {$ref: '#/components/schemas/BaggageClass'}
+                notes: {type: string, nullable: true}
+                info_url: {type: string, nullable: true}
+            pet_policy:
+              type: object
+              properties:
+                allowed: {type: boolean}
+                in_cabin:
+                  type: object
+                  nullable: true
+                  properties:
+                    allowed: {type: boolean}
+                    max_weight: {type: string, nullable: true}
+                    carrier_dimensions_cm: {type: object, nullable: true, properties: {length: {type: number, nullable: true}, width: {type: number, nullable: true}, height: {type: number, nullable: true}}}
+                    weight_includes_bag: {type: boolean}
+                    advance_notice_required: {type: boolean}
+                    notes: {type: string}
+                in_hold:
+                  type: object
+                  nullable: true
+                  properties:
+                    allowed: {type: boolean}
+                    max_weight: {type: string, nullable: true}
+                    advance_notice_required: {type: boolean}
+                    notes: {type: string}
+                restrictions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key: {type: string}
+                      label: {type: string}
+                info_url: {type: string, nullable: true}
+                notes: {type: string, nullable: true}
+            airports:
+              type: array
+              items:
+                type: object
+                properties:
+                  iata_code: {type: string, nullable: true}
+                  icao_code: {type: string, nullable: true}
+                  name: {type: string}
+                  city: {$ref: '#/components/schemas/TranslatedText'}
+                  country: {type: string, nullable: true}
+                  terminal: {type: string, nullable: true}
+                  direction: {type: string, nullable: true}
+                  lounges:
+                    type: array
+                    description: nur mit include=lounges
+                    items: {$ref: '#/components/schemas/Lounge'}
+                  nearby_hotels:
+                    type: array
+                    description: nur mit include=hotels
+                    items: {$ref: '#/components/schemas/NearbyHotel'}
+            updated_at: {type: string, format: date-time, nullable: true}
+    BoundaryFeature:
+      type: object
+      properties:
+        type: {type: string, example: Feature}
+        properties:
+          type: object
+          properties:
+            iso_code: {type: string}
+            iso3_code: {type: string, nullable: true}
+            name: {$ref: '#/components/schemas/TranslatedText'}
+        bbox:
+          type: array
+          nullable: true
+          description: "[min_lng, min_lat, max_lng, max_lat]"
+          items: {type: number}
+        geometry:
+          type: object
+          description: GeoJSON Polygon oder MultiPolygon, Koordinaten als [lng, lat]
     CountryDetail:
       type: object
       properties:
@@ -727,6 +1178,13 @@ components:
           properties:
             lat: {type: number}
             lng: {type: number}
+        capital:
+          type: object
+          nullable: true
+          properties:
+            name: {$ref: '#/components/schemas/TranslatedText'}
+            lat: {type: number, nullable: true}
+            lng: {type: number, nullable: true}
         flag:
           type: object
           properties:
@@ -785,7 +1243,8 @@ components:
                 properties:
                   type: {type: string, example: F}
                   description: {type: string}
-                  image: {type: string, format: uri}
+                  image: {type: string, format: uri, description: "SVG"}
+                  image_png: {type: string, format: uri}
             notes: {$ref: '#/components/schemas/TranslatedText'}
         tipping:
           type: object
@@ -800,6 +1259,29 @@ components:
               unit: {type: string, enum: [percent, amount], nullable: true}
               currency: {type: string, nullable: true}
               description: {$ref: '#/components/schemas/TranslatedText'}
+        airports:
+          type: array
+          description: Aktive Flughäfen im Land, nach Name sortiert (Details über /airports/{code})
+          items:
+            type: object
+            properties:
+              iata_code: {type: string, nullable: true}
+              icao_code: {type: string, nullable: true}
+              name: {type: string}
+              type: {type: string, nullable: true}
+              city: {$ref: '#/components/schemas/TranslatedText'}
+        airlines:
+          type: array
+          description: Aktive Fluggesellschaften mit Sitz im Land, nach Name sortiert
+          items:
+            type: object
+            properties:
+              name: {type: string}
+              iata_code: {type: string, nullable: true}
+              icao_code: {type: string, nullable: true}
+              headquarters: {type: string, nullable: true}
+              website_url: {type: string, nullable: true}
+              booking_url: {type: string, nullable: true}
         taxi_apps:
           type: array
           items:
@@ -874,6 +1356,8 @@ components:
                     additionalProperties:
                       type: object
                       properties:
+                        name: {type: string, description: "Bezeichnung des Punkts"}
+                        type: {type: string, enum: [level, bool, number, tags, text, textarea]}
                         value:
                           nullable: true
                           description: "Stufe 1–5, Ja/Nein, Zahl, Liste oder Text"

@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Models\Airline;
+use App\Models\Airport;
 use App\Models\Country;
 use App\Models\CountryHoliday;
 use App\Models\CountryImage;
@@ -68,6 +70,11 @@ class CountryDetailResource extends JsonResource
                 'lat' => (float) $country->lat,
                 'lng' => (float) $country->lng,
             ] : null,
+            'capital' => $country->capital ? [
+                'name' => $this->text($country->capital->name_translations),
+                'lat' => $country->capital->lat !== null ? (float) $country->capital->lat : null,
+                'lng' => $country->capital->lng !== null ? (float) $country->capital->lng : null,
+            ] : null,
             'flag' => [
                 'svg_url' => $country->flag_url,
                 'emoji' => $country->flag_emoji,
@@ -96,6 +103,21 @@ class CountryDetailResource extends JsonResource
                 'notes' => $this->text($info['power_notes'] ?? null),
             ],
             'tipping' => $this->tipping($info),
+            'airlines' => $country->airlines->map(fn (Airline $airline) => [
+                'name' => trim((string) $airline->name),
+                'iata_code' => $airline->iata_code,
+                'icao_code' => $airline->icao_code,
+                'headquarters' => $airline->headquarters,
+                'website_url' => $airline->website,
+                'booking_url' => $airline->booking_url,
+            ])->values()->all(),
+            'airports' => $country->airports->map(fn (Airport $airport) => [
+                'iata_code' => $airport->iata_code,
+                'icao_code' => $airport->icao_code,
+                'name' => $airport->name,
+                'type' => $airport->type,
+                'city' => $airport->city ? $this->text($airport->city->name_translations) : null,
+            ])->values()->all(),
             'taxi_apps' => $country->taxiApps->map(fn (TaxiApp $app) => [
                 'name' => $app->name,
                 'description' => $this->text($app->description_translations),
@@ -297,7 +319,7 @@ class CountryDetailResource extends JsonResource
             foreach ($definition['fields'] as $field => $meta) {
                 $value = $values[$field] ?? null;
 
-                $entry = ['value' => match ($meta['type']) {
+                $entry = ['name' => $meta['label'], 'type' => $meta['type'], 'value' => match ($meta['type']) {
                     'level' => $value !== null ? (int) $value : null,
                     'bool' => (bool) $value,
                     'number' => $value !== null ? (int) $value : null,
