@@ -459,6 +459,14 @@
 
         .docs-footer { margin-left: 280px; }
         @media (max-width: 1023px) { .docs-footer { margin-left: 0; } }
+        .code-block .code-caption {
+            display: inline-block;
+            color: #cbd5e1;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 5px 12px;
+            font-family: 'Archivo', sans-serif;
+        }
         /* ── Code-Aktionen: Testen + Kopieren ── */
         .code-block .code-actions, .response-block .code-actions {
             position: absolute;

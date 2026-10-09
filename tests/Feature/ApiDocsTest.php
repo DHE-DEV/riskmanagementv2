@@ -38,7 +38,8 @@ it('bietet auf den Anleitungsseiten einen Testbereich und Testen-Knöpfe an den 
         ->assertSee('id="test-panel"', false)
         ->assertSee('class="try-btn"', false)
         ->assertSee('data-request="GET /v1/events"', false)
-        ->assertSee('Testen 2');
+        ->assertSee('<span class="code-caption">Nur manuell erstellte Events</span>', false)
+        ->assertDontSee('Testen 2');
 });
 
 it('liefert die API-Dokumentation auch auf der Plattform unter /api/v1/documentation', function () {

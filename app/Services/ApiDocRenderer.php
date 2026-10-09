@@ -154,17 +154,32 @@ class ApiDocRenderer
                 $label = $language !== '' ? '<span class="code-label">'.e($language).'</span>' : '';
                 $raw = html_entity_decode(strip_tags($m[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                $actions = '';
                 $requests = $this->requestsIn($raw);
-                foreach ($requests as $i => $request) {
-                    $text = count($requests) > 1 ? 'Testen '.($i + 1) : 'Testen';
-                    $actions .= '<button class="try-btn" type="button" data-request="'.e($request['command']).'" title="'.e($request['title'] ?: 'Anfrage in den Testbereich laden').'"><i class="fas fa-play"></i> '.$text.'</button>';
+                $codeAttr = $language !== '' ? ' class="language-'.e($language).'"' : '';
+                $copy = '<button class="copy-btn" type="button"><i class="fas fa-copy"></i> Kopieren</button>';
+
+                // Mehrere Anfragen in einem Block: je Anfrage eine eigene Box, der Kommentar davor wird zur Ueberschrift.
+                if (count($requests) > 1) {
+                    $out = '';
+                    foreach ($requests as $request) {
+                        $caption = $request['title'] !== '' ? '<span class="code-caption">'.e($request['title']).'</span>' : '';
+                        $try = '<button class="try-btn" type="button" data-request="'.e($request['command']).'" title="Anfrage in den Testbereich laden"><i class="fas fa-play"></i> Testen</button>';
+                        $out .= '<div class="code-block is-request">'.$label.$caption
+                            .'<div class="code-actions">'.$try.$copy.'</div>'
+                            .'<pre><code'.$codeAttr.'>'.e($request['command']).'</code></pre></div>';
+                    }
+
+                    return $out;
                 }
-                $actions .= '<button class="copy-btn" type="button"><i class="fas fa-copy"></i> Kopieren</button>';
+
+                $actions = '';
+                foreach ($requests as $request) {
+                    $actions .= '<button class="try-btn" type="button" data-request="'.e($request['command']).'" title="'.e($request['title'] ?: 'Anfrage in den Testbereich laden').'"><i class="fas fa-play"></i> Testen</button>';
+                }
 
                 return '<div class="code-block'.($requests !== [] ? ' is-request' : '').'">'.$label
-                    .'<div class="code-actions">'.$actions.'</div>'
-                    .'<pre><code'.($language !== '' ? ' class="language-'.e($language).'"' : '').'>'.$m[2].'</code></pre></div>';
+                    .'<div class="code-actions">'.$actions.$copy.'</div>'
+                    .'<pre><code'.$codeAttr.'>'.$m[2].'</code></pre></div>';
             }, $html) ?? $html;
         }
 
