@@ -838,7 +838,7 @@
                     const target = document.getElementById(targetId);
                     if (target) {
                         e.preventDefault();
-                        const offset = 80; // navbar height + padding
+                        const offset = 88; // Navigation plus Abstand, knapp unter der Lesekante der Markierung
                         const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
                         window.scrollTo({ top: top, behavior: 'smooth' });
 
@@ -848,48 +848,39 @@
                 });
             });
 
-            // ── Active Section Tracking (IntersectionObserver) ──
+            // ── Aktiven Abschnitt markieren ──
+            // Aktiv ist die letzte Ueberschrift, die oberhalb der Lesekante (unter der Navigation) liegt.
+            // Damit bleibt nach einem Klick genau der angesprungene Abschnitt markiert.
             const sidebarLinks = sidebar.querySelectorAll('a[href^="#"]');
-            const sectionIds = [];
-
+            const sections = [];
             sidebarLinks.forEach(function (link) {
-                const id = link.getAttribute('href').slice(1);
-                if (id && document.getElementById(id)) {
-                    sectionIds.push(id);
-                }
+                const el = document.getElementById(link.getAttribute('href').slice(1));
+                if (el) sections.push({ el: el, link: link });
             });
-
-            if (sectionIds.length > 0) {
-                const observerOptions = {
-                    rootMargin: '-80px 0px -60% 0px',
-                    threshold: 0
-                };
-
-                let currentActive = null;
-
-                const observer = new IntersectionObserver(function (entries) {
-                    entries.forEach(function (entry) {
-                        if (entry.isIntersecting) {
-                            const id = entry.target.id;
-                            if (currentActive !== id) {
-                                currentActive = id;
-                                sidebarLinks.forEach(function (link) {
-                                    link.classList.remove('active');
-                                    if (link.getAttribute('href') === '#' + id) {
-                                        link.classList.add('active');
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }, observerOptions);
-
-                sectionIds.forEach(function (id) {
-                    const el = document.getElementById(id);
-                    if (el) observer.observe(el);
-                });
+            let currentActive = null, ticking = false;
+            function updateActive() {
+                ticking = false;
+                if (sections.length === 0) return;
+                const edge = 96; // Navigation (64px) plus Abstand
+                let active = sections[0];
+                for (let i = 0; i < sections.length; i++) {
+                    if (sections[i].el.getBoundingClientRect().top <= edge) active = sections[i]; else break;
+                }
+                if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 2) {
+                    active = sections[sections.length - 1];
+                }
+                if (currentActive === active.link) return;
+                currentActive = active.link;
+                sidebarLinks.forEach(function (l) { l.classList.toggle('active', l === active.link); });
+                if (active.link.scrollIntoView && typeof active.link.scrollIntoViewIfNeeded !== 'function') {
+                    // nichts – nur Markierung, kein Scrollen der Seitenleiste
+                }
             }
-
+            window.addEventListener('scroll', function () {
+                if (!ticking) { ticking = true; window.requestAnimationFrame(updateActive); }
+            }, { passive: true });
+            window.addEventListener('resize', updateActive);
+            updateActive();
             // ── Copy to Clipboard for Code Blocks ──
             document.querySelectorAll('.code-block .copy-btn, .response-block .copy-btn').forEach(function (btn) {
                 btn.addEventListener('click', function () {

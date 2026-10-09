@@ -16,7 +16,7 @@ Alle API-Aufrufe erfordern einen **Bearer-Token** im HTTP-Header:
 Authorization: Bearer {API_TOKEN}
 ```
 
-Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.
+Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution.
 
 ---
 
@@ -1030,4 +1030,4 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ## Support
 
-Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.
+Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.

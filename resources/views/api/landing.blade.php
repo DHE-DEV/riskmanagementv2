@@ -357,7 +357,7 @@
         <div class="auth-box">
             <h2>Authentifizierung</h2>
             <code>Authorization: Bearer {API_TOKEN}</code>
-            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor.</p>
+            <p>Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution.</p>
         </div>
 
         <div class="apis">

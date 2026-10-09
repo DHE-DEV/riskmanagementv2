@@ -550,4 +550,4 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ## Support
 
-Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.
+Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.

@@ -16,7 +16,7 @@ Alle API-Aufrufe erfordern einen **Bearer-Token** im HTTP-Header:
 Authorization: Bearer {API_TOKEN}
 ```
 
-Den Token erhalten Sie von Ihrem Ansprechpartner bei Global Travel Monitor. Er ist 1 Jahr gültig.
+Den Token erhalten Sie von Ihrem Ansprechpartner bei Passolution. Er ist 1 Jahr gültig.
 
 ---
 
@@ -394,4 +394,4 @@ Wenn ein Firmenlogo in Ihrem API-Account hinterlegt ist, wird dieses als Quellen
 
 ## Support
 
-Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Global Travel Monitor.
+Bei Fragen zur API wenden Sie sich an Ihren Ansprechpartner bei Passolution.
