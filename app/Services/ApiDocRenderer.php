@@ -198,11 +198,33 @@ class ApiDocRenderer
         $requests = [];
         $comment = '';
         $current = null;
+        $quote = null; // offenes Anfuehrungszeichen, z. B. bei mehrzeiligem JSON in -d '{ ... }'
+
+        $continues = function (string $line) use (&$quote): bool {
+            $escaped = false;
+            foreach (mb_str_split($line) as $char) {
+                if ($escaped) {
+                    $escaped = false;
+                    continue;
+                }
+                if ($char === '\\' && $quote !== "'") {
+                    $escaped = true;
+                    continue;
+                }
+                if ($quote === null && ($char === '"' || $char === "'")) {
+                    $quote = $char;
+                } elseif ($char === $quote) {
+                    $quote = null;
+                }
+            }
+
+            return $quote !== null || str_ends_with(rtrim($line), '\\');
+        };
 
         foreach ($lines as $line) {
             if ($current !== null) {
                 $current['command'] .= "\n".$line;
-                if (! str_ends_with(rtrim($line), '\\')) {
+                if (! $continues($line)) {
                     $requests[] = $current;
                     $current = null;
                 }
@@ -218,7 +240,7 @@ class ApiDocRenderer
             }
             if (preg_match('/^curl\s/', $trimmed)) {
                 $current = ['command' => $trimmed, 'title' => $comment];
-                if (! str_ends_with($trimmed, '\\')) {
+                if (! $continues($trimmed)) {
                     $requests[] = $current;
                     $current = null;
                 }
