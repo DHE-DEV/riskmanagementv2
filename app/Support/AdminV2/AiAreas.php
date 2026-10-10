@@ -72,6 +72,13 @@ class AiAreas
                     'coordinates' => ['label' => 'Koordinaten', 'placeholders' => $coordinates],
                 ],
             ],
+            'sights' => [
+                'label' => 'Sehenswürdigkeiten',
+                'sections' => [
+                    'basics' => ['label' => 'Sehenswürdigkeit', 'placeholders' => ['name' => 'Name', 'name_en' => 'Name (Englisch)', 'category' => 'Kategorie', 'country' => 'Land', 'region' => 'Region', 'city' => 'Stadt', 'address' => 'Adresse', 'website' => 'Website', 'short_description' => 'Kurzbeschreibung', 'description' => 'Beschreibung', 'opening_hours' => 'Öffnungszeiten', 'admission' => 'Eintritt']],
+                    'coordinates' => ['label' => 'Koordinaten', 'placeholders' => $coordinates],
+                ],
+            ],
             'airports' => [
                 'label' => 'Flughäfen',
                 'sections' => [

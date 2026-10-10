@@ -499,6 +499,85 @@ paths:
                   meta: {type: object, properties: {total: {type: integer}}}
         "404": {description: Land nicht gefunden}
 
+  /countries/{code}/sights:
+    get:
+      summary: Sehenswürdigkeiten eines Landes
+      description: Sehenswürdigkeiten und Unternehmungen eines Landes, Highlights zuerst. Optional nach Region, Stadt, Kategorie oder nur Highlights.
+      tags: [Basisdaten]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+          description: ISO-3166-1-Code (2 oder 3 Buchstaben)
+        - name: region
+          in: query
+          schema: {type: integer}
+          description: Nur Sehenswürdigkeiten dieser Region
+        - name: city
+          in: query
+          schema: {type: integer}
+          description: Nur Sehenswürdigkeiten dieser Stadt
+        - name: category
+          in: query
+          schema: {type: string, enum: [landmark, old_town, museum, religious, palace, archaeological, nature, national_park, beach, viewpoint, park, activity, theme_park, market, other]}
+        - name: highlight
+          in: query
+          schema: {type: boolean}
+          description: Nur Highlights
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Sehenswürdigkeiten
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/Sight'}
+                  meta: {type: object, properties: {total: {type: integer}}}
+        "404": {description: Land nicht gefunden}
+
+  /sights/{id}:
+    get:
+      summary: Einzelne Sehenswürdigkeit
+      tags: [Basisdaten]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: integer}
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Sehenswürdigkeit mit Land
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    allOf:
+                      - {$ref: '#/components/schemas/Sight'}
+                      - type: object
+                        properties:
+                          country:
+                            type: object
+                            properties:
+                              code: {type: string}
+                              name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        "404": {description: Sehenswürdigkeit nicht gefunden}
+
   /countries/{code}/weather:
     get:
       summary: Wetter der Hauptstadt eines Landes
@@ -916,6 +995,44 @@ components:
         is_capital: {type: boolean}
         is_regional_capital: {type: boolean}
         is_popular: {type: boolean, description: "Markierung „beliebt“ aus der Verwaltung"}
+
+    Sight:
+      type: object
+      properties:
+        id: {type: integer, example: 3}
+        name: {description: "Text je Sprache oder – mit ?lang – ein String", example: {de: Aquarium Genua, en: Aquarium of Genoa}}
+        category: {type: string, example: theme_park}
+        category_name: {description: "Bezeichnung der Kategorie je Sprache oder – mit ?lang – ein String"}
+        is_highlight: {type: boolean}
+        region:
+          type: object
+          nullable: true
+          properties:
+            id: {type: integer}
+            code: {type: string, nullable: true}
+            name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        city:
+          type: object
+          nullable: true
+          properties:
+            id: {type: integer}
+            name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        coordinates:
+          type: object
+          nullable: true
+          properties: {lat: {type: number}, lng: {type: number}}
+        address: {type: string, nullable: true}
+        website_url: {type: string, nullable: true}
+        ticket_url: {type: string, nullable: true}
+        visit_minutes: {type: integer, nullable: true, description: Übliche Besuchsdauer}
+        short_description: {nullable: true, description: "Text je Sprache oder – mit ?lang – ein String"}
+        description: {nullable: true, description: "Text je Sprache oder – mit ?lang – ein String"}
+        opening_hours: {nullable: true, description: "Allgemein und ohne Gewähr"}
+        admission: {nullable: true, description: "Allgemein und ohne Gewähr"}
+        best_time: {nullable: true}
+        tips: {nullable: true}
+        accessibility: {nullable: true}
+        is_reviewed: {type: boolean, description: "false, solange ein KI-Entwurf nicht redaktionell geprüft ist"}
 
     WeatherReport:
       type: object

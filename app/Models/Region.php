@@ -34,6 +34,14 @@ class Region extends Model
     ];
 
     /**
+     * Sehenswuerdigkeiten der Region (auch solche ohne Stadt, z. B. Nationalparks).
+     */
+    public function sights(): HasMany
+    {
+        return $this->hasMany(Sight::class);
+    }
+
+    /**
      * Get the country for this region.
      */
     public function country(): BelongsTo

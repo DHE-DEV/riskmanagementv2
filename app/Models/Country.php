@@ -170,6 +170,11 @@ class Country extends Model
     /**
      * Get the regions for this country.
      */
+    public function sights(): HasMany
+    {
+        return $this->hasMany(Sight::class);
+    }
+
     public function regions(): HasMany
     {
         return $this->hasMany(Region::class);

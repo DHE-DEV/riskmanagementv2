@@ -9,6 +9,7 @@ use App\Livewire\AdminV2\MasterData\Cities\Editor as CityEditor;
 use App\Livewire\AdminV2\MasterData\Continents\Editor as ContinentEditor;
 use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
 use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
+use App\Livewire\AdminV2\MasterData\Sights\Editor as SightEditor;
 use App\Models\Airline;
 use App\Models\Airport;
 use App\Models\AirportCode;
@@ -16,6 +17,7 @@ use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
 use App\Models\Region;
+use App\Models\Sight;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -48,6 +50,7 @@ class AiRecordContexts
         'countries' => ['model' => Country::class, 'editor' => CountryEditor::class, 'parameter' => 'country', 'filters' => ['continent' => 'continent_id']],
         'regions' => ['model' => Region::class, 'editor' => RegionEditor::class, 'parameter' => 'region', 'filters' => ['country' => 'country_id']],
         'cities' => ['model' => City::class, 'editor' => CityEditor::class, 'parameter' => 'city', 'filters' => ['country' => 'country_id', 'capital' => 'is_capital']],
+        'sights' => ['model' => Sight::class, 'editor' => SightEditor::class, 'parameter' => 'sight', 'filters' => ['country' => 'country_id']],
         'airports' => ['model' => Airport::class, 'editor' => AirportEditor::class, 'parameter' => 'airport', 'filters' => ['active' => 'is_active', 'country' => 'country_id', 'type' => 'type']],
         'airport-codes' => ['model' => AirportCode::class, 'editor' => AirportCodeEditor::class, 'parameter' => 'airportCode', 'filters' => ['scheduled' => 'scheduled_service', 'type' => 'type', 'country' => 'country_id', 'active' => 'is_active']],
         'airlines' => ['model' => Airline::class, 'editor' => AirlineEditor::class, 'parameter' => 'airline', 'filters' => ['active' => 'is_active', 'country' => 'home_country_id']],

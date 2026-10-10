@@ -50,6 +50,16 @@ return [
         'api_url' => env('DEEPL_API_URL', 'https://api.deepl.com/v2/translate'),
     ],
 
+    // OpenStreetMap-Suche (Nominatim) zum Abgleich der Koordinaten von Sehenswuerdigkeiten.
+    // Nutzungsregeln: hoechstens 1 Anfrage je Sekunde, aussagekraeftiger User-Agent.
+    'nominatim' => [
+        'enabled' => env('NOMINATIM_ENABLED', true),
+        'url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'Passolution Travel Information Platform (platform.passolution.de)'),
+        // Mindestabstand zwischen zwei Anfragen in Sekunden
+        'throttle' => (float) env('NOMINATIM_THROTTLE', 1.1),
+    ],
+
     // Doctors Network (myBakup) - eingebettete Arztsuche
     'mybakup' => [
         'iframe_url' => env(

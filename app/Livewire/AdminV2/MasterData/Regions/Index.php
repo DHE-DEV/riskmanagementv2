@@ -49,6 +49,9 @@ class Index extends Component
     #[Url(except: '')]
     public string $info = '';
 
+    /** KI-Vorbefuellung: was – "fill" (Regionsinfos) oder "sights" (Sehenswuerdigkeiten) */
+    public string $fillKind = RegionInfoRun::KIND_FILL;
+
     /** KI-Vorbefuellung: auch Regionen, die schon Infos haben */
     public bool $fillAll = false;
 
@@ -138,24 +141,43 @@ class Index extends Component
         return $this->fillQuery()->count();
     }
 
+    public function updatedFillKind(): void
+    {
+        unset($this->fillCount);
+    }
+
     protected function fillQuery(): Builder
     {
         $query = $this->filteredQuery()->withoutTrashed();
 
+        if ($this->fillKind === RegionInfoRun::KIND_SIGHTS) {
+            return $this->fillAll ? $query : $query->whereDoesntHave('sights');
+        }
+
         return $this->fillAll || $this->fillOverwrite ? $query : $query->whereNull('info');
     }
 
+    /**
+     * Die Laeufe der Liste, die gerade laufen oder noch nicht ausgeblendet sind.
+     *
+     * @return \Illuminate\Support\Collection<int, RegionInfoRun>
+     */
     #[Computed]
-    public function fillRun(): ?RegionInfoRun
+    public function fillRuns(): \Illuminate\Support\Collection
     {
-        return RegionInfoFillRun::current();
+        return collect([RegionInfoRun::KIND_FILL, RegionInfoRun::KIND_SIGHTS])
+            ->map(fn (string $kind) => RegionInfoFillRun::current($kind))
+            ->filter()
+            ->values();
     }
 
     public function startFill(): void
     {
         $this->modal('region-info-fill')->close();
 
-        if (RegionInfoFillRun::isRunning()) {
+        $kind = $this->fillKind === RegionInfoRun::KIND_SIGHTS ? RegionInfoRun::KIND_SIGHTS : RegionInfoRun::KIND_FILL;
+
+        if (RegionInfoFillRun::isRunning($kind)) {
             $this->dispatch('adminv2-toast', message: 'Es läuft bereits eine KI-Vorbefüllung.', variant: 'danger');
 
             return;
@@ -170,35 +192,35 @@ class Index extends Component
         $ids = $this->fillQuery()->orderBy('country_id')->orderBy('id')->pluck('id')->all();
 
         if ($ids === []) {
-            $this->dispatch('adminv2-toast', message: 'Keine Region zu bearbeiten – alle gefilterten Regionen haben schon Infos.', variant: 'danger');
+            $this->dispatch('adminv2-toast', message: $kind === RegionInfoRun::KIND_SIGHTS ? 'Keine Region zu bearbeiten – alle gefilterten Regionen haben schon Sehenswürdigkeiten.' : 'Keine Region zu bearbeiten – alle gefilterten Regionen haben schon Infos.', variant: 'danger');
 
             return;
         }
 
-        $run = RegionInfoFillRun::start($ids, $this->fillOverwrite, auth('web')->id());
+        $run = RegionInfoFillRun::start($ids, $kind === RegionInfoRun::KIND_FILL && $this->fillOverwrite, auth('web')->id(), $kind);
         FillRegionInfoJob::dispatch($run->id);
 
-        unset($this->fillRun, $this->rows);
+        unset($this->fillRuns, $this->rows);
         $this->dispatch('adminv2-toast', message: count($ids).' '.(count($ids) === 1 ? 'Region wird' : 'Regionen werden').' im Hintergrund vorbefüllt.');
     }
 
-    public function cancelFill(): void
+    public function cancelFill(string $kind = RegionInfoRun::KIND_FILL): void
     {
-        RegionInfoFillRun::cancel();
-        unset($this->fillRun);
+        RegionInfoFillRun::cancel($kind);
+        unset($this->fillRuns);
         $this->dispatch('adminv2-toast', message: 'KI-Vorbefüllung angehalten. Bereits gefüllte Regionen bleiben gespeichert.');
     }
 
-    public function dismissFill(): void
+    public function dismissFill(string $kind = RegionInfoRun::KIND_FILL): void
     {
-        RegionInfoFillRun::dismiss();
+        RegionInfoFillRun::dismiss($kind);
 
-        unset($this->fillRun);
+        unset($this->fillRuns);
     }
 
     public function refreshFill(): void
     {
-        unset($this->fillRun, $this->rows);
+        unset($this->fillRuns, $this->rows);
     }
 
     public function render()

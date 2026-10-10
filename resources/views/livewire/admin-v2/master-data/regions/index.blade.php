@@ -3,40 +3,43 @@
     use App\Support\AdminV2\RegionInfo;
 
     $rows = $this->rows;
-    $fillRun = $this->fillRun;
-    $fillRunning = $fillRun?->isRunning() ?? false;
+    $fillRuns = $this->fillRuns;
+    $fillRunning = $fillRuns->contains(fn ($run) => $run->isRunning());
     $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
 @endphp
 
 <div class="flex flex-col gap-6">
     <x-adminv2.master-data.list-header section="regions" create-label="Neue Region">
         <flux:modal.trigger name="region-info-fill">
-            <flux:button icon="sparkles" :disabled="$fillRunning">Infos mit KI vorbefüllen</flux:button>
+            <flux:button icon="sparkles">Mit KI vorbefüllen</flux:button>
         </flux:modal.trigger>
     </x-adminv2.master-data.list-header>
 
-    @if ($fillRun)
+    @foreach ($fillRuns as $fillRun)
         @php
+            $isSights = $fillRun->isSights();
+            $label = $isSights ? 'KI-Sehenswürdigkeiten' : 'KI-Vorbefüllung';
+            $runRunning = $fillRun->isRunning();
             $failed = (array) $fillRun->failed;
             $processed = $fillRun->done + count($failed);
             $percent = $fillRun->total > 0 ? (int) floor($processed / $fillRun->total * 100) : 0;
         @endphp
-        <x-adminv2.card :heading="$fillRunning ? 'KI-Vorbefüllung läuft' : ($fillRun->status === 'cancelled' ? 'KI-Vorbefüllung angehalten' : 'KI-Vorbefüllung abgeschlossen')">
+        <x-adminv2.card :heading="$label.($runRunning ? ' läuft' : ($fillRun->status === 'cancelled' ? ' angehalten' : ' abgeschlossen'))">
             <x-slot:actions>
-                @if ($fillRunning)
-                    <flux:button size="sm" variant="ghost" icon="stop" wire:click="cancelFill">Anhalten</flux:button>
+                @if ($runRunning)
+                    <flux:button size="sm" variant="ghost" icon="stop" wire:click="cancelFill('{{ $fillRun->kind }}')">Anhalten</flux:button>
                 @else
-                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="dismissFill">Ausblenden</flux:button>
+                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="dismissFill('{{ $fillRun->kind }}')">Ausblenden</flux:button>
                 @endif
             </x-slot:actions>
-            <div class="flex flex-col gap-3 text-sm" @if ($fillRunning) wire:poll.5s="refreshFill" @endif>
+            <div class="flex flex-col gap-3 text-sm" @if ($runRunning) wire:poll.5s="refreshFill" @endif>
                 <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                     <div class="h-full rounded-full bg-emerald-600 transition-all" style="width: {{ $percent }}%"></div>
                 </div>
                 <p class="text-zinc-600 dark:text-zinc-400">
-                    <span class="tabular-nums font-medium text-zinc-900 dark:text-white">{{ number_format($fillRun->done, 0, ',', '.') }}</span> von {{ number_format($fillRun->total, 0, ',', '.') }} Regionen vorbefüllt{{ count($failed) ? ', '.count($failed).' fehlgeschlagen' : '' }}.
-                    @if ($fillRunning)
-                        Die Regionen werden im Hintergrund nacheinander bearbeitet, je Region etwa eine Minute – die Seite muss dafür nicht offen bleiben.
+                    <span class="tabular-nums font-medium text-zinc-900 dark:text-white">{{ number_format($fillRun->done, 0, ',', '.') }}</span> von {{ number_format($fillRun->total, 0, ',', '.') }} Regionen {{ $isSights ? 'bearbeitet, '.number_format((int) ($fillRun->result['created'] ?? 0), 0, ',', '.').' Sehenswürdigkeiten angelegt' : 'vorbefüllt' }}{{ count($failed) ? ', '.count($failed).' fehlgeschlagen' : '' }}.
+                    @if ($runRunning)
+                        Die Regionen werden im Hintergrund nacheinander bearbeitet, je Region {{ $isSights ? 'zwei bis drei Minuten' : 'etwa eine Minute' }} – die Seite muss dafür nicht offen bleiben.
                     @endif
                     Ergebnisse sind als „KI-Entwurf, ungeprüft“ gekennzeichnet.
                 </p>
@@ -52,7 +55,7 @@
                 @endif
             </div>
         </x-adminv2.card>
-    @endif
+    @endforeach
 
     <div class="flex flex-wrap items-center gap-3">
         <div class="min-w-64 flex-1">
@@ -136,11 +139,19 @@
     <flux:modal name="region-info-fill" class="md:w-[36rem]">
         <div class="flex flex-col gap-5">
             <div>
-                <flux:heading size="lg">Regionsinfos mit KI vorbefüllen</flux:heading>
-                <flux:text class="mt-2">Die KI schreibt für jede Region Beschreibung, Reiseinfos und Fakten in allen Sprachen – nur, was für die Region eigen ist. Es gelten die Filter der Liste (Suche, Land, Infos …). Die Arbeit läuft im Hintergrund, je Region etwa eine Minute; das Ergebnis wird als ungeprüfter KI-Entwurf gespeichert.</flux:text>
+                <flux:heading size="lg">Regionen mit KI vorbefüllen</flux:heading>
+                <flux:text class="mt-2">Es gelten die Filter der Liste (Suche, Land, Infos …). Die Arbeit läuft im Hintergrund; die Ergebnisse werden als ungeprüfter KI-Entwurf gespeichert.</flux:text>
             </div>
-            <flux:checkbox wire:model.live="fillAll" label="Auch Regionen, die schon Infos haben" description="Ohne Haken nur Regionen ohne Infos. Vorhandene Texte bleiben, nur leere Felder werden ergänzt." />
-            <flux:checkbox wire:model.live="fillOverwrite" label="Vorhandene Texte überschreiben" description="Ersetzt auch geprüfte oder von Hand gepflegte Texte – nur mit Bedacht." />
+            <flux:radio.group wire:model.live="fillKind" label="Was soll die KI anlegen?">
+                <flux:radio value="fill" label="Regionsinfos" description="Beschreibung, Reiseinfos und Fakten in allen Sprachen – nur, was für die Region eigen ist. Etwa eine Minute je Region." />
+                <flux:radio value="sights" label="Sehenswürdigkeiten" description="3 bis 15 Sehenswürdigkeiten und Unternehmungen je Region mit Texten, Lage und Highlights; Dubletten werden übersprungen. Zwei bis drei Minuten je Region." />
+            </flux:radio.group>
+            @if ($fillKind === 'sights')
+                <flux:checkbox wire:model.live="fillAll" label="Auch Regionen, die schon Sehenswürdigkeiten haben" description="Ergänzt dort nur neue Einträge." />
+            @else
+                <flux:checkbox wire:model.live="fillAll" label="Auch Regionen, die schon Infos haben" description="Ohne Haken nur Regionen ohne Infos. Vorhandene Texte bleiben, nur leere Felder werden ergänzt." />
+                <flux:checkbox wire:model.live="fillOverwrite" label="Vorhandene Texte überschreiben" description="Ersetzt auch geprüfte oder von Hand gepflegte Texte – nur mit Bedacht." />
+            @endif
             <p class="rounded-lg bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
                 <span class="font-semibold tabular-nums">{{ number_format($this->fillCount, 0, ',', '.') }}</span> {{ $this->fillCount === 1 ? 'Region wird' : 'Regionen werden' }} bearbeitet.
             </p>

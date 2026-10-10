@@ -29,6 +29,8 @@ use App\Livewire\AdminV2\MasterData\Airports\Editor as AirportEditor;
 use App\Livewire\AdminV2\MasterData\Airports\Index as AirportIndex;
 use App\Livewire\AdminV2\MasterData\Cities\Editor as CityEditor;
 use App\Livewire\AdminV2\MasterData\Cities\Index as CityIndex;
+use App\Livewire\AdminV2\MasterData\Sights\Editor as SightEditor;
+use App\Livewire\AdminV2\MasterData\Sights\Index as SightIndex;
 use App\Livewire\AdminV2\MasterData\Continents\Editor as ContinentEditor;
 use App\Livewire\AdminV2\MasterData\Continents\Index as ContinentIndex;
 use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
@@ -105,6 +107,10 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('cities', CityIndex::class)->name('cities.index');
             Route::get('cities/create', CityEditor::class)->name('cities.create');
             Route::get('cities/{city}', CityEditor::class)->whereNumber('city')->name('cities.edit');
+
+            Route::get('sights', SightIndex::class)->name('sights.index');
+            Route::get('sights/create', SightEditor::class)->name('sights.create');
+            Route::get('sights/{sight}', SightEditor::class)->whereNumber('sight')->name('sights.edit');
 
             Route::get('airports', AirportIndex::class)->name('airports.index');
             Route::get('airports/create', AirportEditor::class)->name('airports.create');

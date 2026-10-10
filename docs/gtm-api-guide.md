@@ -718,6 +718,84 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ---
 
+### Sehenswürdigkeiten eines Landes
+
+```
+GET /v1/countries/{code}/sights
+```
+
+Sehenswürdigkeiten und Unternehmungen eines Landes – Highlights zuerst, dann alphabetisch. Jede Sehenswürdigkeit gehört zu einem Land, meist zu einer Region und oft zu einer Stadt; Nationalparks und Naturgebiete hängen auch ohne Stadt an ihrer Region. Öffnungszeiten und Eintritt sind allgemeine Angaben ohne Gewähr. `is_reviewed` ist `false`, solange ein KI-Entwurf noch nicht redaktionell geprüft wurde.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `region` | integer | Nein | Nur Sehenswürdigkeiten dieser Region (ID aus `/v1/countries/{code}/regions`) |
+| `city` | integer | Nein | Nur Sehenswürdigkeiten dieser Stadt (ID aus `/v1/countries/{code}/cities`) |
+| `category` | string | Nein | `landmark`, `old_town`, `museum`, `religious`, `palace`, `archaeological`, `nature`, `national_park`, `beach`, `viewpoint`, `park`, `activity`, `theme_park`, `market`, `other` |
+| `highlight` | boolean | Nein | `1` = nur die Highlights |
+| `lang` | string | Nein | Nur diese Sprache (`de`, `en`, `nl`) statt aller Sprachen |
+
+**Beispiele:**
+
+```bash
+# Alle Sehenswürdigkeiten Italiens
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/IT/sights?lang=de"
+
+# Nur die Highlights einer Region
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/IT/sights?lang=de&region=56&highlight=1"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 3,
+      "name": "Aquarium Genua",
+      "category": "theme_park",
+      "category_name": "Freizeitpark & Zoo",
+      "is_highlight": true,
+      "region": {"id": 56, "code": "IT-42", "name": "Ligurien"},
+      "city": {"id": 1388, "name": "Genua"},
+      "coordinates": {"lat": 44.410145, "lng": 8.926291},
+      "address": "Ponte Spinola, Porto Antico, 16128 Genova",
+      "website_url": "https://www.acquariodigenova.it/",
+      "ticket_url": null,
+      "visit_minutes": 180,
+      "short_description": "Das Aquarium im alten Hafen zeigt Meeres- und Süßwasserlebensräume …",
+      "description": "Das Aquarium wurde 1992 im Zuge der Neugestaltung des Porto Antico eröffnet …",
+      "opening_hours": null,
+      "admission": null,
+      "best_time": "werktags direkt nach der Öffnung",
+      "tips": "Tickets und gegebenenfalls ein Zeitfenster vorab online buchen.",
+      "accessibility": "Der Rundgang ist mit Rollstuhl und Kinderwagen zugänglich.",
+      "is_reviewed": false
+    }
+  ],
+  "meta": {"total": 14}
+}
+```
+
+### Einzelne Sehenswürdigkeit
+
+```
+GET /v1/sights/{id}
+```
+
+Eine Sehenswürdigkeit mit denselben Feldern wie oben und zusätzlich `country` (`code`, `name`).
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/sights/3?lang=de"
+```
+
+---
+
 ### Wetter
 
 ```

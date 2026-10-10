@@ -14,6 +14,17 @@ class RegionInfoRun extends Model
 
     public const KIND_FILL = 'fill';
 
+    /** Sehenswuerdigkeiten vieler Regionen (oder einer aus dem Editor) per KI anlegen */
+    public const KIND_SIGHTS = 'sights';
+
+    /** Sehenswuerdigkeiten einer Region aus ihrem Editor heraus */
+    public const KIND_SIGHTS_ONE = 'sights_one';
+
+    public function isSights(): bool
+    {
+        return in_array($this->kind, [self::KIND_SIGHTS, self::KIND_SIGHTS_ONE], true);
+    }
+
     public const STATUS_RUNNING = 'running';
 
     public const STATUS_DONE = 'done';

@@ -53,6 +53,11 @@ class City extends Model
     /**
      * Get the airports for this city.
      */
+    public function sights(): HasMany
+    {
+        return $this->hasMany(Sight::class);
+    }
+
     public function airports(): HasMany
     {
         return $this->hasMany(Airport::class);

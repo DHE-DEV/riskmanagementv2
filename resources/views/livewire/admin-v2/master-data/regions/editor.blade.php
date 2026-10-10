@@ -245,6 +245,38 @@
                     @endforeach
                 </x-adminv2.master-data.related-list>
 
+
+                @php $sights = $this->sights; @endphp
+                <x-adminv2.master-data.related-list
+                    heading="Sehenswürdigkeiten"
+                    :count="$sights['count']"
+                    :shown="$sights['items']->count()"
+                    :all-url="route('adminv2.master-data.sights.index', ['country' => [$record->country_id], 'region' => $record->id])"
+                    :create-url="route('adminv2.master-data.sights.create', ['region' => $record->id])"
+                    create-label="Neue Sehenswürdigkeit"
+                    empty-text="Für diese Region sind noch keine Sehenswürdigkeiten erfasst."
+                >
+                    @foreach ($sights['items'] as $sight)
+                        <li class="flex items-center justify-between gap-3 py-1.5">
+                            <a href="{{ route('adminv2.master-data.sights.edit', $sight->id) }}" class="truncate text-zinc-900 hover:underline dark:text-white">{{ $sight->getName('de') }}</a>
+                            @if ($sight->is_highlight)
+                                <flux:badge size="sm" color="amber" inset="top bottom">Highlight</flux:badge>
+                            @elseif ($sight->city)
+                                <span class="shrink-0 truncate text-xs text-zinc-400">{{ $sight->city->getName('de') }}</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </x-adminv2.master-data.related-list>
+                <div class="-mt-3">
+                    @if ($sightsRunId)
+                        <div wire:poll.4s="checkSightsSuggestion" class="flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100">
+                            <flux:icon.loading class="size-4 shrink-0" />
+                            <span>Die KI sucht Sehenswürdigkeiten und gleicht die Lage mit OpenStreetMap ab – das dauert zwei bis drei Minuten.</span>
+                        </div>
+                    @else
+                        <flux:button size="sm" icon="sparkles" class="w-full" wire:click="startSightsSuggestion">Sehenswürdigkeiten mit KI vorschlagen</flux:button>
+                    @endif
+                </div>
             @else
                 <x-adminv2.card heading="Nach dem Speichern">
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Sobald die Region angelegt ist, lassen sich ihr Städte zuordnen – hier oder in der Bearbeitung einer Stadt.</p>

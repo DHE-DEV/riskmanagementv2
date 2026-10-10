@@ -2,6 +2,7 @@
 
 namespace App\Livewire\AdminV2\MasterData\Regions;
 
+use App\Jobs\FillRegionInfoJob;
 use App\Jobs\SuggestRegionInfoJob;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
@@ -56,6 +57,9 @@ class Editor extends Component
 
     /** KI-Vorschlag: vorhandene Texte ueberschreiben statt nur Leeres zu fuellen */
     public bool $suggestOverwrite = false;
+
+    /** Laufender KI-Lauf fuer die Sehenswuerdigkeiten dieser Region (RegionInfoRun) */
+    public ?int $sightsRunId = null;
 
     /** DeepL: bereits ausgefuellte Sprachen ueberschreiben */
     public bool $overwriteNoteTranslations = false;
@@ -122,6 +126,71 @@ class Editor extends Component
             'count' => $this->record->cities()->count(),
             'items' => $this->record->cities()->orderByDesc('is_regional_capital')->orderByDesc('population')->limit(self::RELATED_LIMIT)->get(),
         ] : null;
+    }
+
+    /**
+     * Die Sehenswuerdigkeiten der Region fuer die Seitenspalte, Highlights zuerst.
+     *
+     * @return array{count: int, items: Collection}|null
+     */
+    #[Computed]
+    public function sights(): ?array
+    {
+        return $this->record ? [
+            'count' => $this->record->sights()->count(),
+            'items' => $this->record->sights()->with('city')->orderByDesc('is_highlight')->orderBy('sort_order')->limit(self::RELATED_LIMIT)->get(),
+        ] : null;
+    }
+
+    /**
+     * Sehenswuerdigkeiten der Region per KI anlegen lassen (im Hintergrund,
+     * dauert zwei bis drei Minuten). Bestehende Eintraege bleiben, Dubletten
+     * werden uebersprungen.
+     */
+    public function startSightsSuggestion(): void
+    {
+        if (! $this->record) {
+            return;
+        }
+
+        $run = RegionInfoRun::create([
+            'kind' => RegionInfoRun::KIND_SIGHTS_ONE,
+            'region_id' => $this->record->id,
+            'status' => RegionInfoRun::STATUS_RUNNING,
+            'pending' => [$this->record->id],
+            'total' => 1,
+            'failed' => [],
+            'started_by' => auth('web')->id(),
+        ]);
+
+        $this->sightsRunId = $run->id;
+        FillRegionInfoJob::dispatch($run->id);
+
+        $this->checkSightsSuggestion();
+    }
+
+    public function checkSightsSuggestion(): void
+    {
+        if (! $this->sightsRunId) {
+            return;
+        }
+
+        $run = RegionInfoRun::query()->find($this->sightsRunId);
+
+        if ($run?->isRunning()) {
+            return;
+        }
+
+        $this->sightsRunId = null;
+        unset($this->sights);
+
+        $failed = (array) ($run?->failed ?? []);
+        $created = (int) ($run?->result['created'] ?? 0);
+        $run?->delete();
+
+        $this->dispatch('adminv2-toast', ...($failed !== [] || ! $run
+            ? ['message' => 'Sehenswürdigkeiten konnten nicht angelegt werden: '.(reset($failed) ?: 'unbekannter Fehler'), 'variant' => 'danger']
+            : ['message' => $created > 0 ? $created.' Sehenswürdigkeiten als KI-Entwurf angelegt.' : 'Keine neuen Sehenswürdigkeiten – die Vorschläge gab es schon.']));
     }
 
     public function save(bool $another = false): void

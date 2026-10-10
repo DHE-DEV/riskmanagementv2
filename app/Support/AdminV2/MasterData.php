@@ -63,6 +63,13 @@ class MasterData
                 'legacy' => '/admin/cities',
                 'routes' => 'adminv2.master-data.cities',
             ],
+            'sights' => [
+                'label' => 'Sehenswürdigkeiten',
+                'icon' => 'camera',
+                'description' => 'Sehenswürdigkeiten und Unternehmungen je Land, Region und Stadt.',
+                'legacy' => null,
+                'routes' => 'adminv2.master-data.sights',
+            ],
             'airports' => [
                 'label' => 'Flughäfen',
                 'icon' => 'paper-airplane',
@@ -199,6 +206,7 @@ class MasterData
             $record instanceof Country => [
                 'Regionen' => $record->regions()->withTrashed()->count(),
                 'Städte' => $record->cities()->withTrashed()->count(),
+                'Sehenswürdigkeiten' => $record->sights()->withTrashed()->count(),
                 'Flughäfen' => $record->airports()->withTrashed()->count(),
                 'Ereignisse' => DB::table('country_custom_event')->where('country_id', $record->id)->distinct()->count('custom_event_id'),
                 'Katastrophen-Ereignisse' => $record->disasterEvents()->count(),
@@ -206,12 +214,14 @@ class MasterData
             ],
             $record instanceof Region => [
                 'Städte' => $record->cities()->withTrashed()->count(),
+                'Sehenswürdigkeiten' => $record->sights()->withTrashed()->count(),
                 'Ereignisse' => DB::table('custom_event_region')->where('region_id', $record->id)->distinct()->count('custom_event_id')
                     + DB::table('country_custom_event')->where('region_id', $record->id)->distinct()->count('custom_event_id'),
                 'Katastrophen-Ereignisse' => $record->disasterEvents()->count(),
             ],
             $record instanceof City => [
                 'Flughäfen' => $record->airports()->withTrashed()->count(),
+                'Sehenswürdigkeiten' => $record->sights()->withTrashed()->count(),
                 'Ereignisse' => DB::table('city_custom_event')->where('city_id', $record->id)->distinct()->count('custom_event_id')
                     + DB::table('country_custom_event')->where('city_id', $record->id)->distinct()->count('custom_event_id'),
                 'Katastrophen-Ereignisse' => $record->disasterEvents()->count(),
