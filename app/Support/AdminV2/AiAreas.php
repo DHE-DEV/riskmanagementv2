@@ -60,7 +60,7 @@ class AiAreas
             'regions' => [
                 'label' => 'Regionen',
                 'sections' => [
-                    'basics' => ['label' => 'Region', 'placeholders' => ['name' => 'Name', 'name_en' => 'Name (Englisch)', 'code' => 'Code', 'country' => 'Land', 'description' => 'Beschreibung', 'keywords' => 'Schlagwörter']],
+                    'basics' => ['label' => 'Region', 'placeholders' => ['name' => 'Name', 'name_en' => 'Name (Englisch)', 'code' => 'Code', 'country' => 'Land', 'description' => 'Kurzbeschreibung', 'keywords' => 'Schlagwörter']],
                     'coordinates' => ['label' => 'Koordinaten', 'placeholders' => $coordinates],
                     'cities' => ['label' => 'Städte', 'placeholders' => ['cities_count' => 'Anzahl Städte', 'cities' => 'Städte (Liste)']],
                 ],

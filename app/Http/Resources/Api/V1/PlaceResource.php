@@ -21,7 +21,9 @@ class PlaceResource
             'id' => $region->id,
             'code' => $region->code,
             'name' => AirportResource::text($region->name_translations, $lang),
-            'description' => is_string($region->description) && trim($region->description) !== '' ? trim($region->description) : null,
+            // Kurzbeschreibung aus den Regionsinfos (AdminV2), sonst die alte einsprachige Beschreibung.
+            'description' => AirportResource::text($region->info['texts']['short_description'] ?? null, $lang ?? 'de')
+                ?? (is_string($region->description) && trim($region->description) !== '' ? trim($region->description) : null),
             'is_popular' => (bool) $region->is_major,
             'coordinates' => $region->lat !== null && $region->lng !== null ? ['lat' => (float) $region->lat, 'lng' => (float) $region->lng] : null,
             'cities_count' => (int) ($region->cities_count ?? 0),

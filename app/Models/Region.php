@@ -18,6 +18,7 @@ class Region extends Model
         'country_id',
         'description',
         'keywords',
+        'info',
         'lat',
         'lng',
         'is_major',
@@ -26,6 +27,7 @@ class Region extends Model
     protected $casts = [
         'name_translations' => 'array',
         'keywords' => 'array',
+        'info' => 'array',
         'lat' => 'decimal:6',
         'lng' => 'decimal:6',
         'is_major' => 'boolean',

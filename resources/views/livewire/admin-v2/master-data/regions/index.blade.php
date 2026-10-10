@@ -1,12 +1,58 @@
 @php
     use App\Support\AdminV2\Coordinates;
+    use App\Support\AdminV2\RegionInfo;
 
     $rows = $this->rows;
+    $fillRun = $this->fillRun;
+    $fillRunning = $fillRun?->isRunning() ?? false;
     $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
 @endphp
 
 <div class="flex flex-col gap-6">
-    <x-adminv2.master-data.list-header section="regions" create-label="Neue Region" />
+    <x-adminv2.master-data.list-header section="regions" create-label="Neue Region">
+        <flux:modal.trigger name="region-info-fill">
+            <flux:button icon="sparkles" :disabled="$fillRunning">Infos mit KI vorbefüllen</flux:button>
+        </flux:modal.trigger>
+    </x-adminv2.master-data.list-header>
+
+    @if ($fillRun)
+        @php
+            $failed = (array) $fillRun->failed;
+            $processed = $fillRun->done + count($failed);
+            $percent = $fillRun->total > 0 ? (int) floor($processed / $fillRun->total * 100) : 0;
+        @endphp
+        <x-adminv2.card :heading="$fillRunning ? 'KI-Vorbefüllung läuft' : ($fillRun->status === 'cancelled' ? 'KI-Vorbefüllung angehalten' : 'KI-Vorbefüllung abgeschlossen')">
+            <x-slot:actions>
+                @if ($fillRunning)
+                    <flux:button size="sm" variant="ghost" icon="stop" wire:click="cancelFill">Anhalten</flux:button>
+                @else
+                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="dismissFill">Ausblenden</flux:button>
+                @endif
+            </x-slot:actions>
+            <div class="flex flex-col gap-3 text-sm" @if ($fillRunning) wire:poll.5s="refreshFill" @endif>
+                <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <div class="h-full rounded-full bg-emerald-600 transition-all" style="width: {{ $percent }}%"></div>
+                </div>
+                <p class="text-zinc-600 dark:text-zinc-400">
+                    <span class="tabular-nums font-medium text-zinc-900 dark:text-white">{{ number_format($fillRun->done, 0, ',', '.') }}</span> von {{ number_format($fillRun->total, 0, ',', '.') }} Regionen vorbefüllt{{ count($failed) ? ', '.count($failed).' fehlgeschlagen' : '' }}.
+                    @if ($fillRunning)
+                        Die Regionen werden im Hintergrund nacheinander bearbeitet, je Region etwa eine Minute – die Seite muss dafür nicht offen bleiben.
+                    @endif
+                    Ergebnisse sind als „KI-Entwurf, ungeprüft“ gekennzeichnet.
+                </p>
+                @if (count($failed))
+                    <details class="text-zinc-600 dark:text-zinc-400">
+                        <summary class="cursor-pointer">Fehlgeschlagene Regionen</summary>
+                        <ul class="mt-2 flex flex-col gap-1">
+                            @foreach (array_slice($failed, 0, 20, true) as $failedId => $message)
+                                <li><a href="{{ route('adminv2.master-data.regions.edit', $failedId) }}" class="underline">Region {{ $failedId }}</a>: {{ $message }}</li>
+                            @endforeach
+                        </ul>
+                    </details>
+                @endif
+            </div>
+        </x-adminv2.card>
+    @endif
 
     <div class="flex flex-wrap items-center gap-3">
         <div class="min-w-64 flex-1">
@@ -19,6 +65,14 @@
             <flux:select wire:model.live="coordinates" aria-label="Koordinaten">
                 <flux:select.option value="">Koordinaten: alle</flux:select.option>
                 <flux:select.option value="missing">Ohne Koordinaten</flux:select.option>
+            </flux:select>
+        </div>
+        <div class="w-56">
+            <flux:select wire:model.live="info" aria-label="Regionsinfos">
+                <flux:select.option value="">Regionsinfos: alle</flux:select.option>
+                @foreach (RegionInfo::STATUSES as $statusKey => $statusLabel)
+                    <flux:select.option value="{{ $statusKey }}">{{ $statusLabel }}</flux:select.option>
+                @endforeach
             </flux:select>
         </div>
         <div class="w-48">
@@ -36,7 +90,7 @@
             <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Regionen" />
         </x-adminv2.card>
     @else
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, coordinates, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, coordinates, info, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
             @foreach ($rows as $region)
                 <x-adminv2.master-data.record-card
                     wire:key="region-{{ $region->id }}"
@@ -58,6 +112,10 @@
                             –
                         @endif
                     </x-adminv2.master-data.card-row>
+                    @php $status = RegionInfo::status($region->info); @endphp
+                    <x-adminv2.master-data.card-row icon="document-text" label="Infos">
+                        <flux:badge size="sm" inset="top bottom" :color="match ($status) { 'ai' => 'amber', 'reviewed' => 'emerald', 'manual' => 'sky', default => 'zinc' }">{{ RegionInfo::STATUSES[$status] }}</flux:badge>
+                    </x-adminv2.master-data.card-row>
                     <x-adminv2.master-data.card-row icon="building-office-2" label="Städte">
                         @if ($region->cities_count > 0)
                             <a href="{{ route('adminv2.master-data.cities.index', ['country' => [$region->country_id], 'region' => $region->id]) }}" class="relative z-10 text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">{{ number_format($region->cities_count, 0, ',', '.') }} {{ $region->cities_count === 1 ? 'Stadt' : 'Städte' }}</a>
@@ -74,6 +132,24 @@
 
         <x-adminv2.pagination :paginator="$rows" />
     @endif
+
+    <flux:modal name="region-info-fill" class="md:w-[36rem]">
+        <div class="flex flex-col gap-5">
+            <div>
+                <flux:heading size="lg">Regionsinfos mit KI vorbefüllen</flux:heading>
+                <flux:text class="mt-2">Die KI schreibt für jede Region Beschreibung, Reiseinfos und Fakten in allen Sprachen – nur, was für die Region eigen ist. Es gelten die Filter der Liste (Suche, Land, Infos …). Die Arbeit läuft im Hintergrund, je Region etwa eine Minute; das Ergebnis wird als ungeprüfter KI-Entwurf gespeichert.</flux:text>
+            </div>
+            <flux:checkbox wire:model.live="fillAll" label="Auch Regionen, die schon Infos haben" description="Ohne Haken nur Regionen ohne Infos. Vorhandene Texte bleiben, nur leere Felder werden ergänzt." />
+            <flux:checkbox wire:model.live="fillOverwrite" label="Vorhandene Texte überschreiben" description="Ersetzt auch geprüfte oder von Hand gepflegte Texte – nur mit Bedacht." />
+            <p class="rounded-lg bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                <span class="font-semibold tabular-nums">{{ number_format($this->fillCount, 0, ',', '.') }}</span> {{ $this->fillCount === 1 ? 'Region wird' : 'Regionen werden' }} bearbeitet.
+            </p>
+            <div class="flex justify-end gap-2">
+                <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
+                <flux:button variant="primary" icon="sparkles" wire:click="startFill" :disabled="$this->fillCount === 0">Starten</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 </div>
