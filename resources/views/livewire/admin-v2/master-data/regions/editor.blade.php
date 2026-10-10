@@ -178,7 +178,20 @@
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt der Region für die Darstellung auf der Karte." />
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt der Region für die Darstellung auf der Karte.">
+                @if ($countryId !== '')
+                    <x-slot:map>
+                        <x-adminv2.master-data.boundary-map
+                            :url="route('adminv2.master-data.boundaries.country', (int) $countryId)"
+                            :lat="$lat"
+                            :lng="$lng"
+                            :focus-zoom="6"
+                            empty-text="Für das Land liegen keine Grenzdaten vor – die Karte zeigt nur den Mittelpunkt der Region."
+                        />
+                        <p class="text-xs text-zinc-500">Markierung: Mittelpunkt der Region. Umriss: Grenzen von {{ $country?->getName('de') ?? 'dem Land' }}.@if (! is_numeric($lat) || ! is_numeric($lng)) Ohne Koordinaten zeigt die Karte nur das Land.@endif</p>
+                    </x-slot:map>
+                @endif
+            </x-adminv2.master-data.coordinates>
         </div>
 
         <div class="flex flex-col gap-6">

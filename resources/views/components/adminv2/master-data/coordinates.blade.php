@@ -41,14 +41,24 @@
         {{ $map ?? '' }}
 
         @if ($hasPoint)
-            <a
-                href="https://www.google.com/maps?q={{ $lat }},{{ $lng }}"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex w-fit items-center gap-1 text-sm text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300"
-            >
-                In Google Maps ansehen <flux:icon.arrow-top-right-on-square variant="micro" />
-            </a>
+            <div class="flex flex-wrap gap-x-5 gap-y-2">
+                <a
+                    href="https://www.google.com/maps?q={{ $lat }},{{ $lng }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex w-fit items-center gap-1 text-sm text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300"
+                >
+                    In Google Maps ansehen <flux:icon.arrow-top-right-on-square variant="micro" />
+                </a>
+                <a
+                    href="https://www.openstreetmap.org/?mlat={{ $lat }}&amp;mlon={{ $lng }}#map=8/{{ $lat }}/{{ $lng }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex w-fit items-center gap-1 text-sm text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300"
+                >
+                    In OpenStreetMap ansehen <flux:icon.arrow-top-right-on-square variant="micro" />
+                </a>
+            </div>
         @endif
     </div>
 </x-adminv2.card>

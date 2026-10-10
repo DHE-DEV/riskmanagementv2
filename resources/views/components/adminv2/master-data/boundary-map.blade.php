@@ -4,12 +4,15 @@
     - url: GeoJSON der Grenzen (BoundaryGeoJsonController)
     - lat / lng: gespeicherter Mittelpunkt – als Markierung, wenn vorhanden
     - height: Hoehe der Karte
+    - focusZoom: wenn gesetzt, zeigt die Karte den Mittelpunkt in dieser Zoomstufe
+      statt den Ausschnitt der Grenzen (z. B. eine Region innerhalb ihres Landes)
 --}}
 @props([
     'url',
     'lat' => '',
     'lng' => '',
     'height' => 'h-80',
+    'focusZoom' => null,
     'emptyText' => 'Für diesen Eintrag liegen keine Grenzdaten vor – die Karte zeigt nur den Mittelpunkt.',
 ])
 
@@ -19,7 +22,7 @@
     <script>
         // Karte mit Grenz-Layer. Die Karte selbst liegt ausserhalb der Alpine-Daten;
         // aendern sich Mittelpunkt oder Quelle, baut Livewire das Element neu auf.
-        window.adminv2BoundaryMap = (url, center) => {
+        window.adminv2BoundaryMap = (url, center, focusZoom = null) => {
             let map = null;
             let observer = null;
             // Ausschnitt, der noch nicht gesetzt werden konnte, weil die Karte
@@ -67,7 +70,7 @@
                 init() {
                     map = L.map(this.$refs.map, {
                         center: center ?? [20, 0],
-                        zoom: center ? 4 : 2,
+                        zoom: center ? (focusZoom ?? 4) : 2,
                         minZoom: 1,
                         scrollWheelZoom: false,
                         attributionControl: true,
@@ -107,6 +110,10 @@
                             // Erst die tatsaechliche Groesse der Karte nehmen, dann den Ausschnitt
                             // so waehlen, dass alle Hauptgebiete vollstaendig zu sehen sind.
                             map.invalidateSize();
+
+                            // Mit Fokus bleibt der Ausschnitt beim Mittelpunkt; die Grenzen sind nur Umgebung.
+                            if (center && focusZoom) return;
+
                             const bounds = mainlandBounds(collection);
                             const target = bounds.isValid() ? bounds : layer.getBounds();
 
@@ -153,9 +160,9 @@
 @endphp
 
 <div
-    wire:key="boundary-map-{{ md5($url.($center ? implode(',', $center) : '')) }}"
+    wire:key="boundary-map-{{ md5($url.($center ? implode(',', $center) : '').$focusZoom) }}"
     wire:ignore
-    x-data="adminv2BoundaryMap(@js($url), @js($center))"
+    x-data="adminv2BoundaryMap(@js($url), @js($center), @js($focusZoom))"
     {{ $attributes->class('flex flex-col gap-2') }}
 >
     <div x-ref="map" class="{{ $height }} w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"></div>

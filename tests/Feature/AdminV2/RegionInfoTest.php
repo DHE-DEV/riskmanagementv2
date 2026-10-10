@@ -144,6 +144,18 @@ it('zeigt die Abschnitte der Regionsinfos im Editor', function () {
         ->assertSee('Ohne Infos');
 });
 
+it('zeigt bei den Koordinaten eine OpenStreetMap-Karte mit den Grenzen des Landes', function () {
+    $italy = regionInfoCountry();
+    $veneto = regionInfoRegion($italy, 'Venetien', ['lat' => 45.6, 'lng' => 11.9]);
+
+    $this->get(route('adminv2.master-data.regions.edit', $veneto))
+        ->assertOk()
+        ->assertSee('boundaries\\/country\\/'.$italy->id, false)
+        ->assertSee('Umriss: Grenzen von Italien.')
+        ->assertSee('https://www.openstreetmap.org/?mlat=45.6', false)
+        ->assertSee('In OpenStreetMap ansehen');
+});
+
 // ── KI im Editor ────────────────────────────────────────────────────────
 
 it('uebernimmt einen KI-Vorschlag ins Formular, fuellt nur Leeres und speichert erst mit Speichern', function () {
