@@ -96,7 +96,7 @@
                             <h3 class="text-lg font-semibold text-gray-900 group-hover:text-brand-600 transition-colors">Events API (GTM)</h3>
                         </div>
                     </div>
-                    <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">22 Endpoints</span>
+                    <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">23 Endpoints</span>
                 </div>
                 <p class="mt-4 text-sm text-gray-600 leading-relaxed">
                     Read-only Zugriff auf aktive Sicherheits- und Reiserisiko-Events (Filter nach Risikostufe, Land, Kategorie, Region und Umkreis)

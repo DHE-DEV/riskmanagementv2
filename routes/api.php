@@ -419,6 +419,7 @@ Route::prefix('v1')->middleware([
     Route::get('/countries/{code}/cities', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'cities'])->name('v1.countries.cities');
     Route::get('/countries/{code}/sights', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'sights'])->name('v1.countries.sights');
     Route::get('/sights/{id}', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'sight'])->whereNumber('id')->name('v1.sights.show');
+    Route::get('/places', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'places'])->name('v1.places');
     Route::get('/countries/{code}/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'country'])->name('v1.countries.weather');
     Route::get('/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'point'])->name('v1.weather');
     Route::get('/airports', [\App\Http\Controllers\Api\V1\AirportController::class, 'index'])->name('v1.airports');

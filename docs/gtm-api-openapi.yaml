@@ -578,6 +578,45 @@ paths:
                               name: {description: "Text je Sprache oder – mit ?lang – ein String"}
         "404": {description: Sehenswürdigkeit nicht gefunden}
 
+  /places:
+    get:
+      summary: Gemerkte Orte auflösen
+      description: Name, Land, Lage und Kategorie zu Schlüsseln region:ID, city:ID, sight:ID (bis zu 1000). Unbekannte Schlüssel fehlen.
+      tags: [Basisdaten]
+      parameters:
+        - name: keys
+          in: query
+          required: true
+          schema: {type: string, example: "region:56,city:1388,sight:3"}
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+      responses:
+        "200":
+          description: Orte
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key: {type: string}
+                        kind: {type: string, enum: [region, city, sight]}
+                        id: {type: integer}
+                        name: {type: string}
+                        country: {type: object, nullable: true, properties: {code: {type: string}, name: {type: string}}}
+                        region: {type: object, nullable: true, properties: {id: {type: integer}, name: {type: string}}}
+                        city: {type: object, nullable: true, properties: {id: {type: integer}, name: {type: string}}}
+                        coordinates: {type: object, nullable: true, properties: {lat: {type: number}, lng: {type: number}}}
+                        category: {type: string, nullable: true}
+                        category_name: {type: string, nullable: true}
+                  meta: {type: object, properties: {total: {type: integer}}}
+
   /countries/{code}/weather:
     get:
       summary: Wetter der Hauptstadt eines Landes

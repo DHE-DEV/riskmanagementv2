@@ -380,6 +380,7 @@
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/cities</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/sights</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/sights/{id}</span></li>
+                    <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/places</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/countries/{code}/weather</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/weather</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/airports</span></li>

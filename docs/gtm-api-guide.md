@@ -794,6 +794,30 @@ curl -H "Authorization: Bearer {TOKEN}" \
   "https://platform.passolution.de/api/v1/sights/3?lang=de"
 ```
 
+### Gemerkte Orte auflösen
+
+```
+GET /v1/places?keys=region:56,city:1388,sight:3
+```
+
+Für Apps, die Markierungen wie „besucht“ oder „Wunschliste“ nur als Schlüssel speichern: liefert zu bis zu 1000 Schlüsseln (`region:ID`, `city:ID`, `sight:ID`, mit Komma getrennt) Art, Name, Land, Region, Stadt, Koordinaten und – bei Sehenswürdigkeiten – die Kategorie. Unbekannte Schlüssel fehlen in der Antwort. Texte kommen in der Sprache aus `lang` (Standard Deutsch).
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/places?keys=city:1388,sight:3&lang=de"
+```
+
+```json
+{
+  "success": true,
+  "data": [
+    {"key": "city:1388", "kind": "city", "id": 1388, "name": "Genua", "country": {"code": "IT", "name": "Italien"}, "region": {"id": 56, "name": "Ligurien"}, "city": null, "coordinates": {"lat": 44.407, "lng": 8.9347}, "category": null, "category_name": null},
+    {"key": "sight:3", "kind": "sight", "id": 3, "name": "Aquarium Genua", "country": {"code": "IT", "name": "Italien"}, "region": {"id": 56, "name": "Ligurien"}, "city": {"id": 1388, "name": "Genua"}, "coordinates": {"lat": 44.4101, "lng": 8.9263}, "category": "theme_park", "category_name": "Freizeitpark & Zoo"}
+  ],
+  "meta": {"total": 2}
+}
+```
+
 ---
 
 ### Wetter

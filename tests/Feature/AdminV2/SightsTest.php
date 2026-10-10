@@ -313,3 +313,63 @@ it('liefert die Sehenswuerdigkeiten eines Landes und einzeln ueber die API', fun
         ->and($controller->sight(\Illuminate\Http\Request::create('/', 'GET'), 999999)->getStatusCode())->toBe(404)
         ->and($controller->sights(\Illuminate\Http\Request::create('/', 'GET'), 'XX')->getStatusCode())->toBe(404);
 });
+
+// ── Export und Import (Migration) ─────────────────────────────────────────
+
+it('gibt Sehenswuerdigkeiten als Daten aus und legt sie auf einem anderen System wieder an', function () {
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    sight($italy, 'Aquarium Genua', ['region_id' => $liguria->id, 'city_id' => $genoa->id, 'category' => 'theme_park', 'is_highlight' => true, 'sort_order' => 1, 'lat' => 44.41, 'lng' => 8.93, 'info' => ['texts' => ['short_description' => ['de' => 'Im Hafen.']], 'meta' => ['ai_generated_at' => '2026-10-10T10:00:00+00:00']]]);
+    sight($italy, 'Cinque Terre', ['region_id' => $liguria->id, 'category' => 'national_park', 'sort_order' => 2]);
+
+    $data = \App\Support\AdminV2\SightTransfer::export(['it']);
+    expect($data['IT']['Ligurien'])->toHaveCount(2)
+        ->and($data['IT']['Ligurien'][0]['city'])->toBe('Genua');
+
+    // "Anderes System": gleiche Namen, andere IDs; ein Eintrag existiert schon, eine Region fehlt.
+    Sight::query()->forceDelete();
+    $liguria->delete();
+    $otherLiguria = sightRegion($italy);
+    $otherGenoa = sightCity($italy, $otherLiguria, 'Genua', 'Genoa');
+    sight($italy, 'Cinque Terre', ['region_id' => $otherLiguria->id]);
+    $data['IT']['Atlantis'] = [['name_translations' => ['de' => 'Versunkene Stadt'], 'category' => 'other']];
+
+    $result = \App\Support\AdminV2\SightTransfer::import($data);
+
+    expect($result)->toBe(['created' => 1, 'skipped' => 2, 'missing_regions' => ['IT: Atlantis']]);
+
+    $aquarium = Sight::get()->first(fn ($sight) => $sight->getName('de') === 'Aquarium Genua');
+    expect($aquarium->region_id)->toBe($otherLiguria->id)
+        ->and($aquarium->city_id)->toBe($otherGenoa->id)
+        ->and($aquarium->is_highlight)->toBeTrue()
+        ->and(SightInfo::status($aquarium->info))->toBe(SightInfo::STATUS_AI);
+
+    // Ein zweiter Import legt nichts doppelt an.
+    expect(\App\Support\AdminV2\SightTransfer::import($data)['created'])->toBe(0);
+});
+
+it('loest gemerkte Orte zu Name, Land und Lage auf', function () {
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    $genoa->update(['lat' => 44.4, 'lng' => 8.9]);
+    $aquarium = sight($italy, 'Aquarium Genua', ['name_translations' => ['de' => 'Aquarium Genua', 'en' => 'Aquarium of Genoa'], 'region_id' => $liguria->id, 'city_id' => $genoa->id, 'category' => 'theme_park', 'lat' => 44.41, 'lng' => 8.93]);
+
+    $controller = app(\App\Http\Controllers\Api\V1\CountryPlacesController::class);
+    $data = $controller->places(\Illuminate\Http\Request::create('/', 'GET', ['keys' => "region:{$liguria->id}, city:{$genoa->id},sight:{$aquarium->id},sight:999999,quatsch,country:IT", 'lang' => 'en']))->getData(true);
+
+    expect($data['meta']['total'])->toBe(3)
+        ->and(collect($data['data'])->pluck('key')->sort()->values()->all())->toBe(["city:{$genoa->id}", "region:{$liguria->id}", "sight:{$aquarium->id}"]);
+
+    $sight = collect($data['data'])->firstWhere('kind', 'sight');
+    expect($sight)->toMatchArray([
+        'name' => 'Aquarium of Genoa',
+        'country' => ['code' => 'IT', 'name' => 'Italy'],
+        'region' => ['id' => $liguria->id, 'name' => 'Liguria'],
+        'city' => ['id' => $genoa->id, 'name' => 'Genoa'],
+        'coordinates' => ['lat' => 44.41, 'lng' => 8.93],
+        'category' => 'theme_park',
+        'category_name' => 'Theme park & zoo',
+    ]);
+});

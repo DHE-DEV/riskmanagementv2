@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\AirportResource;
 use App\Http\Resources\Api\V1\CountryDetailResource;
 use App\Http\Resources\Api\V1\PlaceResource;
 use App\Http\Resources\Api\V1\SightResource;
@@ -22,6 +23,7 @@ use Illuminate\Validation\Rule;
  *   GET /v1/countries/{code}/sights?lang=de&region=12&city=5&category=museum&highlight=1
  *                                                       – Sehenswuerdigkeiten, Highlights zuerst
  *   GET /v1/sights/{id}?lang=de                          – eine Sehenswuerdigkeit
+ *   GET /v1/places?keys=region:12,city:5,sight:3&lang=de – gemerkte Orte aufloesen (Name, Land, Lage)
  */
 class CountryPlacesController extends Controller
 {
@@ -145,5 +147,50 @@ class CountryPlacesController extends Controller
             'success' => true,
             'data' => SightResource::make($sight, $lang) + ['country' => ['code' => $sight->country->iso_code, 'name' => \App\Http\Resources\Api\V1\AirportResource::text($sight->country->name_translations, $lang)]],
         ]);
+    }
+
+    /**
+     * Orte zu Schluesseln "region:ID", "city:ID", "sight:ID" – fuer Apps, die
+     * Markierungen (besucht, Wunschliste) nur als Schluessel speichern.
+     * Unbekannte Schluessel fehlen in der Antwort.
+     */
+    public function places(Request $request): JsonResponse
+    {
+        $request->validate(['keys' => 'required|string|max:20000', 'lang' => 'nullable|string|max:5']);
+
+        $lang = CountryDetailResource::lang($request) ?? 'de';
+        $ids = ['region' => [], 'city' => [], 'sight' => []];
+
+        foreach (array_slice(explode(',', $request->string('keys')->toString()), 0, 1000) as $key) {
+            [$kind, $id] = array_pad(explode(':', trim($key), 2), 2, '');
+            if (isset($ids[$kind]) && ctype_digit($id)) {
+                $ids[$kind][] = (int) $id;
+            }
+        }
+
+        $country = fn ($country) => $country ? ['code' => $country->iso_code, 'name' => AirportResource::text($country->name_translations, $lang)] : null;
+        $point = fn ($lat, $lng) => $lat !== null && $lng !== null ? ['lat' => (float) $lat, 'lng' => (float) $lng] : null;
+        $text = fn ($translations) => AirportResource::text($translations, $lang);
+        $places = [];
+
+        foreach (Region::query()->whereIn('id', $ids['region'])->with('country')->get() as $region) {
+            $places[] = ['key' => 'region:'.$region->id, 'kind' => 'region', 'id' => $region->id, 'name' => $text($region->name_translations),
+                'country' => $country($region->country), 'region' => null, 'city' => null, 'coordinates' => $point($region->lat, $region->lng), 'category' => null, 'category_name' => null];
+        }
+
+        foreach (City::query()->whereIn('id', $ids['city'])->with(['country', 'region'])->get() as $city) {
+            $places[] = ['key' => 'city:'.$city->id, 'kind' => 'city', 'id' => $city->id, 'name' => $text($city->name_translations),
+                'country' => $country($city->country), 'region' => $city->region ? ['id' => $city->region->id, 'name' => $text($city->region->name_translations)] : null, 'city' => null,
+                'coordinates' => $point($city->lat, $city->lng), 'category' => null, 'category_name' => null];
+        }
+
+        foreach (Sight::query()->whereIn('id', $ids['sight'])->with(['country', 'region', 'city'])->get() as $sight) {
+            $places[] = ['key' => 'sight:'.$sight->id, 'kind' => 'sight', 'id' => $sight->id, 'name' => $text($sight->name_translations),
+                'country' => $country($sight->country), 'region' => $sight->region ? ['id' => $sight->region->id, 'name' => $text($sight->region->name_translations)] : null,
+                'city' => $sight->city ? ['id' => $sight->city->id, 'name' => $text($sight->city->name_translations)] : null,
+                'coordinates' => $point($sight->lat, $sight->lng), 'category' => $sight->category, 'category_name' => $text(SightInfo::categoryNames($sight->category))];
+        }
+
+        return response()->json(['success' => true, 'data' => $places, 'meta' => ['total' => count($places)]]);
     }
 }

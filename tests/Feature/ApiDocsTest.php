@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 it('zeigt die Doku-Übersicht und jede Anleitung aus den Markdown-Dateien', function () {
     $this->get('/docs/api')
         ->assertOk()
-        ->assertSee('22 Endpoints')
+        ->assertSee('23 Endpoints')
         ->assertSee('https://platform.passolution.de/api')
         ->assertSee('https://platform.passolution.de/feed')
         ->assertSee('https://api.global-travel-monitor.de/v1')
