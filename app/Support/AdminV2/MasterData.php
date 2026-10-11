@@ -56,6 +56,13 @@ class MasterData
                 'legacy' => '/admin/regions',
                 'routes' => 'adminv2.master-data.regions',
             ],
+            'subregions' => [
+                'label' => 'Teilgebiete',
+                'icon' => 'squares-2x2',
+                'description' => 'Inseln, Inselgruppen und Reisegebiete innerhalb der Regionen.',
+                'legacy' => null,
+                'routes' => 'adminv2.master-data.subregions',
+            ],
             'cities' => [
                 'label' => 'Städte',
                 'icon' => 'building-office-2',
@@ -213,6 +220,7 @@ class MasterData
                 'Kreuzfahrthäfen' => DB::table('tourism_cruise_ports')->where('country_id', $record->id)->count(),
             ],
             $record instanceof Region => [
+                'Teilgebiete' => $record->subregions()->withTrashed()->count(),
                 'Städte' => $record->cities()->withTrashed()->count(),
                 'Sehenswürdigkeiten' => $record->sights()->withTrashed()->count(),
                 'Ereignisse' => DB::table('custom_event_region')->where('region_id', $record->id)->distinct()->count('custom_event_id')

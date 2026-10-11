@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Sehenswuerdigkeit oder Unternehmung eines Landes, optional einer Region und Stadt.
+ * Sehenswuerdigkeit oder Unternehmung eines Landes, optional einer Region, eines Teilgebiets und einer Stadt.
  */
 class Sight extends Model
 {
@@ -18,6 +18,7 @@ class Sight extends Model
         'name_translations',
         'country_id',
         'region_id',
+        'subregion_id',
         'city_id',
         'category',
         'is_highlight',
@@ -47,6 +48,12 @@ class Sight extends Model
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class);
+    }
+
+    /** Teilgebiet (optional), z. B. die Insel innerhalb der Region */
+    public function subregion(): BelongsTo
+    {
+        return $this->belongsTo(Subregion::class);
     }
 
     public function city(): BelongsTo

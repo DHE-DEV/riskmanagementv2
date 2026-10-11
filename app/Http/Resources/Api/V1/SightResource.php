@@ -35,6 +35,11 @@ class SightResource
                 'code' => $sight->region->code,
                 'name' => AirportResource::text($sight->region->name_translations, $lang),
             ] : null,
+            'subregion' => $sight->subregion ? [
+                'id' => $sight->subregion->id,
+                'name' => AirportResource::text($sight->subregion->name_translations, $lang),
+                'kind' => $sight->subregion->kind,
+            ] : null,
             'city' => $sight->city ? [
                 'id' => $sight->city->id,
                 'name' => AirportResource::text($sight->city->name_translations, $lang),

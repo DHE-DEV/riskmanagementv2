@@ -28,6 +28,17 @@
                 </flux:select>
             </div>
         @endif
+        @if ($this->subregionOptions->isNotEmpty())
+            <div class="w-56">
+                <flux:select wire:model.live="subregion" aria-label="Teilgebiet">
+                    <flux:select.option value="">Alle Teilgebiete</flux:select.option>
+                    <flux:select.option value="none">Ohne Teilgebiet</flux:select.option>
+                    @foreach ($this->subregionOptions as $option)
+                        <flux:select.option value="{{ $option->id }}">{{ $option->getName('de') }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+        @endif
         <div class="w-60">
             <flux:select wire:model.live="category" aria-label="Kategorie">
                 <flux:select.option value="">Alle Kategorien</flux:select.option>
@@ -71,7 +82,7 @@
             <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Sehenswürdigkeiten" />
         </x-adminv2.card>
     @else
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, region, category, highlight, status, coordinates, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, region, subregion, category, highlight, status, coordinates, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
             @foreach ($rows as $sight)
                 @php $status = SightInfo::status($sight->info); @endphp
                 <x-adminv2.master-data.record-card
@@ -85,7 +96,7 @@
                     <x-slot:aside><x-adminv2.master-data.coordinates-mark :lat="$sight->lat" :lng="$sight->lng" /></x-slot:aside>
                     <x-adminv2.master-data.card-row :icon="SightInfo::categoryIcon($sight->category)" label="Kategorie">{{ SightInfo::categoryLabel($sight->category) }}</x-adminv2.master-data.card-row>
                     <x-adminv2.master-data.card-row icon="flag" label="Ort">
-                        {{ collect([$sight->city?->getName('de'), $sight->region?->getName('de'), $sight->country?->getName('de')])->filter()->implode(' · ') ?: '–' }}
+                        {{ collect([$sight->city?->getName('de'), $sight->subregion?->getName('de'), $sight->region?->getName('de'), $sight->country?->getName('de')])->filter()->implode(' · ') ?: '–' }}
                     </x-adminv2.master-data.card-row>
                     <x-adminv2.master-data.card-row icon="document-text" label="Stand">
                         <flux:badge size="sm" inset="top bottom" :color="match ($status) { 'ai' => 'amber', 'reviewed' => 'emerald', default => 'sky' }">{{ SightInfo::STATUSES[$status] }}</flux:badge>

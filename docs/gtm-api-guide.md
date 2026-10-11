@@ -659,11 +659,92 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "description": null,
       "is_popular": false,
       "coordinates": {"lat": 48.6616, "lng": 9.3501},
-      "cities_count": 8
+      "cities_count": 8,
+      "subregions_count": 0
     }
   ],
   "meta": {"total": 16}
 }
+```
+
+---
+
+### Einzelne Region mit Infos und Teilgebieten
+
+```
+GET /v1/regions/{id}
+```
+
+Eine Region mit denselben Feldern wie in der Liste, dazu `country` (`code`, `name`), die Regionsinfos in `info` und die Teilgebiete in `subregions`. Die Regionsinfos enthalten nur, was für die Region eigen ist – Landesweites steht am Land. Fehlende Angaben sind `null`. Absätze in `description` sind durch eine Leerzeile getrennt.
+
+| Feld in `info` | Inhalt |
+|----------------|--------|
+| `short_description`, `description` | Kurzbeschreibung und ausführliche Beschreibung |
+| `known_for` | Liste von Stichworten („Bekannt für“) |
+| `best_time`, `climate`, `getting_there`, `getting_around`, `cuisine`, `good_to_know` | Reiseinfos: beste Reisezeit, Klima, Anreise, Unterwegs vor Ort, Küche, Gut zu wissen |
+| `best_months` | Beste Reisemonate als Zahlen 1–12 |
+| `population`, `area_km2` | Einwohner und Fläche in km² |
+| `timezone` | IANA-Zeitzone, nur wenn sie von der des Landes abweicht |
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/regions/33?lang=de"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 33,
+    "code": "ES-CN",
+    "name": "Kanarische Inseln",
+    "description": "Die Kanarischen Inseln liegen im Atlantik vor der Nordwestküste Afrikas …",
+    "is_popular": false,
+    "coordinates": {"lat": 28.2916, "lng": -16.6291},
+    "cities_count": 7,
+    "subregions_count": 8,
+    "country": {"code": "ES", "name": "Spanien"},
+    "info": {
+      "short_description": "Die Kanarischen Inseln liegen im Atlantik …",
+      "description": "Zum Archipel gehören sieben größere Inseln …\n\nTeneriffa wird vom Teide geprägt …",
+      "known_for": ["Vulkanlandschaften", "Teide", "Atlantikstrände"],
+      "best_time": "Die Kanaren sind ganzjährig bereisbar …",
+      "climate": "Das subtropische, vom Atlantik und den Passatwinden geprägte Klima …",
+      "getting_there": "…", "getting_around": "…", "cuisine": "…", "good_to_know": "…",
+      "best_months": [3, 4, 5, 9, 10, 11],
+      "population": 2258866,
+      "area_km2": 7447,
+      "timezone": "Atlantic/Canary"
+    },
+    "subregions": [
+      {"id": 1, "region": {"id": 33, "code": "ES-CN", "name": "Kanarische Inseln"}, "kind": "island", "kind_name": "Insel", "group_name": "Inseln", "name": "Teneriffa", "description": "…", "coordinates": {"lat": 28.2936, "lng": -16.6214}, "cities_count": 3, "sights_count": 9}
+    ]
+  }
+}
+```
+
+---
+
+### Teilgebiete (Inseln und Reisegebiete)
+
+```
+GET /v1/countries/{code}/subregions
+GET /v1/subregions/{id}
+```
+
+Teilgebiete liegen zwischen Region und Stadt: Inseln (`island`), Inselgruppen (`archipelago`) und Reisegebiete (`area`) wie Teneriffa, die Liparischen Inseln oder die Costa Brava. Städte und Sehenswürdigkeiten können einem Teilgebiet zugeordnet sein (Feld `subregion`), müssen aber nicht. `kind_name` ist die Art als Text, `group_name` die passende Überschrift für Listen („Inseln“, „Reisegebiete“). Die Liste ist nach Region und der gepflegten Reihenfolge sortiert; mit `region` nur die Teilgebiete einer Region. Ein einzelnes Teilgebiet enthält zusätzlich `country` und `info` mit denselben Feldern wie bei der Region.
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `region` | integer | Nein | Nur Teilgebiete dieser Region (nur Liste) |
+| `lang` | string | Nein | Nur diese Sprache (`de`, `en`, `nl`) statt aller Sprachen |
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/countries/ES/subregions?lang=de&region=33"
+
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/subregions/1?lang=de"
 ```
 
 ---
@@ -674,13 +755,14 @@ curl -H "Authorization: Bearer {TOKEN}" \
 GET /v1/countries/{code}/cities
 ```
 
-Alle Städte eines Landes, alphabetisch nach Name, mit Region, Einwohnerzahl und Koordinaten. Mit `region` nur die Städte einer Region (ID aus `/v1/countries/{code}/regions`). `is_popular` ist die Markierung „beliebt“ aus der Verwaltung.
+Alle Städte eines Landes, alphabetisch nach Name, mit Region, Teilgebiet (falls zugeordnet), Einwohnerzahl und Koordinaten. Mit `region` nur die Städte einer Region (ID aus `/v1/countries/{code}/regions`), mit `subregion` nur die eines Teilgebiets. `is_popular` ist die Markierung „beliebt“ aus der Verwaltung.
 
 **Query-Parameter:**
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
 | `region` | integer | Nein | Nur Städte dieser Region |
+| `subregion` | integer | Nein | Nur Städte dieses Teilgebiets (Insel, Reisegebiet) |
 | `lang` | string | Nein | Nur diese Sprache (`de`, `en`, `nl`) statt aller Sprachen |
 
 **Beispiele:**
@@ -705,6 +787,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "id": 1382,
       "name": "Düsseldorf",
       "region": {"id": 12, "code": "DE-NW", "name": "Nordrhein-Westfalen"},
+      "subregion": null,
       "population": 620000,
       "coordinates": {"lat": 51.2277, "lng": 6.7735},
       "is_capital": false,
@@ -724,13 +807,14 @@ curl -H "Authorization: Bearer {TOKEN}" \
 GET /v1/countries/{code}/sights
 ```
 
-Sehenswürdigkeiten und Unternehmungen eines Landes – Highlights zuerst, dann alphabetisch. Jede Sehenswürdigkeit gehört zu einem Land, meist zu einer Region und oft zu einer Stadt; Nationalparks und Naturgebiete hängen auch ohne Stadt an ihrer Region. Öffnungszeiten und Eintritt sind allgemeine Angaben ohne Gewähr. `is_reviewed` ist `false`, solange ein KI-Entwurf noch nicht redaktionell geprüft wurde.
+Sehenswürdigkeiten und Unternehmungen eines Landes – Highlights zuerst, dann alphabetisch. Jede Sehenswürdigkeit gehört zu einem Land, meist zu einer Region, oft zu einer Stadt und manchmal zu einem Teilgebiet (Insel, Reisegebiet); Nationalparks und Naturgebiete hängen auch ohne Stadt an ihrer Region. Öffnungszeiten und Eintritt sind allgemeine Angaben ohne Gewähr. `is_reviewed` ist `false`, solange ein KI-Entwurf noch nicht redaktionell geprüft wurde.
 
 **Query-Parameter:**
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
 | `region` | integer | Nein | Nur Sehenswürdigkeiten dieser Region (ID aus `/v1/countries/{code}/regions`) |
+| `subregion` | integer | Nein | Nur Sehenswürdigkeiten dieses Teilgebiets (ID aus `/v1/countries/{code}/subregions`) |
 | `city` | integer | Nein | Nur Sehenswürdigkeiten dieser Stadt (ID aus `/v1/countries/{code}/cities`) |
 | `category` | string | Nein | `landmark`, `old_town`, `museum`, `religious`, `palace`, `archaeological`, `nature`, `national_park`, `beach`, `viewpoint`, `park`, `activity`, `theme_park`, `market`, `other` |
 | `highlight` | boolean | Nein | `1` = nur die Highlights |
@@ -761,6 +845,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "category_name": "Freizeitpark & Zoo",
       "is_highlight": true,
       "region": {"id": 56, "code": "IT-42", "name": "Ligurien"},
+      "subregion": null,
       "city": {"id": 1388, "name": "Genua"},
       "coordinates": {"lat": 44.410145, "lng": 8.926291},
       "address": "Ponte Spinola, Porto Antico, 16128 Genova",
@@ -797,10 +882,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Gemerkte Orte auflösen
 
 ```
-GET /v1/places?keys=region:56,city:1388,sight:3
+GET /v1/places?keys=region:56,subregion:1,city:1388,sight:3
 ```
 
-Für Apps, die Markierungen wie „besucht“ oder „Wunschliste“ nur als Schlüssel speichern: liefert zu bis zu 1000 Schlüsseln (`region:ID`, `city:ID`, `sight:ID`, mit Komma getrennt) Art, Name, Land, Region, Stadt, Koordinaten und – bei Sehenswürdigkeiten – die Kategorie. Unbekannte Schlüssel fehlen in der Antwort. Texte kommen in der Sprache aus `lang` (Standard Deutsch).
+Für Apps, die Markierungen wie „besucht“ oder „Wunschliste“ nur als Schlüssel speichern: liefert zu bis zu 1000 Schlüsseln (`region:ID`, `subregion:ID`, `city:ID`, `sight:ID`, mit Komma getrennt) Art, Name, Land, Region, Stadt, Koordinaten und – bei Sehenswürdigkeiten – die Kategorie. Unbekannte Schlüssel fehlen in der Antwort. Texte kommen in der Sprache aus `lang` (Standard Deutsch).
 
 ```bash
 curl -H "Authorization: Bearer {TOKEN}" \

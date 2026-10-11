@@ -8,6 +8,7 @@
     $status = $this->status();
     $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
     $regionOptions = $this->regionOptions->map(fn ($region) => ['value' => $region->id, 'label' => $region->getName('de'), 'code' => $region->code])->all();
+    $subregionOptions = $this->subregionOptions->map(fn ($subregion) => ['value' => $subregion->id, 'label' => $subregion->getName('de'), 'code' => $subregion->region?->getName('de')])->all();
     $cityOptions = $this->cityOptions->map(fn ($city) => ['value' => $city->id, 'label' => $city->getName('de')])->all();
     $country = $this->countryOptions->firstWhere('id', (int) $countryId);
     $title = $record ? $record->getName('de') : 'Neue Sehenswürdigkeit';
@@ -58,7 +59,7 @@
                         </flux:field>
                     </div>
 
-                    <div class="grid gap-5 sm:grid-cols-3">
+                    <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Land</flux:label>
                             <x-adminv2.search-select :options="$countryOptions" model="countryId" :selected="$countryId" placeholder="Land wählen …" search-placeholder="Land oder ISO-Code …" label="Land" live />
@@ -70,12 +71,17 @@
                             <flux:error name="regionId" />
                         </flux:field>
                         <flux:field>
+                            <flux:label>Teilgebiet</flux:label>
+                            <x-adminv2.search-select :options="$subregionOptions" model="subregionId" :selected="$subregionId" :placeholder="$countryId === '' ? 'Zuerst ein Land wählen' : ($subregionOptions === [] ? 'Keine Teilgebiete im Land' : 'Kein Teilgebiet')" search-placeholder="Insel oder Reisegebiet …" label="Teilgebiet" :disabled="$subregionOptions === []" clearable wire:key="sight-subregion-{{ $countryId }}-{{ $regionId }}" />
+                            <flux:error name="subregionId" />
+                        </flux:field>
+                        <flux:field>
                             <flux:label>Stadt</flux:label>
                             <x-adminv2.search-select :options="$cityOptions" model="cityId" :selected="$cityId" :placeholder="$countryId === '' ? 'Zuerst ein Land wählen' : 'Keine Stadt'" search-placeholder="Stadt …" label="Stadt" :disabled="$cityOptions === []" live clearable wire:key="sight-city-{{ $countryId }}-{{ $regionId }}" />
                             <flux:error name="cityId" />
                         </flux:field>
                     </div>
-                    <p class="-mt-2 text-sm text-zinc-500">Nationalparks und Naturgebiete hängen ohne Stadt direkt an der Region.</p>
+                    <p class="-mt-2 text-sm text-zinc-500">Nationalparks und Naturgebiete hängen ohne Stadt direkt an der Region. Das Teilgebiet (Insel, Reisegebiet) ist freiwillig.</p>
 
                     <div>
                         <flux:input wire:model="address" label="Adresse oder Lage" maxlength="500" placeholder="z. B. Piazza San Marco, 30124 Venedig" />

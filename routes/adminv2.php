@@ -37,6 +37,8 @@ use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
 use App\Livewire\AdminV2\MasterData\Countries\Index as CountryIndex;
 use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
 use App\Livewire\AdminV2\MasterData\Regions\Index as RegionIndex;
+use App\Livewire\AdminV2\MasterData\Subregions\Editor as SubregionEditor;
+use App\Livewire\AdminV2\MasterData\Subregions\Index as SubregionIndex;
 use App\Livewire\AdminV2\MasterData\Section as MasterDataSection;
 use App\Livewire\AdminV2\Rules\Show as RuleShow;
 use App\Livewire\AdminV2\System\Ai as SystemAi;
@@ -103,6 +105,10 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('regions', RegionIndex::class)->name('regions.index');
             Route::get('regions/create', RegionEditor::class)->name('regions.create');
             Route::get('regions/{region}', RegionEditor::class)->whereNumber('region')->name('regions.edit');
+
+            Route::get('subregions', SubregionIndex::class)->name('subregions.index');
+            Route::get('subregions/create', SubregionEditor::class)->name('subregions.create');
+            Route::get('subregions/{subregion}', SubregionEditor::class)->whereNumber('subregion')->name('subregions.edit');
 
             Route::get('cities', CityIndex::class)->name('cities.index');
             Route::get('cities/create', CityEditor::class)->name('cities.create');

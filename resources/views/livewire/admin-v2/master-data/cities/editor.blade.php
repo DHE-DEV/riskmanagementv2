@@ -2,6 +2,7 @@
     $record = $this->record;
     $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
     $regionOptions = $this->regionOptions->map(fn ($region) => ['value' => $region->id, 'label' => $region->getName('de'), 'code' => $region->code])->all();
+    $subregionOptions = $this->subregionOptions->map(fn ($subregion) => ['value' => $subregion->id, 'label' => $subregion->getName('de'), 'code' => $subregion->kindLabel()])->all();
     $country = $this->countryOptions->firstWhere('id', (int) $countryId);
     $otherCapitals = $this->otherCapitals;
     $airports = $this->airports;
@@ -64,6 +65,14 @@
                             <x-adminv2.ai-field-hint key="population" :review="$aiReview" />
                             <flux:error name="population" />
                         </flux:field>
+                        @if ($subregionOptions !== [] || $subregionId !== '')
+                            <flux:field>
+                                <flux:label>Teilgebiet</flux:label>
+                                <x-adminv2.search-select :options="$subregionOptions" model="subregionId" :selected="$subregionId" placeholder="Kein Teilgebiet" search-placeholder="Insel oder Reisegebiet …" label="Teilgebiet" clearable wire:key="subregion-select-{{ $regionId }}" />
+                                <flux:description>Insel oder Reisegebiet der Region – freiwillig.</flux:description>
+                                <flux:error name="subregionId" />
+                            </flux:field>
+                        @endif
                     </div>
 
                     <div class="flex flex-col gap-3">

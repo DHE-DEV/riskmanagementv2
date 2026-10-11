@@ -16,6 +16,7 @@ class City extends Model
         'name_translations',
         'country_id',
         'region_id',
+        'subregion_id',
         'population',
         'lat',
         'lng',
@@ -51,7 +52,15 @@ class City extends Model
     }
 
     /**
-     * Get the airports for this city.
+     * Teilgebiet der Stadt (optional), z. B. die Insel.
+     */
+    public function subregion(): BelongsTo
+    {
+        return $this->belongsTo(Subregion::class);
+    }
+
+    /**
+     * Sehenswuerdigkeiten der Stadt.
      */
     public function sights(): HasMany
     {

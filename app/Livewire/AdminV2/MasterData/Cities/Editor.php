@@ -9,6 +9,7 @@ use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Region;
+use App\Models\Subregion;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -33,6 +34,9 @@ class Editor extends Component
 
     public string $regionId = '';
 
+    /** Teilgebiet der Region (Insel, Reisegebiet) – optional */
+    public string $subregionId = '';
+
     public bool $isCapital = false;
 
     public bool $isRegionalCapital = false;
@@ -43,7 +47,11 @@ class Editor extends Component
     {
         if ($city === null) {
             // Vorbelegt, wenn die Seite aus einem Land oder einer Region heraus geoeffnet wird.
-            if ($region = Region::find((int) request()->query('region'))) {
+            if ($subregion = Subregion::find((int) request()->query('subregion'))) {
+                $this->subregionId = (string) $subregion->id;
+                $this->regionId = (string) $subregion->region_id;
+                $this->countryId = (string) $subregion->country_id;
+            } elseif ($region = Region::find((int) request()->query('region'))) {
                 $this->regionId = (string) $region->id;
                 $this->countryId = (string) $region->country_id;
             } elseif (Country::whereKey((int) request()->query('country'))->exists()) {
@@ -60,6 +68,7 @@ class Editor extends Component
         $this->nameEn = (string) ($record->name_translations['en'] ?? '');
         $this->countryId = (string) $record->country_id;
         $this->regionId = (string) $record->region_id;
+        $this->subregionId = (string) $record->subregion_id;
         $this->isCapital = (bool) $record->is_capital;
         $this->isRegionalCapital = (bool) $record->is_regional_capital;
         $this->population = (string) $record->population;
@@ -87,6 +96,25 @@ class Editor extends Component
         if ($this->regionId !== '' && ! $this->regionOptions->contains('id', (int) $this->regionId)) {
             $this->regionId = '';
         }
+        $this->updatedRegionId();
+    }
+
+    public function updatedRegionId(): void
+    {
+        unset($this->subregionOptions);
+
+        if ($this->subregionId !== '' && ! $this->subregionOptions->contains('id', (int) $this->subregionId)) {
+            $this->subregionId = '';
+        }
+    }
+
+    /**
+     * Die Teilgebiete der gewaehlten Region.
+     */
+    #[Computed]
+    public function subregionOptions(): Collection
+    {
+        return $this->regionId === '' ? collect() : Subregion::query()->where('region_id', (int) $this->regionId)->orderBy('sort_order')->orderBy('id')->get(['id', 'kind', 'name_translations']);
     }
 
     #[Computed]
@@ -153,12 +181,14 @@ class Editor extends Component
             'nameEn' => ['nullable', 'string', 'max:255'],
             'countryId' => ['required', Rule::in($this->countryOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
             'regionId' => ['nullable', Rule::in($this->regionOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
+            'subregionId' => ['nullable', Rule::in($this->subregionOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
             'population' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
         ] + $this->coordinateRules(), [
             'nameDe.required' => 'Bitte den deutschen Namen angeben.',
             'countryId.required' => 'Bitte ein Land wählen.',
             'countryId.in' => 'Bitte ein Land wählen.',
             'regionId.in' => 'Diese Region gehört nicht zum gewählten Land.',
+            'subregionId.in' => 'Dieses Teilgebiet gehört nicht zur gewählten Region.',
             'population.integer' => 'Die Bevölkerung muss eine ganze Zahl sein.',
         ] + $this->coordinateMessages());
 
@@ -169,6 +199,7 @@ class Editor extends Component
             'name_translations' => $this->translations($record->name_translations, $this->nameDe, $this->nameEn),
             'country_id' => (int) $this->countryId,
             'region_id' => $this->regionId === '' ? null : (int) $this->regionId,
+            'subregion_id' => $this->subregionId === '' ? null : (int) $this->subregionId,
             'is_capital' => $this->isCapital,
             'is_regional_capital' => $this->isRegionalCapital,
             'population' => $this->population === '' ? null : (int) $this->population,

@@ -36,7 +36,7 @@ class RegionInfoRun extends Model
     /** Abgeschlossene Laeufe der Liste, die ausgeblendet wurden */
     public const STATUS_DISMISSED = 'dismissed';
 
-    protected $fillable = ['kind', 'region_id', 'status', 'pending', 'total', 'done', 'failed', 'overwrite', 'result', 'error', 'started_by', 'finished_at'];
+    protected $fillable = ['kind', 'region_id', 'subregion_id', 'status', 'pending', 'total', 'done', 'failed', 'overwrite', 'result', 'error', 'started_by', 'finished_at'];
 
     protected $casts = [
         'pending' => 'array',
@@ -49,6 +49,12 @@ class RegionInfoRun extends Model
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class);
+    }
+
+    /** Gesetzt, wenn der Lauf einem Teilgebiet statt der Region gilt */
+    public function subregion(): BelongsTo
+    {
+        return $this->belongsTo(Subregion::class);
     }
 
     public function isRunning(): bool

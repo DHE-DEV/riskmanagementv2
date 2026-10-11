@@ -63,120 +63,17 @@
                 </div>
             </x-adminv2.card>
 
-            <x-adminv2.card heading="Regionsbeschreibung" description="Die Region allgemein – was sie ausmacht. Was fürs ganze Land gilt, steht am Land und wird hier nicht wiederholt." collapsible collapse-key="region-description">
-                <x-slot:actions>
-                    <flux:modal.trigger name="translate-description">
-                        <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
-                    </flux:modal.trigger>
-                    @if ($record)
-                        <flux:modal.trigger name="region-info-ai">
-                            <flux:button size="sm" variant="ghost" icon="sparkles" :disabled="(bool) $suggestRunId">Mit KI vorbefüllen</flux:button>
-                        </flux:modal.trigger>
-                    @endif
-                </x-slot:actions>
-                <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-5">
-                    @if ($suggestRunId)
-                        <div wire:poll.3s="checkSuggestion" class="flex items-center gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100">
-                            <flux:icon.loading class="size-4 shrink-0" />
-                            <span class="flex-1">Die KI schreibt die Regionsinfos – das dauert meist ein bis zwei Minuten. Die Texte erscheinen hier automatisch und werden erst mit „Speichern“ übernommen.</span>
-                            <flux:button size="xs" variant="ghost" wire:click="cancelSuggestion">Abbrechen</flux:button>
-                        </div>
-                    @endif
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="text-sm text-zinc-600 dark:text-zinc-400">Sprache der Texte</span>
-                        <div class="inline-flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
-                            @foreach ($locales as $locale)
-                                <button type="button" x-on:click="locale = @js($locale)" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="locale === @js($locale) ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-950 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'">
-                                    {{ CustomEvent::localeLabel($locale) }}
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-                    @foreach ($locales as $locale)
-                        <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="region-description-{{ $locale }}" class="flex flex-col gap-5">
-                            @foreach (RegionInfo::DESCRIPTION_TEXTS as $field => [$label, $kind, $hint, $rows])
-                                <flux:field>
-                                    <flux:label>{{ $label }} ({{ strtoupper($locale) }})</flux:label>
-                                    <flux:description>{{ $hint }}</flux:description>
-                                    @if ($kind === 'tags')
-                                        <flux:input wire:model="info.texts.{{ $field }}.{{ $locale }}" />
-                                    @else
-                                        <flux:textarea wire:model="info.texts.{{ $field }}.{{ $locale }}" rows="{{ $rows }}" />
-                                    @endif
-                                    <flux:error name="info.texts.{{ $field }}.{{ $locale }}" />
-                                </flux:field>
-                            @endforeach
-                        </div>
-                    @endforeach
-                </div>
-            </x-adminv2.card>
-
-            <x-adminv2.card heading="Reiseinfos der Region" description="Nur, was in dieser Region anders oder zusätzlich gilt. Leere Felder zeigen die Angaben des Landes." collapsible collapse-key="region-travel">
-                <x-slot:actions>
-                    <flux:modal.trigger name="translate-travel">
-                        <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
-                    </flux:modal.trigger>
-                </x-slot:actions>
-                <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-5">
-                    <flux:field>
-                        <flux:label>Beste Reisemonate</flux:label>
-                        <flux:description>Nur, wenn sie für die Region anders sind als fürs ganze Land.</flux:description>
-                        <div class="mt-1 flex flex-wrap gap-1.5">
-                            @foreach (RegionInfo::MONTHS as $month => $monthLabel)
-                                @php $on = in_array($month, $bestMonths, true); @endphp
-                                <button type="button" wire:click="toggleBestMonth({{ $month }})" aria-pressed="{{ $on ? 'true' : 'false' }}" class="w-12 rounded-md border px-2 py-1 text-sm font-medium transition {{ $on ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300' }}">{{ $monthLabel }}</button>
-                            @endforeach
-                        </div>
-                    </flux:field>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="text-sm text-zinc-600 dark:text-zinc-400">Sprache der Texte</span>
-                        <div class="inline-flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
-                            @foreach ($locales as $locale)
-                                <button type="button" x-on:click="locale = @js($locale)" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="locale === @js($locale) ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-950 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'">
-                                    {{ CustomEvent::localeLabel($locale) }}
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-                    @foreach ($locales as $locale)
-                        <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="region-travel-{{ $locale }}" class="flex flex-col gap-5">
-                            @foreach (RegionInfo::TRAVEL_TEXTS as $field => [$label, $kind, $hint, $rows])
-                                <flux:field>
-                                    <flux:label>{{ $label }} ({{ strtoupper($locale) }})</flux:label>
-                                    <flux:description>{{ $hint }}</flux:description>
-                                    @if ($kind === 'tags')
-                                        <flux:input wire:model="info.texts.{{ $field }}.{{ $locale }}" />
-                                    @else
-                                        <flux:textarea wire:model="info.texts.{{ $field }}.{{ $locale }}" rows="{{ $rows }}" />
-                                    @endif
-                                    <flux:error name="info.texts.{{ $field }}.{{ $locale }}" />
-                                </flux:field>
-                            @endforeach
-                        </div>
-                    @endforeach
-                </div>
-            </x-adminv2.card>
-
-            <x-adminv2.card heading="Fakten zur Region" description="Zahlen der Region. Die Zeitzone nur, wenn sie von der des Landes abweicht." collapsible collapse-key="region-facts">
-                <div class="grid gap-5 sm:grid-cols-2">
-                    <flux:field>
-                        <flux:label>Einwohner</flux:label>
-                        <flux:input wire:model="info.population" inputmode="numeric" placeholder="z. B. 4851851" />
-                        <flux:error name="info.population" />
-                    </flux:field>
-                    <flux:field>
-                        <flux:label>Fläche (km²)</flux:label>
-                        <flux:input wire:model="info.area_km2" inputmode="numeric" placeholder="z. B. 18345" />
-                        <flux:error name="info.area_km2" />
-                    </flux:field>
-                    <flux:field class="min-w-0 sm:col-span-2">
-                        <flux:label>Zeitzone</flux:label>
-                        <x-adminv2.search-select :options="$timezoneOptions" model="info.timezone" :selected="(string) ($info['timezone'] ?? '')" :placeholder="$countryTimezone ? 'Wie das Land ('.$countryTimezone.')' : 'Wie das Land'" search-placeholder="Zeitzone suchen …" label="Zeitzone" clearable />
-                        <flux:description>Leer = wie das Land{{ $countryTimezone ? ' ('.$countryTimezone.')' : '' }}.</flux:description>
-                        <flux:error name="info.timezone" />
-                    </flux:field>
-                </div>
-            </x-adminv2.card>
+            @include('livewire.admin-v2.master-data.regions.partials.info-cards', ['labels' => [
+                'description' => 'Regionsbeschreibung',
+                'description_hint' => 'Die Region allgemein – was sie ausmacht. Was fürs ganze Land gilt, steht am Land und wird hier nicht wiederholt.',
+                'travel' => 'Reiseinfos der Region',
+                'travel_hint' => 'Nur, was in dieser Region anders oder zusätzlich gilt. Leere Felder zeigen die Angaben des Landes.',
+                'months_hint' => 'Nur, wenn sie für die Region anders sind als fürs ganze Land.',
+                'facts' => 'Fakten zur Region',
+                'facts_hint' => 'Zahlen der Region. Die Zeitzone nur, wenn sie von der des Landes abweicht.',
+                'ai_what' => 'die Regionsinfos',
+                'key' => 'region',
+            ]])
 
             <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt der Region für die Darstellung auf der Karte.">
                 @if ($countryId !== '')
@@ -221,6 +118,24 @@
                         </a>
                     @endif
                 </x-adminv2.master-data.record-meta>
+
+                @php $subregions = $this->subregions; @endphp
+                <x-adminv2.master-data.related-list
+                    heading="Teilgebiete"
+                    :count="$subregions->count()"
+                    :shown="$subregions->count()"
+                    :all-url="route('adminv2.master-data.subregions.index', ['country' => [$record->country_id], 'region' => $record->id])"
+                    :create-url="route('adminv2.master-data.subregions.create', ['region' => $record->id])"
+                    create-label="Neues Teilgebiet"
+                    empty-text="Keine Teilgebiete – Inseln oder Reisegebiete lassen sich hier anlegen, wo es sich lohnt."
+                >
+                    @foreach ($subregions as $subregion)
+                        <li class="flex items-center justify-between gap-3 py-1.5">
+                            <a href="{{ route('adminv2.master-data.subregions.edit', $subregion->id) }}" class="truncate text-zinc-900 hover:underline dark:text-white">{{ $subregion->getName('de') }}</a>
+                            <span class="shrink-0 text-xs text-zinc-400">{{ $subregion->kindLabel() }} · {{ $subregion->sights_count }}</span>
+                        </li>
+                    @endforeach
+                </x-adminv2.master-data.related-list>
 
                 <x-adminv2.master-data.related-list
                     heading="Städte"

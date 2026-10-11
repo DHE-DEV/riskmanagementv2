@@ -74,6 +74,9 @@ Route::prefix('v1')->middleware([
     Route::get('/countries/{code}/regions', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'regions'])->name('sub.v1.countries.regions');
     Route::get('/countries/{code}/cities', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'cities'])->name('sub.v1.countries.cities');
     Route::get('/countries/{code}/sights', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'sights'])->name('sub.v1.countries.sights');
+    Route::get('/countries/{code}/subregions', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'subregions'])->name('sub.v1.countries.subregions');
+    Route::get('/regions/{id}', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'region'])->whereNumber('id')->name('sub.v1.regions.show');
+    Route::get('/subregions/{id}', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'subregion'])->whereNumber('id')->name('sub.v1.subregions.show');
     Route::get('/sights/{id}', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'sight'])->whereNumber('id')->name('sub.v1.sights.show');
     Route::get('/places', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'places'])->name('sub.v1.places');
     Route::get('/countries/{code}/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'country'])->name('sub.v1.countries.weather');

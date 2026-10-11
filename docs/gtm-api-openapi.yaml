@@ -438,7 +438,7 @@ paths:
   /countries/{code}/regions:
     get:
       summary: Regionen eines Landes
-      description: Alle Regionen eines Landes, alphabetisch, mit Anzahl der zugeordneten Städte.
+      description: Alle Regionen eines Landes, alphabetisch, mit Anzahl der zugeordneten Städte und Teilgebiete.
       tags: [Basisdaten]
       parameters:
         - name: code
@@ -465,6 +465,106 @@ paths:
                   meta: {type: object, properties: {total: {type: integer}}}
         "404": {description: Land nicht gefunden}
 
+  /regions/{id}:
+    get:
+      summary: Einzelne Region mit Infos und Teilgebieten
+      description: Eine Region mit Land, Regionsinfos (nur was für die Region eigen ist) und ihren Teilgebieten (Inseln, Reisegebiete).
+      tags: [Basisdaten]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: integer}
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Region
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    allOf:
+                      - {$ref: '#/components/schemas/CountryRegion'}
+                      - type: object
+                        properties:
+                          country: {$ref: '#/components/schemas/PlaceCountry'}
+                          info: {$ref: '#/components/schemas/RegionInfo'}
+                          subregions:
+                            type: array
+                            items: {$ref: '#/components/schemas/Subregion'}
+        "404": {description: Region nicht gefunden}
+
+  /countries/{code}/subregions:
+    get:
+      summary: Teilgebiete eines Landes
+      description: Inseln, Inselgruppen und Reisegebiete der Regionen eines Landes, nach Region und gepflegter Reihenfolge.
+      tags: [Basisdaten]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+          description: ISO-3166-1-Code (2 oder 3 Buchstaben)
+        - name: region
+          in: query
+          schema: {type: integer}
+          description: Nur Teilgebiete dieser Region
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Teilgebiete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/Subregion'}
+                  meta: {type: object, properties: {total: {type: integer}}}
+        "404": {description: Land nicht gefunden}
+
+  /subregions/{id}:
+    get:
+      summary: Einzelnes Teilgebiet mit Infos
+      tags: [Basisdaten]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: integer}
+        - name: lang
+          in: query
+          schema: {type: string, enum: [de, en, nl]}
+          description: Nur diese Sprache statt aller Sprachen
+      responses:
+        "200":
+          description: Teilgebiet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data:
+                    allOf:
+                      - {$ref: '#/components/schemas/Subregion'}
+                      - type: object
+                        properties:
+                          country: {$ref: '#/components/schemas/PlaceCountry'}
+                          info: {$ref: '#/components/schemas/RegionInfo'}
+        "404": {description: Teilgebiet nicht gefunden}
+
   /countries/{code}/cities:
     get:
       summary: Städte eines Landes
@@ -480,6 +580,10 @@ paths:
           in: query
           schema: {type: integer}
           description: Nur Städte dieser Region (ID aus /countries/{code}/regions)
+        - name: subregion
+          in: query
+          schema: {type: integer}
+          description: Nur Städte dieses Teilgebiets (Insel, Reisegebiet)
         - name: lang
           in: query
           schema: {type: string, enum: [de, en, nl]}
@@ -514,6 +618,10 @@ paths:
           in: query
           schema: {type: integer}
           description: Nur Sehenswürdigkeiten dieser Region
+        - name: subregion
+          in: query
+          schema: {type: integer}
+          description: Nur Sehenswürdigkeiten dieses Teilgebiets (Insel, Reisegebiet)
         - name: city
           in: query
           schema: {type: integer}
@@ -581,13 +689,13 @@ paths:
   /places:
     get:
       summary: Gemerkte Orte auflösen
-      description: Name, Land, Lage und Kategorie zu Schlüsseln region:ID, city:ID, sight:ID (bis zu 1000). Unbekannte Schlüssel fehlen.
+      description: Name, Land, Lage und Kategorie zu Schlüsseln region:ID, subregion:ID, city:ID, sight:ID (bis zu 1000). Unbekannte Schlüssel fehlen.
       tags: [Basisdaten]
       parameters:
         - name: keys
           in: query
           required: true
-          schema: {type: string, example: "region:56,city:1388,sight:3"}
+          schema: {type: string, example: "region:56,subregion:1,city:1388,sight:3"}
         - name: lang
           in: query
           schema: {type: string, enum: [de, en, nl]}
@@ -606,7 +714,7 @@ paths:
                       type: object
                       properties:
                         key: {type: string}
-                        kind: {type: string, enum: [region, city, sight]}
+                        kind: {type: string, enum: [region, subregion, city, sight]}
                         id: {type: integer}
                         name: {type: string}
                         country: {type: object, nullable: true, properties: {code: {type: string}, name: {type: string}}}
@@ -1013,6 +1121,54 @@ components:
           nullable: true
           properties: {lat: {type: number}, lng: {type: number}}
         cities_count: {type: integer, example: 8}
+        subregions_count: {type: integer, example: 0, description: "Anzahl der Teilgebiete (Inseln, Reisegebiete)"}
+
+    PlaceCountry:
+      type: object
+      properties:
+        code: {type: string, example: ES}
+        name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+
+    Subregion:
+      type: object
+      description: Teilgebiet einer Region – Insel, Inselgruppe oder Reisegebiet
+      properties:
+        id: {type: integer, example: 1}
+        region:
+          type: object
+          properties:
+            id: {type: integer}
+            code: {type: string, nullable: true}
+            name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        kind: {type: string, enum: [island, archipelago, area]}
+        kind_name: {description: "Art als Text je Sprache oder – mit ?lang – ein String", example: Insel}
+        group_name: {description: "Überschrift für Listen je Sprache oder – mit ?lang – ein String", example: Inseln}
+        name: {description: "Text je Sprache oder – mit ?lang – ein String", example: {de: Teneriffa, en: Tenerife}}
+        description: {type: string, nullable: true, description: Kurzbeschreibung}
+        coordinates:
+          type: object
+          nullable: true
+          properties: {lat: {type: number}, lng: {type: number}}
+        cities_count: {type: integer}
+        sights_count: {type: integer}
+
+    RegionInfo:
+      type: object
+      description: Infos einer Region bzw. eines Teilgebiets. Texte je Sprache oder – mit ?lang – als String; fehlende Angaben sind null.
+      properties:
+        short_description: {nullable: true}
+        description: {nullable: true, description: Absätze durch eine Leerzeile getrennt}
+        known_for: {nullable: true, description: Liste von Stichworten}
+        best_time: {nullable: true}
+        climate: {nullable: true}
+        getting_there: {nullable: true}
+        getting_around: {nullable: true}
+        cuisine: {nullable: true}
+        good_to_know: {nullable: true}
+        best_months: {type: array, nullable: true, items: {type: integer, minimum: 1, maximum: 12}}
+        population: {type: integer, nullable: true}
+        area_km2: {type: integer, nullable: true}
+        timezone: {type: string, nullable: true, description: Nur wenn sie von der des Landes abweicht}
 
     CountryCity:
       type: object
@@ -1025,6 +1181,12 @@ components:
           properties:
             id: {type: integer}
             code: {type: string, nullable: true}
+            name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        subregion:
+          type: object
+          nullable: true
+          properties:
+            id: {type: integer}
             name: {description: "Text je Sprache oder – mit ?lang – ein String"}
         population: {type: integer, nullable: true}
         coordinates:
@@ -1050,6 +1212,13 @@ components:
             id: {type: integer}
             code: {type: string, nullable: true}
             name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+        subregion:
+          type: object
+          nullable: true
+          properties:
+            id: {type: integer}
+            name: {description: "Text je Sprache oder – mit ?lang – ein String"}
+            kind: {type: string, enum: [island, archipelago, area]}
         city:
           type: object
           nullable: true

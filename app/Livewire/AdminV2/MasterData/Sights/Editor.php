@@ -11,6 +11,7 @@ use App\Models\Country;
 use App\Models\CustomEvent;
 use App\Models\Region;
 use App\Models\Sight;
+use App\Models\Subregion;
 use App\Services\DeepLTranslationService;
 use App\Support\AdminV2\MasterData;
 use App\Support\AdminV2\SightInfo;
@@ -36,6 +37,9 @@ class Editor extends Component
     public string $countryId = '';
 
     public string $regionId = '';
+
+    /** Teilgebiet (Insel, Reisegebiet) – optional */
+    public string $subregionId = '';
 
     public string $cityId = '';
 
@@ -65,9 +69,14 @@ class Editor extends Component
 
         if ($sight === null) {
             // Vorbelegt, wenn die Seite aus einer Stadt, Region oder einem Land heraus geoeffnet wird.
-            if ($city = City::find((int) request()->query('city'))) {
+            if ($subregion = Subregion::find((int) request()->query('subregion'))) {
+                $this->subregionId = (string) $subregion->id;
+                $this->regionId = (string) $subregion->region_id;
+                $this->countryId = (string) $subregion->country_id;
+            } elseif ($city = City::find((int) request()->query('city'))) {
                 $this->cityId = (string) $city->id;
                 $this->regionId = (string) $city->region_id;
+                $this->subregionId = (string) $city->subregion_id;
                 $this->countryId = (string) $city->country_id;
             } elseif ($region = Region::find((int) request()->query('region'))) {
                 $this->regionId = (string) $region->id;
@@ -87,6 +96,7 @@ class Editor extends Component
         }
         $this->countryId = (string) $record->country_id;
         $this->regionId = (string) $record->region_id;
+        $this->subregionId = (string) $record->subregion_id;
         $this->cityId = (string) $record->city_id;
         $this->category = (string) $record->category;
         $this->isHighlight = (bool) $record->is_highlight;
@@ -115,10 +125,13 @@ class Editor extends Component
 
     public function updatedCountryId(): void
     {
-        unset($this->regionOptions, $this->cityOptions);
+        unset($this->regionOptions, $this->subregionOptions, $this->cityOptions);
 
         if ($this->regionId !== '' && ! $this->regionOptions->contains('id', (int) $this->regionId)) {
             $this->regionId = '';
+        }
+        if ($this->subregionId !== '' && ! $this->subregionOptions->contains('id', (int) $this->subregionId)) {
+            $this->subregionId = '';
         }
         if ($this->cityId !== '' && ! $this->cityOptions->contains('id', (int) $this->cityId)) {
             $this->cityId = '';
@@ -141,6 +154,26 @@ class Editor extends Component
         if ($city && $city->region_id) {
             $this->regionId = (string) $city->region_id;
         }
+        // Das Teilgebiet der Stadt, solange keines gewaehlt ist.
+        if ($city && $city->subregion_id && $this->subregionId === '') {
+            $this->subregionId = (string) $city->subregion_id;
+        }
+    }
+
+    /**
+     * Teilgebiete des Landes, die der gewaehlten Region zuerst. Auch eines einer
+     * Nachbarregion ist waehlbar – der Gardasee etwa liegt in drei Regionen.
+     */
+    #[Computed]
+    public function subregionOptions(): Collection
+    {
+        if ($this->countryId === '') {
+            return collect();
+        }
+
+        return Subregion::query()->where('country_id', (int) $this->countryId)->with('region')->get()
+            ->sortBy(fn (Subregion $subregion) => [(string) $subregion->region_id === $this->regionId ? 0 : 1, $subregion->region?->getName('de'), $subregion->sort_order])
+            ->values();
     }
 
     #[Computed]
@@ -172,7 +205,7 @@ class Editor extends Component
             ->where('country_id', (int) $this->countryId)
             ->when($this->regionId !== '', fn ($query) => $query->where('region_id', (int) $this->regionId))
             ->orderByRaw(MasterData::nameSql('cities'))
-            ->get(['id', 'region_id', 'name_translations']);
+            ->get(['id', 'region_id', 'subregion_id', 'name_translations']);
     }
 
     public function status(): string
@@ -193,7 +226,7 @@ class Editor extends Component
         $this->normalizeCoordinates();
         $this->websiteUrl = trim($this->websiteUrl);
         $this->ticketUrl = trim($this->ticketUrl);
-        unset($this->regionOptions, $this->cityOptions);
+        unset($this->regionOptions, $this->subregionOptions, $this->cityOptions);
 
         $source = CustomEvent::sourceLocale();
         $rules = [
@@ -201,6 +234,7 @@ class Editor extends Component
             'names.*' => ['nullable', 'string', 'max:255'],
             'countryId' => ['required', Rule::in($this->countryOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
             'regionId' => ['nullable', Rule::in($this->regionOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
+            'subregionId' => ['nullable', Rule::in($this->subregionOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
             'cityId' => ['nullable', Rule::in($this->cityOptions->pluck('id')->map(fn ($id) => (string) $id)->all())],
             'category' => ['required', Rule::in(array_keys(SightInfo::CATEGORIES))],
             'address' => ['nullable', 'string', 'max:500'],
@@ -219,6 +253,7 @@ class Editor extends Component
             'countryId.required' => 'Bitte ein Land wählen.',
             'countryId.in' => 'Bitte ein Land wählen.',
             'regionId.in' => 'Diese Region gehört nicht zum gewählten Land.',
+            'subregionId.in' => 'Dieses Teilgebiet gehört nicht zum gewählten Land.',
             'cityId.in' => 'Diese Stadt gehört nicht zum gewählten Land bzw. zur Region.',
             'websiteUrl.url' => 'Bitte eine vollständige Adresse mit https:// angeben.',
             'ticketUrl.url' => 'Bitte eine vollständige Adresse mit https:// angeben.',
@@ -233,6 +268,7 @@ class Editor extends Component
             'name_translations' => array_filter(array_map(fn ($name) => trim((string) $name), $this->names), fn ($name) => $name !== ''),
             'country_id' => (int) $this->countryId,
             'region_id' => $this->regionId === '' ? null : (int) $this->regionId,
+            'subregion_id' => $this->subregionId === '' ? null : (int) $this->subregionId,
             'city_id' => $this->cityId === '' ? null : (int) $this->cityId,
             'category' => $this->category,
             'is_highlight' => $this->isHighlight,

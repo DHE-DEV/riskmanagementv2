@@ -11,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * KI-Vorschlag fuer eine Region im Hintergrund holen (dauert oft laenger,
+ * KI-Vorschlag fuer eine Region oder ein Teilgebiet im Hintergrund holen (dauert oft laenger,
  * als eine Web-Anfrage darf). Das Ergebnis liegt am Lauf; der Editor
  * uebernimmt es ins Formular, gespeichert wird erst mit "Speichern".
  */
@@ -27,18 +27,20 @@ class SuggestRegionInfoJob implements ShouldQueue
 
     public function handle(RegionInfoGenerator $generator): void
     {
-        $run = RegionInfoRun::query()->with('region.country')->find($this->runId);
+        $run = RegionInfoRun::query()->with(['region.country', 'subregion.region', 'subregion.country'])->find($this->runId);
 
         if (! $run || ! $run->isRunning()) {
             return;
         }
 
         try {
-            if (! $run->region) {
-                throw new \RuntimeException('Die Region gibt es nicht mehr.');
+            $target = $run->subregion_id ? $run->subregion : $run->region;
+
+            if (! $target) {
+                throw new \RuntimeException($run->subregion_id ? 'Das Teilgebiet gibt es nicht mehr.' : 'Die Region gibt es nicht mehr.');
             }
 
-            $run->update(['status' => RegionInfoRun::STATUS_DONE, 'result' => $generator->suggest($run->region), 'finished_at' => now()]);
+            $run->update(['status' => RegionInfoRun::STATUS_DONE, 'result' => $generator->suggest($target), 'finished_at' => now()]);
         } catch (\Throwable $e) {
             $run->update([
                 'status' => RegionInfoRun::STATUS_FAILED,

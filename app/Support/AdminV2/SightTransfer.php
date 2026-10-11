@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\Country;
 use App\Models\Region;
 use App\Models\Sight;
+use App\Models\Subregion;
 
 /**
  * Sehenswuerdigkeiten als JSON-Datei ausgeben und einlesen – so lassen sie
@@ -13,29 +14,31 @@ use App\Models\Sight;
  * Migration auf jedem System anlegen, ohne dort die KI zu befragen.
  *
  * Aufbau: {"IT": {"Ligurien": [{name_translations, category, is_highlight, sort_order,
- *          city, lat, lng, address, website_url, ticket_url, info}, …]}, …}
- * Land ueber den ISO-Code, Region und Stadt ueber den deutschen Namen.
+ *          city, subregion, lat, lng, address, website_url, ticket_url, info}, …]}, …}
+ * Land ueber den ISO-Code, Region, Teilgebiet und Stadt ueber den deutschen Namen.
  */
 class SightTransfer
 {
     /**
      * @param  array<int, string>  $isoCodes
+     * @param  \Closure|null  $filter  nur Eintraege, fuer die er true liefert
      * @return array<string, array<string, array<int, array<string, mixed>>>>
      */
-    public static function export(array $isoCodes): array
+    public static function export(array $isoCodes, ?\Closure $filter = null): array
     {
         $data = [];
 
         foreach (Country::query()->whereIn('iso_code', array_map('strtoupper', $isoCodes))->orderBy('iso_code')->get() as $country) {
-            $sights = Sight::query()->where('country_id', $country->id)->with(['region', 'city'])->orderBy('region_id')->orderBy('sort_order')->orderBy('id')->get();
+            $sights = Sight::query()->where('country_id', $country->id)->with(['region', 'subregion', 'city'])->orderBy('region_id')->orderBy('sort_order')->orderBy('id')->get();
 
-            foreach ($sights as $sight) {
+            foreach ($filter ? $sights->filter($filter) : $sights as $sight) {
                 $data[$country->iso_code][$sight->region?->getName('de') ?? ''][] = [
                     'name_translations' => $sight->name_translations,
                     'category' => $sight->category,
                     'is_highlight' => (bool) $sight->is_highlight,
                     'sort_order' => (int) $sight->sort_order,
                     'city' => $sight->city?->getName('de'),
+                    'subregion' => $sight->subregion?->getName('de'),
                     'lat' => $sight->lat !== null ? (float) $sight->lat : null,
                     'lng' => $sight->lng !== null ? (float) $sight->lng : null,
                     'address' => $sight->address,
@@ -74,6 +77,7 @@ class SightTransfer
 
             $regionByName = Region::query()->where('country_id', $country->id)->get()->keyBy(fn (Region $region) => SightInfo::normalizeName($region->getName('de')));
             $cities = City::query()->where('country_id', $country->id)->get();
+            $subregions = Subregion::query()->where('country_id', $country->id)->get();
             $existing = Sight::withTrashed()->where('country_id', $country->id)->get()
                 ->flatMap(fn (Sight $sight) => array_map(fn ($name) => SightInfo::normalizeName((string) $name), array_values((array) $sight->name_translations)))
                 ->filter()->flip();
@@ -101,10 +105,14 @@ class SightTransfer
                     $city = $cityName === '' ? null : ($cities->first(fn (City $city) => $city->region_id === $region?->id && SightInfo::normalizeName($city->getName('de')) === $cityName)
                         ?? $cities->first(fn (City $city) => SightInfo::normalizeName($city->getName('de')) === $cityName));
 
+                    $subregionName = SightInfo::normalizeName((string) ($item['subregion'] ?? ''));
+                    $subregion = $subregionName === '' ? null : $subregions->first(fn (Subregion $subregion) => SightInfo::normalizeName($subregion->getName('de')) === $subregionName);
+
                     Sight::create([
                         'name_translations' => $item['name_translations'],
                         'country_id' => $country->id,
                         'region_id' => $region?->id,
+                        'subregion_id' => $subregion?->id,
                         'city_id' => $city?->id,
                         'category' => isset(SightInfo::CATEGORIES[$item['category'] ?? '']) ? $item['category'] : 'other',
                         'is_highlight' => (bool) ($item['is_highlight'] ?? false),

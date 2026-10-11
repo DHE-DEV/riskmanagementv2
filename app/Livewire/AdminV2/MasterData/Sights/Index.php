@@ -7,6 +7,7 @@ use App\Livewire\AdminV2\Concerns\ManagesMasterDataList;
 use App\Models\Country;
 use App\Models\Region;
 use App\Models\Sight;
+use App\Models\Subregion;
 use App\Support\AdminV2\MasterData;
 use App\Support\AdminV2\SightInfo;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -41,6 +42,10 @@ class Index extends Component
     #[Url(except: '')]
     public string $region = '';
 
+    /** Teilgebiet der gewaehlten Region; 'none' = ohne Teilgebiet */
+    #[Url(except: '')]
+    public string $subregion = '';
+
     #[Url(except: '')]
     public string $category = '';
 
@@ -68,12 +73,27 @@ class Index extends Component
 
     protected function filterProperties(): array
     {
-        return ['countryIds', 'region', 'category', 'highlight', 'status', 'coordinates'];
+        return ['countryIds', 'region', 'subregion', 'category', 'highlight', 'status', 'coordinates'];
     }
 
     public function updatedCountryIds(): void
     {
         $this->region = '';
+        $this->subregion = '';
+    }
+
+    public function updatedRegion(): void
+    {
+        $this->subregion = '';
+    }
+
+    /**
+     * Teilgebiete der gewaehlten Region (Inseln, Reisegebiete).
+     */
+    #[Computed]
+    public function subregionOptions(): Collection
+    {
+        return ctype_digit($this->region) ? Subregion::query()->where('region_id', (int) $this->region)->orderBy('sort_order')->get(['id', 'name_translations']) : collect();
     }
 
     #[Computed]
@@ -110,6 +130,7 @@ class Index extends Component
         $query = $this->listQuery(['address'])->with([
             'country' => fn ($query) => $query->withTrashed(),
             'region' => fn ($query) => $query->withTrashed(),
+            'subregion' => fn ($query) => $query->withTrashed(),
             'city' => fn ($query) => $query->withTrashed(),
         ]);
 
@@ -121,6 +142,12 @@ class Index extends Component
             $query->whereNull('region_id');
         } elseif ($this->region !== '' && $this->regionOptions->contains('id', (int) $this->region)) {
             $query->where('region_id', (int) $this->region);
+        }
+
+        if ($this->subregion === 'none') {
+            $query->whereNull('subregion_id');
+        } elseif ($this->subregion !== '' && $this->subregionOptions->contains('id', (int) $this->subregion)) {
+            $query->where('subregion_id', (int) $this->subregion);
         }
 
         if (isset(SightInfo::CATEGORIES[$this->category])) {

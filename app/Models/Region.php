@@ -42,6 +42,14 @@ class Region extends Model
     }
 
     /**
+     * Teilgebiete der Region (Inseln, Inselgruppen, Reisegebiete), in ihrer Reihenfolge.
+     */
+    public function subregions(): HasMany
+    {
+        return $this->hasMany(Subregion::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
      * Get the country for this region.
      */
     public function country(): BelongsTo

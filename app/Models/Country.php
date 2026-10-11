@@ -181,6 +181,14 @@ class Country extends Model
     }
 
     /**
+     * Teilgebiete der Regionen (Inseln, Inselgruppen, Reisegebiete).
+     */
+    public function subregions(): HasMany
+    {
+        return $this->hasMany(Subregion::class);
+    }
+
+    /**
      * Get the cities for this country.
      */
     public function cities(): HasMany

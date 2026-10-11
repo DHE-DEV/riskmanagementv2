@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\CustomEvent;
 use App\Models\Region;
 use App\Models\Sight;
+use App\Models\Subregion;
 use App\Support\AdminV2\SightInfo;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -16,6 +17,8 @@ use Throwable;
  * Sehenswuerdigkeiten einer Region per KI vorschlagen und als ungepruefte
  * KI-Entwuerfe anlegen. Die Koordinaten der KI werden mit OpenStreetMap
  * (Nominatim) abgeglichen; Dubletten im Land werden uebersprungen.
+ * Statt einer Region geht auch ein Teilgebiet (Insel, Reisegebiet) – die
+ * Eintraege haengen dann an der Region und am Teilgebiet.
  */
 class SightGenerator
 {
@@ -38,7 +41,7 @@ class SightGenerator
      * Mehrere Regionen fuellen. Faellt die gemeinsame Anfrage aus, wird
      * jede Region einzeln versucht.
      *
-     * @param  Collection<int, Region>  $regions
+     * @param  Collection<int, Region|Subregion>  $regions
      * @return array{done: array<int, int>, failed: array<int, string>, created: int, usage: ?array}
      */
     public function fill(Collection $regions): array
@@ -50,7 +53,7 @@ class SightGenerator
         $options = ['timeout' => 280, 'max_tokens' => 9000];
 
         try {
-            $answers = $this->chat()->sendPrompts($regions->mapWithKeys(fn (Region $region) => ['r'.$region->id => $this->prompt($region)])->all(), $options);
+            $answers = $this->chat()->sendPrompts($regions->mapWithKeys(fn (Region|Subregion $region) => ['r'.$region->id => $this->prompt($region)])->all(), $options);
         } catch (Throwable) {
             foreach ($regions as $region) {
                 try {
@@ -83,8 +86,10 @@ class SightGenerator
      * @param  array<int, array<string, mixed>>  $suggestions
      * @return int angelegte Eintraege
      */
-    public function store(Region $region, array $suggestions): int
+    public function store(Region|Subregion $place, array $suggestions): int
     {
+        $subregion = $place instanceof Subregion ? $place : null;
+        $region = $subregion?->region ?? $place;
         $region->loadMissing('country');
         $existing = Sight::withTrashed()->where('country_id', $region->country_id)->get()
             ->flatMap(fn (Sight $sight) => array_map(fn ($name) => SightInfo::normalizeName((string) $name), array_values((array) $sight->name_translations)))
@@ -102,12 +107,13 @@ class SightGenerator
             }
 
             $city = $this->matchCity($cities, (string) ($suggestion['city'] ?? ''));
-            [$lat, $lng, $geocoded] = $this->locate($suggestion, $region, $city);
+            [$lat, $lng, $geocoded] = $this->locate($suggestion, $region, $city, $subregion);
 
             Sight::create([
                 'name_translations' => $suggestion['name'],
                 'country_id' => $region->country_id,
                 'region_id' => $region->id,
+                'subregion_id' => $subregion?->id ?? $city?->subregion_id,
                 'city_id' => $city?->id,
                 'category' => $suggestion['category'],
                 'is_highlight' => $suggestion['is_highlight'],
@@ -132,8 +138,12 @@ class SightGenerator
         return $created;
     }
 
-    public function prompt(Region $region): string
+    public function prompt(Region|Subregion $region): string
     {
+        if ($region instanceof Subregion) {
+            return $this->subregionPrompt($region);
+        }
+
         $region->loadMissing('country');
         $country = $region->country;
         $source = CustomEvent::sourceLocale();
@@ -152,6 +162,37 @@ class SightGenerator
             'Bereits erfasst (nicht noch einmal vorschlagen)' => $known,
         ]))->map(fn ($value, $label) => "{$label}: {$value}")->implode("\n");
 
+        return $this->promptText($context, 'einer Region', 'Wähle je nach touristischer Bedeutung der Region 8 bis 15 Einträge (kleine, wenig besuchte Regionen 3 bis 6)', 'diese gehören zur Region, auch ohne Stadt');
+    }
+
+    /**
+     * Prompt fuer ein Teilgebiet: Eintraege, die auf der Insel bzw. im Reisegebiet liegen.
+     */
+    public function subregionPrompt(Subregion $subregion): string
+    {
+        $subregion->loadMissing(['region.country']);
+        $region = $subregion->region;
+        $source = CustomEvent::sourceLocale();
+        $kind = $subregion->kindLabel();
+
+        $cities = $region->cities()->orderByDesc('population')->limit(25)->get()->map(fn (City $city) => $city->getName('de'))->implode(', ');
+        $known = Sight::where('region_id', $region->id)->get()->map(fn (Sight $sight) => $sight->getName('de'))->implode(', ');
+
+        $context = collect(array_filter([
+            $kind => $subregion->getName('de').(($en = $subregion->name_translations['en'] ?? '') && $en !== $subregion->getName('de') ? " (englisch: {$en})" : ''),
+            'Region' => $region->getName('de'),
+            'Land' => $region->country?->getName('de'),
+            'Kurzbeschreibung' => trim((string) ($subregion->info['texts']['short_description'][$source] ?? '')),
+            'Städte der Region in unserer Datenbank' => $cities,
+            'In der Region bereits erfasst (nicht noch einmal vorschlagen)' => $known,
+        ]))->map(fn ($value, $label) => "{$label}: {$value}")->implode("\n");
+
+        return $this->promptText($context, "eines Teilgebiets ({$kind}) einer Region", "Alle Einträge müssen tatsächlich in diesem Teilgebiet liegen ({$subregion->getName('de')}). Wähle je nach touristischer Bedeutung 4 bis 8 Einträge (kleine, wenig besuchte Inseln oder Gebiete 3 bis 5)", 'diese gehören zum Teilgebiet, auch ohne Stadt', 'Markiere höchstens einen Eintrag als is_highlight – nur, wenn er weit über die Region hinaus bekannt ist.');
+    }
+
+    protected function promptText(string $context, string $what, string $amount, string $natureHint, string $highlights = 'Markiere die 3 bis 5 bekanntesten als is_highlight.'): string
+    {
+        $locales = SightInfo::locales();
         $categories = collect(SightInfo::CATEGORIES)->map(fn ($category, $key) => "{$key} ({$category[0]})")->implode(', ');
         $texts = collect(SightInfo::TEXTS)->map(fn ($text, $key) => "{$key}: {$text[0]} – {$text[1]}")->implode("\n");
         $languages = implode(', ', array_map(fn ($locale) => $locale.' = '.CustomEvent::localeLabel($locale, false), $locales));
@@ -169,11 +210,11 @@ class SightGenerator
         ]]], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         return <<<PROMPT
-Du stellst für eine Reise-App die wichtigsten Sehenswürdigkeiten und Unternehmungen einer Region zusammen. Reisende können sie auf ihre Wunschliste setzen und als besucht markieren.
+Du stellst für eine Reise-App die wichtigsten Sehenswürdigkeiten und Unternehmungen {$what} zusammen. Reisende können sie auf ihre Wunschliste setzen und als besucht markieren.
 
 {$context}
 
-Wähle je nach touristischer Bedeutung der Region 8 bis 15 Einträge (kleine, wenig besuchte Regionen 3 bis 6): bekannte Bauwerke, Altstädte, Museen, Naturlandschaften, Nationalparks und Schutzgebiete (diese gehören zur Region, auch ohne Stadt), Strände, Aussichtspunkte und typische Erlebnisse. Nur reale, eindeutig benannte Orte – nichts erfinden. Markiere die 3 bis 5 bekanntesten als is_highlight.
+{$amount}: bekannte Bauwerke, Altstädte, Museen, Naturlandschaften, Nationalparks und Schutzgebiete ({$natureHint}), Strände, Aussichtspunkte und typische Erlebnisse. Nur reale, eindeutig benannte Orte – nichts erfinden. {$highlights}
 
 Je Eintrag:
 - name: der gebräuchliche Name in allen Sprachen ({$languages})
@@ -283,10 +324,10 @@ PROMPT;
      * @param  array<string, mixed>  $suggestion
      * @return array{0: ?float, 1: ?float, 2: ?string}
      */
-    protected function locate(array $suggestion, Region $region, ?City $city): array
+    protected function locate(array $suggestion, Region $region, ?City $city, ?Subregion $subregion = null): array
     {
         $ai = $suggestion['lat'] !== null && $suggestion['lng'] !== null ? [$suggestion['lat'], $suggestion['lng']] : null;
-        $place = $city?->getName('en') ?: $city?->getName('de') ?: $suggestion['city'];
+        $place = $city?->getName('en') ?: $city?->getName('de') ?: $suggestion['city'] ?: $subregion?->getName('en');
 
         // Erst der deutsche, dann der englische Name – OSM kennt oft nur den einen.
         foreach (array_unique(array_filter([$suggestion['name']['de'] ?? null, $suggestion['name']['en'] ?? null])) as $name) {
