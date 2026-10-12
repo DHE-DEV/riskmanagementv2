@@ -20,6 +20,9 @@ class RegionInfoRun extends Model
     /** Sehenswuerdigkeiten einer Region aus ihrem Editor heraus */
     public const KIND_SIGHTS_ONE = 'sights_one';
 
+    /** Luecken der Regionen und Teilgebiete eines oder mehrerer Laender fuellen (regions:fill-missing) */
+    public const KIND_FILL_MISSING = 'fill_missing';
+
     public function isSights(): bool
     {
         return in_array($this->kind, [self::KIND_SIGHTS, self::KIND_SIGHTS_ONE], true);

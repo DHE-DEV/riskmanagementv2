@@ -15,7 +15,8 @@ use App\Models\CustomEvent;
  *   texts: {short_description: {de, en, nl}, description: {…}, known_for: {de: ["…"]}, best_time: {…}, …}
  *   best_months: [5, 6, 9], population: 13369393, area_km2: 70550,
  *   timezone: "America/Los_Angeles" (nur wenn sie von der des Landes abweicht),
- *   meta: {ai_generated_at, ai_model, reviewed_at, reviewed_by}
+ *   meta: {ai_generated_at, ai_model, ai_filled (zuletzt von der KI ergaenzte Felder),
+ *          reviewed_at, reviewed_by, last_reviewed_at, last_reviewed_by (Pruefung vor der Ergaenzung)}
  */
 class RegionInfo
 {
@@ -79,6 +80,24 @@ class RegionInfo
     public static function locales(): array
     {
         return CustomEvent::translationLocales();
+    }
+
+    /** Bezeichnungen der sprachunabhaengigen Angaben */
+    public const FACT_LABELS = [
+        'best_months' => 'Beste Reisemonate',
+        'population' => 'Einwohner',
+        'area_km2' => 'Fläche',
+        'timezone' => 'Zeitzone',
+    ];
+
+    /**
+     * "Klima, Anreise, Einwohner" fuer eine Liste von Feldern.
+     */
+    public static function fieldLabels(array $fields): string
+    {
+        $labels = array_map(fn ($field) => $field[0], self::allTexts()) + self::FACT_LABELS;
+
+        return implode(', ', array_map(fn ($field) => $labels[$field] ?? (string) $field, $fields));
     }
 
     public static function limit(string $field): int
@@ -195,6 +214,101 @@ class RegionInfo
             'filled' => count(array_filter($fields, fn ($field) => filled($info['texts'][$field][$source] ?? null))),
             'total' => count($fields),
         ];
+    }
+
+    /**
+     * Was an den Angaben noch fehlt: Textfelder mit den Sprachen, in denen sie
+     * leer sind, und die fehlenden Fakten. Die Zeitzone zaehlt nicht – leer
+     * heisst "wie beim Land". Ohne Flaeche und Einwohner bei Reisegebieten
+     * ohne feste Grenzen ($withNumbers = false).
+     *
+     * @return array{texts: array<string, array<int, string>>, facts: array<int, string>}
+     */
+    public static function missing(?array $info, bool $withNumbers = true): array
+    {
+        $texts = [];
+
+        foreach (array_keys(self::allTexts()) as $field) {
+            $locales = array_values(array_filter(self::locales(), fn ($locale) => blank($info['texts'][$field][$locale] ?? null)));
+            if ($locales !== []) {
+                $texts[$field] = $locales;
+            }
+        }
+
+        $facts = array_values(array_filter(
+            $withNumbers ? ['best_months', 'population', 'area_km2'] : ['best_months'],
+            fn ($key) => blank($info[$key] ?? null),
+        ));
+
+        return ['texts' => $texts, 'facts' => $facts];
+    }
+
+    /**
+     * Anzahl der Luecken (je Feld und Sprache bzw. Fakt).
+     */
+    public static function missingCount(array $missing): int
+    {
+        return array_sum(array_map('count', $missing['texts'])) + count($missing['facts']);
+    }
+
+    /**
+     * Felder, die in $after gegenueber $before neu oder geaendert sind.
+     *
+     * @return array<int, string>
+     */
+    public static function changedFields(?array $before, array $after): array
+    {
+        $fields = array_filter(array_keys(self::allTexts()), fn ($field) => ($before['texts'][$field] ?? null) != ($after['texts'][$field] ?? null));
+        $facts = array_filter(['best_months', 'population', 'area_km2', 'timezone'], fn ($key) => ($before[$key] ?? null) != ($after[$key] ?? null));
+
+        return array_values([...$fields, ...$facts]);
+    }
+
+    /**
+     * KI-Angaben uebernehmen und als ungepruefter KI-Entwurf kennzeichnen –
+     * aber nur, wenn wirklich etwas dazukommt (sonst null). Ergaenzt die KI
+     * vorhandene Angaben, merkt sich meta, welche Felder neu sind (ai_filled)
+     * und wann zuvor geprueft wurde (last_reviewed_*). Was $before in meta
+     * sonst hat (z. B. ai_created_at), bleibt.
+     *
+     * @param  array<string, mixed>  $suggestion  Angaben ohne meta
+     * @param  string|null  $countryTimezone  eine gleiche Zeitzone wird nicht gespeichert
+     * @param  string|null  $generatedAt  Zeitpunkt des KI-Vorschlags (Standard: jetzt)
+     * @return array<string, mixed>|null
+     */
+    public static function applyAi(?array $before, array $suggestion, string $model, bool $overwrite = false, ?string $countryTimezone = null, ?string $generatedAt = null): ?array
+    {
+        unset($suggestion['meta']);
+        $info = self::merge($before, $suggestion, $overwrite);
+
+        if (($info['timezone'] ?? null) === $countryTimezone) {
+            unset($info['timezone']);
+        }
+
+        $changed = self::changedFields($before, $info);
+
+        if ($changed === []) {
+            return null;
+        }
+
+        $meta = (array) ($before['meta'] ?? []);
+        $reviewed = filled($meta['reviewed_at'] ?? null);
+
+        if ($reviewed) {
+            $meta['last_reviewed_at'] = $meta['reviewed_at'];
+            $meta['last_reviewed_by'] = $meta['reviewed_by'] ?? null;
+        }
+
+        $meta['ai_filled'] = self::hasContent($before)
+            ? array_values(array_unique([...($reviewed ? [] : (array) ($meta['ai_filled'] ?? [])), ...$changed]))
+            : null;
+        $meta['ai_generated_at'] = $generatedAt ?: now()->toIso8601String();
+        $meta['ai_model'] = $model;
+        unset($meta['reviewed_at'], $meta['reviewed_by']);
+
+        $info['meta'] = array_filter($meta, fn ($value) => $value !== null && $value !== '' && $value !== []);
+
+        return $info;
     }
 
     /**

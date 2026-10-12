@@ -53,15 +53,16 @@ class SubregionTransfer
 
     /**
      * Einlesen. Ein Teilgebiet, das es in der Region schon gibt (gleicher
-     * Name), wird nicht doppelt angelegt; zugeordnet wird nur, was noch
-     * keinem Teilgebiet angehoert.
+     * Name), wird nicht doppelt angelegt – mit $mergeInfo bekommt es aber
+     * die Infos, die ihm noch fehlen (RegionInfo::applyAi, Vorhandenes bleibt).
+     * Zugeordnet wird nur, was noch keinem Teilgebiet angehoert.
      *
      * @param  array<string, array<string, array<int, array<string, mixed>>>>  $data
-     * @return array{created: int, skipped: int, cities: int, sights: int, missing: array<int, string>}
+     * @return array{created: int, updated: int, skipped: int, cities: int, sights: int, missing: array<int, string>}
      */
-    public static function import(array $data): array
+    public static function import(array $data, bool $mergeInfo = false): array
     {
-        $result = ['created' => 0, 'skipped' => 0, 'cities' => 0, 'sights' => 0, 'missing' => []];
+        $result = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'cities' => 0, 'sights' => 0, 'missing' => []];
 
         foreach ($data as $iso => $regions) {
             $country = Country::query()->where('iso_code', strtoupper((string) $iso))->first();
@@ -101,7 +102,16 @@ class SubregionTransfer
                     $subregion = $existing->get($name);
 
                     if ($subregion) {
-                        $result['skipped']++;
+                        $info = $mergeInfo && is_array($item['info'] ?? null)
+                            ? RegionInfo::applyAi($subregion->info, $item['info'], (string) ($item['info']['meta']['ai_model'] ?? ''), false, $country->timezone, $item['info']['meta']['ai_generated_at'] ?? null)
+                            : null;
+
+                        if ($info !== null) {
+                            $subregion->forceFill(['info' => $info])->save();
+                            $result['updated']++;
+                        } else {
+                            $result['skipped']++;
+                        }
                     } else {
                         $subregion = Subregion::create([
                             'region_id' => $region->id,

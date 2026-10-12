@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Region extends Model
 {
@@ -31,6 +31,7 @@ class Region extends Model
         'lat' => 'decimal:6',
         'lng' => 'decimal:6',
         'is_major' => 'boolean',
+        'subregions_checked_at' => 'datetime',
     ];
 
     /**
@@ -79,6 +80,7 @@ class Region extends Model
     public function getName(string $language = 'de'): string
     {
         $translations = $this->name_translations ?? [];
+
         return $translations[$language] ?? $translations['en'] ?? $this->code ?? 'Unknown';
     }
 
@@ -97,7 +99,7 @@ class Region extends Model
     {
         return $query->where(function ($q) use ($search) {
             $q->where('code', 'like', "%{$search}%")
-              ->orWhere('description', 'like', "%{$search}%");
+                ->orWhere('description', 'like', "%{$search}%");
         });
     }
 }

@@ -89,6 +89,7 @@ trait EditsRegionInfo
     {
         $this->infoMeta['reviewed_at'] = now()->toIso8601String();
         $this->infoMeta['reviewed_by'] = (string) (auth('web')->user()?->name ?? '');
+        unset($this->infoMeta['ai_filled'], $this->infoMeta['ai_created_at'], $this->infoMeta['last_reviewed_at'], $this->infoMeta['last_reviewed_by']);
 
         $this->dispatch('adminv2-toast', message: 'Als geprüft markiert – noch nicht gespeichert.');
     }

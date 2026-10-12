@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\CustomEvent;
 use App\Models\Region;
 use App\Models\Subregion;
+use App\Services\Concerns\AsksChatGpt;
 use App\Support\AdminV2\RegionInfo;
 use App\Support\AdminV2\SubregionInfo;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -19,6 +21,8 @@ use Throwable;
  */
 class RegionInfoGenerator
 {
+    use AsksChatGpt;
+
     /** So viele Regionen fragt ein Durchgang gleichzeitig an. */
     public const PARALLEL = 4;
 
@@ -50,66 +54,107 @@ class RegionInfoGenerator
     public function fill(Collection $regions, bool $overwrite = false): array
     {
         $done = [];
-        $failed = [];
-        $answers = [];
-
-        try {
-            $answers = $this->chat()->sendPrompts(
-                $regions->mapWithKeys(fn (Region|Subregion $region) => ['r'.$region->id => $this->prompt($region)])->all(),
-                ['timeout' => 180, 'max_tokens' => 6000],
-            );
-        } catch (Throwable) {
-            foreach ($regions as $region) {
-                try {
-                    $answers['r'.$region->id] = $this->chat()->sendPrompt($this->prompt($region), ['timeout' => 180, 'max_tokens' => 6000]);
-                } catch (Throwable $e) {
-                    $failed[$region->id] = $this->shortError($e);
-                }
-            }
-        }
+        ['answers' => $answers, 'failed' => $failed, 'usage' => $usage] = $this->ask(
+            $regions->mapWithKeys(fn (Region|Subregion $region) => [$region->id => $this->prompt($region)])->all(),
+        );
 
         foreach ($regions as $region) {
-            if (! isset($answers['r'.$region->id])) {
+            if (! isset($answers[$region->id])) {
                 continue;
             }
 
             try {
-                $this->store($region, $this->parse($answers['r'.$region->id], $region), $overwrite);
+                $this->store($region, $this->parse($answers[$region->id], $region), $overwrite);
                 $done[] = $region->id;
             } catch (Throwable $e) {
                 $failed[$region->id] = $this->shortError($e);
             }
         }
 
-        return ['done' => $done, 'failed' => $failed, 'usage' => $this->chat()->lastUsage()];
+        return ['done' => $done, 'failed' => $failed, 'usage' => $usage];
+    }
+
+    /**
+     * Nur die Luecken fuellen: Die KI bekommt das Vorhandene als Zusammenhang
+     * und liefert nur fehlende Felder bzw. fehlende Sprachen. Was sie nicht
+     * sicher weiss, laesst sie weg – das ist kein Fehler. Mit $web darf sie
+     * dafuer im Internet suchen (langsamer, Anfragen nacheinander).
+     *
+     * @param  Collection<int, Region|Subregion>  $targets  alle vom selben Typ
+     * @return array{done: array<int, int>, changed: array<int, int>, failed: array<int, string>, usage: ?array}
+     */
+    public function fillMissing(Collection $targets, bool $web = false): array
+    {
+        $done = [];
+        $changed = [];
+        ['answers' => $answers, 'failed' => $failed, 'usage' => $usage] = $this->ask(
+            $targets->mapWithKeys(fn (Region|Subregion $target) => [$target->id => $this->prompt($target, $this->missingFor($target), $web)])->all(),
+            $web,
+        );
+
+        foreach ($targets as $target) {
+            if (! isset($answers[$target->id])) {
+                continue;
+            }
+
+            try {
+                $suggestion = $this->parse($this->stripCitations($answers[$target->id]), $target, allowEmpty: true);
+                unset($suggestion['timezone']);
+
+                if ($this->store($target, $suggestion)) {
+                    $changed[] = $target->id;
+                }
+                $done[] = $target->id;
+            } catch (Throwable $e) {
+                $failed[$target->id] = $this->shortError($e);
+            }
+        }
+
+        return ['done' => $done, 'changed' => $changed, 'failed' => $failed, 'usage' => $usage];
+    }
+
+    /**
+     * Luecken einer Region bzw. eines Teilgebiets (RegionInfo::missing).
+     *
+     * @return array{texts: array<string, array<int, string>>, facts: array<int, string>}
+     */
+    public function missingFor(Region|Subregion $target): array
+    {
+        $isArea = $target instanceof Subregion && SubregionInfo::kind($target->kind) === 'area';
+
+        return RegionInfo::missing($target->info, ! $isArea);
     }
 
     /**
      * Vorschlag in die gespeicherten Angaben uebernehmen und als
-     * ungepruefter KI-Entwurf kennzeichnen.
+     * ungepruefter KI-Entwurf kennzeichnen – aber nur, wenn wirklich etwas
+     * dazukommt. Ergaenzt die KI vorhandene Angaben, merkt sich meta, welche
+     * Felder neu sind (ai_filled) und wann zuvor geprueft wurde.
      *
      * @param  array<string, mixed>  $suggestion
+     * @return bool ob sich etwas geaendert hat
      */
-    public function store(Region|Subregion $region, array $suggestion, bool $overwrite = false): void
+    public function store(Region|Subregion $region, array $suggestion, bool $overwrite = false): bool
     {
-        $info = RegionInfo::merge($region->info, $suggestion, $overwrite);
+        $info = RegionInfo::applyAi($region->info, $suggestion, (string) ($this->chat()->lastUsage()['model'] ?? ''), $overwrite, $region->country?->timezone);
 
-        if (($info['timezone'] ?? null) === $region->country?->timezone) {
-            unset($info['timezone']);
+        if ($info === null) {
+            return false;
         }
 
-        $info['meta'] = [
-            'ai_generated_at' => now()->toIso8601String(),
-            'ai_model' => (string) ($this->chat()->lastUsage()['model'] ?? ''),
-        ];
-
         $region->forceFill(['info' => $info])->save();
+
+        return true;
     }
 
-    public function prompt(Region|Subregion $region): string
+    /**
+     * @param  array{texts: array<string, array<int, string>>, facts: array<int, string>}|null  $missing  nur diese Luecken anfordern (RegionInfo::missing)
+     * @param  bool  $web  die KI darf im Internet recherchieren
+     */
+    public function prompt(Region|Subregion $region, ?array $missing = null, bool $web = false): string
     {
         if ($region instanceof Subregion) {
-            return $this->subregionPrompt($region);
+            return $this->subregionPrompt($region, $missing, $web);
         }
 
         $region->loadMissing('country');
@@ -123,9 +168,7 @@ class RegionInfoGenerator
             ->map(fn ($city) => $city->getName('de').($city->is_regional_capital ? ' (Hauptstadt der Region)' : ''))
             ->implode(', ');
 
-        $fields = collect(RegionInfo::allTexts())
-            ->map(fn ($field, $key) => "- {$key}: {$field[0]} – {$field[2]}".($field[1] === 'tags' ? ' (Liste von 3–6 kurzen Stichworten)' : ''))
-            ->implode("\n");
+        $fields = $this->fieldLines($missing, fn (array $field) => $field[2]);
 
         $languages = implode(', ', array_map(fn ($locale) => $locale.' = '.CustomEvent::localeLabel($locale, false), $locales));
 
@@ -153,22 +196,25 @@ class RegionInfoGenerator
             'timezone' => null,
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
+        $facts = $this->factLines([
+            'best_months' => '- best_months: die besten Reisemonate als Zahlen 1–12 (leer lassen, wenn sie dem ganzen Land entsprechen oder unklar sind)',
+            'population' => '- population: Einwohnerzahl der Region als ganze Zahl (nur wenn bekannt)',
+            'area_km2' => '- area_km2: Fläche in km² als ganze Zahl (nur wenn bekannt)',
+            'timezone' => '- timezone: IANA-Zeitzone der Region, NUR wenn sie von der des Landes abweicht, sonst null',
+        ], $missing);
+        $existing = $this->existingBlock($region, $missing);
+        $research = $this->researchNote($web);
+
         return <<<PROMPT
 Du schreibst Reiseinformationen für eine Region in einer Reise-App. Die App zeigt die Region unterhalb ihres Landes an; alles, was für das ganze Land gilt (Währung, Visum, Einreise, Steckdosen, Strom, Notrufnummern, Landessprache, allgemeine Landeskunde), steht dort bereits und darf hier NICHT wiederholt werden.
 
 {$context}
-
-Schreibe nur, was für diese Region eigen ist. Wenn es zu einem Feld nichts Regionsspezifisches gibt (z. B. kein abweichendes Klima, keine Besonderheiten), lass das Feld weg. Erfinde keine Fakten, Zahlen, Namen oder Verbindungen – wenn du dir nicht sicher bist, lass es weg. Kleine, touristisch wenig bekannte Regionen bekommen kurze, sachliche Texte. Sachlicher, freundlicher Ton, keine Werbesprache, keine Aufzählungszeichen, keine Überschriften, kein Markdown. Absätze in der Beschreibung durch eine Leerzeile trennen.
+{$existing}
+Schreibe nur, was für diese Region eigen ist. Wenn es zu einem Feld nichts Regionsspezifisches gibt (z. B. kein abweichendes Klima, keine Besonderheiten), lass das Feld weg. Erfinde keine Fakten, Zahlen, Namen oder Verbindungen – wenn du dir nicht sicher bist, lass es weg. Kleine, touristisch wenig bekannte Regionen bekommen kurze, sachliche Texte. Sachlicher, freundlicher Ton, keine Werbesprache, keine Aufzählungszeichen, keine Überschriften, kein Markdown. Absätze in der Beschreibung durch eine Leerzeile trennen.{$research}
 
 Felder (jeweils in allen Sprachen: {$languages}):
 {$fields}
-
-Außerdem, sprachunabhängig:
-- best_months: die besten Reisemonate als Zahlen 1–12 (leer lassen, wenn sie dem ganzen Land entsprechen oder unklar sind)
-- population: Einwohnerzahl der Region als ganze Zahl (nur wenn bekannt)
-- area_km2: Fläche in km² als ganze Zahl (nur wenn bekannt)
-- timezone: IANA-Zeitzone der Region, NUR wenn sie von der des Landes abweicht, sonst null
-
+{$facts}
 Antworte ausschließlich mit einem JSON-Objekt in genau dieser Form (ohne Erklärungen, ohne Codeblock):
 {$example}
 PROMPT;
@@ -179,7 +225,7 @@ PROMPT;
      *
      * @return array<string, mixed>
      */
-    public function parse(string $answer, Region|Subregion|null $region = null): array
+    public function parse(string $answer, Region|Subregion|null $region = null, bool $allowEmpty = false): array
     {
         $json = trim($answer);
         $json = (string) preg_replace('/^```(?:json)?\s*|\s*```$/i', '', $json);
@@ -212,6 +258,10 @@ PROMPT;
         $info = RegionInfo::fromForm($form, $region?->country) ?? [];
 
         if (! RegionInfo::hasContent($info)) {
+            if ($allowEmpty) {
+                return [];
+            }
+
             throw new RuntimeException('Die KI hat keine Angaben zur Region geliefert.');
         }
 
@@ -223,7 +273,7 @@ PROMPT;
      * bezogen auf die Insel bzw. das Reisegebiet. Was fuer die ganze Region
      * gilt, steht an der Region.
      */
-    public function subregionPrompt(Subregion $subregion): string
+    public function subregionPrompt(Subregion $subregion, ?array $missing = null, bool $web = false): string
     {
         $subregion->loadMissing(['region', 'country']);
         $region = $subregion->region;
@@ -236,9 +286,7 @@ PROMPT;
         $cities = $subregion->cities()->orderByDesc('population')->limit(15)->get()->map(fn ($city) => $city->getName('de'))->implode(', ');
         $siblings = Subregion::query()->where('region_id', $subregion->region_id)->whereKeyNot($subregion->id)->get()->map(fn (Subregion $other) => $other->getName('de'))->implode(', ');
 
-        $fields = collect(RegionInfo::allTexts())
-            ->map(fn ($field, $key) => "- {$key}: {$field[0]} – ".str_replace('Region', $kind, $field[2]).($field[1] === 'tags' ? ' (Liste von 3–6 kurzen Stichworten)' : ''))
-            ->implode("\n");
+        $fields = $this->fieldLines($missing, fn (array $field) => str_replace('Region', $kind, $field[2]));
 
         $languages = implode(', ', array_map(fn ($locale) => $locale.' = '.CustomEvent::localeLabel($locale, false), $locales));
 
@@ -265,32 +313,123 @@ PROMPT;
             'timezone' => null,
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-        $numbers = $isArea
-            ? '- population und area_km2: bei einem Reisegebiet ohne feste Grenzen immer null'
-            : "- population: Einwohnerzahl als ganze Zahl (nur wenn bekannt)\n- area_km2: Fläche in km² als ganze Zahl (nur wenn bekannt)";
+        $facts = $this->factLines([
+            'best_months' => '- best_months: die besten Reisemonate als Zahlen 1–12 (leer lassen, wenn sie der Region entsprechen oder unklar sind)',
+            ...($isArea
+                ? ['area' => '- population und area_km2: bei einem Reisegebiet ohne feste Grenzen immer null']
+                : [
+                    'population' => '- population: Einwohnerzahl als ganze Zahl (nur wenn bekannt)',
+                    'area_km2' => '- area_km2: Fläche in km² als ganze Zahl (nur wenn bekannt)',
+                ]),
+            'timezone' => '- timezone: IANA-Zeitzone, NUR wenn sie von der des Landes abweicht, sonst null',
+        ], $missing);
+        $existing = $this->existingBlock($subregion, $missing);
+        $research = $this->researchNote($web);
 
         return <<<PROMPT
 Du schreibst Reiseinformationen für ein Teilgebiet ({$kind}) einer Region in einer Reise-App. Die App zeigt das Teilgebiet unterhalb seiner Region an. Was für das ganze Land gilt (Währung, Visum, Einreise, Steckdosen, Notrufnummern, Landessprache), steht am Land; was für die ganze Region gilt, steht an der Region. Beides darf hier NICHT wiederholt werden.
 
 {$context}
-
-Schreibe nur, was für dieses Teilgebiet eigen ist: Landschaft, Orte, Strände, Wanderungen, Kultur, Charakter für Reisende, Anreise und Unterwegssein auf bzw. in diesem Gebiet. Wenn es zu einem Feld nichts Eigenes gibt, lass das Feld weg. Erfinde keine Fakten, Zahlen, Namen oder Verbindungen – wenn du dir nicht sicher bist, lass es weg. Sachlicher, freundlicher Ton, keine Werbesprache, keine Aufzählungszeichen, keine Überschriften, kein Markdown. Absätze in der Beschreibung durch eine Leerzeile trennen.
+{$existing}
+Schreibe nur, was für dieses Teilgebiet eigen ist: Landschaft, Orte, Strände, Wanderungen, Kultur, Charakter für Reisende, Anreise und Unterwegssein auf bzw. in diesem Gebiet. Wenn es zu einem Feld nichts Eigenes gibt, lass das Feld weg. Erfinde keine Fakten, Zahlen, Namen oder Verbindungen – wenn du dir nicht sicher bist, lass es weg. Sachlicher, freundlicher Ton, keine Werbesprache, keine Aufzählungszeichen, keine Überschriften, kein Markdown. Absätze in der Beschreibung durch eine Leerzeile trennen.{$research}
 
 Felder (jeweils in allen Sprachen: {$languages}):
 {$fields}
-
-Außerdem, sprachunabhängig:
-- best_months: die besten Reisemonate als Zahlen 1–12 (leer lassen, wenn sie der Region entsprechen oder unklar sind)
-{$numbers}
-- timezone: IANA-Zeitzone, NUR wenn sie von der des Landes abweicht, sonst null
-
+{$facts}
 Antworte ausschließlich mit einem JSON-Objekt in genau dieser Form (ohne Erklärungen, ohne Codeblock):
 {$example}
 PROMPT;
     }
 
-    protected function shortError(Throwable $e): string
+    /**
+     * Zeilen der Textfelder fuer den Prompt – ohne $missing alle, sonst nur
+     * die Luecken; fehlt ein Feld nur in einzelnen Sprachen, wird der
+     * vorhandene Text uebertragen.
+     *
+     * @param  callable(array): string  $hint
+     */
+    protected function fieldLines(?array $missing, callable $hint): string
     {
-        return mb_substr(str_replace('Fehler bei der Kommunikation mit ChatGPT: ', '', $e->getMessage()), 0, 200);
+        $all = RegionInfo::locales();
+
+        return collect(RegionInfo::allTexts())
+            ->when($missing !== null, fn ($fields) => $fields->only(array_keys($missing['texts'])))
+            ->map(function ($field, $key) use ($missing, $hint, $all) {
+                $line = "- {$key}: {$field[0]} – ".$hint($field).($field[1] === 'tags' ? ' (Liste von 3–6 kurzen Stichworten)' : '');
+                $locales = $missing['texts'][$key] ?? $all;
+
+                return count($locales) < count($all)
+                    ? $line.' – NUR noch in: '.implode(', ', $locales).'; übertrage dafür den vorhandenen Text (siehe oben) sinngemäß'
+                    : $line;
+            })
+            ->implode("\n");
+    }
+
+    /**
+     * Block "Außerdem, sprachunabhaengig" – mit $missing nur die fehlenden
+     * Angaben, die Zeitzone dann gar nicht (leer heisst "wie beim Land").
+     *
+     * @param  array<string, string>  $lines
+     */
+    protected function factLines(array $lines, ?array $missing): string
+    {
+        if ($missing !== null) {
+            $lines = array_intersect_key($lines, array_flip($missing['facts']));
+        }
+
+        return $lines === [] ? '' : "\nAußerdem, sprachunabhängig:\n".implode("\n", $lines)."\n";
+    }
+
+    /**
+     * Das Vorhandene als Zusammenhang fuer das Fuellen der Luecken: in der
+     * Ausgangssprache (sonst der ersten vorhandenen), gekuerzt – ausser es
+     * soll in weitere Sprachen uebertragen werden.
+     */
+    protected function existingBlock(Region|Subregion $target, ?array $missing): string
+    {
+        if ($missing === null) {
+            return '';
+        }
+
+        $info = (array) $target->info;
+        $source = CustomEvent::sourceLocale();
+        $lines = [];
+
+        foreach (RegionInfo::allTexts() as $field => [$label]) {
+            $texts = array_filter((array) ($info['texts'][$field] ?? []), fn ($value) => filled($value));
+            if ($texts === []) {
+                continue;
+            }
+
+            $locale = isset($texts[$source]) ? $source : array_key_first($texts);
+            $text = is_array($texts[$locale]) ? implode(', ', $texts[$locale]) : (string) $texts[$locale];
+            $translate = isset($missing['texts'][$field]);
+            $lines[] = "- {$field} ({$locale}): ".($translate ? $text : Str::limit(str_replace("\n", ' ', $text), 500));
+        }
+
+        foreach (['best_months', 'population', 'area_km2', 'timezone'] as $key) {
+            if (filled($info[$key] ?? null)) {
+                $lines[] = "- {$key}: ".(is_array($info[$key]) ? implode(', ', $info[$key]) : $info[$key]);
+            }
+        }
+
+        $intro = $lines === []
+            ? 'Bisher ist nichts hinterlegt.'
+            : "Bereits hinterlegt – NICHT ändern, NICHT zurückgeben, nicht wiederholen, nur als Zusammenhang:\n".implode("\n", $lines);
+
+        return "\n{$intro}\n\nLiefere nur die unten genannten fehlenden Felder; alle anderen lässt du weg.\n";
+    }
+
+    /**
+     * Eigene Formulierungen (immer) und Recherche im Internet (mit $web).
+     * Fakten sind frei – Saetze aus Quellen nicht.
+     */
+    protected function researchNote(bool $web): string
+    {
+        $own = ' Formuliere alle Texte vollständig eigenständig in eigenen Worten: Übernimm keine Sätze oder prägnanten Formulierungen aus Quellen (auch nicht aus Wikipedia, Reiseführern oder Tourismusseiten), übersetze keine fremden Texte und gib keine Werbeslogans wieder. Quellen dienen nur als Grundlage für Fakten.';
+
+        return $web
+            ? ' Recherchiere dazu im Internet in verlässlichen Quellen (offizielle Tourismus- und Verwaltungsseiten, Statistikämter, Wikipedia) und nimm Zahlen nur, wenn sie belegt sind. Keine Quellenangaben, Links oder Fußnoten in den Texten.'.$own
+            : $own;
     }
 }

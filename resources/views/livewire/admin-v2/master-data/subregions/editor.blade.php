@@ -111,6 +111,15 @@
                         @if (filled($infoMeta['ai_generated_at'] ?? null))
                             <p class="text-zinc-600 dark:text-zinc-400">KI-Vorschlag vom {{ \Illuminate\Support\Carbon::parse($infoMeta['ai_generated_at'])->timezone(config('app.timezone'))->format('d.m.Y, H:i') }} Uhr{{ filled($infoMeta['ai_model'] ?? null) ? ' ('.$infoMeta['ai_model'].')' : '' }}.</p>
                         @endif
+                        @if (filled($infoMeta['ai_created_at'] ?? null))
+                            <p class="text-zinc-600 dark:text-zinc-400">Von der KI recherchiert und angelegt am {{ \Illuminate\Support\Carbon::parse($infoMeta['ai_created_at'])->timezone(config('app.timezone'))->format('d.m.Y') }} – bitte prüfen, ob es das Teilgebiet so gibt.</p>
+                        @endif
+                        @if (filled($infoMeta['ai_filled'] ?? null))
+                            <p class="text-zinc-600 dark:text-zinc-400">Von der KI ergänzt: {{ RegionInfo::fieldLabels((array) $infoMeta['ai_filled']) }}.</p>
+                        @endif
+                        @if (filled($infoMeta['last_reviewed_at'] ?? null) && blank($infoMeta['reviewed_at'] ?? null))
+                            <p class="text-zinc-600 dark:text-zinc-400">Zuvor geprüft am {{ \Illuminate\Support\Carbon::parse($infoMeta['last_reviewed_at'])->timezone(config('app.timezone'))->format('d.m.Y') }}{{ filled($infoMeta['last_reviewed_by'] ?? null) ? ' von '.$infoMeta['last_reviewed_by'] : '' }}.</p>
+                        @endif
                         @if (filled($infoMeta['reviewed_at'] ?? null))
                             <p class="text-zinc-600 dark:text-zinc-400">Geprüft am {{ \Illuminate\Support\Carbon::parse($infoMeta['reviewed_at'])->timezone(config('app.timezone'))->format('d.m.Y') }}{{ filled($infoMeta['reviewed_by'] ?? null) ? ' von '.$infoMeta['reviewed_by'] : '' }}.</p>
                         @elseif ($infoStatus === 'ai')
