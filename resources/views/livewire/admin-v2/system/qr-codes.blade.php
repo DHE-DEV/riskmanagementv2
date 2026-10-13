@@ -11,11 +11,12 @@
     <div class="grid gap-6 lg:grid-cols-2">
         <section class="flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
             <flux:radio.group wire:model.live="type" label="Art" variant="segmented">
-                <flux:radio value="{{ QrCodes::TYPE_TRAVEL_DETAILS }}" label="Travel Details (Reise-ID)" />
+                <flux:radio value="{{ QrCodes::TYPE_TRIPDATA }}" label="TripData-Link" />
+                <flux:radio value="{{ QrCodes::TYPE_TRAVEL_DETAILS }}" label="Travel Details" />
                 <flux:radio value="{{ QrCodes::TYPE_FREE }}" label="Freier Inhalt" />
             </flux:radio.group>
 
-            @if ($type === QrCodes::TYPE_TRAVEL_DETAILS)
+            @if ($type !== QrCodes::TYPE_FREE)
                 <flux:input
                     wire:model.live.debounce.300ms="value"
                     label="Reise-ID"
@@ -24,11 +25,17 @@
                     class="font-mono"
                     autofocus
                 />
-                <flux:select wire:model.live="language" label="Sprache der Reisenden-Seite">
-                    <flux:select.option value="de">Deutsch</flux:select.option>
-                    <flux:select.option value="en">Englisch</flux:select.option>
-                    <flux:select.option value="nl">Niederländisch</flux:select.option>
-                </flux:select>
+                @if ($type === QrCodes::TYPE_TRIPDATA)
+                    <flux:callout icon="device-phone-mobile" variant="secondary">
+                        <flux:callout.text>Mit installierter TripData-App öffnet die Handy-Kamera die Reise direkt in der App – ist sie dort noch nicht gespeichert, fragt die App, ob sie angelegt werden soll. Ohne App führt der Link zur Reise auf travel-details.eu.</flux:callout.text>
+                    </flux:callout>
+                @else
+                    <flux:select wire:model.live="language" label="Sprache der Reisenden-Seite">
+                        <flux:select.option value="de">Deutsch</flux:select.option>
+                        <flux:select.option value="en">Englisch</flux:select.option>
+                        <flux:select.option value="nl">Niederländisch</flux:select.option>
+                    </flux:select>
+                @endif
             @else
                 <flux:textarea
                     wire:model.live.debounce.300ms="value"

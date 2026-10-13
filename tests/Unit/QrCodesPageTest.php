@@ -13,8 +13,18 @@ beforeEach(function () {
     $this->actingAs($admin, 'web');
 });
 
+it('uses the tripdata link by default', function () {
+    config(['services.tripdata.link_base' => 'https://plattform.passolution.de/reise']);
+
+    Livewire::test(QrCodes::class)
+        ->set('value', 'zipt-hrg1-z6y5')
+        ->assertSee('https://plattform.passolution.de/reise/ZIPTHRG1Z6Y5')
+        ->assertSeeHtml('shape-rendering="crispEdges"');
+});
+
 it('shows the qr code for a travel details id and offers the pdf', function () {
     Livewire::test(QrCodes::class)
+        ->set('type', QrCodes::TYPE_TRAVEL_DETAILS)
         ->set('value', 'zipthrg1z6y5')
         ->assertSee('https://travel-details.eu/de?tid=ZIPTHRG1Z6Y5')
         ->assertSee('ZIPT-HRG1-Z6Y5')

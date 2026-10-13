@@ -120,6 +120,18 @@ return [
         'detailed_logging' => env('PDS_API_DETAILED_LOGGING', false),
     ],
 
+    // TripData-App: Reise-Links (Universal Links / Android App Links) unter /reise/{code}.
+    // Die Verifikationsdateien unter /.well-known nennen die App; ohne App leitet /reise/{code}
+    // auf die Reisenden-Seite travel-details.eu weiter.
+    'tripdata' => [
+        'link_base' => env('TRIPDATA_LINK_BASE', 'https://plattform.passolution.de/reise'),
+        // Apple: <Team-ID>.<Bundle-ID>, mehrere mit Komma
+        'ios_app_ids' => array_filter(array_map('trim', explode(',', (string) env('TRIPDATA_IOS_APP_IDS', '5843TDW7F4.de.passolution.tripdata')))),
+        'android_package' => env('TRIPDATA_ANDROID_PACKAGE', 'de.passolution.tripdata'),
+        // SHA-256-Fingerabdruecke der Signaturschluessel (Release, ggf. Debug), mehrere mit Komma
+        'android_sha256' => array_filter(array_map('trim', explode(',', (string) env('TRIPDATA_ANDROID_CERT_SHA256', '')))),
+    ],
+
     // Folder Import Settings
     'folder_import' => [
         'detailed_logging' => env('FOLDER_IMPORT_DETAILED_LOGGING', false),

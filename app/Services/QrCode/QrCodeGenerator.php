@@ -54,6 +54,17 @@ class QrCodeGenerator
     }
 
     /**
+     * Reise-Link der TripData-App, z. B. https://plattform.passolution.de/reise/ZIPTHRG1Z6Y5 – mit
+     * installierter App oeffnet ihn das Smartphone direkt in TripData, sonst leitet die Plattform auf
+     * travel-details.eu weiter.
+     */
+    public static function tripDataUrl(string $code): string
+    {
+        return rtrim((string) config('services.tripdata.link_base', 'https://plattform.passolution.de/reise'), '/')
+            .'/'.str_replace('-', '', $code);
+    }
+
+    /**
      * Modul-Matrix ohne Ruhezone: $matrix[$y][$x] === true heisst dunkles Modul.
      *
      * @return array<int, array<int, bool>>
