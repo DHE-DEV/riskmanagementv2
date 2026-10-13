@@ -27,6 +27,8 @@
         :record="$record"
     >
         @if ($record)
+            {{-- Website-Ansicht: alle Laenderdaten gestaltet, mit denselben Reitern wie die TripData-App --}}
+            <flux:button variant="ghost" icon="globe-alt" :href="route('adminv2.master-data.countries.website', $record)" target="_blank">Website-Ansicht</flux:button>
             {{-- API-Test: zeigt, was GET /v1/countries/{code} fuer dieses Land liefert --}}
             <flux:modal.trigger name="api-test">
                 <flux:button variant="ghost" icon="code-bracket" wire:click="loadApiPreview">API-Test</flux:button>

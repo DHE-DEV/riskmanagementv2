@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminV2\BoundaryGeoJsonController;
+use App\Http\Controllers\AdminV2\CountryWebsiteController;
 use App\Livewire\AdminV2\Auth\Login;
 use App\Livewire\AdminV2\CustomerManagement\ApiClients\Editor as ApiClientEditor;
 use App\Livewire\AdminV2\CustomerManagement\ApiClients\Index as ApiClientIndex;
@@ -103,6 +104,7 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('countries', CountryIndex::class)->name('countries.index');
             Route::get('countries/create', CountryEditor::class)->name('countries.create');
             Route::get('countries/{country}', CountryEditor::class)->whereNumber('country')->name('countries.edit');
+            Route::get('countries/{country}/website', CountryWebsiteController::class)->whereNumber('country')->name('countries.website');
 
             Route::get('regions', RegionIndex::class)->name('regions.index');
             Route::get('regions/create', RegionEditor::class)->name('regions.create');
