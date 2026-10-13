@@ -402,7 +402,7 @@ it('bricht bei leerem OpenAI-Guthaben sofort ab, laesst das Offene offen und mel
     $spain = gapCountry();
     gapRegion($spain, 'Aragón');
     gapRegion($spain, 'Murcia');
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
     $task = RegionInfoTask::openFor($spain);
 
     $this->artisan('regions:fill-missing', ['--country' => ['ES'], '--no-discover' => true, '--web' => true, '--sync' => true, '--notify' => 'dh@passolution.de'])
@@ -420,28 +420,46 @@ it('bricht bei leerem OpenAI-Guthaben sofort ab, laesst das Offene offen und mel
 
 // ── Aufgaben je Land ────────────────────────────────────────────────────
 
-function runRegionInfoTaskMigration(): void
+function runRegionInfoTaskMigration(string $file = '2026_10_12_100000_create_region_info_tasks'): void
 {
-    (require base_path('database/migrations/2026_10_12_100000_create_region_info_tasks.php'))->up();
+    (require base_path("database/migrations/{$file}.php"))->up();
 }
 
-it('legt per Migration je Land mit Regionen eine Aufgabe an – auch beim zweiten Mal nur eine', function () {
+/**
+ * Aufgaben fuer alle Laender mit Regionen – in den Tests auch fuer Spanien,
+ * das auf Live keine Aufgabe bekommt (RegionInfoTask::EXCLUDED).
+ */
+function createRegionInfoTasks(): void
+{
+    Country::query()->has('regions')->get()->each(fn (Country $country) => RegionInfoTask::createFor($country));
+}
+
+it('legt per Migration je Land mit Regionen ausser Spanien und Italien eine Aufgabe an und weist sie Daniel Henninger zu', function () {
     Mail::fake();
-    $spain = gapCountry();
-    gapRegion($spain, 'Katalonien');
+    $daniel = User::factory()->create(['email' => RegionInfoTask::RESPONSIBLE_EMAIL, 'name' => 'Daniel Henninger', 'is_admin' => true, 'is_active' => true]);
+    gapRegion(gapCountry(), 'Katalonien');
     gapRegion(gapCountry('IT', 'Italien'), 'Venetien');
+    $portugal = gapCountry('PT', 'Portugal');
+    gapRegion($portugal, 'Algarve');
+    $greece = gapCountry('GR', 'Griechenland');
+    gapRegion($greece, 'Kreta');
     gapCountry('MC', 'Monaco');
 
     runRegionInfoTaskMigration();
     runRegionInfoTaskMigration();
+    RegionInfoTask::openFor($greece)->update(['status' => AdminTask::STATUS_DONE]);
+    runRegionInfoTaskMigration('2026_10_13_100000_assign_region_info_tasks');
 
-    expect(AdminTask::query()->orderBy('title')->pluck('title')->all())->toBe(['Regionsinfos per KI ergänzen – Italien', 'Regionsinfos per KI ergänzen – Spanien']);
+    expect(AdminTask::query()->orderBy('title')->pluck('title')->all())->toBe(['Regionsinfos per KI ergänzen – Griechenland', 'Regionsinfos per KI ergänzen – Portugal']);
 
-    $task = RegionInfoTask::openFor($spain);
-    expect($task->subjectLabel())->toContain('Spanien')
+    $task = RegionInfoTask::openFor($portugal);
+    expect($task->subjectLabel())->toContain('Portugal')
         ->and($task->category->name)->toBe('Stammdaten')
         ->and($task->status)->toBe(AdminTask::STATUS_OPEN)
-        ->and($task->description)->toContain('php artisan regions:fill-missing --country=ES');
+        ->and($task->responsible_id)->toBe($daniel->id)
+        ->and($task->description)->toContain('php artisan regions:fill-missing --country=PT')
+        // Erledigte bleiben, wie sie sind.
+        ->and(AdminTask::where('subject_id', $greece->id)->first()->responsible_id)->not->toBe($daniel->id);
     Mail::assertNothingSent();
 });
 
@@ -450,7 +468,7 @@ it('erledigt die Aufgabe des Landes nach Lauf und Mail und schreibt das Ergebnis
     fakeGapAi(['texts' => ['cuisine' => ['de' => 'Paella.']]]);
     $spain = gapCountry();
     gapRegion($spain, 'Valencia');
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
     $task = RegionInfoTask::openFor($spain);
 
     $this->artisan('regions:fill-missing', ['--country' => ['ES'], '--dry-run' => true])->expectsOutputToContain("Aufgabe #{$task->id}")->assertSuccessful();
@@ -473,7 +491,7 @@ it('erledigt die Aufgabe gleich, wenn nichts fehlt, und laesst sie bei mehreren 
     gapRegion($spain, 'Kanaren', completeInfo());
     $italy = gapCountry('IT', 'Italien');
     gapRegion($italy, 'Venetien', completeInfo());
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
 
     $this->artisan('regions:fill-missing', ['--country' => ['ES', 'IT'], '--no-discover' => true])->assertSuccessful();
     expect(AdminTask::where('status', AdminTask::STATUS_DONE)->count())->toBe(0);
@@ -487,7 +505,7 @@ it('setzt die Aufgabe beim Anhalten wieder auf offen', function () {
     Queue::fake();
     $spain = gapCountry();
     gapRegion($spain, 'Aragón');
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
     $task = RegionInfoTask::openFor($spain);
 
     $this->artisan('regions:fill-missing', ['--country' => ['ES']])->assertSuccessful();
@@ -503,7 +521,7 @@ it('startet den Lauf aus der Aufgabe heraus, zeigt den Stand und haelt ihn an', 
     $spain = gapCountry();
     gapRegion($spain, 'Aragón');
     gapRegion($spain, 'Kanaren', completeInfo());
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
     $task = RegionInfoTask::openFor($spain);
 
     $this->get(route('adminv2.tasks.show', $task))->assertOk()->assertSee('KI-Lauf')->assertSee('Lauf starten');
@@ -546,7 +564,7 @@ it('zeigt den KI-Lauf nur an Aufgaben "Regionsinfos per KI ergänzen" und arbeit
     fakeGapAi(['texts' => ['cuisine' => ['de' => 'Paella.']]]);
     $spain = gapCountry();
     $valencia = gapRegion($spain, 'Valencia');
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
     $task = RegionInfoTask::openFor($spain);
     $other = AdminTask::withoutAssignmentMails(fn () => AdminTask::create(['title' => 'Etwas anderes', 'category_id' => $task->category_id, 'subject_type' => $task->subject_type, 'subject_id' => $spain->id]));
 
@@ -592,7 +610,7 @@ it('recherchiert neue Teilgebiete, legt sie ohne Dubletten an, ordnet Staedte zu
     $tossa = City::create(['name_translations' => ['de' => 'Tossa de Mar'], 'country_id' => $spain->id, 'region_id' => $catalonia->id]);
     $lloret = City::create(['name_translations' => ['de' => 'Lloret de Mar'], 'country_id' => $spain->id, 'region_id' => $catalonia->id, 'subregion_id' => $pyrenees->id]);
     $castle = Sight::create(['name_translations' => ['de' => 'Vila Vella'], 'country_id' => $spain->id, 'region_id' => $catalonia->id, 'city_id' => $tossa->id, 'category' => 'castle']);
-    runRegionInfoTaskMigration();
+    createRegionInfoTasks();
 
     $this->artisan('regions:fill-missing', ['--country' => ['ES'], '--notify' => 'dh@passolution.de'])->assertSuccessful();
 

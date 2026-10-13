@@ -19,6 +19,27 @@ class RegionInfoTask
 {
     public const TITLE = 'Regionsinfos per KI ergänzen';
 
+    /** Laender, deren Regionsinfos per Migration kommen (complete_region_info_spain_italy) – ohne Aufgabe. */
+    public const EXCLUDED = ['ES', 'IT'];
+
+    /** Bei ihm liegen die Aufgaben; er startet die Laeufe selbst. */
+    public const RESPONSIBLE_EMAIL = 'daniel.henninger@passolution.de';
+
+    /**
+     * Die Laender, die eine Aufgabe bekommen: alle mit Regionen ausser EXCLUDED.
+     *
+     * @return \Illuminate\Support\Collection<int, Country>
+     */
+    public static function countries(): \Illuminate\Support\Collection
+    {
+        return Country::query()
+            ->has('regions')
+            ->whereNotIn('iso_code', self::EXCLUDED)
+            ->get()
+            ->sortBy(fn (Country $country) => $country->getName('de'))
+            ->values();
+    }
+
     public static function title(Country $country): string
     {
         return self::TITLE.' – '.$country->getName('de');

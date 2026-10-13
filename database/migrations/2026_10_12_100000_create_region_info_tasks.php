@@ -8,7 +8,8 @@ use Illuminate\Database\Migrations\Migration;
 
 /**
  * Je Land mit Regionen eine Aufgabe "Regionsinfos per KI ergänzen – <Land>"
- * (Rubrik Stammdaten, Bezug: das Land). Gestartet wird Land fuer Land mit
+ * (Rubrik Stammdaten, Bezug: das Land) – ausser Spanien und Italien, deren
+ * Infos per Migration kommen (RegionInfoTask::EXCLUDED). Gestartet wird Land fuer Land mit
  * regions:fill-missing --country=XX; der Lauf erledigt die Aufgabe am Ende.
  * Laender, die schon eine solche Aufgabe haben, bleiben aussen vor.
  */
@@ -16,11 +17,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Country::query()
-            ->has('regions')
-            ->get()
-            ->sortBy(fn (Country $country) => $country->getName('de'))
-            ->each(fn (Country $country) => RegionInfoTask::createFor($country));
+        RegionInfoTask::countries()->each(fn (Country $country) => RegionInfoTask::createFor($country));
     }
 
     public function down(): void
