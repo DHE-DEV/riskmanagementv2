@@ -88,6 +88,9 @@ Route::prefix('v1')->middleware([
     Route::get('/exchange-rates', [\App\Http\Controllers\Api\V1\ExchangeRateController::class, 'latest'])->name('sub.v1.exchange-rates');
     Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('sub.v1.regions');
     Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('sub.v1.event-categories');
+
+    // Stand des Servers fuer die App-Info der Apps
+    Route::get('/app-info', [\App\Http\Controllers\Api\V1\AppInfoController::class, 'show'])->name('sub.v1.app-info');
 });
 
 /*

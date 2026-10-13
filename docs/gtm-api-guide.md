@@ -1219,6 +1219,40 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 ---
 
+### Stand des Servers (App-Info)
+
+```
+GET /v1/app-info
+```
+
+Gibt an, welcher Stand der Plattform gerade läuft – für die App-Info in Apps, um zu erkennen, ob neue Inhalte schon deployt sind. `deployed_at` ist die Zeit des letzten Deployments (ISO 8601).
+
+**Beispiel:**
+
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/app-info"
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "server": {
+      "branch": "main",
+      "commit": "6ab760bd870ab4f68a18ae569b459b79f377e4c2",
+      "commit_short": "6ab760bd",
+      "deployed_at": "2026-10-13T16:05:00+02:00",
+      "environment": "production"
+    }
+  }
+}
+```
+
+---
+
 ## Datenmodelle
 
 ### Event

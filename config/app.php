@@ -29,6 +29,16 @@ return [
     'env' => env('APP_ENV', 'production'),
 
     /*
+    | Stand des Deployments fuer GET /v1/app-info (App\Support\DeployInfo) –
+    | optional im Deploy-Skript setzen, sonst aus .git bzw. Dateizeiten.
+    */
+    'deploy' => [
+        'branch' => env('APP_DEPLOY_BRANCH'),
+        'commit' => env('APP_DEPLOY_COMMIT'),
+        'deployed_at' => env('APP_DEPLOYED_AT'),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
