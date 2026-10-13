@@ -112,6 +112,9 @@
                     <flux:navlist.item icon="signal" :href="route('adminv2.system.mobile-operators.index')" :current="request()->routeIs('adminv2.system.mobile-operators.*')">
                         Mobilfunkanbieter
                     </flux:navlist.item>
+                    <flux:navlist.item icon="qr-code" :href="route('adminv2.system.qr-codes')" :current="request()->routeIs('adminv2.system.qr-codes')">
+                        QR-Codes
+                    </flux:navlist.item>
                     <flux:navlist.item
                         icon="queue-list"
                         :href="route('adminv2.system.automator.index')"
