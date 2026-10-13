@@ -2,6 +2,7 @@
 
 use App\Jobs\FillMissingRegionInfoJob;
 use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
+use App\Livewire\AdminV2\Tasks\RegionInfoRunPanel;
 use App\Mail\FillMissingRegionInfoMail;
 use App\Models\AdminTask;
 use App\Models\AdminTaskActivity;
@@ -10,6 +11,7 @@ use App\Models\Continent;
 use App\Models\Country;
 use App\Models\Region;
 use App\Models\RegionInfoRun;
+use App\Models\RegionInfoSource;
 use App\Models\Sight;
 use App\Models\Subregion;
 use App\Models\User;
@@ -296,6 +298,78 @@ it('fuellt mit --subregion nur die genannten Teilgebiete, ohne Regionen und ohne
         ->assertSuccessful();
 });
 
+it('speichert die Quellen der Websuche je Feld getrennt und zeigt sie nur auf der eigenen Seite', function () {
+    config(['services.openai.key' => 'test-key']);
+    $requests = [];
+    Http::fake(['api.openai.com/v1/responses' => function ($request) use (&$requests) {
+        $requests[] = $request->data();
+        $text = '{"texts": {"getting_there": {"de": "Flughafen Reus ([reus.cat](https://www.reus.cat/flughafen?utm_source=openai))."}, "climate": {"de": "Mild ([aemet.es](https://aemet.es/klima))."}}, "area_km2": 6303}';
+
+        return Http::response([
+            'model' => 'gpt-test',
+            'output' => [
+                ['type' => 'web_search_call', 'action' => ['type' => 'search', 'sources' => [['type' => 'url', 'url' => 'https://www.reus.cat/flughafen?utm_source=openai'], ['type' => 'url', 'url' => 'https://de.wikipedia.org/wiki/Tarragona']]]],
+                ['type' => 'message', 'content' => [['type' => 'output_text', 'text' => $text, 'annotations' => [
+                    ['type' => 'url_citation', 'url' => 'https://www.reus.cat/flughafen?utm_source=openai', 'title' => 'Flughafen Reus', 'start_index' => mb_strpos($text, '([reus'), 'end_index' => 0],
+                    ['type' => 'url_citation', 'url' => 'https://aemet.es/klima', 'title' => 'AEMET', 'start_index' => mb_strpos($text, '([aemet'), 'end_index' => 0],
+                ]]]],
+            ],
+            'usage' => ['input_tokens' => 100, 'output_tokens' => 50, 'total_tokens' => 150],
+        ]);
+    }]);
+
+    $spain = gapCountry();
+    $tarragona = gapRegion($spain, 'Tarragona');
+
+    $this->artisan('regions:fill-missing', ['--country' => ['ES'], '--web' => true, '--no-discover' => true, '--sync' => true])->assertSuccessful();
+
+    $run = RegionInfoRun::firstOrFail();
+    $sources = RegionInfoSource::query()->orderBy('id')->get();
+    expect($requests[0]['include'])->toBe(['web_search_call.action.sources'])
+        ->and($requests[0]['input'])->toContain('als Quellen gespeichert')
+        ->and($tarragona->refresh()->info['texts']['getting_there']['de'])->toBe('Flughafen Reus.')
+        ->and($sources->map(fn ($source) => [$source->field, $source->url, $source->cited])->all())->toBe([
+            ['getting_there', 'https://www.reus.cat/flughafen', true],
+            ['climate', 'https://aemet.es/klima', true],
+            [null, 'https://de.wikipedia.org/wiki/Tarragona', false],
+        ])
+        ->and($sources->first()->domain)->toBe('reus.cat')
+        ->and($sources->first()->sourceable_id)->toBe($tarragona->id)
+        ->and($sources->first()->region_info_run_id)->toBe($run->id);
+
+    // Weder Region noch API laden die Quellen; der Editor zeigt nur die Anzahl und verlinkt die eigene Seite.
+    expect(array_key_exists('sources', $tarragona->toArray()))->toBeFalse();
+    $this->get(route('adminv2.master-data.regions.edit', $tarragona))->assertOk()->assertSee('Quellen der KI-Recherche (3)')->assertDontSee('aemet.es/klima');
+    $this->get(route('adminv2.master-data.region-info-sources', ['type' => 'region', 'id' => $tarragona->id]))
+        ->assertOk()
+        ->assertSee('Quellen der KI-Recherche – Tarragona')
+        ->assertSeeInOrder(['Klima', 'AEMET', 'Anreise', 'Flughafen Reus', 'Weitere besuchte Seiten', 'de.wikipedia.org']);
+    $this->get('/adminv2/master-data/sources/city/1')->assertNotFound();
+});
+
+it('nimmt Belege auch aus Links im Text, wenn die Websuche keine Annotationen liefert', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/v1/responses' => Http::response([
+        'model' => 'gpt-test',
+        'output' => [
+            ['type' => 'web_search_call', 'action' => ['sources' => [['type' => 'url', 'url' => 'https://idescat.cat/pop?utm_source=openai'], ['type' => 'url', 'url' => 'https://reddit.com/r/catalunya']]]],
+            ['type' => 'message', 'content' => [['type' => 'output_text', 'annotations' => [], 'text' => '{"texts": {"cuisine": {"de": "Wein und Olivenöl ([Priorat DOQ](https://doqpriorat.org/de))."}}, "population": 9415 ([Idescat](https://idescat.cat/pop?utm_source=openai))}']]],
+        ],
+        'usage' => ['total_tokens' => 150],
+    ])]);
+
+    $priorat = gapRegion(gapCountry(), 'Priorat');
+
+    $this->artisan('regions:fill-missing', ['--country' => ['ES'], '--web' => true, '--no-discover' => true, '--sync' => true])->assertSuccessful();
+
+    expect($priorat->refresh()->info['population'])->toBe(9415)
+        ->and(RegionInfoSource::query()->orderByDesc('cited')->orderBy('id')->get()->map(fn ($source) => [$source->field, $source->url, $source->title, $source->cited])->all())->toBe([
+            ['cuisine', 'https://doqpriorat.org/de', 'Priorat DOQ', true],
+            ['population', 'https://idescat.cat/pop', 'Idescat', true],
+            [null, 'https://reddit.com/r/catalunya', null, false],
+        ]);
+});
+
 it('haelt einen Lauf an und setzt einen abgebrochenen Job fort', function () {
     Queue::fake();
     Http::fake();
@@ -422,6 +496,74 @@ it('setzt die Aufgabe beim Anhalten wieder auf offen', function () {
     $this->artisan('regions:fill-missing', ['--cancel' => RegionInfoRun::first()->id])->assertSuccessful();
     expect($task->refresh()->status)->toBe(AdminTask::STATUS_OPEN)
         ->and($task->activities()->latest('id')->where('type', AdminTaskActivity::TYPE_NOTE)->first()->body)->toContain('angehalten');
+});
+
+it('startet den Lauf aus der Aufgabe heraus, zeigt den Stand und haelt ihn an', function () {
+    Queue::fake();
+    $spain = gapCountry();
+    gapRegion($spain, 'Aragón');
+    gapRegion($spain, 'Kanaren', completeInfo());
+    runRegionInfoTaskMigration();
+    $task = RegionInfoTask::openFor($spain);
+
+    $this->get(route('adminv2.tasks.show', $task))->assertOk()->assertSee('KI-Lauf')->assertSee('Lauf starten');
+
+    $panel = Livewire::test(RegionInfoRunPanel::class, ['taskId' => $task->id])
+        ->assertSeeText('1 Regionen und 0 Teilgebiete mit Lücken')
+        ->assertSeeText('Suche nach neuen Teilgebieten in 2 Regionen')
+        ->set('discover', false)
+        ->assertDontSee('Suche nach neuen Teilgebieten')
+        ->set('notify', 'dh@passolution.de, kein-mail')
+        ->call('start')
+        ->assertHasErrors('notify')
+        ->set('notify', 'dh@passolution.de')
+        ->set('web', false)
+        ->call('start')
+        ->assertHasNoErrors()
+        ->assertDispatched('adminv2-task-changed');
+
+    $run = RegionInfoRun::firstOrFail();
+    expect($run->result['task_id'])->toBe($task->id)
+        ->and($run->result['notify'])->toBe(['dh@passolution.de'])
+        ->and($run->result['web'])->toBeFalse()
+        ->and($run->result['discover'])->toBe(0)
+        ->and($run->pending)->toHaveCount(1)
+        ->and($task->refresh()->status)->toBe(AdminTask::STATUS_IN_PROGRESS);
+    Queue::assertPushed(FillMissingRegionInfoJob::class, 1);
+
+    // Laeuft schon: kein zweiter Lauf – weder hier noch per Befehl.
+    $panel->assertSee('Lauf #'.$run->id)->assertSee('Anhalten')->assertDontSee('Lauf starten')->call('start');
+    $this->artisan('regions:fill-missing', ['--country' => ['ES']])->expectsOutputToContain('läuft schon ein Lauf')->assertFailed();
+    expect(RegionInfoRun::count())->toBe(1);
+
+    $panel->call('cancel')->assertSee('angehalten')->assertSee('Neuen Lauf starten');
+    expect($run->refresh()->status)->toBe(RegionInfoRun::STATUS_CANCELLED)
+        ->and($task->refresh()->status)->toBe(AdminTask::STATUS_OPEN);
+});
+
+it('zeigt den KI-Lauf nur an Aufgaben "Regionsinfos per KI ergänzen" und arbeitet ihn bis zur erledigten Aufgabe ab', function () {
+    Mail::fake();
+    fakeGapAi(['texts' => ['cuisine' => ['de' => 'Paella.']]]);
+    $spain = gapCountry();
+    $valencia = gapRegion($spain, 'Valencia');
+    runRegionInfoTaskMigration();
+    $task = RegionInfoTask::openFor($spain);
+    $other = AdminTask::withoutAssignmentMails(fn () => AdminTask::create(['title' => 'Etwas anderes', 'category_id' => $task->category_id, 'subject_type' => $task->subject_type, 'subject_id' => $spain->id]));
+
+    $this->get(route('adminv2.tasks.show', $other))->assertOk()->assertDontSee('KI-Lauf');
+
+    // Ohne Queue-Fake laeuft der Job hier synchron durch.
+    Livewire::test(RegionInfoRunPanel::class, ['taskId' => $task->id])
+        ->set('web', false)
+        ->set('discover', false)
+        ->call('start')
+        ->call('reload')
+        ->assertSee('fertig')
+        ->assertSee('Regionen prüfen');
+
+    expect($valencia->refresh()->info['texts']['cuisine']['de'])->toBe('Paella.')
+        ->and($task->refresh()->status)->toBe(AdminTask::STATUS_DONE);
+    Mail::assertSent(FillMissingRegionInfoMail::class);
 });
 
 // ── Neue Teilgebiete ────────────────────────────────────────────────────

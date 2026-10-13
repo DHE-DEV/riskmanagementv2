@@ -10,7 +10,7 @@ use App\Models\RegionInfoRun;
 use App\Models\Subregion;
 use App\Services\RegionInfoGenerator;
 use App\Support\AdminV2\RegionInfo;
-use App\Support\AdminV2\RegionInfoFillRun;
+use App\Support\AdminV2\RegionInfoFill;
 use App\Support\AdminV2\RegionInfoTask;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -96,21 +96,14 @@ class FillMissingRegionInfo extends Command
             return self::INVALID;
         }
 
-        $regions = $only === 'subregions' ? collect() : $this->withGaps(Region::query()->whereIn('country_id', $countries->modelKeys())->orderBy('country_id')->orderBy('id')->get(), $generator);
-        $subregions = $only === 'regions' ? collect() : $this->withGaps(Subregion::query()->whereIn('country_id', $countries->modelKeys())->when($subregionIds !== [], fn ($query) => $query->whereIn('id', $subregionIds))->orderBy('country_id')->orderBy('region_id')->orderBy('sort_order')->get(), $generator);
-
-        $discover = $only === 'regions' || $subregionIds !== [] || $this->option('no-discover') ? collect() : Region::query()
-            ->whereIn('country_id', $countries->modelKeys())
-            ->when(! $this->option('rediscover'), fn ($query) => $query->whereNull('subregions_checked_at'))
-            ->orderBy('country_id')->orderBy('id')
-            ->get(['id', 'country_id'])
-            ->mapWithKeys(fn (Region $region) => [$region->id => ['country_id' => $region->country_id]]);
-
-        if ($limit = (int) $this->option('limit')) {
-            $regions = $regions->take($limit);
-            $discover = $discover->take(max(0, $limit - $regions->count()));
-            $subregions = $subregions->take(max(0, $limit - $regions->count() - $discover->count()));
-        }
+        ['regions' => $regions, 'subregions' => $subregions, 'discover' => $discover] = RegionInfoFill::plan(
+            $countries,
+            $only,
+            ! $this->option('no-discover'),
+            (bool) $this->option('rediscover'),
+            $subregionIds,
+            (int) $this->option('limit'),
+        );
 
         $this->summary($countries, $regions, $subregions, $discover);
 
@@ -140,6 +133,12 @@ class FillMissingRegionInfo extends Command
             }
 
             return self::SUCCESS;
+        }
+
+        if ($busy = $countries->filter(fn (Country $country) => RegionInfoFill::runningFor($country))->map(fn (Country $country) => $country->getName('de').' (Lauf #'.RegionInfoFill::runningFor($country)->id.')')->values()->all()) {
+            $this->error('Für diese Länder läuft schon ein Lauf: '.implode(', ', $busy));
+
+            return self::FAILURE;
         }
 
         $run = FillMissingRegionInfoJob::start(
@@ -176,19 +175,6 @@ class FillMissingRegionInfo extends Command
         $this->newLine(2);
 
         return $this->showStatus($run->id);
-    }
-
-    /**
-     * Nur Eintraege mit Luecken, je ID die Luecken.
-     *
-     * @param  Collection<int, Region|Subregion>  $targets
-     * @return Collection<int, array>
-     */
-    protected function withGaps(Collection $targets, RegionInfoGenerator $generator): Collection
-    {
-        return $targets
-            ->mapWithKeys(fn (Region|Subregion $target) => [$target->id => ['country_id' => $target->country_id, 'missing' => $generator->missingFor($target)]])
-            ->filter(fn (array $item) => RegionInfo::missingCount($item['missing']) > 0);
     }
 
     protected function summary(Collection $countries, Collection $regions, Collection $subregions, Collection $discover): void
@@ -249,12 +235,8 @@ class FillMissingRegionInfo extends Command
             ['Tokens', number_format((int) ($result['tokens'] ?? 0), 0, ',', '.')],
         ]);
 
-        $ids = fn (string $type) => array_map(fn ($key) => (int) substr($key, 1), array_filter(array_keys($failed), fn ($key) => $key[0] === $type));
-        $names = Region::withTrashed()->whereIn('id', [...$ids('r'), ...$ids('d')])->get()->flatMap(fn (Region $region) => ['r'.$region->id => 'Region '.$region->getName('de'), 'd'.$region->id => 'Teilgebiete von '.$region->getName('de')])->all()
-            + Subregion::withTrashed()->whereIn('id', $ids('s'))->get()->mapWithKeys(fn (Subregion $subregion) => ['s'.$subregion->id => $subregion->kindLabel().' '.$subregion->getName('de')])->all();
-
-        foreach ($failed as $key => $message) {
-            $this->warn(($names[$key] ?? $key).' (#'.substr($key, 1)."): {$message}");
+        foreach (RegionInfoFill::failures($run) as $failure) {
+            $this->warn($failure['name'].' (#'.substr($failure['key'], 1).'): '.$failure['message']);
         }
 
         return $failed === [] ? self::SUCCESS : self::FAILURE;
@@ -262,21 +244,11 @@ class FillMissingRegionInfo extends Command
 
     protected function cancel(int $id): int
     {
-        $run = RegionInfoFillRun::update($id, function (RegionInfoRun $run) {
-            if ($run->kind === RegionInfoRun::KIND_FILL_MISSING && $run->isRunning()) {
-                $run->status = RegionInfoRun::STATUS_CANCELLED;
-                $run->pending = [];
-                $run->finished_at = now();
-            }
-        });
-
-        if ($run?->status !== RegionInfoRun::STATUS_CANCELLED) {
+        if (! RegionInfoFill::cancel($id)) {
             $this->error("Lauf #{$id} läuft nicht.");
 
             return self::FAILURE;
         }
-
-        RegionInfoTask::finished($run);
 
         $this->info("Lauf #{$id} angehalten – Einträge, die gerade in Arbeit sind, werden noch fertig.");
 

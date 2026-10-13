@@ -26,6 +26,19 @@ class ChatGptService
         return $this->lastUsage;
     }
 
+    /**
+     * Quellen der letzten Websuche: belegte Links aus der Antwort (cited, mit
+     * Position im Text) und die uebrigen besuchten Seiten.
+     *
+     * @var array<int, array{url: string, title: ?string, cited: bool, start: ?int}>
+     */
+    protected array $lastSources = [];
+
+    public function lastSources(): array
+    {
+        return $this->lastSources;
+    }
+
     public function __construct()
     {
         // Schluessel und Modell kommen aus dem Admin-Bereich (System > KI),
@@ -196,24 +209,33 @@ class ChatGptService
     {
         $model = $options['model'] ?? $this->model;
 
-        $request = fn (string $tool) => Http::withHeaders([
+        $this->lastSources = [];
+
+        $request = fn (string $tool, bool $withSources = true) => Http::withHeaders([
             'Authorization' => 'Bearer '.$this->apiKey,
             'Content-Type' => 'application/json',
         ])
             // Suchen und Lesen dauert laenger als eine reine Textantwort.
             ->timeout($options['timeout'] ?? 240)
-            ->post('https://api.openai.com/v1/responses', [
+            ->post('https://api.openai.com/v1/responses', array_filter([
                 'model' => $model,
                 'input' => $prompt,
                 'tools' => [['type' => $tool]],
-            ]);
+                // Auch die besuchten Seiten, nicht nur die in der Antwort belegten.
+                'include' => $withSources ? ['web_search_call.action.sources'] : null,
+            ]));
 
         try {
             $response = $request('web_search');
 
+            // Kennt das Modell die Liste der besuchten Seiten nicht, ohne sie.
+            if ($response->status() === 400 && str_contains((string) $response->json('error.message'), 'include')) {
+                $response = $request('web_search', false);
+            }
+
             // Aeltere Modelle kennen das Werkzeug nur unter seinem frueheren Namen.
             if ($response->status() === 400 && str_contains((string) $response->json('error.message'), 'web_search')) {
-                $response = $request('web_search_preview');
+                $response = $request('web_search_preview', false);
             }
         } catch (Exception $e) {
             Log::error('OpenAI-Websuche fehlgeschlagen', ['message' => $e->getMessage()]);
@@ -237,18 +259,56 @@ class ChatGptService
         ] : null;
 
         // Die Antwort besteht aus Suchschritten und Textbloecken – nur der Text zaehlt.
-        $text = collect($data['output'] ?? [])
+        $blocks = collect($data['output'] ?? [])
             ->where('type', 'message')
             ->flatMap(fn (array $item) => $item['content'] ?? [])
             ->where('type', 'output_text')
-            ->pluck('text')
-            ->implode("\n");
+            ->values();
+        $text = $blocks->pluck('text')->implode("\n");
+
+        $this->lastSources = $this->webSources($data, $blocks->all());
 
         if (trim($text) === '') {
             throw new Exception('OpenAI hat keine auswertbare Antwort geliefert.');
         }
 
         return trim($text);
+    }
+
+    /**
+     * Belegte Links (Annotationen der Textbloecke, Position bezogen auf den
+     * zusammengesetzten Text) und besuchte Seiten der Suchschritte – je URL einmal.
+     *
+     * @param  array<int, array>  $blocks
+     * @return array<int, array{url: string, title: ?string, cited: bool, start: ?int}>
+     */
+    protected function webSources(array $data, array $blocks): array
+    {
+        $sources = [];
+        $offset = 0;
+
+        foreach ($blocks as $block) {
+            foreach ((array) ($block['annotations'] ?? []) as $annotation) {
+                if (($annotation['type'] ?? '') === 'url_citation' && filled($annotation['url'] ?? null)) {
+                    $sources[] = ['url' => (string) $annotation['url'], 'title' => $annotation['title'] ?? null, 'cited' => true, 'start' => $offset + (int) ($annotation['start_index'] ?? 0)];
+                }
+            }
+            $offset += mb_strlen((string) ($block['text'] ?? '')) + 1;
+        }
+
+        $seen = array_flip(array_column($sources, 'url'));
+
+        foreach ((array) ($data['output'] ?? []) as $item) {
+            foreach ((array) ($item['action']['sources'] ?? []) as $source) {
+                $url = (string) ($source['url'] ?? '');
+                if ($url !== '' && ! isset($seen[$url])) {
+                    $sources[] = ['url' => $url, 'title' => $source['title'] ?? null, 'cited' => false, 'start' => null];
+                    $seen[$url] = true;
+                }
+            }
+        }
+
+        return $sources;
     }
 
     /**

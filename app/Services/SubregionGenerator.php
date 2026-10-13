@@ -53,7 +53,7 @@ class SubregionGenerator
     {
         $done = [];
         $created = [];
-        ['answers' => $answers, 'failed' => $failed, 'usage' => $usage] = $this->ask(
+        ['answers' => $answers, 'failed' => $failed, 'usage' => $usage, 'sources' => $sources] = $this->ask(
             $regions->mapWithKeys(fn (Region $region) => [$region->id => $this->prompt($region, $web)])->all(),
             $web,
             4000,
@@ -65,8 +65,13 @@ class SubregionGenerator
             }
 
             try {
-                $created = [...$created, ...$this->store($region, $this->parse($this->stripCitations($answers[$region->id])))];
+                $new = $this->store($region, $this->parse($this->stripCitations($answers[$region->id])));
+                $created = [...$created, ...$new];
                 $done[] = $region->id;
+
+                if ($new !== []) {
+                    $this->storeSources($region, $sources[$region->id] ?? [], $answers[$region->id], 'subregions');
+                }
             } catch (Throwable $e) {
                 $failed[$region->id] = $this->shortError($e);
             }
@@ -105,7 +110,7 @@ class SubregionGenerator
         $languages = implode(', ', array_map(fn ($locale) => $locale.' = '.CustomEvent::localeLabel($locale, false), $locales));
         $max = self::MAX_PER_REGION;
         $research = $web
-            ? ' Recherchiere dazu im Internet in verlässlichen Quellen (offizielle Tourismusseiten, Wikipedia). Keine Quellenangaben oder Links in der Antwort.'
+            ? ' Recherchiere dazu im Internet in mehreren verlässlichen Quellen (offizielle Tourismusseiten, Reiseveranstalter, Wikipedia). Belege jedes Teilgebiet direkt hinter seinem deutschen Namen mit einem Link in der Form ([Seite](URL)) – die Links werden automatisch entfernt und als Quellen gespeichert.'
             : '';
         $example = json_encode(['subregions' => [[
             'kind' => 'island',

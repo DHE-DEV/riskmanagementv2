@@ -87,7 +87,7 @@ class RegionInfoGenerator
     {
         $done = [];
         $changed = [];
-        ['answers' => $answers, 'failed' => $failed, 'usage' => $usage] = $this->ask(
+        ['answers' => $answers, 'failed' => $failed, 'usage' => $usage, 'sources' => $sources] = $this->ask(
             $targets->mapWithKeys(fn (Region|Subregion $target) => [$target->id => $this->prompt($target, $this->missingFor($target), $web)])->all(),
             $web,
         );
@@ -103,6 +103,7 @@ class RegionInfoGenerator
 
                 if ($this->store($target, $suggestion)) {
                     $changed[] = $target->id;
+                    $this->storeSources($target, $sources[$target->id] ?? [], $answers[$target->id]);
                 }
                 $done[] = $target->id;
             } catch (Throwable $e) {
@@ -426,10 +427,10 @@ PROMPT;
      */
     protected function researchNote(bool $web): string
     {
-        $own = ' Formuliere alle Texte vollständig eigenständig in eigenen Worten: Übernimm keine Sätze oder prägnanten Formulierungen aus Quellen (auch nicht aus Wikipedia, Reiseführern oder Tourismusseiten), übersetze keine fremden Texte und gib keine Werbeslogans wieder. Quellen dienen nur als Grundlage für Fakten.';
+        $own = ' Formuliere alle Texte vollständig eigenständig in eigenen Worten: Übernimm keine Sätze oder prägnanten Formulierungen aus Quellen (auch nicht aus Wikipedia, Reiseführern oder Tourismusseiten), übersetze keine fremden Texte und gib keine Werbeslogans wieder. Quellen dienen nur als Grundlage für Fakten. Folge nicht dem Aufbau, der Reihenfolge oder der Auswahl einer einzelnen Quelle, sondern gewichte und ordne die Fakten selbst – passend zu den Fragen von Reisenden in dieser App.';
 
         return $web
-            ? ' Recherchiere dazu im Internet in verlässlichen Quellen (offizielle Tourismus- und Verwaltungsseiten, Statistikämter, Wikipedia) und nimm Zahlen nur, wenn sie belegt sind. Keine Quellenangaben, Links oder Fußnoten in den Texten.'.$own
+            ? ' Recherchiere dazu im Internet in mehreren unabhängigen, verlässlichen Quellen (offizielle Tourismus- und Verwaltungsseiten, Statistikämter, Wikipedia) und führe die Fakten daraus zusammen; nimm Zahlen nur, wenn sie belegt sind. Belege jede recherchierte Angabe direkt dahinter mit einem Link in der Form ([Seite](URL)) – die Links werden automatisch aus den Texten entfernt und als Quellen gespeichert.'.$own
             : $own;
     }
 }

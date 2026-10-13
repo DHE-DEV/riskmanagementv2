@@ -37,7 +37,7 @@ class RegionInfoTask
 
         return AdminTask::withoutAssignmentMails(fn () => AdminTask::create([
             'title' => self::title($country),
-            'description' => "Fehlende Regionsinfos aller Regionen und Teilgebiete von {$country->getName('de')} per KI ergänzen. Starten auf dem Server:\n\n"
+            'description' => "Fehlende Regionsinfos aller Regionen und Teilgebiete von {$country->getName('de')} per KI ergänzen. Starten in dieser Aufgabe (Kasten „KI-Lauf“) oder auf dem Server:\n\n"
                 ."php artisan regions:fill-missing --country={$code} --dry-run\n"
                 ."php artisan regions:fill-missing --country={$code} --notify=…\n\n"
                 .'Die Aufgabe wird nach dem Lauf und der Mail automatisch erledigt. Ergänztes steht danach als „KI-Entwurf, ungeprüft“ an den Regionen und Teilgebieten.',
@@ -45,6 +45,30 @@ class RegionInfoTask
             'subject_type' => TaskSubjects::morphClass('country'),
             'subject_id' => $country->id,
         ]));
+    }
+
+    /**
+     * Das Land, wenn die Aufgabe eine "Regionsinfos per KI ergänzen" ist.
+     */
+    public static function countryOf(AdminTask $task): ?Country
+    {
+        if ($task->subject_type !== TaskSubjects::morphClass('country') || ! str_starts_with((string) $task->title, self::TITLE)) {
+            return null;
+        }
+
+        return Country::query()->find($task->subject_id);
+    }
+
+    /**
+     * Der letzte Lauf zu dieser Aufgabe.
+     */
+    public static function lastRun(AdminTask $task): ?RegionInfoRun
+    {
+        return RegionInfoRun::query()
+            ->where('kind', RegionInfoRun::KIND_FILL_MISSING)
+            ->where('result->task_id', $task->id)
+            ->latest('id')
+            ->first();
     }
 
     /**

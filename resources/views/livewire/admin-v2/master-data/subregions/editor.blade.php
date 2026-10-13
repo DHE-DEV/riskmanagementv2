@@ -117,6 +117,11 @@
                         @if (filled($infoMeta['ai_filled'] ?? null))
                             <p class="text-zinc-600 dark:text-zinc-400">Von der KI ergänzt: {{ RegionInfo::fieldLabels((array) $infoMeta['ai_filled']) }}.</p>
                         @endif
+                        @if ($record && ($sourceCount = \App\Models\RegionInfoSource::query()->where('sourceable_type', $record->getMorphClass())->where('sourceable_id', $record->getKey())->count()))
+                            <p class="text-zinc-600 dark:text-zinc-400">
+                                <a href="{{ route('adminv2.master-data.region-info-sources', ['type' => 'subregion', 'id' => $record->getKey()]) }}" target="_blank" class="inline-flex items-center gap-1 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">Quellen der KI-Recherche ({{ $sourceCount }}) <flux:icon.arrow-top-right-on-square variant="micro" /></a>
+                            </p>
+                        @endif
                         @if (filled($infoMeta['last_reviewed_at'] ?? null) && blank($infoMeta['reviewed_at'] ?? null))
                             <p class="text-zinc-600 dark:text-zinc-400">Zuvor geprüft am {{ \Illuminate\Support\Carbon::parse($infoMeta['last_reviewed_at'])->timezone(config('app.timezone'))->format('d.m.Y') }}{{ filled($infoMeta['last_reviewed_by'] ?? null) ? ' von '.$infoMeta['last_reviewed_by'] : '' }}.</p>
                         @endif

@@ -174,8 +174,8 @@ class FillMissingRegionInfoJob implements ShouldQueue
 
         try {
             $result = $type === 'd'
-                ? ['changed' => []] + app(SubregionGenerator::class)->discover($targets, $web)
-                : ['created' => []] + $generator->fillMissing($targets, $web);
+                ? ['changed' => []] + app(SubregionGenerator::class)->forRun($run->id)->discover($targets, $web)
+                : ['created' => []] + $generator->forRun($run->id)->fillMissing($targets, $web);
         } catch (Throwable $e) {
             $result = ['done' => [], 'changed' => [], 'created' => [], 'failed' => array_fill_keys($targets->modelKeys(), mb_substr($e->getMessage(), 0, 200)), 'usage' => null];
         }

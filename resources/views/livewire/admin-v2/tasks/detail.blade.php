@@ -196,6 +196,9 @@
 
         {{-- Rechte Spalte: Unteraufgaben, darunter Notizen und Verlauf. --}}
         <div class="flex min-w-0 flex-col gap-6">
+        @if ($task && \App\Support\AdminV2\RegionInfoTask::countryOf($task))
+            <livewire:admin-v2.tasks.region-info-run-panel :task-id="$task->id" :key="'region-info-run-'.$task->id" />
+        @endif
         @if ($task)
             {{-- Unteraufgaben: eigene Aufgaben mit allem Drum und Dran, hier in Kurzform. --}}
             <x-adminv2.card

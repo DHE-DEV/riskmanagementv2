@@ -29,17 +29,18 @@ use App\Livewire\AdminV2\MasterData\Airports\Editor as AirportEditor;
 use App\Livewire\AdminV2\MasterData\Airports\Index as AirportIndex;
 use App\Livewire\AdminV2\MasterData\Cities\Editor as CityEditor;
 use App\Livewire\AdminV2\MasterData\Cities\Index as CityIndex;
-use App\Livewire\AdminV2\MasterData\Sights\Editor as SightEditor;
-use App\Livewire\AdminV2\MasterData\Sights\Index as SightIndex;
 use App\Livewire\AdminV2\MasterData\Continents\Editor as ContinentEditor;
 use App\Livewire\AdminV2\MasterData\Continents\Index as ContinentIndex;
 use App\Livewire\AdminV2\MasterData\Countries\Editor as CountryEditor;
 use App\Livewire\AdminV2\MasterData\Countries\Index as CountryIndex;
+use App\Livewire\AdminV2\MasterData\RegionInfoSources\Show as RegionInfoSources;
 use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
 use App\Livewire\AdminV2\MasterData\Regions\Index as RegionIndex;
+use App\Livewire\AdminV2\MasterData\Section as MasterDataSection;
+use App\Livewire\AdminV2\MasterData\Sights\Editor as SightEditor;
+use App\Livewire\AdminV2\MasterData\Sights\Index as SightIndex;
 use App\Livewire\AdminV2\MasterData\Subregions\Editor as SubregionEditor;
 use App\Livewire\AdminV2\MasterData\Subregions\Index as SubregionIndex;
-use App\Livewire\AdminV2\MasterData\Section as MasterDataSection;
 use App\Livewire\AdminV2\Rules\Show as RuleShow;
 use App\Livewire\AdminV2\System\Ai as SystemAi;
 use App\Livewire\AdminV2\System\AiSearchEditor as SystemAiSearchEditor;
@@ -109,6 +110,9 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('subregions', SubregionIndex::class)->name('subregions.index');
             Route::get('subregions/create', SubregionEditor::class)->name('subregions.create');
             Route::get('subregions/{subregion}', SubregionEditor::class)->whereNumber('subregion')->name('subregions.edit');
+
+            // Quellen der KI-Recherche einer Region bzw. eines Teilgebiets – nur hier geladen.
+            Route::get('sources/{type}/{id}', RegionInfoSources::class)->whereIn('type', ['region', 'subregion'])->whereNumber('id')->name('region-info-sources');
 
             Route::get('cities', CityIndex::class)->name('cities.index');
             Route::get('cities/create', CityEditor::class)->name('cities.create');

@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -435,6 +436,19 @@ class Detail extends Component
             'status' => $this->task->isDone() ? AdminTask::STATUS_OPEN : AdminTask::STATUS_DONE,
         ]);
         $this->status = $this->task->status;
+
+        unset($this->task, $this->timeline);
+    }
+
+    /**
+     * Der KI-Lauf (RegionInfoRunPanel) hat Status oder Verlauf geaendert.
+     */
+    #[On('adminv2-task-changed')]
+    public function reloadTask(): void
+    {
+        if ($this->task) {
+            $this->status = $this->task->fresh()->status;
+        }
 
         unset($this->task, $this->timeline);
     }
