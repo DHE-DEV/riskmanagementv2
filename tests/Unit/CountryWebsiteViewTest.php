@@ -54,3 +54,36 @@ it('renders every tab with the api data', function () {
         ->toContain('Aktuelle Wetterdaten sind gerade nicht verfügbar.')
         ->toContain('data-panel="health"');
 });
+
+it('has admin-only detail routes for regions and subregions', function () {
+    foreach (['region' => 'regions/{region}', 'subregion' => 'subregions/{subregion}'] as $name => $uri) {
+        $route = Route::getRoutes()->getByName('adminv2.master-data.countries.website.'.$name);
+
+        expect($route)->not->toBeNull()
+            ->and($route->uri())->toBe('adminv2/master-data/countries/{country}/website/'.$uri)
+            ->and($route->gatherMiddleware())->toContain('adminv2');
+    }
+});
+
+it('renders a region page with subregions, cities and sights', function () {
+    $country = (new Country)->forceFill(['id' => 14, 'iso_code' => 'ES']);
+    $html = view('adminv2.country-website.place', [
+        'country' => $country,
+        'lang' => 'de',
+        'languages' => CountryWebsiteController::LANGUAGES,
+        'type' => 'region',
+        'c' => ['iso_code' => 'ES', 'name' => 'Spanien', 'images' => []],
+        'place' => [
+            'id' => 30, 'code' => 'ES-AN', 'name' => 'Andalusien', 'is_popular' => true, 'cities_count' => 1, 'subregions_count' => 1,
+            'country' => ['code' => 'ES', 'name' => 'Spanien'],
+            'info' => ['short_description' => 'Süden', 'description' => 'Lang', 'known_for' => ['Flamenco'], 'climate' => 'Heiß im Sommer', 'best_months' => [4, 5], 'population' => 8773535],
+            'subregions' => [['id' => 7, 'name' => 'Costa del Sol', 'kind' => 'area', 'kind_name' => 'Reisegebiet', 'group_name' => 'Reisegebiete', 'cities_count' => 2, 'sights_count' => 4]],
+        ],
+        'cities' => [['id' => 2, 'name' => 'Sevilla', 'region' => ['id' => 30, 'name' => 'Andalusien'], 'is_regional_capital' => true]],
+        'sights' => [['id' => 3, 'name' => 'Alhambra', 'category_name' => 'Palast', 'is_highlight' => true, 'region' => ['id' => 30, 'name' => 'Andalusien']]],
+    ])->render();
+
+    expect($html)->toContain('Andalusien')->toContain('Flamenco')->toContain('Heiß im Sommer')->toContain('8.773.535')
+        ->toContain('Reisegebiete')->toContain('Costa del Sol')->toContain('/website/subregions/7')
+        ->toContain('Sevilla')->toContain('Regionalhauptstadt')->toContain('Alhambra')->toContain('Zurück zu Spanien');
+});

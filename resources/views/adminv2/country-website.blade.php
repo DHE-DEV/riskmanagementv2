@@ -90,21 +90,7 @@
 </head>
 <body class="min-h-screen bg-zinc-50 font-sans text-zinc-800 antialiased dark:bg-zinc-950 dark:text-zinc-200">
 
-{{-- Leiste oben: zurück, Sprache --}}
-<div class="sticky top-0 z-30 border-b border-zinc-200/70 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-    <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-sm">
-        <a href="{{ route('adminv2.master-data.countries.edit', $country) }}" class="inline-flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
-            <i class="fa-solid fa-arrow-left"></i> Zurück zum Land
-        </a>
-        <span class="hidden text-xs uppercase tracking-widest text-zinc-400 sm:block">Website-Ansicht · wie in TripData</span>
-        <div class="flex items-center gap-1 rounded-full bg-zinc-100 p-1 dark:bg-zinc-900">
-            @foreach ($languages as $code => $label)
-                <a href="{{ request()->fullUrlWithQuery(['lang' => $code]) }}" title="{{ $label }}"
-                   class="rounded-full px-3 py-1 text-xs font-semibold {{ $lang === $code ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200' }}">{{ strtoupper($code) }}</a>
-            @endforeach
-        </div>
-    </div>
-</div>
+@include('adminv2.country-website.topbar', ['backUrl' => route('adminv2.master-data.countries.edit', $country), 'backLabel' => 'Zurück zum Land'])
 
 {{-- Titelbild --}}
 <header class="relative isolate overflow-hidden">
@@ -268,25 +254,29 @@
             @forelse ($regions as $region)
                 @php $subs = $subregionsByRegion->get($region['id'], collect()); @endphp
                 <article data-item data-popular="{{ ! empty($region['is_popular']) ? 1 : 0 }}" data-search="{{ mb_strtolower($region['name']) }}"
-                         class="flex flex-col rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-900 dark:ring-zinc-800">
+                         class="group relative flex flex-col rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/70 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-[#0b3250]/30 dark:bg-zinc-900 dark:ring-zinc-800">
                     <div class="flex items-start justify-between gap-3">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">{{ $region['name'] }}</h3>
+                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">
+                            {{-- ganze Karte klickbar; Teilgebiet-Links und Karte liegen darueber (relative z-10) --}}
+                            <a href="{{ route('adminv2.master-data.countries.website.region', ['country' => $country, 'region' => $region['id'], 'lang' => $lang]) }}" class="after:absolute after:inset-0 after:rounded-3xl">{{ $region['name'] }}</a>
+                            <i class="fa-solid fa-arrow-right ms-1 text-sm text-zinc-300 transition group-hover:translate-x-0.5 group-hover:text-[#0b3250] dark:group-hover:text-lime-300"></i>
+                        </h3>
                         @if (! empty($region['is_popular']))<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"><i class="fa-solid fa-star me-1"></i>Beliebt</span>@endif
                     </div>
                     @if (! empty($region['description']))<p class="mt-2 line-clamp-4 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{{ $region['description'] }}</p>@endif
                     @if ($subs->isNotEmpty())
                         <div class="mt-3 flex flex-wrap gap-1.5">
                             @foreach ($subs as $sub)
-                                <span class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" title="{{ $sub['kind_name'] ?? '' }}">
-                                    <i class="fa-solid {{ ($sub['kind'] ?? '') === 'island' || ($sub['kind'] ?? '') === 'island_group' ? 'fa-umbrella-beach' : 'fa-location-dot' }} me-1 text-zinc-400"></i>{{ $sub['name'] }}
-                                </span>
+                                <a href="{{ route('adminv2.master-data.countries.website.subregion', ['country' => $country, 'subregion' => $sub['id'], 'lang' => $lang]) }}" class="relative z-10 rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-zinc-700 hover:bg-[#0b3250] hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-lime-300 dark:hover:text-[#0b3250]" title="{{ $sub['kind_name'] ?? '' }}">
+                                    <i class="fa-solid {{ in_array($sub['kind'] ?? '', ['island', 'island_group'], true) ? 'fa-umbrella-beach' : 'fa-location-dot' }} me-1 opacity-60"></i>{{ $sub['name'] }}
+                                </a>
                             @endforeach
                         </div>
                     @endif
                     <div class="mt-auto flex items-center gap-4 pt-4 text-xs text-zinc-500">
                         <span><i class="fa-solid fa-city me-1"></i>{{ $region['cities_count'] ?? 0 }} Städte</span>
                         @if (! empty($region['subregions_count']))<span><i class="fa-solid fa-layer-group me-1"></i>{{ $region['subregions_count'] }} Teilgebiete</span>@endif
-                        @if (! empty($region['coordinates']['lat']))<a class="ms-auto hover:text-zinc-900 dark:hover:text-white" href="{{ $osm($region['coordinates']['lat'], $region['coordinates']['lng'], 8) }}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot me-1"></i>Karte</a>@endif
+                        @if (! empty($region['coordinates']['lat']))<a class="relative z-10 ms-auto hover:text-zinc-900 dark:hover:text-white" href="{{ $osm($region['coordinates']['lat'], $region['coordinates']['lng'], 8) }}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot me-1"></i>Karte</a>@endif
                     </div>
                 </article>
             @empty
@@ -300,22 +290,7 @@
         @include('adminv2.country-website.filter-bar', ['target' => 'cities', 'filters' => ['all' => 'Alle', 'popular' => 'Beliebt'], 'regionOptions' => $regionNames])
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-list="cities">
             @forelse (collect($cities)->sortByDesc(fn ($city) => [(int) ! empty($city['is_capital']), (int) ! empty($city['is_popular']), $city['population'] ?? 0]) as $city)
-                <article data-item data-popular="{{ ! empty($city['is_popular']) ? 1 : 0 }}" data-region="{{ $city['region']['id'] ?? '' }}" data-search="{{ mb_strtolower($city['name']) }}"
-                         class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-900 dark:ring-zinc-800">
-                    <div class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ ! empty($city['is_capital']) ? 'bg-[#0b3250] text-white' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800' }}">
-                        <i class="fa-solid {{ ! empty($city['is_capital']) ? 'fa-landmark-dome' : 'fa-city' }}"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5 font-semibold text-zinc-900 dark:text-white">
-                            <span class="truncate">{{ $city['name'] }}</span>
-                            @if (! empty($city['is_popular']))<i class="fa-solid fa-star text-[10px] text-amber-500"></i>@endif
-                        </div>
-                        <div class="truncate text-xs text-zinc-500">
-                            {{ collect([! empty($city['is_capital']) ? 'Hauptstadt' : (! empty($city['is_regional_capital']) ? 'Regionalhauptstadt' : null), $city['region']['name'] ?? null, ! empty($city['population']) ? number_format($city['population'], 0, ',', '.').' Einw.' : null])->filter()->implode(' · ') }}
-                        </div>
-                    </div>
-                    @if (! empty($city['coordinates']['lat']))<a href="{{ $osm($city['coordinates']['lat'], $city['coordinates']['lng']) }}" target="_blank" rel="noopener" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-white" title="Karte"><i class="fa-solid fa-map-location-dot"></i></a>@endif
-                </article>
+                @include('adminv2.country-website.city-card', ['city' => $city])
             @empty
                 @include('adminv2.country-website.empty', ['text' => 'Für dieses Land sind noch keine Städte gepflegt.'])
             @endforelse
@@ -327,48 +302,7 @@
         @include('adminv2.country-website.filter-bar', ['target' => 'sights', 'filters' => ['all' => 'Alle', 'popular' => 'Highlights ('.$highlights.')'], 'regionOptions' => $regionNames, 'categoryOptions' => $sightCategories])
         <div class="grid gap-4 md:grid-cols-2" data-list="sights">
             @forelse (collect($sights)->sortByDesc(fn ($s) => (int) ! empty($s['is_highlight'])) as $sight)
-                <article data-item data-popular="{{ ! empty($sight['is_highlight']) ? 1 : 0 }}" data-region="{{ $sight['region']['id'] ?? '' }}" data-category="{{ $sight['category'] ?? '' }}" data-search="{{ mb_strtolower($sight['name'].' '.($sight['city']['name'] ?? '')) }}"
-                         class="flex flex-col rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-900 dark:ring-zinc-800">
-                    <div class="flex items-start gap-3">
-                        <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#0b3250]/8 text-[#0b3250] dark:bg-lime-300/10 dark:text-lime-300"><i class="fa-solid fa-binoculars"></i></div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-semibold leading-snug text-zinc-900 dark:text-white">{{ $sight['name'] }}</h3>
-                            <div class="text-xs text-zinc-500">{{ collect([$sight['category_name'] ?? null, $sight['city']['name'] ?? ($sight['subregion']['name'] ?? null), $sight['region']['name'] ?? null])->filter()->implode(' · ') }}</div>
-                        </div>
-                        @if (! empty($sight['is_highlight']))<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"><i class="fa-solid fa-star me-1"></i>Highlight</span>@endif
-                    </div>
-                    @if (! empty($sight['short_description']))<p class="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{{ $sight['short_description'] }}</p>@endif
-                    @php
-                        $sightFacts = array_filter([
-                            ['fa-hourglass-half', 'Besuchsdauer', ! empty($sight['visit_minutes']) ? ($sight['visit_minutes'] >= 60 ? round($sight['visit_minutes'] / 60, 1).' Std.' : $sight['visit_minutes'].' Min.') : null],
-                            ['fa-clock', 'Öffnungszeiten', $sight['opening_hours'] ?? null],
-                            ['fa-ticket', 'Eintritt', $sight['admission'] ?? null],
-                            ['fa-sun', 'Beste Zeit', $sight['best_time'] ?? null],
-                            ['fa-lightbulb', 'Tipps', $sight['tips'] ?? null],
-                            ['fa-wheelchair', 'Barrierefreiheit', $sight['accessibility'] ?? null],
-                            ['fa-location-dot', 'Adresse', $sight['address'] ?? null],
-                        ], fn ($fact) => ! empty($fact[2]));
-                    @endphp
-                    @if (! empty($sight['description']) || $sightFacts)
-                        <details class="group mt-3">
-                            <summary class="cursor-pointer list-none text-sm font-semibold text-[#0b3250] dark:text-lime-300"><span class="group-open:hidden">Mehr anzeigen</span><span class="hidden group-open:inline">Weniger</span> <i class="fa-solid fa-chevron-down ms-1 text-xs transition group-open:rotate-180"></i></summary>
-                            @if (! empty($sight['description']))<p class="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">{!! nl2br(e($sight['description'])) !!}</p>@endif
-                            @if ($sightFacts)
-                                <dl class="mt-3 grid gap-2 text-sm">
-                                    @foreach ($sightFacts as [$icon, $label, $value])
-                                        <div class="flex gap-2"><i class="fa-solid {{ $icon }} mt-1 w-4 text-center text-zinc-400"></i><div><dt class="inline font-medium">{{ $label }}:</dt> <dd class="inline text-zinc-600 dark:text-zinc-400">{{ $value }}</dd></div></div>
-                                    @endforeach
-                                </dl>
-                            @endif
-                        </details>
-                    @endif
-                    <div class="mt-auto flex flex-wrap items-center gap-3 pt-4 text-xs">
-                        @if (! empty($sight['coordinates']['lat']))<a href="{{ $osm($sight['coordinates']['lat'], $sight['coordinates']['lng'], 15) }}" target="_blank" rel="noopener" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><i class="fa-solid fa-map-location-dot me-1"></i>Karte</a>@endif
-                        @if (! empty($sight['website_url']))<a href="{{ $sight['website_url'] }}" target="_blank" rel="noopener" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><i class="fa-solid fa-globe me-1"></i>Website</a>@endif
-                        @if (! empty($sight['ticket_url']))<a href="{{ $sight['ticket_url'] }}" target="_blank" rel="noopener" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><i class="fa-solid fa-ticket me-1"></i>Tickets</a>@endif
-                        @if (array_key_exists('is_reviewed', $sight) && ! $sight['is_reviewed'])<span class="ms-auto rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-500 dark:bg-zinc-800" title="Von der KI entworfen, noch nicht geprüft">KI-Entwurf</span>@endif
-                    </div>
-                </article>
+                @include('adminv2.country-website.sight-card', ['sight' => $sight])
             @empty
                 @include('adminv2.country-website.empty', ['text' => 'Für dieses Land sind noch keine Sehenswürdigkeiten gepflegt.'])
             @endforelse

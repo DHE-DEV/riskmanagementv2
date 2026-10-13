@@ -105,6 +105,8 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('countries/create', CountryEditor::class)->name('countries.create');
             Route::get('countries/{country}', CountryEditor::class)->whereNumber('country')->name('countries.edit');
             Route::get('countries/{country}/website', CountryWebsiteController::class)->whereNumber('country')->name('countries.website');
+            Route::get('countries/{country}/website/regions/{region}', [CountryWebsiteController::class, 'region'])->whereNumber(['country', 'region'])->name('countries.website.region');
+            Route::get('countries/{country}/website/subregions/{subregion}', [CountryWebsiteController::class, 'subregion'])->whereNumber(['country', 'subregion'])->name('countries.website.subregion');
 
             Route::get('regions', RegionIndex::class)->name('regions.index');
             Route::get('regions/create', RegionEditor::class)->name('regions.create');

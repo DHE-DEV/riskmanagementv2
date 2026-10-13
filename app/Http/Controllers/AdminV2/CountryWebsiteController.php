@@ -52,6 +52,45 @@ class CountryWebsiteController extends Controller
         ]);
     }
 
+    /** Detailseite einer Region (GET /v1/regions/{id}) mit ihren Teilgebieten, Städten und Sehenswürdigkeiten. */
+    public function region(Request $request, Country $country, int $region): View
+    {
+        return $this->place($request, $country, 'region', $region);
+    }
+
+    /** Detailseite eines Teilgebiets – Insel, Inselgruppe, Reisegebiet (GET /v1/subregions/{id}). */
+    public function subregion(Request $request, Country $country, int $subregion): View
+    {
+        return $this->place($request, $country, 'subregion', $subregion);
+    }
+
+    private function place(Request $request, Country $country, string $type, int $id): View
+    {
+        $lang = array_key_exists($request->query('lang'), self::LANGUAGES) ? $request->query('lang') : 'de';
+        $apiRequest = Request::create('/', 'GET', ['lang' => $lang]);
+        $code = (string) $country->iso_code;
+        $places = app(CountryPlacesController::class);
+
+        $place = $this->data(fn () => $places->{$type}($apiRequest, $id));
+        // Nur Orte dieses Landes – sonst passte der Rueckweg nicht.
+        abort_if($place === null || strcasecmp($place['country']['code'] ?? '', $code) !== 0, 404);
+
+        $detail = $this->data(fn () => app(BaseDataController::class)->country($apiRequest, $code)) ?? [];
+        $key = $type === 'region' ? 'region' : 'subregion';
+        $belongs = fn (array $item) => (int) ($item[$key]['id'] ?? 0) === $id;
+
+        return view('adminv2.country-website.place', [
+            'country' => $country,
+            'lang' => $lang,
+            'languages' => self::LANGUAGES,
+            'type' => $type,
+            'place' => $place,
+            'c' => $detail,
+            'cities' => array_values(array_filter($this->data(fn () => $places->cities($apiRequest, $code)) ?? [], $belongs)),
+            'sights' => array_values(array_filter($this->data(fn () => $places->sights($apiRequest, $code)) ?? [], $belongs)),
+        ]);
+    }
+
     /** `data` einer API-Antwort; null bei Fehlerstatus oder Ausnahme. */
     private function data(callable $call): ?array
     {
