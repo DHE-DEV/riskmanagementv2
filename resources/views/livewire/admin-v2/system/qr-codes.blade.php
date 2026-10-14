@@ -12,6 +12,7 @@
         <section class="flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
             <flux:radio.group wire:model.live="type" label="Art" variant="segmented">
                 <flux:radio value="{{ QrCodes::TYPE_TRIPDATA }}" label="TripData-Link" />
+                <flux:radio value="{{ QrCodes::TYPE_TRIPDATA_APP }}" label="App-Direktlink" />
                 <flux:radio value="{{ QrCodes::TYPE_TRAVEL_DETAILS }}" label="Travel Details" />
                 <flux:radio value="{{ QrCodes::TYPE_FREE }}" label="Freier Inhalt" />
             </flux:radio.group>
@@ -28,6 +29,10 @@
                 @if ($type === QrCodes::TYPE_TRIPDATA)
                     <flux:callout icon="device-phone-mobile" variant="secondary">
                         <flux:callout.text>Mit installierter TripData-App öffnet die Handy-Kamera die Reise direkt in der App – ist sie dort noch nicht gespeichert, fragt die App, ob sie angelegt werden soll. Ohne App führt der Link zur Reise auf travel-details.eu.</flux:callout.text>
+                    </flux:callout>
+                @elseif ($type === QrCodes::TYPE_TRIPDATA_APP)
+                    <flux:callout icon="device-phone-mobile" variant="secondary">
+                        <flux:callout.text>Öffnet die TripData-App direkt über ihr eigenes Link-Format (tripdata://) – funktioniert ohne Server, aber nur mit installierter App: Ohne App passiert beim Scannen nichts.</flux:callout.text>
                     </flux:callout>
                 @else
                     <flux:select wire:model.live="language" label="Sprache der Reisenden-Seite">
@@ -77,7 +82,7 @@
                 @endif
                 <div class="flex flex-wrap justify-center gap-2">
                     <flux:button variant="primary" icon="arrow-down-tray" wire:click="downloadPdf">Als PDF herunterladen</flux:button>
-                    @if ($this->travelCode)
+                    @if ($this->travelCode && $type !== QrCodes::TYPE_TRIPDATA_APP)
                         <flux:button icon="arrow-top-right-on-square" :href="$this->content" target="_blank">Reise öffnen</flux:button>
                     @endif
                 </div>

@@ -16,7 +16,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * Art „TripData-Link“ (Vorgabe) macht aus der Reise-ID den Link https://plattform.passolution.de/reise/…:
  * Mit installierter TripData-App oeffnet die Handy-Kamera ihn direkt in der App (Reise oeffnen oder
- * anlegen), ohne App landet er auf der Reisenden-Seite. Art „Travel Details“ macht aus der Reise-ID eines Travel Detail Links den Link der
+ * anlegen), ohne App landet er auf der Reisenden-Seite. Art „App-Direktlink“ macht daraus
+ * tripdata://reise/… – oeffnet die App ohne Server (Uebergang, solange die Domain nicht bereitsteht),
+ * ohne App passiert beim Scannen nichts. Art „Travel Details“ macht aus der Reise-ID eines Travel Detail Links den Link der
  * Reisenden-Seite (https://travel-details.eu/de?tid=…) – den liest die TripData-App beim Scannen,
  * und mit der Handy-Kamera oeffnet er die Reise im Browser. Art „Freier Inhalt“ kodiert Text oder
  * einen beliebigen Link unveraendert.
@@ -28,6 +30,8 @@ class QrCodes extends Component
     use AuthorizesAdminV2;
 
     public const TYPE_TRIPDATA = 'tripdata';
+
+    public const TYPE_TRIPDATA_APP = 'tripdata-app';
 
     public const TYPE_TRAVEL_DETAILS = 'travel-details';
 
@@ -47,7 +51,7 @@ class QrCodes extends Component
     #[Computed]
     public function travelCode(): ?string
     {
-        return in_array($this->type, [self::TYPE_TRIPDATA, self::TYPE_TRAVEL_DETAILS], true)
+        return in_array($this->type, [self::TYPE_TRIPDATA, self::TYPE_TRIPDATA_APP, self::TYPE_TRAVEL_DETAILS], true)
             ? QrCodeGenerator::normalizeTravelDetailsCode($this->value)
             : null;
     }
@@ -58,6 +62,9 @@ class QrCodes extends Component
     {
         if ($this->type === self::TYPE_TRIPDATA) {
             return $this->travelCode ? QrCodeGenerator::tripDataUrl($this->travelCode) : null;
+        }
+        if ($this->type === self::TYPE_TRIPDATA_APP) {
+            return $this->travelCode ? QrCodeGenerator::tripDataAppUrl($this->travelCode) : null;
         }
         if ($this->type === self::TYPE_TRAVEL_DETAILS) {
             return $this->travelCode ? QrCodeGenerator::travelDetailsUrl($this->travelCode, $this->language) : null;

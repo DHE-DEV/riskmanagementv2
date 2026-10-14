@@ -22,6 +22,17 @@ it('uses the tripdata link by default', function () {
         ->assertSeeHtml('shape-rendering="crispEdges"');
 });
 
+it('encodes the app direct link without the open button', function () {
+    Livewire::test(QrCodes::class)
+        ->set('type', QrCodes::TYPE_TRIPDATA_APP)
+        ->set('value', 'ZIPT-HRG1-Z6Y5')
+        ->assertSee('tripdata://reise/ZIPTHRG1Z6Y5')
+        ->assertSeeHtml('shape-rendering="crispEdges"')
+        ->assertDontSee('Reise öffnen')
+        ->call('downloadPdf')
+        ->assertFileDownloaded('qr-ZIPT-HRG1-Z6Y5.pdf');
+});
+
 it('shows the qr code for a travel details id and offers the pdf', function () {
     Livewire::test(QrCodes::class)
         ->set('type', QrCodes::TYPE_TRAVEL_DETAILS)

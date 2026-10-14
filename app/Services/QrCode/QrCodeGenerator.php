@@ -65,6 +65,15 @@ class QrCodeGenerator
     }
 
     /**
+     * App-Direktlink der TripData-App, z. B. tripdata://reise/ZIPTHRG1Z6Y5 – oeffnet die App ueber ihr
+     * eigenes Schema, ohne Server und Associated Domains; ohne installierte App passiert beim Scannen nichts.
+     */
+    public static function tripDataAppUrl(string $code): string
+    {
+        return 'tripdata://reise/'.str_replace('-', '', $code);
+    }
+
+    /**
      * Modul-Matrix ohne Ruhezone: $matrix[$y][$x] === true heisst dunkles Modul.
      *
      * @return array<int, array<int, bool>>
