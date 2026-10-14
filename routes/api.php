@@ -4,15 +4,6 @@ use App\Http\Controllers\AirportSearchController;
 use App\Http\Controllers\Api\EntryConditionsController;
 use App\Http\Controllers\Api\Plugin\HandshakeController;
 use App\Http\Controllers\Api\ShareLinkController;
-use App\Http\Controllers\Api\V1\EventApiController;
-use App\Http\Controllers\Api\V1\EventReferenceController;
-use App\Http\Controllers\Api\V1\ProximityController;
-use App\Http\Controllers\Api\V1\ShareLinkController as V1ShareLinkController;
-use App\Http\Controllers\Api\V1\TripController;
-use App\Http\Controllers\CustomEventController;
-use App\Http\Controllers\GdacsController;
-use App\Http\Controllers\GeolocationController;
-use App\Http\Controllers\SocialLinkController;
 use App\Http\Controllers\Api\V1\BranchApiController;
 use App\Http\Controllers\Api\V1\BranchContactApiController;
 use App\Http\Controllers\Api\V1\CustomerSettingsController;
@@ -20,10 +11,19 @@ use App\Http\Controllers\Api\V1\DepartmentApiController;
 use App\Http\Controllers\Api\V1\EmailAddressApiController;
 use App\Http\Controllers\Api\V1\EmployeeApiController;
 use App\Http\Controllers\Api\V1\EmployeeGroupApiController;
+use App\Http\Controllers\Api\V1\EventApiController;
+use App\Http\Controllers\Api\V1\EventReferenceController;
 use App\Http\Controllers\Api\V1\OrgNodeApiController;
 use App\Http\Controllers\Api\V1\PhoneNumberApiController;
 use App\Http\Controllers\Api\V1\PluginDomainController;
+use App\Http\Controllers\Api\V1\ProximityController;
+use App\Http\Controllers\Api\V1\ShareLinkController as V1ShareLinkController;
+use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\WebsiteApiController;
+use App\Http\Controllers\CustomEventController;
+use App\Http\Controllers\GdacsController;
+use App\Http\Controllers\GeolocationController;
+use App\Http\Controllers\SocialLinkController;
 use App\Http\Middleware\ApiClientAuthenticate;
 use App\Http\Middleware\ApiClientRequestLogger;
 use App\Http\Middleware\AuthenticatePluginKey;
@@ -430,6 +430,10 @@ Route::prefix('v1')->middleware([
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('v1.airlines');
     Route::get('/airlines/{code}', [\App\Http\Controllers\Api\V1\AirlineController::class, 'show'])->name('v1.airlines.show');
     Route::get('/exchange-rates', [\App\Http\Controllers\Api\V1\ExchangeRateController::class, 'latest'])->name('v1.exchange-rates');
+
+    // QR-Codes (TripData-Link, App-Direktlink, Travel Details, freier Inhalt) als JSON, SVG oder PDF
+    Route::get('/qr-codes/types', [\App\Http\Controllers\Api\V1\QrCodeController::class, 'types'])->name('v1.qr-codes.types');
+    Route::match(['get', 'post'], '/qr-codes', [\App\Http\Controllers\Api\V1\QrCodeController::class, 'generate'])->name('v1.qr-codes');
     Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('v1.regions');
     Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('v1.event-categories');
 

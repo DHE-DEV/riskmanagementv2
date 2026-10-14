@@ -22,6 +22,50 @@ class QrCodeGenerator
 
     public const TRAVEL_DETAILS_LANGUAGES = ['de', 'en', 'nl'];
 
+    /** Arten von QR-Codes – gleich fuer adminv2 (System > QR-Codes) und die API (GET /v1/qr-codes). */
+    public const TYPE_TRIPDATA = 'tripdata';
+
+    public const TYPE_TRIPDATA_APP = 'tripdata-app';
+
+    public const TYPE_TRAVEL_DETAILS = 'travel-details';
+
+    public const TYPE_FREE = 'free';
+
+    public const TYPES = [
+        self::TYPE_TRIPDATA => ['label' => 'TripData-Link', 'description' => 'https://platform.passolution.de/reise/{code} – oeffnet die TripData-App, ohne App die Reisenden-Seite.'],
+        self::TYPE_TRIPDATA_APP => ['label' => 'App-Direktlink', 'description' => 'tripdata://reise/{code} – oeffnet die TripData-App direkt, ohne App passiert nichts.'],
+        self::TYPE_TRAVEL_DETAILS => ['label' => 'Travel Details', 'description' => 'https://travel-details.eu/{lang}?tid={code} – die Reisenden-Seite im Browser.'],
+        self::TYPE_FREE => ['label' => 'Freier Inhalt', 'description' => 'Text oder Link, unveraendert kodiert.'],
+    ];
+
+    /** Hoechstlaenge fuer freien Inhalt, damit der Code gut lesbar bleibt. */
+    public const MAX_FREE_LENGTH = 1500;
+
+    /**
+     * Inhalt des QR-Codes fuer eine Art: Reise-ID bzw. Text/Link -> Link oder Text.
+     * null, wenn die Eingabe nicht passt (keine Reise-ID, leer oder zu lang).
+     */
+    public static function contentFor(string $type, string $value, string $language = 'de'): ?string
+    {
+        if ($type === self::TYPE_FREE) {
+            $text = trim($value);
+
+            return $text === '' || strlen($text) > self::MAX_FREE_LENGTH ? null : $text;
+        }
+
+        $code = self::normalizeTravelDetailsCode($value);
+        if ($code === null) {
+            return null;
+        }
+
+        return match ($type) {
+            self::TYPE_TRIPDATA => self::tripDataUrl($code),
+            self::TYPE_TRIPDATA_APP => self::tripDataAppUrl($code),
+            self::TYPE_TRAVEL_DETAILS => self::travelDetailsUrl($code, $language),
+            default => null,
+        };
+    }
+
     /**
      * Code eines Travel Detail Links normalisieren: "ZIPT-HRG1-Z6Y5", "zipthrg1z6y5",
      * ein Link mit "?tid=…" oder ein Link, der auf den Code endet. null, wenn kein Code erkennbar ist.
@@ -54,13 +98,13 @@ class QrCodeGenerator
     }
 
     /**
-     * Reise-Link der TripData-App, z. B. https://plattform.passolution.de/reise/ZIPTHRG1Z6Y5 – mit
+     * Reise-Link der TripData-App, z. B. https://platform.passolution.de/reise/ZIPTHRG1Z6Y5 – mit
      * installierter App oeffnet ihn das Smartphone direkt in TripData, sonst leitet die Plattform auf
      * travel-details.eu weiter.
      */
     public static function tripDataUrl(string $code): string
     {
-        return rtrim((string) config('services.tripdata.link_base', 'https://plattform.passolution.de/reise'), '/')
+        return rtrim((string) config('services.tripdata.link_base', 'https://platform.passolution.de/reise'), '/')
             .'/'.str_replace('-', '', $code);
     }
 

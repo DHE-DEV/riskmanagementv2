@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Reise-Links der TripData-App: https://plattform.passolution.de/reise/{code}
+ * Reise-Links der TripData-App: https://platform.passolution.de/reise/{code}
  *
  * Ist die App installiert, oeffnet das Smartphone den Link direkt in TripData (Universal Link bzw.
  * Android App Link) – diese Route wird dann gar nicht aufgerufen. Ohne App landet der Link hier und

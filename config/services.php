@@ -124,7 +124,7 @@ return [
     // Die Verifikationsdateien unter /.well-known nennen die App; ohne App leitet /reise/{code}
     // auf die Reisenden-Seite travel-details.eu weiter.
     'tripdata' => [
-        'link_base' => env('TRIPDATA_LINK_BASE', 'https://plattform.passolution.de/reise'),
+        'link_base' => env('TRIPDATA_LINK_BASE', 'https://platform.passolution.de/reise'),
         // Apple: <Team-ID>.<Bundle-ID>, mehrere mit Komma
         'ios_app_ids' => array_filter(array_map('trim', explode(',', (string) env('TRIPDATA_IOS_APP_IDS', '5843TDW7F4.de.passolution.tripdata')))),
         'android_package' => env('TRIPDATA_ANDROID_PACKAGE', 'de.passolution.tripdata'),

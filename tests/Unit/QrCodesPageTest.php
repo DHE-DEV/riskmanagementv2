@@ -14,11 +14,11 @@ beforeEach(function () {
 });
 
 it('uses the tripdata link by default', function () {
-    config(['services.tripdata.link_base' => 'https://plattform.passolution.de/reise']);
+    config(['services.tripdata.link_base' => 'https://platform.passolution.de/reise']);
 
     Livewire::test(QrCodes::class)
         ->set('value', 'zipt-hrg1-z6y5')
-        ->assertSee('https://plattform.passolution.de/reise/ZIPTHRG1Z6Y5')
+        ->assertSee('https://platform.passolution.de/reise/ZIPTHRG1Z6Y5')
         ->assertSeeHtml('shape-rendering="crispEdges"');
 });
 

@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * System > QR-Codes: QR-Code erzeugen, auf dem Bildschirm anzeigen und als PDF herunterladen.
  *
- * Art „TripData-Link“ (Vorgabe) macht aus der Reise-ID den Link https://plattform.passolution.de/reise/…:
+ * Art „TripData-Link“ (Vorgabe) macht aus der Reise-ID den Link https://platform.passolution.de/reise/…:
  * Mit installierter TripData-App oeffnet die Handy-Kamera ihn direkt in der App (Reise oeffnen oder
  * anlegen), ohne App landet er auf der Reisenden-Seite. Art „App-Direktlink“ macht daraus
  * tripdata://reise/… – oeffnet die App ohne Server (Uebergang, solange die Domain nicht bereitsteht),
@@ -29,13 +29,13 @@ class QrCodes extends Component
 {
     use AuthorizesAdminV2;
 
-    public const TYPE_TRIPDATA = 'tripdata';
+    public const TYPE_TRIPDATA = QrCodeGenerator::TYPE_TRIPDATA;
 
-    public const TYPE_TRIPDATA_APP = 'tripdata-app';
+    public const TYPE_TRIPDATA_APP = QrCodeGenerator::TYPE_TRIPDATA_APP;
 
-    public const TYPE_TRAVEL_DETAILS = 'travel-details';
+    public const TYPE_TRAVEL_DETAILS = QrCodeGenerator::TYPE_TRAVEL_DETAILS;
 
-    public const TYPE_FREE = 'free';
+    public const TYPE_FREE = QrCodeGenerator::TYPE_FREE;
 
     public string $type = self::TYPE_TRIPDATA;
 
@@ -60,19 +60,14 @@ class QrCodes extends Component
     #[Computed]
     public function content(): ?string
     {
-        if ($this->type === self::TYPE_TRIPDATA) {
-            return $this->travelCode ? QrCodeGenerator::tripDataUrl($this->travelCode) : null;
-        }
-        if ($this->type === self::TYPE_TRIPDATA_APP) {
-            return $this->travelCode ? QrCodeGenerator::tripDataAppUrl($this->travelCode) : null;
-        }
-        if ($this->type === self::TYPE_TRAVEL_DETAILS) {
-            return $this->travelCode ? QrCodeGenerator::travelDetailsUrl($this->travelCode, $this->language) : null;
+        if ($this->type === self::TYPE_FREE) {
+            // Zu langer Text wird trotzdem angezeigt; inputError meldet ihn.
+            $text = trim($this->value);
+
+            return $text === '' ? null : $text;
         }
 
-        $text = trim($this->value);
-
-        return $text === '' ? null : $text;
+        return QrCodeGenerator::contentFor($this->type, $this->value, $this->language);
     }
 
     /** Hinweis unter dem Eingabefeld, wenn die Eingabe (noch) nicht passt. */
@@ -85,7 +80,7 @@ class QrCodes extends Component
         if ($this->type !== self::TYPE_FREE && ! $this->travelCode) {
             return 'Keine gültige Reise-ID: Sie hat 12 Zeichen (z. B. ZIPT-HRG1-Z6Y5) oder steckt in einem Link mit „?tid=…“.';
         }
-        if ($this->type === self::TYPE_FREE && strlen(trim($this->value)) > 1500) {
+        if ($this->type === self::TYPE_FREE && strlen(trim($this->value)) > QrCodeGenerator::MAX_FREE_LENGTH) {
             return 'Der Inhalt ist zu lang für einen gut lesbaren QR-Code (höchstens 1.500 Zeichen).';
         }
 

@@ -86,6 +86,10 @@ Route::prefix('v1')->middleware([
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('sub.v1.airlines');
     Route::get('/airlines/{code}', [\App\Http\Controllers\Api\V1\AirlineController::class, 'show'])->name('sub.v1.airlines.show');
     Route::get('/exchange-rates', [\App\Http\Controllers\Api\V1\ExchangeRateController::class, 'latest'])->name('sub.v1.exchange-rates');
+
+    // QR-Codes (TripData-Link, App-Direktlink, Travel Details, freier Inhalt) als JSON, SVG oder PDF
+    Route::get('/qr-codes/types', [\App\Http\Controllers\Api\V1\QrCodeController::class, 'types'])->name('sub.v1.qr-codes.types');
+    Route::match(['get', 'post'], '/qr-codes', [\App\Http\Controllers\Api\V1\QrCodeController::class, 'generate'])->name('sub.v1.qr-codes');
     Route::get('/regions', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'regions'])->name('sub.v1.regions');
     Route::get('/event-categories', [\App\Http\Controllers\Api\V1\BaseDataController::class, 'eventCategories'])->name('sub.v1.event-categories');
 
@@ -159,4 +163,3 @@ Route::prefix('v1/plugin/gtm/domains')->middleware([
     Route::put('/{uuid}', [PluginDomainController::class, 'update'])->name('sub.v1.plugin.gtm.domains.update');
     Route::delete('/{uuid}', [PluginDomainController::class, 'destroy'])->name('sub.v1.plugin.gtm.domains.destroy');
 });
-
