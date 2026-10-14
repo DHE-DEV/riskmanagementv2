@@ -183,7 +183,7 @@
             </x-adminv2.card>
 
             {{-- Weitere Informationen: Waehrung, Vorwahl, Zeitzone, Groesse – und was Reisende vor Ort brauchen --}}
-            <x-adminv2.card heading="Weitere Informationen" description="Währung, Vorwahl, Zeitzone, Größe – und was Reisende vor Ort brauchen." collapsible collapse-key="country-details">
+            <x-adminv2.card heading="Weitere Informationen" description="Währung, Vorwahl, Zeitzone, Größe, Sprachen – und was Reisende vor Ort brauchen." collapsible collapse-key="country-details">
                 <x-slot:actions>
                     <flux:modal.trigger name="translate-details">
                         <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
@@ -237,6 +237,50 @@
                         <flux:error name="areaKm2" />
                     </flux:field>
                 </div>
+
+                {{-- Sprachen: die Reihenfolge ist die Reihenfolge fuer Kunden, die Amtssprache zuerst --}}
+                <flux:field>
+                    <flux:label>Sprachen</flux:label>
+                    <flux:description>Die im Land gesprochenen Sprachen, mehrere möglich – zuerst die Amtssprache(n), dann weitere verbreitete. In dieser Reihenfolge sehen Kunden sie.</flux:description>
+
+                    @if ($languages !== [])
+                        <ol class="mb-3 flex flex-col divide-y divide-zinc-100 rounded-xl border border-zinc-200 text-sm sm:max-w-md dark:divide-zinc-800 dark:border-zinc-700">
+                            @foreach ($languages as $position => $code)
+                                <li wire:key="language-{{ $code }}" class="flex items-center gap-3 px-3 py-1.5">
+                                    <span class="w-5 text-right text-xs tabular-nums text-zinc-400">{{ $position + 1 }}.</span>
+                                    <span class="min-w-0 flex-1 truncate text-zinc-900 dark:text-white">{{ \App\Support\AdminV2\CountryLanguages::label($code) }} <span class="font-mono text-xs text-zinc-500">{{ $code }}</span></span>
+                                    <flux:button size="xs" variant="ghost" icon="chevron-up" wire:click="moveLanguage('{{ $code }}', 'up')" :disabled="$loop->first" aria-label="Nach vorn" />
+                                    <flux:button size="xs" variant="ghost" icon="chevron-down" wire:click="moveLanguage('{{ $code }}', 'down')" :disabled="$loop->last" aria-label="Nach hinten" />
+                                    <flux:button size="xs" variant="ghost" icon="x-mark" wire:click="removeLanguage('{{ $code }}')" aria-label="{{ \App\Support\AdminV2\CountryLanguages::label($code) }} entfernen" />
+                                </li>
+                            @endforeach
+                        </ol>
+                    @endif
+
+                    <div class="flex gap-2 sm:max-w-md">
+                        <flux:input
+                            wire:model="languageInput"
+                            wire:keydown.enter.prevent="addLanguage"
+                            icon="language"
+                            placeholder="Sprache oder ISO-Code, z. B. Spanisch oder es"
+                            aria-label="Sprache hinzufügen"
+                            list="country-language-options"
+                            autocomplete="off"
+                        />
+                        <flux:button icon="plus" wire:click="addLanguage">Hinzufügen</flux:button>
+                    </div>
+                    <datalist id="country-language-options">
+                        @foreach (\App\Support\AdminV2\CountryLanguages::options() as $code => $languageLabel)
+                            @unless (in_array($code, $languages, true))
+                                <option value="{{ $languageLabel }} ({{ $code }})"></option>
+                            @endunless
+                        @endforeach
+                    </datalist>
+                    <x-adminv2.ai-field-hint key="languages" :review="$aiReview" />
+                    <flux:error name="languageInput" />
+                    <flux:error name="languages" />
+                    <flux:error name="languages.*" />
+                </flux:field>
 
                 <div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
                     {{-- Gebiet --}}

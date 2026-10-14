@@ -609,7 +609,7 @@ it('fuehrt eine KI-Pruefung mit den Daten des Abschnitts aus und zeigt Verbrauch
 
     // Die Daten des Abschnitts – und nur die – gehen mit.
     // Seit dem Zusammenlegen mit den Reiseinformationen gehoeren auch Gebiet, Notruf und Texte dazu.
-    expect(array_slice(array_keys($component->get('aiData')), 0, 7))->toBe(['currency_code', 'currency_name', 'currency_symbol', 'phone_prefix', 'timezone', 'population', 'area_km2'])
+    expect(array_slice(array_keys($component->get('aiData')), 0, 8))->toBe(['currency_code', 'currency_name', 'currency_symbol', 'phone_prefix', 'timezone', 'languages', 'population', 'area_km2'])
         ->and(array_keys($component->get('aiData')))->toContain('territory_type', 'emergency_police', 'intro_de')
         ->and(array_keys($component->get('aiData')))->not->toContain('name', 'plug_types', 'lat')
         ->and($component->get('aiData')['currency_code']['value'])->toBe('EUR')

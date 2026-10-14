@@ -44,7 +44,7 @@ class AiAreas
                 'sections' => [
                     'basics' => ['label' => 'Grunddaten', 'placeholders' => ['name' => 'Name', 'name_en' => 'Name (Englisch)', 'names' => 'Weitere Sprachen', 'iso_code' => 'ISO-Code (2)', 'iso3_code' => 'ISO-Code (3)', 'continent' => 'Kontinent', 'is_eu_member' => 'EU-Mitglied', 'is_schengen_member' => 'Schengen-Mitglied']],
                     'description' => ['label' => 'Länderbeschreibung', 'placeholders' => CountryTravelInfo::descriptionPlaceholders()],
-                    'details' => ['label' => 'Weitere Informationen', 'placeholders' => ['currency_code' => 'Währungscode', 'currency_name' => 'Währungsname', 'currency_symbol' => 'Währungssymbol', 'phone_prefix' => 'Telefonvorwahl', 'timezone' => 'Zeitzone', 'population' => 'Bevölkerung', 'area_km2' => 'Fläche (km²)'] + CountryTravelInfo::placeholders()],
+                    'details' => ['label' => 'Weitere Informationen', 'placeholders' => ['currency_code' => 'Währungscode', 'currency_name' => 'Währungsname', 'currency_symbol' => 'Währungssymbol', 'phone_prefix' => 'Telefonvorwahl', 'timezone' => 'Zeitzone', 'languages' => 'Sprachen', 'population' => 'Bevölkerung', 'area_km2' => 'Fläche (km²)'] + CountryTravelInfo::placeholders()],
                     'coordinates' => ['label' => 'Koordinaten', 'placeholders' => $coordinates],
                 ] + collect(CountryRiskProfile::categories())->mapWithKeys(fn (array $definition, string $category) => [
                     CountryRiskProfile::section($category) => ['label' => $definition['label'], 'placeholders' => CountryRiskProfile::placeholdersFor($category)],

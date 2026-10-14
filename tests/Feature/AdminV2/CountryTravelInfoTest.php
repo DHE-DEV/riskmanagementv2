@@ -456,3 +456,39 @@ it('fuellt die Waehrungstabelle nach ISO 4217 mit Namen in drei Sprachen', funct
         ->and(\App\Models\Currency::find('XTS'))->toBeNull()
         ->and(collect(\App\Models\Currency::options('de'))->firstWhere('value', 'CHF')['label'])->toContain('Schweizer Franken');
 });
+
+it('pflegt mehrere Sprachen eines Landes in Reihenfolge und gibt sie der KI-Prüfung', function () {
+    $spain = travelCountry('Spanien', 'ES', 'ESP', ['languages' => ['es']]);
+
+    $this->actingAs(travelAdmin());
+
+    $editor = Livewire::test(CountryEditor::class, ['country' => $spain->id])
+        ->assertSet('languages', ['es'])
+        ->assertSee('Sprachen')
+        ->set('languageInput', 'Katalanisch (ca)')->call('addLanguage')
+        ->call('addLanguage', 'Basque')
+        ->call('addLanguage', 'gl')
+        ->call('addLanguage', 'es')
+        ->assertSet('languages', ['es', 'ca', 'eu', 'gl'])
+        ->assertSet('languageInput', '')
+        ->call('addLanguage', 'Klingonisch')
+        ->assertHasErrors('languageInput')
+        ->call('moveLanguage', 'gl', 'up')
+        ->call('moveLanguage', 'gl', 'up')
+        ->call('removeLanguage', 'eu')
+        ->assertSet('languages', ['es', 'gl', 'ca'])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($spain->fresh()->languages)->toBe(['es', 'gl', 'ca']);
+
+    $instance = $editor->instance();
+    expect((fn () => $this->aiContext())->call($instance)['languages'])->toBe('Spanisch (es), Galicisch (gl), Katalanisch (ca)')
+        ->and(\App\Support\AdminV2\AiAreas::areas()['countries']['sections']['details']['placeholders'])->toHaveKey('languages')
+        ->and((fn () => $this->aiApply('languages', 'Spanisch (es), ca, Baskisch und Galicisch'))->call($instance))->toBeTrue()
+        ->and($instance->languages)->toBe(['es', 'ca', 'eu', 'gl'])
+        ->and((fn () => $this->aiApply('languages', 'unbekannt'))->call($instance))->toBeFalse();
+
+    $editor->set('languages', [])->call('save')->assertHasNoErrors();
+    expect($spain->fresh()->languages)->toBeNull();
+});

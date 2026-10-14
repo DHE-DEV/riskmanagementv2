@@ -18,6 +18,7 @@ use App\Models\Region;
 use App\Models\TaxiApp;
 use App\Services\CountryImageService;
 use App\Services\DeepLTranslationService;
+use App\Support\AdminV2\CountryLanguages;
 use App\Support\AdminV2\CountryRiskProfile;
 use App\Support\AdminV2\CountryTravelInfo;
 use App\Support\AdminV2\MasterData;
@@ -79,6 +80,12 @@ class Editor extends Component
     public string $phonePrefix = '';
 
     public string $timezone = '';
+
+    /** @var array<int, string> im Land gesprochene Sprachen (ISO 639), die wichtigste zuerst */
+    public array $languages = [];
+
+    /** Eingabe zum Hinzufuegen einer Sprache (Code, Name oder "Spanisch (es)") */
+    public string $languageInput = '';
 
     public string $population = '';
 
@@ -179,6 +186,7 @@ class Editor extends Component
         $this->currencySymbol = (string) $record->currency_symbol;
         $this->phonePrefix = (string) $record->phone_prefix;
         $this->timezone = (string) $record->timezone;
+        $this->languages = CountryLanguages::normalize((array) ($record->languages ?? []));
         $this->population = (string) $record->population;
         $this->areaKm2 = $record->area_km2 === null ? '' : rtrim(rtrim(number_format((float) $record->area_km2, 2, '.', ''), '0'), '.');
         $this->riskProfile = CountryRiskProfile::toForm($record->risk_profile);
@@ -250,6 +258,38 @@ class Editor extends Component
      * Eine Religion in der Reihenfolge nach vorn oder hinten schieben – die
      * Reihenfolge bestimmt die Darstellung fuer Kunden.
      */
+    public function addLanguage(?string $value = null): void
+    {
+        $this->resetErrorBag('languageInput');
+        $code = CountryLanguages::find($value ?? $this->languageInput);
+
+        if ($code === null) {
+            $this->addError('languageInput', 'Diese Sprache kenne ich nicht – bitte aus der Liste wählen oder den ISO-Code angeben, z. B. es.');
+
+            return;
+        }
+
+        $this->languages = CountryLanguages::normalize([...$this->languages, $code]);
+        $this->languageInput = '';
+    }
+
+    public function removeLanguage(string $code): void
+    {
+        $this->languages = array_values(array_filter($this->languages, fn (string $language) => $language !== $code));
+    }
+
+    public function moveLanguage(string $code, string $direction): void
+    {
+        $index = array_search($code, $this->languages, true);
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if ($index === false || $target < 0 || $target >= count($this->languages)) {
+            return;
+        }
+
+        [$this->languages[$index], $this->languages[$target]] = [$this->languages[$target], $this->languages[$index]];
+    }
+
     public function moveReligion(string $key, string $direction): void
     {
         $religions = CountryTravelInfo::religionKeys((array) ($this->travelInfo['religions'] ?? []));
@@ -973,6 +1013,8 @@ class Editor extends Component
             'currencySymbol' => ['nullable', 'string', 'max:5'],
             'phonePrefix' => ['nullable', 'string', 'max:10'],
             'timezone' => ['nullable', 'string', 'max:255'],
+            'languages' => ['array', 'max:20'],
+            'languages.*' => ['string', 'regex:/^[a-z]{2,3}$/'],
             'population' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
             'areaKm2' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
             'riskProfile.entry.passport_validity_months' => ['nullable', 'integer', 'min:0', 'max:120'],
@@ -1005,6 +1047,7 @@ class Editor extends Component
             'currencyCode.size' => 'Der Währungscode besteht aus 3 Buchstaben, z. B. EUR.',
             'currencySymbol.max' => 'Das Währungssymbol darf höchstens 5 Zeichen haben.',
             'phonePrefix.max' => 'Die Vorwahl darf höchstens 10 Zeichen haben.',
+            'languages.*.regex' => 'Sprachen werden als ISO-Code mit 2–3 Buchstaben gespeichert, z. B. es.',
             'population.integer' => 'Die Bevölkerung muss eine ganze Zahl sein.',
             'areaKm2.numeric' => 'Die Fläche muss eine Zahl sein.',
             'riskProfile.entry.passport_validity_months.integer' => 'Die Gültigkeit des Reisepasses ist eine ganze Zahl von Monaten.',
@@ -1041,6 +1084,7 @@ class Editor extends Component
             'currency_symbol' => trim($this->currencySymbol) ?: null,
             'phone_prefix' => trim($this->phonePrefix) ?: null,
             'timezone' => trim($this->timezone) ?: null,
+            'languages' => CountryLanguages::normalize($this->languages) ?: null,
             'population' => $this->population === '' ? null : (int) $this->population,
             'area_km2' => $this->areaKm2 === '' ? null : (float) $this->areaKm2,
             'risk_profile' => $riskProfile,
@@ -1380,6 +1424,7 @@ class Editor extends Component
             'currency_symbol' => $this->currencySymbol,
             'phone_prefix' => $this->phonePrefix,
             'timezone' => $this->timezone,
+            'languages' => CountryLanguages::describe($this->languages),
             'population' => $this->population,
             'area_km2' => $this->areaKm2,
             'lat' => $this->lat,
@@ -1391,7 +1436,7 @@ class Editor extends Component
     {
         return match ($section) {
             'description' => CountryTravelInfo::descriptionReviewHint(),
-            'details' => CountryTravelInfo::reviewHint(),
+            'details' => CountryLanguages::reviewHint().' '.CountryTravelInfo::reviewHint(),
             'tipping' => CountryTravelInfo::tippingReviewHint(),
             'power' => CountryTravelInfo::powerReviewHint(),
             default => null,
@@ -1478,6 +1523,13 @@ class Editor extends Component
             case 'timezone': $this->timezone = $value;
 
                 return true;
+            case 'languages':
+                $languages = CountryLanguages::parse($value);
+                if ($languages !== []) {
+                    $this->languages = $languages;
+                }
+
+                return $languages !== [];
             case 'population': $this->population = $this->aiNumber($value);
 
                 return true;
