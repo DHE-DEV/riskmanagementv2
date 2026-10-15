@@ -555,8 +555,13 @@
 
                     @if ($locations === [])
                         <div class="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-                            Noch kein Standort zugeordnet. Über die Suche oben einen Ort hinzufügen – danach lassen sich für ihn auch eigene Koordinaten eintragen.
+                            @if ($withoutLocation)
+                                Ohne Standort – das Ereignis gilt weltweit bzw. überregional. Es erscheint nicht auf der Karte und wird keiner Reise über den Ort zugeordnet.
+                            @else
+                                Noch kein Standort zugeordnet. Über die Suche oben einen Ort hinzufügen – danach lassen sich für ihn auch eigene Koordinaten eintragen.
+                            @endif
                         </div>
+                        <flux:checkbox wire:model.live="withoutLocation" label="Kein Standort (weltweit oder überregional)" description="Zum Beispiel weltweite Ereignisse, Airlines oder Leitlinien ohne festen Ort. Damit lässt sich das Ereignis ohne Standort veröffentlichen." />
                     @else
                         <ul class="flex flex-col gap-3">
                             @foreach ($locations as $index => $location)

@@ -221,8 +221,8 @@ it('speichert ein neues Ereignis als Entwurf und veroeffentlicht es erst mit Sta
         ->set('contents.de', '<p>Starkregen <script>alert(1)</script></p>')
         ->set('eventTypeIds', [(string) $type->id])
         ->set('priority', 'high')
-        ->set('startDate', '2026-10-09T08:00')
-        ->set('endDate', '2026-10-12T00:00')
+        ->set('startDate', now()->addDays(2)->format('Y-m-d').'T08:00')
+        ->set('endDate', now()->addDays(5)->format('Y-m-d').'T00:00')
         ->call('save');
 
     $event = CustomEvent::firstWhere('title', 'Unwetter in Norditalien');
@@ -258,6 +258,46 @@ it('speichert ein neues Ereignis als Entwurf und veroeffentlicht es erst mit Sta
         ->and($event->activated_at)->not->toBeNull()
         ->and(EventState::of($event))->toBe(EventState::Scheduled)
         ->and($event->countries()->pluck('countries.id')->all())->toBe([$italy->id]);
+});
+
+it('veroeffentlicht ein weltweites Ereignis bewusst ohne Standort', function () {
+    $type = eventType('travel');
+    $italy = Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA', 'lat' => 41.9028, 'lng' => 12.4964]);
+
+    $this->actingAs(adminUser());
+
+    Livewire::test(Editor::class)
+        ->set('titles.de', 'IATA veröffentlicht neue Leitlinien')
+        ->set('eventTypeIds', [(string) $type->id])
+        ->set('priority', 'low')
+        ->set('startDate', '2026-10-09T08:00')
+        ->call('save');
+
+    $event = CustomEvent::firstWhere('title', 'IATA veröffentlicht neue Leitlinien');
+
+    $editor = Livewire::test(Editor::class, ['event' => $event->id])
+        ->assertSet('withoutLocation', false)
+        ->call('publish')
+        ->assertHasErrors('locations')
+        ->assertSee('Kein Standort (weltweit oder überregional)')
+        // Ein Ort hebt "ohne Standort" wieder auf.
+        ->set('withoutLocation', true)
+        ->assertHasNoErrors('locations')
+        ->call('addLocation', 'country', $italy->id)
+        ->assertSet('withoutLocation', false)
+        ->call('removeLocation', 0)
+        ->set('withoutLocation', true)
+        ->call('publish')
+        ->assertHasNoErrors();
+
+    $event = $event->fresh();
+    expect($event->is_active)->toBeTrue()
+        ->and($event->countries()->count())->toBe(0);
+
+    // Beim erneuten Oeffnen bleibt es "ohne Standort".
+    Livewire::test(Editor::class, ['event' => $event->id])
+        ->assertSet('withoutLocation', true)
+        ->assertSee('Ohne Standort – das Ereignis gilt weltweit');
 });
 
 it('aendert ein veroeffentlichtes Ereignis still und loest es erst ueber eine neue Version ab', function () {

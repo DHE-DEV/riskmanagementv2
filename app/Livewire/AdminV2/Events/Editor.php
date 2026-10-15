@@ -35,7 +35,8 @@ use Livewire\Component;
  *
  * Speichern und Veroeffentlichen sind getrennte Schritte. Ein neues Ereignis
  * entsteht als Entwurf und wird erst ausgeliefert, wenn es vollstaendig ist
- * (mindestens ein Standort) und ausdruecklich veroeffentlicht wird.
+ * (mindestens ein Standort oder ausdruecklich "ohne Standort", z. B. weltweit)
+ * und ausdruecklich veroeffentlicht wird.
  */
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
@@ -66,6 +67,9 @@ class Editor extends Component
 
     /** @var array<int, array<string, mixed>> */
     public array $locations = [];
+
+    /** Bewusst ohne Standort (weltweit oder ueberregional) – erlaubt das Veroeffentlichen ohne Ort. */
+    public bool $withoutLocation = false;
 
     /** @var array<int, array{show_frontend: bool, link_text: ?string, link_url: ?string}> */
     public array $sources = [];
@@ -222,6 +226,8 @@ class Editor extends Component
         $this->versionNote = (string) $event->version_note;
         $this->versionInternalNote = (string) $event->version_internal_note;
         $this->locations = app(CustomEventLocationService::class)->rowsFor($event);
+        // Ausgeliefert ohne Standort: das war so gewollt.
+        $this->withoutLocation = $this->locations === [] && (bool) $event->is_active;
         $this->sourceChecks = $this->latestSourceChecks($event);
     }
 
@@ -362,6 +368,11 @@ class Editor extends Component
      * Unter einem Land in den Suchtreffern seine Regionen zeigen – oder wieder
      * einklappen.
      */
+    public function updatedWithoutLocation(): void
+    {
+        $this->resetValidation('locations');
+    }
+
     public function browseCountry(int $countryId): void
     {
         $this->browseRegionId = null;
@@ -407,6 +418,7 @@ class Editor extends Component
         ]);
 
         $this->locations[] = $row;
+        $this->withoutLocation = false;
 
         if ($row['coordinate_issue']) {
             $this->dispatch('adminv2-toast', message: $row['coordinate_issue'], variant: 'danger');
@@ -737,8 +749,8 @@ class Editor extends Component
             }
         }
 
-        if ($requireAtLeastOne && $this->locations === []) {
-            $errors['locations'] = 'Zum Veröffentlichen wird mindestens ein Standort benötigt – sonst erscheint das Ereignis nicht auf der Karte und kann keiner Reise zugeordnet werden.';
+        if ($requireAtLeastOne && $this->locations === [] && ! $this->withoutLocation) {
+            $errors['locations'] = 'Zum Veröffentlichen wird mindestens ein Standort benötigt – sonst erscheint das Ereignis nicht auf der Karte und kann keiner Reise zugeordnet werden. Gilt es weltweit oder überregional, „Kein Standort“ ankreuzen.';
         }
 
         if ($errors !== []) {
