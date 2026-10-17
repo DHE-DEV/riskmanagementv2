@@ -92,6 +92,21 @@ Schedule::command('travel-links:sync')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/travel-links-sync.log'));
 
+// Push-Benachrichtigungen bei wichtigen Aenderungen an Reise-Links (TripData), siehe config/push.php
+if (config('push.travel_changes.enabled')) {
+    Schedule::command('push:scan-travel-changes')
+        ->everyTwoMinutes()
+        ->withoutOverlapping(15)
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/push-travel-changes.log'));
+}
+
+Schedule::command('push:prune-devices')
+    ->dailyAt('04:20')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/push-prune-devices.log'));
+
 // GTM Notification Queue
 Schedule::command('notifications:process-gtm')
     ->cron('*/' . config('notifications.gtm_interval', 5) . ' * * * *')

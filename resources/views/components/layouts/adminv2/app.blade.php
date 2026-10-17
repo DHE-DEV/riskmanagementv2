@@ -43,6 +43,10 @@
                     Aufgaben
                 </flux:navlist.item>
 
+                <flux:navlist.item icon="book-open" :href="route('adminv2.docs.index')" :current="request()->routeIs('adminv2.docs.*')">
+                    Doku
+                </flux:navlist.item>
+
                 <x-adminv2.nav-group heading="Ereignisse" key="events" class="mt-4">
                     <flux:navlist.item icon="chart-bar" :href="route('adminv2.events.overview')" :current="request()->routeIs('adminv2.events.overview')">
                         Übersicht

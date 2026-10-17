@@ -19,6 +19,7 @@ trait ManagesCustomerTokens
         'folder:read' => 'Folder Lesen',
         'folder:write' => 'Folder Schreiben',
         'gtm:read' => 'GTM Lesen',
+        'push:send' => 'Push senden (alle App-Geräte)',
     ];
 
     public string $tokenSearch = '';

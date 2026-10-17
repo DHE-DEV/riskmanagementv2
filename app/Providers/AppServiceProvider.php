@@ -65,6 +65,21 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute($limit)->by($customer?->id ?: $request->ip());
         });
 
+        // Geraete-Endpunkte der Apps: je Geraet bzw. IP, nicht je Kunde (alle Installationen teilen einen Token).
+        RateLimiter::for('app-devices', function (Request $request) {
+            $device = (string) $request->route('id');
+
+            return [
+                Limit::perMinute(30)->by('app-devices:'.($device !== '' ? $device : $request->ip())),
+                Limit::perMinute(600)->by('app-devices-ip:'.$request->ip()),
+            ];
+        });
+
+        // Push-Versand ueber die API: je Kunde.
+        RateLimiter::for('push-api', function (Request $request) {
+            return Limit::perMinute(60)->by('push-api:'.($request->user()?->getKey() ?: $request->ip()));
+        });
+
         // Plugin API Rate Limiter - per plugin client
         RateLimiter::for('plugin-api', function (Request $request) {
             $client = $request->attributes->get('plugin_client');

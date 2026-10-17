@@ -441,6 +441,25 @@ Route::prefix('v1')->middleware([
     Route::get('/app-info', [\App\Http\Controllers\Api\V1\AppInfoController::class, 'show'])->name('v1.app-info');
 });
 
+// Push-Benachrichtigungen der Apps: Geraete an-/abmelden und Reise-Links melden (App-Token mit gtm:read).
+// Eigener Limiter je Geraet bzw. IP – alle Installationen einer App teilen sich einen Kunden-Token.
+Route::prefix('v1/devices')->middleware([
+    'auth:sanctum',
+    \App\Http\Middleware\GtmApiAuthenticate::class,
+    'throttle:app-devices',
+])->group(function () {
+    Route::post('/', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'store'])->name('v1.devices.store');
+    Route::put('/{id}', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'update'])->name('v1.devices.update');
+    Route::put('/{id}/travel-links', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'travelLinks'])->name('v1.devices.travel-links');
+    Route::delete('/{id}', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'destroy'])->name('v1.devices.destroy');
+});
+
+// Push-Benachrichtigungen verschicken (Token mit push:send, nur vom Admin vergeben).
+Route::prefix('v1/push')->middleware(['auth:sanctum', 'throttle:push-api'])->group(function () {
+    Route::post('/messages', [\App\Http\Controllers\Api\V1\PushMessageController::class, 'store'])->name('v1.push.messages.store');
+    Route::get('/messages/{id}', [\App\Http\Controllers\Api\V1\PushMessageController::class, 'show'])->whereNumber('id')->name('v1.push.messages.show');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Custom Event API Routes (API-Client-Protected)

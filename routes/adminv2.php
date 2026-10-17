@@ -176,6 +176,9 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('api-clients/{apiClient}', ApiClientEditor::class)->whereNumber('apiClient')->name('api-clients.edit');
         });
 
+        Route::get('docs', \App\Livewire\AdminV2\Docs\Index::class)->name('docs.index');
+        Route::get('docs/{doc}', \App\Livewire\AdminV2\Docs\Show::class)->where('doc', '[a-z0-9-]+')->name('docs.show');
+
         Route::get('system/ai', SystemAi::class)->name('system.ai');
         Route::get('system/ai/searches/create', SystemAiSearchEditor::class)->name('system.ai.searches.create');
         Route::get('system/ai/searches/{profile}', SystemAiSearchEditor::class)->whereNumber('profile')->name('system.ai.searches.edit');
