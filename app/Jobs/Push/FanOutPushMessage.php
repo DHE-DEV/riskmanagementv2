@@ -13,7 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 
 /**
- * Versand ueber die API (POST /api/v1/push/messages): Zielgeraete seitenweise
+ * Versand ueber die API (POST /api/v1/push/messages) und Admin v2: Zielgeraete seitenweise
  * ermitteln und auf Versand-Jobs verteilen – auch fuer "alle Geraete der App".
  */
 class FanOutPushMessage implements ShouldQueue
@@ -49,8 +49,15 @@ class FanOutPushMessage implements ShouldQueue
             $query->whereRaw('1 = 0');
         }
 
-        $query->chunkById(max(1, (int) config('push.batch_size', 500)) * 10, function ($devices) use ($dispatcher, $message) {
-            $dispatcher->dispatch($message, $devices->pluck('id')->all());
+        $query->chunkById(max(1, (int) config('push.batch_size', 500)) * 10, function ($devices) use ($dispatcher, $message, $target, $tids) {
+            $deviceIds = $devices->pluck('id')->all();
+            // Bei Reise-IDs bekommt jeder Push die passende Reise mit (tid, url) – so zaehlt die App ihn bei der Reise.
+            $tidByDevice = empty($target['device_ids']) && $tids !== []
+                ? AppDeviceTravelLink::whereIn('app_device_id', $deviceIds)->whereIn('tid', $tids)
+                    ->orderBy('id')->get(['app_device_id', 'tid'])
+                    ->unique('app_device_id')->pluck('tid', 'app_device_id')->all()
+                : [];
+            $dispatcher->dispatch($message, $deviceIds, $tidByDevice);
         });
 
         $dispatcher->release($message);

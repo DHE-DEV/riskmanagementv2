@@ -119,6 +119,9 @@
                     <flux:navlist.item icon="qr-code" :href="route('adminv2.system.qr-codes')" :current="request()->routeIs('adminv2.system.qr-codes')">
                         QR-Codes
                     </flux:navlist.item>
+                    <flux:navlist.item icon="bell-alert" :href="route('adminv2.system.push')" :current="request()->routeIs('adminv2.system.push')">
+                        Push senden
+                    </flux:navlist.item>
                     <flux:navlist.item
                         icon="queue-list"
                         :href="route('adminv2.system.automator.index')"

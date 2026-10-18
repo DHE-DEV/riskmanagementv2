@@ -3,6 +3,7 @@
 namespace App\Models\Push;
 
 use App\Models\Customer;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,9 @@ class AppPushMessage extends Model
 
     public const SOURCE_API = 'api';
 
+    /** Aus Admin v2 (System > Push senden). */
+    public const SOURCE_ADMIN = 'admin';
+
     public const STATUS_QUEUED = 'queued';
 
     public const STATUS_SENDING = 'sending';
@@ -28,7 +32,7 @@ class AppPushMessage extends Model
     public const STATUS_DONE = 'done';
 
     protected $fillable = [
-        'app', 'type', 'source', 'customer_id', 'title', 'body', 'data', 'target',
+        'app', 'type', 'source', 'customer_id', 'user_id', 'title', 'body', 'data', 'target',
         'status', 'targeted', 'sent', 'failed', 'invalid', 'pending_batches', 'finished_at',
     ];
 
@@ -46,6 +50,11 @@ class AppPushMessage extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

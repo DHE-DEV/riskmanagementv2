@@ -12,6 +12,10 @@ Voraussetzungen:
 
 Was eine wichtige Änderung ist, entscheidet wie bisher die Redaktion in **pds-admin**. Es sind dieselben Änderungen, für die travel-details.eu heute schon E-Mails verschickt.
 
+Zusätzlich lassen sich **eigene Benachrichtigungen** verschicken: in Admin v2 unter **System › Push senden** an alle Geräte mit bestimmten Reisen oder an alle Geräte, oder über die Plattform-API.
+
+**Stand 2026-10-17:** Live für iOS (TripData ab Build 20261017.1955 in TestFlight), Ende-zu-Ende getestet. Android (FCM) ist vorbereitet, aber noch nicht eingerichtet.
+
 <div class="doc-cards">
 <div><b>pds unverändert</b><span>Die pds-Dienste kennen die Plattform nicht. Die Plattform holt sich die Änderungen selbst.</span></div>
 <div><b>100.000+ Geräte</b><span>Erkennung über einen Delta-Feed, Versand in Paketen zu 500 Geräten über HTTP/2.</span></div>
@@ -26,7 +30,7 @@ Was eine wichtige Änderung ist, entscheidet wie bisher die Redaktion in **pds-a
 <div><strong>Änderung in pds-admin</strong><span>Die Redaktion speichert eine wichtige Änderung. pds berechnet für jeden betroffenen Link <code>important_change_at</code> neu.</span></div>
 <div><strong>Delta-Feed lesen</strong><span>Alle 2 Minuten holt die Plattform aus api-internal nur die Links, die sich seitdem geändert haben.</span></div>
 <div><strong>Geräte finden</strong><span>Die Plattform gleicht die geänderten Reise-IDs mit den gemeldeten Reise-Links ab und merkt die Geräte vor.</span></div>
-<div><strong>Push verschicken</strong><span>Versand-Jobs schicken je 500 Geräte über APNs (iOS) bzw. FCM (Android). Tippen öffnet die Reise in der App.</span></div>
+<div><strong>Push verschicken</strong><span>Versand-Jobs schicken je 500 Geräte über APNs (iOS) bzw. FCM (Android). Tippen öffnet die App; die Reise zeigt die Zahl der neuen Benachrichtigungen.</span></div>
 </div>
 
 ## Beteiligte Systeme
@@ -36,9 +40,9 @@ Was eine wichtige Änderung ist, entscheidet wie bisher die Redaktion in **pds-a
 | **pds-admin** | Redaktion speichert Änderungen und markiert sie als wichtig (`DataChange`). |
 | **pds-queue / data-service** | Job `UpdateLastImportantChangeTime` rechnet für jeden betroffenen Link `shared_travel_infos.important_change_at` neu. Er berücksichtigt Ziele, Nationalitäten, Reiseart, Reisewarnungen, Kreuzfahrten und Anpassungen des Reisebüros. |
 | **pds-api (api-internal)** | Delta-Feed `GET /api/v2/__internal/travel-details/changes`: account-übergreifend alle Links mit `last_change_at` (= größter Wert von `updated_at` und `important_change_at`) nach einem Cursor, nur Reisen, die noch nicht vorbei sind. |
-| **Plattform** | Geräte-API, Scanner `push:scan-travel-changes`, Versand-Jobs, Push-API für eigene Nachrichten. |
+| **Plattform** | Geräte-API, Scanner `push:scan-travel-changes`, Versand-Jobs, Push-API und Admin-Seite **System › Push senden** für eigene Nachrichten. |
 | **Apple / Google** | APNs (iOS) und Firebase Cloud Messaging (Android) stellen zu. |
-| **TripData-App** | Erlaubnis, Anmeldung, Schalter je Reise, Öffnen der Reise beim Tippen. |
+| **TripData-App** | Erlaubnis, Anmeldung, Schalter je Reise, Zähler ungelesener Benachrichtigungen je Reise. |
 
 > Die E-Mail-Benachrichtigung von travel-details.eu (`SendImportantChangeNotifications` in pds-queue) läuft unabhängig davon weiter. Ein Reisender kann beides bekommen.
 
@@ -53,7 +57,9 @@ Die Plattform fragt **nicht** jeden Reise-Link einzeln ab. Ein Abruf der Reisend
    - der Zeitpunkt, zu dem das Gerät den Link gemeldet hat, und
    - die letzte Benachrichtigung für diesen Link (`notified_change_at`).
 5. Fällige Geräte werden **vor** dem Versand vorgemerkt (`notified_change_at`). Ein zweiter Lauf schickt dieselbe Änderung also nicht noch einmal.
-6. Sind auf einer Seite mehrere Reisen eines Geräts betroffen, bekommt es **eine** Benachrichtigung.
+6. Sind auf einer Seite mehrere Reisen eines Geräts betroffen, bekommt es **eine** Benachrichtigung (zur ersten Reise). Beide Änderungen gelten als gemeldet.
+7. Haben **mehrere Geräte dieselbe Reise**, bekommt jedes seine eigene Benachrichtigung in seiner Sprache. Jedes Gerät hat eine eigene Zeile mit eigenem `notified_change_at`; ein Gerät, das die Reise erst nach einer Änderung übernimmt, bekommt diese ältere Änderung nicht mehr.
+8. Benachrichtigt werden nur Geräte mit erlaubten Mitteilungen, gültigem Token und einer Meldung in den letzten 180 Tagen (wie bei eigenen Nachrichten).
 
 Beim allerersten Lauf beginnt die Beobachtung „ab jetzt“. Der Bestand wird nicht nachträglich durchgegangen.
 
@@ -74,6 +80,24 @@ Jedes Reisebüro und jeder Veranstalter hat ein eigenes Konto in pds und stellt 
 - Der Delta-Feed arbeitet account-übergreifend und liefert die Änderungen aller Konten.
 
 Ein Reisender kann also Reisen mehrerer Reisebüros in der App haben und bekommt für jede eine Benachrichtigung.
+
+### Voraussetzung in der pds-Datenbank
+
+Der Delta-Feed filtert und sortiert über die Spalte **`client_customer_shared_travel_infos.last_change_at`**. Sie steht nicht in einer Migration, sondern wurde direkt in der Datenbank angelegt, als virtuelle Spalte mit Index:
+
+```sql
+ALTER TABLE client_customer_shared_travel_infos
+  ADD COLUMN last_change_at DATETIME GENERATED ALWAYS AS
+    (GREATEST(COALESCE(updated_at, '1970-01-01 00:00:00'),
+              COALESCE(important_change_at, '1970-01-01 00:00:00'))) VIRTUAL,
+  ALGORITHM=INSTANT;
+
+CREATE INDEX idx_last_change_at_id
+  ON client_customer_shared_travel_infos (last_change_at, id)
+  ALGORITHM=INPLACE LOCK=NONE;
+```
+
+Beim Umzug auf `pds-prod-2026` (MySQL 8.4) ging die Spalte verloren und wurde am 2026-10-17 neu angelegt. Ohne Index dauert eine Abfrage rund 14 Sekunden, mit Index 0,3 Sekunden. Bei einem weiteren Datenbank-Umzug muss sie mit.
 
 <div class="doc-note"><strong>Warum der Feed reicht:</strong> Ob 1.000 oder 500.000 Geräte angemeldet sind, der Feed liefert nur geänderte Links. Die Last hängt also an der Zahl der Änderungen, nicht an der Zahl der Nutzer.</div>
 
@@ -131,14 +155,35 @@ Regeln:
 
 Die Texte liegen in `app/Services/Push/PushTexts.php`. Zusätzlich schickt die Plattform:
 
-- `type` = `travel_important_change`
-- `tid`
-- `url` = `tripdata://reise/{tid}`: öffnet in der App direkt die Reise
+- `type` = `travel_important_change` (eigene Nachrichten: `custom`)
+- `tid`: die betroffene Reise. Daran zählt die App die Benachrichtigung bei der Reise.
+- `url` = `tripdata://reise/{tid}` (für spätere Verwendung; die App öffnet beim Tippen derzeit nur sich selbst)
 - `thread-id` bzw. `collapse_key` `trip-{tid}`: Mehrere Pushs zur selben Reise ersetzen sich auf dem Gerät.
+
+## In der App
+
+- **Tippen** auf eine Benachrichtigung öffnet nur die App, nicht die Reise.
+- Der Reiter **Reisen** zeigt die Zahl der ungelesenen Benachrichtigungen über alle eigenen Reisen, jede **Reise-Karte** ihre eigene Zahl (rote Glocke).
+- **Gelesen** ist eine Reise, sobald sie geöffnet wird. Ihre Zahl verschwindet, und ihre Benachrichtigungen werden aus der Mitteilungszentrale entfernt.
+- Gezählt wird nur auf dem Gerät (`NotificationInbox.swift`), aus drei Quellen: Banner bei geöffneter App, Antippen und beim Öffnen der App alles, was in der Mitteilungszentrale liegt. Eine Benachrichtigung, die weggewischt wird, bevor die App geöffnet wird, zählt nicht.
+- Benachrichtigungen ohne `tid` (z. B. „an alle Geräte“) erscheinen nur als Mitteilung und zählen bei keiner Reise.
+
+## Push senden in Admin v2
+
+Unter **System › Push senden** (`/adminv2/system/push`) verschicken Admins eigene Benachrichtigungen, ohne Token:
+
+1. **Empfänger** wählen:
+   - **Geräte mit diesen Reisen:** Reise-IDs eingeben, mehrere durch Zeilen, Kommas oder Leerzeichen getrennt, mit oder ohne Bindestriche. Ganze Links (`…?tid=…`, `…/reise/…`) gehen auch. Höchstens 1.000.
+   - **Alle Geräte:** zusätzlich bestätigen.
+2. Die Seite zeigt sofort, **wie viele Geräte** erreicht werden (erlaubte Mitteilungen, gültiger Token, Meldung in den letzten 180 Tagen).
+3. **Titel und Text** auf Deutsch (Pflicht), Englisch und Niederländisch (optional). Geräte in einer Sprache ohne Text bekommen Deutsch. Titel höchstens 120, Text höchstens 500 Zeichen. Eine Vorschau zeigt die Mitteilung.
+4. **Senden** und im Dialog bestätigen. Gesendete Benachrichtigungen lassen sich nicht zurückholen.
+
+Bei Reise-IDs bekommt jeder Push die passende Reise (`tid`) mit, sodass er in der App bei dieser Reise zählt. Darunter stehen die **letzten 25 Versände** aller Quellen (Reise-Änderung, Admin mit Namen, API) mit Geräten, gesendet, Fehlern, ungültigen Tokens und Status. Die Liste aktualisiert sich alle 5 Sekunden.
 
 ## Eigene Nachrichten über die Plattform-API
 
-Mit einem Token mit der Berechtigung **`push:send`** kann die Plattform-API selbst Pushs verschicken, z. B. Hinweise des Global Travel Monitor oder eine Ankündigung an alle Nutzer. Den Token vergibt nur ein Admin, unter **Kundenverwaltung › Kunde › API Tokens**. Er erreicht **alle Geräte der App**.
+Mit einem Token mit der Berechtigung **`push:send`** kann ein anderes System selbst Pushs verschicken, z. B. Hinweise des Global Travel Monitor. Den Token vergibt nur ein Admin, unter **Kundenverwaltung › Kunde › API Tokens**. Er kann **alle Geräte der App** erreichen, nicht nur die des eigenen Kunden. Für Versände von Hand ist **System › Push senden** einfacher.
 
 ```http
 POST /api/v1/push/messages
@@ -148,8 +193,7 @@ Content-Type: application/json
 {
   "title": { "de": "Streik in Frankreich", "en": "Strike in France" },
   "body":  { "de": "Am Freitag fallen viele Flüge aus.", "en": "Many flights are cancelled on Friday." },
-  "data":  { "url": "tripdata://reise/ZIPTHRG1Z6Y5" },
-  "target": { "tids": ["ZIPTHRG1Z6Y5"] }
+  "target": { "tids": ["ZIPT-HRG1-Z6Y5"] }
 }
 ```
 
@@ -158,6 +202,7 @@ Content-Type: application/json
   - `{"tids": […]}`: Geräte mit diesen Reisen, höchstens 1.000 IDs
   - `{"device_ids": […]}`: höchstens 1.000 Geräte
 - `title` und `body`: Text oder je Sprache. Geräte bekommen ihre Sprache, sonst Deutsch.
+- Bei `tids` bekommt jeder Push automatisch die passende Reise (`tid`, `url`) mit. `data` (höchstens 10 Werte) geht zusätzlich an die App.
 - Antwort **202** mit der Versand-ID. Der Versand läuft im Hintergrund.
 - `GET /api/v1/push/messages/{id}` liefert `status` (`sending`/`done`), `targeted`, `sent`, `failed` und `invalid`.
 - Rate-Limit: 60 Anfragen pro Minute je Kunde.
@@ -184,6 +229,8 @@ Content-Type: application/json
 2. Unter **Keys** einen Schlüssel mit **Apple Push Notifications service (APNs)** anlegen oder einen vorhandenen nutzen. Die `.p8`-Datei gibt es nur einmal zum Download.
 3. Notieren: Key-ID und Team-ID (`PFC8Z32F99`).
 
+Eingerichtet am 2026-10-17: Schlüssel „TripData Push Plattform“, Key-ID `8WH74Z379X`, Sandbox & Production, für alle Apps des Teams. Die Datei liegt auf dem Server unter `/home/forge/keys/` (Rechte 600); wo die Sicherungen liegen, steht im Second Brain unter „Schlüssel & Zugangsdateien“.
+
 ### Google (Android)
 
 1. Ein Firebase-Projekt anlegen und die Android-App `de.passolution.tripdata` hinzufügen.
@@ -193,10 +240,10 @@ Content-Type: application/json
 
 ```dotenv
 # APNs (iOS)
-APNS_KEY_ID=XXXXXXXXXX
+APNS_KEY_ID=8WH74Z379X
 APNS_TEAM_ID=PFC8Z32F99
 APNS_TOPIC=de.passolution.tripdata.app
-APNS_KEY_PATH=/home/forge/keys/AuthKey_XXXXXXXXXX.p8   # oder APNS_KEY=<Base64 der .p8>
+APNS_KEY_PATH=/home/forge/keys/AuthKey_8WH74Z379X.p8   # oder APNS_KEY=<Base64 der .p8>
 
 # FCM (Android)
 FCM_CREDENTIALS_PATH=/home/forge/keys/fcm-service-account.json   # oder FCM_CREDENTIALS=<Base64>
@@ -210,17 +257,17 @@ PASSOLUTION_INTERNAL_API_URL=https://api-internal-dot-pds-prod-dataservice.appsp
 PASSOLUTION_INTERNAL_TOKEN=…
 ```
 
-Danach `php artisan config:cache`. Schlüsseldateien nie ins Repo legen.
+Danach `php artisan config:cache` **und die Queue-Worker neu starten** (`php artisan queue:restart` oder in Forge): Ein laufender Worker liest die Konfiguration nur beim Start. Schlüsseldateien nie ins Repo legen.
 
 ### Queue-Worker
 
 Die Versand-Jobs laufen auf der Queue **`push`**. Auf Forge einen eigenen Daemon bzw. Worker anlegen:
 
 ```bash
-php artisan queue:work --queue=push --sleep=1 --tries=1 --timeout=150
+php artisan queue:work database --queue=push --sleep=1 --tries=1 --timeout=150 --memory=256 --max-time=3600
 ```
 
-Für viele Geräte mehrere Prozesse starten, z. B. 4. Jobs werden **nicht wiederholt** (`--tries=1`), weil ein zweiter Lauf schon Benachrichtigte doppelt treffen würde.
+Eingerichtet sind 2 Prozesse. `retry_after` der Database-Queue steht auf 660 Sekunden, also über dem Timeout des Verteilungs-Jobs (600). Für viele Geräte mehr Prozesse starten, z. B. 4. Jobs werden **nicht wiederholt** (`--tries=1`), weil ein zweiter Lauf schon Benachrichtigte doppelt treffen würde.
 
 ### Benutzer der App
 
@@ -236,7 +283,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | Cursor | Tabelle `pds_global_sync_states`, Schlüssel `travel_details_push`. Zeile löschen = beim nächsten Lauf neu „ab jetzt“ |
 | Geräte | `app_devices` (ohne Namen; Token und Secret-Hash sind verborgen) |
 | Gemeldete Reisen | `app_device_travel_links` (`tid`, `notified_change_at`) |
-| Versände und Zähler | `app_push_messages` (`targeted`, `sent`, `failed`, `invalid`, `status`) |
+| Versände und Zähler | `app_push_messages` (`source` scanner/admin/api, `user_id` bei Admin, `targeted`, `sent`, `failed`, `invalid`, `status`); ansehen unter **System › Push senden** |
 | Fehlgeschlagene Jobs | `php artisan queue:failed` |
 
 ### Typische Fehlerbilder
@@ -248,6 +295,9 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | Keine Versände, obwohl sich etwas geändert hat | Prüfen: Läuft der Scanner (Log, `PUSH_TRAVEL_CHANGES_ENABLED`)? Ist api-internal erreichbar (Delta-Feed, Log-Eintrag „Delta-Feed nicht erreichbar“)? Hat das Gerät die Reise gemeldet und den Schalter an? |
 | Pushs nur im Debug-Build | Ein Sandbox-Token schickt die Plattform an `api.sandbox.push.apple.com`. TestFlight und App Store nutzen production. |
 | Versand steht auf `sending` | Ein Worker auf der Queue `push` fehlt. |
+| Log „Delta-Abruf fehlgeschlagen“ mit `2006` | api-internal erreicht seine Datenbank nicht (z. B. alte Instanz gestoppt). `cloud_sql_instances` und `DB_SOCKET` von api-internal prüfen. |
+| Log „Delta-Abruf fehlgeschlagen“ mit `42S22` | Spalte `last_change_at` fehlt in der pds-Datenbank, siehe „Voraussetzung in der pds-Datenbank“. |
+| Delta-Feed sehr langsam | Index `idx_last_change_at_id` fehlt. |
 
 ## Datenschutz
 
@@ -267,6 +317,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | `app/Jobs/Push/SendPushBatch.php`, `FanOutPushMessage.php` | Versand-Jobs |
 | `app/Services/Push/ApnsClient.php`, `FcmClient.php` | HTTP/2 zu Apple und Google, JWT, ungültige Tokens |
 | `app/Services/Push/PushSender.php`, `PushTexts.php` | Inhalt je Gerät und Sprache |
+| `app/Livewire/AdminV2/System/PushMessages.php` | Admin-Seite System › Push senden |
 | `config/push.php` | Einstellungen |
-| `tests/Feature/Api/AppPushTest.php` | Tests |
-| TripData iOS: `PushManager.swift`, `AppDelegate.swift` | Erlaubnis, Anmeldung, Abgleich der Reise-IDs, Öffnen beim Tippen |
+| `tests/Feature/Api/AppPushTest.php`, `tests/Feature/AdminV2/PushMessagesTest.php` | Tests |
+| TripData iOS: `PushManager.swift`, `AppDelegate.swift`, `NotificationInbox.swift` | Erlaubnis, Anmeldung, Abgleich der Reise-IDs, Zähler je Reise |

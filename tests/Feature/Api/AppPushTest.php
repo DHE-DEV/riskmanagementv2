@@ -104,9 +104,12 @@ it('beginnt beim ersten Lauf ab jetzt und benachrichtigt danach nur bei neuen wi
 
     $device = AppDevice::create(['platform' => 'ios', 'push_token' => 'tok-1', 'secret_hash' => 'x', 'locale' => 'en']);
     $muted = AppDevice::create(['platform' => 'ios', 'push_token' => 'tok-2', 'secret_hash' => 'x', 'notifications_enabled' => false]);
+    // Seit ueber 180 Tagen nicht gemeldet: kein Push (wie bei eigenen Pushs ueber die API)
+    $stale = AppDevice::create(['platform' => 'ios', 'push_token' => 'tok-3', 'secret_hash' => 'x', 'last_seen_at' => now()->subDays(181)]);
     $this->travel(-2)->days();
     $link = AppDeviceTravelLink::create(['app_device_id' => $device->id, 'tid' => 'ZIPTHRG1Z6Y5']);
     AppDeviceTravelLink::create(['app_device_id' => $muted->id, 'tid' => 'ZIPTHRG1Z6Y5']);
+    AppDeviceTravelLink::create(['app_device_id' => $stale->id, 'tid' => 'ZIPTHRG1Z6Y5']);
     AppDeviceTravelLink::create(['app_device_id' => $device->id, 'tid' => 'ALTEAENDERUN']);
     $this->travelBack();
 

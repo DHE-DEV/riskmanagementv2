@@ -110,6 +110,9 @@ class TravelChangeScanner
             ->where('app_devices.notifications_enabled', true)
             ->whereNotNull('app_devices.push_token')
             ->whereNull('app_devices.token_invalid_at')
+            // Wie AppDevice::scopeReachable: lange nicht gemeldete Geraete auslassen.
+            ->where(fn ($q) => $q->whereNull('app_devices.last_seen_at')
+                ->orWhere('app_devices.last_seen_at', '>=', now()->subDays(config('push.device_stale_days', 180))))
             ->chunkById(5000, function ($rows) use ($changes, $tripNames, &$message, &$notified) {
                 $due = [];
                 foreach ($rows as $row) {

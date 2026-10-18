@@ -49,6 +49,7 @@ use App\Livewire\AdminV2\System\Automator\Index as AutomatorIndex;
 use App\Livewire\AdminV2\System\Automator\Monitor as AutomatorMonitor;
 use App\Livewire\AdminV2\System\MobileOperators\Editor as MobileOperatorEditor;
 use App\Livewire\AdminV2\System\MobileOperators\Index as MobileOperatorIndex;
+use App\Livewire\AdminV2\System\PushMessages as SystemPushMessages;
 use App\Livewire\AdminV2\System\QrCodes as SystemQrCodes;
 use App\Livewire\AdminV2\System\RecurringTasks\Editor as RecurringTaskEditor;
 use App\Livewire\AdminV2\System\RecurringTasks\Index as RecurringTaskIndex;
@@ -184,6 +185,7 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('system/ai/searches/{profile}', SystemAiSearchEditor::class)->whereNumber('profile')->name('system.ai.searches.edit');
         Route::get('system/teams', SystemTeams::class)->name('system.teams');
         Route::get('system/qr-codes', SystemQrCodes::class)->name('system.qr-codes');
+        Route::get('system/push', SystemPushMessages::class)->name('system.push');
         Route::get('system/recurring-tasks', RecurringTaskIndex::class)->name('system.recurring-tasks.index');
         Route::get('system/recurring-tasks/create', RecurringTaskEditor::class)->name('system.recurring-tasks.create');
         Route::get('system/recurring-tasks/{recurrence}', RecurringTaskEditor::class)->whereNumber('recurrence')->name('system.recurring-tasks.edit');
