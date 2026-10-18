@@ -473,6 +473,10 @@ Route::prefix('v1/devices')->middleware([
         Route::delete('/trips/{clientTripId}/list', 'destroyList')->name('trips.list.destroy');
         Route::put('/shared-lists/{list}', 'updateList')->name('shared-lists.update');
         Route::put('/shared-lists/{list}/roles', 'updateListRoles')->name('shared-lists.roles');
+        Route::post('/trips/{clientTripId}/invite', 'tripInvite')->name('trips.invite');
+        Route::post('/groups/{group}/invite', 'groupInvite')->name('groups.invite');
+        Route::get('/invites/{code}', 'showInvite')->name('invites.show');
+        Route::post('/invites/{code}/accept', 'acceptInvite')->name('invites.accept');
     });
 });
 

@@ -192,6 +192,9 @@ Reisende können Reisen mit Familie oder Mitreisenden teilen, ohne Konto:
     So können Eltern Kindern zunächst nur das Abhaken erlauben und älteren Kindern das Bearbeiten freigeben. Die Plattform prüft die Rechte.
   - **Koffer** lassen sich einer Person der Reise zuordnen. Angezeigt wird deren Anzeigename, zum Beispiel „Großer Koffer · Mama“.
   - **Zusammenführen:** Jeder Eintrag trägt eigene Zeitstempel für Inhalt (`updated_at`) und Haken (`packed_at`). Gleichzeitiges Umbenennen und Abhaken desselben Gegenstands geht so nicht verloren. Gelöschte Einträge bleiben als `deleted` stehen, damit ein älterer Stand sie nicht zurückholt.
+- **Einladungslinks:** Zu einer geteilten Reise und (für den Ersteller) zu einer Gruppe lässt sich ein Link `https://platform.passolution.de/einladung/ABCD-EFGH` erzeugen. Der Code hat 8 Zeichen, ist 30 Tage gültig, und pro Reise bzw. Gruppe gibt es einen gültigen Link. „Erneuern“ macht den alten ungültig. Die App verschickt ihn über das Teilen-Menü (WhatsApp, Mail …).
+  - **Mit installierter App** öffnet der Link direkt TripData (Universal Link bzw. App Link, Pfad `/einladung/*` in den Verifikationsdateien). Die App zeigt die Einladung und nimmt sie auf Wunsch an: Bei einer Reise wird man angenommener Empfänger, bei einer Gruppe Mitglied.
+  - **Ohne App** zeigt die Seite, wer wozu einlädt, Zeitraum und Länder, Knöpfe zu App Store und Google Play (`TRIPDATA_APP_STORE_URL`, `TRIPDATA_PLAY_STORE_URL`) und den Code. Diesen trägt man nach der Installation in der App unter Mehr › Teilen & Gruppen › „Einladungscode eingeben“ ein.
 - **Push beim Teilen:** Einladungen zu Reisen und Gruppen sowie neue Reisen in einer Gruppe lösen eine Benachrichtigung aus (`type = share`, Quelle `sharing`, in Admin v2 als „Teilen“). Die App lädt daraufhin ihre Freigaben neu.
 - **Ende:** Der Ersteller hebt die Freigabe auf oder löscht die Reise, Empfänger verlassen sie. Wird ein Gerät gelöscht („Alle Daten löschen“ oder `push:prune-devices` nach 180 Tagen), verschwinden seine Gruppen, Freigaben und Mitgliedschaften mit.
 
@@ -215,6 +218,9 @@ Alle Aufrufe stehen unter `/api/v1/devices/{id}/…` und brauchen den Header `X-
 | `DELETE trips/{clientTripId}/list` | Packliste nicht mehr teilen |
 | `PUT shared-lists/{list}` | Änderungen an einer geteilten Packliste (`name`, `suitcases`, `items`). Die Plattform übernimmt nur, was die eigene Rolle erlaubt; „Nur ansehen“ → 403. |
 | `PUT shared-lists/{list}/roles` | Rechte ändern (Ersteller und „Verwalten“) |
+
+| `POST trips/{clientTripId}/invite` · `POST groups/{group}/invite` | Einladungslink erzeugen bzw. vorhandenen liefern (`{renew: true}` = neuer Code); Antwort `code`, `url`, `expires_at` |
+| `GET invites/{code}` · `POST invites/{code}/accept` | Einladung ansehen (`kind`, `name`, `from`, `already`, `is_own`) bzw. annehmen |
 
 Empfangene und eigene geteilte Reisen enthalten im Stand zusätzlich `participants` (wer die Reise sieht, mit `list_role`) und `list` (Inhalt, `my_role`, `default_role`, `revision`).
 
@@ -333,7 +339,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | Cursor | Tabelle `pds_global_sync_states`, Schlüssel `travel_details_push`. Zeile löschen = beim nächsten Lauf neu „ab jetzt“ |
 | Geräte | `app_devices` (ohne Namen; Token und Secret-Hash sind verborgen) |
 | Gemeldete Reisen | `app_device_travel_links` (`tid`, `notified_change_at`) |
-| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
+| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_invites` (Einladungslinks: `code`, `expires_at`, `uses`), `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
 | Versände und Zähler | `app_push_messages` (`source` scanner/admin/api/sharing, `user_id` bei Admin, `targeted`, `sent`, `failed`, `invalid`, `status`); ansehen unter **System › Push senden** |
 | Fehlgeschlagene Jobs | `php artisan queue:failed` |
 
@@ -371,8 +377,8 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | `app/Services/Push/PushSender.php`, `PushTexts.php` | Inhalt je Gerät und Sprache |
 | `app/Livewire/AdminV2/System/PushMessages.php` | Admin-Seite System › Push senden |
 | `app/Http/Controllers/Api/V1/AppSharingController.php`, `app/Services/Push/SharingNotifier.php` | Teilen: App-ID, Gruppen, geteilte Reisen, Push bei Einladungen |
-| `app/Models/Push/AppGroup*.php`, `AppSharedTrip*.php`, `AppSharedList.php` | Modelle zum Teilen; `AppSharedList::merge()` führt Packlisten nach Rolle zusammen |
+| `app/Models/Push/AppGroup*.php`, `AppSharedTrip*.php`, `AppSharedList.php`, `AppInvite.php`; `app/Http/Controllers/TripDataLinkController.php` (Seite `/einladung/{code}`, `resources/views/tripdata/invite.blade.php`) | Modelle zum Teilen; `AppSharedList::merge()` führt Packlisten nach Rolle zusammen |
 | `config/push.php` | Einstellungen |
-| `tests/Feature/Api/AppPushTest.php`, `tests/Feature/Api/AppSharingTest.php`, `tests/Feature/Api/AppSharedListTest.php`, `tests/Feature/AdminV2/PushMessagesTest.php` | Tests |
+| `tests/Feature/Api/AppPushTest.php`, `tests/Feature/Api/AppSharingTest.php`, `tests/Feature/Api/AppSharedListTest.php`, `tests/Feature/Api/AppInviteTest.php`, `tests/Feature/AdminV2/PushMessagesTest.php` | Tests |
 | TripData iOS: `PushManager.swift`, `AppDelegate.swift`, `NotificationInbox.swift` | Erlaubnis, Anmeldung, Abgleich der Reise-IDs, Zähler je Reise |
 | TripData iOS: `Sharing.swift`, `SharingViews.swift` | Teilen: Stand, Abgleich der empfangenen Reisen, Mehr › Teilen & Gruppen, Reise teilen |

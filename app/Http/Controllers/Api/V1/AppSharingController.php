@@ -7,6 +7,7 @@ use App\Models\Push\AppDevice;
 use App\Models\Push\AppDeviceTravelLink;
 use App\Models\Push\AppGroup;
 use App\Models\Push\AppGroupMember;
+use App\Models\Push\AppInvite;
 use App\Models\Push\AppSharedList;
 use App\Models\Push\AppSharedTrip;
 use App\Models\Push\AppSharedTripRecipient;
@@ -35,6 +36,10 @@ use Illuminate\Validation\ValidationException;
  *   DELETE trips/{clientTripId}/list        Packliste nicht mehr teilen
  *   PUT    shared-lists/{list}              Aenderungen an einer geteilten Packliste (je nach Rolle)
  *   PUT    shared-lists/{list}/roles        Rechte festlegen (Ersteller und „verwalten“)
+ *   POST   trips/{clientTripId}/invite      Einladungslink zur eigenen geteilten Reise ({renew: true} = neuer Code)
+ *   POST   groups/{group}/invite            Einladungslink zur Gruppe (Ersteller)
+ *   GET    invites/{code}                   Einladung ansehen
+ *   POST   invites/{code}/accept            Einladung annehmen (Reise: angenommener Empfaenger, Gruppe: Mitglied)
  */
 class AppSharingController extends Controller
 {
@@ -385,6 +390,75 @@ class AppSharingController extends Controller
         $names = $trip->participants()->mapWithKeys(fn (AppDevice $p) => [$p->share_code => $p->publicName()])->all();
 
         return $list->toApi($device, $names) + ['default_role' => $list->default_role];
+    }
+
+    // MARK: Einladungslinks
+
+    public function tripInvite(Request $request, string $id, string $clientTripId): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->firstOrFail();
+        $invite = AppInvite::for($device, $trip, null, (bool) $request->boolean('renew'));
+
+        return response()->json(['success' => true, 'data' => $invite->toApi() + ['preview' => $invite->preview()]]);
+    }
+
+    public function groupInvite(Request $request, string $id, string $group): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $group = $this->ownedGroup($device, $group);
+        $invite = AppInvite::for($device, null, $group, (bool) $request->boolean('renew'));
+
+        return response()->json(['success' => true, 'data' => $invite->toApi() + ['preview' => $invite->preview()]]);
+    }
+
+    public function showInvite(Request $request, string $id, string $code): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $invite = $this->validInvite($code);
+
+        return response()->json(['success' => true, 'data' => $invite->preview() + [
+            'is_own' => $invite->created_by_device_id === $device->id,
+            'already' => $this->alreadyIn($device, $invite),
+        ]]);
+    }
+
+    public function acceptInvite(Request $request, string $id, string $code): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $invite = $this->validInvite($code);
+        abort_if($invite->created_by_device_id === $device->id, 422, 'This is your own invitation.');
+
+        DB::transaction(function () use ($invite, $device) {
+            if ($trip = $invite->trip) {
+                abort_if($trip->owner_device_id === $device->id, 422, 'This is your own trip.');
+                $trip->recipients()->updateOrCreate(['app_device_id' => $device->id], ['status' => AppSharedTripRecipient::STATUS_ACCEPTED, 'direct' => true]);
+            } elseif ($group = $invite->group) {
+                abort_if($group->members()->count() >= AppGroup::MAX_MEMBERS, 422, 'Too many members.');
+                $group->members()->updateOrCreate(['app_device_id' => $device->id], ['status' => AppGroupMember::STATUS_ACCEPTED]);
+            }
+            $invite->increment('uses');
+        });
+
+        return response()->json(['success' => true, 'data' => ['kind' => $invite->trip ? 'trip' : 'group', 'id' => $invite->app_shared_trip_id ?? $invite->app_group_id] + $this->state($device)]);
+    }
+
+    private function validInvite(string $code): AppInvite
+    {
+        $invite = AppInvite::with(['trip', 'group', 'creator'])->where('code', AppDevice::normalizeShareCode($code) ?? '-')->first();
+        abort_if(! $invite || ! $invite->isValid(), 404, 'Invitation not found or expired.');
+
+        return $invite;
+    }
+
+    private function alreadyIn(AppDevice $device, AppInvite $invite): bool
+    {
+        if ($trip = $invite->trip) {
+            return $trip->owner_device_id === $device->id
+                || $trip->recipients()->where('app_device_id', $device->id)->where('status', AppSharedTripRecipient::STATUS_ACCEPTED)->exists();
+        }
+
+        return (bool) $invite->group?->members()->where('app_device_id', $device->id)->where('status', AppGroupMember::STATUS_ACCEPTED)->exists();
     }
 
     // MARK: Stand fuer die App

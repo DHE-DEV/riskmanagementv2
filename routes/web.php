@@ -73,6 +73,8 @@ Route::get('/', function () {
 // TripData-App: Reise-Links (Universal Links / Android App Links) samt Verifikationsdateien
 Route::get('/'.\App\Http\Controllers\TripDataLinkController::PATH.'/{code}', [\App\Http\Controllers\TripDataLinkController::class, 'show'])
     ->where('code', '[A-Za-z0-9-]{12,20}')->name('tripdata.travel-link');
+Route::get('/'.\App\Models\Push\AppInvite::PATH.'/{code}', [\App\Http\Controllers\TripDataLinkController::class, 'invite'])
+    ->where('code', '[A-Za-z0-9-]{8,10}')->name('tripdata.invite');
 Route::get('/.well-known/apple-app-site-association', [\App\Http\Controllers\TripDataLinkController::class, 'appleAppSiteAssociation'])->name('tripdata.aasa');
 Route::get('/.well-known/assetlinks.json', [\App\Http\Controllers\TripDataLinkController::class, 'assetLinks'])->name('tripdata.assetlinks');
 

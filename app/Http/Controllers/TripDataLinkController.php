@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Push\AppDevice;
+use App\Models\Push\AppInvite;
 use App\Services\QrCode\QrCodeGenerator;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,12 +32,31 @@ class TripDataLinkController extends Controller
         return redirect()->away(QrCodeGenerator::travelDetailsUrl($normalized, $language));
     }
 
+    /**
+     * Einladung zu einer Reise oder Gruppe: https://platform.passolution.de/einladung/{code}. Mit installierter App
+     * oeffnet sie direkt TripData; ohne App diese Seite mit Infos, Links zu den Stores und dem Code zum Eintippen.
+     */
+    public function invite(string $code): View
+    {
+        $invite = AppInvite::with(['trip', 'group', 'creator'])->where('code', AppDevice::normalizeShareCode($code) ?? '-')->first();
+
+        return view('tripdata.invite', [
+            'invite' => $invite && $invite->isValid() ? $invite->preview() : null,
+            'appStoreUrl' => config('services.tripdata.app_store_url'),
+            'playStoreUrl' => config('services.tripdata.play_store_url'),
+            'appUrl' => 'tripdata://einladung/'.($invite?->formattedCode() ?? ''),
+        ]);
+    }
+
     /** iOS: welche App die Links unter /reise/* oeffnen darf (Associated Domains). */
     public function appleAppSiteAssociation(): JsonResponse
     {
         $details = array_map(fn (string $appId) => [
             'appIDs' => [$appId],
-            'components' => [['/' => '/'.self::PATH.'/*', 'comment' => 'Reise-Links der TripData-App']],
+            'components' => [
+                ['/' => '/'.self::PATH.'/*', 'comment' => 'Reise-Links der TripData-App'],
+                ['/' => '/'.AppInvite::PATH.'/*', 'comment' => 'Einladungen zu Reisen und Gruppen'],
+            ],
         ], config('services.tripdata.ios_app_ids', []));
 
         return response()->json(['applinks' => ['details' => array_values($details)]])

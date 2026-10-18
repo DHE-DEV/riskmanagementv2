@@ -128,6 +128,9 @@ return [
         // Apple: <Team-ID>.<Bundle-ID>, mehrere mit Komma
         'ios_app_ids' => array_filter(array_map('trim', explode(',', (string) env('TRIPDATA_IOS_APP_IDS', 'PFC8Z32F99.de.passolution.tripdata.app,5843TDW7F4.de.passolution.tripdata')))),
         'android_package' => env('TRIPDATA_ANDROID_PACKAGE', 'de.passolution.tripdata'),
+        // Store-Seiten fuer die Einladungsseite (/einladung/{code})
+        'app_store_url' => env('TRIPDATA_APP_STORE_URL', 'https://apps.apple.com/app/id6822724220'),
+        'play_store_url' => env('TRIPDATA_PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=de.passolution.tripdata'),
         // SHA-256-Fingerabdruecke der Signaturschluessel (Release, ggf. Debug), mehrere mit Komma
         'android_sha256' => array_filter(array_map('trim', explode(',', (string) env('TRIPDATA_ANDROID_CERT_SHA256', '')))),
     ],
