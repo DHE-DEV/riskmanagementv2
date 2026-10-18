@@ -430,6 +430,7 @@ Route::prefix('v1')->middleware([
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('v1.airlines');
     Route::get('/airlines/{code}', [\App\Http\Controllers\Api\V1\AirlineController::class, 'show'])->name('v1.airlines.show');
     Route::get('/exchange-rates', [\App\Http\Controllers\Api\V1\ExchangeRateController::class, 'latest'])->name('v1.exchange-rates');
+    Route::get('/entry-requirements', [\App\Http\Controllers\Api\V1\EntryRequirementsController::class, 'index'])->name('v1.entry-requirements');
 
     // QR-Codes (TripData-Link, App-Direktlink, Travel Details, freier Inhalt) als JSON, SVG oder PDF
     Route::get('/qr-codes/types', [\App\Http\Controllers\Api\V1\QrCodeController::class, 'types'])->name('v1.qr-codes.types');
