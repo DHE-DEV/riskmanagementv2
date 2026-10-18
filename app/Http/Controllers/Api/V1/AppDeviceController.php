@@ -31,13 +31,16 @@ class AppDeviceController extends Controller
         $device = DB::transaction(function () use ($data, $hash, $request) {
             $this->releaseToken($data['push_token'] ?? null);
 
-            return AppDevice::create(array_merge($this->attributes($data), [
+            $device = AppDevice::create(array_merge($this->attributes($data), [
                 'customer_id' => $request->user()?->getKey(),
                 'app' => $data['app'] ?? 'tripdata',
                 'platform' => $data['platform'],
                 'secret_hash' => $hash,
                 'last_seen_at' => now(),
             ]));
+            $device->ensureShareCode();
+
+            return $device;
         });
 
         return response()->json(['success' => true, 'data' => array_merge($device->toApi(), ['secret' => $secret])], 201);
@@ -138,12 +141,17 @@ class AppDeviceController extends Controller
             'locale' => ['sometimes', 'string', 'max:8'],
             'app_version' => ['sometimes', 'nullable', 'string', 'max:64'],
             'notifications_enabled' => ['sometimes', 'boolean'],
+            'display_name' => ['sometimes', 'nullable', 'string', 'max:60'],
         ];
     }
 
     private function attributes(array $data): array
     {
         $attributes = array_intersect_key($data, array_flip(['push_token', 'push_environment', 'app_version', 'notifications_enabled']));
+
+        if (array_key_exists('display_name', $data)) {
+            $attributes['display_name'] = filled($data['display_name']) ? trim($data['display_name']) : null;
+        }
 
         if (isset($data['locale'])) {
             $locale = strtolower(substr($data['locale'], 0, 2));

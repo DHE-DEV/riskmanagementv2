@@ -452,6 +452,27 @@ Route::prefix('v1/devices')->middleware([
     Route::put('/{id}', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'update'])->name('v1.devices.update');
     Route::put('/{id}/travel-links', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'travelLinks'])->name('v1.devices.travel-links');
     Route::delete('/{id}', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'destroy'])->name('v1.devices.destroy');
+
+    // Teilen: App-ID, Gruppen, geteilte Reisen
+    Route::controller(\App\Http\Controllers\Api\V1\AppSharingController::class)->prefix('/{id}')->name('v1.devices.sharing.')->group(function () {
+        Route::get('/sharing', 'show')->name('show');
+        Route::get('/lookup/{code}', 'lookup')->name('lookup');
+        Route::post('/groups', 'storeGroup')->name('groups.store');
+        Route::put('/groups/{group}', 'updateGroup')->name('groups.update');
+        Route::delete('/groups/{group}', 'destroyGroup')->name('groups.destroy');
+        Route::post('/groups/{group}/members', 'inviteMembers')->name('groups.members.store');
+        Route::delete('/groups/{group}/members/{member}', 'removeMember')->whereNumber('member')->name('groups.members.destroy');
+        Route::post('/groups/{group}/accept', 'acceptGroup')->name('groups.accept');
+        Route::post('/groups/{group}/decline', 'declineGroup')->name('groups.decline');
+        Route::put('/trips/{clientTripId}', 'upsertTrip')->name('trips.upsert');
+        Route::delete('/trips/{clientTripId}', 'destroyTrip')->name('trips.destroy');
+        Route::post('/shared-trips/{trip}/accept', 'acceptTrip')->name('shared-trips.accept');
+        Route::post('/shared-trips/{trip}/decline', 'declineTrip')->name('shared-trips.decline');
+        Route::put('/trips/{clientTripId}/list', 'upsertList')->name('trips.list.upsert');
+        Route::delete('/trips/{clientTripId}/list', 'destroyList')->name('trips.list.destroy');
+        Route::put('/shared-lists/{list}', 'updateList')->name('shared-lists.update');
+        Route::put('/shared-lists/{list}/roles', 'updateListRoles')->name('shared-lists.roles');
+    });
 });
 
 // Push-Benachrichtigungen verschicken (Token mit push:send, nur vom Admin vergeben).

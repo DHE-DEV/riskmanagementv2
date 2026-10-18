@@ -18,12 +18,18 @@ class AppPushMessage extends Model
 
     public const TYPE_CUSTOM = 'custom';
 
+    /** Einladung zu einer Reise oder Gruppe bzw. neue Reise in einer Gruppe (Teilen in der App). */
+    public const TYPE_SHARE = 'share';
+
     public const SOURCE_SCANNER = 'scanner';
 
     public const SOURCE_API = 'api';
 
     /** Aus Admin v2 (System > Push senden). */
     public const SOURCE_ADMIN = 'admin';
+
+    /** Teilen in der App (Einladungen). */
+    public const SOURCE_SHARING = 'sharing';
 
     public const STATUS_QUEUED = 'queued';
 

@@ -25,6 +25,9 @@ class AppDevice extends Model
 
     public const LOCALES = ['de', 'en', 'nl'];
 
+    /** Zeichen der App-ID: ohne 0/O, 1/I/L und U, damit sie sich vorlesen und abtippen laesst. */
+    public const SHARE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
+
     protected $fillable = [
         'customer_id',
         'app',
@@ -35,6 +38,8 @@ class AppDevice extends Model
         'app_version',
         'notifications_enabled',
         'secret_hash',
+        'share_code',
+        'display_name',
         'last_seen_at',
         'token_invalid_at',
     ];
@@ -58,6 +63,47 @@ class AppDevice extends Model
     public function travelLinks(): HasMany
     {
         return $this->hasMany(AppDeviceTravelLink::class);
+    }
+
+    /**
+     * App-ID zum Teilen; aeltere Geraete bekommen sie beim ersten Bedarf.
+     */
+    public function ensureShareCode(): string
+    {
+        if ($this->share_code) {
+            return $this->share_code;
+        }
+
+        do {
+            $code = '';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= self::SHARE_ALPHABET[random_int(0, strlen(self::SHARE_ALPHABET) - 1)];
+            }
+        } while (self::where('share_code', $code)->exists());
+
+        $this->forceFill(['share_code' => $code])->save();
+
+        return $code;
+    }
+
+    /** "k7m3-9qxa", "K7M39QXA" → "K7M39QXA"; null, wenn es keine App-ID sein kann. */
+    public static function normalizeShareCode(?string $code): ?string
+    {
+        $code = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', (string) $code));
+
+        return strlen($code) === 8 && strspn($code, self::SHARE_ALPHABET) === 8 ? $code : null;
+    }
+
+    /** "K7M39QXA" → "K7M3-9QXA" */
+    public static function formatShareCode(?string $code): ?string
+    {
+        return $code ? substr($code, 0, 4).'-'.substr($code, 4) : null;
+    }
+
+    /** Name fuer andere: Anzeigename oder die App-ID. */
+    public function publicName(): string
+    {
+        return filled($this->display_name) ? $this->display_name : (self::formatShareCode($this->share_code) ?? 'TripData');
     }
 
     /**
@@ -98,6 +144,8 @@ class AppDevice extends Model
             'app_version' => $this->app_version,
             'notifications_enabled' => $this->notifications_enabled,
             'has_push_token' => filled($this->push_token) && $this->token_invalid_at === null,
+            'share_code' => self::formatShareCode($this->share_code),
+            'display_name' => $this->display_name,
         ];
     }
 }

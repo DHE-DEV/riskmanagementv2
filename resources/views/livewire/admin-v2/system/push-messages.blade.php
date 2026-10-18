@@ -177,6 +177,9 @@
                                     @case(AppPushMessage::SOURCE_SCANNER)
                                         <flux:badge size="sm" color="sky">Reise-Änderung</flux:badge>
                                         @break
+                                    @case(AppPushMessage::SOURCE_SHARING)
+                                        <flux:badge size="sm" color="emerald">Teilen</flux:badge>
+                                        @break
                                     @case(AppPushMessage::SOURCE_ADMIN)
                                         <flux:badge size="sm" color="violet">{{ $message->user?->name ?? 'Admin' }}</flux:badge>
                                         @break

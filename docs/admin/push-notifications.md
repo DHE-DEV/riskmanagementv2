@@ -168,6 +168,56 @@ Die Texte liegen in `app/Services/Push/PushTexts.php`. Zusätzlich schickt die P
 - Gezählt wird nur auf dem Gerät (`NotificationInbox.swift`), aus drei Quellen: Banner bei geöffneter App, Antippen und beim Öffnen der App alles, was in der Mitteilungszentrale liegt. Eine Benachrichtigung, die weggewischt wird, bevor die App geöffnet wird, zählt nicht.
 - Benachrichtigungen ohne `tid` (z. B. „an alle Geräte“) erscheinen nur als Mitteilung und zählen bei keiner Reise.
 
+## Teilen in der App (App-ID, Gruppen)
+
+Reisende können Reisen mit Familie oder Mitreisenden teilen, ohne Konto:
+
+- **App-ID:** Jedes Gerät hat eine kurze App-ID mit 8 Zeichen, angezeigt als `K7M3-9QXA` (ohne 0/O, 1/I/L und U, damit sie sich vorlesen lässt). Sie steht in der App unter **Mehr › Teilen & Gruppen**, mit QR-Code und Weitergeben. Dazu kommt ein freiwilliger **Anzeigename**, den andere beim Einladen sehen. Ohne Namen erscheint die App-ID.
+- **Gruppen** (z. B. Familie, Reisegruppe): Der Ersteller lädt per App-ID ein und verwaltet die Mitglieder. Eingeladene werden erst nach **Annehmen** Mitglied und sehen vorher nur, wer einlädt. Mitglieder sehen sich gegenseitig, können Reisen mit der Gruppe teilen und die Gruppe verlassen. Höchstens 20 eigene Gruppen mit je 50 Mitgliedern.
+- **Reise teilen:** Auf der Reiseseite einzelne App-IDs eingeben und/oder Gruppen wählen.
+  - **Einzeln Eingeladene** müssen annehmen.
+  - **Gruppenmitglieder** sehen die Reise sofort und können sie ausblenden.
+  - Geteilt werden Name, Zeitraum, Zielländer und die Reise-ID. Durch die Reise-ID meldet die App der anderen sie in ihrer Liste (`travel-links`). Damit bekommen alle die **Benachrichtigungen bei wichtigen Änderungen** und sehen die Einreisebestimmungen, ohne dass der Versand etwas Besonderes tun muss. Auch „Push senden“ an diese Reise-ID erreicht sie.
+- **Änderungen** pflegt nur der Ersteller (Name, Zeitraum, Länder). Die App schickt sie nach jeder Änderung, und die anderen übernehmen sie beim nächsten Abgleich (`revision`). Empfänger können der Reise **für sich einen eigenen Namen** geben, den Änderungen des Erstellers nicht überschreiben. „Besucht“, Wunschliste und Packliste bleiben auf jedem Gerät für sich.
+- **Packliste teilen:** Beim Teilen einer Reise kann der Ersteller ihre Packliste mitteilen. Es gibt dann eine **gemeinsame Liste** für alle, die die Reise sehen: Was jemand abhakt oder ergänzt, sehen alle.
+  - **Rechte:** Der Ersteller legt eine Vorgabe für alle fest und kann sie pro Person abweichend setzen. Die Vorgabe beim ersten Teilen ist „Abhaken“.
+
+    | Recht | Darf |
+    |---|---|
+    | Nur ansehen | die Liste sehen |
+    | Abhaken | Gegenstände als eingepackt markieren |
+    | Bearbeiten | Gegenstände und Koffer anlegen, ändern und löschen |
+    | Verwalten | zusätzlich die Rechte der anderen ändern, z. B. der zweite Elternteil |
+
+    So können Eltern Kindern zunächst nur das Abhaken erlauben und älteren Kindern das Bearbeiten freigeben. Die Plattform prüft die Rechte.
+  - **Koffer** lassen sich einer Person der Reise zuordnen. Angezeigt wird deren Anzeigename, zum Beispiel „Großer Koffer · Mama“.
+  - **Zusammenführen:** Jeder Eintrag trägt eigene Zeitstempel für Inhalt (`updated_at`) und Haken (`packed_at`). Gleichzeitiges Umbenennen und Abhaken desselben Gegenstands geht so nicht verloren. Gelöschte Einträge bleiben als `deleted` stehen, damit ein älterer Stand sie nicht zurückholt.
+- **Push beim Teilen:** Einladungen zu Reisen und Gruppen sowie neue Reisen in einer Gruppe lösen eine Benachrichtigung aus (`type = share`, Quelle `sharing`, in Admin v2 als „Teilen“). Die App lädt daraufhin ihre Freigaben neu.
+- **Ende:** Der Ersteller hebt die Freigabe auf oder löscht die Reise, Empfänger verlassen sie. Wird ein Gerät gelöscht („Alle Daten löschen“ oder `push:prune-devices` nach 180 Tagen), verschwinden seine Gruppen, Freigaben und Mitgliedschaften mit.
+
+### API für die App
+
+Alle Aufrufe stehen unter `/api/v1/devices/{id}/…` und brauchen den Header `X-Device-Secret`. Jede Antwort enthält den vollständigen Stand (`me`, `groups`, `trip_invitations`, `received_trips`, `owned_trips`).
+
+| Aufruf | Zweck |
+|---|---|
+| `GET sharing` | Stand holen |
+| `GET lookup/{code}` | Name zu einer App-ID (404 = unbekannt) |
+| `PUT /v1/devices/{id}` mit `display_name` | Anzeigenamen setzen |
+| `POST groups` · `PUT`/`DELETE groups/{group}` | Gruppe anlegen, umbenennen, auflösen (nur Ersteller) |
+| `POST groups/{group}/members` `{codes: []}` | Einladen (nur Ersteller; unbekannte App-IDs → 422) |
+| `DELETE groups/{group}/members/{member}` | Entfernen (Ersteller) bzw. selbst verlassen |
+| `POST groups/{group}/accept` · `decline` | Einladung annehmen oder ablehnen |
+| `PUT trips/{clientTripId}` | Eigene Reise teilen oder aktualisieren: `name`, `start_date`, `end_date`, `country_codes`, `travel_link_code`; `codes` und `group_ids` jeweils als vollständige Liste (weggelassen = unverändert) |
+| `DELETE trips/{clientTripId}` | Freigabe aufheben |
+| `POST shared-trips/{trip}/accept` · `decline` | Empfangene Reise annehmen bzw. ablehnen oder ausblenden |
+| `PUT trips/{clientTripId}/list` | Packliste der eigenen Reise teilen bzw. Inhalt senden: `client_list_id`, `name`, `suitcases`, `items`, optional `default_role` und `roles` (`{App-ID: view\|check\|edit\|manage}`) |
+| `DELETE trips/{clientTripId}/list` | Packliste nicht mehr teilen |
+| `PUT shared-lists/{list}` | Änderungen an einer geteilten Packliste (`name`, `suitcases`, `items`). Die Plattform übernimmt nur, was die eigene Rolle erlaubt; „Nur ansehen“ → 403. |
+| `PUT shared-lists/{list}/roles` | Rechte ändern (Ersteller und „Verwalten“) |
+
+Empfangene und eigene geteilte Reisen enthalten im Stand zusätzlich `participants` (wer die Reise sieht, mit `list_role`) und `list` (Inhalt, `my_role`, `default_role`, `revision`).
+
 ## Push senden in Admin v2
 
 Unter **System › Push senden** (`/adminv2/system/push`) verschicken Admins eigene Benachrichtigungen, ohne Token:
@@ -283,7 +333,8 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | Cursor | Tabelle `pds_global_sync_states`, Schlüssel `travel_details_push`. Zeile löschen = beim nächsten Lauf neu „ab jetzt“ |
 | Geräte | `app_devices` (ohne Namen; Token und Secret-Hash sind verborgen) |
 | Gemeldete Reisen | `app_device_travel_links` (`tid`, `notified_change_at`) |
-| Versände und Zähler | `app_push_messages` (`source` scanner/admin/api, `user_id` bei Admin, `targeted`, `sent`, `failed`, `invalid`, `status`); ansehen unter **System › Push senden** |
+| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
+| Versände und Zähler | `app_push_messages` (`source` scanner/admin/api/sharing, `user_id` bei Admin, `targeted`, `sent`, `failed`, `invalid`, `status`); ansehen unter **System › Push senden** |
 | Fehlgeschlagene Jobs | `php artisan queue:failed` |
 
 ### Typische Fehlerbilder
@@ -304,6 +355,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 - Die Plattform speichert je Gerät nur Push-Token, Plattform, Sprache, App-Version und die gemeldeten Reise-IDs. Personen erkennt sie daran nicht.
 - Das Geräte-Secret liegt nur als SHA-256-Hash vor.
 - Abmelden: Schalter in der App aus (`notifications_enabled=false`), Reise-Schalter aus (Reise-ID entfernt) oder `DELETE /v1/devices/{id}`.
+- Teilen: gespeichert werden App-ID, der freiwillige Anzeigename sowie Name, Zeitraum, Länder und Reise-ID geteilter Reisen. Sichtbar sind sie nur für Eingeladene bzw. Gruppenmitglieder; wer eine App-ID kennt, sieht den Anzeigenamen. Alles hängt am Gerät und wird mit ihm gelöscht.
 - Über die Reise-ID lässt sich ermitteln, wie viele Reisende eines Reisebüros die App nutzen, ohne dass jemand identifiziert wird.
 
 ## Code-Überblick
@@ -318,6 +370,9 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | `app/Services/Push/ApnsClient.php`, `FcmClient.php` | HTTP/2 zu Apple und Google, JWT, ungültige Tokens |
 | `app/Services/Push/PushSender.php`, `PushTexts.php` | Inhalt je Gerät und Sprache |
 | `app/Livewire/AdminV2/System/PushMessages.php` | Admin-Seite System › Push senden |
+| `app/Http/Controllers/Api/V1/AppSharingController.php`, `app/Services/Push/SharingNotifier.php` | Teilen: App-ID, Gruppen, geteilte Reisen, Push bei Einladungen |
+| `app/Models/Push/AppGroup*.php`, `AppSharedTrip*.php`, `AppSharedList.php` | Modelle zum Teilen; `AppSharedList::merge()` führt Packlisten nach Rolle zusammen |
 | `config/push.php` | Einstellungen |
-| `tests/Feature/Api/AppPushTest.php`, `tests/Feature/AdminV2/PushMessagesTest.php` | Tests |
+| `tests/Feature/Api/AppPushTest.php`, `tests/Feature/Api/AppSharingTest.php`, `tests/Feature/Api/AppSharedListTest.php`, `tests/Feature/AdminV2/PushMessagesTest.php` | Tests |
 | TripData iOS: `PushManager.swift`, `AppDelegate.swift`, `NotificationInbox.swift` | Erlaubnis, Anmeldung, Abgleich der Reise-IDs, Zähler je Reise |
+| TripData iOS: `Sharing.swift`, `SharingViews.swift` | Teilen: Stand, Abgleich der empfangenen Reisen, Mehr › Teilen & Gruppen, Reise teilen |
