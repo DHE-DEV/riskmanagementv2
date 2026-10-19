@@ -957,6 +957,50 @@ curl -H "Authorization: Bearer {TOKEN}" \
 
 Antwortet die Wetterquelle nicht, kommt `503` mit `"message": "Weather service unavailable."`.
 
+#### Tagesvorhersage (16 Tage)
+
+```
+GET /v1/weather/daily?lat=36.72&lng=-4.42
+```
+
+Tiefst- und Höchstwert, Wetterart und Regenwahrscheinlichkeit je Tag für die nächsten 16 Tage – z. B. für die Planung einer Reise. Quelle ist Open-Meteo, die Daten werden 3 Stunden gecacht. `condition` ist eine von `clear`, `partly`, `cloudy`, `fog`, `drizzle`, `rain`, `showers`, `snow`, `thunder`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "lat": 36.72, "lng": -4.42,
+    "days": [
+      {"date": "2026-10-19", "condition": "thunder", "temp_max": 22, "temp_min": 18, "precipitation_probability": 55}
+    ]
+  }
+}
+```
+
+---
+
+### Wichtige Sätze
+
+```
+GET /v1/phrases/{language}?lang=de
+```
+
+Rund 40 wichtige Sätze für Reisende in einer Landessprache (`language` = ISO-639-Code wie in `languages` eines Landes, z. B. `ja`, `pap`), nach Gruppen (Grundlagen, Unterwegs, Essen & Trinken, Gesundheit, Notfall, Zahlen). `source` ist der Ausgangstext in `lang` (`de`, `en`, `nl`), `romanization` eine Umschrift bei nichtlateinischen Schriften. `status` ist `ai_draft`, solange die Übersetzungen nicht geprüft sind. Gibt es für die Sprache keine Sätze, kommt `404`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "language": "ja", "name": "Japanisch", "status": "ai_draft",
+    "categories": [
+      {"key": "basics", "name": "Grundlagen", "phrases": [
+        {"key": "hello", "source": "Hallo", "text": "こんにちは", "romanization": "Konnichiwa"}
+      ]}
+    ]
+  }
+}
+```
+
 ---
 
 ### Flughäfen

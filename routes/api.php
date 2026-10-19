@@ -425,6 +425,8 @@ Route::prefix('v1')->middleware([
     Route::get('/places', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'places'])->name('v1.places');
     Route::get('/countries/{code}/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'country'])->name('v1.countries.weather');
     Route::get('/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'point'])->name('v1.weather');
+    Route::get('/weather/daily', [\App\Http\Controllers\Api\V1\WeatherController::class, 'daily'])->name('v1.weather.daily');
+    Route::get('/phrases/{language}', [\App\Http\Controllers\Api\V1\PhraseController::class, 'show'])->where('language', '[a-zA-Z]{2,3}')->name('v1.phrases');
     Route::get('/airports', [\App\Http\Controllers\Api\V1\AirportController::class, 'index'])->name('v1.airports');
     Route::get('/airports/{code}', [\App\Http\Controllers\Api\V1\AirportController::class, 'show'])->name('v1.airports.show');
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('v1.airlines');
@@ -473,6 +475,7 @@ Route::prefix('v1/devices')->middleware([
         Route::delete('/trips/{clientTripId}/sights', 'destroySights')->name('trips.sights.destroy');
         Route::put('/shared-trips/{trip}/sights', 'updateSights')->name('shared-trips.sights.update');
         Route::put('/shared-trips/{trip}/plan', 'planSight')->name('shared-trips.plan');
+        Route::put('/shared-trips/{trip}/expenses', 'updateExpenses')->name('shared-trips.expenses');
         Route::put('/trips/{clientTripId}/list', 'upsertList')->name('trips.list.upsert');
         Route::delete('/trips/{clientTripId}/list', 'destroyList')->name('trips.list.destroy');
         Route::put('/shared-lists/{list}', 'updateList')->name('shared-lists.update');

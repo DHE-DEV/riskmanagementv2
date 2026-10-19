@@ -260,3 +260,25 @@ it('plant gemeinsame Sehenswuerdigkeiten: Stimmen, wer dabei ist und ein gemeins
     $plan($ben, ['key' => 'sight:99', 'vote' => 'like'])->assertNotFound();
     $plan($ben, ['key' => 'sight:12', 'vote' => 'maybe'])->assertUnprocessable();
 });
+
+it('fuehrt die gemeinsame Reisekasse aller Teilnehmer zusammen', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token, 'Ben');
+    asDevice($this, $token, $anna)->putJson('/api/v1/devices/'.$anna['id'].'/trips/trip-1', tripPayload(['codes' => [$ben['share_code']]]))->assertOk();
+    $tripId = AppSharedTrip::first()->id;
+    asDevice($this, $token, $ben)->postJson('/api/v1/devices/'.$ben['id'].'/shared-trips/'.$tripId.'/accept')->assertOk();
+    $send = fn (array $device, array $expenses) => asDevice($this, $token, $device)->putJson('/api/v1/devices/'.$device['id'].'/shared-trips/'.$tripId.'/expenses', ['expenses' => $expenses]);
+
+    $send($anna, [['id' => 'e1', 'title' => 'Abendessen', 'amount' => 8400, 'currency' => 'eur', 'date' => '2027-03-02', 'paid_by' => $anna['share_code'], 'split' => [$anna['share_code'], $ben['share_code']], 'updated_at' => 100]])->assertOk();
+    $send($ben, [['id' => 'e2', 'title' => 'Taxi', 'amount' => 3000, 'currency' => 'PEN', 'date' => '2027-03-03', 'paid_by' => $ben['share_code'], 'split' => [$ben['share_code']], 'updated_at' => 100]])->assertOk();
+    // Aelterer Stand aendert nichts, neuerer loescht.
+    $send($ben, [['id' => 'e1', 'title' => 'Alt', 'amount' => 1, 'currency' => 'EUR', 'paid_by' => $ben['share_code'], 'split' => [$ben['share_code']], 'updated_at' => 50]])->assertOk();
+    $expenses = $send($ben, [['id' => 'e2', 'updated_at' => 200, 'deleted' => true]])->assertOk()->json('data.received_trips.0.expenses');
+
+    expect($expenses)->toHaveCount(1)
+        ->and($expenses[0])->toMatchArray(['id' => 'e1', 'title' => 'Abendessen', 'amount' => 8400, 'currency' => 'EUR', 'paid_by' => $anna['share_code'], 'split' => [$anna['share_code'], $ben['share_code']]]);
+    expect(asDevice($this, $token, $anna)->getJson('/api/v1/devices/'.$anna['id'].'/sharing')->json('data.owned_trips.0.expenses.0.title'))->toBe('Abendessen');
+
+    $send($ben, [['id' => 'e3', 'title' => 'X', 'amount' => 1, 'currency' => 'EUR', 'paid_by' => 'nope', 'split' => [], 'updated_at' => 1]])->assertUnprocessable();
+});

@@ -20,7 +20,7 @@ class AppSharedTrip extends Model
 
     public const MAX_SIGHTS = 300;
 
-    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'revision'];
+    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'expenses', 'revision'];
 
     protected function casts(): array
     {
@@ -31,6 +31,7 @@ class AppSharedTrip extends Model
             'sights' => 'array',
             'sight_visits' => 'array',
             'sight_votes' => 'array',
+            'expenses' => 'array',
             'revision' => 'integer',
         ];
     }
@@ -116,6 +117,70 @@ class AppSharedTrip extends Model
             }
         }
         abort(404, 'Sight not in this trip.');
+    }
+
+    public const MAX_EXPENSES = 500;
+
+    /**
+     * Ausgaben eines Geraets einarbeiten (Reisekasse): je Ausgabe gewinnt der neuere Stand (`updated_at`), Geloeschtes
+     * bleibt mit `deleted` stehen. Bezahlt von / aufgeteilt auf sind App-IDs der Teilnehmer. true bei Aenderungen.
+     *
+     * @param  array<int, array<string, mixed>>  $entries
+     */
+    public function mergeExpenses(AppDevice $device, array $entries): bool
+    {
+        $current = collect((array) $this->expenses)->keyBy('id')->all();
+        $changed = false;
+        foreach ($entries as $incoming) {
+            $existing = $current[$incoming['id']] ?? null;
+            $updated = (int) $incoming['updated_at'];
+            if ($existing && $updated <= (int) ($existing['updated_at'] ?? 0)) {
+                continue;
+            }
+            $deleted = (bool) ($incoming['deleted'] ?? false);
+            $current[$incoming['id']] = $deleted ? ['id' => $incoming['id'], 'updated_at' => $updated, 'deleted' => true] : [
+                'id' => $incoming['id'],
+                'title' => mb_substr(trim((string) $incoming['title']), 0, 120),
+                'amount' => (int) $incoming['amount'],
+                'currency' => strtoupper((string) $incoming['currency']),
+                'date' => $incoming['date'] ?? null,
+                'paid_by' => self::shareCode($incoming['paid_by']),
+                'split' => array_values(array_unique(array_map([self::class, 'shareCode'], (array) $incoming['split']))),
+                'by' => $existing['by'] ?? $device->id,
+                'updated_at' => $updated,
+                'deleted' => false,
+            ];
+            $changed = true;
+        }
+        abort_if(count(array_filter($current, fn ($e) => ! $e['deleted'])) > self::MAX_EXPENSES, 422, 'Too many expenses.');
+        $this->expenses = array_values($current);
+
+        return $changed;
+    }
+
+    /** App-ID einer Ausgabe (bezahlt von / aufgeteilt auf); ungueltige → 422. */
+    private static function shareCode(mixed $code): string
+    {
+        $normalized = AppDevice::normalizeShareCode((string) $code);
+        abort_if($normalized === null, 422, 'Invalid app ID in expense.');
+
+        return $normalized;
+    }
+
+    /** Aktuelle Ausgaben fuer die App (App-IDs formatiert, ohne geloeschte). */
+    public function expensesApi(): array
+    {
+        return collect((array) $this->expenses)->reject(fn ($e) => $e['deleted'] ?? false)->sortBy([['date', 'desc'], ['updated_at', 'desc']])->values()
+            ->map(fn ($e) => [
+                'id' => $e['id'],
+                'title' => $e['title'],
+                'amount' => $e['amount'],
+                'currency' => $e['currency'],
+                'date' => $e['date'],
+                'paid_by' => AppDevice::formatShareCode($e['paid_by']),
+                'split' => array_map(fn ($c) => AppDevice::formatShareCode($c), $e['split']),
+                'updated_at' => $e['updated_at'],
+            ])->all();
     }
 
     public function sharesSights(): bool

@@ -216,6 +216,7 @@ Alle Aufrufe stehen unter `/api/v1/devices/{id}/…` und brauchen den Header `X-
 | `DELETE groups/{group}/members/{member}` | Entfernen (Ersteller) bzw. selbst verlassen |
 | `POST groups/{group}/accept` · `decline` | Einladung annehmen oder ablehnen |
 | `PUT trips/{clientTripId}` | Eigene Reise teilen oder aktualisieren: `name`, `start_date`, `end_date`, `country_codes`, `travel_link_code`, `codes` und `group_ids` jeweils als vollständige Liste (weggelassen = unverändert). Geteilte Reisen im Stand haben `sights` (gemeinsame Sehenswürdigkeiten mit `added_by` und `visited_by`, `null` = nicht geteilt) und `has_list`. |
+| `PUT shared-trips/{trip}/expenses` | Reisekasse (alle Teilnehmer, auch der Ersteller mit der ID der geteilten Reise): `expenses: [{id, title, amount (Cent), currency, date, paid_by, split, updated_at, deleted}]` mit App-IDs; im Stand je Reise `expenses` |
 | `PUT shared-trips/{trip}/plan` | Planung einer gemeinsamen Sehenswürdigkeit (alle Teilnehmer, auch der Ersteller mit der ID der geteilten Reise): `key`, optional `vote` (`must`\|`like`\|`no`\|`null`), `going`, `day` (`Y-m-d`\|`null`); im Stand je Sehenswürdigkeit `day` und `votes` (`name`, `is_me`, `vote`, `going`) |
 | `PUT trips/{clientTripId}/sights` · `PUT shared-trips/{trip}/sights` · `DELETE trips/{clientTripId}/sights` | Gemeinsame Sehenswürdigkeiten: Ersteller startet bzw. sendet, Teilnehmer senden Änderungen (`sights: [{key, updated_at, deleted}]`, `visited: [keys]`); Löschen beendet das gemeinsame Nutzen |
 | `DELETE trips/{clientTripId}` | Freigabe aufheben |
@@ -345,7 +346,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | Cursor | Tabelle `pds_global_sync_states`, Schlüssel `travel_details_push`. Zeile löschen = beim nächsten Lauf neu „ab jetzt“ |
 | Geräte | `app_devices` (ohne Namen; Token und Secret-Hash sind verborgen) |
 | Gemeldete Reisen | `app_device_travel_links` (`tid`, `notified_change_at`) |
-| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`, `sights`, `sight_visits`, `sight_votes`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_invites` (Einladungslinks: `code`, `expires_at`, `uses`), `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
+| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`, `sights`, `sight_visits`, `sight_votes`, `expenses`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_invites` (Einladungslinks: `code`, `expires_at`, `uses`), `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
 | Versände und Zähler | `app_push_messages` (`source` scanner/admin/api/sharing, `user_id` bei Admin, `targeted`, `sent`, `failed`, `invalid`, `status`); ansehen unter **System › Push senden** |
 | Fehlgeschlagene Jobs | `php artisan queue:failed` |
 

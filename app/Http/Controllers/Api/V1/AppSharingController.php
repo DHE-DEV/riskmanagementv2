@@ -36,6 +36,7 @@ use Illuminate\Validation\ValidationException;
  *   DELETE trips/{clientTripId}/sights      Sehenswuerdigkeiten nicht mehr gemeinsam nutzen
  *   PUT    shared-trips/{trip}/sights       Aenderungen an den gemeinsamen Sehenswuerdigkeiten einer empfangenen Reise
  *   PUT    shared-trips/{trip}/plan         Planung einer gemeinsamen Sehenswuerdigkeit {key, vote?, going?, day?} (alle Teilnehmer)
+ *   PUT    shared-trips/{trip}/expenses     Reisekasse: Ausgaben senden {expenses: [{id, title, amount, currency, date, paid_by, split, updated_at, deleted}]}
  *   PUT    trips/{clientTripId}/list        Packliste der eigenen Reise teilen bzw. Inhalt und Rechte setzen
  *   DELETE trips/{clientTripId}/list        Packliste nicht mehr teilen
  *   PUT    shared-lists/{list}              Aenderungen an einer geteilten Packliste (je nach Rolle)
@@ -427,6 +428,42 @@ class AppSharingController extends Controller
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
 
+    /** Reisekasse: Ausgaben aller Teilnehmer einschliesslich des Erstellers (ueber die ID der geteilten Reise). */
+    public function updateExpenses(Request $request, string $id, string $trip): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = AppSharedTrip::findOrFail($trip);
+        abort_unless($trip->participants()->contains('id', $device->id), 404);
+        $data = $request->validate([
+            'expenses' => ['present', 'array', 'max:'.AppSharedTrip::MAX_EXPENSES * 2],
+            'expenses.*.id' => ['required', 'string', 'max:64'],
+            'expenses.*.updated_at' => ['required', 'numeric', 'min:0'],
+            'expenses.*.deleted' => ['sometimes', 'boolean'],
+            'expenses.*.title' => ['required_unless:expenses.*.deleted,true', 'nullable', 'string', 'max:120'],
+            'expenses.*.amount' => ['required_unless:expenses.*.deleted,true', 'nullable', 'integer', 'min:0', 'max:100000000'],
+            'expenses.*.currency' => ['required_unless:expenses.*.deleted,true', 'nullable', 'string', 'size:3'],
+            'expenses.*.date' => ['nullable', 'date_format:Y-m-d'],
+            'expenses.*.paid_by' => ['required_unless:expenses.*.deleted,true', 'nullable', 'string', 'max:16'],
+            'expenses.*.split' => ['required_unless:expenses.*.deleted,true', 'nullable', 'array', 'max:60'],
+            'expenses.*.split.*' => ['string', 'max:16'],
+        ]);
+
+        $changed = DB::transaction(function () use ($trip, $device, $data) {
+            $trip->refresh();
+            $changed = $trip->mergeExpenses($device, $data['expenses']);
+            if ($changed) {
+                $trip->save();
+            }
+
+            return $changed;
+        });
+        if ($changed) {
+            $this->notifier->sync($trip, $device);
+        }
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
     private function mergeSights(Request $request, AppDevice $device, AppSharedTrip $trip, bool $start): void
     {
         $data = $request->validate([
@@ -633,6 +670,7 @@ class AppSharingController extends Controller
             if ($row?->status === AppSharedTripRecipient::STATUS_ACCEPTED || $viaGroup) {
                 $entry['participants'] = $this->participantsApi($trip, $device, $trip->list);
                 $entry['list'] = $this->listApi($trip->list, $trip, $device);
+                $entry['expenses'] = $trip->expensesApi();
             }
             if ($row?->status === AppSharedTripRecipient::STATUS_DECLINED) {
                 continue;
@@ -657,6 +695,7 @@ class AppSharingController extends Controller
                 'participants' => $this->participantsApi($trip, $device, $trip->list),
                 'list' => $this->listApi($trip->list, $trip, $device),
                 'sights' => $trip->sightsApi($device),
+                'expenses' => $trip->expensesApi(),
             ])->values()->all();
 
         return [

@@ -68,6 +68,8 @@ class ApiDocController extends Controller
                     'Gemerkte Orte auflösen' => '/v1/places?keys=region:12,subregion:3,city:5,sight:3',
                     'Wetter der Hauptstadt' => '/v1/countries/{code}/weather',
                     'Wetter für Koordinaten' => '/v1/weather?lat=52.52&lng=13.405',
+                    'Tagesvorhersage (16 Tage)' => '/v1/weather/daily?lat=36.72&lng=-4.42',
+                    'Wichtige Sätze' => '/v1/phrases/ja?lang=de',
                     'Landesgrenzen mehrerer Länder' => '/v1/boundaries?codes=EG,DE',
                     'Flughäfen' => '/v1/airports?country=EG',
                     'Flughafen mit Lounges, Hotels, Mobilität, Airlines' => '/v1/airports/{code}',

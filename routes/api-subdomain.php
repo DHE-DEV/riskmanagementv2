@@ -81,6 +81,8 @@ Route::prefix('v1')->middleware([
     Route::get('/places', [\App\Http\Controllers\Api\V1\CountryPlacesController::class, 'places'])->name('sub.v1.places');
     Route::get('/countries/{code}/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'country'])->name('sub.v1.countries.weather');
     Route::get('/weather', [\App\Http\Controllers\Api\V1\WeatherController::class, 'point'])->name('sub.v1.weather');
+    Route::get('/weather/daily', [\App\Http\Controllers\Api\V1\WeatherController::class, 'daily'])->name('sub.v1.weather.daily');
+    Route::get('/phrases/{language}', [\App\Http\Controllers\Api\V1\PhraseController::class, 'show'])->where('language', '[a-zA-Z]{2,3}')->name('sub.v1.phrases');
     Route::get('/airports', [\App\Http\Controllers\Api\V1\AirportController::class, 'index'])->name('sub.v1.airports');
     Route::get('/airports/{code}', [\App\Http\Controllers\Api\V1\AirportController::class, 'show'])->name('sub.v1.airports.show');
     Route::get('/airlines', [\App\Http\Controllers\Api\V1\AirlineController::class, 'index'])->name('sub.v1.airlines');
