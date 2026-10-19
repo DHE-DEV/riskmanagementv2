@@ -18,7 +18,9 @@ class AppSharedTrip extends Model
 
     public const MAX_RECIPIENTS = 50;
 
-    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'revision'];
+    public const MAX_SIGHTS = 300;
+
+    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'revision'];
 
     protected function casts(): array
     {
@@ -26,6 +28,8 @@ class AppSharedTrip extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'country_codes' => 'array',
+            'sights' => 'array',
+            'sight_visits' => 'array',
             'revision' => 'integer',
         ];
     }
@@ -73,6 +77,86 @@ class AppSharedTrip extends Model
         return $this->tid ? implode('-', str_split($this->tid, 4)) : null;
     }
 
+    public function sharesSights(): bool
+    {
+        return $this->sights !== null;
+    }
+
+    /**
+     * Aenderungen eines Geraets an den gemeinsamen Sehenswuerdigkeiten einarbeiten: je Eintrag gewinnt der neuere
+     * Stand (`updated_at`), Entferntes bleibt mit `deleted` stehen. `$visited` = die davon, die das Geraet besucht hat.
+     * true, wenn sich etwas geaendert hat.
+     *
+     * @param  array<int, array{key: string, updated_at: int|float, deleted?: bool}>  $entries
+     * @param  array<int, string>|null  $visited
+     */
+    public function mergeSights(AppDevice $device, array $entries, ?array $visited): bool
+    {
+        $current = collect((array) $this->sights)->keyBy('key')->all();
+        $changed = false;
+        foreach ($entries as $incoming) {
+            $existing = $current[$incoming['key']] ?? null;
+            $updated = (int) $incoming['updated_at'];
+            if ($existing && $updated <= (int) ($existing['updated_at'] ?? 0)) {
+                continue;
+            }
+            $deleted = (bool) ($incoming['deleted'] ?? false);
+            if (! $existing && $deleted) {
+                continue;
+            }
+            $current[$incoming['key']] = [
+                'key' => $incoming['key'],
+                // Wer sie (zuletzt) hinzugefuegt hat
+                'by' => $existing && ! ($existing['deleted'] ?? false) ? ($existing['by'] ?? $device->id) : $device->id,
+                'updated_at' => $updated,
+                'deleted' => $deleted,
+            ];
+            $changed = true;
+        }
+        if (count(array_filter($current, fn ($s) => ! $s['deleted'])) > self::MAX_SIGHTS) {
+            abort(422, 'Too many sights.');
+        }
+        $this->sights = array_values($current);
+
+        if ($visited !== null) {
+            $visits = (array) $this->sight_visits;
+            $mine = array_values(array_unique(array_filter($visited, fn ($key) => isset($current[$key]))));
+            sort($mine);
+            if (($visits[$device->id] ?? []) !== $mine) {
+                $visits[$device->id] = $mine;
+                $this->sight_visits = $visits;
+                $changed = true;
+            }
+        }
+
+        return $changed;
+    }
+
+    /**
+     * Gemeinsame Sehenswuerdigkeiten fuer ein Geraet: aktuelle Eintraege mit „hinzugefuegt von“ und wer
+     * (ausser dem Geraet selbst) schon dort war; null = nicht geteilt.
+     *
+     * @param  \Illuminate\Support\Collection<int, AppDevice>|null  $participants
+     */
+    public function sightsApi(AppDevice $device, ?\Illuminate\Support\Collection $participants = null): ?array
+    {
+        if (! $this->sharesSights()) {
+            return null;
+        }
+        $names = ($participants ?? $this->participants())->mapWithKeys(fn (AppDevice $p) => [$p->id => $p->publicName()]);
+        $visits = (array) $this->sight_visits;
+
+        return collect((array) $this->sights)->reject(fn ($s) => $s['deleted'] ?? false)
+            ->sortBy('updated_at')->values()
+            ->map(fn ($s) => [
+                'key' => $s['key'],
+                'added_by' => $names[$s['by'] ?? ''] ?? null,
+                'updated_at' => (int) $s['updated_at'],
+                'visited_by' => collect($visits)->filter(fn ($keys, $id) => $id !== $device->id && $names->has($id) && in_array($s['key'], (array) $keys, true))
+                    ->keys()->map(fn ($id) => $names[$id])->values()->all(),
+            ])->all();
+    }
+
     /** Inhalt der Reise fuer die Apps der anderen. */
     public function toApi(): array
     {
@@ -85,6 +169,8 @@ class AppSharedTrip extends Model
             'travel_link_code' => $this->travelLinkCode(),
             'revision' => $this->revision,
             'owner_name' => $this->owner?->publicName(),
+            // Packliste mitgeteilt – auch fuer Einladungen, die die Liste selbst noch nicht sehen.
+            'has_list' => $this->list !== null,
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

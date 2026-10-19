@@ -173,3 +173,60 @@ it('loescht Gruppen und Freigaben mit dem Geraet', function () {
         ->and(\App\Models\Push\AppGroup::count())->toBe(0);
     asDevice($this, $token, $ben)->getJson($base($ben).'/sharing')->assertJsonCount(0, 'data.trip_invitations');
 });
+
+it('fuehrt gemeinsame Sehenswuerdigkeiten aller Teilnehmer zusammen – besucht bleibt persoenlich', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token, 'Ben');
+    $url = '/api/v1/devices/'.$anna['id'].'/trips/trip-1';
+
+    asDevice($this, $token, $anna)->putJson($url, tripPayload(['codes' => [$ben['share_code']]]))->assertOk();
+    $invitation = asDevice($this, $token, $ben)->getJson('/api/v1/devices/'.$ben['id'].'/sharing')->json('data.trip_invitations.0');
+    expect($invitation['sights'])->toBeNull()->and($invitation['has_list'])->toBeFalse();
+
+    asDevice($this, $token, $anna)->putJson($url.'/sights', [
+        'sights' => [['key' => 'sight:12', 'updated_at' => 100], ['key' => 'sight:7', 'updated_at' => 100]],
+        'visited' => ['sight:12'],
+    ])->assertOk()->assertJsonPath('data.owned_trips.0.sights.0.key', 'sight:12');
+    $tripId = AppSharedTrip::first()->id;
+    asDevice($this, $token, $ben)->postJson('/api/v1/devices/'.$ben['id'].'/shared-trips/'.$tripId.'/accept')->assertOk();
+
+    // Ben fuegt eine hinzu und entfernt eine; ein aelterer Stand von Anna aendert daran nichts.
+    $received = asDevice($this, $token, $ben)->putJson('/api/v1/devices/'.$ben['id'].'/shared-trips/'.$tripId.'/sights', [
+        'sights' => [['key' => 'sight:3', 'updated_at' => 200], ['key' => 'sight:7', 'updated_at' => 200, 'deleted' => true]],
+        'visited' => ['sight:3'],
+    ])->assertOk()->json('data.received_trips.0.sights');
+    expect(collect($received)->pluck('key')->all())->toBe(['sight:12', 'sight:3'])
+        ->and($received[0]['visited_by'])->toBe(['Anna'])
+        ->and($received[1]['added_by'])->toBe('Ben')
+        ->and($received[1]['visited_by'])->toBe([]);
+
+    $owned = asDevice($this, $token, $anna)->putJson($url.'/sights', ['sights' => [['key' => 'sight:7', 'updated_at' => 150]]])
+        ->assertOk()->json('data.owned_trips.0.sights');
+    expect(collect($owned)->pluck('key')->all())->toBe(['sight:12', 'sight:3'])
+        ->and($owned[1]['visited_by'])->toBe(['Ben'])
+        ->and($owned[0]['visited_by'])->toBe([]);
+
+    // Andere bekommen bei Aenderungen einen stillen Push.
+    Queue::assertPushed(\App\Jobs\Push\SendSharingSync::class, fn ($job) => $job->deviceIds === [$anna['id']]);
+
+    asDevice($this, $token, $anna)->deleteJson($url.'/sights')->assertOk();
+    asDevice($this, $token, $ben)->putJson('/api/v1/devices/'.$ben['id'].'/shared-trips/'.$tripId.'/sights', ['sights' => []])->assertStatus(409);
+    asDevice($this, $token, $anna)->putJson($url.'/sights', ['sights' => [['key' => 'city:3', 'updated_at' => 1]]])->assertUnprocessable();
+});
+
+it('schickt stille Pushs ohne Anzeige an iOS und Android', function () {
+    $sender = Mockery::mock(\App\Services\Push\ApnsClient::class);
+    $sender->shouldReceive('send')->once()->withArgs(function (array $messages) {
+        $message = array_values($messages)[0];
+
+        return $message['silent'] === true && $message['payload']['aps'] === ['content-available' => 1] && $message['payload']['type'] === 'share_sync';
+    })->andReturn([]);
+    $fcm = Mockery::mock(\App\Services\Push\FcmClient::class);
+    $fcm->shouldReceive('send')->once()->withArgs(fn (array $messages) => array_values($messages)[0]['silent'] === true && ! isset(array_values($messages)[0]['title']))->andReturn([]);
+
+    $token = sharingToken();
+    $ios = sharingDevice($this, $token);
+    $android = $this->withToken($token)->postJson('/api/v1/devices', ['platform' => 'android', 'push_token' => fake()->sha256()])->assertCreated()->json('data');
+    (new \App\Jobs\Push\SendSharingSync('trip', [$ios['id'], $android['id']]))->handle(new \App\Services\Push\PushSender($sender, $fcm));
+});

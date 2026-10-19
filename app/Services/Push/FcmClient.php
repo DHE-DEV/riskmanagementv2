@@ -22,7 +22,7 @@ class FcmClient
     }
 
     /**
-     * @param  array<string, array{token: string, title: string, body: string, data: array<string, string>, collapse_key?: ?string}>  $messages
+     * @param  array<string, array{token: string, title?: string, body?: string, data: array<string, string>, collapse_key?: ?string, silent?: bool}>  $messages  silent = Datennachricht ohne Anzeige
      * @return array<string, string> Schluessel => sent | invalid | failed
      */
     public function send(array $messages): array
@@ -45,16 +45,16 @@ class FcmClient
                     $android['collapse_key'] = $message['collapse_key'];
                 }
 
+                $payload = ['token' => $message['token'], 'data' => $message['data'], 'android' => $android];
+                if (! ($message['silent'] ?? false)) {
+                    $payload['notification'] = ['title' => $message['title'], 'body' => $message['body']];
+                }
+
                 $pool->as((string) $key)
                     ->withOptions(['version' => 2.0])
                     ->withToken($accessToken)
                     ->timeout($timeout)
-                    ->post($url, ['message' => [
-                        'token' => $message['token'],
-                        'notification' => ['title' => $message['title'], 'body' => $message['body']],
-                        'data' => $message['data'],
-                        'android' => $android,
-                    ]]);
+                    ->post($url, ['message' => $payload]);
             }
         });
 

@@ -74,6 +74,37 @@ class PushSender
     }
 
     /**
+     * Stiller Push nur mit Daten (iOS content-available, Android Datennachricht) – die App laedt im Hintergrund neu.
+     *
+     * @param  Collection<int, AppDevice>  $devices
+     * @param  array<string, string>  $data
+     */
+    public function sendSilent(Collection $devices, array $data): void
+    {
+        $apns = [];
+        $fcm = [];
+        foreach ($devices as $device) {
+            if ($device->platform === AppDevice::PLATFORM_ANDROID) {
+                $fcm[$device->id] = ['token' => $device->push_token, 'data' => array_map('strval', $data), 'silent' => true, 'collapse_key' => 'share-sync'];
+            } else {
+                $apns[$device->id] = [
+                    'token' => $device->push_token,
+                    'environment' => $device->push_environment,
+                    'silent' => true,
+                    'collapse_id' => 'share-sync',
+                    'payload' => ['aps' => ['content-available' => 1]] + $data,
+                ];
+            }
+        }
+
+        $results = $this->apns->send($apns) + $this->fcm->send($fcm);
+        $invalid = array_keys(array_filter($results, fn (string $r) => $r === ApnsClient::RESULT_INVALID));
+        if ($invalid !== []) {
+            AppDevice::whereIn('id', $invalid)->update(['token_invalid_at' => now()]);
+        }
+    }
+
+    /**
      * Titel, Text und Zusatzdaten in der Sprache des Geraets. "{trip}" wird zum Reisenamen.
      *
      * @return array{0: string, 1: string, 2: array<string, string>}

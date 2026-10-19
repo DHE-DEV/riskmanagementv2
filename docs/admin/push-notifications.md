@@ -178,7 +178,10 @@ Reisende können Reisen mit Familie oder Mitreisenden teilen, ohne Konto:
   - **Einzeln Eingeladene** müssen annehmen.
   - **Gruppenmitglieder** sehen die Reise sofort und können sie ausblenden.
   - Geteilt werden Name, Zeitraum, Zielländer und die Reise-ID. Durch die Reise-ID meldet die App der anderen sie in ihrer Liste (`travel-links`). Damit bekommen alle die **Benachrichtigungen bei wichtigen Änderungen** und sehen die Einreisebestimmungen, ohne dass der Versand etwas Besonderes tun muss. Auch „Push senden“ an diese Reise-ID erreicht sie.
-- **Änderungen** pflegt nur der Ersteller (Name, Zeitraum, Länder). Die App schickt sie nach jeder Änderung, und die anderen übernehmen sie beim nächsten Abgleich (`revision`). Empfänger können der Reise **für sich einen eigenen Namen** geben, den Änderungen des Erstellers nicht überschreiben. „Besucht“, Wunschliste und Packliste bleiben auf jedem Gerät für sich.
+- **Änderungen** pflegt nur der Ersteller (Name, Zeitraum, Länder). Die App schickt sie nach jeder Änderung, und die anderen übernehmen sie beim nächsten Abgleich (`revision`). Empfänger können der Reise **für sich einen eigenen Namen** geben, den Änderungen des Erstellers nicht überschreiben. „Besucht“, Wunschliste und Packliste bleiben auf jedem Gerät für sich – außer der Ersteller schickt sie mit (siehe unten) und der Empfänger übernimmt sie.
+- **Gemeinsame Sehenswürdigkeiten:** Der Ersteller kann die Sehenswürdigkeiten der Reise gemeinsam nutzen. Dann gibt es – wie bei der Packliste – eine Liste für alle, die zustimmen: Wer eine hinzufügt oder entfernt, ändert sie für alle (je Eintrag gewinnt die neuere Änderung). „Besucht“ bleibt persönlich; die Apps zeigen, wer schon dort war.
+- **Zustimmen oder ablehnen:** Beim Annehmen einer Einladung fragt die App einzeln, ob man die Sehenswürdigkeiten und die Packliste gemeinsam nutzen möchte. Bei Reisen aus einer Gruppe und bei später Geteiltem steht die Frage auf der Reiseseite; Abgelehntes lässt sich dort später noch übernehmen. Die Entscheidung speichert nur die App.
+- **Sofort bei allen:** Nach jeder Änderung an einer geteilten Reise (Inhalt, Packliste, Sehenswürdigkeiten, Teilnehmer) bekommen die anderen einen **stillen Push** (`type = share_sync`, iOS `content-available`, Android Datennachricht, Job `SendSharingSync`, kein Eintrag bei den Versänden) und laden neu. Solange eine geteilte Reise oder Packliste offen ist, laden die Apps zusätzlich alle 10 Sekunden.
 - **Packliste teilen:** Beim Teilen einer Reise kann der Ersteller ihre Packliste mitteilen. Es gibt dann eine **gemeinsame Liste** für alle, die die Reise sehen: Was jemand abhakt oder ergänzt, sehen alle.
   - **Rechte:** Der Ersteller legt eine Vorgabe für alle fest und kann sie pro Person abweichend setzen. Die Vorgabe beim ersten Teilen ist „Abhaken“.
 
@@ -211,7 +214,8 @@ Alle Aufrufe stehen unter `/api/v1/devices/{id}/…` und brauchen den Header `X-
 | `POST groups/{group}/members` `{codes: []}` | Einladen (nur Ersteller; unbekannte App-IDs → 422) |
 | `DELETE groups/{group}/members/{member}` | Entfernen (Ersteller) bzw. selbst verlassen |
 | `POST groups/{group}/accept` · `decline` | Einladung annehmen oder ablehnen |
-| `PUT trips/{clientTripId}` | Eigene Reise teilen oder aktualisieren: `name`, `start_date`, `end_date`, `country_codes`, `travel_link_code`; `codes` und `group_ids` jeweils als vollständige Liste (weggelassen = unverändert) |
+| `PUT trips/{clientTripId}` | Eigene Reise teilen oder aktualisieren: `name`, `start_date`, `end_date`, `country_codes`, `travel_link_code`, `codes` und `group_ids` jeweils als vollständige Liste (weggelassen = unverändert). Geteilte Reisen im Stand haben `sights` (gemeinsame Sehenswürdigkeiten mit `added_by` und `visited_by`, `null` = nicht geteilt) und `has_list`. |
+| `PUT trips/{clientTripId}/sights` · `PUT shared-trips/{trip}/sights` · `DELETE trips/{clientTripId}/sights` | Gemeinsame Sehenswürdigkeiten: Ersteller startet bzw. sendet, Teilnehmer senden Änderungen (`sights: [{key, updated_at, deleted}]`, `visited: [keys]`); Löschen beendet das gemeinsame Nutzen |
 | `DELETE trips/{clientTripId}` | Freigabe aufheben |
 | `POST shared-trips/{trip}/accept` · `decline` | Empfangene Reise annehmen bzw. ablehnen oder ausblenden |
 | `PUT trips/{clientTripId}/list` | Packliste der eigenen Reise teilen bzw. Inhalt senden: `client_list_id`, `name`, `suitcases`, `items`, optional `default_role` und `roles` (`{App-ID: view\|check\|edit\|manage}`) |
@@ -220,7 +224,7 @@ Alle Aufrufe stehen unter `/api/v1/devices/{id}/…` und brauchen den Header `X-
 | `PUT shared-lists/{list}/roles` | Rechte ändern (Ersteller und „Verwalten“) |
 
 | `POST trips/{clientTripId}/invite` · `POST groups/{group}/invite` | Einladungslink erzeugen bzw. vorhandenen liefern (`{renew: true}` = neuer Code); Antwort `code`, `url`, `expires_at` |
-| `GET invites/{code}` · `POST invites/{code}/accept` | Einladung ansehen (`kind`, `name`, `from`, `already`, `is_own`) bzw. annehmen |
+| `GET invites/{code}` · `POST invites/{code}/accept` | Einladung ansehen (`kind`, `trip_id`, `name`, `from`, `sights_count`, `has_list`, `already`, `is_own`) bzw. annehmen |
 
 Empfangene und eigene geteilte Reisen enthalten im Stand zusätzlich `participants` (wer die Reise sieht, mit `list_role`) und `list` (Inhalt, `my_role`, `default_role`, `revision`).
 
@@ -339,7 +343,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 | Cursor | Tabelle `pds_global_sync_states`, Schlüssel `travel_details_push`. Zeile löschen = beim nächsten Lauf neu „ab jetzt“ |
 | Geräte | `app_devices` (ohne Namen; Token und Secret-Hash sind verborgen) |
 | Gemeldete Reisen | `app_device_travel_links` (`tid`, `notified_change_at`) |
-| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_invites` (Einladungslinks: `code`, `expires_at`, `uses`), `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
+| Teilen | `app_devices.share_code`/`display_name`, `app_groups`, `app_group_members` (`invited`/`accepted`), `app_shared_trips` (`revision`, `tid`, `sights`, `sight_visits`), `app_shared_trip_recipients` (`invited`/`accepted`/`declined`, `direct`), `app_shared_trip_groups`, `app_invites` (Einladungslinks: `code`, `expires_at`, `uses`), `app_shared_lists` (Packliste: `suitcases`/`items` als JSON, `default_role`, `roles`, `revision`) |
 | Versände und Zähler | `app_push_messages` (`source` scanner/admin/api/sharing, `user_id` bei Admin, `targeted`, `sent`, `failed`, `invalid`, `status`); ansehen unter **System › Push senden** |
 | Fehlgeschlagene Jobs | `php artisan queue:failed` |
 

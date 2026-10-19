@@ -2,8 +2,10 @@
 
 namespace App\Services\Push;
 
+use App\Jobs\Push\SendSharingSync;
 use App\Models\Push\AppDevice;
 use App\Models\Push\AppPushMessage;
+use App\Models\Push\AppSharedTrip;
 
 /**
  * Push an Geraete beim Teilen in der App: Einladung zu einer Reise oder Gruppe, neue Reise in einer Gruppe.
@@ -53,6 +55,15 @@ class SharingNotifier
             'en' => "{$name} invites you to the group “{$groupName}”.",
             'nl' => "{$name} nodigt je uit voor de groep ‘{$groupName}’.",
         ]);
+    }
+
+    /** Stiller Push an alle anderen Teilnehmer der Reise: Stand neu laden. */
+    public function sync(AppSharedTrip $trip, AppDevice $from): void
+    {
+        $ids = $trip->participants()->pluck('id')->reject(fn ($id) => $id === $from->id)->values()->all();
+        if ($ids !== []) {
+            SendSharingSync::dispatch($trip->id, $ids);
+        }
     }
 
     private function send(array $deviceIds, string $event, array $title, array $body): void

@@ -32,6 +32,9 @@ use Illuminate\Validation\ValidationException;
  *   PUT    trips/{clientTripId}             eigene Reise teilen bzw. aktualisieren {name, …, codes?, group_ids?}
  *   DELETE trips/{clientTripId}             Freigabe aufheben
  *   POST   shared-trips/{trip}/accept|decline  empfangene Reise annehmen / ablehnen bzw. ausblenden
+ *   PUT    trips/{clientTripId}/sights      Sehenswuerdigkeiten der eigenen Reise gemeinsam nutzen bzw. Aenderungen senden
+ *   DELETE trips/{clientTripId}/sights      Sehenswuerdigkeiten nicht mehr gemeinsam nutzen
+ *   PUT    shared-trips/{trip}/sights       Aenderungen an den gemeinsamen Sehenswuerdigkeiten einer empfangenen Reise
  *   PUT    trips/{clientTripId}/list        Packliste der eigenen Reise teilen bzw. Inhalt und Rechte setzen
  *   DELETE trips/{clientTripId}/list        Packliste nicht mehr teilen
  *   PUT    shared-lists/{list}              Aenderungen an einer geteilten Packliste (je nach Rolle)
@@ -40,6 +43,9 @@ use Illuminate\Validation\ValidationException;
  *   POST   groups/{group}/invite            Einladungslink zur Gruppe (Ersteller)
  *   GET    invites/{code}                   Einladung ansehen
  *   POST   invites/{code}/accept            Einladung annehmen (Reise: angenommener Empfaenger, Gruppe: Mitglied)
+ *
+ * Nach jeder Aenderung an einer geteilten Reise (Inhalt, Packliste, Sehenswuerdigkeiten, Teilnehmer) bekommen die
+ * anderen Teilnehmer einen stillen Push (data.type = share_sync), damit ihre App sofort neu laedt.
  */
 class AppSharingController extends Controller
 {
@@ -190,9 +196,10 @@ class AppSharingController extends Controller
                 'tid' => AppDeviceTravelLink::normalizeTid($data['travel_link_code'] ?? null),
             ];
             $trip = AppSharedTrip::firstOrNew(['owner_device_id' => $device->id, 'client_trip_id' => $clientTripId]);
-            $before = $trip->exists ? [$trip->name, $trip->start_date?->toDateString(), $trip->end_date?->toDateString(), $trip->country_codes, $trip->tid] : null;
+            $snapshot = fn () => [$trip->name, $trip->start_date?->toDateString(), $trip->end_date?->toDateString(), $trip->country_codes, $trip->tid];
+            $before = $trip->exists ? $snapshot() : null;
             $trip->fill($fields);
-            if ($before !== null && $before !== [$fields['name'], $fields['start_date'], $fields['end_date'], $fields['country_codes'], $fields['tid']]) {
+            if ($before !== null && $before !== $snapshot()) {
                 $trip->revision++;
             }
             $trip->save();
@@ -221,6 +228,7 @@ class AppSharingController extends Controller
         });
 
         $this->notifier->tripInvite($device, $trip->name, $invited);
+        $this->notifier->sync($trip, $device);
         foreach ($newGroups as $group) {
             $this->notifier->groupTrip($device, $trip->name, $group->name, array_diff($group->acceptedDeviceIds(), [$device->id]));
         }
@@ -231,7 +239,11 @@ class AppSharingController extends Controller
     public function destroyTrip(Request $request, string $id, string $clientTripId): JsonResponse
     {
         $device = $this->device($request, $id);
-        AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->delete();
+        $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->first();
+        if ($trip) {
+            $this->notifier->sync($trip, $device);
+            $trip->delete();
+        }
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
@@ -243,6 +255,7 @@ class AppSharingController extends Controller
         $device = $this->device($request, $id);
         $trip = $this->visibleTrip($device, $trip);
         $trip->recipients()->updateOrCreate(['app_device_id' => $device->id], ['status' => AppSharedTripRecipient::STATUS_ACCEPTED]);
+        $this->notifier->sync($trip, $device);
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
@@ -254,6 +267,7 @@ class AppSharingController extends Controller
         $row = $trip->recipients()->firstOrNew(['app_device_id' => $device->id], ['direct' => false]);
         $row->status = AppSharedTripRecipient::STATUS_DECLINED;
         $row->save();
+        $this->notifier->sync($trip, $device);
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
@@ -282,6 +296,7 @@ class AppSharingController extends Controller
             $list->setRelation('trip', $trip);
             $list->save();
         });
+        $this->notifier->sync($trip, $device);
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
@@ -291,6 +306,7 @@ class AppSharingController extends Controller
         $device = $this->device($request, $id);
         $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->firstOrFail();
         $trip->list()->delete();
+        $this->notifier->sync($trip, $device);
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
@@ -303,11 +319,12 @@ class AppSharingController extends Controller
         $role = $list->roleFor($device);
         abort_if($role === AppSharedList::ROLE_VIEW, 403, 'This list is read-only for you.');
 
-        DB::transaction(function () use ($list, $data, $role) {
+        DB::transaction(function () use ($list, $data, $role, $device) {
             $list->refresh();
             if ($list->merge($role, $data['name'] ?? null, $data['suitcases'] ?? [], $data['items'] ?? [])) {
                 $list->revision++;
                 $list->save();
+                $this->notifier->sync($list->trip, $device);
             }
         });
 
@@ -328,9 +345,71 @@ class AppSharingController extends Controller
         if ($list->isDirty()) {
             $list->revision++;
             $list->save();
+            $this->notifier->sync($list->trip, $device);
         }
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    // MARK: Gemeinsame Sehenswuerdigkeiten
+
+    public function upsertSights(Request $request, string $id, string $clientTripId): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->firstOrFail();
+        $this->mergeSights($request, $device, $trip, start: true);
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    public function destroySights(Request $request, string $id, string $clientTripId): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->firstOrFail();
+        $trip->update(['sights' => null, 'sight_visits' => null]);
+        $this->notifier->sync($trip, $device);
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    public function updateSights(Request $request, string $id, string $trip): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = $this->visibleTrip($device, $trip);
+        abort_unless($trip->participants()->contains('id', $device->id), 404);
+        abort_unless($trip->sharesSights(), 409, 'The sights of this trip are not shared.');
+        $this->mergeSights($request, $device, $trip, start: false);
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    private function mergeSights(Request $request, AppDevice $device, AppSharedTrip $trip, bool $start): void
+    {
+        $data = $request->validate([
+            'sights' => ['present', 'array', 'max:'.AppSharedTrip::MAX_SIGHTS * 2],
+            'sights.*.key' => ['required', 'string', 'regex:/^sight:\d+$/'],
+            'sights.*.updated_at' => ['required', 'numeric', 'min:0'],
+            'sights.*.deleted' => ['sometimes', 'boolean'],
+            'visited' => ['sometimes', 'nullable', 'array', 'max:'.AppSharedTrip::MAX_SIGHTS * 2],
+            'visited.*' => ['string', 'max:32'],
+        ]);
+
+        $changed = DB::transaction(function () use ($trip, $device, $data, $start) {
+            $trip->refresh();
+            $starting = $start && ! $trip->sharesSights();
+            if ($starting) {
+                $trip->sights = [];
+            }
+            $changed = $trip->mergeSights($device, $data['sights'], $data['visited'] ?? null) || $starting;
+            if ($changed) {
+                $trip->save();
+            }
+
+            return $changed;
+        });
+        if ($changed) {
+            $this->notifier->sync($trip, $device);
+        }
     }
 
     private function listRules(): array
@@ -506,7 +585,7 @@ class AppSharingController extends Controller
         foreach ($visible as $trip) {
             $row = $ownRows->get($trip->id);
             $viaGroup = $trip->groups->firstWhere(fn ($g) => in_array($g->id, $acceptedGroupIds, true));
-            $entry = $trip->toApi() + ['via_group' => $viaGroup?->name];
+            $entry = $trip->toApi() + ['via_group' => $viaGroup?->name, 'sights' => $trip->sightsApi($device)];
             if ($row?->status === AppSharedTripRecipient::STATUS_ACCEPTED || $viaGroup) {
                 $entry['participants'] = $this->participantsApi($trip, $device, $trip->list);
                 $entry['list'] = $this->listApi($trip->list, $trip, $device);
@@ -533,6 +612,7 @@ class AppSharingController extends Controller
                 'groups' => $trip->groups->map(fn ($g) => ['id' => $g->id, 'name' => $g->name])->values()->all(),
                 'participants' => $this->participantsApi($trip, $device, $trip->list),
                 'list' => $this->listApi($trip->list, $trip, $device),
+                'sights' => $trip->sightsApi($device),
             ])->values()->all();
 
         return [

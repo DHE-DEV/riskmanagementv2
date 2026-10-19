@@ -33,7 +33,7 @@ class ApnsClient
     }
 
     /**
-     * @param  array<string, array{token: string, environment: string, payload: array, collapse_id?: ?string}>  $messages  je Schluessel (Geraete-ID) eine Nachricht
+     * @param  array<string, array{token: string, environment: string, payload: array, collapse_id?: ?string, silent?: bool}>  $messages  je Schluessel (Geraete-ID) eine Nachricht; silent = Hintergrund-Push ohne Anzeige
      * @return array<string, string> Schluessel => sent | invalid | failed
      */
     public function send(array $messages): array
@@ -56,8 +56,9 @@ class ApnsClient
                 $headers = [
                     'authorization' => 'bearer '.$jwt,
                     'apns-topic' => $topic,
-                    'apns-push-type' => 'alert',
-                    'apns-priority' => '10',
+                    // Stille Pushs muessen als background mit Prioritaet 5 kommen, sonst verwirft Apple sie.
+                    'apns-push-type' => ($message['silent'] ?? false) ? 'background' : 'alert',
+                    'apns-priority' => ($message['silent'] ?? false) ? '5' : '10',
                     // Ungeliefertes verfaellt nach einem Tag (Geraet aus).
                     'apns-expiration' => (string) (time() + 86400),
                 ];
