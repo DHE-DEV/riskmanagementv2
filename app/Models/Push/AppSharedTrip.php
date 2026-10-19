@@ -20,7 +20,7 @@ class AppSharedTrip extends Model
 
     public const MAX_SIGHTS = 300;
 
-    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'revision'];
+    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'revision'];
 
     protected function casts(): array
     {
@@ -30,6 +30,7 @@ class AppSharedTrip extends Model
             'country_codes' => 'array',
             'sights' => 'array',
             'sight_visits' => 'array',
+            'sight_votes' => 'array',
             'revision' => 'integer',
         ];
     }
@@ -77,6 +78,46 @@ class AppSharedTrip extends Model
         return $this->tid ? implode('-', str_split($this->tid, 4)) : null;
     }
 
+    public const VOTES = ['must', 'like', 'no'];
+
+    /** Eigene Stimme und „Ich bin dabei“ zu einer gemeinsamen Sehenswuerdigkeit; true, wenn sich etwas geaendert hat. */
+    public function vote(AppDevice $device, string $key, ?string $vote, bool $going): bool
+    {
+        $votes = (array) $this->sight_votes;
+        $mine = (array) ($votes[$device->id] ?? []);
+        $entry = array_filter(['vote' => $vote, 'going' => $going ?: null], fn ($v) => $v !== null);
+        if (($mine[$key] ?? []) === $entry) {
+            return false;
+        }
+        if ($entry === []) {
+            unset($mine[$key]);
+        } else {
+            $mine[$key] = $entry;
+        }
+        $votes[$device->id] = $mine;
+        $this->sight_votes = array_filter($votes);
+
+        return true;
+    }
+
+    /** Geplanter Tag einer gemeinsamen Sehenswuerdigkeit (fuer alle gleich); true, wenn sich etwas geaendert hat. */
+    public function planDay(string $key, ?string $day): bool
+    {
+        $sights = (array) $this->sights;
+        foreach ($sights as $index => $sight) {
+            if ($sight['key'] === $key && ! ($sight['deleted'] ?? false)) {
+                if (($sight['day'] ?? null) === $day) {
+                    return false;
+                }
+                $sights[$index]['day'] = $day;
+                $this->sights = $sights;
+
+                return true;
+            }
+        }
+        abort(404, 'Sight not in this trip.');
+    }
+
     public function sharesSights(): bool
     {
         return $this->sights !== null;
@@ -104,13 +145,14 @@ class AppSharedTrip extends Model
             if (! $existing && $deleted) {
                 continue;
             }
-            $current[$incoming['key']] = [
+            $current[$incoming['key']] = array_filter([
                 'key' => $incoming['key'],
                 // Wer sie (zuletzt) hinzugefuegt hat
                 'by' => $existing && ! ($existing['deleted'] ?? false) ? ($existing['by'] ?? $device->id) : $device->id,
                 'updated_at' => $updated,
                 'deleted' => $deleted,
-            ];
+                'day' => $deleted ? null : ($existing['day'] ?? null),
+            ], fn ($v) => $v !== null);
             $changed = true;
         }
         if (count(array_filter($current, fn ($s) => ! $s['deleted'])) > self::MAX_SIGHTS) {
@@ -145,6 +187,7 @@ class AppSharedTrip extends Model
         }
         $names = ($participants ?? $this->participants())->mapWithKeys(fn (AppDevice $p) => [$p->id => $p->publicName()]);
         $visits = (array) $this->sight_visits;
+        $votes = (array) $this->sight_votes;
 
         return collect((array) $this->sights)->reject(fn ($s) => $s['deleted'] ?? false)
             ->sortBy('updated_at')->values()
@@ -154,6 +197,14 @@ class AppSharedTrip extends Model
                 'updated_at' => (int) $s['updated_at'],
                 'visited_by' => collect($visits)->filter(fn ($keys, $id) => $id !== $device->id && $names->has($id) && in_array($s['key'], (array) $keys, true))
                     ->keys()->map(fn ($id) => $names[$id])->values()->all(),
+                'day' => $s['day'] ?? null,
+                // Stimmen aller Teilnehmer (die eigene mit is_me), Reihenfolge wie die Teilnehmer
+                'votes' => $names->keys()->filter(fn ($id) => isset($votes[$id][$s['key']]))->map(fn ($id) => [
+                    'name' => $names[$id],
+                    'is_me' => $id === $device->id,
+                    'vote' => $votes[$id][$s['key']]['vote'] ?? null,
+                    'going' => (bool) ($votes[$id][$s['key']]['going'] ?? false),
+                ])->values()->all(),
             ])->all();
     }
 

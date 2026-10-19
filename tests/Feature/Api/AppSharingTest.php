@@ -230,3 +230,33 @@ it('schickt stille Pushs ohne Anzeige an iOS und Android', function () {
     $android = $this->withToken($token)->postJson('/api/v1/devices', ['platform' => 'android', 'push_token' => fake()->sha256()])->assertCreated()->json('data');
     (new \App\Jobs\Push\SendSharingSync('trip', [$ios['id'], $android['id']]))->handle(new \App\Services\Push\PushSender($sender, $fcm));
 });
+
+it('plant gemeinsame Sehenswuerdigkeiten: Stimmen, wer dabei ist und ein gemeinsamer Tag', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token, 'Ben');
+    $url = '/api/v1/devices/'.$anna['id'].'/trips/trip-1';
+    asDevice($this, $token, $anna)->putJson($url, tripPayload(['codes' => [$ben['share_code']]]))->assertOk();
+    asDevice($this, $token, $anna)->putJson($url.'/sights', ['sights' => [['key' => 'sight:12', 'updated_at' => 100]]])->assertOk();
+    $tripId = AppSharedTrip::first()->id;
+    asDevice($this, $token, $ben)->postJson('/api/v1/devices/'.$ben['id'].'/shared-trips/'.$tripId.'/accept')->assertOk();
+
+    $plan = fn (array $device, array $body) => asDevice($this, $token, $device)->putJson('/api/v1/devices/'.$device['id'].'/shared-trips/'.$tripId.'/plan', $body);
+    $plan($anna, ['key' => 'sight:12', 'vote' => 'must', 'going' => true])->assertOk();
+    $sight = $plan($ben, ['key' => 'sight:12', 'vote' => 'no', 'day' => '2027-03-05'])->assertOk()->json('data.received_trips.0.sights.0');
+
+    expect($sight['day'])->toBe('2027-03-05')
+        ->and($sight['votes'])->toBe([
+            ['name' => 'Anna', 'is_me' => false, 'vote' => 'must', 'going' => true],
+            ['name' => 'Ben', 'is_me' => true, 'vote' => 'no', 'going' => false],
+        ]);
+
+    // Nur „dabei“ aendern laesst die Stimme stehen; ein neuer Stand von Anna behaelt den Tag.
+    $plan($ben, ['key' => 'sight:12', 'going' => true])->assertOk();
+    $owned = asDevice($this, $token, $anna)->putJson($url.'/sights', ['sights' => [['key' => 'sight:12', 'updated_at' => 200]]])->json('data.owned_trips.0.sights.0');
+    expect($owned['day'])->toBe('2027-03-05')
+        ->and($owned['votes'][1])->toBe(['name' => 'Ben', 'is_me' => false, 'vote' => 'no', 'going' => true]);
+
+    $plan($ben, ['key' => 'sight:99', 'vote' => 'like'])->assertNotFound();
+    $plan($ben, ['key' => 'sight:12', 'vote' => 'maybe'])->assertUnprocessable();
+});

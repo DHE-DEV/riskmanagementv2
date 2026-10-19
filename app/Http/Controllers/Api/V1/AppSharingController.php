@@ -35,6 +35,7 @@ use Illuminate\Validation\ValidationException;
  *   PUT    trips/{clientTripId}/sights      Sehenswuerdigkeiten der eigenen Reise gemeinsam nutzen bzw. Aenderungen senden
  *   DELETE trips/{clientTripId}/sights      Sehenswuerdigkeiten nicht mehr gemeinsam nutzen
  *   PUT    shared-trips/{trip}/sights       Aenderungen an den gemeinsamen Sehenswuerdigkeiten einer empfangenen Reise
+ *   PUT    shared-trips/{trip}/plan         Planung einer gemeinsamen Sehenswuerdigkeit {key, vote?, going?, day?} (alle Teilnehmer)
  *   PUT    trips/{clientTripId}/list        Packliste der eigenen Reise teilen bzw. Inhalt und Rechte setzen
  *   DELETE trips/{clientTripId}/list        Packliste nicht mehr teilen
  *   PUT    shared-lists/{list}              Aenderungen an einer geteilten Packliste (je nach Rolle)
@@ -379,6 +380,49 @@ class AppSharingController extends Controller
         abort_unless($trip->participants()->contains('id', $device->id), 404);
         abort_unless($trip->sharesSights(), 409, 'The sights of this trip are not shared.');
         $this->mergeSights($request, $device, $trip, start: false);
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    /**
+     * Planung einer gemeinsamen Sehenswuerdigkeit: eigene Stimme (must/like/no/null) und „Ich bin dabei“ sowie der
+     * gemeinsame Tag. Fuer alle Teilnehmer einschliesslich des Erstellers (ueber die ID der geteilten Reise).
+     */
+    public function planSight(Request $request, string $id, string $trip): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = AppSharedTrip::findOrFail($trip);
+        abort_unless($trip->participants()->contains('id', $device->id), 404);
+        abort_unless($trip->sharesSights(), 409, 'The sights of this trip are not shared.');
+        $data = $request->validate([
+            'key' => ['required', 'string', 'regex:/^sight:\d+$/'],
+            'vote' => ['sometimes', 'nullable', 'in:'.implode(',', AppSharedTrip::VOTES)],
+            'going' => ['sometimes', 'boolean'],
+            'day' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $changed = DB::transaction(function () use ($trip, $device, $data) {
+            $trip->refresh();
+            abort_unless(collect((array) $trip->sights)->contains(fn ($s) => $s['key'] === $data['key'] && ! ($s['deleted'] ?? false)), 404, 'Sight not in this trip.');
+            $current = (array) (((array) $trip->sight_votes)[$device->id][$data['key']] ?? []);
+            $changed = false;
+            if (array_key_exists('vote', $data) || array_key_exists('going', $data)) {
+                $changed = $trip->vote($device, $data['key'],
+                    array_key_exists('vote', $data) ? $data['vote'] : ($current['vote'] ?? null),
+                    array_key_exists('going', $data) ? (bool) $data['going'] : (bool) ($current['going'] ?? false));
+            }
+            if (array_key_exists('day', $data)) {
+                $changed = $trip->planDay($data['key'], $data['day']) || $changed;
+            }
+            if ($changed) {
+                $trip->save();
+            }
+
+            return $changed;
+        });
+        if ($changed) {
+            $this->notifier->sync($trip, $device);
+        }
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }

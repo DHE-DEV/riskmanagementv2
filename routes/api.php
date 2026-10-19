@@ -472,6 +472,7 @@ Route::prefix('v1/devices')->middleware([
         Route::put('/trips/{clientTripId}/sights', 'upsertSights')->name('trips.sights.upsert');
         Route::delete('/trips/{clientTripId}/sights', 'destroySights')->name('trips.sights.destroy');
         Route::put('/shared-trips/{trip}/sights', 'updateSights')->name('shared-trips.sights.update');
+        Route::put('/shared-trips/{trip}/plan', 'planSight')->name('shared-trips.plan');
         Route::put('/trips/{clientTripId}/list', 'upsertList')->name('trips.list.upsert');
         Route::delete('/trips/{clientTripId}/list', 'destroyList')->name('trips.list.destroy');
         Route::put('/shared-lists/{list}', 'updateList')->name('shared-lists.update');
