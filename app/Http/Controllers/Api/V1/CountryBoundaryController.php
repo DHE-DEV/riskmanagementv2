@@ -92,15 +92,17 @@ class CountryBoundaryController extends Controller
     protected function feature(Country $country, ?string $lang): ?array
     {
         $version = (string) DB::table('country_boundaries')->max('updated_at');
-        $key = 'api.boundary.'.$country->id.'.'.md5($version.self::TOLERANCE);
+        $key = 'api.boundary.'.$country->id.'.'.md5($version.self::TOLERANCE.'-small');
 
         $geometry = Cache::remember($key, now()->addDay(), function () use ($country) {
             // ST_Simplify gibt es nur fuer kartesische Geometrien – daher ohne SRID;
-            // die Koordinaten bleiben dabei Laenge/Breite.
+            // die Koordinaten bleiben dabei Laenge/Breite. Kleine Laender (Monaco, Anguilla …) verschwinden bei
+            // der groben Vereinfachung ganz – dann feiner, zuletzt die volle Grenze.
             $row = DB::selectOne(
-                'select ST_AsGeoJSON(ST_Simplify(ST_SRID(boundary, 0), ?)) as geometry, min_lat, max_lat, min_lng, max_lng
+                'select ST_AsGeoJSON(coalesce(ST_Simplify(ST_SRID(boundary, 0), ?), ST_Simplify(ST_SRID(boundary, 0), ?), ST_SRID(boundary, 0))) as geometry,
+                        min_lat, max_lat, min_lng, max_lng
                  from country_boundaries where country_id = ?',
-                [self::TOLERANCE, $country->id],
+                [self::TOLERANCE, self::TOLERANCE / 50, $country->id],
             );
 
             if (! $row || ! $row->geometry) {
