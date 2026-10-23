@@ -4,10 +4,63 @@
     $rows = $this->rows;
     $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
     $regionOptions = $this->regionOptions;
+    $aiCountry = $this->aiCountry;
+    $aiRun = $this->aiRun;
+    $aiTargets = $this->aiTargets;
+    $aiTotal = count($aiTargets['region']) + count($aiTargets['subregion']) + count($aiTargets['city']);
 @endphp
 
 <div class="flex flex-col gap-6">
-    <x-adminv2.master-data.list-header section="sights" create-label="Neue Sehenswürdigkeit" />
+    <x-adminv2.master-data.list-header section="sights" create-label="Neue Sehenswürdigkeit">
+        {{-- KI-Funktionen gelten einem Land – sie erscheinen, sobald genau eines gefiltert ist. --}}
+        @if ($aiCountry)
+            <flux:button icon="magnifying-glass" wire:click="openAiFind">Per KI suchen</flux:button>
+            <flux:modal.trigger name="sights-ai-fill">
+                <flux:button icon="sparkles">Mit KI ergänzen</flux:button>
+            </flux:modal.trigger>
+        @endif
+    </x-adminv2.master-data.list-header>
+
+    @if ($aiRun)
+        @php
+            $runRunning = $aiRun->isRunning();
+            $failed = (array) $aiRun->failed;
+            $processed = $aiRun->done + count($failed);
+            $percent = $aiRun->total > 0 ? (int) floor($processed / $aiRun->total * 100) : 0;
+            $runCountry = $this->aiRunCountry();
+        @endphp
+        <x-adminv2.card :heading="'KI-Sehenswürdigkeiten'.($runCountry ? ' für '.$runCountry->getName('de') : '').($runRunning ? ' läuft' : ($aiRun->status === 'cancelled' ? ' angehalten' : ' abgeschlossen'))">
+            <x-slot:actions>
+                @if ($runRunning)
+                    <flux:button size="sm" variant="ghost" icon="stop" wire:click="cancelAiFill">Anhalten</flux:button>
+                @else
+                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="dismissAiFill">Ausblenden</flux:button>
+                @endif
+            </x-slot:actions>
+            <div class="flex flex-col gap-3 text-sm" @if ($runRunning) wire:poll.5s="refreshAiFill" @endif>
+                <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <div class="h-full rounded-full bg-emerald-600 transition-all" style="width: {{ $percent }}%"></div>
+                </div>
+                <p class="text-zinc-600 dark:text-zinc-400">
+                    <span class="tabular-nums font-medium text-zinc-900 dark:text-white">{{ number_format($aiRun->done, 0, ',', '.') }}</span> von {{ number_format($aiRun->total, 0, ',', '.') }} Gebieten bearbeitet, {{ number_format((int) ($aiRun->result['created'] ?? 0), 0, ',', '.') }} Sehenswürdigkeiten angelegt{{ count($failed) ? ', '.count($failed).' fehlgeschlagen' : '' }}.
+                    @if ($runRunning)
+                        Regionen, Teilgebiete und Städte werden im Hintergrund nacheinander bearbeitet, je zwei bis drei Minuten – die Seite muss dafür nicht offen bleiben.
+                    @endif
+                    Neue Einträge sind als „KI-Entwurf, ungeprüft“ gekennzeichnet; Dubletten im Land werden übersprungen.
+                </p>
+                @if (count($failed))
+                    <details class="text-xs text-zinc-500">
+                        <summary class="cursor-pointer">Fehlgeschlagen</summary>
+                        <ul class="mt-1 list-disc ps-5">
+                            @foreach (array_slice($failed, 0, 20, true) as $key => $message)
+                                <li>{{ $key }}: {{ $message }}</li>
+                            @endforeach
+                        </ul>
+                    </details>
+                @endif
+            </div>
+        </x-adminv2.card>
+    @endif
 
     <div class="flex flex-wrap items-center gap-3">
         <div class="min-w-64 flex-1">
@@ -112,4 +165,85 @@
     @endif
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
+
+    @if ($aiCountry)
+        {{-- Mit KI ergaenzen: Regionen, Teilgebiete und wichtige Staedte des Landes --}}
+        <flux:modal name="sights-ai-fill" class="md:w-[32rem]">
+            <div class="flex flex-col gap-5">
+                <div>
+                    <flux:heading size="lg">Sehenswürdigkeiten für {{ $aiCountry->getName('de') }} ergänzen</flux:heading>
+                    <flux:text class="mt-2">Die KI schlägt je Gebiet die wichtigsten Sehenswürdigkeiten und Unternehmungen vor – mit Kategorie, Highlights, Adresse, Besuchsdauer, Kurzbeschreibung und Beschreibung in allen Sprachen. Koordinaten werden mit OpenStreetMap abgeglichen. Alles wird als ungeprüfter KI-Entwurf angelegt, Dubletten im Land übersprungen.</flux:text>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <flux:checkbox wire:model.live="aiSubregions" label="Teilgebiete (Inseln, Reisegebiete) einbeziehen" />
+                    <flux:checkbox wire:model.live="aiCities" label="Wichtige Städte einbeziehen (Hauptstadt, Regionshauptstädte, große Städte)" />
+                    <flux:checkbox wire:model.live="aiAll" label="Auch Gebiete, die schon Sehenswürdigkeiten haben (ergänzt nur Neue)" />
+                </div>
+                <div class="rounded-lg bg-zinc-50 p-3 text-sm dark:bg-zinc-800/60">
+                    <span class="font-medium tabular-nums">{{ count($aiTargets['region']) }}</span> Regionen ·
+                    <span class="font-medium tabular-nums">{{ count($aiTargets['subregion']) }}</span> Teilgebiete ·
+                    <span class="font-medium tabular-nums">{{ count($aiTargets['city']) }}</span> Städte
+                    <span class="block text-xs text-zinc-500">Dauer etwa {{ max(1, (int) ceil($aiTotal * 1.2)) }} Minuten im Hintergrund.</span>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
+                    <flux:button variant="primary" icon="sparkles" wire:click="startAiFill" :disabled="$aiTotal === 0 || ($aiRun && $aiRun->isRunning())">Starten</flux:button>
+                </div>
+            </div>
+        </flux:modal>
+
+        {{-- Per KI suchen: eine bestimmte Sehenswuerdigkeit finden und nach Vorschau anlegen --}}
+        <flux:modal name="sights-ai-find" class="md:w-[34rem]">
+            <form wire:submit="aiFind" class="flex flex-col gap-5">
+                <div>
+                    <flux:heading size="lg">Sehenswürdigkeit per KI suchen</flux:heading>
+                    <flux:text class="mt-2">Fehlt etwas in {{ $aiCountry->getName('de') }}? Die KI sucht genau diese Sehenswürdigkeit und füllt alle Details aus. Angelegt wird erst nach deiner Bestätigung – als ungeprüfter KI-Entwurf.</flux:text>
+                </div>
+                <flux:input wire:model="aiQuery" label="Name" placeholder="z. B. Loro Parque, Masca-Schlucht, Mercado de la Boqueria" autofocus />
+                <div class="flex justify-end">
+                    <flux:button type="submit" variant="primary" icon="sparkles">
+                        <span wire:loading.remove wire:target="aiFind">Suchen</span>
+                        <span wire:loading wire:target="aiFind">KI sucht … (bis zu einer Minute)</span>
+                    </flux:button>
+                </div>
+            </form>
+
+            @if ($aiError)
+                <flux:callout variant="danger" icon="exclamation-triangle" class="mt-4">{{ $aiError }}</flux:callout>
+            @endif
+
+            @if ($aiFound)
+                <div class="mt-5 flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                    <div class="flex items-start justify-between gap-3">
+                        <flux:heading>{{ $aiFound['name'] }}</flux:heading>
+                        @if ($aiFound['suggestion']['is_highlight'] ?? false)
+                            <flux:badge size="sm" color="amber">Highlight</flux:badge>
+                        @endif
+                    </div>
+                    <dl class="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1 text-sm">
+                        <dt class="text-zinc-500">Kategorie</dt><dd>{{ $aiFound['category'] }}</dd>
+                        <dt class="text-zinc-500">Ort</dt><dd>{{ $aiFound['place'] ?: '–' }}</dd>
+                        <dt class="text-zinc-500">Adresse</dt><dd>{{ $aiFound['suggestion']['address'] ?? '–' }}</dd>
+                        <dt class="text-zinc-500">Koordinaten</dt><dd class="tabular-nums">{{ $aiFound['coordinates'] ?? '–' }}</dd>
+                    </dl>
+                    @if ($aiFound['short'])
+                        <flux:text>{{ $aiFound['short'] }}</flux:text>
+                    @endif
+                    @if ($aiFound['existing_id'])
+                        <flux:callout variant="warning" icon="information-circle">
+                            Gibt es schon:
+                            <a class="underline" href="{{ route('adminv2.master-data.sights.edit', $aiFound['existing_id']) }}">zum Eintrag</a>
+                        </flux:callout>
+                    @else
+                        <div class="flex justify-end">
+                            <flux:button variant="primary" icon="plus" wire:click="aiCreate">
+                                <span wire:loading.remove wire:target="aiCreate">Anlegen und prüfen</span>
+                                <span wire:loading wire:target="aiCreate">Wird angelegt …</span>
+                            </flux:button>
+                        </div>
+                    @endif
+                </div>
+            @endif
+        </flux:modal>
+    @endif
 </div>

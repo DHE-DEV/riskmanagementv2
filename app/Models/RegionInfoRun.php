@@ -20,12 +20,18 @@ class RegionInfoRun extends Model
     /** Sehenswuerdigkeiten einer Region aus ihrem Editor heraus */
     public const KIND_SIGHTS_ONE = 'sights_one';
 
+    /**
+     * Sehenswuerdigkeiten eines ganzen Landes per KI (Stammdaten > Sehenswuerdigkeiten): pending enthaelt
+     * gemischt "region:ID", "subregion:ID" und "city:ID"; result.country_id = das Land.
+     */
+    public const KIND_SIGHTS_COUNTRY = 'sights_country';
+
     /** Luecken der Regionen und Teilgebiete eines oder mehrerer Laender fuellen (regions:fill-missing) */
     public const KIND_FILL_MISSING = 'fill_missing';
 
     public function isSights(): bool
     {
-        return in_array($this->kind, [self::KIND_SIGHTS, self::KIND_SIGHTS_ONE], true);
+        return in_array($this->kind, [self::KIND_SIGHTS, self::KIND_SIGHTS_ONE, self::KIND_SIGHTS_COUNTRY], true);
     }
 
     public const STATUS_RUNNING = 'running';

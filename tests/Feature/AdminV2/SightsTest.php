@@ -258,6 +258,77 @@ it('fuellt die gefilterten Regionen ohne Sehenswuerdigkeiten aus der Liste', fun
         ->and(RegionInfoFillRun::current())->toBeNull();
 });
 
+it('ergaenzt ein ganzes Land aus der Liste: Regionen, Teilgebiete und wichtige Staedte', function () {
+    fakeSightServices();
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $done = sightRegion($italy, 'Fertig', 'Done');
+    sight($italy, 'Schon da', ['region_id' => $done->id]);
+    \App\Models\Subregion::create(['region_id' => $liguria->id, 'country_id' => $italy->id, 'kind' => 'area', 'name_translations' => ['de' => 'Riviera di Levante', 'en' => 'Riviera di Levante'], 'code' => 'RL']);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    $genoa->update(['is_regional_capital' => true]);
+    sightCity($italy, $liguria, 'Dorf');
+
+    $page = Livewire::test(SightIndex::class)
+        ->assertDontSee('Mit KI ergänzen')
+        ->set('countryIds', [(string) $italy->id])
+        ->assertSee('Mit KI ergänzen')
+        ->assertSee('Per KI suchen');
+    expect(array_map('count', $page->get('aiTargets')))->toBe(['region' => 1, 'subregion' => 1, 'city' => 1]);
+
+    $page->call('startAiFill')->call('refreshAiFill')
+        ->assertSee('KI-Sehenswürdigkeiten für Italien abgeschlossen')
+        ->assertSeeText('3 von 3 Gebieten bearbeitet, 4 Sehenswürdigkeiten angelegt');
+
+    $run = RegionInfoFillRun::current(RegionInfoRun::KIND_SIGHTS_COUNTRY);
+    expect($run->done)->toBe(3)->and($run->failed)->toBe([])
+        ->and(Sight::where('region_id', $liguria->id)->count())->toBe(4)
+        ->and(Sight::where('region_id', $done->id)->count())->toBe(1);
+    Http::assertSent(fn ($request) => str_contains((string) ($request->data()['messages'][0]['content'] ?? ''), 'Stadt: Genua'));
+    Http::assertSent(fn ($request) => str_contains((string) ($request->data()['messages'][0]['content'] ?? ''), 'Riviera di Levante'));
+
+    // Danach gibt es nichts mehr zu tun (ohne „auch vorhandene“)
+    expect(array_sum(array_map('count', Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])->get('aiTargets'))))->toBe(1);
+});
+
+it('sucht eine bestimmte Sehenswuerdigkeit per KI und legt sie nach Vorschau an', function () {
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    $answer = sightAnswer();
+    $one = $answer['sights'][0] + ['region' => 'Ligurien'];
+    fakeSightServices(fn (string $prompt) => str_contains($prompt, 'Gesuchte Sehenswürdigkeit: Gibtsnicht') ? ['sights' => []] : ['sights' => [$one]]);
+
+    $page = Livewire::test(SightIndex::class)
+        ->set('countryIds', [(string) $italy->id])
+        ->call('openAiFind')
+        ->set('aiQuery', 'Gibtsnicht')
+        ->call('aiFind')
+        ->assertSet('aiFound', null);
+    expect($page->get('aiError'))->toContain('nicht eindeutig');
+
+    $page->set('aiQuery', 'Aquarium von Genua')->call('aiFind')
+        ->assertSet('aiError', null)
+        ->assertSee('Aquarium Genua')
+        ->assertSee('Genua · Ligurien');
+    expect($page->get('aiFound'))->toMatchArray(['region_id' => $liguria->id, 'city_id' => $genoa->id, 'existing_id' => null]);
+
+    $page->call('aiCreate')->assertRedirect();
+    $created = Sight::sole();
+    expect($created->getName('de'))->toBe('Aquarium Genua')
+        ->and($created->region_id)->toBe($liguria->id)
+        ->and($created->city_id)->toBe($genoa->id)
+        ->and($created->is_highlight)->toBeTrue()
+        ->and($created->info['meta']['geocoded'])->toBe('osm')
+        ->and(SightInfo::status($created->info))->toBe(SightInfo::STATUS_AI);
+    Http::assertSent(fn ($request) => str_contains((string) ($request->data()['messages'][0]['content'] ?? ''), 'Regionen des Landes in unserer Datenbank: Ligurien'));
+
+    // Zweite Suche: gibt es schon
+    $again = Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])->set('aiQuery', 'Aquarium Genua')->call('aiFind');
+    expect($again->get('aiFound')['existing_id'])->toBe($created->id);
+    $again->assertSee('Gibt es schon');
+});
+
 it('legt Sehenswuerdigkeiten per Befehl an', function () {
     fakeSightServices();
     $italy = sightCountry();
