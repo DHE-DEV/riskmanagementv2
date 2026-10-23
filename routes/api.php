@@ -469,6 +469,7 @@ Route::prefix('v1/devices')->middleware([
         Route::post('/groups/{group}/decline', 'declineGroup')->name('groups.decline');
         Route::put('/trips/{clientTripId}', 'upsertTrip')->name('trips.upsert');
         Route::delete('/trips/{clientTripId}', 'destroyTrip')->name('trips.destroy');
+        Route::post('/trips/{clientTripId}/notify', 'notifyTrip')->name('trips.notify');
         Route::post('/shared-trips/{trip}/accept', 'acceptTrip')->name('shared-trips.accept');
         Route::post('/shared-trips/{trip}/decline', 'declineTrip')->name('shared-trips.decline');
         Route::put('/trips/{clientTripId}/sights', 'upsertSights')->name('trips.sights.upsert');
@@ -476,6 +477,7 @@ Route::prefix('v1/devices')->middleware([
         Route::put('/shared-trips/{trip}/sights', 'updateSights')->name('shared-trips.sights.update');
         Route::put('/shared-trips/{trip}/plan', 'planSight')->name('shared-trips.plan');
         Route::put('/shared-trips/{trip}/expenses', 'updateExpenses')->name('shared-trips.expenses');
+        Route::put('/shared-trips/{trip}/itinerary', 'updateItinerary')->name('shared-trips.itinerary');
         Route::put('/trips/{clientTripId}/list', 'upsertList')->name('trips.list.upsert');
         Route::delete('/trips/{clientTripId}/list', 'destroyList')->name('trips.list.destroy');
         Route::put('/shared-lists/{list}', 'updateList')->name('shared-lists.update');

@@ -50,6 +50,7 @@ class AppDeviceController extends Controller
     {
         $device = $this->device($request, $id);
         $data = $request->validate($this->rules(false));
+        $nameBefore = $device->publicName();
 
         DB::transaction(function () use ($device, $data) {
             if (array_key_exists('push_token', $data) && $data['push_token'] !== $device->push_token) {
@@ -61,6 +62,11 @@ class AppDeviceController extends Controller
             $device->last_seen_at = now();
             $device->save();
         });
+
+        // Neuer Name: alle Geraete in gemeinsamen Gruppen und Reisen laden neu – der Name erscheint ueberall.
+        if ($device->publicName() !== $nameBefore) {
+            app(\App\Services\Push\SharingNotifier::class)->nameChanged($device);
+        }
 
         return response()->json(['success' => true, 'data' => $device->toApi()]);
     }
@@ -141,13 +147,14 @@ class AppDeviceController extends Controller
             'locale' => ['sometimes', 'string', 'max:8'],
             'app_version' => ['sometimes', 'nullable', 'string', 'max:64'],
             'notifications_enabled' => ['sometimes', 'boolean'],
+            'notify_itinerary' => ['sometimes', 'boolean'],
             'display_name' => ['sometimes', 'nullable', 'string', 'max:60'],
         ];
     }
 
     private function attributes(array $data): array
     {
-        $attributes = array_intersect_key($data, array_flip(['push_token', 'push_environment', 'app_version', 'notifications_enabled']));
+        $attributes = array_intersect_key($data, array_flip(['push_token', 'push_environment', 'app_version', 'notifications_enabled', 'notify_itinerary']));
 
         if (array_key_exists('display_name', $data)) {
             $attributes['display_name'] = filled($data['display_name']) ? trim($data['display_name']) : null;

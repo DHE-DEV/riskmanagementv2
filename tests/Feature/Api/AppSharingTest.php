@@ -247,15 +247,25 @@ it('plant gemeinsame Sehenswuerdigkeiten: Stimmen, wer dabei ist und ein gemeins
 
     expect($sight['day'])->toBe('2027-03-05')
         ->and($sight['votes'])->toBe([
-            ['name' => 'Anna', 'is_me' => false, 'vote' => 'must', 'going' => true],
-            ['name' => 'Ben', 'is_me' => true, 'vote' => 'no', 'going' => false],
+            ['name' => 'Anna', 'is_me' => false, 'vote' => 'must', 'going' => true, 'comment' => null],
+            ['name' => 'Ben', 'is_me' => true, 'vote' => 'no', 'going' => false, 'comment' => null],
         ]);
 
     // Nur „dabei“ aendern laesst die Stimme stehen; ein neuer Stand von Anna behaelt den Tag.
     $plan($ben, ['key' => 'sight:12', 'going' => true])->assertOk();
     $owned = asDevice($this, $token, $anna)->putJson($url.'/sights', ['sights' => [['key' => 'sight:12', 'updated_at' => 200]]])->json('data.owned_trips.0.sights.0');
     expect($owned['day'])->toBe('2027-03-05')
-        ->and($owned['votes'][1])->toBe(['name' => 'Ben', 'is_me' => false, 'vote' => 'no', 'going' => true]);
+        ->and($owned['votes'][1])->toBe(['name' => 'Ben', 'is_me' => false, 'vote' => 'no', 'going' => true, 'comment' => null]);
+
+    // Kommentar: bleibt bei spaeteren Stimmen, leer loescht
+    $plan($ben, ['key' => 'sight:12', 'comment' => '  Nur wenn das Wetter passt  '])->assertOk();
+    $plan($ben, ['key' => 'sight:12', 'vote' => 'like'])->assertOk();
+    $votes = asDevice($this, $token, $anna)->getJson('/api/v1/devices/'.$anna['id'].'/sharing')->json('data.owned_trips.0.sights.0.votes');
+    expect($votes[1])->toMatchArray(['name' => 'Ben', 'vote' => 'like', 'going' => true, 'comment' => 'Nur wenn das Wetter passt']);
+    $plan($ben, ['key' => 'sight:12', 'comment' => ''])->assertOk();
+    $votes = asDevice($this, $token, $anna)->getJson('/api/v1/devices/'.$anna['id'].'/sharing')->json('data.owned_trips.0.sights.0.votes');
+    expect($votes[1]['comment'])->toBeNull();
+    $plan($ben, ['key' => 'sight:12', 'comment' => str_repeat('x', 501)])->assertUnprocessable();
 
     $plan($ben, ['key' => 'sight:99', 'vote' => 'like'])->assertNotFound();
     $plan($ben, ['key' => 'sight:12', 'vote' => 'maybe'])->assertUnprocessable();
@@ -281,4 +291,120 @@ it('fuehrt die gemeinsame Reisekasse aller Teilnehmer zusammen', function () {
     expect(asDevice($this, $token, $anna)->getJson('/api/v1/devices/'.$anna['id'].'/sharing')->json('data.owned_trips.0.expenses.0.title'))->toBe('Abendessen');
 
     $send($ben, [['id' => 'e3', 'title' => 'X', 'amount' => 1, 'currency' => 'EUR', 'paid_by' => 'nope', 'split' => [], 'updated_at' => 1]])->assertUnprocessable();
+});
+
+it('fuehrt den Reiseverlauf aller Teilnehmer zusammen und meldet geaenderte Orte sichtbar', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token, 'Ben');
+    $cara = sharingDevice($this, $token, 'Cara');
+    asDevice($this, $token, $anna)->putJson('/api/v1/devices/'.$anna['id'].'/trips/trip-1', tripPayload(['start_date' => '2026-11-05', 'end_date' => '2026-11-12', 'codes' => [$ben['share_code'], $cara['share_code']]]))->assertOk();
+    $tripId = AppSharedTrip::first()->id;
+    asDevice($this, $token, $ben)->postJson('/api/v1/devices/'.$ben['id'].'/shared-trips/'.$tripId.'/accept')->assertOk();
+    asDevice($this, $token, $cara)->postJson('/api/v1/devices/'.$cara['id'].'/shared-trips/'.$tripId.'/accept')->assertOk();
+    asDevice($this, $token, $cara)->putJson('/api/v1/devices/'.$cara['id'], ['notify_itinerary' => false])->assertOk()->assertJsonPath('data.notify_itinerary', false);
+    $send = fn (array $device, array $payload) => asDevice($this, $token, $device)->putJson('/api/v1/devices/'.$device['id'].'/shared-trips/'.$tripId.'/itinerary', $payload);
+    AppPushMessage::query()->delete();
+
+    $send($anna, ['stays' => [
+        ['id' => 's1', 'kind' => 'place', 'from' => '2026-11-07', 'to' => '2026-11-08', 'name' => 'Funchal, Madeira', 'country_code' => 'pt', 'lat' => 32.65, 'lng' => -16.91, 'arrival' => '07:00', 'departure' => '14:00', 'updated_at' => 100],
+        ['id' => 's2', 'kind' => 'sea', 'from' => '2026-11-06', 'updated_at' => 100],
+    ]])->assertOk();
+    expect(AppPushMessage::sole()->body['de'])->toBe('Anna hat den Reiseverlauf geändert (2 Einträge).');
+
+    // Nur die Notiz: kein sichtbarer Hinweis
+    AppPushMessage::query()->delete();
+    $send($ben, ['stays' => [['id' => 's1', 'kind' => 'place', 'from' => '2026-11-07', 'to' => '2026-11-08', 'name' => 'Funchal, Madeira', 'country_code' => 'PT', 'lat' => 32.65, 'lng' => -16.91, 'arrival' => '07:00', 'departure' => '14:00', 'note' => 'Liegeplatz Pier 2', 'updated_at' => 200]],
+        'day_notes' => [['date' => '2026-11-10', 'note' => 'Ausflug Teide, 08:30 Gangway', 'updated_at' => 200]]])->assertOk();
+    expect(AppPushMessage::count())->toBe(0);
+
+    // Neue Zeiten: Hinweis an Anna (Cara hat ihn abgeschaltet)
+    $send($ben, ['stays' => [['id' => 's3', 'kind' => 'place', 'from' => '2026-11-09', 'name' => 'Santa Cruz de La Palma', 'arrival' => '09:00', 'departure' => '18:00', 'updated_at' => 300]]])->assertOk();
+    $message = AppPushMessage::sole();
+    expect($message->body['de'])->toBe('Ben hat Tag 5 geändert: Santa Cruz de La Palma, 09:00–18:00')
+        ->and($message->title['de'])->toBe('Peru 2027')
+        ->and($message->data)->toMatchArray(['event' => 'itinerary', 'trip' => $tripId]);
+    Queue::assertPushed(SendPushBatch::class, fn ($job) => $job->deviceIds === [$anna['id']]);
+
+    // Aelterer Stand aendert nichts, neuerer loescht
+    $send($anna, ['stays' => [['id' => 's1', 'kind' => 'place', 'from' => '2026-11-07', 'name' => 'Alt', 'updated_at' => 150]]])->assertOk();
+    $itinerary = $send($anna, ['stays' => [['id' => 's2', 'deleted' => true, 'updated_at' => 400]]])->assertOk()->json('data.owned_trips.0.itinerary');
+    expect(collect($itinerary['stays'])->pluck('id')->all())->toBe(['s1', 's3'])
+        ->and($itinerary['stays'][0])->toMatchArray(['name' => 'Funchal, Madeira', 'country_code' => 'PT', 'to' => '2026-11-08', 'note' => 'Liegeplatz Pier 2', 'changed_by' => 'Ben'])
+        ->and($itinerary['stays'][1]['to'])->toBe('2026-11-09')
+        ->and($itinerary['day_notes'])->toHaveCount(1)
+        ->and($itinerary['day_notes'][0])->toMatchArray(['date' => '2026-11-10', 'note' => 'Ausflug Teide, 08:30 Gangway', 'changed_by' => 'Ben']);
+    expect(asDevice($this, $token, $cara)->getJson('/api/v1/devices/'.$cara['id'].'/sharing')->json('data.received_trips.0.itinerary.stays'))->toHaveCount(2);
+
+    // Leere Notiz loescht
+    $notes = $send($cara, ['day_notes' => [['date' => '2026-11-10', 'note' => '', 'updated_at' => 500]]])->json('data.received_trips.0.itinerary.day_notes');
+    expect($notes)->toBe([]);
+
+    $send($ben, ['stays' => [['id' => 's4', 'kind' => 'place', 'from' => '2026-11-09', 'updated_at' => 1]]])->assertUnprocessable();
+    $send($ben, ['stays' => [['id' => 's4', 'kind' => 'place', 'name' => 'X', 'from' => '2026-11-09', 'to' => '2026-11-01', 'updated_at' => 1]]])->assertUnprocessable();
+    $send($ben, ['stays' => [['id' => 's4', 'kind' => 'place', 'name' => 'X', 'from' => '2026-11-09', 'arrival' => '25:00', 'updated_at' => 1]]])->assertUnprocessable();
+    $stranger = sharingDevice($this, $token, 'Dora');
+    $send($stranger, ['stays' => []])->assertNotFound();
+});
+
+it('teilt die Beschreibung des Erstellers und benachrichtigt nur auf Wunsch die Gruppe', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token, 'Ben');
+    $base = fn ($d) => '/api/v1/devices/'.$d['id'];
+    $url = $base($anna).'/trips/trip-1';
+    asDevice($this, $token, $anna)->putJson($url, tripPayload(['description' => 'Kanaren & Madeira mit Mein Schiff', 'codes' => [$ben['share_code']]]))->assertOk();
+    $tripId = AppSharedTrip::first()->id;
+    asDevice($this, $token, $ben)->postJson($base($ben).'/shared-trips/'.$tripId.'/accept')->assertOk();
+    $received = fn () => asDevice($this, $token, $ben)->getJson($base($ben).'/sharing')->json('data.received_trips.0');
+    expect($received()['description'])->toBe('Kanaren & Madeira mit Mein Schiff');
+    $revision = $received()['revision'];
+    AppPushMessage::query()->delete();
+
+    // Aeltere App ohne Beschreibung: bleibt
+    asDevice($this, $token, $anna)->putJson($url, tripPayload())->assertOk();
+    expect($received()['description'])->toBe('Kanaren & Madeira mit Mein Schiff');
+
+    // Aendern allein: neuer Stand, aber kein sichtbarer Hinweis
+    asDevice($this, $token, $anna)->putJson($url, tripPayload(['description' => "Kanaren & Madeira\nTreffpunkt 14:00 Terminal"]))->assertOk();
+    expect($received())->description->toBe("Kanaren & Madeira\nTreffpunkt 14:00 Terminal")->revision->toBe($revision + 1)
+        ->and(AppPushMessage::count())->toBe(0);
+
+    // Benachrichtigen nur bei Reisen mit Gruppe
+    asDevice($this, $token, $anna)->postJson($url.'/notify', ['changes' => ['description']])->assertStatus(409);
+    $group = asDevice($this, $token, $anna)->postJson($base($anna).'/groups', ['name' => 'Familie'])->json('data.id');
+    asDevice($this, $token, $anna)->putJson($url, tripPayload(['group_ids' => [$group]]))->assertOk();
+    asDevice($this, $token, $anna)->postJson($url.'/notify', ['changes' => ['dates', 'description']])->assertOk()->assertJsonPath('data.owned_trips.0.client_trip_id', 'trip-1');
+    expect(AppPushMessage::sole())->body->toMatchArray(['de' => 'Anna hat die Reise geändert: Zeitraum und Beschreibung.'])
+        ->data->toMatchArray(['event' => 'trip_changed', 'trip' => $tripId]);
+
+    // Nur der Ersteller, nur bekannte Aenderungen
+    asDevice($this, $token, $ben)->postJson($base($ben).'/trips/trip-1/notify', ['changes' => ['dates']])->assertNotFound();
+    asDevice($this, $token, $anna)->postJson($url.'/notify', ['changes' => ['wetter']])->assertUnprocessable();
+});
+
+it('zeigt spaeter eingetragene Namen in Gruppen und Reisen und laedt die anderen Geraete neu', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token);
+    $base = fn ($d) => '/api/v1/devices/'.$d['id'];
+    $group = asDevice($this, $token, $anna)->postJson($base($anna).'/groups', ['name' => 'Familie'])->json('data.id');
+    asDevice($this, $token, $anna)->postJson($base($anna)."/groups/{$group}/members", ['codes' => [$ben['share_code']]])->assertOk();
+    asDevice($this, $token, $ben)->postJson($base($ben)."/groups/{$group}/accept")->assertOk();
+    asDevice($this, $token, $anna)->putJson($base($anna).'/trips/trip-1', tripPayload(['group_ids' => [$group]]))->assertOk();
+
+    $members = fn () => collect(asDevice($this, $token, $anna)->getJson($base($anna).'/sharing')->json('data.groups.0.members'))->keyBy('is_me');
+    expect($members()[0])->toMatchArray(['name' => $ben['share_code'], 'has_name' => false]);
+    Queue::fake();
+
+    asDevice($this, $token, $ben)->putJson($base($ben), ['display_name' => 'Ben'])->assertOk();
+
+    expect($members()[0])->toMatchArray(['name' => 'Ben', 'has_name' => true])
+        ->and(asDevice($this, $token, $anna)->getJson($base($anna).'/sharing')->json('data.owned_trips.0.participants.1'))->toMatchArray(['name' => 'Ben', 'has_name' => true]);
+    Queue::assertPushed(\App\Jobs\Push\SendSharingSync::class, fn ($job) => $job->deviceIds === [$anna['id']]);
+
+    // Gleicher Name: kein Neuladen
+    Queue::fake();
+    asDevice($this, $token, $ben)->putJson($base($ben), ['display_name' => 'Ben'])->assertOk();
+    Queue::assertNotPushed(\App\Jobs\Push\SendSharingSync::class);
 });

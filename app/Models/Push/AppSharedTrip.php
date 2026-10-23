@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Eine Reise, die ein Geraet mit anderen teilt (einzelne App-IDs und/oder Gruppen). Nur der Ersteller
- * aendert sie; die anderen sehen den aktuellen Stand (revision) und koennen ihr lokal einen eigenen Namen geben.
+ * aendert sie (Name, Beschreibung, Zeitraum, Laender); die anderen sehen den aktuellen Stand (revision) und koennen ihr
+ * lokal einen eigenen Namen geben.
  */
 class AppSharedTrip extends Model
 {
@@ -20,7 +21,7 @@ class AppSharedTrip extends Model
 
     public const MAX_SIGHTS = 300;
 
-    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'expenses', 'revision'];
+    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'description', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'expenses', 'stays', 'day_notes', 'revision'];
 
     protected function casts(): array
     {
@@ -32,6 +33,8 @@ class AppSharedTrip extends Model
             'sight_visits' => 'array',
             'sight_votes' => 'array',
             'expenses' => 'array',
+            'stays' => 'array',
+            'day_notes' => 'array',
             'revision' => 'integer',
         ];
     }
@@ -81,12 +84,18 @@ class AppSharedTrip extends Model
 
     public const VOTES = ['must', 'like', 'no'];
 
-    /** Eigene Stimme und „Ich bin dabei“ zu einer gemeinsamen Sehenswuerdigkeit; true, wenn sich etwas geaendert hat. */
-    public function vote(AppDevice $device, string $key, ?string $vote, bool $going): bool
+    public const MAX_COMMENT = 500;
+
+    /**
+     * Eigene Stimme, „Ich bin dabei“ und Kommentar zu einer gemeinsamen Sehenswuerdigkeit; true, wenn sich etwas
+     * geaendert hat.
+     */
+    public function vote(AppDevice $device, string $key, ?string $vote, bool $going, ?string $comment = null): bool
     {
         $votes = (array) $this->sight_votes;
         $mine = (array) ($votes[$device->id] ?? []);
-        $entry = array_filter(['vote' => $vote, 'going' => $going ?: null], fn ($v) => $v !== null);
+        $comment = filled($comment) ? mb_substr(trim($comment), 0, self::MAX_COMMENT) : null;
+        $entry = array_filter(['vote' => $vote, 'going' => $going ?: null, 'comment' => $comment], fn ($v) => $v !== null);
         if (($mine[$key] ?? []) === $entry) {
             return false;
         }
@@ -183,6 +192,143 @@ class AppSharedTrip extends Model
             ])->all();
     }
 
+    public const MAX_STAYS = 200;
+
+    public const MAX_DAY_NOTES = 400;
+
+    public const STAY_KINDS = ['place', 'sea'];
+
+    /**
+     * Aufenthaltsorte eines Geraets einarbeiten (Reiseverlauf): je Eintrag gewinnt der neuere Stand (`updated_at`),
+     * Geloeschtes bleibt mit `deleted` stehen; `by` = wer zuletzt geaendert hat. Liefert die Eintraege, deren Ort,
+     * Zeitraum oder Zeiten sich geaendert haben (fuer den Hinweis an die anderen) – Notizen allein zaehlen nicht.
+     *
+     * @param  array<int, array<string, mixed>>  $entries
+     * @return array<int, array<string, mixed>>
+     */
+    public function mergeStays(AppDevice $device, array $entries): array
+    {
+        $current = collect((array) $this->stays)->keyBy('id')->all();
+        $changed = [];
+        $touched = false;
+        foreach ($entries as $incoming) {
+            $existing = $current[$incoming['id']] ?? null;
+            $updated = (int) $incoming['updated_at'];
+            if ($existing && $updated <= (int) ($existing['updated_at'] ?? 0)) {
+                continue;
+            }
+            $deleted = (bool) ($incoming['deleted'] ?? false);
+            if (! $existing && $deleted) {
+                continue;
+            }
+            $sea = ($incoming['kind'] ?? 'place') === 'sea';
+            $stay = $deleted ? ['id' => $incoming['id'], 'updated_at' => $updated, 'deleted' => true, 'by' => $device->id] : [
+                'id' => $incoming['id'],
+                'kind' => $sea ? 'sea' : 'place',
+                'from' => $incoming['from'],
+                'to' => ($incoming['to'] ?? null) ?: $incoming['from'],
+                'name' => $sea ? null : mb_substr(trim((string) $incoming['name']), 0, 120),
+                'country_code' => $sea || empty($incoming['country_code']) ? null : strtoupper($incoming['country_code']),
+                'lat' => $sea || ! isset($incoming['lat']) ? null : round((float) $incoming['lat'], 6),
+                'lng' => $sea || ! isset($incoming['lng']) ? null : round((float) $incoming['lng'], 6),
+                'arrival' => $incoming['arrival'] ?? null,
+                'departure' => $incoming['departure'] ?? null,
+                'note' => filled($incoming['note'] ?? null) ? mb_substr(trim($incoming['note']), 0, 1000) : null,
+                'by' => $device->id,
+                'updated_at' => $updated,
+                'deleted' => false,
+            ];
+            $current[$incoming['id']] = $stay;
+            $touched = true;
+            $relevant = ['kind', 'from', 'to', 'name', 'arrival', 'departure', 'deleted'];
+            if (array_intersect_key((array) $existing, array_flip($relevant)) != array_intersect_key($stay, array_flip($relevant))
+                && ! ($deleted && ($existing['deleted'] ?? false))) {
+                $changed[] = $deleted ? array_merge($existing, ['deleted' => true]) : $stay;
+            }
+        }
+        abort_if(count(array_filter($current, fn ($s) => ! $s['deleted'])) > self::MAX_STAYS, 422, 'Too many stays.');
+        if ($touched) {
+            $this->stays = array_values($current);
+        }
+
+        return $changed;
+    }
+
+    /**
+     * Notizen je Tag einarbeiten (Schluessel = Datum); leere Notiz = geloescht. true bei Aenderungen.
+     *
+     * @param  array<int, array<string, mixed>>  $entries
+     */
+    public function mergeDayNotes(AppDevice $device, array $entries): bool
+    {
+        $current = collect((array) $this->day_notes)->keyBy('date')->all();
+        $changed = false;
+        foreach ($entries as $incoming) {
+            $existing = $current[$incoming['date']] ?? null;
+            $updated = (int) $incoming['updated_at'];
+            if ($existing && $updated <= (int) ($existing['updated_at'] ?? 0)) {
+                continue;
+            }
+            $note = trim((string) ($incoming['note'] ?? ''));
+            $deleted = (bool) ($incoming['deleted'] ?? false) || $note === '';
+            if (! $existing && $deleted) {
+                continue;
+            }
+            $current[$incoming['date']] = [
+                'date' => $incoming['date'],
+                'note' => $deleted ? null : mb_substr($note, 0, 1000),
+                'by' => $device->id,
+                'updated_at' => $updated,
+                'deleted' => $deleted,
+            ];
+            $changed = true;
+        }
+        abort_if(count(array_filter($current, fn ($n) => ! $n['deleted'])) > self::MAX_DAY_NOTES, 422, 'Too many day notes.');
+        if ($changed) {
+            $this->day_notes = array_values($current);
+        }
+
+        return $changed;
+    }
+
+    /**
+     * Reiseverlauf fuer die App: Aufenthalte (nach Datum) und Notizen je Tag, ohne geloeschte, mit „zuletzt geaendert von“.
+     *
+     * @param  \Illuminate\Support\Collection<int, AppDevice>|null  $participants
+     */
+    public function itineraryApi(?\Illuminate\Support\Collection $participants = null): array
+    {
+        $names = ($participants ?? $this->participants())->mapWithKeys(fn (AppDevice $p) => [$p->id => $p->publicName()]);
+
+        return [
+            'stays' => collect((array) $this->stays)->reject(fn ($s) => $s['deleted'] ?? false)
+                ->sortBy([['from', 'asc'], ['arrival', 'asc']])->values()
+                ->map(fn ($s) => [
+                    'id' => $s['id'],
+                    'kind' => $s['kind'],
+                    'from' => $s['from'],
+                    'to' => $s['to'],
+                    'name' => $s['name'],
+                    'country_code' => $s['country_code'],
+                    'lat' => $s['lat'],
+                    'lng' => $s['lng'],
+                    'arrival' => $s['arrival'],
+                    'departure' => $s['departure'],
+                    'note' => $s['note'],
+                    'changed_by' => $names[$s['by'] ?? ''] ?? null,
+                    'updated_at' => (int) $s['updated_at'],
+                ])->all(),
+            'day_notes' => collect((array) $this->day_notes)->reject(fn ($n) => $n['deleted'] ?? false)
+                ->sortBy('date')->values()
+                ->map(fn ($n) => [
+                    'date' => $n['date'],
+                    'note' => $n['note'],
+                    'changed_by' => $names[$n['by'] ?? ''] ?? null,
+                    'updated_at' => (int) $n['updated_at'],
+                ])->all(),
+        ];
+    }
+
     public function sharesSights(): bool
     {
         return $this->sights !== null;
@@ -269,6 +415,7 @@ class AppSharedTrip extends Model
                     'is_me' => $id === $device->id,
                     'vote' => $votes[$id][$s['key']]['vote'] ?? null,
                     'going' => (bool) ($votes[$id][$s['key']]['going'] ?? false),
+                    'comment' => $votes[$id][$s['key']]['comment'] ?? null,
                 ])->values()->all(),
             ])->all();
     }
@@ -279,6 +426,7 @@ class AppSharedTrip extends Model
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'description' => $this->description,
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
             'country_codes' => array_values((array) $this->country_codes),

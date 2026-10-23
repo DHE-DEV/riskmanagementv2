@@ -37,6 +37,7 @@ class AppDevice extends Model
         'locale',
         'app_version',
         'notifications_enabled',
+        'notify_itinerary',
         'secret_hash',
         'share_code',
         'display_name',
@@ -50,6 +51,7 @@ class AppDevice extends Model
     {
         return [
             'notifications_enabled' => 'boolean',
+            'notify_itinerary' => 'boolean',
             'last_seen_at' => 'datetime',
             'token_invalid_at' => 'datetime',
         ];
@@ -143,6 +145,7 @@ class AppDevice extends Model
             'locale' => $this->locale,
             'app_version' => $this->app_version,
             'notifications_enabled' => $this->notifications_enabled,
+            'notify_itinerary' => $this->notify_itinerary ?? true,
             'has_push_token' => filled($this->push_token) && $this->token_invalid_at === null,
             'share_code' => self::formatShareCode($this->share_code),
             'display_name' => $this->display_name,

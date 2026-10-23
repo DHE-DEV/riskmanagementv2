@@ -29,14 +29,18 @@ use Illuminate\Validation\ValidationException;
  *   POST   groups/{group}/members           einladen {codes: []} (Ersteller)
  *   DELETE groups/{group}/members/{member}  entfernen (Ersteller) bzw. selbst verlassen
  *   POST   groups/{group}/accept|decline    Einladung annehmen/ablehnen
- *   PUT    trips/{clientTripId}             eigene Reise teilen bzw. aktualisieren {name, …, codes?, group_ids?}
+ *   PUT    trips/{clientTripId}             eigene Reise teilen bzw. aktualisieren {name, description?, …, codes?, group_ids?}
+ *   POST   trips/{clientTripId}/notify      Mitreisende ueber Aenderungen benachrichtigen {changes: [name|description|dates|countries]}
+ *                                           (Ersteller, nur Reisen mit Gruppe)
  *   DELETE trips/{clientTripId}             Freigabe aufheben
  *   POST   shared-trips/{trip}/accept|decline  empfangene Reise annehmen / ablehnen bzw. ausblenden
  *   PUT    trips/{clientTripId}/sights      Sehenswuerdigkeiten der eigenen Reise gemeinsam nutzen bzw. Aenderungen senden
  *   DELETE trips/{clientTripId}/sights      Sehenswuerdigkeiten nicht mehr gemeinsam nutzen
  *   PUT    shared-trips/{trip}/sights       Aenderungen an den gemeinsamen Sehenswuerdigkeiten einer empfangenen Reise
- *   PUT    shared-trips/{trip}/plan         Planung einer gemeinsamen Sehenswuerdigkeit {key, vote?, going?, day?} (alle Teilnehmer)
+ *   PUT    shared-trips/{trip}/plan         Planung einer gemeinsamen Sehenswuerdigkeit {key, vote?, going?, comment?, day?} (alle Teilnehmer)
  *   PUT    shared-trips/{trip}/expenses     Reisekasse: Ausgaben senden {expenses: [{id, title, amount, currency, date, paid_by, split, updated_at, deleted}]}
+ *   PUT    shared-trips/{trip}/itinerary    Reiseverlauf: {stays: [{id, kind, from, to, name, country_code, lat, lng, arrival, departure, note, updated_at, deleted}],
+ *                                           day_notes: [{date, note, updated_at, deleted}]} (alle Teilnehmer)
  *   PUT    trips/{clientTripId}/list        Packliste der eigenen Reise teilen bzw. Inhalt und Rechte setzen
  *   DELETE trips/{clientTripId}/list        Packliste nicht mehr teilen
  *   PUT    shared-lists/{list}              Aenderungen an einer geteilten Packliste (je nach Rolle)
@@ -168,6 +172,8 @@ class AppSharingController extends Controller
         $device = $this->device($request, $id);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
+            // Aeltere Apps schicken keine Beschreibung – dann bleibt die bisherige.
+            'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'start_date' => ['nullable', 'date_format:Y-m-d'],
             'end_date' => ['nullable', 'date_format:Y-m-d'],
             'country_codes' => ['present', 'array', 'max:40'],
@@ -197,8 +203,11 @@ class AppSharingController extends Controller
                 'country_codes' => array_values(array_unique(array_map('strtoupper', $data['country_codes']))),
                 'tid' => AppDeviceTravelLink::normalizeTid($data['travel_link_code'] ?? null),
             ];
+            if (array_key_exists('description', $data)) {
+                $fields['description'] = filled($data['description']) ? trim($data['description']) : null;
+            }
             $trip = AppSharedTrip::firstOrNew(['owner_device_id' => $device->id, 'client_trip_id' => $clientTripId]);
-            $snapshot = fn () => [$trip->name, $trip->start_date?->toDateString(), $trip->end_date?->toDateString(), $trip->country_codes, $trip->tid];
+            $snapshot = fn () => [$trip->name, $trip->description, $trip->start_date?->toDateString(), $trip->end_date?->toDateString(), $trip->country_codes, $trip->tid];
             $before = $trip->exists ? $snapshot() : null;
             $trip->fill($fields);
             if ($before !== null && $before !== $snapshot()) {
@@ -234,6 +243,24 @@ class AppSharingController extends Controller
         foreach ($newGroups as $group) {
             $this->notifier->groupTrip($device, $trip->name, $group->name, array_diff($group->acceptedDeviceIds(), [$device->id]));
         }
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    /**
+     * Ersteller hat die Reise geaendert und moechte die anderen benachrichtigen (fragt die App nur bei Reisen mit
+     * Gruppe): sichtbarer Push mit dem, was sich geaendert hat.
+     */
+    public function notifyTrip(Request $request, string $id, string $clientTripId): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $data = $request->validate([
+            'changes' => ['required', 'array', 'min:1', 'max:4'],
+            'changes.*' => ['string', 'in:'.implode(',', SharingNotifier::TRIP_CHANGES)],
+        ]);
+        $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->firstOrFail();
+        abort_unless($trip->groups()->exists(), 409, 'The trip is not shared with a group.');
+        $this->notifier->tripChanged($trip, $device, array_values(array_unique($data['changes'])));
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
     }
@@ -399,6 +426,7 @@ class AppSharingController extends Controller
             'key' => ['required', 'string', 'regex:/^sight:\d+$/'],
             'vote' => ['sometimes', 'nullable', 'in:'.implode(',', AppSharedTrip::VOTES)],
             'going' => ['sometimes', 'boolean'],
+            'comment' => ['sometimes', 'nullable', 'string', 'max:'.AppSharedTrip::MAX_COMMENT],
             'day' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
         ]);
 
@@ -407,10 +435,11 @@ class AppSharingController extends Controller
             abort_unless(collect((array) $trip->sights)->contains(fn ($s) => $s['key'] === $data['key'] && ! ($s['deleted'] ?? false)), 404, 'Sight not in this trip.');
             $current = (array) (((array) $trip->sight_votes)[$device->id][$data['key']] ?? []);
             $changed = false;
-            if (array_key_exists('vote', $data) || array_key_exists('going', $data)) {
+            if (array_key_exists('vote', $data) || array_key_exists('going', $data) || array_key_exists('comment', $data)) {
                 $changed = $trip->vote($device, $data['key'],
                     array_key_exists('vote', $data) ? $data['vote'] : ($current['vote'] ?? null),
-                    array_key_exists('going', $data) ? (bool) $data['going'] : (bool) ($current['going'] ?? false));
+                    array_key_exists('going', $data) ? (bool) $data['going'] : (bool) ($current['going'] ?? false),
+                    array_key_exists('comment', $data) ? $data['comment'] : ($current['comment'] ?? null));
             }
             if (array_key_exists('day', $data)) {
                 $changed = $trip->planDay($data['key'], $data['day']) || $changed;
@@ -459,6 +488,56 @@ class AppSharingController extends Controller
         });
         if ($changed) {
             $this->notifier->sync($trip, $device);
+        }
+
+        return response()->json(['success' => true, 'data' => $this->state($device)]);
+    }
+
+    /** Reiseverlauf: Aufenthaltsorte und Notizen je Tag (alle Teilnehmer). Aenderungen an Ort/Zeiten mit sichtbarem Hinweis. */
+    public function updateItinerary(Request $request, string $id, string $trip): JsonResponse
+    {
+        $device = $this->device($request, $id);
+        $trip = AppSharedTrip::findOrFail($trip);
+        abort_unless($trip->participants()->contains('id', $device->id), 404);
+        $data = $request->validate([
+            'stays' => ['sometimes', 'array', 'max:'.AppSharedTrip::MAX_STAYS * 2],
+            'stays.*.id' => ['required', 'string', 'max:64'],
+            'stays.*.updated_at' => ['required', 'numeric', 'min:0'],
+            'stays.*.deleted' => ['sometimes', 'boolean'],
+            'stays.*.kind' => ['required_unless:stays.*.deleted,true', 'nullable', 'in:'.implode(',', AppSharedTrip::STAY_KINDS)],
+            'stays.*.from' => ['required_unless:stays.*.deleted,true', 'nullable', 'date_format:Y-m-d'],
+            'stays.*.to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:stays.*.from'],
+            'stays.*.name' => ['required_if:stays.*.kind,place', 'nullable', 'string', 'max:120'],
+            'stays.*.country_code' => ['nullable', 'string', 'size:2'],
+            'stays.*.lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'stays.*.lng' => ['nullable', 'numeric', 'between:-180,180'],
+            'stays.*.arrival' => ['nullable', 'date_format:H:i'],
+            'stays.*.departure' => ['nullable', 'date_format:H:i'],
+            'stays.*.note' => ['nullable', 'string', 'max:1000'],
+            'day_notes' => ['sometimes', 'array', 'max:'.AppSharedTrip::MAX_DAY_NOTES * 2],
+            'day_notes.*.date' => ['required', 'date_format:Y-m-d'],
+            'day_notes.*.updated_at' => ['required', 'numeric', 'min:0'],
+            'day_notes.*.deleted' => ['sometimes', 'boolean'],
+            'day_notes.*.note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        [$changed, $moved] = DB::transaction(function () use ($trip, $device, $data) {
+            $trip->refresh();
+            $before = [$trip->stays, $trip->day_notes];
+            $moved = $trip->mergeStays($device, $data['stays'] ?? []);
+            $trip->mergeDayNotes($device, $data['day_notes'] ?? []);
+            $changed = $before !== [$trip->stays, $trip->day_notes];
+            if ($changed) {
+                $trip->save();
+            }
+
+            return [$changed, $moved];
+        });
+        if ($changed) {
+            $this->notifier->sync($trip, $device);
+        }
+        if ($moved !== []) {
+            $this->notifier->itineraryChanged($trip, $device, $moved);
         }
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
@@ -535,6 +614,7 @@ class AppSharingController extends Controller
         return $trip->participants()->map(fn (AppDevice $p) => [
             'share_code' => AppDevice::formatShareCode($p->share_code),
             'name' => $p->publicName(),
+            'has_name' => filled($p->display_name),
             'is_owner' => $p->id === $trip->owner_device_id,
             'is_me' => $p->id === $device->id,
             'list_role' => $list ? $list->roleFor($p) : null,
@@ -643,6 +723,8 @@ class AppSharingController extends Controller
                 'members' => $accepted ? $group->members->sortBy(fn ($m) => [$m->app_device_id !== $group->owner_device_id, $m->created_at])->values()->map(fn (AppGroupMember $m) => [
                     'id' => $m->id,
                     'name' => $m->device?->publicName(),
+                    // Ohne eigenen Namen ist name die App-ID – die App zeigt dann „noch ohne Namen“.
+                    'has_name' => filled($m->device?->display_name),
                     'share_code' => AppDevice::formatShareCode($m->device?->share_code),
                     'status' => $m->status,
                     'is_owner' => $m->app_device_id === $group->owner_device_id,
@@ -671,6 +753,7 @@ class AppSharingController extends Controller
                 $entry['participants'] = $this->participantsApi($trip, $device, $trip->list);
                 $entry['list'] = $this->listApi($trip->list, $trip, $device);
                 $entry['expenses'] = $trip->expensesApi();
+                $entry['itinerary'] = $trip->itineraryApi();
             }
             if ($row?->status === AppSharedTripRecipient::STATUS_DECLINED) {
                 continue;
@@ -696,6 +779,7 @@ class AppSharingController extends Controller
                 'list' => $this->listApi($trip->list, $trip, $device),
                 'sights' => $trip->sightsApi($device),
                 'expenses' => $trip->expensesApi(),
+                'itinerary' => $trip->itineraryApi(),
             ])->values()->all();
 
         return [
