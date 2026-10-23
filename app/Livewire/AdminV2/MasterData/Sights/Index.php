@@ -268,6 +268,12 @@ class Index extends Component
         return $id ? Country::query()->find($id) : null;
     }
 
+    public function openAiFill(): void
+    {
+        unset($this->aiTargets);
+        $this->modal('sights-ai-fill')->show();
+    }
+
     public function startAiFill(): void
     {
         $this->modal('sights-ai-fill')->close();

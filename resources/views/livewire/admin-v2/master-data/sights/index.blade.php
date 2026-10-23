@@ -14,10 +14,10 @@
     <x-adminv2.master-data.list-header section="sights" create-label="Neue Sehenswürdigkeit">
         {{-- KI-Funktionen gelten einem Land – sie erscheinen, sobald genau eines gefiltert ist. --}}
         @if ($aiCountry)
-            <flux:button icon="magnifying-glass" wire:click="openAiFind">Per KI suchen</flux:button>
-            <flux:modal.trigger name="sights-ai-fill">
-                <flux:button icon="sparkles">Mit KI ergänzen</flux:button>
-            </flux:modal.trigger>
+            {{-- Oeffnen ueber den Server statt flux:modal.trigger: die Knoepfe kommen erst mit der Filterauswahl dazu,
+                 ein so eingefuegter Trigger oeffnete den falschen bzw. keinen Dialog. --}}
+            <flux:button wire:key="ai-find-button" icon="magnifying-glass" wire:click="openAiFind">Per KI suchen</flux:button>
+            <flux:button wire:key="ai-fill-button" icon="sparkles" wire:click="openAiFill">Mit KI ergänzen</flux:button>
         @endif
     </x-adminv2.master-data.list-header>
 
@@ -169,7 +169,7 @@
     {{-- Die Dialoge stehen immer in der Seite (nur ihr Inhalt haengt am Land): erscheinen sie erst, nachdem im Filter
          ein Land gewaehlt wurde, werden sie nicht eingebunden und die Knoepfe oeffnen nichts. --}}
     {{-- Mit KI ergaenzen: Regionen, Teilgebiete und wichtige Staedte des Landes --}}
-    <flux:modal name="sights-ai-fill" class="md:w-[32rem]">
+    <flux:modal wire:key="modal-sights-ai-fill" name="sights-ai-fill" class="md:w-[32rem]">
         @if ($aiCountry)
             <div class="flex flex-col gap-5">
                 <div>
@@ -196,7 +196,7 @@
     </flux:modal>
 
     {{-- Per KI suchen: eine bestimmte Sehenswuerdigkeit finden und nach Vorschau anlegen --}}
-    <flux:modal name="sights-ai-find" class="md:w-[34rem]">
+    <flux:modal wire:key="modal-sights-ai-find" name="sights-ai-find" class="md:w-[34rem]">
         @if ($aiCountry)
             <form wire:submit="aiFind" class="flex flex-col gap-5">
                 <div>

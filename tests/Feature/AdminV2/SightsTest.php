@@ -275,6 +275,9 @@ it('ergaenzt ein ganzes Land aus der Liste: Regionen, Teilgebiete und wichtige S
         ->assertSee('Mit KI ergänzen')
         ->assertSee('Per KI suchen');
     expect(array_map('count', $page->get('aiTargets')))->toBe(['region' => 1, 'subregion' => 1, 'city' => 1]);
+    // Jeder Knopf oeffnet seinen eigenen Dialog (auch wenn das Land erst im Filter gewaehlt wurde)
+    $page->call('openAiFill')->assertDispatched('modal-show', name: 'sights-ai-fill');
+    $page->call('openAiFind')->assertDispatched('modal-show', name: 'sights-ai-find');
 
     $page->call('startAiFill')->call('refreshAiFill')
         ->assertSee('KI-Sehenswürdigkeiten für Italien abgeschlossen')
