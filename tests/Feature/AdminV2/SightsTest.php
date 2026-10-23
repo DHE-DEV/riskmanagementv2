@@ -294,6 +294,34 @@ it('ergaenzt ein ganzes Land aus der Liste: Regionen, Teilgebiete und wichtige S
     expect(array_sum(array_map('count', Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])->get('aiTargets'))))->toBe(1);
 });
 
+it('startet Laender-Laeufe parallel – je Land einer – und haelt sie einzeln an', function () {
+    \Illuminate\Support\Facades\Queue::fake();
+    config(['services.openai.key' => 'test-key']);
+    $italy = sightCountry();
+    sightRegion($italy);
+    $spain = sightCountry('ES', ['name_translations' => ['de' => 'Spanien', 'en' => 'Spain']]);
+    sightRegion($spain, 'Katalonien', 'Catalonia');
+
+    Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])->call('startAiFill');
+    // Zweiter Lauf fuer dasselbe Land: abgelehnt
+    Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])->call('startAiFill')
+        ->assertDispatched('adminv2-toast', message: 'Für Italien läuft bereits ein KI-Lauf – andere Länder lassen sich parallel starten.', variant: 'danger');
+    // Anderes Land: laeuft parallel
+    $page = Livewire::test(SightIndex::class)->set('countryIds', [(string) $spain->id])->call('startAiFill');
+
+    $runs = RegionInfoRun::where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)->get();
+    expect($runs)->toHaveCount(2)->and($runs->every->isRunning())->toBeTrue();
+    \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\FillRegionInfoJob::class, 2);
+    $page->assertSee('KI-Sehenswürdigkeiten für Italien läuft')->assertSee('KI-Sehenswürdigkeiten für Spanien läuft');
+
+    // Nur Italien anhalten, Spanien laeuft weiter; danach Italien ausblenden
+    $italyRun = $runs->first(fn ($run) => $run->result['country_id'] === $italy->id);
+    $page->call('cancelAiFill', $italyRun->id)
+        ->assertSee('KI-Sehenswürdigkeiten für Italien angehalten')->assertSee('KI-Sehenswürdigkeiten für Spanien läuft');
+    $page->call('dismissAiFill', $italyRun->id)->assertDontSee('für Italien angehalten');
+    expect(RegionInfoRun::where('status', RegionInfoRun::STATUS_RUNNING)->count())->toBe(1);
+});
+
 it('filtert nach Teilgebiet und Stadt und grenzt „Mit KI ergänzen“ auf die Auswahl ein', function () {
     $italy = sightCountry();
     $liguria = sightRegion($italy);

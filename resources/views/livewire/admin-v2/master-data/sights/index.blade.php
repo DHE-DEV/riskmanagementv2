@@ -5,7 +5,8 @@
     $countryOptions = $this->countryOptions->map(fn ($country) => ['value' => $country->id, 'label' => $country->getName('de'), 'code' => $country->iso_code])->all();
     $regionOptions = $this->regionOptions;
     $aiCountry = $this->aiCountry;
-    $aiRun = $this->aiRun;
+    $aiRuns = $this->aiRuns;
+    $aiRunningForCountry = $aiCountry && $aiRuns->contains(fn ($run) => $run->isRunning() && ($run->result['country_id'] ?? null) === $aiCountry->id);
     $aiTargets = $this->aiTargets;
     $aiTotal = count($aiTargets['region']) + count($aiTargets['subregion']) + count($aiTargets['city']);
 @endphp
@@ -21,30 +22,32 @@
         @endif
     </x-adminv2.master-data.list-header>
 
-    @if ($aiRun)
+    {{-- Alle Laender-Laeufe (je Land einer, mehrere gleichzeitig), laufende zuerst – unabhaengig vom Filter. --}}
+    <div class="flex flex-col gap-3" @if ($aiRuns->contains(fn ($run) => $run->isRunning())) wire:poll.5s="refreshAiFill" @endif>
+    @foreach ($aiRuns as $aiRun)
         @php
             $runRunning = $aiRun->isRunning();
             $failed = (array) $aiRun->failed;
             $processed = $aiRun->done + count($failed);
             $percent = $aiRun->total > 0 ? (int) floor($processed / $aiRun->total * 100) : 0;
-            $runCountry = $this->aiRunCountry();
+            $runCountry = $aiRun->country;
         @endphp
-        <x-adminv2.card :heading="'KI-Sehenswürdigkeiten'.($runCountry ? ' für '.$runCountry->getName('de') : '').($runRunning ? ' läuft' : ($aiRun->status === 'cancelled' ? ' angehalten' : ' abgeschlossen'))">
+        <x-adminv2.card wire:key="ai-run-{{ $aiRun->id }}" :heading="'KI-Sehenswürdigkeiten'.($runCountry ? ' für '.$runCountry->getName('de') : '').($runRunning ? ' läuft' : ($aiRun->status === 'cancelled' ? ' angehalten' : ' abgeschlossen'))">
             <x-slot:actions>
                 @if ($runRunning)
-                    <flux:button size="sm" variant="ghost" icon="stop" wire:click="cancelAiFill">Anhalten</flux:button>
+                    <flux:button size="sm" variant="ghost" icon="stop" wire:click="cancelAiFill({{ $aiRun->id }})">Anhalten</flux:button>
                 @else
-                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="dismissAiFill">Ausblenden</flux:button>
+                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="dismissAiFill({{ $aiRun->id }})">Ausblenden</flux:button>
                 @endif
             </x-slot:actions>
-            <div class="flex flex-col gap-3 text-sm" @if ($runRunning) wire:poll.5s="refreshAiFill" @endif>
+            <div class="flex flex-col gap-3 text-sm">
                 <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                     <div class="h-full rounded-full bg-emerald-600 transition-all" style="width: {{ $percent }}%"></div>
                 </div>
                 <p class="text-zinc-600 dark:text-zinc-400">
                     <span class="tabular-nums font-medium text-zinc-900 dark:text-white">{{ number_format($aiRun->done, 0, ',', '.') }}</span> von {{ number_format($aiRun->total, 0, ',', '.') }} Gebieten bearbeitet, {{ number_format((int) ($aiRun->result['created'] ?? 0), 0, ',', '.') }} Sehenswürdigkeiten angelegt{{ count($failed) ? ', '.count($failed).' fehlgeschlagen' : '' }}.
                     @if ($runRunning)
-                        Regionen, Teilgebiete und Städte werden im Hintergrund nacheinander bearbeitet, je zwei bis drei Minuten – die Seite muss dafür nicht offen bleiben.
+                        Regionen, Teilgebiete und Städte werden im Hintergrund nacheinander bearbeitet, je zwei bis drei Minuten – die Seite muss dafür nicht offen bleiben. Laufen mehrere Länder, kommen sie abwechselnd voran.
                     @endif
                     Neue Einträge sind als „KI-Entwurf, ungeprüft“ gekennzeichnet; Dubletten im Land werden übersprungen.
                 </p>
@@ -60,7 +63,8 @@
                 @endif
             </div>
         </x-adminv2.card>
-    @endif
+    @endforeach
+    </div>
 
     <div class="flex flex-wrap items-center gap-3">
         <div class="min-w-64 flex-1">
@@ -205,8 +209,11 @@
                 </div>
                 <div class="flex justify-end gap-2">
                     <flux:modal.close><flux:button variant="ghost">Abbrechen</flux:button></flux:modal.close>
-                    <flux:button variant="primary" icon="sparkles" wire:click="startAiFill" :disabled="$aiTotal === 0 || ($aiRun && $aiRun->isRunning())">Starten</flux:button>
+                    <flux:button variant="primary" icon="sparkles" wire:click="startAiFill" :disabled="$aiTotal === 0 || $aiRunningForCountry">Starten</flux:button>
                 </div>
+                @if ($aiRunningForCountry)
+                    <flux:text class="text-xs text-amber-600">Für {{ $aiCountry->getName('de') }} läuft bereits ein Lauf. Andere Länder kannst du parallel starten.</flux:text>
+                @endif
             </div>
         @endif
     </flux:modal>

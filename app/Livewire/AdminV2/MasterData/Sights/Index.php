@@ -345,18 +345,31 @@ class Index extends Component
         unset($this->aiTargets);
     }
 
-    /** Laufender bzw. zuletzt beendeter (nicht ausgeblendeter) Laender-Lauf. */
+    /**
+     * Laender-Laeufe, die laufen oder noch nicht ausgeblendet sind – je Land ein eigener Lauf, mehrere gleichzeitig
+     * (FillRegionInfoJob stellt sich nach jedem Stueck hinten an, so kommen alle abwechselnd voran). Laufende zuerst.
+     *
+     * @return Collection<int, RegionInfoRun>
+     */
     #[Computed]
-    public function aiRun(): ?RegionInfoRun
+    public function aiRuns(): Collection
     {
-        return RegionInfoFillRun::current(RegionInfoRun::KIND_SIGHTS_COUNTRY);
+        $runs = RegionInfoRun::query()->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
+            ->where('status', '!=', RegionInfoRun::STATUS_DISMISSED)
+            ->latest('id')->limit(20)->get()
+            ->sortBy(fn (RegionInfoRun $run) => $run->isRunning() ? 0 : 1)->values();
+        $countries = Country::query()->whereIn('id', $runs->pluck('result.country_id')->filter()->unique())->get()->keyBy('id');
+
+        return $runs->each(fn (RegionInfoRun $run) => $run->setRelation('country', $countries->get($run->result['country_id'] ?? 0)));
     }
 
-    public function aiRunCountry(): ?Country
+    /** Laeuft fuer dieses Land schon ein Lauf? (Andere Laender duerfen parallel laufen.) */
+    protected function runningFor(Country $country): ?RegionInfoRun
     {
-        $id = $this->aiRun?->result['country_id'] ?? null;
-
-        return $id ? Country::query()->find($id) : null;
+        return RegionInfoRun::query()->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
+            ->where('status', RegionInfoRun::STATUS_RUNNING)
+            ->where('result->country_id', $country->id)
+            ->first();
     }
 
     public function openAiFill(): void
@@ -373,8 +386,8 @@ class Index extends Component
         if (! $country) {
             return;
         }
-        if (RegionInfoFillRun::isRunning(RegionInfoRun::KIND_SIGHTS_COUNTRY)) {
-            $this->dispatch('adminv2-toast', message: 'Es läuft bereits ein KI-Lauf für Sehenswürdigkeiten.', variant: 'danger');
+        if ($this->runningFor($country)) {
+            $this->dispatch('adminv2-toast', message: 'Für '.$country->getName('de').' läuft bereits ein KI-Lauf – andere Länder lassen sich parallel starten.', variant: 'danger');
 
             return;
         }
@@ -397,8 +410,9 @@ class Index extends Component
             return;
         }
 
-        // Ein frueher beendeter Lauf verschwindet aus der Anzeige.
+        // Ein frueher beendeter Lauf desselben Landes verschwindet aus der Anzeige; die anderer Laender bleiben.
         RegionInfoRun::query()->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)->where('status', '!=', RegionInfoRun::STATUS_RUNNING)
+            ->where('result->country_id', $country->id)
             ->update(['status' => RegionInfoRun::STATUS_DISMISSED]);
         $run = RegionInfoRun::create([
             'kind' => RegionInfoRun::KIND_SIGHTS_COUNTRY,
@@ -411,26 +425,35 @@ class Index extends Component
         ]);
         FillRegionInfoJob::dispatch($run->id);
 
-        unset($this->aiRun);
+        unset($this->aiRuns);
         $this->dispatch('adminv2-toast', message: count($keys).' '.(count($keys) === 1 ? 'Gebiet' : 'Gebiete').' in '.$this->aiScopeLabel.' '.(count($keys) === 1 ? 'wird' : 'werden').' im Hintergrund bearbeitet.');
     }
 
-    public function cancelAiFill(): void
+    /** Einen Lauf anhalten (nur diesen; bereits angelegte Sehenswuerdigkeiten bleiben). */
+    public function cancelAiFill(int $runId): void
     {
-        RegionInfoFillRun::cancel(RegionInfoRun::KIND_SIGHTS_COUNTRY);
-        unset($this->aiRun);
+        RegionInfoFillRun::update($runId, function (RegionInfoRun $run) {
+            if ($run->kind === RegionInfoRun::KIND_SIGHTS_COUNTRY && $run->isRunning()) {
+                $run->status = RegionInfoRun::STATUS_CANCELLED;
+                $run->pending = [];
+                $run->finished_at = now();
+            }
+        });
+        unset($this->aiRuns);
         $this->dispatch('adminv2-toast', message: 'KI-Lauf angehalten. Bereits angelegte Sehenswürdigkeiten bleiben.');
     }
 
-    public function dismissAiFill(): void
+    /** Einen beendeten Lauf aus der Anzeige nehmen. */
+    public function dismissAiFill(int $runId): void
     {
-        RegionInfoFillRun::dismiss(RegionInfoRun::KIND_SIGHTS_COUNTRY);
-        unset($this->aiRun);
+        RegionInfoRun::query()->whereKey($runId)->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
+            ->where('status', '!=', RegionInfoRun::STATUS_RUNNING)->update(['status' => RegionInfoRun::STATUS_DISMISSED]);
+        unset($this->aiRuns);
     }
 
     public function refreshAiFill(): void
     {
-        unset($this->aiRun, $this->rows, $this->aiTargets);
+        unset($this->aiRuns, $this->rows, $this->aiTargets);
     }
 
     // MARK: Per KI suchen
