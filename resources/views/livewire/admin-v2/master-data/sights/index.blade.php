@@ -166,9 +166,11 @@
 
     <x-adminv2.master-data.delete-modal :pending="$this->pendingDelete" />
 
-    @if ($aiCountry)
-        {{-- Mit KI ergaenzen: Regionen, Teilgebiete und wichtige Staedte des Landes --}}
-        <flux:modal name="sights-ai-fill" class="md:w-[32rem]">
+    {{-- Die Dialoge stehen immer in der Seite (nur ihr Inhalt haengt am Land): erscheinen sie erst, nachdem im Filter
+         ein Land gewaehlt wurde, werden sie nicht eingebunden und die Knoepfe oeffnen nichts. --}}
+    {{-- Mit KI ergaenzen: Regionen, Teilgebiete und wichtige Staedte des Landes --}}
+    <flux:modal name="sights-ai-fill" class="md:w-[32rem]">
+        @if ($aiCountry)
             <div class="flex flex-col gap-5">
                 <div>
                     <flux:heading size="lg">Sehenswürdigkeiten für {{ $aiCountry->getName('de') }} ergänzen</flux:heading>
@@ -190,10 +192,12 @@
                     <flux:button variant="primary" icon="sparkles" wire:click="startAiFill" :disabled="$aiTotal === 0 || ($aiRun && $aiRun->isRunning())">Starten</flux:button>
                 </div>
             </div>
-        </flux:modal>
+        @endif
+    </flux:modal>
 
-        {{-- Per KI suchen: eine bestimmte Sehenswuerdigkeit finden und nach Vorschau anlegen --}}
-        <flux:modal name="sights-ai-find" class="md:w-[34rem]">
+    {{-- Per KI suchen: eine bestimmte Sehenswuerdigkeit finden und nach Vorschau anlegen --}}
+    <flux:modal name="sights-ai-find" class="md:w-[34rem]">
+        @if ($aiCountry)
             <form wire:submit="aiFind" class="flex flex-col gap-5">
                 <div>
                     <flux:heading size="lg">Sehenswürdigkeit per KI suchen</flux:heading>
@@ -244,6 +248,6 @@
                     @endif
                 </div>
             @endif
-        </flux:modal>
-    @endif
+        @endif
+    </flux:modal>
 </div>
