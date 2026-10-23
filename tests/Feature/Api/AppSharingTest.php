@@ -408,3 +408,27 @@ it('zeigt spaeter eingetragene Namen in Gruppen und Reisen und laedt die anderen
     asDevice($this, $token, $ben)->putJson($base($ben), ['display_name' => 'Ben'])->assertOk();
     Queue::assertNotPushed(\App\Jobs\Push\SendSharingSync::class);
 });
+
+it('teilt die Reiseart und nennt die Reise in Einladungs-Pushs', function () {
+    $token = sharingToken();
+    $anna = sharingDevice($this, $token, 'Anna');
+    $ben = sharingDevice($this, $token, 'Ben');
+    $base = fn ($d) => '/api/v1/devices/'.$d['id'];
+    asDevice($this, $token, $anna)->putJson($base($anna).'/trips/trip-1', tripPayload(['travel_type' => 'cruise', 'codes' => [$ben['share_code']]]))->assertOk();
+    $trip = AppSharedTrip::first();
+    expect($trip->travel_type)->toBe('cruise')
+        ->and(AppPushMessage::where('data->event', 'trip_invite')->sole()->data)->toMatchArray(['trip' => $trip->id]);
+    expect(asDevice($this, $token, $ben)->getJson($base($ben).'/sharing')->json('data.trip_invitations.0.travel_type'))->toBe('cruise');
+
+    // Aeltere App ohne Reiseart: bleibt; ungueltige Reiseart abgelehnt
+    asDevice($this, $token, $anna)->putJson($base($anna).'/trips/trip-1', tripPayload())->assertOk();
+    expect($trip->fresh()->travel_type)->toBe('cruise');
+    asDevice($this, $token, $anna)->putJson($base($anna).'/trips/trip-1', tripPayload(['travel_type' => 'zug']))->assertUnprocessable();
+
+    // Neue Reise in einer Gruppe: Push mit der Reise
+    $group = asDevice($this, $token, $anna)->postJson($base($anna).'/groups', ['name' => 'Familie'])->json('data.id');
+    asDevice($this, $token, $anna)->postJson($base($anna)."/groups/{$group}/members", ['codes' => [$ben['share_code']]])->assertOk();
+    asDevice($this, $token, $ben)->postJson($base($ben)."/groups/{$group}/accept")->assertOk();
+    asDevice($this, $token, $anna)->putJson($base($anna).'/trips/trip-2', tripPayload(['name' => 'Kanaren', 'group_ids' => [$group]]))->assertOk();
+    expect(AppPushMessage::where('data->event', 'group_trip')->sole()->data)->toMatchArray(['trip' => AppSharedTrip::where('client_trip_id', 'trip-2')->value('id')]);
+});

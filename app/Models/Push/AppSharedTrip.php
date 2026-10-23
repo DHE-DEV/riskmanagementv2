@@ -19,9 +19,12 @@ class AppSharedTrip extends Model
 
     public const MAX_RECIPIENTS = 50;
 
+    /** Reisearten wie in der App (TravelType). */
+    public const TRAVEL_TYPES = ['package', 'separate', 'roundTrip', 'cruise'];
+
     public const MAX_SIGHTS = 300;
 
-    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'description', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'expenses', 'stays', 'day_notes', 'revision'];
+    protected $fillable = ['owner_device_id', 'client_trip_id', 'name', 'description', 'travel_type', 'start_date', 'end_date', 'country_codes', 'tid', 'sights', 'sight_visits', 'sight_votes', 'expenses', 'stays', 'day_notes', 'revision'];
 
     protected function casts(): array
     {
@@ -427,6 +430,7 @@ class AppSharedTrip extends Model
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
+            'travel_type' => $this->travel_type,
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
             'country_codes' => array_values((array) $this->country_codes),

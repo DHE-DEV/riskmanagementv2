@@ -17,9 +17,10 @@ class SharingNotifier
 {
     public function __construct(private PushDispatcher $dispatcher) {}
 
-    public function tripInvite(AppDevice $from, string $tripName, array $deviceIds): void
+    public function tripInvite(AppDevice $from, AppSharedTrip $trip, array $deviceIds): void
     {
         $name = $from->publicName();
+        $tripName = $trip->name;
         $this->send($deviceIds, 'trip_invite', [
             'de' => 'Einladung zu einer Reise',
             'en' => 'Trip invitation',
@@ -28,12 +29,13 @@ class SharingNotifier
             'de' => "{$name} möchte die Reise „{$tripName}“ mit dir teilen.",
             'en' => "{$name} wants to share the trip “{$tripName}” with you.",
             'nl' => "{$name} wil de reis ‘{$tripName}’ met je delen.",
-        ]);
+        ], ['trip' => $trip->id]);
     }
 
-    public function groupTrip(AppDevice $from, string $tripName, string $groupName, array $deviceIds): void
+    public function groupTrip(AppDevice $from, AppSharedTrip $trip, string $groupName, array $deviceIds): void
     {
         $name = $from->publicName();
+        $tripName = $trip->name;
         $this->send($deviceIds, 'group_trip', [
             'de' => $groupName,
             'en' => $groupName,
@@ -42,7 +44,7 @@ class SharingNotifier
             'de' => "{$name} hat die Reise „{$tripName}“ mit der Gruppe geteilt.",
             'en' => "{$name} shared the trip “{$tripName}” with the group.",
             'nl' => "{$name} heeft de reis ‘{$tripName}’ met de groep gedeeld.",
-        ]);
+        ], ['trip' => $trip->id]);
     }
 
     public function groupInvite(AppDevice $from, string $groupName, array $deviceIds): void
@@ -137,7 +139,7 @@ class SharingNotifier
         $this->send($ids, 'itinerary', $title, $body, ['trip' => $trip->id]);
     }
 
-    public const TRIP_CHANGES = ['name', 'description', 'dates', 'countries'];
+    public const TRIP_CHANGES = ['name', 'description', 'travel_type', 'dates', 'countries'];
 
     /**
      * Sichtbarer Hinweis an die anderen Teilnehmer, wenn der Ersteller das moechte: was sich an der Reise geaendert hat
@@ -154,9 +156,9 @@ class SharingNotifier
             return 0;
         }
         $labels = [
-            'de' => ['name' => 'Name', 'description' => 'Beschreibung', 'dates' => 'Zeitraum', 'countries' => 'Reiseländer'],
-            'en' => ['name' => 'name', 'description' => 'description', 'dates' => 'dates', 'countries' => 'countries'],
-            'nl' => ['name' => 'naam', 'description' => 'beschrijving', 'dates' => 'periode', 'countries' => 'landen'],
+            'de' => ['name' => 'Name', 'description' => 'Beschreibung', 'travel_type' => 'Reiseart', 'dates' => 'Zeitraum', 'countries' => 'Reiseländer'],
+            'en' => ['name' => 'name', 'description' => 'description', 'travel_type' => 'type of trip', 'dates' => 'dates', 'countries' => 'countries'],
+            'nl' => ['name' => 'naam', 'description' => 'beschrijving', 'travel_type' => 'reistype', 'dates' => 'periode', 'countries' => 'landen'],
         ];
         $and = ['de' => 'und', 'en' => 'and', 'nl' => 'en'];
         $list = function (string $lang) use ($changes, $labels, $and): string {

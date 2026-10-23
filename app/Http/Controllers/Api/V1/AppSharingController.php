@@ -30,7 +30,7 @@ use Illuminate\Validation\ValidationException;
  *   DELETE groups/{group}/members/{member}  entfernen (Ersteller) bzw. selbst verlassen
  *   POST   groups/{group}/accept|decline    Einladung annehmen/ablehnen
  *   PUT    trips/{clientTripId}             eigene Reise teilen bzw. aktualisieren {name, description?, …, codes?, group_ids?}
- *   POST   trips/{clientTripId}/notify      Mitreisende ueber Aenderungen benachrichtigen {changes: [name|description|dates|countries]}
+ *   POST   trips/{clientTripId}/notify      Mitreisende ueber Aenderungen benachrichtigen {changes: [name|description|travel_type|dates|countries]}
  *                                           (Ersteller, nur Reisen mit Gruppe)
  *   DELETE trips/{clientTripId}             Freigabe aufheben
  *   POST   shared-trips/{trip}/accept|decline  empfangene Reise annehmen / ablehnen bzw. ausblenden
@@ -174,6 +174,7 @@ class AppSharingController extends Controller
             'name' => ['required', 'string', 'max:120'],
             // Aeltere Apps schicken keine Beschreibung – dann bleibt die bisherige.
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'travel_type' => ['sometimes', 'nullable', 'in:'.implode(',', AppSharedTrip::TRAVEL_TYPES)],
             'start_date' => ['nullable', 'date_format:Y-m-d'],
             'end_date' => ['nullable', 'date_format:Y-m-d'],
             'country_codes' => ['present', 'array', 'max:40'],
@@ -206,8 +207,11 @@ class AppSharingController extends Controller
             if (array_key_exists('description', $data)) {
                 $fields['description'] = filled($data['description']) ? trim($data['description']) : null;
             }
+            if (array_key_exists('travel_type', $data)) {
+                $fields['travel_type'] = $data['travel_type'];
+            }
             $trip = AppSharedTrip::firstOrNew(['owner_device_id' => $device->id, 'client_trip_id' => $clientTripId]);
-            $snapshot = fn () => [$trip->name, $trip->description, $trip->start_date?->toDateString(), $trip->end_date?->toDateString(), $trip->country_codes, $trip->tid];
+            $snapshot = fn () => [$trip->name, $trip->description, $trip->travel_type, $trip->start_date?->toDateString(), $trip->end_date?->toDateString(), $trip->country_codes, $trip->tid];
             $before = $trip->exists ? $snapshot() : null;
             $trip->fill($fields);
             if ($before !== null && $before !== $snapshot()) {
@@ -238,10 +242,10 @@ class AppSharingController extends Controller
             return [$trip, $invited, $newGroups];
         });
 
-        $this->notifier->tripInvite($device, $trip->name, $invited);
+        $this->notifier->tripInvite($device, $trip, $invited);
         $this->notifier->sync($trip, $device);
         foreach ($newGroups as $group) {
-            $this->notifier->groupTrip($device, $trip->name, $group->name, array_diff($group->acceptedDeviceIds(), [$device->id]));
+            $this->notifier->groupTrip($device, $trip, $group->name, array_diff($group->acceptedDeviceIds(), [$device->id]));
         }
 
         return response()->json(['success' => true, 'data' => $this->state($device)]);
@@ -255,7 +259,7 @@ class AppSharingController extends Controller
     {
         $device = $this->device($request, $id);
         $data = $request->validate([
-            'changes' => ['required', 'array', 'min:1', 'max:4'],
+            'changes' => ['required', 'array', 'min:1', 'max:5'],
             'changes.*' => ['string', 'in:'.implode(',', SharingNotifier::TRIP_CHANGES)],
         ]);
         $trip = AppSharedTrip::where('owner_device_id', $device->id)->where('client_trip_id', $clientTripId)->firstOrFail();
