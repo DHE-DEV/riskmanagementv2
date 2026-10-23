@@ -81,13 +81,25 @@
                 </flux:select>
             </div>
         @endif
+        {{-- Teilgebiete und Staedte: sobald genau ein Land gewaehlt ist (eingegrenzt durch Region bzw. Teilgebiet). --}}
         @if ($this->subregionOptions->isNotEmpty())
-            <div class="w-56">
+            <div class="w-64">
                 <flux:select wire:model.live="subregion" aria-label="Teilgebiet">
                     <flux:select.option value="">Alle Teilgebiete</flux:select.option>
                     <flux:select.option value="none">Ohne Teilgebiet</flux:select.option>
                     @foreach ($this->subregionOptions as $option)
-                        <flux:select.option value="{{ $option->id }}">{{ $option->getName('de') }}</flux:select.option>
+                        <flux:select.option value="{{ $option['id'] }}">{{ $option['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+        @endif
+        @if ($this->cityOptions->isNotEmpty())
+            <div class="w-56">
+                <flux:select wire:model.live="city" aria-label="Stadt">
+                    <flux:select.option value="">Alle Städte</flux:select.option>
+                    <flux:select.option value="none">Ohne Stadt</flux:select.option>
+                    @foreach ($this->cityOptions as $option)
+                        <flux:select.option value="{{ $option['id'] }}">{{ $option['label'] }}</flux:select.option>
                     @endforeach
                 </flux:select>
             </div>
@@ -135,7 +147,7 @@
             <x-adminv2.master-data.empty :filtered="$this->hasFilters()" noun="Sehenswürdigkeiten" />
         </x-adminv2.card>
     @else
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, region, subregion, category, highlight, status, coordinates, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, countryIds, region, subregion, city, category, highlight, status, coordinates, trashed, sort, toggleDirection, resetFilters, gotoPage, nextPage, previousPage">
             @foreach ($rows as $sight)
                 @php $status = SightInfo::status($sight->info); @endphp
                 <x-adminv2.master-data.record-card
@@ -173,7 +185,10 @@
         @if ($aiCountry)
             <div class="flex flex-col gap-5">
                 <div>
-                    <flux:heading size="lg">Sehenswürdigkeiten für {{ $aiCountry->getName('de') }} ergänzen</flux:heading>
+                    <flux:heading size="lg">Sehenswürdigkeiten für {{ $this->aiScopeLabel }} ergänzen</flux:heading>
+                    @if ($this->aiScopeLabel !== $aiCountry->getName('de'))
+                        <flux:text class="mt-1 text-xs">Nur die Auswahl in den Filtern – für das ganze Land Region, Teilgebiet und Stadt zurücksetzen.</flux:text>
+                    @endif
                     <flux:text class="mt-2">Die KI schlägt je Gebiet die wichtigsten Sehenswürdigkeiten und Unternehmungen vor – mit Kategorie, Highlights, Adresse, Besuchsdauer, Kurzbeschreibung und Beschreibung in allen Sprachen. Koordinaten werden mit OpenStreetMap abgeglichen. Alles wird als ungeprüfter KI-Entwurf angelegt, Dubletten im Land übersprungen.</flux:text>
                 </div>
                 <div class="flex flex-col gap-3">
@@ -203,7 +218,7 @@
                     <flux:heading size="lg">Sehenswürdigkeit per KI suchen</flux:heading>
                     <flux:text class="mt-2">Fehlt etwas in {{ $aiCountry->getName('de') }}? Die KI sucht genau diese Sehenswürdigkeit und füllt alle Details aus. Angelegt wird erst nach deiner Bestätigung – als ungeprüfter KI-Entwurf.</flux:text>
                 </div>
-                <flux:input wire:model="aiQuery" label="Name" placeholder="z. B. Loro Parque, Masca-Schlucht, Mercado de la Boqueria" autofocus />
+                <flux:input wire:model="aiQuery" label="Name" placeholder="z. B. Loro Parque, Masca-Schlucht, Mercado de la Boqueria" autocomplete="off" data-1p-ignore autofocus />
                 <div class="flex justify-end">
                     <flux:button type="submit" variant="primary" icon="sparkles">
                         <span wire:loading.remove wire:target="aiFind">Suchen</span>

@@ -52,9 +52,13 @@ class Index extends Component
     #[Url(except: '')]
     public string $region = '';
 
-    /** Teilgebiet der gewaehlten Region; 'none' = ohne Teilgebiet */
+    /** Teilgebiet (der gewaehlten Region bzw. des Landes); 'none' = ohne Teilgebiet */
     #[Url(except: '')]
     public string $subregion = '';
+
+    /** Stadt (des Landes, eingegrenzt durch Region bzw. Teilgebiet); 'none' = ohne Stadt */
+    #[Url(except: '')]
+    public string $city = '';
 
     #[Url(except: '')]
     public string $category = '';
@@ -98,27 +102,80 @@ class Index extends Component
 
     protected function filterProperties(): array
     {
-        return ['countryIds', 'region', 'subregion', 'category', 'highlight', 'status', 'coordinates'];
+        return ['countryIds', 'region', 'subregion', 'city', 'category', 'highlight', 'status', 'coordinates'];
     }
 
     public function updatedCountryIds(): void
     {
         $this->region = '';
         $this->subregion = '';
+        $this->city = '';
     }
 
     public function updatedRegion(): void
     {
         $this->subregion = '';
+        $this->city = '';
+    }
+
+    public function updatedSubregion(): void
+    {
+        $this->city = '';
+        // Teilgebiet ohne Region gewaehlt: Region mitsetzen, damit beide Filter zusammenpassen.
+        if (ctype_digit($this->subregion) && $this->region === '') {
+            $this->region = (string) (Subregion::query()->whereKey((int) $this->subregion)->value('region_id') ?? '');
+        }
+    }
+
+    /** Das gefilterte Land, wenn genau eines gewaehlt ist. */
+    protected function singleCountryId(): ?int
+    {
+        $ids = array_values(array_filter(array_map('intval', $this->countryIds)));
+
+        return count($ids) === 1 ? $ids[0] : null;
     }
 
     /**
-     * Teilgebiete der gewaehlten Region (Inseln, Reisegebiete).
+     * Teilgebiete (Inseln, Reisegebiete): der gewaehlten Region, sonst aller Regionen des Landes ("Region › Teilgebiet").
+     *
+     * @return Collection<int, array{id: int, label: string}>
      */
     #[Computed]
     public function subregionOptions(): Collection
     {
-        return ctype_digit($this->region) ? Subregion::query()->where('region_id', (int) $this->region)->orderBy('sort_order')->get(['id', 'name_translations']) : collect();
+        if (ctype_digit($this->region)) {
+            return Subregion::query()->where('region_id', (int) $this->region)->orderBy('sort_order')->get(['id', 'name_translations'])
+                ->map(fn (Subregion $s) => ['id' => $s->id, 'label' => $s->getName('de')]);
+        }
+        if (! ($countryId = $this->singleCountryId())) {
+            return collect();
+        }
+
+        return Subregion::query()->with('region:id,name_translations')
+            ->whereIn('region_id', Region::query()->where('country_id', $countryId)->select('id'))
+            ->get(['id', 'region_id', 'name_translations'])
+            ->map(fn (Subregion $s) => ['id' => $s->id, 'label' => ($s->region?->getName('de') ? $s->region->getName('de').' › ' : '').$s->getName('de')])
+            ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)->values();
+    }
+
+    /**
+     * Staedte des Landes, eingegrenzt durch gewaehlte Region bzw. Teilgebiet.
+     *
+     * @return Collection<int, array{id: int, label: string}>
+     */
+    #[Computed]
+    public function cityOptions(): Collection
+    {
+        if (! ($countryId = $this->singleCountryId())) {
+            return collect();
+        }
+
+        return City::query()->where('country_id', $countryId)
+            ->when(ctype_digit($this->region), fn ($q) => $q->where('region_id', (int) $this->region))
+            ->when(ctype_digit($this->subregion), fn ($q) => $q->where('subregion_id', (int) $this->subregion))
+            ->get(['id', 'name_translations'])
+            ->map(fn (City $c) => ['id' => $c->id, 'label' => $c->getName('de')])
+            ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)->values();
     }
 
     #[Computed]
@@ -175,6 +232,12 @@ class Index extends Component
             $query->where('subregion_id', (int) $this->subregion);
         }
 
+        if ($this->city === 'none') {
+            $query->whereNull('city_id');
+        } elseif ($this->city !== '' && $this->cityOptions->contains('id', (int) $this->city)) {
+            $query->where('city_id', (int) $this->city);
+        }
+
         if (isset(SightInfo::CATEGORIES[$this->category])) {
             $query->where('category', $this->category);
         }
@@ -226,17 +289,45 @@ class Index extends Component
         if (! $country) {
             return ['region' => [], 'subregion' => [], 'city' => []];
         }
-        $regionIds = Region::query()->where('country_id', $country->id)->pluck('id');
-        $regions = Region::query()->whereIn('id', $regionIds)->when(! $this->aiAll, fn ($q) => $q->whereDoesntHave('sights'))->orderBy('id')->pluck('id')->all();
-        $subregions = ! $this->aiSubregions ? [] : Subregion::query()->whereIn('region_id', $regionIds)
+        // Auswahl in den Filtern grenzt ein: eine Stadt → nur sie; ein Teilgebiet → es und seine Staedte;
+        // eine Region → sie, ihre Teilgebiete und Staedte; sonst das ganze Land.
+        $regionId = ctype_digit($this->region) ? (int) $this->region : null;
+        $subregionId = ctype_digit($this->subregion) ? (int) $this->subregion : null;
+        $cityId = ctype_digit($this->city) ? (int) $this->city : null;
+        $regionIds = $regionId ? collect([$regionId]) : Region::query()->where('country_id', $country->id)->pluck('id');
+
+        if ($cityId) {
+            $cities = City::query()->whereKey($cityId)->where('country_id', $country->id)->whereNotNull('region_id')
+                ->when(! $this->aiAll, fn ($q) => $q->whereNotIn('id', Sight::query()->whereNotNull('city_id')->select('city_id')))->pluck('id')->all();
+
+            return ['region' => [], 'subregion' => [], 'city' => $cities];
+        }
+
+        $regions = $subregionId ? [] : Region::query()->whereIn('id', $regionIds)->where('country_id', $country->id)
+            ->when(! $this->aiAll, fn ($q) => $q->whereDoesntHave('sights'))->orderBy('id')->pluck('id')->all();
+        $subregions = ! $this->aiSubregions && ! $subregionId ? [] : Subregion::query()->whereIn('region_id', $regionIds)
+            ->when($subregionId, fn ($q) => $q->whereKey($subregionId))
             ->when(! $this->aiAll, fn ($q) => $q->whereNotIn('id', Sight::query()->whereNotNull('subregion_id')->select('subregion_id')))
             ->orderBy('region_id')->orderBy('sort_order')->pluck('id')->all();
-        $cities = ! $this->aiCities ? [] : City::query()->where('country_id', $country->id)->whereNotNull('region_id')
+        $cities = ! $this->aiCities ? [] : City::query()->where('country_id', $country->id)->whereIn('region_id', $regionIds)
+            ->when($subregionId, fn ($q) => $q->where('subregion_id', $subregionId))
             ->where(fn ($q) => $q->where('is_capital', true)->orWhere('is_regional_capital', true)->orWhere('is_major', true))
             ->when(! $this->aiAll, fn ($q) => $q->whereNotIn('id', Sight::query()->whereNotNull('city_id')->select('city_id')))
             ->orderByDesc('population')->pluck('id')->all();
 
         return ['region' => $regions, 'subregion' => $subregions, 'city' => $cities];
+    }
+
+    /** Was „Mit KI ergänzen“ bearbeitet: Stadt, Teilgebiet, Region oder das Land (fuer Dialog und Hinweis). */
+    #[Computed]
+    public function aiScopeLabel(): string
+    {
+        return match (true) {
+            ctype_digit($this->city) => (string) City::query()->find((int) $this->city)?->getName('de'),
+            ctype_digit($this->subregion) => (string) Subregion::query()->find((int) $this->subregion)?->getName('de'),
+            ctype_digit($this->region) => (string) Region::query()->find((int) $this->region)?->getName('de'),
+            default => (string) $this->aiCountry?->getName('de'),
+        };
     }
 
     public function updatedAiAll(): void
@@ -321,7 +412,7 @@ class Index extends Component
         FillRegionInfoJob::dispatch($run->id);
 
         unset($this->aiRun);
-        $this->dispatch('adminv2-toast', message: count($keys).' Gebiete in '.$country->getName('de').' werden im Hintergrund bearbeitet.');
+        $this->dispatch('adminv2-toast', message: count($keys).' '.(count($keys) === 1 ? 'Gebiet' : 'Gebiete').' in '.$this->aiScopeLabel.' '.(count($keys) === 1 ? 'wird' : 'werden').' im Hintergrund bearbeitet.');
     }
 
     public function cancelAiFill(): void

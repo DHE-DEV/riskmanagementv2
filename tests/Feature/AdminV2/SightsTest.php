@@ -294,6 +294,35 @@ it('ergaenzt ein ganzes Land aus der Liste: Regionen, Teilgebiete und wichtige S
     expect(array_sum(array_map('count', Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])->get('aiTargets'))))->toBe(1);
 });
 
+it('filtert nach Teilgebiet und Stadt und grenzt „Mit KI ergänzen“ auf die Auswahl ein', function () {
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $tuscany = sightRegion($italy, 'Toskana', 'Tuscany');
+    $levante = \App\Models\Subregion::create(['region_id' => $liguria->id, 'country_id' => $italy->id, 'kind' => 'area', 'name_translations' => ['de' => 'Riviera di Levante', 'en' => 'Riviera di Levante'], 'code' => 'RL']);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    $genoa->update(['is_regional_capital' => true, 'subregion_id' => $levante->id]);
+    $florence = sightCity($italy, $tuscany, 'Florenz', 'Florence');
+    $florence->update(['is_regional_capital' => true]);
+    sight($italy, 'Aquarium Genua', ['region_id' => $liguria->id, 'subregion_id' => $levante->id, 'city_id' => $genoa->id]);
+    sight($italy, 'Uffizien', ['region_id' => $tuscany->id, 'city_id' => $florence->id]);
+
+    // Teilgebiete und Staedte schon mit dem Land waehlbar ("Region › Teilgebiet")
+    $page = Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])
+        ->assertSee('Ligurien › Riviera di Levante')->assertSee('Florenz');
+
+    $page->set('city', (string) $florence->id)->assertSee('Uffizien')->assertDontSee('Aquarium Genua');
+    expect($page->get('aiScopeLabel'))->toBe('Florenz');
+    $page->set('aiAll', true);
+    expect($page->get('aiTargets'))->toBe(['region' => [], 'subregion' => [], 'city' => [$florence->id]]);
+
+    // Teilgebiet ohne Region gewaehlt: Region wird mitgesetzt, KI nur fuer das Teilgebiet und seine Staedte
+    $page->set('city', '')->set('region', '')->set('subregion', (string) $levante->id)
+        ->assertSet('region', (string) $liguria->id)
+        ->assertSee('Aquarium Genua')->assertDontSee('Uffizien');
+    expect($page->get('aiTargets'))->toBe(['region' => [], 'subregion' => [$levante->id], 'city' => [$genoa->id]])
+        ->and($page->get('aiScopeLabel'))->toBe('Riviera di Levante');
+});
+
 it('sucht eine bestimmte Sehenswuerdigkeit per KI und legt sie nach Vorschau an', function () {
     $italy = sightCountry();
     $liguria = sightRegion($italy);
