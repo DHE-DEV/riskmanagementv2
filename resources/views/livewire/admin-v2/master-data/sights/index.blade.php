@@ -72,7 +72,7 @@
         {{-- Regionen gehoeren zu einem Land – der Filter erscheint, sobald genau eines gewaehlt ist. --}}
         @if ($regionOptions->isNotEmpty())
             <div class="w-56">
-                <flux:select wire:model.live="region" aria-label="Region">
+                <flux:select wire:model.live="region" variant="listbox" searchable placeholder="Alle Regionen" aria-label="Region">
                     <flux:select.option value="">Alle Regionen</flux:select.option>
                     <flux:select.option value="none">Ohne Region</flux:select.option>
                     @foreach ($regionOptions as $option)
@@ -81,10 +81,11 @@
                 </flux:select>
             </div>
         @endif
-        {{-- Teilgebiete und Staedte: sobald genau ein Land gewaehlt ist (eingegrenzt durch Region bzw. Teilgebiet). --}}
+        {{-- Teilgebiete und Staedte: sobald genau ein Land gewaehlt ist (eingegrenzt durch Region bzw. Teilgebiet).
+             Region, Teilgebiet, Stadt und Kategorie sind durchsuchbar (Flux Pro: listbox mit Suche). --}}
         @if ($this->subregionOptions->isNotEmpty())
             <div class="w-64">
-                <flux:select wire:model.live="subregion" aria-label="Teilgebiet">
+                <flux:select wire:model.live="subregion" variant="listbox" searchable placeholder="Alle Teilgebiete" aria-label="Teilgebiet">
                     <flux:select.option value="">Alle Teilgebiete</flux:select.option>
                     <flux:select.option value="none">Ohne Teilgebiet</flux:select.option>
                     @foreach ($this->subregionOptions as $option)
@@ -95,7 +96,7 @@
         @endif
         @if ($this->cityOptions->isNotEmpty())
             <div class="w-56">
-                <flux:select wire:model.live="city" aria-label="Stadt">
+                <flux:select wire:model.live="city" variant="listbox" searchable placeholder="Alle Städte" aria-label="Stadt">
                     <flux:select.option value="">Alle Städte</flux:select.option>
                     <flux:select.option value="none">Ohne Stadt</flux:select.option>
                     @foreach ($this->cityOptions as $option)
@@ -105,7 +106,7 @@
             </div>
         @endif
         <div class="w-60">
-            <flux:select wire:model.live="category" aria-label="Kategorie">
+            <flux:select wire:model.live="category" variant="listbox" searchable placeholder="Alle Kategorien" aria-label="Kategorie">
                 <flux:select.option value="">Alle Kategorien</flux:select.option>
                 @foreach (SightInfo::CATEGORIES as $key => [$label])
                     <flux:select.option value="{{ $key }}">{{ $label }}</flux:select.option>
