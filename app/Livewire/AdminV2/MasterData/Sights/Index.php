@@ -557,7 +557,115 @@ class Index extends Component
 
     public function refreshAiFill(): void
     {
-        unset($this->aiRuns, $this->aiFailedLabels, $this->rows, $this->aiTargets);
+        unset($this->aiRuns, $this->aiFailedLabels, $this->rows, $this->aiTargets, $this->aiGaps);
+    }
+
+    // MARK: Luecken
+
+    /**
+     * Gebiete des gefilterten Landes ohne Sehenswuerdigkeiten – dieselben Kriterien wie „Mit KI ergänzen“ (Regionen,
+     * Teilgebiete, wichtige Staedte), je Region gruppiert; nur Regionen, in denen etwas fehlt.
+     *
+     * @return Collection<int, array{region: Region, empty: bool, subregions: Collection<int, Subregion>, cities: Collection<int, City>}>
+     */
+    #[Computed]
+    public function aiGaps(): Collection
+    {
+        $country = $this->aiCountry;
+        if (! $country) {
+            return collect();
+        }
+
+        $regions = Region::query()->where('country_id', $country->id)->withCount('sights')->get(['id', 'country_id', 'name_translations'])
+            ->sortBy(fn (Region $region) => $region->getName('de'), SORT_NATURAL | SORT_FLAG_CASE);
+        $subregions = Subregion::query()->whereIn('region_id', $regions->pluck('id'))->whereDoesntHave('sights')
+            ->orderBy('sort_order')->get(['id', 'region_id', 'name_translations'])->groupBy('region_id');
+        $cities = City::query()->where('country_id', $country->id)->whereIn('region_id', $regions->pluck('id'))
+            ->where(fn ($q) => $q->where('is_capital', true)->orWhere('is_regional_capital', true)->orWhere('is_major', true))
+            ->whereDoesntHave('sights')
+            ->get(['id', 'region_id', 'name_translations'])
+            ->sortBy(fn (City $city) => $city->getName('de'), SORT_NATURAL | SORT_FLAG_CASE)->groupBy('region_id');
+
+        return $regions->map(fn (Region $region) => [
+            'region' => $region,
+            'empty' => $region->sights_count === 0,
+            'subregions' => $subregions->get($region->id, collect()),
+            'cities' => $cities->get($region->id, collect())->values(),
+        ])->filter(fn ($gap) => $gap['empty'] || $gap['subregions']->isNotEmpty() || $gap['cities']->isNotEmpty())->values();
+    }
+
+    /** Die Liste auf ein Gebiet ("region:5", "subregion:3", "city:9") filtern. */
+    public function filterGap(string $key): void
+    {
+        [$place] = FillRegionInfoJob::places([$key]);
+        $place = $place->first();
+        if (! $place) {
+            return;
+        }
+
+        $this->region = (string) ($place instanceof Region ? $place->id : $place->region_id);
+        $this->subregion = $place instanceof Subregion ? (string) $place->id : '';
+        $this->city = $place instanceof City ? (string) $place->id : '';
+        $this->resetPage();
+    }
+
+    /**
+     * Sehenswuerdigkeiten fuer genau ein Gebiet per KI anlegen. Es kommt in den sichtbaren Lauf des Landes (ein
+     * beendeter laeuft dafuer wieder an); gibt es keinen, entsteht ein neuer.
+     */
+    public function fillGap(string $key): void
+    {
+        $country = $this->aiCountry;
+        [$place] = FillRegionInfoJob::places([$key]);
+        $place = $place->first();
+        if (! $country || ! $place || ($place instanceof Region ? $place->country_id : ($place->region?->country_id ?? $place->country_id)) !== $country->id) {
+            return;
+        }
+        if (blank(AiSettings::apiKey())) {
+            $this->dispatch('adminv2-toast', message: 'Kein OpenAI-Schlüssel hinterlegt (System > KI).', variant: 'danger');
+
+            return;
+        }
+
+        $key = SightGenerator::key($place);
+        $visible = RegionInfoRun::query()->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
+            ->where('status', '!=', RegionInfoRun::STATUS_DISMISSED)
+            ->where('result->country_id', $country->id)
+            ->latest('id')->first();
+
+        $restart = false;
+        if ($visible) {
+            RegionInfoFillRun::update($visible->id, function (RegionInfoRun $run) use ($key, &$restart) {
+                if (in_array($key, (array) $run->pending, true)) {
+                    return;
+                }
+                $run->pending = array_merge((array) $run->pending, [$key]);
+                $run->total++;
+                if (! $run->isRunning()) {
+                    $run->status = RegionInfoRun::STATUS_RUNNING;
+                    $run->finished_at = null;
+                    $restart = true;
+                }
+            });
+            $runId = $visible->id;
+        } else {
+            $runId = RegionInfoRun::create([
+                'kind' => RegionInfoRun::KIND_SIGHTS_COUNTRY,
+                'status' => RegionInfoRun::STATUS_RUNNING,
+                'pending' => [$key],
+                'total' => 1,
+                'failed' => [],
+                'result' => ['country_id' => $country->id, 'created' => 0],
+                'started_by' => auth('web')->id(),
+            ])->id;
+            $restart = true;
+        }
+        if ($restart) {
+            FillRegionInfoJob::dispatch($runId);
+        }
+
+        unset($this->aiRuns, $this->aiGaps, $this->aiTargets);
+        $this->dispatch('adminv2-toast', message: $place->getName('de').' wird im Hintergrund ergänzt.');
     }
 
     // MARK: Per KI suchen

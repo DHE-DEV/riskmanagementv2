@@ -103,6 +103,55 @@
     @endif
     </div>
 
+    {{-- Luecken des gefilterten Landes: Gebiete ohne Sehenswuerdigkeiten, je einzeln per KI ergaenzbar --}}
+    @if ($aiCountry)
+        @php
+            $aiGaps = $this->aiGaps;
+            // Schon in einem laufenden Lauf vorgemerkt: statt des Knopfs „in Arbeit“
+            $aiQueued = $aiRuns->filter(fn ($run) => $run->isRunning())->flatMap(fn ($run) => (array) $run->pending)->flip();
+            $gapCounts = [
+                'region' => $aiGaps->where('empty', true)->count(),
+                'subregion' => $aiGaps->sum(fn ($gap) => $gap['subregions']->count()),
+                'city' => $aiGaps->sum(fn ($gap) => $gap['cities']->count()),
+            ];
+        @endphp
+        <div wire:key="ai-gaps-{{ $aiCountry->id }}" class="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-900" x-data="{ open: false }">
+            @if ($aiGaps->isEmpty())
+                <span class="text-zinc-500">Alle Regionen, Teilgebiete und wichtigen Städte in {{ $aiCountry->getName('de') }} haben Sehenswürdigkeiten.</span>
+            @else
+                <button type="button" class="flex w-full cursor-pointer items-center gap-2 text-start" x-on:click="open = ! open" x-bind:aria-expanded="open">
+                    <flux:icon.chevron-down variant="micro" class="shrink-0 text-zinc-400 transition-transform" x-bind:class="open ? '' : '-rotate-90'" />
+                    <span class="font-medium text-zinc-900 dark:text-white">Ohne Sehenswürdigkeiten in {{ $aiCountry->getName('de') }}:</span>
+                    <span class="text-zinc-600 dark:text-zinc-400">{{ $gapCounts['region'] }} {{ $gapCounts['region'] === 1 ? 'Region' : 'Regionen' }} · {{ $gapCounts['subregion'] }} {{ $gapCounts['subregion'] === 1 ? 'Teilgebiet' : 'Teilgebiete' }} · {{ $gapCounts['city'] }} {{ $gapCounts['city'] === 1 ? 'wichtige Stadt' : 'wichtige Städte' }}</span>
+                </button>
+                <div x-show="open" x-cloak class="mt-3 flex flex-col gap-3">
+                    @foreach ($aiGaps as $gap)
+                        @php
+                            $gapItems = collect($gap['empty'] ? [['key' => 'region:'.$gap['region']->id, 'label' => 'Region (ohne jede Sehenswürdigkeit)']] : [])
+                                ->merge($gap['subregions']->map(fn ($subregion) => ['key' => 'subregion:'.$subregion->id, 'label' => 'Teilgebiet '.$subregion->getName('de')]))
+                                ->merge($gap['cities']->map(fn ($city) => ['key' => 'city:'.$city->id, 'label' => 'Stadt '.$city->getName('de')]));
+                        @endphp
+                        <div wire:key="ai-gap-region-{{ $gap['region']->id }}">
+                            <button type="button" class="cursor-pointer font-medium text-zinc-800 hover:underline dark:text-zinc-200" wire:click="filterGap('region:{{ $gap['region']->id }}')">{{ $gap['region']->getName('de') }}</button>
+                            <ul class="mt-1 flex flex-col gap-1 ps-4 text-xs text-zinc-600 dark:text-zinc-400">
+                                @foreach ($gapItems as $item)
+                                    <li wire:key="ai-gap-{{ $item['key'] }}" class="flex items-center justify-between gap-3">
+                                        <button type="button" class="cursor-pointer text-start hover:underline" wire:click="filterGap('{{ $item['key'] }}')">{{ $item['label'] }}</button>
+                                        @if ($aiQueued->has($item['key']))
+                                            <span class="shrink-0 text-zinc-400">in Arbeit …</span>
+                                        @else
+                                            <flux:button size="xs" variant="ghost" icon="sparkles" class="shrink-0" wire:click="fillGap('{{ $item['key'] }}')" wire:loading.attr="disabled">Mit KI ergänzen</flux:button>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    @endif
+
     <div class="flex flex-wrap items-center gap-3">
         <div class="min-w-64 flex-1">
             <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Name oder Adresse suchen …" aria-label="Suche" clearable />

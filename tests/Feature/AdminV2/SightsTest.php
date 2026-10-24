@@ -373,6 +373,44 @@ it('blendet einen ausgeblendeten Laender-Lauf wieder ein', function () {
     expect($run->fresh()->status)->toBe(RegionInfoRun::STATUS_DONE);
 });
 
+it('zeigt die Gebiete eines Landes ohne Sehenswuerdigkeiten und ergaenzt sie einzeln', function () {
+    \Illuminate\Support\Facades\Queue::fake();
+    config(['services.openai.key' => 'test-key']);
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $tuscany = sightRegion($italy, 'Toskana', 'Tuscany');
+    sight($italy, 'Uffizien', ['region_id' => $tuscany->id]);
+    $levante = \App\Models\Subregion::create(['region_id' => $liguria->id, 'country_id' => $italy->id, 'kind' => 'area', 'name_translations' => ['de' => 'Riviera di Levante', 'en' => 'Riviera di Levante'], 'code' => 'RL']);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    $genoa->update(['is_regional_capital' => true]);
+    sightCity($italy, $liguria, 'Dorf');
+
+    $page = Livewire::test(SightIndex::class)
+        ->assertDontSee('Ohne Sehenswürdigkeiten in')
+        ->set('countryIds', [(string) $italy->id])
+        ->assertSee('Ohne Sehenswürdigkeiten in Italien:')
+        ->assertSeeText('1 Region · 1 Teilgebiet · 1 wichtige Stadt')
+        ->assertSee('Teilgebiet Riviera di Levante')->assertSee('Stadt Genua')->assertDontSee('Stadt Dorf')
+        ->assertSeeHtml('wire:click="fillGap(\'city:'.$genoa->id.'\')"');
+
+    // Name: filtert die Liste auf das Gebiet
+    $page->call('filterGap', 'subregion:'.$levante->id)
+        ->assertSet('region', (string) $liguria->id)->assertSet('subregion', (string) $levante->id)->assertSet('city', '');
+
+    // Einzeln ergaenzen: neuer Lauf nur mit der Stadt; das naechste Gebiet kommt in denselben Lauf
+    $page->call('fillGap', 'city:'.$genoa->id)->call('fillGap', 'region:'.$liguria->id)->call('fillGap', 'city:'.$genoa->id);
+    $run = RegionInfoRun::where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)->sole();
+    expect($run->pending)->toBe(['city:'.$genoa->id, 'region:'.$liguria->id])->and($run->total)->toBe(2)->and($run->isRunning())->toBeTrue();
+    \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\FillRegionInfoJob::class, 1);
+    $page->assertSee('in Arbeit …');
+
+    // Beendeter Lauf laeuft fuer ein weiteres Gebiet wieder an
+    $run->update(['status' => RegionInfoRun::STATUS_DONE, 'pending' => [], 'done' => 2]);
+    $page->call('fillGap', 'subregion:'.$levante->id);
+    expect($run->fresh())->status->toBe(RegionInfoRun::STATUS_RUNNING)->total->toBe(3)->pending->toBe(['subregion:'.$levante->id]);
+    \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\FillRegionInfoJob::class, 2);
+});
+
 it('filtert nach Teilgebiet und Stadt und grenzt „Mit KI ergänzen“ auf die Auswahl ein', function () {
     $italy = sightCountry();
     $liguria = sightRegion($italy);
