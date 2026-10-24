@@ -62,7 +62,7 @@
                                 <li wire:key="ai-run-{{ $aiRun->id }}-failed-{{ $key }}" class="flex items-start justify-between gap-3">
                                     <span><span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $aiFailedLabels[(string) $key] ?? $key }}</span>: {{ $message }}</span>
                                     @unless ($aiRunningForOther($aiRun))
-                                        <flux:button size="xs" variant="ghost" icon="arrow-path" class="shrink-0" wire:click="retryAiFailed({{ $aiRun->id }}, @js((string) $key))" wire:loading.attr="disabled">Erneut versuchen</flux:button>
+                                        <flux:button size="xs" variant="ghost" icon="arrow-path" class="shrink-0" wire:click="retryAiFailed({{ $aiRun->id }}, {{ \Illuminate\Support\Js::from((string) $key) }})" wire:loading.attr="disabled">Erneut versuchen</flux:button>
                                     @endunless
                                 </li>
                             @endforeach

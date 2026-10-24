@@ -339,6 +339,8 @@ it('versucht fehlgeschlagene Gebiete eines Laender-Laufs einzeln oder alle erneu
         ->assertSee('Alle 2 erneut versuchen');
     $run = RegionInfoFillRun::current(RegionInfoRun::KIND_SIGHTS_COUNTRY);
     expect(array_keys($run->failed))->toEqualCanonicalizing([$liguria->id, 'city:'.$genoa->id]);
+    $page->assertSeeHtml('wire:click="retryAiFailed('.$run->id.', \'city:'.$genoa->id.'\')"')
+        ->assertSeeHtml('wire:click="retryAiFailed('.$run->id.')"');
 
     // Einzeln: nur die Stadt, der Lauf laeuft wieder an und ist danach erneut abgeschlossen
     $broken = false;
