@@ -21,6 +21,9 @@ class AppPushMessage extends Model
     /** Einladung zu einer Reise oder Gruppe bzw. neue Reise in einer Gruppe (Teilen in der App). */
     public const TYPE_SHARE = 'share';
 
+    /** Ein neues Geraet moechte die Daten dieses Geraets uebernehmen (Bestaetigung in der App). */
+    public const TYPE_TRANSFER_REQUEST = 'transfer_request';
+
     public const SOURCE_SCANNER = 'scanner';
 
     public const SOURCE_API = 'api';
@@ -30,6 +33,9 @@ class AppPushMessage extends Model
 
     /** Teilen in der App (Einladungen). */
     public const SOURCE_SHARING = 'sharing';
+
+    /** Geraeteuebertragung in der App (Anfrage an das alte Geraet). */
+    public const SOURCE_TRANSFER = 'transfer';
 
     public const STATUS_QUEUED = 'queued';
 

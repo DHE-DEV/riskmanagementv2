@@ -456,6 +456,25 @@ Route::prefix('v1/devices')->middleware([
     Route::put('/{id}/travel-links', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'travelLinks'])->name('v1.devices.travel-links');
     Route::delete('/{id}', [\App\Http\Controllers\Api\V1\AppDeviceController::class, 'destroy'])->name('v1.devices.destroy');
 
+    // Sicherung, Wiederherstellungscode, Geraet uebernehmen
+    Route::controller(\App\Http\Controllers\Api\V1\AppDeviceBackupController::class)->prefix('/{id}')->name('v1.devices.backup.')->group(function () {
+        Route::put('/backup', 'update')->name('update');
+        Route::get('/backup', 'show')->name('show');
+        Route::delete('/backup', 'destroy')->name('destroy');
+        Route::post('/recovery-code', 'recoveryCode')->name('recovery-code');
+        Route::post('/adopt', 'adopt')->middleware('throttle:app-device-adopt')->name('adopt');
+    });
+
+    // Uebertragung auf ein neues Geraet mit Bestaetigung am alten
+    Route::controller(\App\Http\Controllers\Api\V1\AppDeviceTransferController::class)->prefix('/{id}/transfers')->name('v1.devices.transfers.')->group(function () {
+        Route::post('/', 'store')->middleware('throttle:app-device-transfers')->name('store');
+        Route::get('/incoming', 'incoming')->name('incoming');
+        Route::post('/{transfer}/approve', 'approve')->name('approve');
+        Route::post('/{transfer}/decline', 'decline')->name('decline');
+        Route::delete('/{transfer}', 'destroy')->name('destroy');
+        Route::get('/{transfer}', 'show')->name('show');
+    });
+
     // Teilen: App-ID, Gruppen, geteilte Reisen
     Route::controller(\App\Http\Controllers\Api\V1\AppSharingController::class)->prefix('/{id}')->name('v1.devices.sharing.')->group(function () {
         Route::get('/sharing', 'show')->name('show');

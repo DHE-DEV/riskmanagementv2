@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 /**
@@ -43,9 +44,11 @@ class AppDevice extends Model
         'display_name',
         'last_seen_at',
         'token_invalid_at',
+        'recovery_hash',
+        'recovery_created_at',
     ];
 
-    protected $hidden = ['secret_hash', 'push_token'];
+    protected $hidden = ['secret_hash', 'push_token', 'recovery_hash'];
 
     protected function casts(): array
     {
@@ -54,6 +57,7 @@ class AppDevice extends Model
             'notify_itinerary' => 'boolean',
             'last_seen_at' => 'datetime',
             'token_invalid_at' => 'datetime',
+            'recovery_created_at' => 'datetime',
         ];
     }
 
@@ -65,6 +69,11 @@ class AppDevice extends Model
     public function travelLinks(): HasMany
     {
         return $this->hasMany(AppDeviceTravelLink::class);
+    }
+
+    public function backup(): HasOne
+    {
+        return $this->hasOne(AppDeviceBackup::class);
     }
 
     /**
@@ -121,6 +130,43 @@ class AppDevice extends Model
     public function secretMatches(?string $secret): bool
     {
         return is_string($secret) && $secret !== '' && hash_equals($this->secret_hash, hash('sha256', $secret));
+    }
+
+    /**
+     * Neuer Wiederherstellungscode (12 Zeichen aus SHARE_ALPHABET): der Klartext geht genau einmal an die App,
+     * gespeichert wird nur der Hash. Ein vorheriger Code wird damit ungueltig.
+     */
+    public function newRecoveryCode(): string
+    {
+        $code = '';
+        for ($i = 0; $i < 12; $i++) {
+            $code .= self::SHARE_ALPHABET[random_int(0, strlen(self::SHARE_ALPHABET) - 1)];
+        }
+
+        $this->forceFill(['recovery_hash' => hash('sha256', $code), 'recovery_created_at' => now()])->save();
+
+        return $code;
+    }
+
+    /** "abcd-efgh-jkmn", "ABCDEFGHJKMN" → "ABCDEFGHJKMN"; null, wenn es kein Wiederherstellungscode sein kann. */
+    public static function normalizeRecoveryCode(?string $code): ?string
+    {
+        $code = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', (string) $code));
+
+        return strlen($code) === 12 && strspn($code, self::SHARE_ALPHABET) === 12 ? $code : null;
+    }
+
+    /** "ABCDEFGHJKMN" → "ABCD-EFGH-JKMN" */
+    public static function formatRecoveryCode(string $code): string
+    {
+        return implode('-', str_split($code, 4));
+    }
+
+    public function recoveryCodeMatches(?string $code): bool
+    {
+        $code = self::normalizeRecoveryCode($code);
+
+        return $code !== null && filled($this->recovery_hash) && hash_equals($this->recovery_hash, hash('sha256', $code));
     }
 
     /**

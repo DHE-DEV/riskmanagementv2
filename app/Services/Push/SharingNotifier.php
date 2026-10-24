@@ -4,6 +4,7 @@ namespace App\Services\Push;
 
 use App\Jobs\Push\SendSharingSync;
 use App\Models\Push\AppDevice;
+use App\Models\Push\AppDeviceTransfer;
 use App\Models\Push\AppGroupMember;
 use App\Models\Push\AppPushMessage;
 use App\Models\Push\AppSharedTrip;
@@ -177,6 +178,24 @@ class SharingNotifier
         return $reachable;
     }
 
+    /**
+     * Sichtbarer Hinweis an das alte Geraet: ein neues Geraet moechte seine Daten uebernehmen
+     * (data.type = transfer_request, data.transfer = ID der Anfrage). Die App zeigt die Anfrage zum Bestaetigen.
+     */
+    public function transferRequest(AppDevice $from, AppDeviceTransfer $transfer): void
+    {
+        $label = filled($transfer->to_label) ? $transfer->to_label : null;
+        $this->send([$from->id], 'transfer_request', [
+            'de' => 'Datenübernahme angefragt',
+            'en' => 'Data transfer requested',
+            'nl' => 'Gegevensoverdracht aangevraagd',
+        ], [
+            'de' => 'Ein neues Gerät'.($label ? " ({$label})" : '').' möchte deine TripData-Daten übernehmen. Öffne TripData, um zu bestätigen.',
+            'en' => 'A new device'.($label ? " ({$label})" : '').' wants to take over your TripData data. Open TripData to confirm.',
+            'nl' => 'Een nieuw apparaat'.($label ? " ({$label})" : '').' wil je TripData-gegevens overnemen. Open TripData om te bevestigen.',
+        ], ['transfer' => $transfer->id], AppPushMessage::TYPE_TRANSFER_REQUEST, AppPushMessage::SOURCE_TRANSFER);
+    }
+
     /** „Tag 5“ ab Reisebeginn, ohne Startdatum das Datum („9.11.“). */
     private function dayLabel(AppSharedTrip $trip, string $date): array
     {
@@ -205,7 +224,7 @@ class SharingNotifier
         };
     }
 
-    private function send(array $deviceIds, string $event, array $title, array $body, array $data = []): void
+    private function send(array $deviceIds, string $event, array $title, array $body, array $data = [], string $type = AppPushMessage::TYPE_SHARE, string $source = AppPushMessage::SOURCE_SHARING): void
     {
         $ids = AppDevice::reachable()->whereIn('id', array_values(array_unique($deviceIds)))->pluck('id')->all();
         if ($ids === []) {
@@ -213,8 +232,8 @@ class SharingNotifier
         }
 
         $message = $this->dispatcher->begin([
-            'type' => AppPushMessage::TYPE_SHARE,
-            'source' => AppPushMessage::SOURCE_SHARING,
+            'type' => $type,
+            'source' => $source,
             'title' => $title,
             'body' => $body,
             'data' => ['event' => $event] + $data,

@@ -50,4 +50,7 @@ return [
     // Geraete, die so lange nichts von sich hoeren liessen, bekommen nichts mehr (Tage).
     'device_stale_days' => (int) env('PUSH_DEVICE_STALE_DAYS', 180),
 
+    // Geraete mit Sicherung (app_device_backups) bleiben samt Sicherung so lange erhalten (Tage, hoechstens 2 Jahre).
+    'backup_retention_days' => (int) env('PUSH_BACKUP_RETENTION_DAYS', 730),
+
 ];

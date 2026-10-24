@@ -75,6 +75,23 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Geraet uebernehmen per App-ID + Wiederherstellungscode: streng, gegen Durchprobieren von Codes –
+        // je anfragendem Geraet, je Ziel-App-ID und je IP.
+        RateLimiter::for('app-device-adopt', function (Request $request) {
+            $target = \App\Models\Push\AppDevice::normalizeShareCode((string) $request->input('share_code')) ?? 'invalid';
+
+            return [
+                Limit::perHour(5)->by('adopt-device:'.$request->route('id')),
+                Limit::perHour(5)->by('adopt-target:'.$target),
+                Limit::perHour(5)->by('adopt-ip:'.$request->ip()),
+            ];
+        });
+
+        // Uebertragungs-Anfragen (jede loest einen Push am alten Geraet aus): je anfragendem Geraet.
+        RateLimiter::for('app-device-transfers', function (Request $request) {
+            return Limit::perHour(5)->by('transfer-device:'.$request->route('id'));
+        });
+
         // Push-Versand ueber die API: je Kunde.
         RateLimiter::for('push-api', function (Request $request) {
             return Limit::perMinute(60)->by('push-api:'.($request->user()?->getKey() ?: $request->ip()));

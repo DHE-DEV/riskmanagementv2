@@ -69,7 +69,7 @@ Abgelaufene Reise-Links werden an keiner Stelle abgefragt:
 
 - **Feed:** Der Delta-Feed liefert nur Links mit `end_date` ≥ jetzt. Auch pds selbst rechnet `important_change_at` nur für Reisen neu, die höchstens 7 Tage vorbei sind.
 - **App:** Sie meldet nur Reisen, deren Ende frühestens gestern ist. Reisen ohne Datum zählen mit. Ist eine Reise vorbei, fällt ihre Reise-ID beim nächsten App-Start aus der Liste.
-- **Plattform:** `push:prune-devices` entfernt täglich um 04:20 Geräte, die sich 180 Tage nicht gemeldet haben, samt ihren Reise-Links.
+- **Plattform:** `push:prune-devices` entfernt täglich um 04:20 Geräte, die sich 180 Tage nicht gemeldet haben, samt ihren Reise-Links. Geräte mit Sicherung bleiben bis zu 2 Jahre (730 Tage, `PUSH_BACKUP_RETENTION_DAYS`) ohne Meldung erhalten; danach gehen Gerät und Sicherung.
 
 ### Reisen verschiedener Reisebüros
 
@@ -200,7 +200,7 @@ Reisende können Reisen mit Familie oder Mitreisenden teilen, ohne Konto:
   - **Mit installierter App** öffnet der Link direkt TripData (Universal Link bzw. App Link, Pfad `/einladung/*` in den Verifikationsdateien). Die App zeigt die Einladung und nimmt sie auf Wunsch an: Bei einer Reise wird man angenommener Empfänger, bei einer Gruppe Mitglied.
   - **Ohne App** zeigt die Seite, wer wozu einlädt, Zeitraum und Länder, Knöpfe zu App Store und Google Play (`TRIPDATA_APP_STORE_URL`, `TRIPDATA_PLAY_STORE_URL`) und den Code. Diesen trägt man nach der Installation in der App unter Mehr › Teilen & Gruppen › „Einladungscode eingeben“ ein.
 - **Push beim Teilen:** Einladungen zu Reisen und Gruppen sowie neue Reisen in einer Gruppe lösen eine Benachrichtigung aus (`type = share`, Quelle `sharing`, in Admin v2 als „Teilen“). Die App lädt daraufhin ihre Freigaben neu.
-- **Ende:** Der Ersteller hebt die Freigabe auf oder löscht die Reise, Empfänger verlassen sie. Wird ein Gerät gelöscht („Alle Daten löschen“ oder `push:prune-devices` nach 180 Tagen), verschwinden seine Gruppen, Freigaben und Mitgliedschaften mit.
+- **Ende:** Der Ersteller hebt die Freigabe auf oder löscht die Reise, Empfänger verlassen sie. Wird ein Gerät gelöscht („Alle Daten löschen“ oder `push:prune-devices` nach 180 Tagen, mit Sicherung nach 2 Jahren), verschwinden seine Gruppen, Freigaben und Mitgliedschaften mit.
 
 ### API für die App
 
@@ -230,6 +230,27 @@ Alle Aufrufe stehen unter `/api/v1/devices/{id}/…` und brauchen den Header `X-
 | `GET invites/{code}` · `POST invites/{code}/accept` | Einladung ansehen (`kind`, `trip_id`, `name`, `from`, `sights_count`, `has_list`, `already`, `is_own`) bzw. annehmen |
 
 Empfangene und eigene geteilte Reisen enthalten im Stand zusätzlich `participants` (wer die Reise sieht, mit `list_role`) und `list` (Inhalt, `my_role`, `default_role`, `revision`).
+
+## Sicherung und Geräteübertragung
+
+Die App kann ihre Daten auf der Plattform sichern und auf ein neues Gerät übertragen, ohne Konto. Der Inhalt ist für die Plattform undurchsichtiges JSON. Sie prüft nur Form und Größe (höchstens 8 MB unkomprimiert) und speichert ihn gzip-komprimiert (`app_device_backups`, eine Sicherung je Gerät, sie wird mit dem Gerät gelöscht).
+
+- **Wiederherstellungscode** (12 Zeichen, `XXXX-XXXX-XXXX`): Mit App-ID und Code übernimmt eine Neuinstallation das Gerät auch ohne das alte Gerät. Gespeichert wird nur der Hash. Ein neuer Code macht den alten ungültig. Höchstens 5 Versuche pro Stunde je Gerät, Ziel-App-ID und IP.
+- **Übertragung mit Bestätigung:** Die neue Installation fragt per App-ID an. Das alte Gerät bekommt einen Push (`type = transfer_request`, Quelle `transfer`, in Admin v2 als „Geräteübertragung“). Es sichert, bestätigt, und die neue Installation übernimmt beim nächsten Abruf. Anfragen gelten 15 Minuten, höchstens 5 pro Stunde je Gerät.
+- **Übernahme:** Der alte Geräte-Eintrag bleibt mit ID, App-ID, Anzeigename, Gruppen, geteilten Reisen und Reise-Links erhalten. Er bekommt ein neues Secret sowie Plattform, Push-Token, Sprache und App-Version der neuen Installation. Deren eigener Eintrag wird gelöscht. Die alte Installation bekommt danach 403.
+- **Aufräumen:** `app-devices:prune-transfers` (täglich 04:30) setzt abgelaufene Anfragen auf `expired`, löscht das 10 Minuten aufbewahrte Secret und entfernt Anfragen nach 30 Tagen.
+
+| Aufruf (unter `/api/v1/devices/{id}/…`, mit `X-Device-Secret`) | Zweck |
+|---|---|
+| `PUT backup` | Sicherung speichern bzw. ersetzen: `schema`, `platform`, `app_version`, `counts` (Objekt, nur Anzeige), `data` (Objekt). Zu groß → 413. Optional mit `Content-Encoding: gzip`. |
+| `GET backup` · `?meta=1` | Stand mit Inhalt bzw. ohne (`exists`, `backed_up_at`, `size`, `counts`, `has_recovery_code` …) |
+| `DELETE backup` | Sicherung löschen |
+| `POST recovery-code` | Neuen Wiederherstellungscode erzeugen. Der Klartext steht nur in dieser Antwort. |
+| `POST adopt` `{share_code, recovery_code}` | Neuinstallation übernimmt das Gerät. Antwort `device` (mit neuem `secret`) und `backup`. Falsch → 422. |
+| `POST transfers` `{share_code, label}` | Neue Installation fragt an (unbekannte App-ID → 404, eigene → 422) |
+| `GET transfers/incoming` | Altes Gerät: offene Anfragen |
+| `POST transfers/{transfer}/approve` · `decline` | Altes Gerät bestätigt (ohne Sicherung → 409) bzw. lehnt ab |
+| `GET transfers/{transfer}` · `DELETE transfers/{transfer}` | Neue Installation fragt den Stand ab (bei Bestätigung: Übernahme, `device` und `backup`) bzw. bricht ab |
 
 ## Push senden in Admin v2
 
@@ -342,7 +363,7 @@ Nichts zu tun. Die App fragt beim ersten Übernehmen einer Reise aus einem Reise
 |---|---|
 | Scanner von Hand | `php artisan push:scan-travel-changes` (Optionen `--max-pages`, `--per-page`) |
 | Log des Scanners | `storage/logs/push-travel-changes.log` |
-| Aufräumen | `php artisan push:prune-devices` (täglich 04:20): Geräte, die sich 180 Tage nicht gemeldet haben |
+| Aufräumen | `php artisan push:prune-devices` (täglich 04:20): Geräte, die sich 180 Tage nicht gemeldet haben – mit Sicherung erst nach 2 Jahren |
 | Cursor | Tabelle `pds_global_sync_states`, Schlüssel `travel_details_push`. Zeile löschen = beim nächsten Lauf neu „ab jetzt“ |
 | Geräte | `app_devices` (ohne Namen; Token und Secret-Hash sind verborgen) |
 | Gemeldete Reisen | `app_device_travel_links` (`tid`, `notified_change_at`) |

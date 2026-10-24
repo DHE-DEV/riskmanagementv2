@@ -107,6 +107,13 @@ Schedule::command('push:prune-devices')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/push-prune-devices.log'));
 
+// Geraeteuebertragungen der TripData-App aufraeumen (abgelaufen, aufbewahrtes Secret, aelter als 30 Tage)
+Schedule::command('app-devices:prune-transfers')
+    ->dailyAt('04:30')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/app-devices-prune-transfers.log'));
+
 // GTM Notification Queue
 Schedule::command('notifications:process-gtm')
     ->cron('*/' . config('notifications.gtm_interval', 5) . ' * * * *')
