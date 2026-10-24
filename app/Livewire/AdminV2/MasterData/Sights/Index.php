@@ -448,7 +448,35 @@ class Index extends Component
     {
         RegionInfoRun::query()->whereKey($runId)->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
             ->where('status', '!=', RegionInfoRun::STATUS_RUNNING)->update(['status' => RegionInfoRun::STATUS_DISMISSED]);
-        unset($this->aiRuns);
+        unset($this->aiRuns, $this->dismissedAiRuns);
+    }
+
+    /**
+     * Zuletzt ausgeblendete Laender-Laeufe (auch die, die ein neuer Lauf desselben Landes verdraengt hat), neueste zuerst.
+     *
+     * @return Collection<int, RegionInfoRun>
+     */
+    #[Computed]
+    public function dismissedAiRuns(): Collection
+    {
+        $runs = RegionInfoRun::query()->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
+            ->where('status', RegionInfoRun::STATUS_DISMISSED)
+            ->latest('id')->limit(10)->get();
+        $countries = Country::query()->whereIn('id', $runs->pluck('result.country_id')->filter()->unique())->get()->keyBy('id');
+
+        return $runs->each(fn (RegionInfoRun $run) => $run->setRelation('country', $countries->get($run->result['country_id'] ?? 0)));
+    }
+
+    /** Einen ausgeblendeten Lauf wieder anzeigen – als abgeschlossen bzw. angehalten, je nachdem ob alles bearbeitet ist. */
+    public function restoreAiFill(int $runId): void
+    {
+        RegionInfoFillRun::update($runId, function (RegionInfoRun $run) {
+            if ($run->kind === RegionInfoRun::KIND_SIGHTS_COUNTRY && $run->status === RegionInfoRun::STATUS_DISMISSED) {
+                $complete = (array) $run->pending === [] && $run->done + count((array) $run->failed) >= $run->total;
+                $run->status = $complete ? RegionInfoRun::STATUS_DONE : RegionInfoRun::STATUS_CANCELLED;
+            }
+        });
+        unset($this->aiRuns, $this->aiFailedLabels, $this->dismissedAiRuns);
     }
 
     /**

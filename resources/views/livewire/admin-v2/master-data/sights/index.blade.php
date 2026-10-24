@@ -81,6 +81,26 @@
             </div>
         </x-adminv2.card>
     @endforeach
+    @if (($dismissedAiRuns = $this->dismissedAiRuns)->isNotEmpty())
+        <div class="text-xs text-zinc-500" x-data="{ open: false }">
+            <button type="button" class="flex cursor-pointer items-center gap-1" x-on:click="open = ! open" x-bind:aria-expanded="open">
+                <flux:icon.chevron-down variant="micro" class="transition-transform" x-bind:class="open ? '' : '-rotate-90'" />
+                Ausgeblendete KI-Läufe ({{ $dismissedAiRuns->count() }})
+            </button>
+            <ul x-show="open" x-cloak class="mt-1 flex flex-col gap-1">
+                @foreach ($dismissedAiRuns as $dismissedRun)
+                    <li wire:key="ai-run-dismissed-{{ $dismissedRun->id }}" class="flex items-center justify-between gap-3">
+                        <span>
+                            <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $dismissedRun->country?->getName('de') ?? 'Unbekanntes Land' }}</span>,
+                            {{ $dismissedRun->created_at?->format('d.m.Y H:i') }}:
+                            {{ number_format($dismissedRun->done, 0, ',', '.') }} von {{ number_format($dismissedRun->total, 0, ',', '.') }} Gebieten, {{ number_format((int) ($dismissedRun->result['created'] ?? 0), 0, ',', '.') }} angelegt{{ count((array) $dismissedRun->failed) ? ', '.count((array) $dismissedRun->failed).' fehlgeschlagen' : '' }}
+                        </span>
+                        <flux:button size="xs" variant="ghost" icon="eye" class="shrink-0" wire:click="restoreAiFill({{ $dismissedRun->id }})">Wieder einblenden</flux:button>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     </div>
 
     <div class="flex flex-wrap items-center gap-3">

@@ -355,6 +355,24 @@ it('versucht fehlgeschlagene Gebiete eines Laender-Laufs einzeln oder alle erneu
     expect($run->failed)->toBe([])->and($run->done)->toBe(2)->and($run->status)->toBe(RegionInfoRun::STATUS_DONE);
 });
 
+it('blendet einen ausgeblendeten Laender-Lauf wieder ein', function () {
+    $italy = sightCountry();
+    $run = RegionInfoRun::create([
+        'kind' => RegionInfoRun::KIND_SIGHTS_COUNTRY, 'status' => RegionInfoRun::STATUS_DISMISSED, 'pending' => [], 'total' => 3, 'done' => 2,
+        'failed' => ['city:7' => 'Die KI hat kein gültiges JSON geliefert.'], 'result' => ['country_id' => $italy->id, 'created' => 12],
+    ]);
+
+    Livewire::test(SightIndex::class)
+        ->assertDontSee('KI-Sehenswürdigkeiten für Italien')
+        ->assertSee('Ausgeblendete KI-Läufe (1)')
+        ->assertSeeHtml('wire:click="restoreAiFill('.$run->id.')"')
+        ->call('restoreAiFill', $run->id)
+        ->assertSee('KI-Sehenswürdigkeiten für Italien abgeschlossen')
+        ->assertSee('1 fehlgeschlagen')
+        ->assertDontSee('Ausgeblendete KI-Läufe');
+    expect($run->fresh()->status)->toBe(RegionInfoRun::STATUS_DONE);
+});
+
 it('filtert nach Teilgebiet und Stadt und grenzt „Mit KI ergänzen“ auf die Auswahl ein', function () {
     $italy = sightCountry();
     $liguria = sightRegion($italy);
