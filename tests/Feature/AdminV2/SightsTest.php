@@ -322,6 +322,37 @@ it('startet Laender-Laeufe parallel – je Land einer – und haelt sie einzeln 
     expect(RegionInfoRun::where('status', RegionInfoRun::STATUS_RUNNING)->count())->toBe(1);
 });
 
+it('versucht fehlgeschlagene Gebiete eines Laender-Laufs einzeln oder alle erneut', function () {
+    $broken = true;
+    fakeSightServices(function () use (&$broken) {
+        return $broken ? 'kein json' : sightAnswer();
+    });
+    $italy = sightCountry();
+    $liguria = sightRegion($italy);
+    $genoa = sightCity($italy, $liguria, 'Genua', 'Genoa');
+    $genoa->update(['is_regional_capital' => true]);
+
+    $page = Livewire::test(SightIndex::class)->set('countryIds', [(string) $italy->id])
+        ->call('startAiFill')->call('refreshAiFill')
+        ->assertSee('2 fehlgeschlagen')
+        ->assertSee('Region Ligurien')->assertSee('Stadt Genua')
+        ->assertSee('Alle 2 erneut versuchen');
+    $run = RegionInfoFillRun::current(RegionInfoRun::KIND_SIGHTS_COUNTRY);
+    expect(array_keys($run->failed))->toEqualCanonicalizing([$liguria->id, 'city:'.$genoa->id]);
+
+    // Einzeln: nur die Stadt, der Lauf laeuft wieder an und ist danach erneut abgeschlossen
+    $broken = false;
+    $page->call('retryAiFailed', $run->id, 'city:'.$genoa->id)->call('refreshAiFill')
+        ->assertSee('1 fehlgeschlagen')->assertDontSee('Stadt Genua');
+    $run->refresh();
+    expect($run->status)->toBe(RegionInfoRun::STATUS_DONE)->and(array_keys($run->failed))->toBe([$liguria->id])->and($run->done)->toBe(1);
+
+    // Alle (hier: die Region)
+    $page->call('retryAiFailed', $run->id)->call('refreshAiFill')->assertDontSee('fehlgeschlagen');
+    $run->refresh();
+    expect($run->failed)->toBe([])->and($run->done)->toBe(2)->and($run->status)->toBe(RegionInfoRun::STATUS_DONE);
+});
+
 it('filtert nach Teilgebiet und Stadt und grenzt „Mit KI ergänzen“ auf die Auswahl ein', function () {
     $italy = sightCountry();
     $liguria = sightRegion($italy);

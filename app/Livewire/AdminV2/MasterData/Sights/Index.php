@@ -451,9 +451,85 @@ class Index extends Component
         unset($this->aiRuns);
     }
 
+    /**
+     * Namen der fehlgeschlagenen Gebiete aller angezeigten Laeufe, je Schluessel des Laufs ("5" = Region 5, "city:9" …).
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function aiFailedLabels(): array
+    {
+        $keys = $this->aiRuns->flatMap(fn (RegionInfoRun $run) => array_map('strval', array_keys((array) $run->failed)))->unique();
+        [$places] = FillRegionInfoJob::places($keys->map(fn ($key) => self::runKey($key))->all());
+
+        return $places->mapWithKeys(fn (Region|Subregion|City $place) => [(string) SightGenerator::id($place) => match (true) {
+            $place instanceof City => 'Stadt '.$place->getName('de'),
+            $place instanceof Subregion => 'Teilgebiet '.($place->region ? $place->region->getName('de').' › ' : '').$place->getName('de'),
+            default => 'Region '.$place->getName('de'),
+        }])->all();
+    }
+
+    /** Schluessel aus failed (Regionen nur mit ID) als Eintrag fuer pending ("region:5"). */
+    protected static function runKey(string $key): string
+    {
+        return ctype_digit($key) ? 'region:'.$key : $key;
+    }
+
+    /**
+     * Fehlgeschlagene Gebiete eines Laufs erneut versuchen – eines ($key) oder alle. Der Lauf nimmt sie wieder
+     * auf; war er beendet, laeuft er weiter (Zaehler und angelegte Eintraege bleiben).
+     */
+    public function retryAiFailed(int $runId, ?string $key = null): void
+    {
+        if (blank(AiSettings::apiKey())) {
+            $this->dispatch('adminv2-toast', message: 'Kein OpenAI-Schlüssel hinterlegt (System > KI).', variant: 'danger');
+
+            return;
+        }
+
+        $restart = false;
+        $retried = [];
+        RegionInfoFillRun::update($runId, function (RegionInfoRun $run) use ($key, &$restart, &$retried) {
+            if ($run->kind !== RegionInfoRun::KIND_SIGHTS_COUNTRY || $run->status === RegionInfoRun::STATUS_DISMISSED) {
+                return;
+            }
+            // Ein anderer Lauf desselben Landes darf nicht parallel laufen.
+            if (! $run->isRunning() && RegionInfoRun::query()->where('kind', RegionInfoRun::KIND_SIGHTS_COUNTRY)
+                ->where('status', RegionInfoRun::STATUS_RUNNING)->where('result->country_id', $run->result['country_id'] ?? 0)->exists()) {
+                return;
+            }
+
+            $failed = (array) $run->failed;
+            $retried = $key === null ? array_map('strval', array_keys($failed)) : (array_key_exists($key, $failed) ? [$key] : []);
+            if ($retried === []) {
+                return;
+            }
+
+            $run->failed = array_diff_key($failed, array_flip($retried)) ?: [];
+            $run->pending = array_values(array_unique(array_merge((array) $run->pending, array_map(fn ($k) => self::runKey($k), $retried))));
+            if (! $run->isRunning()) {
+                $run->status = RegionInfoRun::STATUS_RUNNING;
+                $run->finished_at = null;
+                $restart = true;
+            }
+        });
+
+        if ($retried === []) {
+            $this->dispatch('adminv2-toast', message: 'Nichts erneut zu versuchen – für dieses Land läuft womöglich schon ein KI-Lauf.', variant: 'danger');
+
+            return;
+        }
+        if ($restart) {
+            FillRegionInfoJob::dispatch($runId);
+        }
+
+        unset($this->aiRuns, $this->aiFailedLabels);
+        $this->dispatch('adminv2-toast', message: count($retried) === 1 ? 'Das Gebiet wird im Hintergrund erneut versucht.' : count($retried).' Gebiete werden im Hintergrund erneut versucht.');
+    }
+
     public function refreshAiFill(): void
     {
-        unset($this->aiRuns, $this->rows, $this->aiTargets);
+        unset($this->aiRuns, $this->aiFailedLabels, $this->rows, $this->aiTargets);
     }
 
     // MARK: Per KI suchen

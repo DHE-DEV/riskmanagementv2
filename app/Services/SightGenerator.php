@@ -93,7 +93,7 @@ class SightGenerator
     }
 
     /** Kennung fuer done/failed: Regionen wie bisher mit ID, sonst der Schluessel. */
-    protected static function id(Region|Subregion|City $place): int|string
+    public static function id(Region|Subregion|City $place): int|string
     {
         return $place instanceof Region ? $place->id : self::key($place);
     }

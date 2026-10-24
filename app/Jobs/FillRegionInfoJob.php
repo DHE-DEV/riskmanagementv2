@@ -62,7 +62,8 @@ class FillRegionInfoJob implements ShouldQueue
                     ? $sights->fill($regions)
                     : $generator->fill($regions, $run->overwrite);
             } catch (\Throwable $e) {
-                $result = ['done' => [], 'failed' => array_fill_keys($regions->pluck('id')->all(), mb_substr($e->getMessage(), 0, 200))];
+                $ids = $run->isSights() ? $regions->map(fn ($place) => SightGenerator::id($place))->all() : $regions->pluck('id')->all();
+                $result = ['done' => [], 'failed' => array_fill_keys($ids, mb_substr($e->getMessage(), 0, 200))];
             }
 
             $run = RegionInfoFillRun::update($this->runId, function (RegionInfoRun $run) use ($result, $missing) {

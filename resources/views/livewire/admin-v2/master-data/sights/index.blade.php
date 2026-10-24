@@ -7,6 +7,9 @@
     $aiCountry = $this->aiCountry;
     $aiRuns = $this->aiRuns;
     $aiRunningForCountry = $aiCountry && $aiRuns->contains(fn ($run) => $run->isRunning() && ($run->result['country_id'] ?? null) === $aiCountry->id);
+    $aiFailedLabels = $this->aiFailedLabels;
+    // Beendeter Lauf, waehrend fuer sein Land schon ein anderer laeuft: nicht erneut versuchbar
+    $aiRunningForOther = fn ($run) => ! $run->isRunning() && $aiRuns->contains(fn ($other) => $other->isRunning() && ($other->result['country_id'] ?? null) === ($run->result['country_id'] ?? null));
     $aiTargets = $this->aiTargets;
     $aiTotal = count($aiTargets['region']) + count($aiTargets['subregion']) + count($aiTargets['city']);
 @endphp
@@ -54,11 +57,19 @@
                 @if (count($failed))
                     <details class="text-xs text-zinc-500">
                         <summary class="cursor-pointer">Fehlgeschlagen</summary>
-                        <ul class="mt-1 list-disc ps-5">
-                            @foreach (array_slice($failed, 0, 20, true) as $key => $message)
-                                <li>{{ $key }}: {{ $message }}</li>
+                        <ul class="mt-1 flex flex-col gap-1">
+                            @foreach (array_slice($failed, 0, 50, true) as $key => $message)
+                                <li wire:key="ai-run-{{ $aiRun->id }}-failed-{{ $key }}" class="flex items-start justify-between gap-3">
+                                    <span><span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $aiFailedLabels[(string) $key] ?? $key }}</span>: {{ $message }}</span>
+                                    @unless ($aiRunningForOther($aiRun))
+                                        <flux:button size="xs" variant="ghost" icon="arrow-path" class="shrink-0" wire:click="retryAiFailed({{ $aiRun->id }}, @js((string) $key))" wire:loading.attr="disabled">Erneut versuchen</flux:button>
+                                    @endunless
+                                </li>
                             @endforeach
                         </ul>
+                        @if (count($failed) > 1 && ! $aiRunningForOther($aiRun))
+                            <flux:button size="xs" variant="subtle" icon="arrow-path" class="mt-2" wire:click="retryAiFailed({{ $aiRun->id }})" wire:loading.attr="disabled">Alle {{ count($failed) }} erneut versuchen</flux:button>
+                        @endif
                     </details>
                 @endif
             </div>
