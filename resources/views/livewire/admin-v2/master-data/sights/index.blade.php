@@ -55,22 +55,28 @@
                     Neue Einträge sind als „KI-Entwurf, ungeprüft“ gekennzeichnet; Dubletten im Land werden übersprungen.
                 </p>
                 @if (count($failed))
-                    <details class="text-xs text-zinc-500">
-                        <summary class="cursor-pointer">Fehlgeschlagen</summary>
-                        <ul class="mt-1 flex flex-col gap-1">
-                            @foreach (array_slice($failed, 0, 50, true) as $key => $message)
-                                <li wire:key="ai-run-{{ $aiRun->id }}-failed-{{ $key }}" class="flex items-start justify-between gap-3">
-                                    <span><span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $aiFailedLabels[(string) $key] ?? $key }}</span>: {{ $message }}</span>
-                                    @unless ($aiRunningForOther($aiRun))
-                                        <flux:button size="xs" variant="ghost" icon="arrow-path" class="shrink-0" wire:click="retryAiFailed({{ $aiRun->id }}, {{ \Illuminate\Support\Js::from((string) $key) }})" wire:loading.attr="disabled">Erneut versuchen</flux:button>
-                                    @endunless
-                                </li>
-                            @endforeach
-                        </ul>
-                        @if (count($failed) > 1 && ! $aiRunningForOther($aiRun))
-                            <flux:button size="xs" variant="subtle" icon="arrow-path" class="mt-2" wire:click="retryAiFailed({{ $aiRun->id }})" wire:loading.attr="disabled">Alle {{ count($failed) }} erneut versuchen</flux:button>
-                        @endif
-                    </details>
+                    {{-- Offen, zuklappbar; der Zustand bleibt beim Aktualisieren (Alpine statt <details>) --}}
+                    <div class="text-xs text-zinc-500" x-data="{ open: true }">
+                        <button type="button" class="flex cursor-pointer items-center gap-1" x-on:click="open = ! open" x-bind:aria-expanded="open">
+                            <flux:icon.chevron-down variant="micro" class="transition-transform" x-bind:class="open ? '' : '-rotate-90'" />
+                            Fehlgeschlagen
+                        </button>
+                        <div x-show="open">
+                            <ul class="mt-1 flex flex-col gap-1">
+                                @foreach (array_slice($failed, 0, 50, true) as $key => $message)
+                                    <li wire:key="ai-run-{{ $aiRun->id }}-failed-{{ $key }}" class="flex items-start justify-between gap-3">
+                                        <span><span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $aiFailedLabels[(string) $key] ?? $key }}</span>: {{ $message }}</span>
+                                        @unless ($aiRunningForOther($aiRun))
+                                            <flux:button size="xs" variant="ghost" icon="arrow-path" class="shrink-0" wire:click="retryAiFailed({{ $aiRun->id }}, {{ \Illuminate\Support\Js::from((string) $key) }})" wire:loading.attr="disabled">Erneut versuchen</flux:button>
+                                        @endunless
+                                    </li>
+                                @endforeach
+                            </ul>
+                            @if (count($failed) > 1 && ! $aiRunningForOther($aiRun))
+                                <flux:button size="xs" variant="subtle" icon="arrow-path" class="mt-2" wire:click="retryAiFailed({{ $aiRun->id }})" wire:loading.attr="disabled">Alle {{ count($failed) }} erneut versuchen</flux:button>
+                            @endif
+                        </div>
+                    </div>
                 @endif
             </div>
         </x-adminv2.card>
