@@ -578,3 +578,31 @@ it('erklärt Einstellungen, GTM API und Feature-Überschreibungen per Info-Symbo
     expect(array_keys(\App\Models\CustomerFeatureOverride::getFeatureDescriptions()))
         ->toEqualCanonicalizing(\App\Models\CustomerFeatureOverride::getFeatureKeys());
 });
+
+it('schaltet die Vererbung an Unteraccounts im Admin und setzt Abweichungen zurück', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test']);
+    $office = Customer::factory()->create(['assign_to' => $agency->id]);
+    $other = Customer::factory()->create(['assign_to' => $agency->id]);
+    \App\Models\CustomerFeatureOverride::create(['customer_id' => $office->id, 'navigation_cruise_enabled' => false, 'navigation_events_enabled' => true]);
+    \App\Models\CustomerFeatureOverride::create(['customer_id' => $other->id, 'navigation_cruise_enabled' => true]);
+
+    $component = Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
+        ->assertSee('An Unteraccounts vererben (2)')
+        ->set('inheritFeaturesToSubAccounts', true)
+        ->call('save')
+        ->assertSee('2 Unteraccounts weichen ab')
+        ->call('resetSubAccountFeatures', 'navigation_cruise_enabled');
+
+    expect($agency->fresh()->inherit_features_to_sub_accounts)->toBeTrue()
+        ->and($office->featureOverrides()->first()->navigation_cruise_enabled)->toBeNull()
+        ->and($office->featureOverrides()->first()->navigation_events_enabled)->toBeTrue();
+
+    $component->call('resetSubAccountFeatures', 'all');
+
+    expect($office->featureOverrides()->first()->navigation_events_enabled)->toBeNull();
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $office->id])
+        ->assertSee('Standard (Zentrale bzw. .env)');
+});

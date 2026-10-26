@@ -314,6 +314,32 @@
                             <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
                                 Aktiviert = Feature für diesen Kunden einblenden, auch wenn global deaktiviert. Deaktiviert = Feature ausblenden, auch wenn global aktiviert. Nicht gesetzt = Globale Einstellung verwenden.
                             </p>
+                            @php
+                                $subAccountCount = $customer->assignedCustomers()->count();
+                                // Unteraccount einer vererbenden Zentrale: alle Features kommen von dort.
+                                $agencyInheritsAll = (bool) $customer->assignedTo?->inherit_features_to_sub_accounts;
+                                $deviations = $inheritFeaturesToSubAccounts ? $this->subAccountFeatureDeviations : [];
+                            @endphp
+                            @if ($subAccountCount > 0 || $inheritFeaturesToSubAccounts)
+                                {{-- Zentrale: Features an die Unteraccounts vererben --}}
+                                <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700" x-data="{ info: false }">
+                                    <div class="flex items-center gap-1">
+                                        <flux:switch wire:model.live="inheritFeaturesToSubAccounts" label="An Unteraccounts vererben ({{ $subAccountCount }})" align="left" />
+                                        <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „An Unteraccounts vererben“?" title="Was bedeutet das?" />
+                                    </div>
+                                    <div x-show="info" x-collapse x-cloak class="flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                        <p>Eingeschaltet übernehmen alle zugeordneten Unteraccounts die Feature-Überschreibungen dieses Kunden – auch solche, die später zugeordnet werden. Ein Feature hier auf „Aktiviert“ schaltet es bei allen frei, „Deaktiviert“ entzieht es allen, „Standard“ lässt bei ihnen wieder die globale Einstellung gelten.</p>
+                                        <p>Hat ein Unteraccount selbst einen Wert gesetzt, geht dieser vor. Solche Abweichungen lassen sich hier je Feature oder insgesamt zurücksetzen.</p>
+                                        <p>Ausgeschaltet gelten für die Unteraccounts wieder ihre eigenen bzw. die globalen Einstellungen. Die drei Einstellungsbereiche (Stammdaten, Organisationsstruktur, Benutzerverwaltung) werden immer vererbt. Wirkt nach dem Speichern, spätestens nach 5 Minuten.</p>
+                                    </div>
+                                    @if ($deviations !== [])
+                                        <div class="flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                                            <span>{{ array_sum($deviations) }} abweichende Werte bei Unteraccounts</span>
+                                            <flux:button size="xs" icon="arrow-uturn-left" wire:click="resetSubAccountFeatures('all')" wire:confirm="Bei allen Unteraccounts alle eigenen Feature-Werte auf „Standard“ zurücksetzen? Danach gilt überall die Einstellung dieses Kunden.">Alle zurücksetzen</flux:button>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                             <div class="grid items-start gap-5 sm:grid-cols-2">
                                 @foreach (CustomerFeatureOverride::getFeatureLabels() as $key => $label)
                                     <flux:field wire:key="feature-{{ $key }}" x-data="{ info: false }">
@@ -326,15 +352,24 @@
                                         @if ($featureInfo)
                                             <div x-show="info" x-collapse x-cloak class="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">{{ $featureInfo }}</div>
                                         @endif
-                                        @if (in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
-                                            <flux:description>{{ $customer->assign_to ? 'Standard = Wert der Zentrale, sonst .env.' : 'Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.' }}</flux:description>
+                                        @php($fromAgency = $customer->assign_to && ($agencyInheritsAll || in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true)))
+                                        @if ($fromAgency)
+                                            <flux:description>Standard = Wert der Zentrale, sonst .env.</flux:description>
+                                        @elseif ($inheritFeaturesToSubAccounts || in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
+                                            <flux:description>Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.</flux:description>
                                         @endif
                                         <flux:select wire:model="featureOverrides.{{ $key }}">
-                                            <flux:select.option value="">{{ $customer->assign_to && in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true) ? 'Standard (Zentrale bzw. .env)' : 'Standard (.env)' }}</flux:select.option>
+                                            <flux:select.option value="">{{ $fromAgency ? 'Standard (Zentrale bzw. .env)' : 'Standard (.env)' }}</flux:select.option>
                                             <flux:select.option value="1">Aktiviert</flux:select.option>
                                             <flux:select.option value="0">Deaktiviert</flux:select.option>
                                         </flux:select>
                                         <flux:error name="featureOverrides.{{ $key }}" />
+                                        @if ($deviations[$key] ?? 0)
+                                            <div class="flex flex-wrap items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+                                                {{ $deviations[$key] }} {{ $deviations[$key] === 1 ? 'Unteraccount weicht' : 'Unteraccounts weichen' }} ab
+                                                <flux:button size="xs" variant="ghost" wire:click="resetSubAccountFeatures('{{ $key }}')" wire:confirm="Bei allen Unteraccounts den eigenen Wert für „{{ $label }}“ auf „Standard“ zurücksetzen?">Zurücksetzen</flux:button>
+                                            </div>
+                                        @endif
                                     </flux:field>
                                 @endforeach
                             </div>

@@ -8,6 +8,7 @@ use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerFeatureOverride;
 use App\Services\CustomerFeaturePreauthorizationService;
+use App\Services\CustomerFeatureService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -86,6 +87,9 @@ class Editor extends Component
     /** Zugeordnete Agenturen auch als Adressen anzeigen (Organisation, /branches). */
     public bool $showSubAccountsAsBranches = false;
 
+    /** Zentrale: Feature-Ueberschreibungen an die Unteraccounts vererben. */
+    public bool $inheritFeaturesToSubAccounts = false;
+
     public bool $hideProfileCompletion = false;
 
     // GTM API
@@ -133,6 +137,7 @@ class Editor extends Component
         $this->directoryListingActive = (bool) $model->directory_listing_active;
         $this->branchManagementActive = (bool) $model->branch_management_active;
         $this->showSubAccountsAsBranches = (bool) $model->show_sub_accounts_as_branches;
+        $this->inheritFeaturesToSubAccounts = (bool) $model->inherit_features_to_sub_accounts;
         $this->hideProfileCompletion = (bool) $model->hide_profile_completion;
         $this->gtmApiEnabled = (bool) $model->gtm_api_enabled;
         $this->gtmApiRateLimit = (string) ($model->gtm_api_rate_limit ?? 60);
@@ -294,6 +299,7 @@ class Editor extends Component
             'directory_listing_active' => $this->directoryListingActive,
             'branch_management_active' => $this->branchManagementActive,
             'show_sub_accounts_as_branches' => $this->showSubAccountsAsBranches,
+            'inherit_features_to_sub_accounts' => $this->inheritFeaturesToSubAccounts,
             'hide_profile_completion' => $this->hideProfileCompletion,
             'gtm_api_enabled' => $this->gtmApiEnabled,
             'gtm_api_rate_limit' => (int) $this->gtmApiRateLimit,
@@ -330,6 +336,9 @@ class Editor extends Component
         $customer->fill($attributes)->save();
 
         $this->saveFeatureOverrides($customer);
+        // Vererbung an die Unteraccounts kann sich geaendert haben.
+        app(CustomerFeatureService::class)->clearCache($customer->id);
+        unset($this->subAccountFeatureDeviations);
 
         // Neu zugeordnete Account-ID: Vormerkungen sofort einloesen, nicht erst
         // beim naechsten Login. Erst nach den Overrides, sonst ueberschriebe das
@@ -349,6 +358,64 @@ class Editor extends Component
         $this->dispatch('adminv2-toast', message: $applied === []
             ? 'Gespeichert.'
             : 'Gespeichert. '.count($applied).' vorgemerkte Feature-Freischaltung(en) übernommen.');
+    }
+
+    /**
+     * Zentrale: je Feature, wie viele Unteraccounts selbst einen Wert gesetzt
+     * haben und damit von der Zentrale abweichen.
+     *
+     * @return array<string, int>
+     */
+    #[Computed]
+    public function subAccountFeatureDeviations(): array
+    {
+        $subAccountIds = Customer::query()->where('assign_to', $this->customerId)->select('id');
+        $deviations = [];
+
+        foreach (CustomerFeatureOverride::getFeatureKeys() as $key) {
+            $count = CustomerFeatureOverride::query()->whereIn('customer_id', $subAccountIds)->whereNotNull($key)->count();
+
+            if ($count > 0) {
+                $deviations[$key] = $count;
+            }
+        }
+
+        return $deviations;
+    }
+
+    /**
+     * Abweichungen der Unteraccounts bei einem Feature (oder allen) auf
+     * "Standard" zuruecksetzen – danach gilt dort wieder die Zentrale.
+     */
+    public function resetSubAccountFeatures(string $key): void
+    {
+        $keys = $key === 'all' ? CustomerFeatureOverride::getFeatureKeys() : [$key];
+
+        if (array_diff($keys, CustomerFeatureOverride::getFeatureKeys()) !== []) {
+            return;
+        }
+
+        $subAccountIds = Customer::query()->where('assign_to', $this->customerId)->pluck('id');
+        $service = app(CustomerFeatureService::class);
+        $count = 0;
+
+        // Einzeln speichern, damit der Observer den Cache je Unteraccount leert.
+        CustomerFeatureOverride::query()->whereIn('customer_id', $subAccountIds)
+            ->where(function ($query) use ($keys) {
+                foreach ($keys as $column) {
+                    $query->orWhereNotNull($column);
+                }
+            })
+            ->each(function (CustomerFeatureOverride $override) use ($keys, $service, &$count) {
+                $override->forceFill(array_fill_keys($keys, null))->save();
+                $service->clearCache($override->customer_id);
+                $count++;
+            });
+
+        unset($this->subAccountFeatureDeviations);
+
+        $label = $key === 'all' ? 'allen Features' : '„'.(CustomerFeatureOverride::getFeatureLabels()[$key] ?? $key).'“';
+        $this->dispatch('adminv2-toast', message: "Abweichungen bei {$label} zurückgesetzt ({$count} Unteraccounts).");
     }
 
     protected function fillFeatureOverrides(?CustomerFeatureOverride $overrides): void

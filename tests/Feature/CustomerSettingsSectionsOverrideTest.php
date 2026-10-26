@@ -135,3 +135,32 @@ it('zeigt Agenturen als Kachel und – je Kunde schaltbar – als Adressen in Ü
         ->assertSee('Reisebüro Essen')
         ->assertDontSee('Keine weiteren Filialen');
 });
+
+it('vererbt mit Schalter der Zentrale alle Features an die Unteraccounts – freischalten und entziehen', function () {
+    config(['app.navigation_cruise_enabled' => false, 'app.navigation_events_enabled' => true]);
+    $service = app(CustomerFeatureService::class);
+
+    $agency = Customer::factory()->create();
+    $office = Customer::factory()->create(['assign_to' => $agency->id]);
+    $ownOffice = Customer::factory()->create(['assign_to' => $agency->id]);
+    $agencyOverride = CustomerFeatureOverride::create(['customer_id' => $agency->id, 'navigation_cruise_enabled' => true, 'navigation_events_enabled' => false]);
+    CustomerFeatureOverride::create(['customer_id' => $ownOffice->id, 'navigation_cruise_enabled' => false]);
+
+    // Ohne Schalter: nichts vererbt.
+    expect($service->isFeatureEnabled('navigation_cruise_enabled', $office))->toBeFalse()
+        ->and($service->isFeatureEnabled('navigation_events_enabled', $office))->toBeTrue();
+
+    $agency->forceFill(['inherit_features_to_sub_accounts' => true])->save();
+    $service->clearCache($agency->id);
+
+    // Freigeschaltet und entzogen wie bei der Zentrale; eigener Wert geht vor.
+    expect($service->isFeatureEnabled('navigation_cruise_enabled', $office))->toBeTrue()
+        ->and($service->isFeatureEnabled('navigation_events_enabled', $office))->toBeFalse()
+        ->and($service->isFeatureEnabled('navigation_cruise_enabled', $ownOffice))->toBeFalse()
+        ->and($service->isFeatureEnabled('navigation_events_enabled', $ownOffice))->toBeFalse();
+
+    // Zentrale wieder auf Standard: bei den Bueros gilt die .env.
+    $agencyOverride->update(['navigation_cruise_enabled' => null]);
+
+    expect($service->isFeatureEnabled('navigation_cruise_enabled', $office))->toBeFalse();
+});

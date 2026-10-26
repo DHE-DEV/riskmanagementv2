@@ -96,6 +96,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'directory_listing_active',
         'branch_management_active',
         'show_sub_accounts_as_branches',
+        'inherit_features_to_sub_accounts',
         // SSO fields
         'agent_id',
         'service1_customer_id',
@@ -174,6 +175,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // GTM API
         'gtm_api_enabled' => 'boolean',
         'show_sub_accounts_as_branches' => 'boolean',
+        'inherit_features_to_sub_accounts' => 'boolean',
         'gtm_api_rate_limit' => 'integer',
         // PDS sync & Travel Links
         'pds_sync_enabled' => 'boolean',

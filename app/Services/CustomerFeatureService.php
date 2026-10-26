@@ -10,9 +10,10 @@ class CustomerFeatureService
 {
     /**
      * Check if a feature is enabled for a customer.
-     * First checks customer-specific overrides, then – for keys in
-     * INHERITED_BY_SUB_ACCOUNTS – the override of the customer's agency
-     * (assign_to), then falls back to .env config.
+     * First checks customer-specific overrides, then the override of the
+     * customer's agency (assign_to) – for keys in INHERITED_BY_SUB_ACCOUNTS
+     * always, for all others when the agency has
+     * inherit_features_to_sub_accounts on – then falls back to .env config.
      */
     public function isFeatureEnabled(string $featureKey, ?Customer $customer = null): bool
     {
@@ -33,7 +34,7 @@ class CustomerFeatureService
         }
 
         // Unteraccount: Einstellung der Zentrale uebernehmen.
-        if ($customer->assign_to && in_array($featureKey, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true)) {
+        if ($customer->assign_to && $this->inheritsFromAgency((int) $customer->assign_to, $featureKey)) {
             $override = $this->getCustomerOverride((int) $customer->assign_to, $featureKey);
 
             if ($override !== null) {
@@ -67,6 +68,19 @@ class CustomerFeatureService
     }
 
     /**
+     * Uebernimmt ein Unteraccount dieses Feature von seiner Zentrale?
+     */
+    protected function inheritsFromAgency(int $agencyId, string $featureKey): bool
+    {
+        if (in_array($featureKey, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true)) {
+            return true;
+        }
+
+        return (bool) Cache::remember("customer_feature_inherit_{$agencyId}", 300,
+            fn () => (bool) Customer::withTrashed()->whereKey($agencyId)->value('inherit_features_to_sub_accounts'));
+    }
+
+    /**
      * Get the default config value from .env.
      */
     protected function getDefaultConfig(string $featureKey): bool
@@ -85,6 +99,7 @@ class CustomerFeatureService
     public function clearCache(int $customerId): void
     {
         Cache::forget("customer_feature_override_{$customerId}");
+        Cache::forget("customer_feature_inherit_{$customerId}");
     }
 
     /**
