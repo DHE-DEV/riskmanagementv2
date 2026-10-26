@@ -1,13 +1,17 @@
 <?php
 
+use App\Jobs\ImportPdsChildren;
 use App\Livewire\AdminV2\CustomerManagement\Customers\PdsChildrenImport;
 use App\Livewire\AdminV2\CustomerManagement\Customers\PdsImport;
 use App\Models\Customer;
 use App\Models\User;
+use App\Notifications\PdsChildrenImportCompleted;
 use App\Services\PdsAccountImportService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 /**
@@ -186,6 +190,7 @@ it('importiert Unteraccounts über alle Seiten und ordnet alle dem Kunden zu', f
     expect(Customer::where('assign_to', $agency->id)->count())->toBe(0);
 
     $component->call('importChildren')
+        ->call('refreshRun')
         ->assertSet('result', [
             PdsAccountImportService::STATUS_CREATED => 2,
             PdsAccountImportService::STATUS_UPDATED => 1,
@@ -208,6 +213,7 @@ it('importiert Unteraccounts über alle Seiten und ordnet alle dem Kunden zu', f
 
     // Ein zweiter Lauf legt nichts doppelt an.
     $component->call('importChildren')
+        ->call('refreshRun')
         ->assertSet('result', [
             PdsAccountImportService::STATUS_UNCHANGED => 5,
             PdsAccountImportService::STATUS_INVALID => 1,
@@ -264,6 +270,7 @@ it('gleicht ohne pds-api einen CSV-Export ab und importiert nur die Differenz', 
         ->assertDontSee('Reisebüro Augsburg');
 
     $component->call('importChildren')
+        ->call('refreshRun')
         ->assertSet('result', [
             PdsAccountImportService::STATUS_CREATED => 1,
             PdsAccountImportService::STATUS_UPDATED => 1,
@@ -370,37 +377,104 @@ it('pflegt einen Hinweis zu den Unteraccounts und zeigt ihn beim Unteraccount', 
         ->assertDontSee('Unteraccount von');
 });
 
-it('importiert viele Unteraccounts in Portionen und setzt nach einem Abbruch fort', function () {
+it('importiert im Hintergrund per Queue, zeigt den Fortschritt und benachrichtigt am Ende', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $admin = pdsImportAdmin();
     $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
-    $children = array_map(fn (int $id) => pdsAccount($id), range(1, PdsChildrenImport::BATCH_SIZE * 2 + 5));
+    $children = array_map(fn (int $id) => pdsAccount($id), range(1, 25));
     fakePds(pdsAccount(3145), $children);
 
-    $component = Livewire::actingAs(pdsImportAdmin())
+    $component = Livewire::actingAs($admin)
         ->test(PdsChildrenImport::class, ['customer' => $agency->id])
         ->call('loadChildren')
         ->call('importChildren')
-        ->assertSet('runDone', PdsChildrenImport::BATCH_SIZE)
-        ->assertSet('runTotal', count($children))
-        ->assertSee('Import läuft')
-        ->assertSee(PdsChildrenImport::BATCH_SIZE.' von '.count($children));
+        ->assertSet('runTotal', 25)
+        ->assertSee('Import läuft im Hintergrund')
+        ->assertSee('0 von 25');
 
-    expect(Customer::where('assign_to', $agency->id)->count())->toBe(PdsChildrenImport::BATCH_SIZE);
+    $runKey = $component->get('runKey');
+    Queue::assertPushed(ImportPdsChildren::class, fn (ImportPdsChildren $job) => $job->agencyId === $agency->id && $job->userId === $admin->id && $job->runKey === $runKey);
 
-    $component->call('importNext')
-        ->call('importNext')
+    // Ein zweiter Start fuer denselben Kunden ist gesperrt, eine neu geladene Seite haengt sich an.
+    $component->call('importChildren')->assertSee('Für diesen Kunden läuft schon ein Import.');
+    Livewire::actingAs($admin)->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->assertSet('runKey', $runKey)
+        ->assertSee('0 von 25');
+
+    // Der Worker arbeitet den Job ab.
+    app()->call([new ImportPdsChildren($agency->id, $admin->id, $runKey), 'handle']);
+
+    expect(Customer::where('assign_to', $agency->id)->count())->toBe(25);
+
+    $component->call('refreshRun')
         ->assertSet('runKey', null)
-        ->assertSet('result', [PdsAccountImportService::STATUS_CREATED => count($children)])
-        ->assertSee('Import abgeschlossen');
+        ->assertSet('result', [PdsAccountImportService::STATUS_CREATED => 25])
+        ->assertSee('Import abgeschlossen')
+        ->assertDispatched('pds-import-finished');
 
-    expect(Customer::where('assign_to', $agency->id)->count())->toBe(count($children));
+    Notification::assertSentTo($admin, PdsChildrenImportCompleted::class, fn (PdsChildrenImportCompleted $notification) => $notification->total === 25
+        && $notification->error === null
+        && str_contains($notification->toMail($admin)->subject, 'Unteraccounts von'));
 
-    // Abbruch mitten im Lauf (Cache weg): Hinweis, ein neuer Lauf erkennt alles Vorhandene.
-    $component->call('importChildren');
-    \Illuminate\Support\Facades\Cache::forget($component->get('runKey'));
+    // Danach laesst sich wieder importieren.
+    Livewire::actingAs($admin)->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->assertSet('runKey', null);
+});
 
-    $component->call('importNext')
+it('stellt sich nach der Arbeitszeit für den Rest neu ein', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $admin = pdsImportAdmin();
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(3145), array_map(fn (int $id) => pdsAccount($id), range(1, 3)));
+
+    $component = Livewire::actingAs($admin)
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->call('importChildren');
+    $runKey = $component->get('runKey');
+
+    // Ohne Arbeitszeit schafft jeder Job genau einen Unteraccount.
+    ImportPdsChildren::$runSeconds = 0;
+
+    try {
+        app()->call([new ImportPdsChildren($agency->id, $admin->id, $runKey), 'handle']);
+        $component->call('refreshRun')->assertSet('runDone', 1)->assertSee('1 von 3');
+        Queue::assertPushed(ImportPdsChildren::class, 2);
+
+        app()->call([new ImportPdsChildren($agency->id, $admin->id, $runKey), 'handle']);
+        app()->call([new ImportPdsChildren($agency->id, $admin->id, $runKey), 'handle']);
+    } finally {
+        ImportPdsChildren::$runSeconds = 60;
+    }
+
+    $component->call('refreshRun')
         ->assertSet('runKey', null)
-        ->assertSee('Der Import wurde unterbrochen.')
-        ->call('loadChildren')
-        ->assertSet('childCounts', [PdsAccountImportService::STATUS_UNCHANGED => count($children)]);
+        ->assertSet('result', [PdsAccountImportService::STATUS_CREATED => 3]);
+
+    expect(Customer::where('assign_to', $agency->id)->count())->toBe(3);
+    Notification::assertSentToTimes($admin, PdsChildrenImportCompleted::class, 1);
+});
+
+it('meldet einen abgebrochenen Hintergrund-Import', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $admin = pdsImportAdmin();
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(3145), [pdsAccount(1)]);
+
+    $component = Livewire::actingAs($admin)
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->call('importChildren');
+
+    (new ImportPdsChildren($agency->id, $admin->id, $component->get('runKey')))->failed(new RuntimeException('Zeitlimit'));
+
+    $component->call('refreshRun')
+        ->assertSet('runKey', null)
+        ->assertSee('Der Import ist abgebrochen: Zeitlimit');
+
+    Notification::assertSentTo($admin, PdsChildrenImportCompleted::class, fn (PdsChildrenImportCompleted $notification) => $notification->error !== null);
 });

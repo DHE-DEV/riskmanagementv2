@@ -2,6 +2,7 @@
 
 namespace App\Livewire\AdminV2\CustomerManagement\Customers;
 
+use App\Jobs\ImportPdsChildren;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Models\Customer;
 use App\Services\PdsAccountImportService;
@@ -25,10 +26,12 @@ use RuntimeException;
  * freigegeben (Account-Zugriff) – auch vorhandene, solche im Papierkorb und
  * solche einer anderen Agentur.
  *
- * Der Import laeuft in Portionen (BATCH_SIZE je Anfrage), damit er nicht an
- * die maximale Laufzeit einer Anfrage stoesst: die geladenen Unteraccounts
- * liegen solange im Cache, der Browser ruft importNext() bis zum Ende auf.
- * Bricht er ab, setzt ein neuer Lauf einfach fort – Vorhandenes wird erkannt.
+ * Der Import selbst laeuft als Queue-Job (ImportPdsChildren), damit er nicht
+ * an die maximale Laufzeit einer Anfrage stoesst; die Seite fragt den
+ * Fortschritt alle paar Sekunden ab und haengt sich nach dem Neuladen wieder
+ * an einen laufenden Import an. Am Ende kommt eine E-Mail und – bei offener
+ * Seite – eine Browser-Benachrichtigung. Bricht er ab, setzt ein neuer Lauf
+ * fort: Vorhandenes wird erkannt.
  */
 #[Layout('components.layouts.adminv2.app')]
 #[Title('Unteraccounts aus pds-admin importieren')]
@@ -41,9 +44,6 @@ class PdsChildrenImport extends Component
         'api' => 'Direkt aus pds-admin (Schnittstelle)',
         'csv' => 'Aus Importdatei (CSV-Export)',
     ];
-
-    /** Unteraccounts je Anfrage beim Import. */
-    public const BATCH_SIZE = 20;
 
     public const FILTERS = [
         'all' => 'Alle',
@@ -98,6 +98,10 @@ class PdsChildrenImport extends Component
     #[Locked]
     public int $runTotal = 0;
 
+    /** Seit wann der Job auf einen Queue-Worker wartet (Hinweis, falls keiner laeuft). */
+    #[Locked]
+    public ?int $runQueuedAt = null;
+
     public ?string $error = null;
 
     public function mount(int $customer, PdsAccountImportService $service): void
@@ -107,6 +111,12 @@ class PdsChildrenImport extends Component
         $this->customerId = $model->id;
         $this->pdsAccountId = (string) ($model->pds_account_id ?? '');
         $this->source = $service->isConfigured() ? 'api' : 'csv';
+
+        // An einen laufenden Import dieses Kunden wieder anhaengen.
+        if ($runKey = Cache::get(ImportPdsChildren::agencyKey($model->id))) {
+            $this->runKey = $runKey;
+            $this->refreshRun($service);
+        }
     }
 
     public function customer(): Customer
@@ -207,16 +217,20 @@ class PdsChildrenImport extends Component
     }
 
     /**
-     * Startet den Import: laedt die Unteraccounts einmal und arbeitet sie in
-     * Portionen ab (importNext).
+     * Startet den Import im Hintergrund: laedt die Unteraccounts einmal und
+     * uebergibt sie dem Queue-Job.
      */
     public function importChildren(PdsAccountImportService $service): void
     {
-        if ($this->runKey) {
+        $agency = $this->customer();
+
+        if ($this->runKey || Cache::has(ImportPdsChildren::agencyKey($agency->id))) {
+            $this->error = 'Für diesen Kunden läuft schon ein Import.';
+
             return;
         }
 
-        $children = $this->children($service, $this->customer());
+        $children = $this->children($service, $agency);
 
         if ($children === null) {
             return;
@@ -228,61 +242,66 @@ class PdsChildrenImport extends Component
             $queue[] = [$child, $status];
         });
 
-        $this->runKey = 'adminv2:pds-children-import:'.Str::uuid();
+        $runKey = 'adminv2:pds-children-import:'.Str::uuid();
+
+        Cache::put(ImportPdsChildren::queueKey($runKey), $queue, now()->addDay());
+        Cache::put(ImportPdsChildren::progressKey($runKey), ['done' => 0, 'total' => count($queue), 'result' => [], 'finished' => false, 'error' => null], now()->addDay());
+        Cache::put(ImportPdsChildren::agencyKey($agency->id), $runKey, now()->addDay());
+
+        ImportPdsChildren::dispatch($agency->id, (int) auth()->id(), $runKey);
+
+        $this->runKey = $runKey;
         $this->runDone = 0;
         $this->runTotal = count($queue);
+        $this->runQueuedAt = now()->getTimestamp();
         $this->result = [];
         $this->error = null;
-
-        Cache::put($this->runKey, $queue, now()->addHours(2));
-
-        $this->importNext($service);
     }
 
     /**
-     * Die naechste Portion des laufenden Imports.
+     * Fortschritt des laufenden Imports (wire:poll); am Ende Vorschau
+     * aktualisieren und benachrichtigen.
      */
-    public function importNext(PdsAccountImportService $service): void
+    public function refreshRun(PdsAccountImportService $service): void
     {
         if (! $this->runKey) {
             return;
         }
 
-        $queue = Cache::get($this->runKey);
+        $progress = ImportPdsChildren::progress($this->runKey);
 
-        if (! is_array($queue)) {
+        if ($progress === null) {
             $this->runKey = null;
-            $this->error = 'Der Import wurde unterbrochen. Einfach erneut prüfen und importieren – bereits Importiertes wird erkannt.';
+            $this->error = 'Der Fortschritt des Imports ist nicht mehr bekannt. Einfach erneut prüfen und importieren – bereits Importiertes wird erkannt.';
 
             return;
         }
 
-        $agency = $this->customer();
-        $result = $this->result ?? [];
+        $this->runDone = $progress['done'];
+        $this->runTotal = $progress['total'];
+        $this->result = $progress['result'];
 
-        foreach (array_slice($queue, $this->runDone, self::BATCH_SIZE) as [$child, $status]) {
-            $status ??= $service->import($child, $agency)['status'];
-            $result[$status] = ($result[$status] ?? 0) + 1;
-            $this->runDone++;
+        if ($progress['done'] > 0) {
+            $this->runQueuedAt = null;
         }
 
-        $this->result = $result;
-
-        if ($this->runDone < $this->runTotal) {
-            $this->js('$wire.importNext()');
-
+        if (! $progress['finished']) {
             return;
         }
 
-        Cache::forget($this->runKey);
         $this->runKey = null;
+        $result = $progress['result'];
 
         // Vorschau auf den neuen Stand bringen.
         $this->loadChildren($service);
         $this->result = $result;
+        $this->error = $progress['error'];
 
         $created = $result[PdsAccountImportService::STATUS_CREATED] ?? 0;
-        $this->dispatch('adminv2-toast', message: "{$created} Kunden angelegt, ".($this->runTotal - $created).' geprüft bzw. zugeordnet.');
+        $message = $progress['error'] ? 'Import abgebrochen.' : "{$created} Kunden angelegt, ".($progress['total'] - $created).' geprüft bzw. zugeordnet.';
+
+        $this->dispatch('adminv2-toast', message: $message);
+        $this->dispatch('pds-import-finished', title: $progress['error'] ? 'Import abgebrochen' : 'Import abgeschlossen', body: $message);
     }
 
     /**
