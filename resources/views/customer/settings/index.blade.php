@@ -1912,7 +1912,7 @@
                         class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
                         :class="orgTab === 'agenturen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
                         <i class="fas fa-store mr-2"></i>
-                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{{ $assignedCount }}</span>
+                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full" x-data="{ n: {{ $assignedCount }} }" @agencies-tab-count.window="n = $event.detail" x-text="n">{{ $assignedCount }}</span>
                     </button>
                     @endif
                 </div>
@@ -1997,7 +1997,7 @@
                             </div>
                             @if($assignedCount > 0)
                             <button type="button" @click="orgTab = 'agenturen'" class="bg-white rounded-lg border border-gray-200 p-3 text-center hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                                <p class="text-lg font-bold text-gray-900">{{ $assignedCount }}</p>
+                                <p class="text-lg font-bold text-gray-900" x-data="{ n: {{ $assignedCount }} }" @agencies-overview-count.window="n = $event.detail" x-text="n">{{ $assignedCount }}</p>
                                 <p class="text-[10px] text-gray-500">Agenturen</p>
                             </button>
                             @endif
@@ -2020,7 +2020,7 @@
                             ? \App\Models\Customer::where('assign_to', $customer->id)
                                 ->with('legacyOptions:account_id,live_from,end_of_use')
                                 ->orderBy('company_name')->orderBy('id')
-                                ->get(['id', 'app_code', 'name', 'email', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
+                                ->get(['id', 'app_code', 'name', 'email', 'phone', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
                             : collect();
                         // Inaktiv wie im Tab "Agenturen": Laufzeit aus den Alt-Optionen noch nicht begonnen bzw. abgelaufen.
                         $subAccountInactive = fn ($account) => $account->isInactiveByLegacyOptions();
@@ -2088,9 +2088,20 @@
                     </div>
                     @if($subAccountAddresses->isNotEmpty())
                         {{-- Agenturen (Unteraccounts) als Adressen: Suche, Status-Filter, Karten --}}
-                        <div class="mt-6" x-data="{ q: '', status: 'active' }">
+                        @php
+                            // Status und Suchtext je Agentur – fuer Filter und Zaehlung in Alpine.
+                            $subAccountFilterData = $subAccountAddresses->map(fn ($a) => [
+                                's' => $subAccountInactive($a) ? 'inactive' : 'active',
+                                'h' => mb_strtolower(implode(' ', [$a->company_name, $a->name, $a->app_code, $a->company_postal_code, $a->company_city, $a->email])),
+                            ])->values();
+                        @endphp
+                        <div class="mt-6" x-data="{
+                                q: '', status: 'active', items: @js($subAccountFilterData),
+                                matches(i) { const it = this.items[i]; return (this.status === 'all' || this.status === it.s) && (this.q === '' || it.h.includes(this.q.toLowerCase())); },
+                                get count() { return this.items.filter((it, i) => this.matches(i)).length; },
+                             }"
+                             x-init="$watch('count', n => $dispatch('agencies-overview-count', n)); $dispatch('agencies-overview-count', count)">
                             <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agenturen ({{ $subAccountAddresses->count() }})</h4>
                                 <div class="flex flex-wrap items-center gap-2 flex-1 sm:flex-none">
                                     <div class="relative flex-1 sm:w-64">
                                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
@@ -2104,15 +2115,15 @@
                                         <option value="inactive">Inaktiv</option>
                                     </select>
                                 </div>
+                                <h4 class="ml-auto text-xs font-semibold text-gray-500 uppercase tracking-wider">Agenturen (<span x-text="count">{{ $subAccountAddresses->count() }}</span>)</h4>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                                 @foreach($subAccountAddresses as $subAccount)
                                     @php
-                                        $inactive = $subAccountInactive($subAccount);
-                                        $haystack = mb_strtolower(implode(' ', [$subAccount->company_name, $subAccount->name, $subAccount->app_code, $subAccount->company_postal_code, $subAccount->company_city, $subAccount->email]));
+                                        $inactive = $subAccountFilterData[$loop->index]['s'] === 'inactive';
                                     @endphp
-                                    <div x-show="(status === 'all' || status === '{{ $inactive ? 'inactive' : 'active' }}') && (q === '' || @js($haystack).includes(q.toLowerCase()))"
+                                    <div x-show="matches({{ $loop->index }})"
                                          class="rounded-lg border p-3 {{ $inactive ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200' }}">
                                         <div class="flex items-start justify-between gap-2">
                                             <h5 class="text-sm font-semibold text-gray-900 min-w-0 break-words">{{ $subAccount->company_name ?: $subAccount->name }}</h5>
@@ -2128,6 +2139,9 @@
                                         </div>
                                         <div class="text-xs text-gray-500 mt-2 space-y-1">
                                             <p><i class="fas fa-location-dot mr-1 w-3"></i>{{ trim($subAccount->company_street.' '.$subAccount->company_house_number) ?: '—' }}, {{ trim($subAccount->company_postal_code.' '.$subAccount->company_city) ?: '—' }}</p>
+                                            @if($subAccount->phone)
+                                                <p class="truncate"><i class="fas fa-phone mr-1 w-3"></i><a href="tel:{{ preg_replace('/[^0-9+]/', '', $subAccount->phone) }}" class="text-blue-600 hover:underline">{{ $subAccount->phone }}</a></p>
+                                            @endif
                                             @if($subAccount->email)
                                                 <p class="truncate"><i class="fas fa-envelope mr-1 w-3"></i><a href="mailto:{{ $subAccount->email }}" class="text-blue-600 hover:underline">{{ $subAccount->email }}</a></p>
                                             @endif
@@ -6706,7 +6720,13 @@ function assignedAgencies() {
         },
 
         init() {
+            // Zahl am Tab folgt dem Filter.
+            this.$watch('status', () => this.reportCount());
             this.loadAgencies();
+        },
+
+        reportCount() {
+            window.dispatchEvent(new CustomEvent('agencies-tab-count', { detail: this.filteredAgencies.length }));
         },
 
         async loadAgencies() {
@@ -6719,6 +6739,7 @@ function assignedAgencies() {
                 this.lastPage = data.last_page;
                 this.total = data.total;
                 this.sortAgencies();
+                this.reportCount();
             } catch (e) {
                 console.error('Error loading agencies:', e);
             }

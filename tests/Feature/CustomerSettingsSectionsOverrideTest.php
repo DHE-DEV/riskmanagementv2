@@ -189,7 +189,7 @@ it('liefert im Konten-Umschalter E-Mail und sortiert Konten ohne Firmenname ans 
 
 it('zeigt die Agenturen in der Übersicht als Karten mit Suche, Status-Filter und Inaktiv-Markierung', function () {
     $agency = Customer::factory()->create(['branch_management_active' => true, 'customer_type' => 'business', 'show_sub_accounts_as_branches' => true]);
-    $active = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Aktives Büro', 'email' => 'aktiv@buero.test']);
+    $active = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Aktives Büro', 'email' => 'aktiv@buero.test', 'phone' => '+49 201 123']);
     $inactive = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Altes Büro']);
     CustomerFeatureOverride::create(['customer_id' => $agency->id, 'settings_organization_enabled' => true]);
     \Illuminate\Support\Facades\DB::table('customers_legacy_options')->insert([
@@ -200,8 +200,11 @@ it('zeigt die Agenturen in der Übersicht als Karten mit Suche, Status-Filter un
     $this->actingAs($agency, 'customer')
         ->get(route('customer.settings', ['section' => 'organization']))
         ->assertOk()
-        ->assertSee('x-data="{ q: \'\', status: \'active\' }"', false)
-        ->assertSee("status === 'inactive'", false)
+        ->assertSee("q: '', status: 'active'", false)
+        ->assertSee('\u0022s\u0022:\u0022inactive\u0022', false)
+        ->assertSee('tel:+49201123', false)
+        ->assertSee('agencies-overview-count', false)
+        ->assertSee('agencies-tab-count', false)
         ->assertSee('Inaktiv')
         ->assertSee('mailto:aktiv@buero.test', false);
 });
