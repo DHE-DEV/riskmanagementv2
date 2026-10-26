@@ -7,8 +7,10 @@ use App\Livewire\AdminV2\Concerns\QueriesLists;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerFeatureOverride;
+use App\Services\CustomerFeaturePreauthorizationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -90,6 +92,12 @@ class Editor extends Component
     /** @var array<string, string> Feature => '' (Standard), '1' (aktiviert), '0' (deaktiviert) */
     public array $featureOverrides = [];
 
+    /**
+     * Account-ID aus dem Travel Requirements Service (pds-admin). Kommt sonst
+     * beim SSO-Login mit; hier laesst sie sich vorab von Hand zuordnen.
+     */
+    public string $pdsAccountId = '';
+
     /** @var array<string, string> Firmenadresse (company_*) */
     public array $company = [];
 
@@ -124,9 +132,10 @@ class Editor extends Component
         $this->gtmApiEnabled = (bool) $model->gtm_api_enabled;
         $this->gtmApiRateLimit = (string) ($model->gtm_api_rate_limit ?? 60);
 
-        foreach (CustomerFeatureOverride::getFeatureKeys() as $key) {
-            $value = $model->featureOverrides?->{$key};
-            $this->featureOverrides[$key] = $value === null ? '' : ($value ? '1' : '0');
+        $this->fillFeatureOverrides($model->featureOverrides);
+
+        if ($this->hasPdsAccountId()) {
+            $this->pdsAccountId = (string) $model->pds_account_id;
         }
 
         foreach (self::ADDRESS_FIELDS as $field) {
@@ -191,6 +200,29 @@ class Editor extends Component
         return $exists ??= Schema::hasColumn('customers', 'pds_account_id');
     }
 
+    /**
+     * Weitere Kunden mit derselben PDS Account-ID – erlaubt (z. B. mehrere
+     * Logins eines Accounts), aber als Hinweis gegen Tippfehler sichtbar.
+     *
+     * @return Collection<int, Customer>
+     */
+    #[Computed]
+    public function sharedPdsAccountCustomers(): Collection
+    {
+        $accountId = trim($this->pdsAccountId);
+
+        if (! $this->hasPdsAccountId() || ! ctype_digit($accountId)) {
+            return collect();
+        }
+
+        return Customer::query()
+            ->where('pds_account_id', (int) $accountId)
+            ->whereKeyNot($this->customerId)
+            ->orderBy('id')
+            ->limit(10)
+            ->get(['id', 'name', 'company_name', 'email', 'app_code']);
+    }
+
     public function showTab(string $tab): void
     {
         if (isset(self::TABS[$tab])) {
@@ -219,6 +251,7 @@ class Editor extends Component
             'emailVerifiedAt' => ['nullable', 'date'],
             'gtmApiRateLimit' => ['required', 'integer', 'min:1', 'max:1000'],
             'featureOverrides.*' => ['nullable', Rule::in(['', '0', '1'])],
+            'pdsAccountId' => ['nullable', 'regex:/^\s*[1-9]\d{0,18}\s*$/'],
             ...$address('company'),
             ...$address('billing'),
         ];
@@ -235,6 +268,7 @@ class Editor extends Component
             'gtmApiRateLimit.integer' => 'Das Rate Limit ist eine ganze Zahl.',
             'gtmApiRateLimit.min' => 'Das Rate Limit muss mindestens 1 sein.',
             'gtmApiRateLimit.max' => 'Das Rate Limit darf höchstens 1000 sein.',
+            'pdsAccountId.regex' => 'Die PDS Account-ID besteht nur aus Ziffern.',
             '*.house_number.max' => 'Höchstens 20 Zeichen.',
             '*.postal_code.max' => 'Höchstens 20 Zeichen.',
         ];
@@ -272,6 +306,13 @@ class Editor extends Component
             $attributes['email_verified_at'] = $this->emailVerifiedAt === '' ? null : Carbon::parse($this->emailVerifiedAt);
         }
 
+        $previousPdsAccountId = null;
+
+        if ($this->hasPdsAccountId()) {
+            $previousPdsAccountId = $customer->pds_account_id;
+            $attributes['pds_account_id'] = trim($this->pdsAccountId) === '' ? null : (int) trim($this->pdsAccountId);
+        }
+
         foreach (self::ADDRESS_FIELDS as $field) {
             $attributes['company_'.$field] = $text($this->company[$field] ?? '');
             $attributes['billing_'.($field === 'name' ? 'company_name' : $field)] = $text($this->billing[$field] ?? '');
@@ -283,9 +324,32 @@ class Editor extends Component
 
         $this->saveFeatureOverrides($customer);
 
-        unset($this->customer);
+        // Neu zugeordnete Account-ID: Vormerkungen sofort einloesen, nicht erst
+        // beim naechsten Login. Erst nach den Overrides, sonst ueberschriebe das
+        // Formular die eingeloesten Werte wieder.
+        $applied = [];
 
-        $this->dispatch('adminv2-toast', message: 'Gespeichert.');
+        if ($customer->pds_account_id && (int) $customer->pds_account_id !== (int) $previousPdsAccountId) {
+            $applied = app(CustomerFeaturePreauthorizationService::class)->applyForCustomer($customer);
+
+            if ($applied !== []) {
+                $this->fillFeatureOverrides($customer->featureOverrides()->first());
+            }
+        }
+
+        unset($this->customer, $this->sharedPdsAccountCustomers);
+
+        $this->dispatch('adminv2-toast', message: $applied === []
+            ? 'Gespeichert.'
+            : 'Gespeichert. '.count($applied).' vorgemerkte Feature-Freischaltung(en) übernommen.');
+    }
+
+    protected function fillFeatureOverrides(?CustomerFeatureOverride $overrides): void
+    {
+        foreach (CustomerFeatureOverride::getFeatureKeys() as $key) {
+            $value = $overrides?->{$key};
+            $this->featureOverrides[$key] = $value === null ? '' : ($value ? '1' : '0');
+        }
     }
 
     /**

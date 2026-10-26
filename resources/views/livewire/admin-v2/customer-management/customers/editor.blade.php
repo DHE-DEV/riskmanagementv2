@@ -156,14 +156,25 @@
                         </div>
                     </x-adminv2.card>
 
-                    {{-- Nur lesend: diese Werte kommen aus dem Login bzw. dem Abgleich mit Passolution. --}}
+                    {{-- Die Account-ID laesst sich zuordnen, die uebrigen Werte kommen aus dem Login bzw. dem Abgleich mit Passolution. --}}
                     <x-adminv2.card heading="Passolution Integration" collapsible collapse-key="customer-passolution">
                         <div class="grid items-start gap-5 sm:grid-cols-2">
                             @if ($this->hasPdsAccountId())
                                 <flux:field class="sm:col-span-2">
                                     <flux:label>PDS Account-ID</flux:label>
-                                    <flux:input :value="(string) $customer->pds_account_id" placeholder="noch nicht angemeldet" disabled />
-                                    <flux:description>Wird beim Login gesetzt. Diese Nummer wird für Feature-Vormerkungen verwendet.</flux:description>
+                                    <flux:input wire:model.live.debounce.400ms="pdsAccountId" inputmode="numeric" placeholder="noch nicht zugeordnet" />
+                                    <flux:description>Account-ID aus dem Travel Requirements Service (pds-admin). Wird beim SSO-Login automatisch gesetzt und dabei ggf. überschrieben. Diese Nummer wird für Feature-Vormerkungen verwendet.</flux:description>
+                                    <flux:error name="pdsAccountId" />
+                                    @if ($this->sharedPdsAccountCustomers->isNotEmpty())
+                                        <flux:callout variant="warning" icon="exclamation-triangle" class="mt-2">
+                                            <flux:callout.text>
+                                                Diese Account-ID ist bereits zugeordnet:
+                                                @foreach ($this->sharedPdsAccountCustomers as $other)
+                                                    <a href="{{ route('adminv2.customer-management.customers.edit', $other->id) }}" wire:navigate class="underline">{{ $other->company_name ?: $other->name }} ({{ $other->app_code }})</a>@if (! $loop->last), @endif
+                                                @endforeach
+                                            </flux:callout.text>
+                                        </flux:callout>
+                                    @endif
                                 </flux:field>
                             @endif
                             <flux:field>

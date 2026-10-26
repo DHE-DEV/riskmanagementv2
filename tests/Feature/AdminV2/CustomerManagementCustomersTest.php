@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\CustomerFeatureOverride;
 use App\Models\GtmApiRequestLog;
 use App\Models\User;
+use App\Services\CustomerFeaturePreauthorizationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -370,7 +371,7 @@ it('zeigt und speichert die Stammdaten eines Kunden', function () {
         ->and($customer->company_country)->toBe('DE')
         ->and($customer->billing_company_name)->toBe('Berg Buchhaltung')
         ->and($customer->billing_city)->toBeNull()
-        // Nur lesend: die Account-ID kommt aus dem Login.
+        // Unveraendert gespeichert: die Account-ID bleibt.
         ->and($customer->pds_account_id)->toBe(4711);
 
     $overrides = $customer->featureOverrides()->first();
@@ -384,6 +385,43 @@ it('zeigt und speichert die Stammdaten eines Kunden', function () {
 
     expect($overrides->fresh()->navigation_cruise_enabled)->toBeNull()
         ->and($overrides->fresh()->navigation_booking_enabled)->toBeFalse();
+});
+
+it('ordnet die PDS Account-ID von Hand zu und loest dabei Vormerkungen ein', function () {
+    $this->actingAs(customersAdmin());
+
+    $customer = managedCustomer(['pds_account_id' => null]);
+    $other = managedCustomer(['email' => 'zweiter@berg.test', 'company_name' => 'Zweiter Login GmbH', 'pds_account_id' => 20031]);
+
+    app(CustomerFeaturePreauthorizationService::class)->record('navigation_cruise_enabled', [20031]);
+
+    $editor = Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->assertSet('pdsAccountId', '')
+        ->set('pdsAccountId', '20x31')
+        ->call('save')
+        ->assertHasErrors(['pdsAccountId'])
+        // Dieselbe ID an einem anderen Kunden ist erlaubt, wird aber angezeigt.
+        ->set('pdsAccountId', ' 20031 ')
+        ->assertSee('Diese Account-ID ist bereits zugeordnet')
+        ->assertSee('Zweiter Login GmbH')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('adminv2-toast', message: 'Gespeichert. 1 vorgemerkte Feature-Freischaltung(en) übernommen.')
+        // Das Formular zeigt den eingeloesten Wert, ein erneutes Speichern behaelt ihn.
+        ->assertSet('featureOverrides.navigation_cruise_enabled', '1');
+
+    expect($customer->fresh()->pds_account_id)->toBe(20031)
+        ->and($customer->featureOverrides()->first()->navigation_cruise_enabled)->toBeTrue();
+
+    $editor->call('save')->assertDispatched('adminv2-toast', message: 'Gespeichert.');
+
+    expect($customer->featureOverrides()->first()->navigation_cruise_enabled)->toBeTrue();
+
+    // Leeren hebt die Zuordnung wieder auf.
+    $editor->set('pdsAccountId', '')->call('save')->assertHasNoErrors();
+
+    expect($customer->fresh()->pds_account_id)->toBeNull()
+        ->and($other->fresh()->pds_account_id)->toBe(20031);
 });
 
 it('loescht den Kunden von seiner Seite aus, stellt ihn wieder her und loescht ihn endgueltig', function () {
