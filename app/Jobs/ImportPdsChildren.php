@@ -61,6 +61,34 @@ class ImportPdsChildren implements ShouldQueue
         return 'adminv2:pds-children-import:agency:'.$agencyId;
     }
 
+    /** E-Mail-Adresse, an die die Abschluss-Mail geht (fuer die Anzeige). */
+    public static function notifyKey(string $runKey): string
+    {
+        return $runKey.':notify';
+    }
+
+    public static function cancelKey(string $runKey): string
+    {
+        return $runKey.':cancel';
+    }
+
+    /**
+     * Import abbrechen: Sperre sofort frei, als beendet melden; der Job hoert
+     * beim naechsten Unteraccount auf.
+     */
+    public static function cancel(int $agencyId, string $runKey): void
+    {
+        Cache::put(self::cancelKey($runKey), true, now()->addDay());
+
+        $progress = self::progress($runKey) ?? ['done' => 0, 'total' => 0, 'result' => []];
+        Cache::put(self::progressKey($runKey), [...$progress, 'finished' => true, 'error' => 'Der Import wurde abgebrochen. Ein neuer Lauf setzt fort – bereits Importiertes wird erkannt.'], now()->addDay());
+        Cache::forget(self::queueKey($runKey));
+
+        if (Cache::get(self::agencyKey($agencyId)) === $runKey) {
+            Cache::forget(self::agencyKey($agencyId));
+        }
+    }
+
     /**
      * @return array{done: int, total: int, result: array<string, int>, finished: bool, error: ?string}|null
      */
@@ -74,6 +102,11 @@ class ImportPdsChildren implements ShouldQueue
     public function handle(PdsAccountImportService $service): void
     {
         $agency = Customer::findOrFail($this->agencyId);
+        // Abgebrochen: still aufhoeren, cancel() hat schon alles gemeldet.
+        if (Cache::has(self::cancelKey($this->runKey))) {
+            return;
+        }
+
         $queue = Cache::get(self::queueKey($this->runKey));
 
         if (! is_array($queue)) {
@@ -91,6 +124,10 @@ class ImportPdsChildren implements ShouldQueue
         $deadline = microtime(true) + self::$runSeconds;
 
         foreach (array_slice($queue, $progress['done']) as [$child, $status]) {
+            if (Cache::has(self::cancelKey($this->runKey))) {
+                return;
+            }
+
             $status ??= $service->import($child, $agency)['status'];
             $progress['result'][$status] = ($progress['result'][$status] ?? 0) + 1;
             $progress['done']++;
@@ -112,6 +149,10 @@ class ImportPdsChildren implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        if (Cache::has(self::cancelKey($this->runKey))) {
+            return;
+        }
+
         $progress = self::progress($this->runKey) ?? ['done' => 0, 'total' => 0, 'result' => []];
 
         $this->finish($progress, 'Der Import ist abgebrochen'.($exception ? ': '.$exception->getMessage() : '.').' Ein neuer Lauf setzt fort – bereits Importiertes wird erkannt.');

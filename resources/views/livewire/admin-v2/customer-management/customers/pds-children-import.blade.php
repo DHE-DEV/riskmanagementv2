@@ -12,7 +12,7 @@
     class="flex flex-col gap-6"
     {{-- Browser-Benachrichtigung am Ende, auch wenn der Tab im Hintergrund ist --}}
     x-on:pds-import-finished.window="'Notification' in window && Notification.permission === 'granted' && new Notification($event.detail.title, { body: $event.detail.body })"
-    @if ($runKey) wire:poll.5s="refreshRun" @endif
+    @if ($runKey) wire:poll.5s="refreshRun" @elseif ($childrenLoaded) wire:poll.15s="attachRunningImport" @endif
 >
     <div>
         <a href="{{ $back }}" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
@@ -83,6 +83,7 @@
                         wire:confirm="{{ $importable }} Unteraccounts jetzt anlegen bzw. ergänzen und {{ $agencyName }} zuordnen?"
                         wire:loading.attr="disabled"
                         wire:target="importChildren"
+                        :disabled="(bool) $runKey"
                     >{{ $importable }} importieren und zuordnen</flux:button>
                 @endif
 
@@ -93,8 +94,11 @@
                 {{-- Laufender Import im Hintergrund (Queue-Job), Fortschritt per wire:poll --}}
                 <div class="mt-4 flex flex-col gap-2" role="status">
                     <div class="flex items-center justify-between text-sm">
-                        <span class="flex items-center gap-2 font-medium text-zinc-900 dark:text-white"><flux:icon.arrow-path variant="micro" class="animate-spin" /> Import läuft im Hintergrund – die Seite darf geschlossen werden, am Ende kommt eine E-Mail</span>
-                        <span class="tabular-nums text-zinc-500">{{ $runDone }} von {{ $runTotal }}</span>
+                        <span class="flex items-center gap-2 font-medium text-zinc-900 dark:text-white"><flux:icon.arrow-path variant="micro" class="animate-spin" /> Import läuft im Hintergrund – die Seite darf geschlossen werden{{ $runNotify ? ', am Ende kommt eine E-Mail an '.$runNotify : '' }}</span>
+                        <span class="flex items-center gap-3">
+                            <span class="tabular-nums text-zinc-500">{{ $runDone }} von {{ $runTotal }}</span>
+                            <flux:button size="xs" variant="ghost" icon="x-mark" wire:click="cancelImport" wire:confirm="Import abbrechen? Bereits Importiertes bleibt, ein neuer Lauf setzt fort.">Abbrechen</flux:button>
+                        </span>
                     </div>
                     <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                         <div class="h-full rounded-full bg-[var(--color-accent)] transition-all" style="width: {{ $runTotal > 0 ? round($runDone / $runTotal * 100) : 0 }}%"></div>

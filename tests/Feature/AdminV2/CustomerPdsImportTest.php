@@ -386,22 +386,39 @@ it('importiert im Hintergrund per Queue, zeigt den Fortschritt und benachrichtig
     $children = array_map(fn (int $id) => pdsAccount($id), range(1, 25));
     fakePds(pdsAccount(3145), $children);
 
+    // Ein zweiter Tab hat die Vorschau schon geladen, bevor der Import startet.
+    $otherTab = Livewire::actingAs($admin)
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->call('loadChildren')
+        ->assertSee('25 importieren und zuordnen');
+
     $component = Livewire::actingAs($admin)
         ->test(PdsChildrenImport::class, ['customer' => $agency->id])
         ->call('loadChildren')
         ->call('importChildren')
         ->assertSet('runTotal', 25)
         ->assertSee('Import läuft im Hintergrund')
-        ->assertSee('0 von 25');
+        ->assertSee('am Ende kommt eine E-Mail an '.$admin->email)
+        ->assertSee('0 von 25')
+        ->assertDontSee('25 importieren und zuordnen');
 
     $runKey = $component->get('runKey');
     Queue::assertPushed(ImportPdsChildren::class, fn (ImportPdsChildren $job) => $job->agencyId === $agency->id && $job->userId === $admin->id && $job->runKey === $runKey);
 
-    // Ein zweiter Start fuer denselben Kunden ist gesperrt, eine neu geladene Seite haengt sich an.
-    $component->call('importChildren')->assertSee('Für diesen Kunden läuft schon ein Import.');
+    // Kein zweiter Start: der andere Tab haengt sich an statt neu zu starten,
+    // eine neu geladene Seite ebenso.
+    $otherTab->call('importChildren')
+        ->assertDispatched('adminv2-toast', message: 'Für diesen Kunden läuft schon ein Import.')
+        ->assertSet('runKey', $runKey)
+        ->assertSee('0 von 25')
+        ->assertDontSee('25 importieren und zuordnen');
+    Queue::assertPushed(ImportPdsChildren::class, 1);
+
     Livewire::actingAs($admin)->test(PdsChildrenImport::class, ['customer' => $agency->id])
         ->assertSet('runKey', $runKey)
-        ->assertSee('0 von 25');
+        ->assertSee('0 von 25')
+        ->call('loadChildren')
+        ->assertSet('childrenLoaded', false);
 
     // Der Worker arbeitet den Job ab.
     app()->call([new ImportPdsChildren($agency->id, $admin->id, $runKey), 'handle']);
@@ -477,4 +494,30 @@ it('meldet einen abgebrochenen Hintergrund-Import', function () {
         ->assertSee('Der Import ist abgebrochen: Zeitlimit');
 
     Notification::assertSentTo($admin, PdsChildrenImportCompleted::class, fn (PdsChildrenImportCompleted $notification) => $notification->error !== null);
+});
+
+it('lässt einen laufenden Import abbrechen und danach neu starten', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $admin = pdsImportAdmin();
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(3145), [pdsAccount(1), pdsAccount(2)]);
+
+    $component = Livewire::actingAs($admin)
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->call('importChildren');
+    $runKey = $component->get('runKey');
+
+    $component->call('cancelImport')
+        ->assertSet('runKey', null)
+        ->assertSee('Der Import wurde abgebrochen.');
+
+    // Der wartende Job tut nichts mehr und schickt keine Mail.
+    app()->call([new ImportPdsChildren($agency->id, $admin->id, $runKey), 'handle']);
+    expect(Customer::where('assign_to', $agency->id)->count())->toBe(0);
+    Notification::assertNothingSent();
+
+    $component->call('importChildren')->assertNotSet('runKey', null);
+    Queue::assertPushed(ImportPdsChildren::class, 2);
 });

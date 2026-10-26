@@ -98,6 +98,10 @@ class PdsChildrenImport extends Component
     #[Locked]
     public int $runTotal = 0;
 
+    /** An wen am Ende die E-Mail geht (der Admin, der den Import gestartet hat). */
+    #[Locked]
+    public ?string $runNotify = null;
+
     /** Seit wann der Job auf einen Queue-Worker wartet (Hinweis, falls keiner laeuft). */
     #[Locked]
     public ?int $runQueuedAt = null;
@@ -112,11 +116,44 @@ class PdsChildrenImport extends Component
         $this->pdsAccountId = (string) ($model->pds_account_id ?? '');
         $this->source = $service->isConfigured() ? 'api' : 'csv';
 
-        // An einen laufenden Import dieses Kunden wieder anhaengen.
-        if ($runKey = Cache::get(ImportPdsChildren::agencyKey($model->id))) {
-            $this->runKey = $runKey;
-            $this->refreshRun($service);
+        $this->attachRunningImport($service);
+    }
+
+    /**
+     * An einen laufenden Import dieses Kunden anhaengen – auch einen, den ein
+     * anderer Tab oder Admin gestartet hat. true, wenn einer laeuft.
+     */
+    public function attachRunningImport(PdsAccountImportService $service): bool
+    {
+        if ($this->runKey) {
+            return true;
         }
+
+        $runKey = Cache::get(ImportPdsChildren::agencyKey($this->customerId));
+
+        if (! is_string($runKey)) {
+            return false;
+        }
+
+        $this->runKey = $runKey;
+        $this->runNotify = Cache::get(ImportPdsChildren::notifyKey($runKey));
+        $this->refreshRun($service);
+
+        return true;
+    }
+
+    /**
+     * Laufenden Import abbrechen (z. B. wenn kein Worker laeuft); der Job
+     * hoert nach dem aktuellen Unteraccount auf, die Sperre wird sofort frei.
+     */
+    public function cancelImport(PdsAccountImportService $service): void
+    {
+        if (! $this->runKey) {
+            return;
+        }
+
+        ImportPdsChildren::cancel($this->customerId, $this->runKey);
+        $this->refreshRun($service);
     }
 
     public function customer(): Customer
@@ -186,6 +223,11 @@ class PdsChildrenImport extends Component
 
     public function loadChildren(PdsAccountImportService $service): void
     {
+        // Waehrend eines Imports nicht neu pruefen – die Seite zeigt dessen Fortschritt.
+        if ($this->attachRunningImport($service)) {
+            return;
+        }
+
         $agency = $this->customer();
         $children = $this->children($service, $agency);
 
@@ -224,8 +266,8 @@ class PdsChildrenImport extends Component
     {
         $agency = $this->customer();
 
-        if ($this->runKey || Cache::has(ImportPdsChildren::agencyKey($agency->id))) {
-            $this->error = 'Für diesen Kunden läuft schon ein Import.';
+        if ($this->attachRunningImport($service)) {
+            $this->dispatch('adminv2-toast', message: 'Für diesen Kunden läuft schon ein Import.');
 
             return;
         }
@@ -244,9 +286,17 @@ class PdsChildrenImport extends Component
 
         $runKey = 'adminv2:pds-children-import:'.Str::uuid();
 
+        // Sperre je Kunde – add() ist atomar, ein gleichzeitiger zweiter Start scheitert hier.
+        if (! Cache::add(ImportPdsChildren::agencyKey($agency->id), $runKey, now()->addDay())) {
+            $this->attachRunningImport($service);
+            $this->dispatch('adminv2-toast', message: 'Für diesen Kunden läuft schon ein Import.');
+
+            return;
+        }
+
         Cache::put(ImportPdsChildren::queueKey($runKey), $queue, now()->addDay());
+        Cache::put(ImportPdsChildren::notifyKey($runKey), auth()->user()?->email, now()->addDay());
         Cache::put(ImportPdsChildren::progressKey($runKey), ['done' => 0, 'total' => count($queue), 'result' => [], 'finished' => false, 'error' => null], now()->addDay());
-        Cache::put(ImportPdsChildren::agencyKey($agency->id), $runKey, now()->addDay());
 
         ImportPdsChildren::dispatch($agency->id, (int) auth()->id(), $runKey);
 
@@ -254,6 +304,7 @@ class PdsChildrenImport extends Component
         $this->runDone = 0;
         $this->runTotal = count($queue);
         $this->runQueuedAt = now()->getTimestamp();
+        $this->runNotify = auth()->user()?->email;
         $this->result = [];
         $this->error = null;
     }
