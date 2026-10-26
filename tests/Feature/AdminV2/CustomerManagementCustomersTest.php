@@ -865,3 +865,21 @@ it('filtert nach Haupt- und Unteraccounts', function () {
         ->call('resetFilters')
         ->assertSet('accountRole', '');
 });
+
+it('zeigt die Filialen als Karten und sortiert per Auswahl', function () {
+    $this->actingAs(customersAdmin());
+
+    $customer = managedCustomer(['company_name' => 'Kette Zentrale']);
+    customerBranch($customer, 'Filiale Bonn', ['city' => 'Bonn', 'is_headquarters' => true]);
+    customerBranch($customer, 'Filiale Aachen', ['city' => 'Aachen']);
+
+    Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->assertSeeInOrder(['Filiale Aachen', 'Filiale Bonn'])
+        ->assertSee('Hauptsitz')
+        ->call('sortBranches', 'name')
+        ->assertSet('branchDirection', 'desc')
+        ->assertSeeInOrder(['Filiale Bonn', 'Filiale Aachen'])
+        ->set('branchSort', 'city')
+        ->assertSet('branchDirection', 'asc')
+        ->assertSeeInOrder(['Filiale Aachen', 'Filiale Bonn']);
+});

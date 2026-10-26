@@ -166,3 +166,42 @@ it('vererbt die ausgewählten Features der Zentrale an die Unteraccounts – fre
 
     expect($service->isFeatureEnabled('navigation_cruise_enabled', $office))->toBeFalse();
 });
+
+it('liefert im Konten-Umschalter E-Mail und sortiert Konten ohne Firmenname ans Ende', function () {
+    $agency = Customer::factory()->create();
+    $named = Customer::factory()->create(['company_name' => 'Zeta Reisen']);
+    $unnamed = Customer::factory()->create(['company_name' => null, 'name' => 'Max Muster', 'email' => 'max@muster.test', 'company_postal_code' => null, 'company_city' => null]);
+    $agency->accessibleAccounts()->attach([$named->id, $unnamed->id]);
+
+    $data = $this->actingAs($agency, 'customer')
+        ->getJson('/customer/account/accessible')
+        ->assertOk()
+        ->json('data');
+
+    expect(array_column($data, 'id'))->toBe([$named->id, $unnamed->id])
+        ->and($data[1]['email'])->toBe('max@muster.test');
+
+    $this->actingAs($agency, 'customer')
+        ->getJson('/customer/account/accessible?search=muster.test')
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $unnamed->id);
+});
+
+it('zeigt die Agenturen in der Übersicht als Karten mit Suche, Status-Filter und Inaktiv-Markierung', function () {
+    $agency = Customer::factory()->create(['branch_management_active' => true, 'customer_type' => 'business', 'show_sub_accounts_as_branches' => true]);
+    $active = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Aktives Büro', 'email' => 'aktiv@buero.test']);
+    $inactive = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Altes Büro']);
+    CustomerFeatureOverride::create(['customer_id' => $agency->id, 'settings_organization_enabled' => true]);
+    \Illuminate\Support\Facades\DB::table('customers_legacy_options')->insert([
+        ['account_id' => $inactive->id, 'end_of_use' => '2020-12-31', 'providers' => '[]'],
+        ['account_id' => $active->id, 'end_of_use' => '2099-12-31', 'providers' => '[]'],
+    ]);
+
+    $this->actingAs($agency, 'customer')
+        ->get(route('customer.settings', ['section' => 'organization']))
+        ->assertOk()
+        ->assertSee('x-data="{ q: \'\', status: \'all\' }"', false)
+        ->assertSee("status === 'inactive'", false)
+        ->assertSee('Inaktiv')
+        ->assertSee('mailto:aktiv@buero.test', false);
+});

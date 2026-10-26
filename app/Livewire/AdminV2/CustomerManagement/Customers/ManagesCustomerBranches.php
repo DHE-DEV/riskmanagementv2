@@ -79,6 +79,19 @@ trait ManagesCustomerBranches
         $this->resetPage('branchesPage');
     }
 
+    /**
+     * Sortierung aus der Auswahl (Kartenansicht): aufsteigend beginnen.
+     */
+    public function updatedBranchSort(): void
+    {
+        if (! array_key_exists($this->branchSort, $this->branchSortOptions())) {
+            $this->branchSort = 'name';
+        }
+
+        $this->branchDirection = 'asc';
+        $this->resetPage('branchesPage');
+    }
+
     public function sortBranches(string $column): void
     {
         if (! array_key_exists($column, $this->branchSortOptions())) {

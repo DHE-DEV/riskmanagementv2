@@ -2018,9 +2018,13 @@
                         // Zugeordnete Agenturen als Adressen (Schalter je Kunde im Admin).
                         $subAccountAddresses = $customer->show_sub_accounts_as_branches
                             ? \App\Models\Customer::where('assign_to', $customer->id)
+                                ->with('legacyOptions:account_id,live_from,end_of_use')
                                 ->orderBy('company_name')->orderBy('id')
                                 ->get(['id', 'app_code', 'name', 'email', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
                             : collect();
+                        // Inaktiv wie im Tab "Agenturen": Laufzeit aus den Alt-Optionen noch nicht begonnen bzw. abgelaufen.
+                        $subAccountInactive = fn ($account) => ($account->legacyOptions?->live_from && $account->legacyOptions->live_from->isAfter(today()))
+                            || ($account->legacyOptions?->end_of_use && $account->legacyOptions->end_of_use->isBefore(today()));
                     @endphp
 
                     <template x-if="!loading && branches.length === 0 && !showNewForm && {{ $subAccountAddresses->isEmpty() ? 'true' : 'false' }}">
@@ -2084,26 +2088,50 @@
                         </template>
                     </div>
                     @if($subAccountAddresses->isNotEmpty())
-                        {{-- Agenturen (Unteraccounts) als Adressen --}}
-                        <div class="mt-6">
-                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Agenturen ({{ $subAccountAddresses->count() }})</h4>
-                            <div class="space-y-2">
+                        {{-- Agenturen (Unteraccounts) als Adressen: Suche, Status-Filter, Karten --}}
+                        <div class="mt-6" x-data="{ q: '', status: 'all' }">
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agenturen ({{ $subAccountAddresses->count() }})</h4>
+                                <div class="flex flex-wrap items-center gap-2 flex-1 sm:flex-none">
+                                    <div class="relative flex-1 sm:w-64">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
+                                        <input type="search" x-model="q" placeholder="Firma, Code, PLZ, Ort, E-Mail …" aria-label="Agenturen durchsuchen"
+                                               class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <select x-model="status" aria-label="Agenturen nach Status filtern"
+                                            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="all">Alle</option>
+                                        <option value="active">Aktiv</option>
+                                        <option value="inactive">Inaktiv</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                                 @foreach($subAccountAddresses as $subAccount)
-                                    <div class="bg-white rounded-lg border border-gray-200 p-3 flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2 flex-wrap">
-                                                <h5 class="text-sm font-semibold text-gray-900">{{ $subAccount->company_name ?: $subAccount->name }}</h5>
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800"><i class="fas fa-store mr-1 text-[8px]"></i>Agentur</span>
-                                                @if($subAccount->app_code)
-                                                    <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{{ $subAccount->app_code }}</span>
-                                                @endif
-                                            </div>
-                                            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
-                                                <span><i class="fas fa-location-dot mr-1"></i>{{ trim($subAccount->company_street.' '.$subAccount->company_house_number) ?: '—' }}, {{ trim($subAccount->company_postal_code.' '.$subAccount->company_city) ?: '—' }}</span>
-                                                @if($subAccount->email)
-                                                    <span><i class="fas fa-envelope mr-1"></i>{{ $subAccount->email }}</span>
-                                                @endif
-                                            </div>
+                                    @php
+                                        $inactive = $subAccountInactive($subAccount);
+                                        $haystack = mb_strtolower(implode(' ', [$subAccount->company_name, $subAccount->name, $subAccount->app_code, $subAccount->company_postal_code, $subAccount->company_city, $subAccount->email]));
+                                    @endphp
+                                    <div x-show="(status === 'all' || status === '{{ $inactive ? 'inactive' : 'active' }}') && (q === '' || @js($haystack).includes(q.toLowerCase()))"
+                                         class="rounded-lg border p-3 {{ $inactive ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200' }}">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <h5 class="text-sm font-semibold text-gray-900 min-w-0 break-words">{{ $subAccount->company_name ?: $subAccount->name }}</h5>
+                                            @if($subAccount->app_code)
+                                                <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded flex-shrink-0">{{ $subAccount->app_code }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800"><i class="fas fa-store mr-1 text-[8px]"></i>Agentur</span>
+                                            @if($inactive)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700"><i class="fas fa-circle-pause mr-1 text-[8px]"></i>Inaktiv</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-2 space-y-1">
+                                            <p><i class="fas fa-location-dot mr-1 w-3"></i>{{ trim($subAccount->company_street.' '.$subAccount->company_house_number) ?: '—' }}, {{ trim($subAccount->company_postal_code.' '.$subAccount->company_city) ?: '—' }}</p>
+                                            @if($subAccount->email)
+                                                <p class="truncate"><i class="fas fa-envelope mr-1 w-3"></i><a href="mailto:{{ $subAccount->email }}" class="text-blue-600 hover:underline">{{ $subAccount->email }}</a></p>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -2120,9 +2148,9 @@
                 {{-- ==================== Tab: Agenturen ==================== --}}
                 @if($assignedCount > 0)
                 <div x-show="orgTab === 'agenturen'" x-cloak x-data="assignedAgencies()">
-                    {{-- Suche --}}
-                    <div class="mb-4">
-                        <div class="relative">
+                    {{-- Suche und Status-Filter --}}
+                    <div class="mb-4 flex flex-wrap items-center gap-3">
+                        <div class="relative min-w-56 flex-1">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
                             <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()" @keydown.escape="search = ''; loadAgencies()"
                                    placeholder="Suche nach Firma, Code, PLZ, Ort..."
@@ -2131,6 +2159,12 @@
                                 <i class="fas fa-times-circle text-sm"></i>
                             </button>
                         </div>
+                        <select x-model="status" aria-label="Agenturen nach Status filtern"
+                                class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="all">Alle Agenturen</option>
+                            <option value="active">Nur aktive</option>
+                            <option value="inactive">Nur inaktive</option>
+                        </select>
                     </div>
 
                     {{-- Tabelle --}}
@@ -2160,7 +2194,10 @@
                                     <tr class="border-b border-gray-100"
                                         :class="isInactive(agency) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'">
                                         <td class="px-4 py-2"><span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="agency.app_code"></span></td>
-                                        <td class="px-4 py-2 font-medium" x-text="agency.company_name"></td>
+                                        <td class="px-4 py-2 font-medium">
+                                            <span x-text="agency.company_name || agency.name"></span>
+                                            <span x-show="isInactive(agency)" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">Inaktiv</span>
+                                        </td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
                                         <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
@@ -2236,7 +2273,8 @@
                                         </div>
                                         <div>
                                             <span class="text-xs text-gray-500 block">E-Mail</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.email || '—'"></span>
+                                            <a x-show="detailAgency?.email" :href="'mailto:' + detailAgency?.email" class="text-blue-600 hover:text-blue-800 hover:underline break-all" x-text="detailAgency?.email"></a>
+                                            <span x-show="!detailAgency?.email" class="text-gray-900">—</span>
                                         </div>
                                         <div>
                                             <span class="text-xs text-gray-500 block">Telefon</span>
@@ -6652,6 +6690,8 @@ function assignedAgencies() {
         detailAgency: null,
         sortField: 'company_name',
         sortDir: 'asc',
+        // all | active | inactive (Laufzeit aus den Alt-Optionen)
+        status: 'all',
 
         isInactive(agency) {
             const today = new Date().toISOString().slice(0, 10);
@@ -6659,9 +6699,10 @@ function assignedAgencies() {
                    (agency.legacy_options?.end_of_use && today > agency.legacy_options.end_of_use);
         },
 
-        // Alle zugeordneten Agenturen; inaktive (Laufzeit aus den Alt-Optionen)
-        // bleiben sichtbar und sind nur rot markiert.
+        // Standard: alle zugeordneten Agenturen; inaktive sind rot markiert.
         get filteredAgencies() {
+            if (this.status === 'active') return this.agencies.filter(a => !this.isInactive(a));
+            if (this.status === 'inactive') return this.agencies.filter(a => this.isInactive(a));
             return this.agencies;
         },
 

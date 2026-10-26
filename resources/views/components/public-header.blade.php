@@ -139,8 +139,11 @@
                                     <button type="submit" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between border-b border-gray-50"
                                             :class="account.id === {{ $currentCustomer->id }} ? 'bg-blue-50' : ''">
                                         <div class="min-w-0 flex-1">
-                                            <span class="font-semibold block truncate" x-text="account.company_name"></span>
-                                            <span class="text-xs text-gray-500 block" x-text="account.company_postal_code + ' ' + account.company_city"></span>
+                                            {{-- Ohne Firmenname: Name bzw. E-Mail; leere Adressteile nicht als "null" zeigen --}}
+                                            <span class="font-semibold block truncate" x-text="account.company_name || account.name || account.email || ('Kunde #' + account.id)"></span>
+                                            <span class="text-xs text-gray-500 block truncate"
+                                                  x-show="account.company_postal_code || account.company_city || (account.company_name && account.email)"
+                                                  x-text="[account.company_postal_code, account.company_city].filter(Boolean).join(' ') || account.email"></span>
                                         </div>
                                         <span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded flex-shrink-0 ml-2" x-text="account.app_code"></span>
                                     </button>

@@ -32,13 +32,16 @@ class AccountSwitchController extends Controller
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('company_name', 'like', "%{$search}%")
                     ->orWhere('company_postal_code', 'like', "%{$search}%")
-                    ->orWhere('company_city', 'like', "%{$search}%");
+                    ->orWhere('company_city', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         $accounts = $query
-            ->select('customers.id', 'name', 'company_name', 'app_code', 'company_postal_code', 'company_city')
-            ->orderBy('company_name')
+            ->select('customers.id', 'name', 'email', 'company_name', 'app_code', 'company_postal_code', 'company_city')
+            // Kunden ohne Firmenname ans Ende, sonst stehen sie vorn.
+            ->orderByRaw("NULLIF(company_name, '') IS NULL")
+            ->orderByRaw("COALESCE(NULLIF(company_name, ''), NULLIF(name, ''), email)")
             ->paginate(10);
 
         return response()->json($accounts);

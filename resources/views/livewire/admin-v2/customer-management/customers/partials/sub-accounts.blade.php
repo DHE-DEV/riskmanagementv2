@@ -2,42 +2,46 @@
     $subAccounts = $this->subAccounts;
 @endphp
 
-<x-adminv2.card heading="Unteraccounts" description="Kunden, die diesem Kunden als Agentur zugeordnet sind – z. B. die Unteraccounts aus pds-admin." flush>
-    <x-slot:actions>
-        <flux:button size="sm" icon="arrow-down-tray" :href="route('adminv2.customer-management.customers.import-children', $customerId)">Unteraccounts aus pds-admin importieren</flux:button>
-    </x-slot:actions>
+<div class="flex flex-col gap-4">
+    <x-adminv2.card heading="Unteraccounts" description="Kunden, die diesem Kunden als Agentur zugeordnet sind – z. B. die Unteraccounts aus pds-admin." flush>
+        <x-slot:actions>
+            <flux:button size="sm" icon="arrow-down-tray" :href="route('adminv2.customer-management.customers.import-children', $customerId)">Unteraccounts aus pds-admin importieren</flux:button>
+        </x-slot:actions>
 
-    {{-- Hinweis fuer alle, die hier oder beim Unteraccount nachsehen: was die Unteraccounts sind --}}
-    <form wire:submit="saveSubAccountsNote" class="flex flex-col gap-2 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <flux:textarea
-            wire:model="subAccountsNote"
-            label="Hinweis zu den Unteraccounts"
-            description="Wird auch bei jedem zugeordneten Kunden oben angezeigt."
-            placeholder="z. B. Reisebürokette – die Unteraccounts sind eigenständige Büros mit eigenen Logins."
-            rows="2"
-            resize="vertical"
-        />
-        <flux:error name="subAccountsNote" />
-        <div>
-            <flux:button type="submit" size="sm" icon="check" wire:loading.attr="disabled" wire:target="saveSubAccountsNote">Hinweis speichern</flux:button>
+        {{-- Hinweis fuer alle, die hier oder beim Unteraccount nachsehen: was die Unteraccounts sind --}}
+        <form wire:submit="saveSubAccountsNote" class="flex flex-col gap-2 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+            <flux:textarea
+                wire:model="subAccountsNote"
+                label="Hinweis zu den Unteraccounts"
+                description="Wird auch bei jedem zugeordneten Kunden oben angezeigt."
+                placeholder="z. B. Reisebürokette – die Unteraccounts sind eigenständige Büros mit eigenen Logins."
+                rows="2"
+                resize="vertical"
+            />
+            <flux:error name="subAccountsNote" />
+            <div>
+                <flux:button type="submit" size="sm" icon="check" wire:loading.attr="disabled" wire:target="saveSubAccountsNote">Hinweis speichern</flux:button>
+            </div>
+        </form>
+
+        <div class="flex flex-wrap items-center gap-3 px-5 py-4">
+            <div class="min-w-56 flex-1">
+                <flux:input wire:model.live.debounce.300ms="subAccountSearch" size="sm" icon="magnifying-glass" placeholder="Code, Firma, E-Mail, PLZ, Stadt oder PDS-ID suchen …" aria-label="Unteraccounts durchsuchen" clearable />
+            </div>
         </div>
-    </form>
 
-    <div class="flex flex-wrap items-center gap-3 px-5 py-4">
-        <div class="min-w-56 flex-1">
-            <flux:input wire:model.live.debounce.300ms="subAccountSearch" size="sm" icon="magnifying-glass" placeholder="Code, Firma, E-Mail, PLZ, Stadt oder PDS-ID suchen …" aria-label="Unteraccounts durchsuchen" clearable />
-        </div>
-    </div>
+        @if ($subAccounts->isEmpty())
+            @include('livewire.admin-v2.customer-management.customers.partials.empty', [
+                'icon' => 'building-storefront',
+                'heading' => 'Keine Unteraccounts',
+                'text' => $subAccountSearch !== '' ? 'Zur Suche passt kein Unteraccount.' : 'Diesem Kunden ist noch kein anderer Kunde zugeordnet.',
+            ])
+        @endif
+    </x-adminv2.card>
 
-    @if ($subAccounts->isEmpty())
-        @include('livewire.admin-v2.customer-management.customers.partials.empty', [
-            'icon' => 'building-storefront',
-            'heading' => 'Keine Unteraccounts',
-            'text' => $subAccountSearch !== '' ? 'Zur Suche passt kein Unteraccount.' : 'Diesem Kunden ist noch kein anderer Kunde zugeordnet.',
-        ])
-    @else
-        {{-- Karten: je nach verfuegbarer Breite 1, 2 oder hoechstens 3 nebeneinander --}}
-        <div class="@container border-t border-zinc-100 px-5 py-4 dark:border-zinc-800" wire:loading.class="opacity-60" wire:target="subAccountSearch, nextPage, previousPage">
+    @if ($subAccounts->isNotEmpty())
+        {{-- Karten unter dem Kasten: je nach verfuegbarer Breite 1, 2 oder hoechstens 3 nebeneinander --}}
+        <div class="@container" wire:loading.class="opacity-60" wire:target="subAccountSearch, nextPage, previousPage">
             <div class="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3">
                 @foreach ($subAccounts as $account)
                     @php($editUrl = route('adminv2.customer-management.customers.edit', $account->id))
@@ -75,6 +79,8 @@
             </div>
         </div>
 
-        @include('livewire.admin-v2.customer-management.customers.partials.pagination', ['paginator' => $subAccounts, 'pageName' => 'subAccountsPage'])
+        <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 [&>div]:border-t-0">
+            @include('livewire.admin-v2.customer-management.customers.partials.pagination', ['paginator' => $subAccounts, 'pageName' => 'subAccountsPage'])
+        </div>
     @endif
-</x-adminv2.card>
+</div>
