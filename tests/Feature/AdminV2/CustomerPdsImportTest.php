@@ -12,7 +12,7 @@ use Livewire\Livewire;
 
 /**
  * Kundenverwaltung > Kunden > Account aus pds-admin importieren (einzeln) und
- * Kunde > Zugriff auf andere Accounts > Unteraccounts importieren.
+ * Kunde > Unteraccounts > aus pds-admin importieren.
  */
 beforeEach(function () {
     config([
@@ -315,7 +315,57 @@ it('ist nur für Admins erreichbar und aus Liste und Kunde verlinkt', function (
         ->assertSee('Account aus pds-admin importieren');
 
     $this->actingAs($admin)
-        ->get(route('adminv2.customer-management.customers.edit', ['customer' => $customer->id, 'tab' => 'access']))
+        ->get(route('adminv2.customer-management.customers.edit', ['customer' => $customer->id, 'tab' => 'sub-accounts']))
         ->assertSee('Unteraccounts aus pds-admin importieren')
         ->assertSee(route('adminv2.customer-management.customers.import-children', $customer->id));
+});
+
+it('listet im Tab Unteraccounts die zugeordneten Kunden mit Suche', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    Customer::factory()->create(['company_name' => 'Reisebüro Augsburg', 'email' => 'augsburg@solamento.test', 'pds_account_id' => 26054, 'assign_to' => $agency->id]);
+    Customer::factory()->create(['company_name' => 'Reisebüro Essen', 'email' => 'essen@solamento.test', 'assign_to' => $agency->id])->delete();
+    Customer::factory()->create(['company_name' => 'Fremdes Büro', 'email' => 'fremd@agentur.test']);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
+        ->call('showTab', 'sub-accounts')
+        ->assertSee('Reisebüro Augsburg')
+        ->assertSee('26054')
+        ->assertSee('Reisebüro Essen')
+        ->assertSee('Papierkorb')
+        ->assertDontSee('Fremdes Büro')
+        ->assertSee('Unteraccounts aus pds-admin importieren')
+        ->set('subAccountSearch', 'Augsburg')
+        ->assertSee('Reisebüro Augsburg')
+        ->assertDontSee('Reisebüro Essen');
+});
+
+it('pflegt einen Hinweis zu den Unteraccounts und zeigt ihn beim Unteraccount', function () {
+    $agency = Customer::factory()->create(['company_name' => 'solamento Reisen GmbH', 'email' => 'zentrale@login.test']);
+    $office = Customer::factory()->create(['company_name' => 'Reisebüro Augsburg', 'email' => 'augsburg@solamento.test', 'assign_to' => $agency->id]);
+    $note = 'Reisebürokette – eigenständige Büros mit eigenen Logins.';
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
+        ->call('showTab', 'sub-accounts')
+        ->assertSee('Hinweis zu den Unteraccounts')
+        ->set('subAccountsNote', "  {$note}  ")
+        ->call('saveSubAccountsNote')
+        ->assertHasNoErrors()
+        ->set('subAccountsNote', str_repeat('x', 2001))
+        ->call('saveSubAccountsNote')
+        ->assertHasErrors('subAccountsNote');
+
+    expect($agency->fresh()->sub_accounts_note)->toBe($note);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $office->id])
+        ->assertSee('Unteraccount von')
+        ->assertSee('solamento Reisen GmbH')
+        ->assertSee($note);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
+        ->assertSet('subAccountsNote', $note)
+        ->assertDontSee('Unteraccount von');
 });

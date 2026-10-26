@@ -18,7 +18,7 @@ use RuntimeException;
  * schon als Kunden gibt (per Account-ID, sonst per E-Mail). Nur wenn nicht,
  * wird er angelegt. Ist er Unteraccount eines Hauptaccounts, den es schon als
  * Kunden gibt, wird er diesem zugeordnet. Unteraccounts gesammelt importiert
- * der Kunden-Editor (Tab „Zugriff auf andere Accounts“, PdsChildrenImport).
+ * der Kunden-Editor (Tab „Unteraccounts“, PdsChildrenImport).
  */
 #[Layout('components.layouts.adminv2.app')]
 #[Title('Account aus pds-admin importieren')]

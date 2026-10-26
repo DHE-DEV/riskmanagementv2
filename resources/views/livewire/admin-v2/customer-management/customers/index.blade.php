@@ -15,8 +15,35 @@
     </x-adminv2.customer-management.list-header>
 
     <div class="flex flex-wrap items-center gap-3">
-        <div class="min-w-64 flex-1">
-            <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Name, E-Mail, Firma oder PDS Account-ID suchen …" aria-label="Suche" clearable />
+        <div class="flex min-w-64 flex-1 gap-2">
+            <div class="w-44 shrink-0">
+                <flux:select wire:model.live="searchField" aria-label="Suchen in">
+                    @foreach (Index::SEARCH_FIELDS as $value => $label)
+                        <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+            <div class="min-w-0 flex-1">
+                <flux:input
+                    wire:model.live.debounce.300ms="search"
+                    icon="magnifying-glass"
+                    :placeholder="match ($searchField) {
+                        'id' => 'Kundennummer, z. B. 263 – mehrere mit Komma',
+                        'pds_account_id' => 'PDS Account-ID, z. B. 3145 – mehrere mit Komma',
+                        default => 'Name, E-Mail, Firma, Kundennummer oder PDS Account-ID suchen …',
+                    }"
+                    aria-label="Suche"
+                    clearable
+                />
+            </div>
+        </div>
+        <div class="w-48">
+            <flux:select wire:model.live="accountRole" aria-label="Haupt- und Unteraccounts">
+                <flux:select.option value="">Alle Accounts</flux:select.option>
+                @foreach (Index::ACCOUNT_ROLES as $value => $label)
+                    <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                @endforeach
+            </flux:select>
         </div>
         <div class="w-44">
             <flux:select wire:model.live="customerType" aria-label="Kundentyp">
@@ -93,7 +120,7 @@
             @endif
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, customerType, emailVerified, gtmApi, trashed, sort, toggleDirection, resetFilters, runPendingAction, gotoPage, nextPage, previousPage">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" wire:loading.class="opacity-60" wire:target="search, searchField, accountRole, customerType, emailVerified, gtmApi, trashed, sort, toggleDirection, resetFilters, runPendingAction, gotoPage, nextPage, previousPage">
             @foreach ($rows as $customer)
                 @php
                     $editUrl = route('adminv2.customer-management.customers.edit', $customer->id);
@@ -205,6 +232,15 @@
                                 @endif
                             </x-adminv2.master-data.card-row>
                         @endif
+
+                        <x-adminv2.master-data.card-row icon="hashtag" label="Kundennummer">
+                            Kunde <span class="font-mono text-xs">#{{ $customer->id }}</span>
+                            @if ($customer->assigned_customers_count > 0)
+                                <span class="text-zinc-400">·</span> Hauptaccount mit {{ $customer->assigned_customers_count }} {{ $customer->assigned_customers_count === 1 ? 'Unteraccount' : 'Unteraccounts' }}
+                            @elseif ($customer->assignedTo)
+                                <span class="text-zinc-400">·</span> Unteraccount von {{ $customer->assignedTo->company_name ?: Index::label($customer->assignedTo) }}
+                            @endif
+                        </x-adminv2.master-data.card-row>
 
                         <x-adminv2.master-data.card-row icon="building-storefront" label="Filialen">
                             {{ $customer->branches_count }} {{ $customer->branches_count === 1 ? 'Filiale' : 'Filialen' }}

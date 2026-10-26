@@ -11,7 +11,7 @@
             <flux:icon.arrow-left variant="micro" /> Kunden
         </a>
         <flux:heading size="xl" level="1" class="mt-1">Account aus pds-admin importieren</flux:heading>
-        <flux:subheading>Einen einzelnen Account per PDS Account-ID abrufen. Gibt es ihn schon als Kunden (gleiche Account-ID oder E-Mail), wird er nicht doppelt angelegt. Unteraccounts einer Agentur importierst du im Kunden unter „Zugriff auf andere Accounts“.</flux:subheading>
+        <flux:subheading>Einen einzelnen Account per PDS Account-ID abrufen. Gibt es ihn schon als Kunden (gleiche Account-ID oder E-Mail), wird er nicht doppelt angelegt. Unteraccounts einer Agentur importierst du im Kunden im Tab „Unteraccounts“.</flux:subheading>
     </div>
 
     @unless ($this->isConfigured())

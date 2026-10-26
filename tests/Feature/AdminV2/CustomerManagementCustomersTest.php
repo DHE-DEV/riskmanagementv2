@@ -805,3 +805,63 @@ it('laesst nur Admins auf die Kunden', function () {
 
     expect(Customer::count())->toBe(1);
 });
+
+it('sucht wahlweise genau nach Kundennummer oder PDS Account-ID', function () {
+    $this->actingAs(customersAdmin());
+
+    $agency = managedCustomer(['company_name' => 'Kette Zentrale', 'pds_account_id' => 3145]);
+    $office = managedCustomer(['company_name' => 'Büro Augsburg', 'pds_account_id' => 31450]);
+    $other = managedCustomer(['company_name' => 'Anderes Büro', 'pds_account_id' => 26054]);
+
+    // Ueberall: Teiltreffer in der PDS-ID und die Kundennummer genau.
+    Livewire::test(Index::class)
+        ->set('search', '3145')
+        ->assertSee('Kette Zentrale')
+        ->assertSee('Büro Augsburg')
+        ->assertDontSee('Anderes Büro')
+        ->set('search', (string) $other->id)
+        ->assertSee('Anderes Büro');
+
+    Livewire::test(Index::class)
+        ->set('searchField', 'pds_account_id')
+        ->set('search', '3145')
+        ->assertSee('Kette Zentrale')
+        ->assertDontSee('Büro Augsburg')
+        ->set('search', '3145, 26054')
+        ->assertSee('Kette Zentrale')
+        ->assertSee('Anderes Büro')
+        ->assertDontSee('Büro Augsburg');
+
+    Livewire::test(Index::class)
+        ->set('searchField', 'id')
+        ->set('search', (string) $office->id)
+        ->assertSee('Büro Augsburg')
+        ->assertDontSee('Kette Zentrale')
+        ->assertDontSee('Anderes Büro');
+});
+
+it('filtert nach Haupt- und Unteraccounts', function () {
+    $this->actingAs(customersAdmin());
+
+    $agency = managedCustomer(['company_name' => 'Kette Zentrale']);
+    managedCustomer(['company_name' => 'Büro Augsburg', 'assign_to' => $agency->id]);
+    managedCustomer(['company_name' => 'Büro Essen', 'assign_to' => $agency->id]);
+    managedCustomer(['company_name' => 'Einzelkunde GmbH']);
+
+    Livewire::test(Index::class)
+        ->assertSee('Hauptaccount mit 2 Unteraccounts')
+        ->assertSee('Unteraccount von Kette Zentrale')
+        ->set('accountRole', 'main')
+        ->assertSee('Kette Zentrale')
+        ->assertDontSee('Büro Augsburg')
+        ->assertDontSee('Einzelkunde GmbH')
+        ->set('accountRole', 'sub')
+        ->assertSee('Büro Augsburg')
+        ->assertSee('Büro Essen')
+        ->assertDontSee('Einzelkunde GmbH')
+        ->set('accountRole', 'standalone')
+        ->assertSee('Einzelkunde GmbH')
+        ->assertDontSee('Büro Essen')
+        ->call('resetFilters')
+        ->assertSet('accountRole', '');
+});

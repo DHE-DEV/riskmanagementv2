@@ -31,11 +31,25 @@ class Index extends Component
 
     public const CUSTOMER_TYPES = ['private' => 'Privat', 'business' => 'Geschäftlich'];
 
+    /** Worin gesucht wird: '' = ueberall, sonst genau in einer Nummer. */
+    public const SEARCH_FIELDS = ['' => 'Überall', 'id' => 'Kundennummer', 'pds_account_id' => 'PDS Account-ID'];
+
+    /** Haupt- bzw. Unteraccounts (Zuordnung per customers.assign_to). */
+    public const ACCOUNT_ROLES = ['main' => 'Nur Hauptaccounts', 'sub' => 'Nur Unteraccounts', 'standalone' => 'Ohne Zuordnung'];
+
     /** Aktionen mit Rueckfrage: einzeln und fuer die Auswahl. */
     protected const ACTIONS = ['delete', 'restore', 'force', 'bulk-delete', 'bulk-restore', 'bulk-force'];
 
     #[Url(except: '')]
     public string $search = '';
+
+    /** Siehe SEARCH_FIELDS */
+    #[Url(as: 'in', except: '')]
+    public string $searchField = '';
+
+    /** '' = alle, sonst siehe ACCOUNT_ROLES */
+    #[Url(as: 'role', except: '')]
+    public string $accountRole = '';
 
     /** '' = ohne Papierkorb, 'with' = mit, 'only' = nur Papierkorb */
     #[Url(except: '')]
@@ -106,7 +120,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'trashed', 'customerType', 'emailVerified', 'gtmApi', 'sort'], true)) {
+        if (in_array($property, ['search', 'searchField', 'accountRole', 'trashed', 'customerType', 'emailVerified', 'gtmApi', 'sort'], true)) {
             $this->resetPage();
             // Die Auswahl gilt nur fuer das, was gerade zu sehen ist.
             $this->selected = [];
@@ -121,20 +135,20 @@ class Index extends Component
 
     public function resetFilters(): void
     {
-        $this->reset(['search', 'trashed', 'customerType', 'emailVerified', 'gtmApi', 'selected']);
+        $this->reset(['search', 'searchField', 'accountRole', 'trashed', 'customerType', 'emailVerified', 'gtmApi', 'selected']);
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return $this->search !== '' || $this->trashed !== '' || $this->customerType !== '' || $this->emailVerified !== '' || $this->gtmApi !== '';
+        return $this->search !== '' || $this->accountRole !== '' || $this->trashed !== '' || $this->customerType !== '' || $this->emailVerified !== '' || $this->gtmApi !== '';
     }
 
     #[Computed]
     public function rows(): LengthAwarePaginator
     {
         // tokens_count: alle API Tokens des Kunden (Sanctum), unabhaengig von Berechtigung und Ablauf.
-        $query = Customer::query()->withCount(['branches', 'tokens']);
+        $query = Customer::query()->withCount(['branches', 'tokens', 'assignedCustomers'])->with('assignedTo:id,name,email,company_name');
 
         match ($this->trashed) {
             'with' => $query->withTrashed(),
@@ -143,9 +157,28 @@ class Index extends Component
         };
 
         if (($term = trim($this->search)) !== '') {
-            // Die Liste ist auch ueber die reine Account-ID durchsuchbar.
-            $this->whereEveryWord($query, $term, ['name', 'email', 'company_name', ...($this->hasPdsAccountId() ? ['pds_account_id'] : [])]);
+            $field = $this->searchField === 'pds_account_id' && ! $this->hasPdsAccountId() ? '' : $this->searchField;
+
+            if ($field !== '' && isset(self::SEARCH_FIELDS[$field])) {
+                // Genau diese Nummer(n), z. B. "263" oder "3145, 26054".
+                $query->whereIn($field, array_map('intval', preg_split('/[\s,;]+/', $term, -1, PREG_SPLIT_NO_EMPTY) ?: [0]));
+            } elseif (ctype_digit($term)) {
+                // Eine reine Zahl trifft auch die Kundennummer genau.
+                $query->where(function ($query) use ($term) {
+                    $query->whereKey((int) $term)
+                        ->orWhere(fn ($query) => $this->whereEveryWord($query, $term, ['name', 'email', 'company_name', ...($this->hasPdsAccountId() ? ['pds_account_id'] : [])]));
+                });
+            } else {
+                $this->whereEveryWord($query, $term, ['name', 'email', 'company_name', ...($this->hasPdsAccountId() ? ['pds_account_id'] : [])]);
+            }
         }
+
+        match ($this->accountRole) {
+            'main' => $query->has('assignedCustomers'),
+            'sub' => $query->whereNotNull('assign_to'),
+            'standalone' => $query->whereNull('assign_to')->doesntHave('assignedCustomers'),
+            default => null,
+        };
 
         if (isset(self::CUSTOMER_TYPES[$this->customerType])) {
             $query->where('customer_type', $this->customerType);

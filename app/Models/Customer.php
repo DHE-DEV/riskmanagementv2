@@ -144,6 +144,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         // App code
         'app_code',
         'assign_to',
+        'sub_accounts_note',
     ];
 
     protected $hidden = [

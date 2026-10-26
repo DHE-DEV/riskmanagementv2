@@ -38,6 +38,19 @@
                     </div>
                 </div>
 
+                @if ($agency = $customer->assignedTo)
+                    {{-- Unteraccount: zu welcher Agentur er gehoert und was das bedeutet --}}
+                    <div class="flex items-start gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+                        <flux:icon.building-storefront variant="mini" class="mt-0.5 shrink-0" />
+                        <div>
+                            Unteraccount von
+                            <a href="{{ route('adminv2.customer-management.customers.edit', ['customer' => $agency->id, 'tab' => 'sub-accounts']) }}" class="font-medium underline decoration-sky-300 underline-offset-2 hover:decoration-sky-900">{{ $agency->company_name ?: Index::label($agency) }}</a>@if ($agency->sub_accounts_note):
+                                <span class="whitespace-pre-line">{{ $agency->sub_accounts_note }}</span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 @if ($customer->trashed())
                     <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
                         <flux:icon.trash variant="mini" />
@@ -257,7 +270,7 @@
             </div>
         </form>
 
-        {{-- Was am Kunden haengt: Filialen, Account-Zugriffe, API Tokens, GTM API Logs --}}
+        {{-- Was am Kunden haengt: Filialen, Unteraccounts, Account-Zugriffe, API Tokens, GTM API Logs --}}
         <div class="flex flex-col gap-4">
             <div class="flex flex-wrap gap-1 border-b border-zinc-200 dark:border-zinc-800" role="tablist">
                 @foreach (Editor::TABS as $key => $label)
@@ -278,7 +291,9 @@
             </div>
 
             <div wire:loading.class="opacity-60" wire:target="showTab">
-                @if ($tab === 'access')
+                @if ($tab === 'sub-accounts')
+                    @include('livewire.admin-v2.customer-management.customers.partials.sub-accounts')
+                @elseif ($tab === 'access')
                     @include('livewire.admin-v2.customer-management.customers.partials.access')
                 @elseif ($tab === 'tokens')
                     @include('livewire.admin-v2.customer-management.customers.partials.tokens')

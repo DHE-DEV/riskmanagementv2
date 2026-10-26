@@ -1,7 +1,7 @@
 @php
     use App\Services\PdsAccountImportService as Import;
 
-    $back = route('adminv2.customer-management.customers.edit', ['customer' => $agency->id, 'tab' => 'access']);
+    $back = route('adminv2.customer-management.customers.edit', ['customer' => $agency->id, 'tab' => 'sub-accounts']);
     $link = 'text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white';
     $importable = collect($childCounts)->only([Import::STATUS_CREATED, Import::STATUS_UPDATED, Import::STATUS_REASSIGNED, Import::STATUS_TRASHED])->sum();
     $childTotal = array_sum($childCounts);

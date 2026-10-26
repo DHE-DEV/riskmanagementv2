@@ -14,7 +14,7 @@ use Livewire\WithFileUploads;
 use RuntimeException;
 
 /**
- * Kunde > Zugriff auf andere Accounts > Unteraccounts aus pds-admin importieren.
+ * Kunde > Unteraccounts > Unteraccounts aus pds-admin importieren.
  *
  * Die Unteraccounts des PDS-Accounts dieses Kunden – direkt aus pds-admin
  * (__internal/admin/accounts/{ID}/children) oder aus einem CSV-Export – mit

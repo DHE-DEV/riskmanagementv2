@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Livewire\AdminV2\CustomerManagement\Customers;
+
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Livewire\Attributes\Computed;
+
+/**
+ * Unteraccounts: Kunden, die diesem Kunden als Agentur zugeordnet sind
+ * (customers.assign_to) – z. B. per Import aus pds-admin.
+ */
+trait ListsCustomerSubAccounts
+{
+    public string $subAccountSearch = '';
+
+    /** Hinweis, was die Unteraccounts sind (z. B. eigenstaendige Bueros einer Kette). */
+    public string $subAccountsNote = '';
+
+    public function saveSubAccountsNote(): void
+    {
+        $this->validateOnly('subAccountsNote', ['subAccountsNote' => ['nullable', 'string', 'max:2000']], [
+            'subAccountsNote.max' => 'Der Hinweis darf höchstens 2.000 Zeichen lang sein.',
+        ]);
+
+        $note = trim($this->subAccountsNote);
+        $this->customer->forceFill(['sub_accounts_note' => $note === '' ? null : $note])->save();
+        $this->subAccountsNote = $note;
+
+        $this->dispatch('adminv2-toast', message: 'Hinweis zu den Unteraccounts gespeichert.');
+    }
+
+    public function updatedSubAccountSearch(): void
+    {
+        $this->resetPage('subAccountsPage');
+    }
+
+    #[Computed]
+    public function subAccounts(): LengthAwarePaginator
+    {
+        $query = $this->customer->assignedCustomers()->withTrashed();
+
+        if (($term = trim($this->subAccountSearch)) !== '') {
+            $this->whereEveryWord($query, $term, ['app_code', 'company_name', 'email', 'company_city', 'pds_account_id']);
+        }
+
+        return $this->paginateWithinRange($query->orderBy('company_name')->orderBy('id'), self::RELATION_PER_PAGE, 'subAccountsPage');
+    }
+}
