@@ -102,6 +102,10 @@ class PdsChildrenImport extends Component
     #[Locked]
     public ?string $runNotify = null;
 
+    /** Der Job des Laufs steht unter den fehlgeschlagenen Jobs. */
+    #[Locked]
+    public bool $runJobFailed = false;
+
     /** Seit wann der Job auf einen Queue-Worker wartet (Hinweis, falls keiner laeuft). */
     #[Locked]
     public ?int $runQueuedAt = null;
@@ -337,8 +341,12 @@ class PdsChildrenImport extends Component
         }
 
         if (! $progress['finished']) {
+            $this->runJobFailed = ImportPdsChildren::hasFailedJob($this->runKey);
+
             return;
         }
+
+        $this->runJobFailed = false;
 
         $this->runKey = null;
         $result = $progress['result'];

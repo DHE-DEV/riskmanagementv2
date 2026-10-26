@@ -9,6 +9,7 @@ use App\Services\PdsAccountImportService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
@@ -65,6 +66,15 @@ class ImportPdsChildren implements ShouldQueue
     public static function notifyKey(string $runKey): string
     {
         return $runKey.':notify';
+    }
+
+    /**
+     * Ist der Job dieses Laufs fehlgeschlagen, ohne dass failed() lief – etwa
+     * weil ein veralteter Worker die Klasse nicht kennt ("incomplete class")?
+     */
+    public static function hasFailedJob(string $runKey): bool
+    {
+        return DB::table('failed_jobs')->where('payload', 'like', '%'.addcslashes($runKey, '%_\\').'%')->exists();
     }
 
     public static function cancelKey(string $runKey): string

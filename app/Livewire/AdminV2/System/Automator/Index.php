@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\System\Automator;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -16,7 +17,8 @@ use Livewire\Component;
 /**
  * System > Automator: die Warteschlange der Hintergrund-Jobs. Zeigt, ob der
  * Worker laeuft, welche Jobs warten und welche fehlgeschlagen sind – und
- * laesst Jobs verarbeiten, wiederholen oder entfernen.
+ * laesst Jobs verarbeiten, wiederholen oder entfernen und die Worker neu
+ * starten.
  */
 #[Layout('components.layouts.adminv2.app')]
 #[Title('Automator')]
@@ -167,6 +169,32 @@ class Index extends Component
 
         $this->refresh();
         $this->toast('Job verarbeitet.');
+    }
+
+    /**
+     * Wann zuletzt ein Neustart der Worker angefordert wurde (queue:restart,
+     * auch beim Deploy).
+     */
+    #[Computed]
+    public function lastRestart(): ?Carbon
+    {
+        $timestamp = Cache::get('illuminate:queue:restart');
+
+        return is_numeric($timestamp) ? Carbon::createFromTimestamp((int) $timestamp) : null;
+    }
+
+    /**
+     * Worker neu starten (queue:restart): jeder Worker beendet sich nach
+     * seinem aktuellen Job, Supervisor startet ihn mit dem aktuellen Code neu –
+     * noetig, wenn er nach einem Deploy noch alten Code ausfuehrt
+     * ("Job is incomplete class").
+     */
+    public function restartWorkers(): void
+    {
+        Artisan::call('queue:restart');
+
+        unset($this->lastRestart);
+        $this->toast('Neustart angefordert – die Worker starten nach ihrem aktuellen Job mit dem aktuellen Code neu.');
     }
 
     public function processAll(): void

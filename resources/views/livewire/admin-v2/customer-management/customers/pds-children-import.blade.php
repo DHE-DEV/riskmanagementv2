@@ -103,7 +103,15 @@
                     <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                         <div class="h-full rounded-full bg-[var(--color-accent)] transition-all" style="width: {{ $runTotal > 0 ? round($runDone / $runTotal * 100) : 0 }}%"></div>
                     </div>
-                    @if ($runQueuedAt && now()->getTimestamp() - $runQueuedAt > 60)
+                    @if ($runJobFailed)
+                        <flux:callout variant="danger" icon="x-circle" heading="Der Import-Job ist fehlgeschlagen">
+                            <flux:callout.text>
+                                Meist läuft der Queue-Worker noch mit dem Code von vor dem letzten Deploy („incomplete class“). Worker neu starten (Forge › Processes › Queue › Restart oder <code>php artisan queue:restart</code>), dann unter
+                                <a href="{{ route('adminv2.system.automator.index') }}" class="underline">System › Automator</a>
+                                den Job „ImportPdsChildren“ erneut versuchen – der Import läuft dann hier weiter. Oder hier abbrechen und neu starten.
+                            </flux:callout.text>
+                        </flux:callout>
+                    @elseif ($runQueuedAt && now()->getTimestamp() - $runQueuedAt > 60)
                         <p class="text-sm text-amber-700 dark:text-amber-300">Der Import wartet seit über einer Minute auf einen Queue-Worker. Läuft auf dem Server <code>php artisan queue:work</code>?</p>
                     @endif
                 </div>

@@ -4,7 +4,9 @@ use App\Livewire\AdminV2\System\Automator\Index;
 use App\Livewire\AdminV2\System\Automator\Monitor;
 use App\Models\NotificationQueueLog;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -156,4 +158,21 @@ it('startet die Durchlaeufe aus dem Monitor heraus', function () {
         ->assertDispatched('adminv2-toast', fn (string $name, array $params) => str_contains($params['message'], 'GTM-Durchlauf ausgeführt') && str_contains($params['message'], '3 Ereignisse verarbeitet'))
         ->call('syncTravelLinks')
         ->assertDispatched('adminv2-toast', fn (string $name, array $params) => str_contains($params['message'], 'Travel Links Sync gestartet'));
+});
+
+it('fordert einen Neustart der Worker an und zeigt, wann zuletzt', function () {
+    Carbon::setTestNow('2026-10-26 19:30:00');
+
+    try {
+        Livewire::actingAs(automatorAdmin())
+            ->test(Index::class)
+            ->assertSee('Worker neu starten')
+            ->assertDontSee('Zuletzt neu gestartet')
+            ->call('restartWorkers')
+            ->assertSee('Zuletzt neu gestartet 26.10.2026');
+
+        expect(Cache::get('illuminate:queue:restart'))->toBe(Carbon::now()->getTimestamp());
+    } finally {
+        Carbon::setTestNow();
+    }
 });

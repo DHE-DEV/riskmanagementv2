@@ -521,3 +521,30 @@ it('lässt einen laufenden Import abbrechen und danach neu starten', function ()
     $component->call('importChildren')->assertNotSet('runKey', null);
     Queue::assertPushed(ImportPdsChildren::class, 2);
 });
+
+it('erkennt einen fehlgeschlagenen Import-Job, etwa bei veraltetem Worker', function () {
+    Queue::fake();
+
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(3145), [pdsAccount(1)]);
+
+    $component = Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->call('importChildren')
+        ->call('refreshRun')
+        ->assertSet('runJobFailed', false);
+
+    \Illuminate\Support\Facades\DB::table('failed_jobs')->insert([
+        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'connection' => 'database',
+        'queue' => 'default',
+        'payload' => json_encode(['data' => ['command' => 'O:24:"App\\Jobs\\ImportPdsChildren":3:{s:6:"runKey";s:'.strlen($component->get('runKey')).':"'.$component->get('runKey').'";}']]),
+        'exception' => 'Exception: Job is incomplete class',
+        'failed_at' => now(),
+    ]);
+
+    $component->call('refreshRun')
+        ->assertSet('runJobFailed', true)
+        ->assertSee('Der Import-Job ist fehlgeschlagen')
+        ->assertNotSet('runKey', null);
+});

@@ -40,14 +40,24 @@
                 <span class="font-semibold text-amber-800 dark:text-amber-300">Worker inaktiv</span>
                 <span class="text-amber-700 dark:text-amber-400">Jobs werden nicht automatisch verarbeitet.</span>
             @endif
+            @if ($this->lastRestart)
+                <span class="text-zinc-500">· Zuletzt neu gestartet {{ $this->lastRestart->timezone(config('app.timezone'))->format('d.m.Y H:i') }}</span>
+            @endif
         </div>
 
-        @if ($stats['pending'] > 0)
-            <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <flux:button
+                size="sm"
+                icon="arrow-path-rounded-square"
+                wire:click="restartWorkers"
+                wire:confirm="Worker neu starten? Laufende Jobs werden noch fertig, danach starten die Worker mit dem aktuellen Code neu."
+                title="Nötig, wenn ein Worker nach einem Deploy noch alten Code ausführt („Job is incomplete class“)"
+            >Worker neu starten</flux:button>
+            @if ($stats['pending'] > 0)
                 <flux:button size="sm" icon="play" wire:click="processNext">Nächsten Job verarbeiten</flux:button>
                 <flux:button size="sm" variant="primary" icon="forward" wire:click="processAll" wire:confirm="Alle {{ $stats['pending'] }} wartenden Jobs jetzt verarbeiten? Das kann einige Zeit dauern.">Alle verarbeiten</flux:button>
-            </div>
-        @endif
+            @endif
+        </div>
     </div>
 
     {{-- Zahlen --}}
