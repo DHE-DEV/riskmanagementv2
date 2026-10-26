@@ -9,8 +9,10 @@
 @endphp
 
 <div class="flex flex-col gap-6">
-    {{-- Ohne "Neu"-Schaltflaeche: Kunden entstehen bei der Registrierung bzw. beim ersten Login. --}}
-    <x-adminv2.customer-management.list-header section="customers" />
+    {{-- Ohne "Neu"-Schaltflaeche: Kunden entstehen bei der Registrierung, beim ersten Login oder per Import aus pds-admin. --}}
+    <x-adminv2.customer-management.list-header section="customers">
+        <flux:button icon="arrow-down-tray" :href="route('adminv2.customer-management.customers.import')">Aus pds-admin importieren</flux:button>
+    </x-adminv2.customer-management.list-header>
 
     <div class="flex flex-wrap items-center gap-3">
         <div class="min-w-64 flex-1">

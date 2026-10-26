@@ -88,6 +88,9 @@ return [
         // Account-Personal-Access-Token (pds-api) für server-seitige __internal-Aufrufe,
         // z. B. Stammdaten-Lookup beim Auto-Anlegen neuer Kunden (account/info).
         'internal_token' => env('PASSOLUTION_INTERNAL_TOKEN'),
+        // Admin-Service-Secret der pds-api (CONFIG_ENDPOINTS_INTERNAL_ADMIN_SECRET) fuer
+        // die accountuebergreifenden __internal/admin-Routen, z. B. den Kunden-Import.
+        'internal_admin_secret' => env('PASSOLUTION_INTERNAL_ADMIN_SECRET'),
         'client_id' => env('PASSOLUTION_OAUTH_CLIENT_ID'),
         'client_secret' => env('PASSOLUTION_OAUTH_CLIENT_SECRET'),
         // OAuth URLs - configurable for different environments
