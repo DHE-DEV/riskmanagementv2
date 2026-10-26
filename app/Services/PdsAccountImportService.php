@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -215,12 +216,14 @@ class PdsAccountImportService
             }
 
             if (! $dryRun) {
-                $customer->forceFill($changes)->save();
-                $agency?->accessibleAccounts()->syncWithoutDetaching([$customer->id]);
+                DB::transaction(function () use ($customer, $changes, $agency, $previousAgencyId) {
+                    $customer->forceFill($changes)->save();
+                    $agency?->accessibleAccounts()->syncWithoutDetaching([$customer->id]);
 
-                if ($previousAgencyId !== null) {
-                    Customer::withTrashed()->find($previousAgencyId)?->accessibleAccounts()->detach($customer->id);
-                }
+                    if ($previousAgencyId !== null) {
+                        Customer::withTrashed()->find($previousAgencyId)?->accessibleAccounts()->detach($customer->id);
+                    }
+                });
             }
 
             return ['status' => match (true) {
@@ -246,8 +249,9 @@ class PdsAccountImportService
 
         // create() statt saveQuietly(): der created-Hook legt Gruppen und den
         // Inhaber als Mitarbeiter an. Der Login per SSO findet den Kunden
-        // spaeter ueber die E-Mail.
-        $customer = Customer::create([
+        // spaeter ueber die E-Mail. Alles in einer Transaktion, damit ein
+        // Abbruch keinen halb angelegten Kunden hinterlaesst.
+        $customer = DB::transaction(fn () => tap(Customer::create([
             'name' => $contact ?? $company ?? $email,
             'email' => $email,
             'password' => Hash::make(Str::random(40)),
@@ -273,9 +277,7 @@ class PdsAccountImportService
             'pds_account_country' => $country,
             'assign_to' => $agency?->id,
             'email_verified_at' => now(),
-        ]);
-
-        $agency?->accessibleAccounts()->syncWithoutDetaching([$customer->id]);
+        ]), fn (Customer $customer) => $agency?->accessibleAccounts()->syncWithoutDetaching([$customer->id])));
 
         return ['status' => self::STATUS_CREATED, 'customer' => $customer];
     }

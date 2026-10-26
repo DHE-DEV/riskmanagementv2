@@ -369,3 +369,38 @@ it('pflegt einen Hinweis zu den Unteraccounts und zeigt ihn beim Unteraccount', 
         ->assertSet('subAccountsNote', $note)
         ->assertDontSee('Unteraccount von');
 });
+
+it('importiert viele Unteraccounts in Portionen und setzt nach einem Abbruch fort', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    $children = array_map(fn (int $id) => pdsAccount($id), range(1, PdsChildrenImport::BATCH_SIZE * 2 + 5));
+    fakePds(pdsAccount(3145), $children);
+
+    $component = Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->call('loadChildren')
+        ->call('importChildren')
+        ->assertSet('runDone', PdsChildrenImport::BATCH_SIZE)
+        ->assertSet('runTotal', count($children))
+        ->assertSee('Import läuft')
+        ->assertSee(PdsChildrenImport::BATCH_SIZE.' von '.count($children));
+
+    expect(Customer::where('assign_to', $agency->id)->count())->toBe(PdsChildrenImport::BATCH_SIZE);
+
+    $component->call('importNext')
+        ->call('importNext')
+        ->assertSet('runKey', null)
+        ->assertSet('result', [PdsAccountImportService::STATUS_CREATED => count($children)])
+        ->assertSee('Import abgeschlossen');
+
+    expect(Customer::where('assign_to', $agency->id)->count())->toBe(count($children));
+
+    // Abbruch mitten im Lauf (Cache weg): Hinweis, ein neuer Lauf erkennt alles Vorhandene.
+    $component->call('importChildren');
+    \Illuminate\Support\Facades\Cache::forget($component->get('runKey'));
+
+    $component->call('importNext')
+        ->assertSet('runKey', null)
+        ->assertSee('Der Import wurde unterbrochen.')
+        ->call('loadChildren')
+        ->assertSet('childCounts', [PdsAccountImportService::STATUS_UNCHANGED => count($children)]);
+});

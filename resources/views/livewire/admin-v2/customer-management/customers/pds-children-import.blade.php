@@ -67,9 +67,9 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <flux:button icon="magnifying-glass" wire:click="loadChildren" :disabled="$source === 'csv' && ! $csv" wire:loading.attr="disabled" wire:target="loadChildren">{{ $childrenLoaded ? 'Neu prüfen' : 'Unteraccounts laden und prüfen' }}</flux:button>
+                <flux:button icon="magnifying-glass" wire:click="loadChildren" :disabled="($source === 'csv' && ! $csv) || $runKey" wire:loading.attr="disabled" wire:target="loadChildren">{{ $childrenLoaded ? 'Neu prüfen' : 'Unteraccounts laden und prüfen' }}</flux:button>
 
-                @if ($childrenLoaded && $importable > 0)
+                @if ($childrenLoaded && $importable > 0 && ! $runKey)
                     <flux:button
                         variant="primary"
                         icon="arrow-down-tray"
@@ -83,7 +83,20 @@
                 <span wire:loading wire:target="csv, loadChildren, importChildren" class="text-sm text-zinc-500">Läuft … das kann bei vielen Accounts eine Weile dauern.</span>
             </div>
 
-            @if ($result)
+            @if ($runKey)
+                {{-- Laufender Import: der Browser holt Portion fuer Portion (importNext) --}}
+                <div class="mt-4 flex flex-col gap-2" role="status">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="flex items-center gap-2 font-medium text-zinc-900 dark:text-white"><flux:icon.arrow-path variant="micro" class="animate-spin" /> Import läuft – bitte die Seite offen lassen</span>
+                        <span class="tabular-nums text-zinc-500">{{ $runDone }} von {{ $runTotal }}</span>
+                    </div>
+                    <div class="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                        <div class="h-full rounded-full bg-[var(--color-accent)] transition-all" style="width: {{ $runTotal > 0 ? round($runDone / $runTotal * 100) : 0 }}%"></div>
+                    </div>
+                </div>
+            @endif
+
+            @if ($result && ! $runKey)
                 <flux:callout variant="success" icon="check-circle" class="mt-4" heading="Import abgeschlossen">
                     <flux:callout.text>
                         @foreach ($result as $status => $count)

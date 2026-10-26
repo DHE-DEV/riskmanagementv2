@@ -41,10 +41,10 @@
                 <thead class="border-y border-zinc-100 bg-zinc-50 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
                     <tr>
                         <th scope="col" class="px-4 py-2.5 text-start font-medium">Code</th>
-                        <th scope="col" class="px-4 py-2.5 text-start font-medium">Firma</th>
-                        <th scope="col" class="px-4 py-2.5 text-start font-medium">E-Mail</th>
                         <th scope="col" class="px-4 py-2.5 text-start font-medium">PDS-ID</th>
+                        <th scope="col" class="px-4 py-2.5 text-start font-medium">Firma</th>
                         <th scope="col" class="px-4 py-2.5 text-start font-medium">Stadt</th>
+                        <th scope="col" class="px-4 py-2.5 text-start font-medium">E-Mail</th>
                         <th scope="col" class="px-4 py-2.5 text-start font-medium">Angelegt</th>
                     </tr>
                 </thead>
@@ -52,15 +52,15 @@
                     @foreach ($subAccounts as $account)
                         <tr wire:key="sub-account-{{ $account->id }}" class="text-zinc-700 dark:text-zinc-300">
                             <td class="px-4 py-2.5"><flux:badge size="sm" color="sky" inset="top bottom" class="font-mono">{{ $account->app_code }}</flux:badge></td>
+                            <td class="px-4 py-2.5 tabular-nums">{{ $account->pds_account_id ?? '–' }}</td>
                             <td class="px-4 py-2.5 font-medium text-zinc-900 dark:text-white">
                                 <a href="{{ route('adminv2.customer-management.customers.edit', $account->id) }}" class="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">{{ $account->company_name ?: $account->name }}</a>
                                 @if ($account->trashed())
                                     <flux:badge size="sm" color="amber" inset="top bottom" class="ms-1">Papierkorb</flux:badge>
                                 @endif
                             </td>
-                            <td class="px-4 py-2.5">{{ $account->email }}</td>
-                            <td class="px-4 py-2.5 tabular-nums">{{ $account->pds_account_id ?? '–' }}</td>
                             <td class="px-4 py-2.5">{{ $account->company_city ?: '–' }}</td>
+                            <td class="px-4 py-2.5">{{ $account->email }}</td>
                             <td class="px-4 py-2.5 whitespace-nowrap tabular-nums">{{ $account->created_at?->format('d.m.Y') ?? '–' }}</td>
                         </tr>
                     @endforeach
