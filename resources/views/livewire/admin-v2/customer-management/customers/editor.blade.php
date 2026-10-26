@@ -215,6 +215,8 @@
 
                 {{-- Rechte Spalte --}}
                 <div class="flex flex-col gap-6">
+                    <x-adminv2.record-tasks :record="$customer" />
+
                     @php
                         // Schalter mit ausfuehrlicher Erklaerung (Info-Symbol).
                         $settingSwitches = [
@@ -381,8 +383,6 @@
                             </div>
                         </div>
                     </x-adminv2.card>
-
-                    <x-adminv2.record-tasks :record="$customer" />
                 </div>
             </div>
         </form>

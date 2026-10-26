@@ -610,3 +610,15 @@ it('schaltet die Vererbung an Unteraccounts im Admin und setzt Abweichungen zurÃ
         ->assertSee('Standard (Zentrale bzw. .env)')
         ->assertSee('Wird von der Zentrale vererbt');
 });
+
+it('zeigt im Tab Unteraccounts 20 je Seite', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test']);
+    Customer::factory()->count(25)->create(['assign_to' => $agency->id]);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
+        ->call('showTab', 'sub-accounts')
+        ->assertSee('1â€“20')
+        ->assertSee('von 25')
+        ->assertSee('Seite 1 von 2');
+});

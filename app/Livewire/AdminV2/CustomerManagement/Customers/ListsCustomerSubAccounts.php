@@ -11,6 +11,9 @@ use Livewire\Attributes\Computed;
  */
 trait ListsCustomerSubAccounts
 {
+    /** Unteraccounts je Seite */
+    public const SUB_ACCOUNTS_PER_PAGE = 20;
+
     public string $subAccountSearch = '';
 
     /** Hinweis, was die Unteraccounts sind (z. B. eigenstaendige Bueros einer Kette). */
@@ -43,6 +46,6 @@ trait ListsCustomerSubAccounts
             $this->whereEveryWord($query, $term, ['app_code', 'company_name', 'email', 'company_city', 'pds_account_id']);
         }
 
-        return $this->paginateWithinRange($query->orderBy('company_name')->orderBy('id'), self::RELATION_PER_PAGE, 'subAccountsPage');
+        return $this->paginateWithinRange($query->orderBy('company_name')->orderBy('id'), self::SUB_ACCOUNTS_PER_PAGE, 'subAccountsPage');
     }
 }
