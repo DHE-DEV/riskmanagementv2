@@ -96,9 +96,9 @@
     <div style="position: fixed; top: 64px; left: 64px; right: 0; z-index: 9998; height: 36px;" class="bg-amber-500 text-amber-900 text-center text-xs flex items-center justify-center gap-3">
         <i class="fa-regular fa-eye"></i>
         <span>Sie sind aktuell in dieser Agentur eingeloggt: <strong>{{ auth('customer')->user()->company_name }}</strong> ({{ auth('customer')->user()->app_code }})</span>
-        <form method="POST" action="{{ route('customer.account.switch-back') }}" class="inline">
+        <form method="POST" action="{{ route('customer.account.switch-back') }}" class="m-0 flex items-center">
             @csrf
-            <button type="submit" class="ml-2 px-2 py-0.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-800 transition-colors">
+            <button type="submit" class="ml-2 px-2 py-0.5 leading-5 bg-amber-700 text-white text-xs rounded hover:bg-amber-800 transition-colors">
                 Zurück zu meiner Agentur
             </button>
         </form>
