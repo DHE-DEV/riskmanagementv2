@@ -26,7 +26,20 @@
         <flux:callout variant="danger" icon="x-circle" :heading="$error" />
     @endif
 
-    <x-adminv2.card heading="1. Hauptaccount" description="Die Account-ID aus pds-admin.">
+    <x-adminv2.card heading="1. Quelle und Hauptaccount" description="Woher die Unteraccounts kommen und die Account-ID des Hauptaccounts aus pds-admin.">
+        <flux:radio.group wire:model.live="source" label="Quelle" class="mb-5">
+            @foreach (\App\Livewire\AdminV2\CustomerManagement\Customers\PdsImport::SOURCES as $value => $label)
+                <flux:radio
+                    :value="$value"
+                    :label="$label"
+                    :description="$value === 'api'
+                        ? ($this->isConfigured() ? 'Liest die Unteraccounts über __internal/admin/accounts/{ID}/children, alle Seiten.' : 'Nicht verfügbar: PASSOLUTION_INTERNAL_ADMIN_SECRET fehlt in der .env.')
+                        : 'Eine CSV aus der Accountliste in pds-admin (Spalten id, email, …).'"
+                    :disabled="$value === 'api' && ! $this->isConfigured()"
+                />
+            @endforeach
+        </flux:radio.group>
+
         <form wire:submit="fetch" class="flex flex-wrap items-start gap-3">
             <div class="w-56">
                 <flux:input wire:model="pdsAccountId" type="number" min="1" step="1" inputmode="numeric" placeholder="z. B. 3145" aria-label="PDS Account-ID" />
@@ -57,20 +70,38 @@
                 </dl>
 
                 <div class="flex flex-col items-start gap-3">
-                    @if ($agency)
+                    @if ($matched)
                         <p class="text-sm">
                             In der Plattform:
+                            <a href="{{ route('adminv2.customer-management.customers.edit', $matched->id) }}" class="{{ $link }}">{{ $matched->company_name ?: $matched->name }}</a>
+                            <span class="text-zinc-500">({{ $matched->email }}, Kunde #{{ $matched->id }})</span>
+                        </p>
+                        @if (! $matched->trashed() && (int) $matched->pds_account_id !== (int) $account['id'])
+                            <flux:button size="sm" wire:click="importAccount" icon="link">Account-ID am Kunden ergänzen</flux:button>
+                        @endif
+                    @elseif (! ($account['local'] ?? false))
+                        <p class="text-sm text-zinc-500">Noch kein Kunde mit dieser Account-ID oder E-Mail.</p>
+                        <flux:button variant="primary" icon="plus" wire:click="importAccount" wire:loading.attr="disabled" wire:target="importAccount">Als Kunde anlegen</flux:button>
+                    @endif
+
+                    <div class="w-full max-w-xs">
+                        <flux:input
+                            wire:model.blur="targetCustomerId"
+                            type="number"
+                            min="1"
+                            label="Unteraccounts zuordnen zu Kunde #"
+                            description="Vorbelegt mit dem Hauptaccount; ein anderer Plattform-Kunde geht auch."
+                        />
+                    </div>
+                    @if ($agency)
+                        <p class="text-sm">
+                            Agentur:
                             <a href="{{ route('adminv2.customer-management.customers.edit', $agency->id) }}" class="{{ $link }}">{{ $agency->company_name ?: $agency->name }}</a>
-                            <span class="text-zinc-500">({{ $agency->email }}, Kunde #{{ $agency->id }})</span>
+                            <span class="text-zinc-500">({{ $agency->email }})</span>
                         </p>
                         @if ($agency->trashed())
                             <flux:badge color="amber">Im Papierkorb – erst wiederherstellen</flux:badge>
-                        @elseif ((int) $agency->pds_account_id !== (int) $account['id'])
-                            <flux:button size="sm" wire:click="importAccount" icon="link">Account-ID am Kunden ergänzen</flux:button>
                         @endif
-                    @else
-                        <p class="text-sm text-zinc-500">Noch kein Kunde mit dieser Account-ID oder E-Mail.</p>
-                        <flux:button variant="primary" icon="plus" wire:click="importAccount" wire:loading.attr="disabled" wire:target="importAccount">Als Kunde anlegen</flux:button>
                     @endif
                 </div>
             </div>
@@ -78,22 +109,26 @@
     </x-adminv2.card>
 
     @if ($account && $agency && ! $agency->trashed())
-        <x-adminv2.card heading="2. Unteraccounts" description="Aktive Unteraccounts werden per Account-ID bzw. E-Mail mit den Kunden abgeglichen. Alle werden der Agentur zugeordnet und für sie freigegeben (Account-Zugriff) – auch vorhandene, solche im Papierkorb und solche einer anderen Agentur. Neu angelegt werden nur die fehlenden.">
-            <div class="mb-4 flex flex-wrap items-center gap-3 text-sm">
-                @if ($csv)
-                    <flux:badge icon="document-text">Quelle: {{ $csv->getClientOriginalName() }}</flux:badge>
-                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="removeCsv">{{ $this->isConfigured() ? 'Stattdessen aus der pds-api laden' : 'CSV entfernen' }}</flux:button>
+        <x-adminv2.card heading="2. Unteraccounts" description="Die Unteraccounts werden per Account-ID bzw. E-Mail mit den Kunden abgeglichen. Alle werden der Agentur zugeordnet und für sie freigegeben (Account-Zugriff) – auch vorhandene, solche im Papierkorb und solche einer anderen Agentur. Neu angelegt werden nur die fehlenden.">
+            <div class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+                @if ($source === 'csv')
+                    @if ($csv)
+                        <flux:badge icon="document-text">Importdatei: {{ $csv->getClientOriginalName() }}</flux:badge>
+                        <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="removeCsv">Andere Datei</flux:button>
+                    @else
+                        <div class="w-72">
+                            <flux:input type="file" wire:model="csv" accept=".csv,text/csv,text/plain" aria-label="Importdatei" />
+                        </div>
+                    @endif
+                    <flux:error name="csv" />
                 @else
-                    <span class="text-zinc-500">{{ $this->isConfigured() ? 'Quelle: pds-api. Oder einen CSV-Export der Accountliste verwenden:' : 'Quelle: CSV-Export der Accountliste aus pds-admin (Spalten id, email, …).' }}</span>
-                    <div class="w-72">
-                        <flux:input type="file" wire:model="csv" accept=".csv,text/csv,text/plain" aria-label="CSV-Export" />
-                    </div>
+                    <flux:badge icon="cloud-arrow-down">Quelle: pds-admin, Account {{ $account['id'] }}</flux:badge>
                 @endif
-                <flux:error name="csv" />
+                <flux:checkbox wire:model.live="onlyActive" label="Nur aktive Unteraccounts" />
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <flux:button icon="magnifying-glass" wire:click="loadChildren" :disabled="! $csv && ! $this->isConfigured()" wire:loading.attr="disabled" wire:target="loadChildren">{{ $childrenLoaded ? 'Neu prüfen' : 'Unteraccounts laden und prüfen' }}</flux:button>
+                <flux:button icon="magnifying-glass" wire:click="loadChildren" :disabled="$source === 'csv' && ! $csv" wire:loading.attr="disabled" wire:target="loadChildren">{{ $childrenLoaded ? 'Neu prüfen' : 'Unteraccounts laden und prüfen' }}</flux:button>
 
                 @if ($childrenLoaded && $importable > 0)
                     <flux:button
@@ -121,9 +156,9 @@
 
             @if ($childrenLoaded)
                 <div class="mt-4 flex flex-wrap gap-2 text-sm">
-                    <flux:badge>{{ $childTotal }} aktive Unteraccounts</flux:badge>
+                    <flux:badge>{{ $childTotal }} {{ $onlyActive ? 'aktive ' : '' }}Unteraccounts</flux:badge>
                     @if ($csvSkipped > 0)
-                        <flux:badge color="zinc">{{ $csvSkipped }} CSV-Zeilen ignoriert (inaktiv, gelöscht oder anderer Hauptaccount)</flux:badge>
+                        <flux:badge color="zinc">{{ $csvSkipped }} Zeilen der Datei ignoriert ({{ $onlyActive ? 'inaktiv, gelöscht oder ' : '' }}anderer Hauptaccount)</flux:badge>
                     @endif
                     @foreach ($childCounts as $status => $count)
                         <flux:badge :color="match ($status) { Import::STATUS_CREATED => 'green', Import::STATUS_UPDATED => 'sky', Import::STATUS_UNCHANGED => 'zinc', Import::STATUS_INVALID, Import::STATUS_DUPLICATE => 'red', default => 'amber' }">{{ $labels[$status] }}: {{ $count }}</flux:badge>

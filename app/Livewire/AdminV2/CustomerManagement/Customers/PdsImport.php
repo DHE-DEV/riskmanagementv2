@@ -32,6 +32,11 @@ class PdsImport extends Component
     use AuthorizesAdminV2;
     use WithFileUploads;
 
+    public const SOURCES = [
+        'api' => 'Direkt aus pds-admin (Schnittstelle)',
+        'csv' => 'Aus Importdatei (CSV-Export)',
+    ];
+
     public const FILTERS = [
         'all' => 'Alle',
         'existing' => 'Schon in der Plattform',
@@ -40,6 +45,15 @@ class PdsImport extends Component
     ];
 
     public string $pdsAccountId = '';
+
+    /** Woher die Unteraccounts kommen, siehe SOURCES. */
+    public string $source = 'api';
+
+    /** Nur aktive, nicht geloeschte Unteraccounts importieren. */
+    public bool $onlyActive = true;
+
+    /** Plattform-Kunde, dem die Unteraccounts zugeordnet werden (vorbelegt mit dem Hauptaccount). */
+    public string $targetCustomerId = '';
 
     /** Optionaler CSV-Export der Unteraccounts statt Abruf aus der pds-api. */
     public ?TemporaryUploadedFile $csv = null;
@@ -51,6 +65,11 @@ class PdsImport extends Component
     #[Locked]
     public ?array $account = null;
 
+    /** Der Kunde, der zum Hauptaccount gehoert (per Account-ID bzw. E-Mail). */
+    #[Locked]
+    public ?int $matchedCustomerId = null;
+
+    /** Die gewaehlte Agentur (Zielkunde). */
     #[Locked]
     public ?int $agencyId = null;
 
@@ -75,6 +94,56 @@ class PdsImport extends Component
 
     public ?string $error = null;
 
+    public function mount(PdsAccountImportService $service): void
+    {
+        $this->source = $service->isConfigured() ? 'api' : 'csv';
+    }
+
+    public function updatedSource(): void
+    {
+        if (! array_key_exists($this->source, self::SOURCES) || ($this->source === 'api' && ! $this->isConfigured())) {
+            $this->source = 'csv';
+        }
+
+        $this->resetChildren();
+    }
+
+    public function updatedOnlyActive(): void
+    {
+        $this->resetChildren();
+    }
+
+    /**
+     * Anderen Plattform-Kunden als Agentur waehlen.
+     */
+    public function updatedTargetCustomerId(): void
+    {
+        $this->resetChildren();
+        $id = trim($this->targetCustomerId);
+
+        if ($id === '') {
+            $this->agencyId = null;
+
+            return;
+        }
+
+        $customer = ctype_digit($id) ? Customer::withTrashed()->find((int) $id) : null;
+
+        if (! $customer) {
+            $this->addError('targetCustomerId', "Kunde #{$id} gibt es nicht.");
+
+            return;
+        }
+
+        $this->resetErrorBag('targetCustomerId');
+        $this->agencyId = $customer->id;
+    }
+
+    protected function resetChildren(): void
+    {
+        $this->reset(['childCounts', 'childRows', 'csvSkipped', 'childrenLoaded', 'result', 'error']);
+    }
+
     public function isConfigured(): bool
     {
         return app(PdsAccountImportService::class)->isConfigured();
@@ -87,10 +156,14 @@ class PdsImport extends Component
             'pdsAccountId.regex' => 'Die PDS Account-ID besteht nur aus Ziffern.',
         ]);
 
-        $this->reset(['account', 'agencyId', 'childCounts', 'childRows', 'csvSkipped', 'childrenLoaded', 'result', 'error']);
+        $this->reset(['account', 'matchedCustomerId', 'agencyId', 'targetCustomerId']);
+        $this->resetChildren();
+        $this->resetErrorBag('targetCustomerId');
 
         if (! $service->isConfigured()) {
             $this->useLocalAccount((int) trim($this->pdsAccountId));
+            $this->matchedCustomerId = $this->agencyId;
+            $this->targetCustomerId = (string) ($this->agencyId ?? '');
 
             return;
         }
@@ -110,7 +183,8 @@ class PdsImport extends Component
         }
 
         $this->account = $account;
-        $this->agencyId = $service->findCustomer($account)?->id;
+        $this->agencyId = $this->matchedCustomerId = $service->findCustomer($account)?->id;
+        $this->targetCustomerId = (string) ($this->agencyId ?? '');
     }
 
     /**
@@ -145,13 +219,13 @@ class PdsImport extends Component
             'csv.max' => 'Die CSV-Datei ist zu groß (max. 10 MB).',
         ]);
 
-        $this->reset(['childCounts', 'childRows', 'csvSkipped', 'childrenLoaded', 'result', 'error']);
+        $this->resetChildren();
     }
 
     public function removeCsv(): void
     {
         $this->csv = null;
-        $this->reset(['childCounts', 'childRows', 'csvSkipped', 'childrenLoaded', 'result', 'error']);
+        $this->resetChildren();
     }
 
     public function agency(): ?Customer
@@ -167,7 +241,9 @@ class PdsImport extends Component
 
         ['status' => $status, 'customer' => $customer] = $service->import($this->account);
 
-        $this->agencyId = $customer?->id;
+        $this->agencyId = $this->matchedCustomerId = $customer?->id;
+        $this->targetCustomerId = (string) ($this->agencyId ?? '');
+        $this->resetChildren();
 
         $this->dispatch('adminv2-toast', message: match ($status) {
             PdsAccountImportService::STATUS_CREATED => 'Kunde angelegt.',
@@ -255,8 +331,14 @@ class PdsImport extends Component
     protected function children(PdsAccountImportService $service): ?array
     {
         try {
+            if ($this->source === 'api') {
+                return $service->fetchChildren((int) $this->account['id'], $this->onlyActive);
+            }
+
             if (! $this->csv) {
-                return $service->fetchChildren((int) $this->account['id']);
+                $this->error = 'Bitte zuerst die Importdatei wählen.';
+
+                return null;
             }
 
             $rows = $service->parseCsv($this->csv->getRealPath());
@@ -266,11 +348,11 @@ class PdsImport extends Component
             return null;
         }
 
-        // Nur aktive, nicht geloeschte Unteraccounts dieses Hauptaccounts.
+        // Nur Unteraccounts dieses Hauptaccounts, auf Wunsch nur aktive.
         $parentId = (int) $this->account['id'];
         $children = array_values(array_filter($rows, fn (array $row) => (data_get($row, 'parent.id') === null || (int) data_get($row, 'parent.id') === $parentId)
-            && ! filter_var(data_get($row, 'status.deleted'), FILTER_VALIDATE_BOOL)
-            && (data_get($row, 'status.active') === null || filter_var(data_get($row, 'status.active'), FILTER_VALIDATE_BOOL))));
+            && (! $this->onlyActive || (! filter_var(data_get($row, 'status.deleted'), FILTER_VALIDATE_BOOL)
+                && (data_get($row, 'status.active') === null || filter_var(data_get($row, 'status.active'), FILTER_VALIDATE_BOOL))))));
 
         $this->csvSkipped = count($rows) - count($children);
 
@@ -303,6 +385,7 @@ class PdsImport extends Component
 
         return view('livewire.admin-v2.customer-management.customers.pds-import', [
             'agency' => $this->agency(),
+            'matched' => $this->matchedCustomerId ? Customer::withTrashed()->find($this->matchedCustomerId) : null,
             'labels' => PdsAccountImportService::STATUS_LABELS,
             'visibleRows' => match ($this->childFilter) {
                 'existing' => $rows->whereNotNull('customer_id'),

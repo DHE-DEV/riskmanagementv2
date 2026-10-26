@@ -247,6 +247,58 @@ it('meldet ohne pds-api einen Hauptaccount, den es noch nicht als Kunden gibt', 
         ->assertSee('keiner hat die Account-ID 3145');
 });
 
+it('ordnet die Unteraccounts einem frei gewählten Kunden zu und lädt auf Wunsch auch inaktive', function () {
+    $main = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    $target = Customer::factory()->create(['email' => 'ziel@agentur.test']);
+    $known = Customer::factory()->create(['email' => 'agentur1@solamento.test']);
+
+    fakePds(pdsAccount(3145), [pdsAccount(1), pdsAccount(2, ['status' => ['active' => false, 'deleted' => false]])]);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsImport::class)
+        ->assertSet('source', 'api')
+        ->set('pdsAccountId', '3145')
+        ->call('fetch')
+        ->assertSet('targetCustomerId', (string) $main->id)
+        ->set('targetCustomerId', '999999')
+        ->assertHasErrors('targetCustomerId')
+        ->set('targetCustomerId', (string) $target->id)
+        ->assertSet('agencyId', $target->id)
+        ->set('onlyActive', false)
+        ->call('loadChildren')
+        ->call('importChildren')
+        ->assertSet('result', [
+            PdsAccountImportService::STATUS_UPDATED => 1,
+            PdsAccountImportService::STATUS_CREATED => 1,
+        ]);
+
+    expect($known->fresh())->assign_to->toBe($target->id)->pds_account_id->toBe(1)
+        ->and(Customer::where('pds_account_id', 2)->sole()->assign_to)->toBe($target->id)
+        ->and(Customer::where('assign_to', $main->id)->exists())->toBeFalse();
+
+    Http::assertSent(fn (Request $request) => str_contains($request->url(), '/children') && ! str_contains(urldecode($request->url()), 'filters'));
+});
+
+it('nimmt bei Quelle Importdatei die CSV statt der Schnittstelle', function () {
+    Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(3145), [pdsAccount(1)]);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsImport::class)
+        ->set('pdsAccountId', '3145')
+        ->call('fetch')
+        ->set('source', 'csv')
+        ->call('loadChildren')
+        ->assertSee('Bitte zuerst die Importdatei wählen.')
+        ->set('csv', UploadedFile::fake()->createWithContent('a.csv', "id,email,name,parent.id\n77,datei@solamento.test,Aus Datei,3145\n"))
+        ->call('loadChildren')
+        ->assertSet('childCounts', [PdsAccountImportService::STATUS_CREATED => 1])
+        ->assertSee('datei@solamento.test')
+        ->assertDontSee('agentur1@solamento.test');
+
+    Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/children'));
+});
+
 it('ist nur für Admins erreichbar', function () {
     $this->actingAs(User::factory()->create(['is_admin' => false, 'is_active' => true]))
         ->get(route('adminv2.customer-management.customers.import'))
