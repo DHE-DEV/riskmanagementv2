@@ -329,7 +329,7 @@ it('ist nur für Admins erreichbar und aus Liste und Kunde verlinkt', function (
 
 it('listet im Tab Unteraccounts die zugeordneten Kunden mit Suche', function () {
     $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
-    Customer::factory()->create(['company_name' => 'Reisebüro Augsburg', 'email' => 'augsburg@solamento.test', 'pds_account_id' => 26054, 'assign_to' => $agency->id]);
+    Customer::factory()->create(['company_name' => 'Reisebüro Augsburg', 'email' => 'augsburg@solamento.test', 'pds_account_id' => 26054, 'company_postal_code' => '86165', 'assign_to' => $agency->id]);
     Customer::factory()->create(['company_name' => 'Reisebüro Essen', 'email' => 'essen@solamento.test', 'assign_to' => $agency->id])->delete();
     Customer::factory()->create(['company_name' => 'Fremdes Büro', 'email' => 'fremd@agentur.test']);
 
@@ -342,7 +342,8 @@ it('listet im Tab Unteraccounts die zugeordneten Kunden mit Suche', function () 
         ->assertSee('Papierkorb')
         ->assertDontSee('Fremdes Büro')
         ->assertSee('Unteraccounts aus pds-admin importieren')
-        ->set('subAccountSearch', 'Augsburg')
+        ->assertSee('86165')
+        ->set('subAccountSearch', '86165')
         ->assertSee('Reisebüro Augsburg')
         ->assertDontSee('Reisebüro Essen');
 });

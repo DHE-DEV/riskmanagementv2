@@ -43,7 +43,7 @@ trait ListsCustomerSubAccounts
         $query = $this->customer->assignedCustomers()->withTrashed();
 
         if (($term = trim($this->subAccountSearch)) !== '') {
-            $this->whereEveryWord($query, $term, ['app_code', 'company_name', 'email', 'company_city', 'pds_account_id']);
+            $this->whereEveryWord($query, $term, ['app_code', 'company_name', 'email', 'company_postal_code', 'company_city', 'pds_account_id']);
         }
 
         return $this->paginateWithinRange($query->orderBy('company_name')->orderBy('id'), self::SUB_ACCOUNTS_PER_PAGE, 'subAccountsPage');
