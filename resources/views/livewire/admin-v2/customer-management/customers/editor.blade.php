@@ -157,8 +157,11 @@
                                 @foreach (CustomerFeatureOverride::getFeatureLabels() as $key => $label)
                                     <flux:field wire:key="feature-{{ $key }}">
                                         <flux:label>{{ $label }}</flux:label>
+                                        @if (in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
+                                            <flux:description>{{ $customer->assign_to ? 'Standard = Wert der Zentrale, sonst .env.' : 'Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.' }}</flux:description>
+                                        @endif
                                         <flux:select wire:model="featureOverrides.{{ $key }}">
-                                            <flux:select.option value="">Standard (.env)</flux:select.option>
+                                            <flux:select.option value="">{{ $customer->assign_to && in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true) ? 'Standard (Zentrale bzw. .env)' : 'Standard (.env)' }}</flux:select.option>
                                             <flux:select.option value="1">Aktiviert</flux:select.option>
                                             <flux:select.option value="0">Deaktiviert</flux:select.option>
                                         </flux:select>

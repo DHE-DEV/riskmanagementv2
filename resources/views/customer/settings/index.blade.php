@@ -18,7 +18,13 @@
 
     $customerSettingsSections = config('customer_settings.sections', []);
     $customerSettingsBlocks = config('customer_settings.blocks', []);
-    $sectionEnabled = fn ($s) => ! array_key_exists($s, $customerSettingsSections) || $customerSettingsSections[$s];
+    // Stammdaten, Organisationsstruktur und Benutzerverwaltung lassen sich je Kunde
+    // ueberschreiben (Feature-Ueberschreibungen, Unteraccounts erben von der Zentrale).
+    $settingsFeatureKeys = array_flip(\App\Models\CustomerFeatureOverride::SETTINGS_SECTIONS);
+    $sectionEnabled = fn ($s) => isset($settingsFeatureKeys[$s])
+        ? $featureService->isFeatureEnabled($settingsFeatureKeys[$s], $customer)
+        : (! array_key_exists($s, $customerSettingsSections) || $customerSettingsSections[$s]);
+    $organisationSections = array_filter(['master-data', 'organization', 'users'], $sectionEnabled);
 
     if (! $sectionEnabled($settingsSection)) {
         // Direktaufruf einer deaktivierten Section -> 404. Ohne ?section= (Default)
@@ -166,10 +172,10 @@
                 </a>
                 @endif
 
-                @if($customer->branch_management_active || $isSuperAdmin)
+                @if(($customer->branch_management_active || $isSuperAdmin) && $organisationSections !== [])
                 <div id="settings-nav-org" class="settings-section-title mt-2">Organisation</div>
 
-                @if($customerSettingsSections['master-data'] ?? true)
+                @if($sectionEnabled('master-data'))
                 <a href="{{ route('customer.settings', ['section' => 'master-data']) }}"
                    class="settings-nav-item {{ $settingsSection === 'master-data' ? 'active' : '' }}">
                     <i class="fas fa-database"></i>
@@ -177,7 +183,7 @@
                 </a>
                 @endif
 
-                @if($customerSettingsSections['organization'] ?? true)
+                @if($sectionEnabled('organization'))
                 <a href="{{ route('customer.settings', ['section' => 'organization']) }}"
                    class="settings-nav-item {{ $settingsSection === 'organization' ? 'active' : '' }}">
                     <i class="fas fa-sitemap"></i>
@@ -185,7 +191,7 @@
                 </a>
                 @endif
 
-                @if($customerSettingsSections['users'] ?? true)
+                @if($sectionEnabled('users'))
                 <a href="{{ route('customer.settings', ['section' => 'users']) }}"
                    class="settings-nav-item {{ $settingsSection === 'users' ? 'active' : '' }}">
                     <i class="fas fa-users"></i>

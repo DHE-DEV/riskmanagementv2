@@ -25,6 +25,29 @@ class CustomerFeatureOverride extends Model
         'navigation_visumpoint_enabled',
         'navigation_customer_events_enabled',
         'navigation_doctors_network_enabled',
+        'settings_master_data_enabled',
+        'settings_organization_enabled',
+        'settings_users_enabled',
+    ];
+
+    /**
+     * Einstellungsbereich (customer_settings.sections) je Feature-Key – der
+     * globale Standard kommt von dort statt aus app.*.
+     */
+    public const SETTINGS_SECTIONS = [
+        'settings_master_data_enabled' => 'master-data',
+        'settings_organization_enabled' => 'organization',
+        'settings_users_enabled' => 'users',
+    ];
+
+    /**
+     * Diese Keys uebernehmen Unteraccounts (customers.assign_to) von ihrer
+     * Zentrale, solange bei ihnen selbst nichts gesetzt ist.
+     */
+    public const INHERITED_BY_SUB_ACCOUNTS = [
+        'settings_master_data_enabled',
+        'settings_organization_enabled',
+        'settings_users_enabled',
     ];
 
     protected $casts = [
@@ -41,6 +64,9 @@ class CustomerFeatureOverride extends Model
         'navigation_visumpoint_enabled' => 'boolean',
         'navigation_customer_events_enabled' => 'boolean',
         'navigation_doctors_network_enabled' => 'boolean',
+        'settings_master_data_enabled' => 'boolean',
+        'settings_organization_enabled' => 'boolean',
+        'settings_users_enabled' => 'boolean',
     ];
 
     /**
@@ -70,6 +96,9 @@ class CustomerFeatureOverride extends Model
             'navigation_visumpoint_enabled',
             'navigation_customer_events_enabled',
             'navigation_doctors_network_enabled',
+            'settings_master_data_enabled',
+            'settings_organization_enabled',
+            'settings_users_enabled',
         ];
     }
 
@@ -92,6 +121,9 @@ class CustomerFeatureOverride extends Model
             'navigation_visumpoint_enabled' => 'VisumPoint',
             'navigation_customer_events_enabled' => 'Eigene Ereignisse',
             'navigation_doctors_network_enabled' => 'Doctors Network',
+            'settings_master_data_enabled' => 'Einstellungen: Stammdaten',
+            'settings_organization_enabled' => 'Einstellungen: Organisationsstruktur',
+            'settings_users_enabled' => 'Einstellungen: Benutzerverwaltung',
         ];
     }
 }

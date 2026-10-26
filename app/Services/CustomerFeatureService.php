@@ -10,7 +10,9 @@ class CustomerFeatureService
 {
     /**
      * Check if a feature is enabled for a customer.
-     * First checks customer-specific overrides, then falls back to .env config.
+     * First checks customer-specific overrides, then – for keys in
+     * INHERITED_BY_SUB_ACCOUNTS – the override of the customer's agency
+     * (assign_to), then falls back to .env config.
      */
     public function isFeatureEnabled(string $featureKey, ?Customer $customer = null): bool
     {
@@ -28,6 +30,15 @@ class CustomerFeatureService
 
         if ($override !== null) {
             return $override;
+        }
+
+        // Unteraccount: Einstellung der Zentrale uebernehmen.
+        if ($customer->assign_to && in_array($featureKey, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true)) {
+            $override = $this->getCustomerOverride((int) $customer->assign_to, $featureKey);
+
+            if ($override !== null) {
+                return $override;
+            }
         }
 
         // Fall back to default config
@@ -60,6 +71,10 @@ class CustomerFeatureService
      */
     protected function getDefaultConfig(string $featureKey): bool
     {
+        if ($section = CustomerFeatureOverride::SETTINGS_SECTIONS[$featureKey] ?? null) {
+            return (bool) config("customer_settings.sections.{$section}", true);
+        }
+
         // Convert feature key to config key (e.g., navigation_events_enabled -> app.navigation_events_enabled)
         return (bool) config("app.{$featureKey}", true);
     }
