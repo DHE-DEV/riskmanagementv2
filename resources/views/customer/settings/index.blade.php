@@ -1904,22 +1904,15 @@
                         Struktur
                     </button>
                     @php
+                        // Alle zugeordneten Agenturen – dieselbe Menge wie die Liste im Tab.
                         $assignedCount = \App\Models\Customer::where('assign_to', $customer->id)->count();
-                        $activeAssignedCount = \App\Models\Customer::where('assign_to', $customer->id)
-                            ->whereHas('legacyOptions', function ($q) {
-                                $q->where(function ($q2) {
-                                    $q2->whereNull('live_from')->orWhere('live_from', '<=', now()->toDateString());
-                                })->where(function ($q2) {
-                                    $q2->whereNull('end_of_use')->orWhere('end_of_use', '>=', now()->toDateString());
-                                });
-                            })->count();
                     @endphp
                     @if($assignedCount > 0)
                     <button @click="orgTab = 'agenturen'"
                         class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
                         :class="orgTab === 'agenturen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
                         <i class="fas fa-store mr-2"></i>
-                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{{ $activeAssignedCount }}</span>
+                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{{ $assignedCount }}</span>
                     </button>
                     @endif
                 </div>

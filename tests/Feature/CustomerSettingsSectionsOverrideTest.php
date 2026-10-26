@@ -74,3 +74,16 @@ it('zeigt unter Organisation nur freigeschaltete Bereiche und sonst keine leere 
         ->get(route('customer.settings', ['section' => 'organization']))
         ->assertOk();
 });
+
+it('zählt am Tab Agenturen alle zugeordneten Agenturen', function () {
+    $agency = Customer::factory()->create(['branch_management_active' => true, 'customer_type' => 'business']);
+    Customer::factory()->count(3)->create(['assign_to' => $agency->id]);
+    CustomerFeatureOverride::create(['customer_id' => $agency->id, 'settings_organization_enabled' => true]);
+
+    $html = $this->actingAs($agency, 'customer')
+        ->get(route('customer.settings', ['section' => 'organization']))
+        ->assertOk()
+        ->getContent();
+
+    expect(preg_replace('/\s+/', ' ', strip_tags($html)))->toContain('Agenturen 3');
+});
