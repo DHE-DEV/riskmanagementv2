@@ -7,6 +7,7 @@ use App\Livewire\AdminV2\CustomerManagement\ApiClients\Editor as ApiClientEditor
 use App\Livewire\AdminV2\CustomerManagement\ApiClients\Index as ApiClientIndex;
 use App\Livewire\AdminV2\CustomerManagement\Customers\Editor as CustomerEditor;
 use App\Livewire\AdminV2\CustomerManagement\Customers\Index as CustomerIndex;
+use App\Livewire\AdminV2\CustomerManagement\Customers\PdsChildrenImport as CustomerPdsChildrenImport;
 use App\Livewire\AdminV2\CustomerManagement\Customers\PdsImport as CustomerPdsImport;
 use App\Livewire\AdminV2\CustomerManagement\FeaturePreauthorizations\Editor as FeaturePreauthorizationEditor;
 use App\Livewire\AdminV2\CustomerManagement\FeaturePreauthorizations\Index as FeaturePreauthorizationIndex;
@@ -159,6 +160,7 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
             Route::get('customers/create', CustomerEditor::class)->name('customers.create');
             Route::get('customers/import', CustomerPdsImport::class)->name('customers.import');
             Route::get('customers/{customer}', CustomerEditor::class)->whereNumber('customer')->name('customers.edit');
+            Route::get('customers/{customer}/import-children', CustomerPdsChildrenImport::class)->whereNumber('customer')->name('customers.import-children');
 
             Route::get('feature-preauthorizations', FeaturePreauthorizationIndex::class)->name('feature-preauthorizations.index');
             Route::get('feature-preauthorizations/create', FeaturePreauthorizationEditor::class)->name('feature-preauthorizations.create');

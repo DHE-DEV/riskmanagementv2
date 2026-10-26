@@ -6,6 +6,10 @@
 @endphp
 
 <x-adminv2.card heading="Zugriff auf andere Accounts" description="Accounts, mit denen dieser Kunde zusätzlich zu seinem eigenen arbeiten darf." flush>
+    <x-slot:actions>
+        <flux:button size="sm" icon="arrow-down-tray" :href="route('adminv2.customer-management.customers.import-children', $customerId)">Unteraccounts aus pds-admin importieren</flux:button>
+    </x-slot:actions>
+
     {{-- Account-Zugriff hinzufuegen: Suche ueber Firma, E-Mail und App-Code --}}
     <div class="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
         <flux:field>

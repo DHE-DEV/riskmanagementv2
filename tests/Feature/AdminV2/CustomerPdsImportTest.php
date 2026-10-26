@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\AdminV2\CustomerManagement\Customers\PdsChildrenImport;
 use App\Livewire\AdminV2\CustomerManagement\Customers\PdsImport;
 use App\Models\Customer;
 use App\Models\User;
@@ -10,8 +11,8 @@ use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 /**
- * Kundenverwaltung > Kunden > Aus pds-admin importieren: Hauptaccount anlegen,
- * Unteraccounts anlegen und der Agentur zuordnen.
+ * Kundenverwaltung > Kunden > Account aus pds-admin importieren (einzeln) und
+ * Kunde > Zugriff auf andere Accounts > Unteraccounts importieren.
  */
 beforeEach(function () {
     config([
@@ -58,7 +59,7 @@ function fakePds(array $parent, array $children): void
     ]);
 }
 
-it('legt den Hauptaccount als Kunden an', function () {
+it('legt einen einzelnen Account als Kunden an', function () {
     fakePds(pdsAccount(3145, ['name' => 'solamento Reisen GmbH', 'first_name' => 'Solamento', 'last_name' => 'Zentrale']), []);
 
     Livewire::actingAs(pdsImportAdmin())
@@ -66,8 +67,9 @@ it('legt den Hauptaccount als Kunden an', function () {
         ->set('pdsAccountId', '3145')
         ->call('fetch')
         ->assertSee('solamento Reisen GmbH')
-        ->assertSee('Als Kunde anlegen')
-        ->call('importAccount');
+        ->assertSee('Noch nicht in der Plattform')
+        ->call('import')
+        ->assertSee('Schon in der Plattform');
 
     $customer = Customer::where('pds_account_id', 3145)->sole();
 
@@ -87,19 +89,40 @@ it('legt den Hauptaccount als Kunden an', function () {
         && $request->hasHeader('Authorization', 'Bearer token'));
 });
 
-it('erkennt einen vorhandenen Kunden statt ihn doppelt anzulegen', function () {
-    $existing = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+it('erkennt einen schon angelegten Account statt ihn doppelt anzulegen', function () {
+    $existing = Customer::factory()->create(['email' => 'AGENTUR3145@solamento.test', 'pds_account_id' => null]);
     fakePds(pdsAccount(3145), []);
 
     Livewire::actingAs(pdsImportAdmin())
         ->test(PdsImport::class)
         ->set('pdsAccountId', '3145')
         ->call('fetch')
-        ->assertSet('agencyId', $existing->id)
+        ->assertSet('customerId', $existing->id)
+        ->assertSee('Schon in der Plattform')
+        ->assertSee('Fehlt noch: Account-ID')
         ->assertDontSee('Als Kunde anlegen')
-        ->assertSee('2. Unteraccounts');
+        ->call('import')
+        ->assertDontSee('Am Kunden ergänzen');
 
-    expect(Customer::where('pds_account_id', 3145)->count())->toBe(1);
+    expect(Customer::where('email', 'agentur3145@solamento.test')->count())->toBe(1)
+        ->and($existing->fresh()->pds_account_id)->toBe(3145);
+});
+
+it('ordnet einen Unteraccount beim Einzelimport seinem Hauptaccount zu', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(26054, ['parent' => ['id' => 3145, 'name' => 'solamento Reisen GmbH']]), []);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsImport::class)
+        ->set('pdsAccountId', '26054')
+        ->call('fetch')
+        ->assertSee('Wird dem Hauptaccount zugeordnet')
+        ->call('import');
+
+    $customer = Customer::where('pds_account_id', 26054)->sole();
+
+    expect($customer->assign_to)->toBe($agency->id)
+        ->and($agency->accessibleAccounts()->whereKey($customer->id)->exists())->toBeTrue();
 });
 
 it('meldet einen unbekannten Account', function () {
@@ -113,7 +136,18 @@ it('meldet einen unbekannten Account', function () {
         ->assertSee('Account 999 gibt es in pds-admin nicht.');
 });
 
-it('importiert Unteraccounts über alle Seiten und ordnet sie der Agentur zu', function () {
+it('zeigt beim Einzelimport einen Hinweis, wenn das Admin-Secret fehlt', function () {
+    config(['services.passolution.internal_admin_secret' => null]);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsImport::class)
+        ->assertSee('Import nicht eingerichtet')
+        ->set('pdsAccountId', '3145')
+        ->call('fetch')
+        ->assertSee('PDS-Import ist nicht eingerichtet');
+});
+
+it('importiert Unteraccounts über alle Seiten und ordnet alle dem Kunden zu', function () {
     $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
     $other = Customer::factory()->create(['email' => 'andere@agentur.test']);
 
@@ -136,9 +170,8 @@ it('importiert Unteraccounts über alle Seiten und ordnet sie der Agentur zu', f
     ]);
 
     $component = Livewire::actingAs(pdsImportAdmin())
-        ->test(PdsImport::class)
-        ->set('pdsAccountId', '3145')
-        ->call('fetch')
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->assertSet('source', 'api')
         ->call('loadChildren')
         ->assertSet('childCounts', [
             PdsAccountImportService::STATUS_CREATED => 2,
@@ -183,6 +216,19 @@ it('importiert Unteraccounts über alle Seiten und ordnet sie der Agentur zu', f
     expect(Customer::withTrashed()->where('assign_to', $agency->id)->count())->toBe(5);
 });
 
+it('lädt auf Wunsch auch inaktive Unteraccounts', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+    fakePds(pdsAccount(3145), [pdsAccount(1)]);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->set('onlyActive', false)
+        ->call('loadChildren')
+        ->assertSet('childCounts', [PdsAccountImportService::STATUS_CREATED => 1]);
+
+    Http::assertSent(fn (Request $request) => str_contains($request->url(), '/children') && ! str_contains(urldecode($request->url()), 'filters'));
+});
+
 it('gleicht ohne pds-api einen CSV-Export ab und importiert nur die Differenz', function () {
     config(['services.passolution.internal_admin_secret' => null]);
     Http::fake();
@@ -201,12 +247,10 @@ it('gleicht ohne pds-api einen CSV-Export ab und importiert nur die Differenz', 
     ]);
 
     $component = Livewire::actingAs(pdsImportAdmin())
-        ->test(PdsImport::class)
-        ->assertSee('Import nicht eingerichtet')
-        ->set('pdsAccountId', '3145')
-        ->call('fetch')
-        ->assertSet('agencyId', $agency->id)
-        ->assertSee('pds-api nicht angebunden')
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->assertSet('source', 'csv')
+        ->call('loadChildren')
+        ->assertSee('Bitte zuerst die Importdatei wählen.')
         ->set('csv', UploadedFile::fake()->createWithContent('solamento.csv', $csv))
         ->call('loadChildren')
         ->assertSet('csvSkipped', 2)
@@ -236,75 +280,42 @@ it('gleicht ohne pds-api einen CSV-Export ab und importiert nur die Differenz', 
     Http::assertNothingSent();
 });
 
-it('meldet ohne pds-api einen Hauptaccount, den es noch nicht als Kunden gibt', function () {
-    config(['services.passolution.internal_admin_secret' => null]);
-
-    Livewire::actingAs(pdsImportAdmin())
-        ->test(PdsImport::class)
-        ->set('pdsAccountId', '3145')
-        ->call('fetch')
-        ->assertSet('account', null)
-        ->assertSee('keiner hat die Account-ID 3145');
-});
-
-it('ordnet die Unteraccounts einem frei gewählten Kunden zu und lädt auf Wunsch auch inaktive', function () {
-    $main = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
-    $target = Customer::factory()->create(['email' => 'ziel@agentur.test']);
-    $known = Customer::factory()->create(['email' => 'agentur1@solamento.test']);
-
-    fakePds(pdsAccount(3145), [pdsAccount(1), pdsAccount(2, ['status' => ['active' => false, 'deleted' => false]])]);
-
-    Livewire::actingAs(pdsImportAdmin())
-        ->test(PdsImport::class)
-        ->assertSet('source', 'api')
-        ->set('pdsAccountId', '3145')
-        ->call('fetch')
-        ->assertSet('targetCustomerId', (string) $main->id)
-        ->set('targetCustomerId', '999999')
-        ->assertHasErrors('targetCustomerId')
-        ->set('targetCustomerId', (string) $target->id)
-        ->assertSet('agencyId', $target->id)
-        ->set('onlyActive', false)
-        ->call('loadChildren')
-        ->call('importChildren')
-        ->assertSet('result', [
-            PdsAccountImportService::STATUS_UPDATED => 1,
-            PdsAccountImportService::STATUS_CREATED => 1,
-        ]);
-
-    expect($known->fresh())->assign_to->toBe($target->id)->pds_account_id->toBe(1)
-        ->and(Customer::where('pds_account_id', 2)->sole()->assign_to)->toBe($target->id)
-        ->and(Customer::where('assign_to', $main->id)->exists())->toBeFalse();
-
-    Http::assertSent(fn (Request $request) => str_contains($request->url(), '/children') && ! str_contains(urldecode($request->url()), 'filters'));
-});
-
-it('nimmt bei Quelle Importdatei die CSV statt der Schnittstelle', function () {
-    Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => 3145]);
+it('fragt die fehlende PDS Account-ID des Kunden ab und speichert sie', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test', 'pds_account_id' => null]);
     fakePds(pdsAccount(3145), [pdsAccount(1)]);
 
     Livewire::actingAs(pdsImportAdmin())
-        ->test(PdsImport::class)
+        ->test(PdsChildrenImport::class, ['customer' => $agency->id])
+        ->assertSee('PDS Account-ID des Kunden')
+        ->assertDontSee('2. Unteraccounts')
         ->set('pdsAccountId', '3145')
-        ->call('fetch')
-        ->set('source', 'csv')
+        ->call('savePdsAccountId')
+        ->assertSee('2. Unteraccounts')
         ->call('loadChildren')
-        ->assertSee('Bitte zuerst die Importdatei wählen.')
-        ->set('csv', UploadedFile::fake()->createWithContent('a.csv', "id,email,name,parent.id\n77,datei@solamento.test,Aus Datei,3145\n"))
-        ->call('loadChildren')
-        ->assertSet('childCounts', [PdsAccountImportService::STATUS_CREATED => 1])
-        ->assertSee('datei@solamento.test')
-        ->assertDontSee('agentur1@solamento.test');
+        ->assertSet('childCounts', [PdsAccountImportService::STATUS_CREATED => 1]);
 
-    Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/children'));
+    expect($agency->fresh()->pds_account_id)->toBe(3145);
 });
 
-it('ist nur für Admins erreichbar', function () {
+it('ist nur für Admins erreichbar und aus Liste und Kunde verlinkt', function () {
+    $customer = Customer::factory()->create(['pds_account_id' => 3145]);
+
     $this->actingAs(User::factory()->create(['is_admin' => false, 'is_active' => true]))
         ->get(route('adminv2.customer-management.customers.import'))
         ->assertForbidden();
 
-    $this->actingAs(pdsImportAdmin())
+    $this->actingAs(User::factory()->create(['is_admin' => false, 'is_active' => true]))
+        ->get(route('adminv2.customer-management.customers.import-children', $customer))
+        ->assertForbidden();
+
+    $admin = pdsImportAdmin();
+
+    $this->actingAs($admin)
         ->get(route('adminv2.customer-management.customers.index'))
-        ->assertSee('Aus pds-admin importieren');
+        ->assertSee('Account aus pds-admin importieren');
+
+    $this->actingAs($admin)
+        ->get(route('adminv2.customer-management.customers.edit', ['customer' => $customer->id, 'tab' => 'access']))
+        ->assertSee('Unteraccounts aus pds-admin importieren')
+        ->assertSee(route('adminv2.customer-management.customers.import-children', $customer->id));
 });
