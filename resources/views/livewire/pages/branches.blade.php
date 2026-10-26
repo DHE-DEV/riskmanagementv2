@@ -238,6 +238,13 @@
                 {{-- Zugeordnete Agenturen (Schalter "Agenturen als Adressen anzeigen" im Admin) --}}
                 <div class="mt-4" x-data="{ q: '' }">
                     <h3 class="text-xs font-semibold text-gray-900 mb-2">Agenturen ({{ $subAccounts->count() }})</h3>
+                    @php($onMap = $subAccounts->whereNotNull('company_latitude')->count())
+                    <p class="text-[11px] text-gray-500 mb-2">
+                        <i class="fa-solid fa-location-dot mr-1"></i>Auf der Karte: {{ $onMap }} von {{ $subAccounts->count() }}
+                        @if($onMap < $subAccounts->count())
+                            – die übrigen haben noch keine Koordinaten (werden im Hintergrund ermittelt) oder keine auffindbare Adresse.
+                        @endif
+                    </p>
                     <input type="search" x-model="q" placeholder="Agentur, PLZ oder Ort suchen …" class="w-full mb-2 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                     <div class="space-y-2">
                         @foreach($subAccounts as $subAccount)

@@ -2023,8 +2023,7 @@
                                 ->get(['id', 'app_code', 'name', 'email', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
                             : collect();
                         // Inaktiv wie im Tab "Agenturen": Laufzeit aus den Alt-Optionen noch nicht begonnen bzw. abgelaufen.
-                        $subAccountInactive = fn ($account) => ($account->legacyOptions?->live_from && $account->legacyOptions->live_from->isAfter(today()))
-                            || ($account->legacyOptions?->end_of_use && $account->legacyOptions->end_of_use->isBefore(today()));
+                        $subAccountInactive = fn ($account) => $account->isInactiveByLegacyOptions();
                     @endphp
 
                     <template x-if="!loading && branches.length === 0 && !showNewForm && {{ $subAccountAddresses->isEmpty() ? 'true' : 'false' }}">

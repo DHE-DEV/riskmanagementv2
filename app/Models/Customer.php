@@ -628,6 +628,18 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(CustomerLegacyOption::class, 'account_id');
     }
 
+    /**
+     * Inaktiv laut Alt-Optionen: Laufzeit (live_from bis end_of_use) noch nicht
+     * begonnen oder abgelaufen. Ohne Alt-Optionen gilt der Kunde als aktiv.
+     */
+    public function isInactiveByLegacyOptions(): bool
+    {
+        $options = $this->legacyOptions;
+
+        return ($options?->live_from && $options->live_from->isAfter(today()))
+            || ($options?->end_of_use && $options->end_of_use->isBefore(today()));
+    }
+
     public function labels(): HasMany
     {
         return $this->hasMany(Label::class);

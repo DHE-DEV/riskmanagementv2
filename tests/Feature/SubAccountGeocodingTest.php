@@ -112,3 +112,36 @@ it('zeigt die Agenturen mit Koordinaten auf der Karte', function () {
         ->assertSee('focusAgency('.$located->id.')', false)
         ->assertSee('51.45', false);
 });
+
+it('zeigt in der Seitenleiste, wie viele Agenturen auf der Karte sind', function () {
+    $agency = Customer::factory()->create(['branch_management_active' => true, 'show_sub_accounts_as_branches' => true]);
+    Customer::factory()->create(['assign_to' => $agency->id])
+        ->forceFill(['company_latitude' => 51.45, 'company_longitude' => 7.01, 'company_geocoded_at' => now()])->saveQuietly();
+    Customer::factory()->create(['assign_to' => $agency->id])->forceFill(['company_geocoded_at' => now()])->saveQuietly();
+
+    $this->actingAs($agency, 'customer')
+        ->get(route('branches'))
+        ->assertOk()
+        ->assertSee('Auf der Karte: 1 von 2');
+});
+
+it('blendet inaktive Agenturen in Liste und Karte von Filialen & Standorte aus', function () {
+    $agency = Customer::factory()->create(['branch_management_active' => true, 'show_sub_accounts_as_branches' => true]);
+    $active = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Aktives Büro']);
+    $inactive = Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Altes Büro']);
+    foreach ([$active, $inactive] as $office) {
+        $office->forceFill(['company_latitude' => 51.45, 'company_longitude' => 7.01, 'company_geocoded_at' => now()])->saveQuietly();
+    }
+    \Illuminate\Support\Facades\DB::table('customers_legacy_options')->insert([
+        ['account_id' => $inactive->id, 'end_of_use' => '2020-12-31', 'providers' => '[]'],
+    ]);
+
+    $this->actingAs($agency, 'customer')
+        ->get(route('branches'))
+        ->assertOk()
+        ->assertSee('Aktives Büro')
+        ->assertDontSee('Altes Büro')
+        ->assertSee('Agenturen (1)')
+        ->assertSee('focusAgency('.$active->id.')', false)
+        ->assertDontSee('focusAgency('.$inactive->id.')', false);
+});

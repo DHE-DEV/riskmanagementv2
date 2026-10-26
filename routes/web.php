@@ -380,10 +380,14 @@ Route::get('/branches', function () {
     return view('livewire.pages.branches', [
         'customer' => $customer,
         // Zugeordnete Agenturen, wenn im Admin "Agenturen als Adressen anzeigen" aktiv ist.
+        // Nur aktive (Laufzeit laut Alt-Optionen), inaktive weder in der Liste noch auf der Karte.
         'subAccounts' => $customer->show_sub_accounts_as_branches
             ? \App\Models\Customer::where('assign_to', $customer->id)
+                ->with('legacyOptions:account_id,live_from,end_of_use')
                 ->orderBy('company_name')->orderBy('id')
                 ->get(['id', 'app_code', 'name', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_latitude', 'company_longitude'])
+                ->reject(fn ($subAccount) => $subAccount->isInactiveByLegacyOptions())
+                ->values()
             : collect(),
     ]);
 })->name('branches');
