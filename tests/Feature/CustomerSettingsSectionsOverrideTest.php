@@ -208,3 +208,26 @@ it('zeigt die Agenturen in der Übersicht als Karten mit Suche, Status-Filter un
         ->assertSee('Inaktiv')
         ->assertSee('mailto:aktiv@buero.test', false);
 });
+
+it('filtert im Konten-Umschalter für Super-Admins auf Hauptaccounts', function () {
+    $admin = Customer::factory()->create(['email' => 'chef@passolution.test']);
+    config(['app.agentur_super_admin_emails' => ['chef@passolution.test']]);
+
+    $agency = Customer::factory()->create(['company_name' => 'Kette Zentrale']);
+    $office = Customer::factory()->create(['company_name' => 'Kette Büro', 'assign_to' => $agency->id]);
+    $single = Customer::factory()->create(['company_name' => 'Einzelkunde']);
+
+    $ids = fn (string $query) => array_column($this->actingAs($admin, 'customer')->getJson('/customer/account/accessible'.$query)->assertOk()->json('data'), 'id');
+
+    expect($ids(''))->toContain($agency->id, $office->id, $single->id)
+        ->and($ids('?main=1'))->toBe([$agency->id]);
+
+    // Der Filter ist nur fuer Super-Admins sichtbar und wirkt nur dort.
+    $this->actingAs($admin, 'customer')->get(route('customer.settings', ['section' => 'travel-requirements']))
+        ->assertSee('Nur Hauptaccounts (mit Unteraccounts)');
+
+    $agency->accessibleAccounts()->attach($office->id);
+    $this->actingAs($agency, 'customer')->get(route('customer.settings', ['section' => 'travel-requirements']))
+        ->assertDontSee('Nur Hauptaccounts (mit Unteraccounts)');
+    expect(array_column($this->actingAs($agency, 'customer')->getJson('/customer/account/accessible?main=1')->json('data'), 'id'))->toBe([$office->id]);
+});

@@ -75,8 +75,8 @@
                     $originalCustomerId = session('original_customer_id');
                     $currentCustomer = auth('customer')->user();
                     $originalCustomer = $originalCustomerId ? \App\Models\Customer::find($originalCustomerId) : $currentCustomer;
-                    $hasAccessibleAccounts = in_array($originalCustomer->email, config('app.agentur_super_admin_emails', []))
-                        || $originalCustomer->accessibleAccounts()->exists();
+                    $isAgencySuperAdmin = in_array($originalCustomer->email, config('app.agentur_super_admin_emails', []));
+                    $hasAccessibleAccounts = $isAgencySuperAdmin || $originalCustomer->accessibleAccounts()->exists();
                 @endphp
 
                 <!-- Account Switcher -->
@@ -102,10 +102,17 @@
                         </div>
 
                         {{-- Search --}}
-                        <div class="p-2 border-b border-gray-100">
+                        <div class="p-2 border-b border-gray-100 flex flex-col gap-2">
                             <input type="text" x-model="search" @input.debounce.300ms="searchAccounts()"
                                    placeholder="Suche: Code, PLZ, Ort, Firma..."
                                    class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                            @if($isAgencySuperAdmin)
+                                {{-- Nur fuer Super-Admins: auf Hauptaccounts (Kunden mit Unteraccounts) einschraenken --}}
+                                <label class="flex items-center gap-2 px-1 text-xs text-gray-600 cursor-pointer">
+                                    <input type="checkbox" x-model="mainOnly" @change="searchAccounts()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    Nur Hauptaccounts (mit Unteraccounts)
+                                </label>
+                            @endif
                         </div>
 
                         {{-- Own account (always visible) --}}
@@ -345,6 +352,7 @@ function accountSwitcher() {
     return {
         open: false,
         search: '',
+        mainOnly: false,
         accounts: [],
         page: 1,
         lastPage: 1,
@@ -365,6 +373,9 @@ function accountSwitcher() {
                     page: this.page,
                     search: this.search
                 });
+                if (this.mainOnly) {
+                    params.set('main', '1');
+                }
                 const response = await fetch(`/customer/account/accessible?${params}`);
                 const data = await response.json();
                 this.accounts = data.data;

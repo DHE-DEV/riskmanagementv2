@@ -22,6 +22,11 @@ class AccountSwitchController extends Controller
 
         if ($this->isSuperAdmin($originalCustomer)) {
             $query = Customer::where('id', '!=', $originalCustomer->id);
+
+            // Nur Hauptaccounts: Kunden mit zugeordneten Unteraccounts.
+            if ($request->boolean('main')) {
+                $query->has('assignedCustomers');
+            }
         } else {
             $query = $originalCustomer->accessibleAccounts();
         }
