@@ -200,7 +200,7 @@ it('zeigt die Agenturen in der Übersicht als Karten mit Suche, Status-Filter un
     $this->actingAs($agency, 'customer')
         ->get(route('customer.settings', ['section' => 'organization']))
         ->assertOk()
-        ->assertSee('x-data="{ q: \'\', status: \'all\' }"', false)
+        ->assertSee('x-data="{ q: \'\', status: \'active\' }"', false)
         ->assertSee("status === 'inactive'", false)
         ->assertSee('Inaktiv')
         ->assertSee('mailto:aktiv@buero.test', false);

@@ -2,6 +2,8 @@
 
 namespace App\Livewire\AdminV2\CustomerManagement\Customers;
 
+use App\Jobs\GeocodeSubAccounts;
+use App\Models\Customer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
 
@@ -35,6 +37,42 @@ trait ListsCustomerSubAccounts
     public function updatedSubAccountSearch(): void
     {
         $this->resetPage('subAccountsPage');
+    }
+
+    /**
+     * Stand der Koordinaten fuer die Karte "Filialen & Standorte".
+     *
+     * @return array{total: int, located: int, pending: int, missing: int}
+     */
+    #[Computed]
+    public function subAccountGeoStats(): array
+    {
+        $query = fn () => Customer::query()->where('assign_to', $this->customerId);
+        $total = $query()->count();
+        $located = $query()->whereNotNull('company_latitude')->count();
+        $pending = $query()->whereNull('company_geocoded_at')->count();
+
+        return ['total' => $total, 'located' => $located, 'pending' => $pending, 'missing' => $total - $located - $pending];
+    }
+
+    /**
+     * Fehlende Koordinaten im Hintergrund ermitteln; mit $retry auch die,
+     * fuer die bisher nichts gefunden wurde.
+     */
+    public function geocodeSubAccounts(bool $retry = false): void
+    {
+        if ($retry) {
+            Customer::query()->where('assign_to', $this->customerId)
+                ->whereNotNull('company_geocoded_at')->whereNull('company_latitude')
+                ->update(['company_geocoded_at' => null]);
+        }
+
+        if (GeocodeSubAccounts::pending($this->customerId)->exists()) {
+            GeocodeSubAccounts::dispatch($this->customerId);
+        }
+
+        unset($this->subAccountGeoStats);
+        $this->dispatch('adminv2-toast', message: 'Koordinaten werden im Hintergrund ermittelt (etwa eine Adresse pro Sekunde).');
     }
 
     #[Computed]

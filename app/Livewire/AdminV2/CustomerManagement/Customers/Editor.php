@@ -2,6 +2,7 @@
 
 namespace App\Livewire\AdminV2\CustomerManagement\Customers;
 
+use App\Jobs\GeocodeSubAccounts;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\QueriesLists;
 use App\Models\Country;
@@ -336,6 +337,11 @@ class Editor extends Component
         $customer->fill($attributes)->save();
 
         $this->saveFeatureOverrides($customer);
+        // Agenturen auf der Karte: fehlende Koordinaten im Hintergrund ermitteln.
+        if ($customer->show_sub_accounts_as_branches && GeocodeSubAccounts::pending($customer->id)->exists()) {
+            GeocodeSubAccounts::dispatch($customer->id);
+        }
+
         // Vererbung an die Unteraccounts kann sich geaendert haben.
         app(CustomerFeatureService::class)->clearCache($customer->id);
         unset($this->subAccountFeatureDeviations);

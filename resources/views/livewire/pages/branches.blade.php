@@ -242,7 +242,8 @@
                     <div class="space-y-2">
                         @foreach($subAccounts as $subAccount)
                             @php($subAccountSearch = mb_strtolower(implode(' ', [$subAccount->company_name, $subAccount->name, $subAccount->company_postal_code, $subAccount->company_city, $subAccount->app_code])))
-                            <div class="bg-white p-3 rounded-lg border border-gray-200" x-show="q === '' || @js($subAccountSearch).includes(q.toLowerCase())">
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 {{ $subAccount->company_latitude ? 'cursor-pointer hover:border-blue-300' : '' }}" x-show="q === '' || @js($subAccountSearch).includes(q.toLowerCase())"
+                                 @if($subAccount->company_latitude) onclick="focusAgency({{ $subAccount->id }})" title="Auf der Karte zeigen" @endif>
                                 <h4 class="font-semibold text-gray-900 text-xs">{{ $subAccount->company_name ?: $subAccount->name }}</h4>
                                 <p class="text-[11px] text-gray-600 mt-1">
                                     @if($subAccount->company_street || $subAccount->company_city)
@@ -278,6 +279,15 @@
     // Initialize map
     let map;
     let markersLayer;
+    const agencyMarkers = {};
+    const agencies = @js($subAccounts->filter(fn ($a) => $a->company_latitude !== null && $a->company_longitude !== null)->map(fn ($a) => [
+        'id' => $a->id,
+        'name' => $a->company_name ?: $a->name,
+        'street' => trim($a->company_street.' '.$a->company_house_number),
+        'city' => trim($a->company_postal_code.' '.$a->company_city),
+        'lat' => (float) $a->company_latitude,
+        'lng' => (float) $a->company_longitude,
+    ])->values());
 
     document.addEventListener('DOMContentLoaded', function() {
         initMap();
@@ -378,8 +388,40 @@
             }
         @endif
 
-        // TODO: Load additional branches from database
-        // This would be done via an API call to fetch all branches
+        // Zugeordnete Agenturen mit ermittelten Koordinaten (Hintergrund-Job).
+        const agencyIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background-color: #f59e0b; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"><i class="fa-solid fa-store" style="font-size: 12px;"></i></div>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+        });
+        const bounds = [];
+
+        agencies.forEach(agency => {
+            const marker = L.marker([agency.lat, agency.lng], { icon: agencyIcon });
+            const popup = document.createElement('div');
+            popup.style.minWidth = '180px';
+            popup.innerHTML = '<h3 style="font-weight: bold; margin-bottom: 4px; color: #1f2937;"></h3><p style="margin: 2px 0; font-size: 13px;"></p><p style="margin: 2px 0; font-size: 13px;"></p>';
+            popup.children[0].textContent = agency.name;
+            popup.children[1].textContent = agency.street;
+            popup.children[2].textContent = agency.city;
+            marker.bindPopup(popup);
+            markersLayer.addLayer(marker);
+            agencyMarkers[agency.id] = marker;
+            bounds.push([agency.lat, agency.lng]);
+        });
+
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+        }
+    }
+
+    // Klick in der Seitenleiste: Agentur auf der Karte zeigen.
+    function focusAgency(id) {
+        const marker = agencyMarkers[id];
+        if (marker) {
+            markersLayer.zoomToShowLayer(marker, () => marker.openPopup());
+        }
     }
 
     async function geocodeAddress(address) {

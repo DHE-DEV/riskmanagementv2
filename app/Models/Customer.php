@@ -174,6 +174,9 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'pds_api_token_expires_at' => 'datetime',
         // GTM API
         'gtm_api_enabled' => 'boolean',
+        'company_latitude' => 'float',
+        'company_longitude' => 'float',
+        'company_geocoded_at' => 'datetime',
         'show_sub_accounts_as_branches' => 'boolean',
         'inherited_features' => 'array',
         'gtm_api_rate_limit' => 'integer',
@@ -205,6 +208,26 @@ class Customer extends Authenticatable implements MustVerifyEmail
     {
         static::creating(function (Customer $customer) {
             $customer->app_code = self::generateUniqueAppCode();
+        });
+
+        // Geaenderte Firmenadresse: Koordinaten neu ermitteln lassen.
+        static::updating(function (Customer $customer) {
+            if ($customer->isDirty(['company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
+                && ! $customer->isDirty('company_geocoded_at')) {
+                $customer->company_latitude = null;
+                $customer->company_longitude = null;
+                $customer->company_geocoded_at = null;
+            }
+        });
+
+        // Unteraccount einer Zentrale, die ihre Agenturen als Adressen zeigt:
+        // Koordinaten im Hintergrund ermitteln (ein Job je Zentrale).
+        static::saved(function (Customer $customer) {
+            if ($customer->assign_to && $customer->company_geocoded_at === null
+                && ($customer->wasRecentlyCreated || $customer->wasChanged(['assign_to', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country']))
+                && self::query()->whereKey($customer->assign_to)->where('show_sub_accounts_as_branches', true)->exists()) {
+                \App\Jobs\GeocodeSubAccounts::dispatch((int) $customer->assign_to);
+            }
         });
 
         static::created(function (Customer $customer) {

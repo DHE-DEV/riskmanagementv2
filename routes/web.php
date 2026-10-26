@@ -383,7 +383,7 @@ Route::get('/branches', function () {
         'subAccounts' => $customer->show_sub_accounts_as_branches
             ? \App\Models\Customer::where('assign_to', $customer->id)
                 ->orderBy('company_name')->orderBy('id')
-                ->get(['id', 'app_code', 'name', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city'])
+                ->get(['id', 'app_code', 'name', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_latitude', 'company_longitude'])
             : collect(),
     ]);
 })->name('branches');

@@ -2089,7 +2089,7 @@
                     </div>
                     @if($subAccountAddresses->isNotEmpty())
                         {{-- Agenturen (Unteraccounts) als Adressen: Suche, Status-Filter, Karten --}}
-                        <div class="mt-6" x-data="{ q: '', status: 'all' }">
+                        <div class="mt-6" x-data="{ q: '', status: 'active' }">
                             <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
                                 <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agenturen ({{ $subAccountAddresses->count() }})</h4>
                                 <div class="flex flex-wrap items-center gap-2 flex-1 sm:flex-none">
@@ -6690,8 +6690,8 @@ function assignedAgencies() {
         detailAgency: null,
         sortField: 'company_name',
         sortDir: 'asc',
-        // all | active | inactive (Laufzeit aus den Alt-Optionen)
-        status: 'all',
+        // all | active | inactive (Laufzeit aus den Alt-Optionen); Standard: aktive
+        status: 'active',
 
         isInactive(agency) {
             const today = new Date().toISOString().slice(0, 10);
@@ -6699,7 +6699,7 @@ function assignedAgencies() {
                    (agency.legacy_options?.end_of_use && today > agency.legacy_options.end_of_use);
         },
 
-        // Standard: alle zugeordneten Agenturen; inaktive sind rot markiert.
+        // Standard: nur aktive; mit "Alle" auch die inaktiven (rot markiert).
         get filteredAgencies() {
             if (this.status === 'active') return this.agencies.filter(a => !this.isInactive(a));
             if (this.status === 'inactive') return this.agencies.filter(a => this.isInactive(a));

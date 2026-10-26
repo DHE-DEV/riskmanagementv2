@@ -24,6 +24,23 @@
             </div>
         </form>
 
+        @if ($showSubAccountsAsBranches && $this->subAccountGeoStats['total'] > 0)
+            @php($geo = $this->subAccountGeoStats)
+            {{-- Karte "Filialen & Standorte": Stand der Koordinaten --}}
+            <div class="flex flex-wrap items-center gap-3 border-b border-zinc-100 px-5 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-300" @if ($geo['pending'] > 0) wire:poll.15s @endif>
+                <flux:icon.map-pin variant="mini" class="text-zinc-400" />
+                <span>Karte: {{ $geo['located'] }} von {{ $geo['total'] }} mit Koordinaten</span>
+                @if ($geo['pending'] > 0)
+                    <flux:badge size="sm" color="sky" inset="top bottom">{{ $geo['pending'] }} werden ermittelt</flux:badge>
+                    <flux:button size="xs" variant="ghost" icon="play" wire:click="geocodeSubAccounts">Anstoßen</flux:button>
+                @endif
+                @if ($geo['missing'] > 0)
+                    <flux:badge size="sm" color="amber" inset="top bottom">{{ $geo['missing'] }} ohne Treffer bzw. ohne Adresse</flux:badge>
+                    <flux:button size="xs" variant="ghost" icon="arrow-path" wire:click="geocodeSubAccounts(true)">Erneut versuchen</flux:button>
+                @endif
+            </div>
+        @endif
+
         <div class="flex flex-wrap items-center gap-3 px-5 py-4">
             <div class="min-w-56 flex-1">
                 <flux:input wire:model.live.debounce.300ms="subAccountSearch" size="sm" icon="magnifying-glass" placeholder="Code, Firma, E-Mail, PLZ, Stadt oder PDS-ID suchen …" aria-label="Unteraccounts durchsuchen" clearable />
