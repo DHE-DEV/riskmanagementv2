@@ -588,13 +588,16 @@ it('schaltet die Vererbung an Unteraccounts im Admin und setzt Abweichungen zurÃ
 
     $component = Livewire::actingAs(pdsImportAdmin())
         ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
-        ->assertSee('An Unteraccounts vererben (2)')
-        ->set('inheritFeaturesToSubAccounts', true)
+        ->assertSee('Vererbung an 2 Unteraccounts')
+        ->assertSee('An Unteraccounts vererben (immer)')
+        ->assertDontSee('2 Unteraccounts weichen ab')
+        ->set('inheritedFeatures', ['navigation_cruise_enabled', 'navigation_events_enabled', 'gibt_es_nicht'])
         ->call('save')
         ->assertSee('2 Unteraccounts weichen ab')
+        ->assertSee('Gilt auch fÃ¼r die Unteraccounts, solange dort nichts gesetzt ist.')
         ->call('resetSubAccountFeatures', 'navigation_cruise_enabled');
 
-    expect($agency->fresh()->inherit_features_to_sub_accounts)->toBeTrue()
+    expect($agency->fresh()->inherited_features)->toBe(['navigation_events_enabled', 'navigation_cruise_enabled'])
         ->and($office->featureOverrides()->first()->navigation_cruise_enabled)->toBeNull()
         ->and($office->featureOverrides()->first()->navigation_events_enabled)->toBeTrue();
 
@@ -604,5 +607,6 @@ it('schaltet die Vererbung an Unteraccounts im Admin und setzt Abweichungen zurÃ
 
     Livewire::actingAs(pdsImportAdmin())
         ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $office->id])
-        ->assertSee('Standard (Zentrale bzw. .env)');
+        ->assertSee('Standard (Zentrale bzw. .env)')
+        ->assertSee('Wird von der Zentrale vererbt');
 });

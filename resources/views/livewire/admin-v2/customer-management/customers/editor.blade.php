@@ -256,15 +256,7 @@
                                 <div x-data="{ info: false }" wire:key="setting-{{ $model }}">
                                     <div class="flex items-center gap-1">
                                         <flux:switch wire:model="{{ $model }}" :label="$setting['label']" align="left" />
-                                        <flux:button
-                                            size="xs"
-                                            variant="ghost"
-                                            icon="information-circle"
-                                            x-on:click="info = ! info"
-                                            x-bind:aria-expanded="info"
-                                            aria-label="Was bedeutet „{{ $setting['label'] }}“?"
-                                            title="Was bedeutet das?"
-                                        />
+                                        <button type="button" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „{{ $setting['label'] }}“?" title="Was bedeutet das?" class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sky-600 transition hover:bg-sky-50 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"><flux:icon.information-circle class="size-5" /></button>
                                     </div>
                                     <div x-show="info" x-collapse x-cloak class="mt-2 flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
                                         @foreach ($setting['info'] as $paragraph)
@@ -281,7 +273,7 @@
                             <div x-data="{ info: false }">
                                 <div class="flex items-center gap-1">
                                     <flux:switch wire:model="gtmApiEnabled" label="GTM API Zugang aktiv" align="left" />
-                                    <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „GTM API Zugang aktiv“?" title="Was bedeutet das?" />
+                                    <button type="button" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „GTM API Zugang aktiv“?" title="Was bedeutet das?" class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sky-600 transition hover:bg-sky-50 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"><flux:icon.information-circle class="size-5" /></button>
                                 </div>
                                 <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aktiviert den Zugang zur Global Travel Monitor JSON API. Der Kunde muss seinen API-Token neu generieren.</p>
                                 <div x-show="info" x-collapse x-cloak class="mt-2 flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
@@ -293,7 +285,7 @@
                             <flux:field class="sm:max-w-xs" x-data="{ info: false }">
                                 <div class="flex items-center gap-1">
                                     <flux:label>Rate Limit (Anfragen/Minute)</flux:label>
-                                    <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet das Rate Limit?" title="Was bedeutet das?" />
+                                    <button type="button" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet das Rate Limit?" title="Was bedeutet das?" class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sky-600 transition hover:bg-sky-50 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"><flux:icon.information-circle class="size-5" /></button>
                                 </div>
                                 <div x-show="info" x-collapse x-cloak class="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">So viele Anfragen darf der Kunde pro Minute an die GTM API stellen (1–1000, Standard 60). Darüber antwortet die Schnittstelle mit HTTP 429 „Too Many Requests“, bis die Minute um ist. Gilt je Kunde für alle seine Token zusammen.</div>
                                 <flux:input wire:model="gtmApiRateLimit" type="number" min="1" max="1000" step="1" />
@@ -316,26 +308,30 @@
                             </p>
                             @php
                                 $subAccountCount = $customer->assignedCustomers()->count();
-                                // Unteraccount einer vererbenden Zentrale: alle Features kommen von dort.
-                                $agencyInheritsAll = (bool) $customer->assignedTo?->inherit_features_to_sub_accounts;
-                                $deviations = $inheritFeaturesToSubAccounts ? $this->subAccountFeatureDeviations : [];
+                                // Unteraccount: diese Features kommen von der Zentrale.
+                                $agencyInherited = $customer->assign_to
+                                    ? [...CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, ...(array) $customer->assignedTo?->inherited_features]
+                                    : [];
+                                $inheritedKeys = $subAccountCount > 0 ? $this->inheritedFeatureKeys() : [];
+                                $deviations = array_intersect_key($subAccountCount > 0 ? $this->subAccountFeatureDeviations : [], array_flip($inheritedKeys));
                             @endphp
-                            @if ($subAccountCount > 0 || $inheritFeaturesToSubAccounts)
-                                {{-- Zentrale: Features an die Unteraccounts vererben --}}
-                                <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700" x-data="{ info: false }">
+                            @if ($subAccountCount > 0)
+                                {{-- Zentrale: je Feature an die Unteraccounts vererben --}}
+                                <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm dark:border-zinc-700" x-data="{ info: false }">
                                     <div class="flex items-center gap-1">
-                                        <flux:switch wire:model.live="inheritFeaturesToSubAccounts" label="An Unteraccounts vererben ({{ $subAccountCount }})" align="left" />
-                                        <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „An Unteraccounts vererben“?" title="Was bedeutet das?" />
+                                        <span class="font-medium text-zinc-900 dark:text-white">Vererbung an {{ $subAccountCount }} Unteraccounts</span>
+                                        <button type="button" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „An Unteraccounts vererben“?" title="Was bedeutet das?" class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sky-600 transition hover:bg-sky-50 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"><flux:icon.information-circle class="size-5" /></button>
                                     </div>
-                                    <div x-show="info" x-collapse x-cloak class="flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
-                                        <p>Eingeschaltet übernehmen alle zugeordneten Unteraccounts die Feature-Überschreibungen dieses Kunden – auch solche, die später zugeordnet werden. Ein Feature hier auf „Aktiviert“ schaltet es bei allen frei, „Deaktiviert“ entzieht es allen, „Standard“ lässt bei ihnen wieder die globale Einstellung gelten.</p>
-                                        <p>Hat ein Unteraccount selbst einen Wert gesetzt, geht dieser vor. Solche Abweichungen lassen sich hier je Feature oder insgesamt zurücksetzen.</p>
-                                        <p>Ausgeschaltet gelten für die Unteraccounts wieder ihre eigenen bzw. die globalen Einstellungen. Die drei Einstellungsbereiche (Stammdaten, Organisationsstruktur, Benutzerverwaltung) werden immer vererbt. Wirkt nach dem Speichern, spätestens nach 5 Minuten.</p>
+                                    <p class="text-zinc-600 dark:text-zinc-400">Je Feature lässt sich mit „An Unteraccounts vererben“ festlegen, ob die zugeordneten Unteraccounts die Einstellung dieses Kunden übernehmen.</p>
+                                    <div x-show="info" x-collapse x-cloak class="flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                        <p>Ist bei einem Feature „An Unteraccounts vererben“ angehakt, übernehmen alle zugeordneten Unteraccounts – auch später zugeordnete – die Einstellung dieses Kunden: „Aktiviert“ schaltet es bei allen frei, „Deaktiviert“ entzieht es allen, „Standard“ lässt bei ihnen wieder die globale Einstellung gelten. Ohne Haken gilt bei den Unteraccounts ihre eigene bzw. die globale Einstellung.</p>
+                                        <p>Hat ein Unteraccount bei einem vererbten Feature selbst einen Wert gesetzt, geht dieser vor; solche Abweichungen lassen sich je Feature oder insgesamt zurücksetzen.</p>
+                                        <p>Die drei Einstellungsbereiche (Stammdaten, Organisationsstruktur, Benutzerverwaltung) werden immer vererbt. Änderungen wirken nach dem Speichern, spätestens nach 5 Minuten.</p>
                                     </div>
                                     @if ($deviations !== [])
-                                        <div class="flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                                        <div class="flex flex-wrap items-center gap-2 text-zinc-600 dark:text-zinc-300">
                                             <span>{{ array_sum($deviations) }} abweichende Werte bei Unteraccounts</span>
-                                            <flux:button size="xs" icon="arrow-uturn-left" wire:click="resetSubAccountFeatures('all')" wire:confirm="Bei allen Unteraccounts alle eigenen Feature-Werte auf „Standard“ zurücksetzen? Danach gilt überall die Einstellung dieses Kunden.">Alle zurücksetzen</flux:button>
+                                            <flux:button size="xs" icon="arrow-uturn-left" wire:click="resetSubAccountFeatures('all')" wire:confirm="Bei allen Unteraccounts die eigenen Werte aller vererbten Features auf „Standard“ zurücksetzen? Danach gilt dort die Einstellung dieses Kunden.">Alle zurücksetzen</flux:button>
                                         </div>
                                     @endif
                                 </div>
@@ -346,17 +342,20 @@
                                         <div class="flex items-center gap-1">
                                             <flux:label>{{ $label }}</flux:label>
                                             @if ($featureInfo = CustomerFeatureOverride::getFeatureDescriptions()[$key] ?? null)
-                                                <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „{{ $label }}“?" title="Was bedeutet das?" />
+                                                <button type="button" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „{{ $label }}“?" title="Was bedeutet das?" class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sky-600 transition hover:bg-sky-50 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"><flux:icon.information-circle class="size-5" /></button>
                                             @endif
                                         </div>
+                                        @php($fromAgency = in_array($key, $agencyInherited, true))
                                         @if ($featureInfo)
-                                            <div x-show="info" x-collapse x-cloak class="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">{{ $featureInfo }}</div>
-                                        @endif
-                                        @php($fromAgency = $customer->assign_to && ($agencyInheritsAll || in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true)))
-                                        @if ($fromAgency)
-                                            <flux:description>Standard = Wert der Zentrale, sonst .env.</flux:description>
-                                        @elseif ($inheritFeaturesToSubAccounts || in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
-                                            <flux:description>Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.</flux:description>
+                                            <div x-show="info" x-collapse x-cloak class="flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                                <p>{{ $featureInfo }}</p>
+                                                @if ($fromAgency)
+                                                    <p>Wird von der Zentrale vererbt: „Standard“ = Wert der Zentrale, sonst .env.</p>
+                                                @endif
+                                                @if (in_array($key, $inheritedKeys, true))
+                                                    <p>Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.</p>
+                                                @endif
+                                            </div>
                                         @endif
                                         <flux:select wire:model="featureOverrides.{{ $key }}">
                                             <flux:select.option value="">{{ $fromAgency ? 'Standard (Zentrale bzw. .env)' : 'Standard (.env)' }}</flux:select.option>
@@ -364,6 +363,13 @@
                                             <flux:select.option value="0">Deaktiviert</flux:select.option>
                                         </flux:select>
                                         <flux:error name="featureOverrides.{{ $key }}" />
+                                        @if ($subAccountCount > 0)
+                                            @if (in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
+                                                <flux:checkbox checked disabled label="An Unteraccounts vererben (immer)" />
+                                            @else
+                                                <flux:checkbox wire:model.live="inheritedFeatures" value="{{ $key }}" label="An Unteraccounts vererben" />
+                                            @endif
+                                        @endif
                                         @if ($deviations[$key] ?? 0)
                                             <div class="flex flex-wrap items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
                                                 {{ $deviations[$key] }} {{ $deviations[$key] === 1 ? 'Unteraccount weicht' : 'Unteraccounts weichen' }} ab

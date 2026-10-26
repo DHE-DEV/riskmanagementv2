@@ -87,8 +87,8 @@ class Editor extends Component
     /** Zugeordnete Agenturen auch als Adressen anzeigen (Organisation, /branches). */
     public bool $showSubAccountsAsBranches = false;
 
-    /** Zentrale: Feature-Ueberschreibungen an die Unteraccounts vererben. */
-    public bool $inheritFeaturesToSubAccounts = false;
+    /** @var array<int, string> Zentrale: diese Features erben die Unteraccounts */
+    public array $inheritedFeatures = [];
 
     public bool $hideProfileCompletion = false;
 
@@ -137,7 +137,7 @@ class Editor extends Component
         $this->directoryListingActive = (bool) $model->directory_listing_active;
         $this->branchManagementActive = (bool) $model->branch_management_active;
         $this->showSubAccountsAsBranches = (bool) $model->show_sub_accounts_as_branches;
-        $this->inheritFeaturesToSubAccounts = (bool) $model->inherit_features_to_sub_accounts;
+        $this->inheritedFeatures = array_values(array_intersect(CustomerFeatureOverride::getFeatureKeys(), (array) $model->inherited_features));
         $this->hideProfileCompletion = (bool) $model->hide_profile_completion;
         $this->gtmApiEnabled = (bool) $model->gtm_api_enabled;
         $this->gtmApiRateLimit = (string) ($model->gtm_api_rate_limit ?? 60);
@@ -299,7 +299,7 @@ class Editor extends Component
             'directory_listing_active' => $this->directoryListingActive,
             'branch_management_active' => $this->branchManagementActive,
             'show_sub_accounts_as_branches' => $this->showSubAccountsAsBranches,
-            'inherit_features_to_sub_accounts' => $this->inheritFeaturesToSubAccounts,
+            'inherited_features' => ($inherited = array_values(array_intersect(CustomerFeatureOverride::getFeatureKeys(), $this->inheritedFeatures))) === [] ? null : $inherited,
             'hide_profile_completion' => $this->hideProfileCompletion,
             'gtm_api_enabled' => $this->gtmApiEnabled,
             'gtm_api_rate_limit' => (int) $this->gtmApiRateLimit,
@@ -384,12 +384,16 @@ class Editor extends Component
     }
 
     /**
-     * Abweichungen der Unteraccounts bei einem Feature (oder allen) auf
-     * "Standard" zuruecksetzen – danach gilt dort wieder die Zentrale.
+     * Abweichungen der Unteraccounts bei einem Feature (oder allen vererbten)
+     * auf "Standard" zuruecksetzen – danach gilt dort wieder die Zentrale.
      */
     public function resetSubAccountFeatures(string $key): void
     {
-        $keys = $key === 'all' ? CustomerFeatureOverride::getFeatureKeys() : [$key];
+        $keys = $key === 'all' ? $this->inheritedFeatureKeys() : [$key];
+
+        if ($keys === []) {
+            return;
+        }
 
         if (array_diff($keys, CustomerFeatureOverride::getFeatureKeys()) !== []) {
             return;
@@ -416,6 +420,17 @@ class Editor extends Component
 
         $label = $key === 'all' ? 'allen Features' : '„'.(CustomerFeatureOverride::getFeatureLabels()[$key] ?? $key).'“';
         $this->dispatch('adminv2-toast', message: "Abweichungen bei {$label} zurückgesetzt ({$count} Unteraccounts).");
+    }
+
+    /**
+     * Die Features, die die Unteraccounts gerade erben (Auswahl plus die
+     * immer vererbten Einstellungsbereiche).
+     *
+     * @return array<int, string>
+     */
+    public function inheritedFeatureKeys(): array
+    {
+        return array_values(array_unique([...CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, ...array_intersect(CustomerFeatureOverride::getFeatureKeys(), $this->inheritedFeatures)]));
     }
 
     protected function fillFeatureOverrides(?CustomerFeatureOverride $overrides): void

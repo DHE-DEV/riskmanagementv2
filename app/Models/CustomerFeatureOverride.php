@@ -124,9 +124,9 @@ class CustomerFeatureOverride extends Model
             'navigation_visumpoint_enabled' => 'Menüpunkt „Visum Check (VisumPoint)“: Visa-Prüfung über VisumPoint. Ausgeschaltet ist die Seite nicht erreichbar.',
             'navigation_customer_events_enabled' => 'Menüpunkt „Meine Ereignisse“: eigene Ereignisse, die der Kunde selbst anlegt und auf seiner Karte zeigt. Ausgeschaltet verschwindet der Menüpunkt.',
             'navigation_doctors_network_enabled' => 'Menüpunkt „Doctors Network“: Ärzte und medizinische Einrichtungen am Reiseziel. Ausgeschaltet ist die Seite nicht erreichbar.',
-            'settings_master_data_enabled' => 'Einstellungsbereich „Stammdaten“ unter Organisation, in dem der Kunde seine Firmendaten pflegt. Global per CUSTOMER_SETTINGS_MASTER_DATA_ENABLED; Unteraccounts übernehmen den Wert ihrer Zentrale, solange bei ihnen nichts gesetzt ist.',
-            'settings_organization_enabled' => 'Einstellungsbereich „Organisationsstruktur“ unter Organisation: Adressen, Struktur, Abteilungen und – bei einer Zentrale – die zugeordneten Agenturen. Global per CUSTOMER_SETTINGS_ORGANIZATION_ENABLED; Unteraccounts übernehmen den Wert ihrer Zentrale.',
-            'settings_users_enabled' => 'Einstellungsbereich „Benutzerverwaltung“ unter Organisation, in dem der Kunde weitere Benutzer (Mitarbeiter) anlegt und Gruppen zuordnet. Global per CUSTOMER_SETTINGS_USERS_ENABLED; Unteraccounts übernehmen den Wert ihrer Zentrale.',
+            'settings_master_data_enabled' => 'Einstellungsbereich „Stammdaten“ unter Organisation, in dem der Kunde seine Firmendaten pflegt.',
+            'settings_organization_enabled' => 'Einstellungsbereich „Organisationsstruktur“ unter Organisation: Adressen, Struktur, Abteilungen und – bei einer Zentrale – die zugeordneten Agenturen.',
+            'settings_users_enabled' => 'Einstellungsbereich „Benutzerverwaltung“ unter Organisation, in dem der Kunde weitere Benutzer (Mitarbeiter) anlegt und Gruppen zuordnet.',
         ];
     }
 

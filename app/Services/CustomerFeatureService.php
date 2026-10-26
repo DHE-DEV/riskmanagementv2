@@ -12,8 +12,8 @@ class CustomerFeatureService
      * Check if a feature is enabled for a customer.
      * First checks customer-specific overrides, then the override of the
      * customer's agency (assign_to) – for keys in INHERITED_BY_SUB_ACCOUNTS
-     * always, for all others when the agency has
-     * inherit_features_to_sub_accounts on – then falls back to .env config.
+     * always, for all others when the agency lists the key in
+     * inherited_features – then falls back to .env config.
      */
     public function isFeatureEnabled(string $featureKey, ?Customer $customer = null): bool
     {
@@ -76,8 +76,10 @@ class CustomerFeatureService
             return true;
         }
 
-        return (bool) Cache::remember("customer_feature_inherit_{$agencyId}", 300,
-            fn () => (bool) Customer::withTrashed()->whereKey($agencyId)->value('inherit_features_to_sub_accounts'));
+        $inherited = Cache::remember("customer_feature_inherit_{$agencyId}", 300,
+            fn () => (array) (Customer::withTrashed()->find($agencyId, ['id', 'inherited_features'])?->inherited_features ?? []));
+
+        return in_array($featureKey, $inherited, true);
     }
 
     /**
