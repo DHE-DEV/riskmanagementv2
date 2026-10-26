@@ -83,6 +83,9 @@ class Editor extends Component
 
     public bool $branchManagementActive = false;
 
+    /** Zugeordnete Agenturen auch als Adressen anzeigen (Organisation, /branches). */
+    public bool $showSubAccountsAsBranches = false;
+
     public bool $hideProfileCompletion = false;
 
     // GTM API
@@ -129,6 +132,7 @@ class Editor extends Component
         $this->emailVerifiedAt = $model->email_verified_at?->format('Y-m-d\TH:i') ?? '';
         $this->directoryListingActive = (bool) $model->directory_listing_active;
         $this->branchManagementActive = (bool) $model->branch_management_active;
+        $this->showSubAccountsAsBranches = (bool) $model->show_sub_accounts_as_branches;
         $this->hideProfileCompletion = (bool) $model->hide_profile_completion;
         $this->gtmApiEnabled = (bool) $model->gtm_api_enabled;
         $this->gtmApiRateLimit = (string) ($model->gtm_api_rate_limit ?? 60);
@@ -289,6 +293,7 @@ class Editor extends Component
             'customer_type' => $this->customerType === '' ? null : $this->customerType,
             'directory_listing_active' => $this->directoryListingActive,
             'branch_management_active' => $this->branchManagementActive,
+            'show_sub_accounts_as_branches' => $this->showSubAccountsAsBranches,
             'hide_profile_completion' => $this->hideProfileCompletion,
             'gtm_api_enabled' => $this->gtmApiEnabled,
             'gtm_api_rate_limit' => (int) $this->gtmApiRateLimit,

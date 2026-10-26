@@ -87,3 +87,51 @@ it('zählt am Tab Agenturen alle zugeordneten Agenturen', function () {
 
     expect(preg_replace('/\s+/', ' ', strip_tags($html)))->toContain('Agenturen 3');
 });
+
+it('liefert bei den Agenturen nur die angezeigten Alt-Optionen', function () {
+    $agency = Customer::factory()->create();
+    $office = Customer::factory()->create(['assign_to' => $agency->id]);
+    \Illuminate\Support\Facades\DB::table('customers_legacy_options')->insert([
+        'account_id' => $office->id,
+        'account_type' => 4,
+        'live_from' => '2020-01-01',
+        'end_of_use' => '2099-12-31',
+        'show_visa_service' => 1,
+        'visa_places' => 'Berlin',
+        'show_travel_warning' => 0,
+        'zoho_crm_id' => 'geheim',
+        'note' => 'interne Notiz',
+        'providers' => '[]',
+    ]);
+
+    $options = $this->actingAs($agency, 'customer')
+        ->getJson('/customer/assigned-agencies')
+        ->assertOk()
+        ->json('data.0.legacy_options');
+
+    expect(array_keys($options))->toEqualCanonicalizing(['account_id', 'account_type', 'live_from', 'end_of_use', 'show_visa_service', 'visa_places', 'show_travel_warning', 'travel_warning_country', 'myjack_agency_id'])
+        ->and($options['visa_places'])->toBe('Berlin');
+});
+
+it('zeigt Agenturen als Kachel und – je Kunde schaltbar – als Adressen in Übersicht und Filialen', function () {
+    $agency = Customer::factory()->create(['branch_management_active' => true, 'customer_type' => 'business']);
+    Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Reisebüro Augsburg', 'company_city' => 'Augsburg']);
+    Customer::factory()->create(['assign_to' => $agency->id, 'company_name' => 'Reisebüro Essen', 'company_city' => 'Essen']);
+    CustomerFeatureOverride::create(['customer_id' => $agency->id, 'settings_organization_enabled' => true]);
+
+    $overview = fn () => preg_replace('/\s+/', ' ', strip_tags($this->actingAs($agency, 'customer')
+        ->get(route('customer.settings', ['section' => 'organization']))->assertOk()->getContent()));
+
+    // Kachel immer, Adressen nur mit Schalter.
+    expect($overview())->toContain('2 Agenturen')->not->toContain('Agenturen (2)');
+    $this->actingAs($agency, 'customer')->get(route('branches'))->assertOk()->assertDontSee('Reisebüro Essen');
+
+    $agency->forceFill(['show_sub_accounts_as_branches' => true])->save();
+
+    expect($overview())->toContain('Agenturen (2)')->toContain('Reisebüro Augsburg');
+    $this->actingAs($agency->fresh(), 'customer')->get(route('branches'))
+        ->assertOk()
+        ->assertSee('Agenturen (2)')
+        ->assertSee('Reisebüro Essen')
+        ->assertDontSee('Keine weiteren Filialen');
+});

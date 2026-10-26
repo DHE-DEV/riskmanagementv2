@@ -62,6 +62,59 @@
             <div class="grid items-start gap-6 lg:grid-cols-2">
                 {{-- Linke Spalte --}}
                 <div class="flex flex-col gap-6">
+                    @foreach (['company' => 'Firmeninformationen', 'billing' => 'Rechnungsadresse'] as $prefix => $heading)
+                        <x-adminv2.card :heading="$heading" wire:key="address-{{ $prefix }}">
+                            <div class="flex flex-col gap-5">
+                                <flux:field>
+                                    <flux:label>Firmenname</flux:label>
+                                    <flux:input wire:model="{{ $prefix }}.name" maxlength="255" />
+                                    <flux:error name="{{ $prefix }}.name" />
+                                </flux:field>
+                                <flux:field>
+                                    <flux:label>Zusatz</flux:label>
+                                    <flux:input wire:model="{{ $prefix }}.additional" maxlength="255" />
+                                    <flux:error name="{{ $prefix }}.additional" />
+                                </flux:field>
+                                <div class="grid items-start gap-5 sm:grid-cols-2">
+                                    <flux:field>
+                                        <flux:label>Straße</flux:label>
+                                        <flux:input wire:model="{{ $prefix }}.street" maxlength="255" />
+                                        <flux:error name="{{ $prefix }}.street" />
+                                    </flux:field>
+                                    <flux:field>
+                                        <flux:label>Hausnummer</flux:label>
+                                        <flux:input wire:model="{{ $prefix }}.house_number" maxlength="20" />
+                                        <flux:error name="{{ $prefix }}.house_number" />
+                                    </flux:field>
+                                    <flux:field>
+                                        <flux:label>PLZ</flux:label>
+                                        <flux:input wire:model="{{ $prefix }}.postal_code" maxlength="20" />
+                                        <flux:error name="{{ $prefix }}.postal_code" />
+                                    </flux:field>
+                                    <flux:field>
+                                        <flux:label>Stadt</flux:label>
+                                        <flux:input wire:model="{{ $prefix }}.city" maxlength="255" />
+                                        <flux:error name="{{ $prefix }}.city" />
+                                    </flux:field>
+                                </div>
+                                <flux:field>
+                                    <flux:label>Land</flux:label>
+                                    <x-adminv2.search-select
+                                        :options="$this->countryOptionsFor(${$prefix}['country'] ?? '')"
+                                        model="{{ $prefix }}.country"
+                                        :selected="${$prefix}['country'] ?? ''"
+                                        placeholder="Kein Land"
+                                        search-placeholder="Land oder ISO-Code …"
+                                        label="Land"
+                                        live
+                                        clearable
+                                    />
+                                    <flux:error name="{{ $prefix }}.country" />
+                                </flux:field>
+                            </div>
+                        </x-adminv2.card>
+                    @endforeach
+
                     <x-adminv2.card heading="Allgemeine Informationen">
                         <div class="flex flex-col gap-5">
                             <div class="grid items-start gap-5 sm:grid-cols-2">
@@ -119,59 +172,6 @@
                         </div>
                     </x-adminv2.card>
 
-                    <x-adminv2.card heading="Einstellungen">
-                        <div class="flex flex-col gap-4">
-                            <flux:switch wire:model="directoryListingActive" label="Adressverzeichnis aktiv" align="left" />
-                            <flux:switch wire:model="branchManagementActive" label="Filialen-Verwaltung aktiv" align="left" />
-                            <flux:switch wire:model="hideProfileCompletion" label="Profil-Vervollständigung ausblenden" align="left" />
-                        </div>
-                    </x-adminv2.card>
-
-                    <x-adminv2.card heading="GTM API Einstellungen" collapsible collapse-key="customer-gtm-api">
-                        <div class="flex flex-col gap-5">
-                            <div>
-                                <flux:switch wire:model="gtmApiEnabled" label="GTM API Zugang aktiv" align="left" />
-                                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aktiviert den Zugang zur Global Travel Monitor JSON API. Der Kunde muss seinen API-Token neu generieren.</p>
-                            </div>
-                            <flux:field class="sm:max-w-xs">
-                                <flux:label>Rate Limit (Anfragen/Minute)</flux:label>
-                                <flux:input wire:model="gtmApiRateLimit" type="number" min="1" max="1000" step="1" />
-                                <flux:description>Maximale API-Anfragen pro Minute für diesen Kunden</flux:description>
-                                <flux:error name="gtmApiRateLimit" />
-                            </flux:field>
-                        </div>
-                    </x-adminv2.card>
-
-                    <x-adminv2.card
-                        heading="Feature-Überschreibungen"
-                        description="Überschreiben Sie die globalen .env-Einstellungen für diesen Kunden. Leere Felder verwenden die Standard-Einstellung."
-                        collapsible
-                        collapsed
-                        collapse-key="customer-feature-overrides"
-                    >
-                        <div class="flex flex-col gap-5">
-                            <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                                Aktiviert = Feature für diesen Kunden einblenden, auch wenn global deaktiviert. Deaktiviert = Feature ausblenden, auch wenn global aktiviert. Nicht gesetzt = Globale Einstellung verwenden.
-                            </p>
-                            <div class="grid items-start gap-5 sm:grid-cols-2">
-                                @foreach (CustomerFeatureOverride::getFeatureLabels() as $key => $label)
-                                    <flux:field wire:key="feature-{{ $key }}">
-                                        <flux:label>{{ $label }}</flux:label>
-                                        @if (in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
-                                            <flux:description>{{ $customer->assign_to ? 'Standard = Wert der Zentrale, sonst .env.' : 'Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.' }}</flux:description>
-                                        @endif
-                                        <flux:select wire:model="featureOverrides.{{ $key }}">
-                                            <flux:select.option value="">{{ $customer->assign_to && in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true) ? 'Standard (Zentrale bzw. .env)' : 'Standard (.env)' }}</flux:select.option>
-                                            <flux:select.option value="1">Aktiviert</flux:select.option>
-                                            <flux:select.option value="0">Deaktiviert</flux:select.option>
-                                        </flux:select>
-                                        <flux:error name="featureOverrides.{{ $key }}" />
-                                    </flux:field>
-                                @endforeach
-                            </div>
-                        </div>
-                    </x-adminv2.card>
-
                     {{-- Die Account-ID laesst sich zuordnen, die uebrigen Werte kommen aus dem Login bzw. dem Abgleich mit Passolution. --}}
                     <x-adminv2.card heading="Passolution Integration" collapsible collapse-key="customer-passolution">
                         <div class="grid items-start gap-5 sm:grid-cols-2">
@@ -215,58 +215,131 @@
 
                 {{-- Rechte Spalte --}}
                 <div class="flex flex-col gap-6">
-                    @foreach (['company' => 'Firmeninformationen', 'billing' => 'Rechnungsadresse'] as $prefix => $heading)
-                        <x-adminv2.card :heading="$heading" wire:key="address-{{ $prefix }}">
-                            <div class="flex flex-col gap-5">
-                                <flux:field>
-                                    <flux:label>Firmenname</flux:label>
-                                    <flux:input wire:model="{{ $prefix }}.name" maxlength="255" />
-                                    <flux:error name="{{ $prefix }}.name" />
-                                </flux:field>
-                                <flux:field>
-                                    <flux:label>Zusatz</flux:label>
-                                    <flux:input wire:model="{{ $prefix }}.additional" maxlength="255" />
-                                    <flux:error name="{{ $prefix }}.additional" />
-                                </flux:field>
-                                <div class="grid items-start gap-5 sm:grid-cols-2">
-                                    <flux:field>
-                                        <flux:label>Straße</flux:label>
-                                        <flux:input wire:model="{{ $prefix }}.street" maxlength="255" />
-                                        <flux:error name="{{ $prefix }}.street" />
-                                    </flux:field>
-                                    <flux:field>
-                                        <flux:label>Hausnummer</flux:label>
-                                        <flux:input wire:model="{{ $prefix }}.house_number" maxlength="20" />
-                                        <flux:error name="{{ $prefix }}.house_number" />
-                                    </flux:field>
-                                    <flux:field>
-                                        <flux:label>PLZ</flux:label>
-                                        <flux:input wire:model="{{ $prefix }}.postal_code" maxlength="20" />
-                                        <flux:error name="{{ $prefix }}.postal_code" />
-                                    </flux:field>
-                                    <flux:field>
-                                        <flux:label>Stadt</flux:label>
-                                        <flux:input wire:model="{{ $prefix }}.city" maxlength="255" />
-                                        <flux:error name="{{ $prefix }}.city" />
-                                    </flux:field>
+                    @php
+                        // Schalter mit ausfuehrlicher Erklaerung (Info-Symbol).
+                        $settingSwitches = [
+                            'directoryListingActive' => [
+                                'label' => 'Adressverzeichnis aktiv',
+                                'info' => [
+                                    'Nimmt die Firmenadresse und alle Filialen des Kunden als Standorte in das Adressverzeichnis auf. Es ist auf der Seite „Buchungsmöglichkeit“ (/booking) der Travel Information Platform zu sehen. Die Kartenposition wird über OpenStreetMap ermittelt.',
+                                    'Gilt nur für Geschäftskunden mit vollständiger Firmenadresse (Firmenname, PLZ, Ort). Beim Ausschalten werden die Einträge aus dem Verzeichnis entfernt; die Adressen selbst bleiben erhalten.',
+                                    'Der Kunde kann die Einstellung auch selbst in seinem Profil ändern.',
+                                ],
+                            ],
+                            'branchManagementActive' => [
+                                'label' => 'Filialen-Verwaltung aktiv',
+                                'info' => [
+                                    'Schaltet für den Kunden die Verwaltung seiner Filialen und Standorte frei: den Menüpunkt „Filialen & Standorte“ (solange die Feature-Überschreibung „Filialen“ ihn nicht ausblendet), die Filialen-Seitenleiste und -Karte im Dashboard, den Filialen-Import und den Bereich „Organisation“ in den Einstellungen.',
+                                    'Beim Ausschalten werden diese Bereiche nur ausgeblendet; angelegte Filialen bleiben erhalten.',
+                                    'Der Kunde kann die Einstellung auch selbst ändern.',
+                                ],
+                            ],
+                            'showSubAccountsAsBranches' => [
+                                'label' => 'Agenturen als Adressen anzeigen',
+                                'info' => [
+                                    'Zeigt die zugeordneten Agenturen (Unteraccounts, Tab „Unteraccounts“) beim Kunden zusätzlich als Adressen an: unter Einstellungen › Organisationsstruktur › Übersicht und in der Seitenleiste von „Filialen & Standorte“. Auf der Karte erscheinen sie nicht.',
+                                    'Die Agenturen sind dort nur aufgeführt, nicht bearbeitbar – es sind eigenständige Kunden mit eigenem Login. Die Kachel und der Tab „Agenturen“ in der Organisationsstruktur gibt es unabhängig von dieser Einstellung.',
+                                ],
+                            ],
+                            'hideProfileCompletion' => [
+                                'label' => 'Profil-Vervollständigung ausblenden',
+                                'info' => [
+                                    'Blendet im Dashboard des Kunden den Kasten zur Profil-Vervollständigung aus, der zeigt, welche Angaben (z. B. Kundentyp, Firmenadresse) noch fehlen.',
+                                    'Der Kunde kann den Kasten auch selbst ausblenden; global lässt er sich zusätzlich über die Konfiguration abschalten.',
+                                ],
+                            ],
+                        ];
+                    @endphp
+                    <x-adminv2.card heading="Einstellungen">
+                        <div class="flex flex-col gap-4">
+                            @foreach ($settingSwitches as $model => $setting)
+                                <div x-data="{ info: false }" wire:key="setting-{{ $model }}">
+                                    <div class="flex items-center gap-1">
+                                        <flux:switch wire:model="{{ $model }}" :label="$setting['label']" align="left" />
+                                        <flux:button
+                                            size="xs"
+                                            variant="ghost"
+                                            icon="information-circle"
+                                            x-on:click="info = ! info"
+                                            x-bind:aria-expanded="info"
+                                            aria-label="Was bedeutet „{{ $setting['label'] }}“?"
+                                            title="Was bedeutet das?"
+                                        />
+                                    </div>
+                                    <div x-show="info" x-collapse x-cloak class="mt-2 flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                        @foreach ($setting['info'] as $paragraph)
+                                            <p>{{ $paragraph }}</p>
+                                        @endforeach
+                                    </div>
                                 </div>
-                                <flux:field>
-                                    <flux:label>Land</flux:label>
-                                    <x-adminv2.search-select
-                                        :options="$this->countryOptionsFor(${$prefix}['country'] ?? '')"
-                                        model="{{ $prefix }}.country"
-                                        :selected="${$prefix}['country'] ?? ''"
-                                        placeholder="Kein Land"
-                                        search-placeholder="Land oder ISO-Code …"
-                                        label="Land"
-                                        live
-                                        clearable
-                                    />
-                                    <flux:error name="{{ $prefix }}.country" />
-                                </flux:field>
+                            @endforeach
+                        </div>
+                    </x-adminv2.card>
+
+                    <x-adminv2.card heading="GTM API Einstellungen" collapsible collapse-key="customer-gtm-api">
+                        <div class="flex flex-col gap-5">
+                            <div x-data="{ info: false }">
+                                <div class="flex items-center gap-1">
+                                    <flux:switch wire:model="gtmApiEnabled" label="GTM API Zugang aktiv" align="left" />
+                                    <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „GTM API Zugang aktiv“?" title="Was bedeutet das?" />
+                                </div>
+                                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aktiviert den Zugang zur Global Travel Monitor JSON API. Der Kunde muss seinen API-Token neu generieren.</p>
+                                <div x-show="info" x-collapse x-cloak class="mt-2 flex flex-col gap-1.5 rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                    <p>Erlaubt dem Kunden, die Ereignisse des Global Travel Monitor per JSON-Schnittstelle (/api/v1/events …) in eigene Systeme zu übernehmen, etwa in eine Website oder ein Reisebüro-Programm.</p>
+                                    <p>Den Zugriff erhält ein API-Token, den der Kunde in den Einstellungen erzeugt. Nur Token, die nach dem Einschalten erzeugt wurden, enthalten die Berechtigung – vorhandene Token muss der Kunde neu generieren. Beim Ausschalten werden alle Anfragen sofort abgewiesen (HTTP 403).</p>
+                                    <p>Jede Anfrage wird protokolliert (Tab „GTM API Logs“).</p>
+                                </div>
                             </div>
-                        </x-adminv2.card>
-                    @endforeach
+                            <flux:field class="sm:max-w-xs" x-data="{ info: false }">
+                                <div class="flex items-center gap-1">
+                                    <flux:label>Rate Limit (Anfragen/Minute)</flux:label>
+                                    <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet das Rate Limit?" title="Was bedeutet das?" />
+                                </div>
+                                <div x-show="info" x-collapse x-cloak class="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">So viele Anfragen darf der Kunde pro Minute an die GTM API stellen (1–1000, Standard 60). Darüber antwortet die Schnittstelle mit HTTP 429 „Too Many Requests“, bis die Minute um ist. Gilt je Kunde für alle seine Token zusammen.</div>
+                                <flux:input wire:model="gtmApiRateLimit" type="number" min="1" max="1000" step="1" />
+                                <flux:description>Maximale API-Anfragen pro Minute für diesen Kunden</flux:description>
+                                <flux:error name="gtmApiRateLimit" />
+                            </flux:field>
+                        </div>
+                    </x-adminv2.card>
+
+                    <x-adminv2.card
+                        heading="Feature-Überschreibungen"
+                        description="Überschreiben Sie die globalen .env-Einstellungen für diesen Kunden. Leere Felder verwenden die Standard-Einstellung."
+                        collapsible
+                        collapsed
+                        collapse-key="customer-feature-overrides"
+                    >
+                        <div class="flex flex-col gap-5">
+                            <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                                Aktiviert = Feature für diesen Kunden einblenden, auch wenn global deaktiviert. Deaktiviert = Feature ausblenden, auch wenn global aktiviert. Nicht gesetzt = Globale Einstellung verwenden.
+                            </p>
+                            <div class="grid items-start gap-5 sm:grid-cols-2">
+                                @foreach (CustomerFeatureOverride::getFeatureLabels() as $key => $label)
+                                    <flux:field wire:key="feature-{{ $key }}" x-data="{ info: false }">
+                                        <div class="flex items-center gap-1">
+                                            <flux:label>{{ $label }}</flux:label>
+                                            @if ($featureInfo = CustomerFeatureOverride::getFeatureDescriptions()[$key] ?? null)
+                                                <flux:button size="xs" variant="ghost" icon="information-circle" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Was bedeutet „{{ $label }}“?" title="Was bedeutet das?" />
+                                            @endif
+                                        </div>
+                                        @if ($featureInfo)
+                                            <div x-show="info" x-collapse x-cloak class="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">{{ $featureInfo }}</div>
+                                        @endif
+                                        @if (in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true))
+                                            <flux:description>{{ $customer->assign_to ? 'Standard = Wert der Zentrale, sonst .env.' : 'Gilt auch für die Unteraccounts, solange dort nichts gesetzt ist.' }}</flux:description>
+                                        @endif
+                                        <flux:select wire:model="featureOverrides.{{ $key }}">
+                                            <flux:select.option value="">{{ $customer->assign_to && in_array($key, CustomerFeatureOverride::INHERITED_BY_SUB_ACCOUNTS, true) ? 'Standard (Zentrale bzw. .env)' : 'Standard (.env)' }}</flux:select.option>
+                                            <flux:select.option value="1">Aktiviert</flux:select.option>
+                                            <flux:select.option value="0">Deaktiviert</flux:select.option>
+                                        </flux:select>
+                                        <flux:error name="featureOverrides.{{ $key }}" />
+                                    </flux:field>
+                                @endforeach
+                            </div>
+                        </div>
+                    </x-adminv2.card>
 
                     <x-adminv2.record-tasks :record="$customer" />
                 </div>

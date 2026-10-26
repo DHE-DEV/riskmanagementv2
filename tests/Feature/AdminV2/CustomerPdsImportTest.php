@@ -548,3 +548,33 @@ it('erkennt einen fehlgeschlagenen Import-Job, etwa bei veraltetem Worker', func
         ->assertSee('Der Import-Job ist fehlgeschlagen')
         ->assertNotSet('runKey', null);
 });
+
+it('schaltet im Admin „Agenturen als Adressen anzeigen“ je Kunde', function () {
+    $agency = Customer::factory()->create(['email' => 'zentrale@login.test']);
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $agency->id])
+        ->assertSee('Agenturen als Adressen anzeigen')
+        ->assertSet('showSubAccountsAsBranches', false)
+        ->set('showSubAccountsAsBranches', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($agency->fresh()->show_sub_accounts_as_branches)->toBeTrue();
+});
+
+it('erklärt Einstellungen, GTM API und Feature-Überschreibungen per Info-Symbol', function () {
+    $customer = Customer::factory()->create();
+
+    Livewire::actingAs(pdsImportAdmin())
+        ->test(\App\Livewire\AdminV2\CustomerManagement\Customers\Editor::class, ['customer' => $customer->id])
+        ->assertSee('Was bedeutet „Adressverzeichnis aktiv“?', false)
+        ->assertSee('Was bedeutet „GTM API Zugang aktiv“?', false)
+        ->assertSee('Was bedeutet das Rate Limit?')
+        ->assertSee('Was bedeutet „Einstellungen: Organisationsstruktur“?', false)
+        ->assertSee('HTTP 429')
+        ->assertSee(\App\Models\CustomerFeatureOverride::getFeatureDescriptions()['navigation_doctors_network_enabled']);
+
+    expect(array_keys(\App\Models\CustomerFeatureOverride::getFeatureDescriptions()))
+        ->toEqualCanonicalizing(\App\Models\CustomerFeatureOverride::getFeatureKeys());
+});

@@ -29,10 +29,10 @@ class AccountSwitchController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('app_code', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('company_name', 'like', "%{$search}%")
-                  ->orWhere('company_postal_code', 'like', "%{$search}%")
-                  ->orWhere('company_city', 'like', "%{$search}%");
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('company_postal_code', 'like', "%{$search}%")
+                    ->orWhere('company_city', 'like', "%{$search}%");
             });
         }
 
@@ -56,15 +56,16 @@ class AccountSwitchController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('app_code', 'like', "%{$search}%")
-                  ->orWhere('company_name', 'like', "%{$search}%")
-                  ->orWhere('company_postal_code', 'like', "%{$search}%")
-                  ->orWhere('company_city', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('company_postal_code', 'like', "%{$search}%")
+                    ->orWhere('company_city', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         $agencies = $query
-            ->with('legacyOptions')
+            // Nur die Alt-Optionen, die die Detailansicht zeigt.
+            ->with('legacyOptions:account_id,account_type,live_from,end_of_use,show_visa_service,visa_places,show_travel_warning,travel_warning_country,myjack_agency_id')
             ->select('id', 'app_code', 'name', 'email', 'phone', 'company_name', 'company_additional', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country', 'billing_company_name', 'billing_additional', 'billing_street', 'billing_house_number', 'billing_postal_code', 'billing_city', 'billing_country', 'legacy_client_account_id')
             ->orderBy('company_name')
             ->paginate(1000);
@@ -88,13 +89,13 @@ class AccountSwitchController extends Controller
             $request->session()->forget('original_customer_id');
 
             return redirect()->route('customer.dashboard')
-                ->with('success', "Zurück zu Ihrem eigenen Account.");
+                ->with('success', 'Zurück zu Ihrem eigenen Account.');
         }
 
         // Check if user has access to this account
         $originalCustomer = Customer::find($originalCustomerId);
 
-        if (!$this->isSuperAdmin($originalCustomer) && !$originalCustomer->accessibleAccounts()->where('customer_id', $customer->id)->exists()) {
+        if (! $this->isSuperAdmin($originalCustomer) && ! $originalCustomer->accessibleAccounts()->where('customer_id', $customer->id)->exists()) {
             abort(403, 'Sie haben keinen Zugriff auf diesen Account.');
         }
 
@@ -123,13 +124,13 @@ class AccountSwitchController extends Controller
     {
         $originalCustomerId = $request->session()->get('original_customer_id');
 
-        if (!$originalCustomerId) {
+        if (! $originalCustomerId) {
             return redirect()->route('customer.dashboard');
         }
 
         $originalCustomer = Customer::find($originalCustomerId);
 
-        if (!$originalCustomer) {
+        if (! $originalCustomer) {
             abort(404);
         }
 

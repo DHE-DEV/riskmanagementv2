@@ -1995,6 +1995,12 @@
                                 <p class="text-lg font-bold text-gray-900">{{ $deptCount }}</p>
                                 <p class="text-[10px] text-gray-500">Abteilungen</p>
                             </div>
+                            @if($assignedCount > 0)
+                            <button type="button" @click="orgTab = 'agenturen'" class="bg-white rounded-lg border border-gray-200 p-3 text-center hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                                <p class="text-lg font-bold text-gray-900">{{ $assignedCount }}</p>
+                                <p class="text-[10px] text-gray-500">Agenturen</p>
+                            </button>
+                            @endif
                         </div>
                         <button @click="showNewForm = true" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-xs flex-shrink-0">
                             <i class="fas fa-plus"></i> Neue Adresse
@@ -2008,7 +2014,16 @@
                         <i class="fas fa-spinner fa-spin text-gray-400 text-xl"></i>
                     </div>
 
-                    <template x-if="!loading && branches.length === 0 && !showNewForm">
+                    @php
+                        // Zugeordnete Agenturen als Adressen (Schalter je Kunde im Admin).
+                        $subAccountAddresses = $customer->show_sub_accounts_as_branches
+                            ? \App\Models\Customer::where('assign_to', $customer->id)
+                                ->orderBy('company_name')->orderBy('id')
+                                ->get(['id', 'app_code', 'name', 'email', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
+                            : collect();
+                    @endphp
+
+                    <template x-if="!loading && branches.length === 0 && !showNewForm && {{ $subAccountAddresses->isEmpty() ? 'true' : 'false' }}">
                         <div class="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
                             <i class="fas fa-building text-3xl text-gray-300 mb-2"></i>
                             <p class="text-sm text-gray-500">Noch keine Adressen angelegt.</p>
@@ -2068,6 +2083,33 @@
                             </div>
                         </template>
                     </div>
+                    @if($subAccountAddresses->isNotEmpty())
+                        {{-- Agenturen (Unteraccounts) als Adressen --}}
+                        <div class="mt-6">
+                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Agenturen ({{ $subAccountAddresses->count() }})</h4>
+                            <div class="space-y-2">
+                                @foreach($subAccountAddresses as $subAccount)
+                                    <div class="bg-white rounded-lg border border-gray-200 p-3 flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <h5 class="text-sm font-semibold text-gray-900">{{ $subAccount->company_name ?: $subAccount->name }}</h5>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800"><i class="fas fa-store mr-1 text-[8px]"></i>Agentur</span>
+                                                @if($subAccount->app_code)
+                                                    <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{{ $subAccount->app_code }}</span>
+                                                @endif
+                                            </div>
+                                            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
+                                                <span><i class="fas fa-location-dot mr-1"></i>{{ trim($subAccount->company_street.' '.$subAccount->company_house_number) ?: '—' }}, {{ trim($subAccount->company_postal_code.' '.$subAccount->company_city) ?: '—' }}</span>
+                                                @if($subAccount->email)
+                                                    <span><i class="fas fa-envelope mr-1"></i>{{ $subAccount->email }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- ==================== Tab: Struktur ==================== --}}
@@ -2265,134 +2307,36 @@
                                     <div class="text-sm text-gray-500 text-center py-4">Keine Legacy-Optionen vorhanden</div>
                                 </template>
                                 <template x-if="detailAgency?.legacy_options">
-                                    <div class="space-y-4">
-                                        {{-- Status --}}
-                                        <div>
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Status</h4>
-                                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Revised</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.revised ? 'Ja' : 'Nein'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Account Typ</span>
-                                                    <span class="text-gray-900" x-text="({'1':'Testaccount VA','2':'Testaccount RB','3':'Veranstalter','4':'Reisebüro','5':'Reiseberater'})[detailAgency.legacy_options.account_type] || '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Client Typ</span>
-                                                    <span class="text-gray-900" x-text="({'1':'Client','2':'Lead'})[detailAgency.legacy_options.client_type] || '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Anzahl Büros</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.office_count ?? '—'"></span>
-                                                </div>
-                                            </div>
+                                    {{-- Nur diese Alt-Optionen; myJACK nur, wenn eingetragen --}}
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div class="col-span-2">
+                                            <span class="text-xs text-gray-500 block">Account Typ</span>
+                                            <span class="text-gray-900" x-text="({'1':'Testaccount VA','2':'Testaccount RB','3':'Veranstalter','4':'Reisebüro','5':'Reiseberater'})[detailAgency.legacy_options.account_type] || '—'"></span>
                                         </div>
-
-                                        {{-- Zeitraum --}}
                                         <div>
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Zeitraum</h4>
-                                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Live ab</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.live_from ? new Date(detailAgency.legacy_options.live_from).toLocaleDateString('de-DE') : '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Nutzungsende</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.end_of_use ? new Date(detailAgency.legacy_options.end_of_use).toLocaleDateString('de-DE') : '—'"></span>
-                                                </div>
-                                            </div>
+                                            <span class="text-xs text-gray-500 block">Live ab</span>
+                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.live_from ? new Date(detailAgency.legacy_options.live_from).toLocaleDateString('de-DE') : '—'"></span>
                                         </div>
-
-                                        {{-- Visa Service --}}
                                         <div>
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Visa Service</h4>
-                                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Visa Service anzeigen</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.show_visa_service ? 'Ja' : 'Nein'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Visa Orte</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.visa_places || '—'"></span>
-                                                </div>
-                                                <div class="col-span-2" x-show="detailAgency.legacy_options.show_visa_service_link">
-                                                    <span class="text-xs text-gray-500 block">Visa Service Link</span>
-                                                    <span class="text-gray-900 break-all" x-text="detailAgency.legacy_options.show_visa_service_link"></span>
-                                                </div>
-                                                <div class="col-span-2" x-show="detailAgency.legacy_options.show_visa_service_text">
-                                                    <span class="text-xs text-gray-500 block">Visa Service Text</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.show_visa_service_text"></span>
-                                                </div>
-                                            </div>
+                                            <span class="text-xs text-gray-500 block">Nutzungsende</span>
+                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.end_of_use ? new Date(detailAgency.legacy_options.end_of_use).toLocaleDateString('de-DE') : '—'"></span>
                                         </div>
-
-                                        {{-- Reisewarnung --}}
                                         <div>
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reisewarnung</h4>
-                                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Reisewarnung anzeigen</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.show_travel_warning ? 'Ja' : 'Nein'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Land</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.travel_warning_country || '—'"></span>
-                                                </div>
-                                            </div>
+                                            <span class="text-xs text-gray-500 block">Visa Service</span>
+                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.show_visa_service ? 'Ja' : 'Nein'"></span>
                                         </div>
-
-                                        {{-- API & Technik --}}
                                         <div>
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">API & Technik</h4>
-                                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">API Version</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.response_api_version || '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">API Status</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.response_api_status ?? '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Tech Access</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.tech_access ?? '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Report</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.use_report ?? '—'"></span>
-                                                </div>
-                                            </div>
+                                            <span class="text-xs text-gray-500 block">Visa Orte</span>
+                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.visa_places || '—'"></span>
                                         </div>
-
-                                        {{-- Sonstiges (nur für Super-Admins) --}}
-                                        @if($isSuperAdmin)
                                         <div>
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Sonstiges</h4>
-                                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Zoho CRM ID</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.zoho_crm_id || '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">MyJack Agency ID</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.myjack_agency_id || '—'"></span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-gray-500 block">Adressposition</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.agency_address_position ?? '—'"></span>
-                                                </div>
-                                                <div class="col-span-2" x-show="detailAgency.legacy_options.note">
-                                                    <span class="text-xs text-gray-500 block">Notiz</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.note"></span>
-                                                </div>
-                                                <div x-show="detailAgency.legacy_options.logo">
-                                                    <span class="text-xs text-gray-500 block">Logo</span>
-                                                    <span class="text-gray-900" x-text="detailAgency.legacy_options.logo"></span>
-                                                </div>
-                                            </div>
+                                            <span class="text-xs text-gray-500 block">Reisewarnungen</span>
+                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.show_travel_warning ? 'Ja' + (detailAgency.legacy_options.travel_warning_country ? ' (' + detailAgency.legacy_options.travel_warning_country + ')' : '') : 'Nein'"></span>
                                         </div>
-                                        @endif
+                                        <div x-show="detailAgency.legacy_options.myjack_agency_id">
+                                            <span class="text-xs text-gray-500 block">myJACK Agency ID</span>
+                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.myjack_agency_id"></span>
+                                        </div>
                                     </div>
                                 </template>
                             </div>
@@ -6708,7 +6652,6 @@ function assignedAgencies() {
         detailAgency: null,
         sortField: 'company_name',
         sortDir: 'asc',
-        showInactive: false,
 
         isInactive(agency) {
             const today = new Date().toISOString().slice(0, 10);
@@ -6716,9 +6659,10 @@ function assignedAgencies() {
                    (agency.legacy_options?.end_of_use && today > agency.legacy_options.end_of_use);
         },
 
+        // Alle zugeordneten Agenturen; inaktive (Laufzeit aus den Alt-Optionen)
+        // bleiben sichtbar und sind nur rot markiert.
         get filteredAgencies() {
-            if (this.showInactive) return this.agencies;
-            return this.agencies.filter(a => !this.isInactive(a));
+            return this.agencies;
         },
 
         init() {

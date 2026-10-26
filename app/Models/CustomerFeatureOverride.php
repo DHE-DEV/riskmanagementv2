@@ -103,6 +103,34 @@ class CustomerFeatureOverride extends Model
     }
 
     /**
+     * Ausfuehrliche Erklaerung je Feature fuer den Admin (Info-Symbol):
+     * was der Schalter in der Travel Information Platform bewirkt.
+     *
+     * @return array<string, string>
+     */
+    public static function getFeatureDescriptions(): array
+    {
+        return [
+            'navigation_events_enabled' => 'Menüpunkt „Global Travel Monitor“: die Karte mit den aktuellen Ereignissen (Unruhen, Naturereignisse, Gesundheit usw.) weltweit. Ausgeschaltet verschwindet der Menüpunkt.',
+            'navigation_entry_conditions_enabled' => 'Menüpunkt „Einreisebestimmungen“: Einreise-, Visa- und Gesundheitsbestimmungen je Reiseziel und Nationalität. Ausgeschaltet verschwindet der Menüpunkt, auch in der mobilen Ansicht.',
+            'navigation_booking_enabled' => 'Menüpunkt „Buchungsmöglichkeit“ (/booking): das Adressverzeichnis mit Reisebüros und Standorten, bei denen gebucht werden kann. Ausgeschaltet ist die Seite nicht erreichbar, auch die Verweise aus den Einreisebestimmungen entfallen.',
+            'navigation_airports_enabled' => 'Menüpunkt „Flughäfen“ mit Flughafeninformationen. Ausgeschaltet ist die Seite nicht erreichbar.',
+            'navigation_branches_enabled' => 'Menüpunkt „Filialen & Standorte“. Er erscheint nur, wenn zusätzlich „Filialen-Verwaltung aktiv“ eingeschaltet ist. Die Filialen im Dashboard und in den Einstellungen hängen allein an der Filialen-Verwaltung.',
+            'navigation_my_travelers_enabled' => 'Menüpunkt „Meine Reisenden“: die Reisenden und Reisen des Kunden mit den für sie relevanten Ereignissen. Ausgeschaltet verschwindet der Menüpunkt.',
+            'navigation_risk_overview_enabled' => 'Travel Alert: die Risikoübersicht zu den Reisen des Kunden samt Benachrichtigungseinstellungen und eingebetteter Ansicht. Ausgeschaltet sind diese Seiten und Schnittstellen gesperrt. Wird bei einer Travel-Alert-Bestellung automatisch freigeschaltet.',
+            'navigation_cruise_enabled' => 'Menüpunkt „Kreuzfahrt“: Routen, Häfen, Einreisebestimmungen und Sicherheitshinweise für Kreuzfahrten. Ausgeschaltet verschwindet der Menüpunkt, auch in der mobilen Ansicht und bei den Einreisebestimmungen.',
+            'navigation_business_visa_enabled' => 'Menüpunkt „Business Visum“ samt zugehörigem Einstellungsbereich. Ausgeschaltet sind Seite und Einstellungen nicht erreichbar.',
+            'navigation_center_map_enabled' => 'Schaltfläche „Karte zentrieren“ in der Navigation des Dashboards. Ausgeschaltet fehlt nur diese Schaltfläche.',
+            'navigation_visumpoint_enabled' => 'Menüpunkt „Visum Check (VisumPoint)“: Visa-Prüfung über VisumPoint. Ausgeschaltet ist die Seite nicht erreichbar.',
+            'navigation_customer_events_enabled' => 'Menüpunkt „Meine Ereignisse“: eigene Ereignisse, die der Kunde selbst anlegt und auf seiner Karte zeigt. Ausgeschaltet verschwindet der Menüpunkt.',
+            'navigation_doctors_network_enabled' => 'Menüpunkt „Doctors Network“: Ärzte und medizinische Einrichtungen am Reiseziel. Ausgeschaltet ist die Seite nicht erreichbar.',
+            'settings_master_data_enabled' => 'Einstellungsbereich „Stammdaten“ unter Organisation, in dem der Kunde seine Firmendaten pflegt. Global per CUSTOMER_SETTINGS_MASTER_DATA_ENABLED; Unteraccounts übernehmen den Wert ihrer Zentrale, solange bei ihnen nichts gesetzt ist.',
+            'settings_organization_enabled' => 'Einstellungsbereich „Organisationsstruktur“ unter Organisation: Adressen, Struktur, Abteilungen und – bei einer Zentrale – die zugeordneten Agenturen. Global per CUSTOMER_SETTINGS_ORGANIZATION_ENABLED; Unteraccounts übernehmen den Wert ihrer Zentrale.',
+            'settings_users_enabled' => 'Einstellungsbereich „Benutzerverwaltung“ unter Organisation, in dem der Kunde weitere Benutzer (Mitarbeiter) anlegt und Gruppen zuordnet. Global per CUSTOMER_SETTINGS_USERS_ENABLED; Unteraccounts übernehmen den Wert ihrer Zentrale.',
+        ];
+    }
+
+    /**
      * Get feature labels for display.
      */
     public static function getFeatureLabels(): array

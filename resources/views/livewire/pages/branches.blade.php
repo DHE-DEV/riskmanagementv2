@@ -224,13 +224,39 @@
                             </div>
                         </div>
 
+                        @if($subAccounts->isEmpty())
                         <div class="bg-gray-50 p-3 rounded-lg border border-dashed border-gray-300 text-center">
                             <i class="fa-regular fa-building text-2xl text-gray-400 mb-1"></i>
                             <p class="text-xs text-gray-500">Keine weiteren Filialen</p>
                             <p class="text-[11px] text-gray-400 mt-1">Fügen Sie Ihre ersten Standorte hinzu</p>
                         </div>
+                        @endif
                     </div>
                 </div>
+
+                @if($subAccounts->isNotEmpty())
+                {{-- Zugeordnete Agenturen (Schalter "Agenturen als Adressen anzeigen" im Admin) --}}
+                <div class="mt-4" x-data="{ q: '' }">
+                    <h3 class="text-xs font-semibold text-gray-900 mb-2">Agenturen ({{ $subAccounts->count() }})</h3>
+                    <input type="search" x-model="q" placeholder="Agentur, PLZ oder Ort suchen …" class="w-full mb-2 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    <div class="space-y-2">
+                        @foreach($subAccounts as $subAccount)
+                            @php($subAccountSearch = mb_strtolower(implode(' ', [$subAccount->company_name, $subAccount->name, $subAccount->company_postal_code, $subAccount->company_city, $subAccount->app_code])))
+                            <div class="bg-white p-3 rounded-lg border border-gray-200" x-show="q === '' || @js($subAccountSearch).includes(q.toLowerCase())">
+                                <h4 class="font-semibold text-gray-900 text-xs">{{ $subAccount->company_name ?: $subAccount->name }}</h4>
+                                <p class="text-[11px] text-gray-600 mt-1">
+                                    @if($subAccount->company_street || $subAccount->company_city)
+                                        {{ $subAccount->company_street }} {{ $subAccount->company_house_number }}<br>
+                                        {{ $subAccount->company_postal_code }} {{ $subAccount->company_city }}
+                                    @else
+                                        <span class="text-gray-400 italic">Keine Adresse hinterlegt</span>
+                                    @endif
+                                </p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 
