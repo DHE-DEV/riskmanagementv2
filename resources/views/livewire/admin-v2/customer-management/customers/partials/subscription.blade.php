@@ -1,7 +1,6 @@
 {{-- Tab „Abo“: Abrechnungsintervall je Zeitraum – fuer alle abonnierten Dienste oder einzelne Module --}}
 @php
     use App\Models\CustomerBillingInterval;
-    use App\Support\TravelInformationService;
 
     $intervals = $this->billingIntervals;
     $today = today();
@@ -22,7 +21,7 @@
             @foreach ($grouped as $module => $moduleIntervals)
                 <section wire:key="interval-group-{{ $module ?: 'all' }}">
                     <div class="mb-1 flex items-center justify-between gap-2">
-                        <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">{{ TravelInformationService::moduleLabel($module ?: null) }}</h3>
+                        <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">{{ CustomerBillingInterval::labelForModule($module ?: null) }}</h3>
                         <flux:button size="xs" variant="ghost" icon="arrows-right-left" wire:click="newBillingInterval('{{ $module }}')">Umstellen</flux:button>
                     </div>
                     <ol class="flex flex-col divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
@@ -67,7 +66,7 @@
                         <flux:label>Gilt für</flux:label>
                         <flux:select wire:model.live="intervalForm.module">
                             <flux:select.option value="">Alle abonnierten Dienste</flux:select.option>
-                            @foreach (TravelInformationService::MODULES as $value => $label)
+                            @foreach (\App\Models\Product::moduleOptions() as $value => $label)
                                 <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                             @endforeach
                         </flux:select>

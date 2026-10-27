@@ -3,7 +3,7 @@
 namespace App\Livewire\AdminV2\CustomerManagement\Customers;
 
 use App\Models\CustomerBillingInterval;
-use App\Support\TravelInformationService;
+use App\Models\Product;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -66,7 +66,7 @@ trait ManagesCustomerBillingIntervals
     public function saveBillingInterval(): void
     {
         $this->validate([
-            'intervalForm.module' => ['nullable', Rule::in(['', ...array_keys(TravelInformationService::MODULES)])],
+            'intervalForm.module' => ['nullable', Rule::in(['', ...array_keys(Product::moduleOptions())])],
             'intervalForm.interval' => ['required', Rule::in(array_keys(CustomerBillingInterval::INTERVALS))],
             'intervalForm.discount_percent' => ['nullable', 'regex:/^\d{1,3}([.,]\d{1,2})?$/'],
             'intervalForm.starts_on' => ['required', 'date'],

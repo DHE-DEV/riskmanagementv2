@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Support\TravelInformationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +9,8 @@ use Illuminate\Support\Carbon;
 
 /**
  * Abrechnungsintervall eines Kunden fuer einen Zeitraum – fuer alle
- * abonnierten Dienste (module null) oder ein einzelnes Modul. Ein Eintrag fuer
+ * abonnierten Dienste (module null) oder ein einzelnes Modul (Kuerzel eines
+ * Produkts aus dem Katalog). Ein Eintrag fuer
  * ein Modul geht dem fuer alle Dienste vor (intervalFor()). Zeitraeume
  * desselben Moduls ueberschneiden sich nicht.
  */
@@ -70,9 +70,19 @@ class CustomerBillingInterval extends Model
         return $periods->firstWhere('module', $module) ?? $periods->firstWhere('module', null);
     }
 
+    /** „Alle abonnierten Dienste“ oder der Name des Produkts aus dem Katalog */
+    public static function labelForModule(?string $module): string
+    {
+        if ($module === null) {
+            return 'Alle abonnierten Dienste';
+        }
+
+        return once(fn () => Product::moduleOptions())[$module] ?? $module;
+    }
+
     public function moduleLabel(): string
     {
-        return TravelInformationService::moduleLabel($this->module);
+        return self::labelForModule($this->module);
     }
 
     public function intervalLabel(): string

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Auspraegung eines Produkts (z. B. Allgemein, Standard, Premium) mit
+ * Preisen je Stichtag (ProductVersionPrice). Die Preisspalten am Datensatz
+ * stammen aus der frueheren Produktverwaltung und werden nicht mehr gepflegt.
+ */
 class ProductVersion extends Model
 {
     protected $fillable = [
@@ -34,6 +39,25 @@ class ProductVersion extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /** Preisstaende, neuester zuerst */
+    public function prices(): HasMany
+    {
+        return $this->hasMany(ProductVersionPrice::class)->orderByDesc('valid_from');
+    }
+
+    /** Der am Tag $date geltende Preis (Standard: heute) */
+    public function priceOn($date = null): ?ProductVersionPrice
+    {
+        $day = ($date ? \Illuminate\Support\Carbon::parse($date) : today())->toDateString();
+
+        return $this->prices->first(fn (ProductVersionPrice $price) => $price->valid_from->toDateString() <= $day);
+    }
+
+    public function featureValues(): HasMany
+    {
+        return $this->hasMany(ProductFeatureValue::class);
     }
 
     public function modules(): HasMany
