@@ -717,6 +717,12 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(CustomerBillingInterval::class)->orderByRaw('module is not null')->orderBy('module')->orderByDesc('starts_on');
     }
 
+    /** Kooperation, deren eigener Account dieser Kunde ist (z. B. die Zentrale) */
+    public function ownCooperation(): HasOne
+    {
+        return $this->hasOne(Cooperation::class);
+    }
+
     /** Vertraege mit Laufzeit, Bedingungen und individuellen Preisen */
     public function contracts(): HasMany
     {

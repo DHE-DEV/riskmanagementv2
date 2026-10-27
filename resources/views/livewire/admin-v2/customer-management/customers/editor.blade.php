@@ -180,6 +180,19 @@
                                     <flux:label>Login via</flux:label>
                                     <flux:input :value="$customer->provider ? ucfirst($customer->provider) : 'E-Mail'" disabled />
                                 </flux:field>
+                                <flux:field>
+                                    <flux:label>Account der Kooperation</flux:label>
+                                    <flux:select wire:model="ownCooperationId">
+                                        <flux:select.option value="">– keine –</flux:select.option>
+                                        @foreach (\App\Models\Cooperation::query()->ordered()->with('customer:id,company_name,name')->get() as $cooperationOption)
+                                            <flux:select.option value="{{ $cooperationOption->id }}">
+                                                {{ $cooperationOption->name }}@if ($cooperationOption->customer && $cooperationOption->customer_id !== $customer->id) (bisher {{ $cooperationOption->customer->company_name ?: $cooperationOption->customer->name }})@endif
+                                            </flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:description>Dieser Kunde ist der eigene Datensatz der Kooperation, z. B. die Zentrale.</flux:description>
+                                    <flux:error name="ownCooperationId" />
+                                </flux:field>
                                 @if ($customer->exists)
                                     @php
                                         $currentBilling = $customer->currentBillingPeriod;

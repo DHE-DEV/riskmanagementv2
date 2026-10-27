@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\CustomerManagement\Customers;
 use App\Jobs\GeocodeSubAccounts;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\QueriesLists;
+use App\Models\Cooperation;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerFeatureOverride;
@@ -133,6 +134,9 @@ class Editor extends Component
     /** Umsatzsteuer auf die Nettobetraege (TaxRates::OPTIONS) */
     public string $taxRate = TaxRates::DEFAULT;
 
+    /** Kooperation, deren Account dieser Kunde ist (leer = keine) */
+    public string $ownCooperationId = '';
+
     /** Aktion, zu der gerade die Rueckfrage offen ist: delete, restore, force. */
     #[Locked]
     public ?string $pendingAction = null;
@@ -180,6 +184,7 @@ class Editor extends Component
 
         $this->billingSameAsCompany = (bool) $model->billing_same_as_company;
         $this->taxRate = TaxRates::key($model->tax_rate);
+        $this->ownCooperationId = (string) ($model->ownCooperation?->id ?? '');
         foreach (['to', 'cc', 'bcc'] as $kind) {
             $this->invoiceEmails[$kind] = implode(', ', $model->invoice_emails[$kind] ?? []);
         }
@@ -297,6 +302,7 @@ class Editor extends Component
             ...$address('billing'),
             'invoiceEmails.*' => [new EmailList],
             'taxRate' => ['required', Rule::in(array_keys(TaxRates::OPTIONS))],
+            'ownCooperationId' => ['nullable', Rule::exists('cooperations', 'id')],
         ];
     }
 
@@ -378,6 +384,13 @@ class Editor extends Component
 
         if ($this->billingSameAsCompany) {
             $this->billing = $this->company;
+        }
+
+        // Account der Kooperation: diese Kooperation zeigt auf den Kunden, eine bisherige nicht mehr.
+        $ownCooperationId = $this->ownCooperationId !== '' ? (int) $this->ownCooperationId : null;
+        Cooperation::where('customer_id', $customer->id)->when($ownCooperationId, fn ($q) => $q->whereKeyNot($ownCooperationId))->update(['customer_id' => null]);
+        if ($ownCooperationId) {
+            Cooperation::whereKey($ownCooperationId)->update(['customer_id' => $customer->id]);
         }
 
         $this->saveFeatureOverrides($customer);

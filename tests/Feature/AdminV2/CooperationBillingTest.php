@@ -311,3 +311,32 @@ it('stellt einen pauschalen Festbetrag fuer alle Mitglieder ein', function () {
     $period = CustomerBillingPeriod::create(['customer_id' => $customer->id, 'cooperation_id' => $cooperation->id, 'billing_mode' => 'cooperation', 'starts_on' => '2026-01-01']);
     expect($period->label())->toBe('Kette Ost · über Kooperation abgerechnet · Pauschale 5.000,00 €/Monat für alle Mitglieder');
 });
+
+it('ordnet einen Kunden als Account einer Kooperation zu', function () {
+    $zentrale = Customer::factory()->create(['company_name' => 'solamento Zentrale']);
+    $andere = Customer::factory()->create(['company_name' => 'Alte Zentrale']);
+    $solamento = Cooperation::create(['name' => 'solamento', 'customer_id' => $andere->id]);
+    $rtk = Cooperation::create(['name' => 'RTK']);
+
+    Livewire::test(Editor::class, ['customer' => $zentrale->id])
+        ->assertSet('ownCooperationId', '')
+        ->assertSee('bisher Alte Zentrale')
+        ->set('ownCooperationId', (string) $solamento->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($solamento->fresh()->customer_id)->toBe($zentrale->id)
+        ->and($zentrale->fresh()->ownCooperation->id)->toBe($solamento->id);
+
+    // Wechsel zu RTK: solamento zeigt nicht mehr auf den Kunden
+    Livewire::test(Editor::class, ['customer' => $zentrale->id])
+        ->assertSet('ownCooperationId', (string) $solamento->id)
+        ->set('ownCooperationId', (string) $rtk->id)
+        ->call('save');
+
+    expect($solamento->fresh()->customer_id)->toBeNull()
+        ->and($rtk->fresh()->customer_id)->toBe($zentrale->id);
+
+    Livewire::test(Editor::class, ['customer' => $zentrale->id])->set('ownCooperationId', '')->call('save');
+    expect($rtk->fresh()->customer_id)->toBeNull();
+});
