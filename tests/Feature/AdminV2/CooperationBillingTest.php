@@ -233,3 +233,28 @@ it('speichert einen Rabatt bei Jahreszahlung, aber nicht bei monatlicher', funct
 
     expect($yearly->fresh()->discount_percent)->toBeNull();
 });
+
+it('speichert mehrere Rechnungsempfaenger mit CC und BCC', function () {
+    Livewire::test(CooperationEditor::class)
+        ->set('name', 'Kette West')
+        ->set('invoiceEmails.to', 'rechnung@kette.test; chef@kette.test')
+        ->set('invoiceEmails.cc', 'falsch@')
+        ->call('save')
+        ->assertHasErrors('invoiceEmails.cc')
+        ->assertSee('Rechnungsempfänger')
+        ->set('invoiceEmails.cc', 'steuer@kette.test')
+        ->set('invoiceEmails.bcc', 'archiv@kette.test, ARCHIV@kette.test')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $cooperation = Cooperation::sole();
+    expect($cooperation->invoice_emails)->toEqual([
+        'to' => ['rechnung@kette.test', 'chef@kette.test'],
+        'cc' => ['steuer@kette.test'],
+        'bcc' => ['archiv@kette.test'],
+    ]);
+
+    Livewire::test(CooperationEditor::class, ['cooperation' => $cooperation->id])
+        ->assertSet('invoiceEmails.to', 'rechnung@kette.test, chef@kette.test');
+    Livewire::test(CooperationIndex::class)->set('search', 'steuer@kette')->assertSee('Kette West');
+});

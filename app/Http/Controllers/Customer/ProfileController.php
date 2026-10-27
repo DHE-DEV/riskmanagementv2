@@ -220,7 +220,12 @@ class ProfileController extends Controller
         }
 
         $before = $customer->only($fields);
-        $customer->update($request->only($fields));
+        $attributes = $request->only($fields);
+        if ($type === CustomerAddressChangedMail::TYPE_BILLING) {
+            // Eigene Rechnungsadresse: nicht mehr aus der Firmeninformation uebernehmen
+            $attributes['billing_same_as_company'] = false;
+        }
+        $customer->update($attributes);
         app(OrganizationChangeNotifier::class)->customerAddressChanged($customer, $type, $before, $customer->only($fields));
 
         return response()->json([

@@ -7,6 +7,8 @@ use App\Livewire\AdminV2\Concerns\QueriesLists;
 use App\Models\Cooperation;
 use App\Models\Customer;
 use App\Models\CustomerBillingPeriod;
+use App\Rules\EmailList;
+use App\Support\OrgMailSettings;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -44,7 +46,8 @@ class Editor extends Component
 
     public string $kickbackValue = '';
 
-    public string $contactEmail = '';
+    /** @var array{to: string, cc: string, bcc: string} Rechnungsempfaenger, je Feld kommagetrennt */
+    public array $invoiceEmails = ['to' => '', 'cc' => '', 'bcc' => ''];
 
     public string $notes = '';
 
@@ -69,7 +72,9 @@ class Editor extends Component
         $this->fixedPricePerOffice = $model->fixed_price_per_office !== null ? str_replace('.', ',', (string) $model->fixed_price_per_office) : '';
         $this->kickbackType = $model->kickback_type;
         $this->kickbackValue = $model->kickback_value !== null ? str_replace('.', ',', (string) $model->kickback_value) : '';
-        $this->contactEmail = (string) $model->contact_email;
+        foreach (['to', 'cc', 'bcc'] as $kind) {
+            $this->invoiceEmails[$kind] = implode(', ', $model->invoice_emails[$kind] ?? []);
+        }
         $this->notes = (string) $model->notes;
         $this->isActive = (bool) $model->is_active;
     }
@@ -134,14 +139,13 @@ class Editor extends Component
             'fixedPricePerOffice' => ['nullable', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
             'kickbackType' => ['required', Rule::in(array_keys(Cooperation::KICKBACK_TYPES))],
             'kickbackValue' => ['nullable', 'required_unless:kickbackType,none', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
-            'contactEmail' => ['nullable', 'email', 'max:255'],
+            'invoiceEmails.*' => [new EmailList],
             'notes' => ['nullable', 'string', 'max:5000'],
         ], [
             'name.required' => 'Bitte den Namen der Kooperation eingeben.',
             'kickbackValue.required_unless' => 'Bitte den Kickback angeben (Prozent oder Betrag).',
             'fixedPricePerOffice.regex' => 'Der Festbetrag ist ein Betrag mit höchstens zwei Nachkommastellen, z. B. 4,90.',
             'kickbackValue.regex' => 'Der Kickback ist eine Zahl mit höchstens zwei Nachkommastellen, z. B. 10 oder 2,50.',
-            'contactEmail.email' => 'Bitte eine gültige E-Mail-Adresse eingeben.',
         ]);
 
         if ($this->kickbackType === 'percent' && (float) str_replace(',', '.', $this->kickbackValue) > 100) {
@@ -149,6 +153,8 @@ class Editor extends Component
 
             return null;
         }
+
+        $invoiceEmails = array_map(fn ($value) => OrgMailSettings::emails($value), $this->invoiceEmails);
 
         $model = $this->cooperation ?? new Cooperation;
         $created = ! $model->exists;
@@ -161,7 +167,7 @@ class Editor extends Component
             'fixed_price_per_office' => trim($this->fixedPricePerOffice) !== '' ? str_replace(',', '.', trim($this->fixedPricePerOffice)) : null,
             'kickback_type' => $this->kickbackType,
             'kickback_value' => $this->kickbackType === 'none' ? null : str_replace(',', '.', $this->kickbackValue),
-            'contact_email' => trim($this->contactEmail) ?: null,
+            'invoice_emails' => array_filter($invoiceEmails) ? $invoiceEmails : null,
             'notes' => trim($this->notes) ?: null,
             'is_active' => $this->isActive,
         ])->save();

@@ -883,3 +883,55 @@ it('zeigt die Filialen als Karten und sortiert per Auswahl', function () {
         ->assertSet('branchDirection', 'asc')
         ->assertSeeInOrder(['Filiale Aachen', 'Filiale Bonn']);
 });
+
+it('speichert Rechnungsempfaenger und uebernimmt auf Wunsch die Firmeninformation', function () {
+    $this->actingAs(customersAdmin());
+    $customer = managedCustomer([
+        'company_name' => 'Berg Reisen',
+        'company_street' => 'Hauptstraße',
+        'company_city' => 'Köln',
+        'billing_city' => 'Bonn',
+    ]);
+
+    Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->set('invoiceEmails.to', 'buchhaltung@berg.test, chef@berg.test')
+        ->set('invoiceEmails.cc', 'kein-mail')
+        ->call('save')
+        ->assertHasErrors('invoiceEmails.cc')
+        ->set('invoiceEmails.cc', 'steuer@berg.test')
+        ->set('invoiceEmails.bcc', 'archiv@berg.test')
+        ->set('billingSameAsCompany', true)
+        ->assertSee('Wie Firmeninformation')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertSet('billing.city', 'Köln');
+
+    $customer->refresh();
+    expect($customer->invoice_emails)->toEqual([
+        'to' => ['buchhaltung@berg.test', 'chef@berg.test'],
+        'cc' => ['steuer@berg.test'],
+        'bcc' => ['archiv@berg.test'],
+    ])
+        ->and($customer->billing_same_as_company)->toBeTrue()
+        ->and($customer->billing_company_name)->toBe('Berg Reisen')
+        ->and($customer->billing_city)->toBe('Köln');
+
+    // Aendert sich die Firmenanschrift spaeter, zieht die Rechnungsadresse mit.
+    $customer->update(['company_city' => 'Düsseldorf']);
+    expect($customer->fresh()->billing_city)->toBe('Düsseldorf');
+
+    Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->assertSet('invoiceEmails.to', 'buchhaltung@berg.test, chef@berg.test')
+        ->assertSet('billingSameAsCompany', true);
+});
+
+it('gibt die Uebernahme auf, wenn der Kunde selbst eine Rechnungsadresse speichert', function () {
+    $customer = managedCustomer(['company_city' => 'Köln', 'billing_same_as_company' => true, 'can_edit_own_address' => true]);
+
+    $this->actingAs($customer, 'customer')
+        ->postJson(route('customer.profile.update-billing-address'), ['billing_city' => 'Bonn'])
+        ->assertOk();
+
+    expect($customer->fresh()->billing_same_as_company)->toBeFalse()
+        ->and($customer->fresh()->billing_city)->toBe('Bonn');
+});

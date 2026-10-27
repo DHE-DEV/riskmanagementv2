@@ -8,8 +8,10 @@ use App\Livewire\AdminV2\Concerns\QueriesLists;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerFeatureOverride;
+use App\Rules\EmailList;
 use App\Services\CustomerFeaturePreauthorizationService;
 use App\Services\CustomerFeatureService;
+use App\Support\OrgMailSettings;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -121,6 +123,12 @@ class Editor extends Component
     /** @var array<string, string> Rechnungsadresse (billing_*) */
     public array $billing = [];
 
+    /** Rechnungsadresse wie Firmeninformation (beim Speichern uebernommen) */
+    public bool $billingSameAsCompany = false;
+
+    /** @var array{to: string, cc: string, bcc: string} Rechnungsempfaenger, je Feld kommagetrennt */
+    public array $invoiceEmails = ['to' => '', 'cc' => '', 'bcc' => ''];
+
     /** Aktion, zu der gerade die Rueckfrage offen ist: delete, restore, force. */
     #[Locked]
     public ?string $pendingAction = null;
@@ -164,6 +172,11 @@ class Editor extends Component
         foreach (self::ADDRESS_FIELDS as $field) {
             $this->company[$field] = (string) $model->{'company_'.$field};
             $this->billing[$field] = (string) $model->{'billing_'.($field === 'name' ? 'company_name' : $field)};
+        }
+
+        $this->billingSameAsCompany = (bool) $model->billing_same_as_company;
+        foreach (['to', 'cc', 'bcc'] as $kind) {
+            $this->invoiceEmails[$kind] = implode(', ', $model->invoice_emails[$kind] ?? []);
         }
 
         if (! isset(self::TABS[$this->tab])) {
@@ -277,6 +290,7 @@ class Editor extends Component
             'pdsAccountId' => ['nullable', 'regex:/^\s*[1-9]\d{0,18}\s*$/'],
             ...$address('company'),
             ...$address('billing'),
+            'invoiceEmails.*' => [new EmailList],
         ];
     }
 
@@ -346,9 +360,18 @@ class Editor extends Component
             $attributes['billing_'.($field === 'name' ? 'company_name' : $field)] = $text($this->billing[$field] ?? '');
         }
 
+        // Bei „Wie Firmeninformation“ uebernimmt das Model die Firmenfelder.
+        $attributes['billing_same_as_company'] = $this->billingSameAsCompany;
+        $invoiceEmails = array_map(fn ($value) => OrgMailSettings::emails($value), $this->invoiceEmails);
+        $attributes['invoice_emails'] = array_filter($invoiceEmails) ? $invoiceEmails : null;
+
         // Ueber save() – der CustomerObserver gleicht bei geaenderter Adresse
         // bzw. geaendertem Adressverzeichnis die Standorte ab.
         $customer->fill($attributes)->save();
+
+        if ($this->billingSameAsCompany) {
+            $this->billing = $this->company;
+        }
 
         $this->saveFeatureOverrides($customer);
         // Agenturen auf der Karte: fehlende Koordinaten im Hintergrund ermitteln.

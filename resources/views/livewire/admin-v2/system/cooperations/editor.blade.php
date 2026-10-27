@@ -29,15 +29,9 @@
         <div class="flex flex-col gap-6">
             <x-adminv2.card heading="Kooperation">
                 <div class="flex flex-col gap-5">
-                    <div class="grid items-start gap-5 sm:grid-cols-2">
-                        <div>
-                            <flux:input wire:model="name" label="Name" placeholder="z. B. solamento" maxlength="255" />
-                            <flux:error name="name" />
-                        </div>
-                        <div>
-                            <flux:input wire:model="contactEmail" label="E-Mail für Rechnungen" type="email" placeholder="buchhaltung@…" />
-                            <flux:error name="contactEmail" />
-                        </div>
+                    <div>
+                        <flux:input wire:model="name" label="Name" placeholder="z. B. solamento" maxlength="255" />
+                        <flux:error name="name" />
                     </div>
 
                     <flux:field>
@@ -71,6 +65,18 @@
 
                     <flux:textarea wire:model="notes" label="Notizen" rows="3" placeholder="Vertrag, Ansprechpartner, Besonderheiten …" />
                     <flux:switch wire:model="isActive" label="Aktiv" description="Inaktive Kooperationen bleiben bei bestehenden Zeiträumen erhalten." align="left" />
+                </div>
+            </x-adminv2.card>
+
+            <x-adminv2.card heading="Rechnungsempfänger" description="An wen die Rechnungen der Kooperation per E-Mail gehen. Mehrere Adressen je Feld durch Komma trennen.">
+                <div class="flex flex-col gap-5">
+                    @foreach (['to' => 'An', 'cc' => 'CC', 'bcc' => 'BCC'] as $kind => $label)
+                        <flux:field>
+                            <flux:label>{{ $label }}</flux:label>
+                            <flux:input wire:model="invoiceEmails.{{ $kind }}" placeholder="buchhaltung@…, geschaeftsfuehrung@…" />
+                            <flux:error name="invoiceEmails.{{ $kind }}" />
+                        </flux:field>
+                    @endforeach
                 </div>
             </x-adminv2.card>
 

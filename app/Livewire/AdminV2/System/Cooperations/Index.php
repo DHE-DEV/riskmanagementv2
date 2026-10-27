@@ -41,7 +41,7 @@ class Index extends Component
             ->ordered();
 
         if (($term = trim($this->search)) !== '') {
-            $this->whereEveryWord($query, $term, ['name', 'contact_email']);
+            $this->whereEveryWord($query, $term, ['name', 'invoice_emails']);
         }
 
         return $this->paginateWithinRange($query, self::PER_PAGE);

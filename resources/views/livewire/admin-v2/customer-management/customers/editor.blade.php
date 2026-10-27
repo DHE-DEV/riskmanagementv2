@@ -65,6 +65,16 @@
                     @foreach (['company' => 'Firmeninformationen', 'billing' => 'Rechnungsadresse'] as $prefix => $heading)
                         <x-adminv2.card :heading="$heading" wire:key="address-{{ $prefix }}">
                             <div class="flex flex-col gap-5">
+                                @if ($prefix === 'billing')
+                                    <flux:switch wire:model.live="billingSameAsCompany" label="Wie Firmeninformation" description="Die Rechnungsadresse übernimmt beim Speichern die Firmeninformation – auch wenn sie sich später ändert." align="left" />
+                                @endif
+                                @if ($prefix === 'billing' && $billingSameAsCompany)
+                                    <p class="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                        {{ $company['name'] ?: '–' }}@if ($company['additional']), {{ $company['additional'] }}@endif<br>
+                                        {{ trim($company['street'].' '.$company['house_number']) ?: '–' }}<br>
+                                        {{ trim($company['postal_code'].' '.$company['city']) ?: '–' }}@if ($company['country']), {{ $company['country'] }}@endif
+                                    </p>
+                                @else
                                 <flux:field>
                                     <flux:label>Firmenname</flux:label>
                                     <flux:input wire:model="{{ $prefix }}.name" maxlength="255" />
@@ -111,6 +121,24 @@
                                     />
                                     <flux:error name="{{ $prefix }}.country" />
                                 </flux:field>
+                                @endif
+
+                                @if ($prefix === 'billing')
+                                    {{-- Wohin Rechnungen per E-Mail gehen --}}
+                                    <div class="flex flex-col gap-4 border-t border-zinc-100 pt-5 dark:border-zinc-800">
+                                        <div>
+                                            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">Rechnung per E-Mail</h3>
+                                            <p class="mt-0.5 text-sm text-zinc-500">Mehrere Adressen je Feld durch Komma trennen. Ohne „An“ geht die Rechnung an {{ $email ?: 'die E-Mail des Kunden' }}.</p>
+                                        </div>
+                                        @foreach (['to' => 'An', 'cc' => 'CC', 'bcc' => 'BCC'] as $kind => $label)
+                                            <flux:field>
+                                                <flux:label>{{ $label }}</flux:label>
+                                                <flux:input wire:model="invoiceEmails.{{ $kind }}" placeholder="buchhaltung@…, chef@…" />
+                                                <flux:error name="invoiceEmails.{{ $kind }}" />
+                                            </flux:field>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </x-adminv2.card>
                     @endforeach

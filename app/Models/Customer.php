@@ -101,6 +101,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'notify_address_changes',
         'org_mail_settings',
         'location_type',
+        'billing_same_as_company',
+        'invoice_emails',
         'inherited_features',
         // SSO fields
         'agent_id',
@@ -187,6 +189,8 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'sub_accounts_can_edit_own_address' => 'boolean',
         'notify_address_changes' => 'boolean',
         'org_mail_settings' => 'array',
+        'billing_same_as_company' => 'boolean',
+        'invoice_emails' => 'array',
         'inherited_features' => 'array',
         'gtm_api_rate_limit' => 'integer',
         // PDS sync & Travel Links
@@ -213,10 +217,31 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'has_seen_settings_tour' => 'boolean',
     ];
 
+    /** Rechnungsfeld => Firmenfeld fuer „Rechnungsadresse wie Firmeninformation“. */
+    public const BILLING_FROM_COMPANY = [
+        'billing_company_name' => 'company_name',
+        'billing_additional' => 'company_additional',
+        'billing_street' => 'company_street',
+        'billing_house_number' => 'company_house_number',
+        'billing_postal_code' => 'company_postal_code',
+        'billing_city' => 'company_city',
+        'billing_country' => 'company_country',
+    ];
+
     protected static function booted(): void
     {
         static::creating(function (Customer $customer) {
             $customer->app_code = self::generateUniqueAppCode();
+        });
+
+        // Rechnungsadresse „wie Firmeninformation“: bei jedem Speichern uebernehmen,
+        // auch wenn der Kunde seine Firmenanschrift selbst aendert.
+        static::saving(function (Customer $customer) {
+            if ($customer->billing_same_as_company) {
+                foreach (self::BILLING_FROM_COMPANY as $billing => $company) {
+                    $customer->{$billing} = $customer->{$company};
+                }
+            }
         });
 
         // Geaenderte Firmenadresse: Koordinaten neu ermitteln lassen.
