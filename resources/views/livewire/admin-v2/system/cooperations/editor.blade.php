@@ -101,9 +101,19 @@
                         <flux:error name="billingInterval" />
                     </flux:field>
                     <flux:field>
+                        <flux:label>Umsatzsteuer</flux:label>
+                        <flux:select wire:model="taxRate">
+                            @foreach (\App\Support\TaxRates::OPTIONS as $value => $label)
+                                <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        <flux:description>Preise und Festbetrag sind netto; dieser Steuersatz kommt bei der Rechnung an die Kooperation hinzu.</flux:description>
+                        <flux:error name="taxRate" />
+                    </flux:field>
+                    <flux:field>
                         <flux:label>Festbetrag pro Büro</flux:label>
                         <flux:input wire:model="fixedPricePerOffice" inputmode="decimal" placeholder="z. B. 4,90" />
-                        <flux:description>€ pro Büro und Monat, leer = kein Festbetrag. Bezahlt wird er gesammelt über die Kooperation oder vom Büro einzeln – je nach „Wer zahlt?“ beim Kunden.</flux:description>
+                        <flux:description>€ netto pro Büro und Monat, leer = kein Festbetrag. Bezahlt wird er gesammelt über die Kooperation oder vom Büro einzeln – je nach „Wer zahlt?“ beim Kunden.</flux:description>
                         <flux:error name="fixedPricePerOffice" />
                     </flux:field>
                     <flux:field>

@@ -103,6 +103,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'location_type',
         'billing_same_as_company',
         'invoice_emails',
+        'tax_rate',
         'inherited_features',
         // SSO fields
         'agent_id',
@@ -191,6 +192,7 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'org_mail_settings' => 'array',
         'billing_same_as_company' => 'boolean',
         'invoice_emails' => 'array',
+        'tax_rate' => 'decimal:2',
         'inherited_features' => 'array',
         'gtm_api_rate_limit' => 'integer',
         // PDS sync & Travel Links

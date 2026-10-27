@@ -36,18 +36,18 @@
                         <h2 class="text-base font-semibold leading-snug text-zinc-900 dark:text-white">
                             <a href="{{ $editUrl }}" class="after:absolute after:inset-0 after:rounded-2xl group-hover:underline">{{ $product->name }}</a>
                         </h2>
-                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                        <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                             @if ($product->key)
-                                <flux:badge size="sm" color="zinc" inset="top bottom" class="font-mono">{{ $product->key }}</flux:badge>
+                                <flux:badge size="sm" color="zinc" class="font-mono">{{ $product->key }}</flux:badge>
                             @endif
                             @unless ($product->is_active)
-                                <flux:badge size="sm" color="zinc" inset="top bottom">Inaktiv</flux:badge>
+                                <flux:badge size="sm" color="zinc">Inaktiv</flux:badge>
                             @endunless
                             @if ($product->features_count)
-                                <flux:badge size="sm" color="sky" inset="top bottom">{{ $product->features_count }} Leistungen</flux:badge>
+                                <flux:badge size="sm" color="sky">{{ $product->features_count }} Leistungen</flux:badge>
                             @endif
                             @if ($product->requiredProduct)
-                                <flux:badge size="sm" color="amber" inset="top bottom">nur mit {{ $product->requirementLabel() }}</flux:badge>
+                                <flux:badge size="sm" color="amber">nur mit {{ $product->requirementLabel() }}</flux:badge>
                             @endif
                         </div>
                     </div>

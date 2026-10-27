@@ -258,3 +258,29 @@ it('speichert mehrere Rechnungsempfaenger mit CC und BCC', function () {
         ->assertSet('invoiceEmails.to', 'rechnung@kette.test, chef@kette.test');
     Livewire::test(CooperationIndex::class)->set('search', 'steuer@kette')->assertSee('Kette West');
 });
+
+it('speichert den Steuersatz an Kooperation und Kunde, Vorschlag 19 %', function () {
+    $component = Livewire::test(CooperationEditor::class)
+        ->assertSet('taxRate', '19')
+        ->set('name', 'Steuerfrei-Kette')
+        ->set('taxRate', '7')
+        ->call('save')
+        ->assertHasErrors('taxRate')
+        ->set('taxRate', '0')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Cooperation::sole()->tax_rate)->toBe('0.00');
+    Livewire::test(CooperationIndex::class)->assertSee('0 % USt.');
+
+    $customer = Customer::factory()->create();
+    expect($customer->fresh()->tax_rate)->toBe('19.00');
+
+    Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->assertSet('taxRate', '19')
+        ->set('taxRate', '0')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($customer->fresh()->tax_rate)->toBe('0.00');
+});

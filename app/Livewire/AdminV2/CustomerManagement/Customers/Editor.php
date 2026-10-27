@@ -12,6 +12,7 @@ use App\Rules\EmailList;
 use App\Services\CustomerFeaturePreauthorizationService;
 use App\Services\CustomerFeatureService;
 use App\Support\OrgMailSettings;
+use App\Support\TaxRates;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -129,6 +130,9 @@ class Editor extends Component
     /** @var array{to: string, cc: string, bcc: string} Rechnungsempfaenger, je Feld kommagetrennt */
     public array $invoiceEmails = ['to' => '', 'cc' => '', 'bcc' => ''];
 
+    /** Umsatzsteuer auf die Nettobetraege (TaxRates::OPTIONS) */
+    public string $taxRate = TaxRates::DEFAULT;
+
     /** Aktion, zu der gerade die Rueckfrage offen ist: delete, restore, force. */
     #[Locked]
     public ?string $pendingAction = null;
@@ -175,6 +179,7 @@ class Editor extends Component
         }
 
         $this->billingSameAsCompany = (bool) $model->billing_same_as_company;
+        $this->taxRate = TaxRates::key($model->tax_rate);
         foreach (['to', 'cc', 'bcc'] as $kind) {
             $this->invoiceEmails[$kind] = implode(', ', $model->invoice_emails[$kind] ?? []);
         }
@@ -291,6 +296,7 @@ class Editor extends Component
             ...$address('company'),
             ...$address('billing'),
             'invoiceEmails.*' => [new EmailList],
+            'taxRate' => ['required', Rule::in(array_keys(TaxRates::OPTIONS))],
         ];
     }
 
@@ -362,6 +368,7 @@ class Editor extends Component
 
         // Bei „Wie Firmeninformation“ uebernimmt das Model die Firmenfelder.
         $attributes['billing_same_as_company'] = $this->billingSameAsCompany;
+        $attributes['tax_rate'] = (int) $this->taxRate;
         $invoiceEmails = array_map(fn ($value) => OrgMailSettings::emails($value), $this->invoiceEmails);
         $attributes['invoice_emails'] = array_filter($invoiceEmails) ? $invoiceEmails : null;
 

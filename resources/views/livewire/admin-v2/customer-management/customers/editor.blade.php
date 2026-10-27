@@ -126,6 +126,16 @@
                                 @if ($prefix === 'billing')
                                     {{-- Wohin Rechnungen per E-Mail gehen --}}
                                     <div class="flex flex-col gap-4 border-t border-zinc-100 pt-5 dark:border-zinc-800">
+                                        <flux:field>
+                                            <flux:label>Umsatzsteuer</flux:label>
+                                            <flux:select wire:model="taxRate">
+                                                @foreach (\App\Support\TaxRates::OPTIONS as $value => $label)
+                                                    <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                                                @endforeach
+                                            </flux:select>
+                                            <flux:description>Alle Preise werden netto erfasst; dieser Steuersatz kommt bei der Rechnung hinzu.</flux:description>
+                                            <flux:error name="taxRate" />
+                                        </flux:field>
                                         <div>
                                             <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">Rechnung per E-Mail</h3>
                                             <p class="mt-0.5 text-sm text-zinc-500">Mehrere Adressen je Feld durch Komma trennen. Ohne „An“ geht die Rechnung an {{ $email ?: 'die E-Mail des Kunden' }}.</p>

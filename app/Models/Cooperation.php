@@ -40,6 +40,7 @@ class Cooperation extends Model
         'kickback_type',
         'kickback_value',
         'invoice_emails',
+        'tax_rate',
         'notes',
         'is_active',
     ];
@@ -49,6 +50,7 @@ class Cooperation extends Model
         'fixed_price_per_office' => 'decimal:2',
         'is_active' => 'boolean',
         'invoice_emails' => 'array',
+        'tax_rate' => 'decimal:2',
     ];
 
     public function customer(): BelongsTo

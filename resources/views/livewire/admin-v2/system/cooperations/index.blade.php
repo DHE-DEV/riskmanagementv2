@@ -33,15 +33,9 @@
                         <h2 class="text-base font-semibold leading-snug text-zinc-900 dark:text-white">
                             <a href="{{ $editUrl }}" class="after:absolute after:inset-0 after:rounded-2xl group-hover:underline">{{ $cooperation->name }}</a>
                         </h2>
-                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                            <flux:badge size="sm" :color="$cooperation->is_active ? 'green' : 'zinc'" inset="top bottom">{{ $cooperation->is_active ? 'Aktiv' : 'Inaktiv' }}</flux:badge>
-                            <flux:badge size="sm" color="zinc" inset="top bottom">{{ $cooperation->members_count }} {{ $cooperation->members_count === 1 ? 'Mitglied' : 'Mitglieder' }}</flux:badge>
-                            @if ($fixedPrice = $cooperation->fixedPriceLabel())
-                                <flux:badge size="sm" color="violet" inset="top bottom">Festbetrag {{ $fixedPrice }}</flux:badge>
-                            @endif
-                            @if ($kickback = $cooperation->kickbackLabel())
-                                <flux:badge size="sm" color="amber" inset="top bottom">Kickback {{ $kickback }}</flux:badge>
-                            @endif
+                        <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <flux:badge size="sm" :color="$cooperation->is_active ? 'green' : 'zinc'">{{ $cooperation->is_active ? 'Aktiv' : 'Inaktiv' }}</flux:badge>
+                            <flux:badge size="sm" color="zinc">{{ $cooperation->members_count }} {{ $cooperation->members_count === 1 ? 'Mitglied' : 'Mitglieder' }}</flux:badge>
                         </div>
                     </div>
 
@@ -58,9 +52,24 @@
                     </div>
                 </div>
 
-                <dl class="mt-3 flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {{-- Abrechnung: Festbetrag und Kickback, darunter wie und wie oft abgerechnet wird --}}
+                <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                    <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Abrechnung:</p>
+                    @if (($fixedPrice = $cooperation->fixedPriceLabel()) || $cooperation->kickbackLabel())
+                        <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            @if ($fixedPrice)
+                                <flux:badge size="sm" color="violet">Festbetrag {{ $fixedPrice }}</flux:badge>
+                            @endif
+                            @if ($kickback = $cooperation->kickbackLabel())
+                                <flux:badge size="sm" color="amber">Kickback {{ $kickback }}</flux:badge>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+
+                <dl class="mt-2 flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
                     <div class="flex gap-2"><dt class="text-zinc-400">Mitglieder:</dt><dd>{{ Cooperation::MEMBER_BILLING[$cooperation->member_billing] ?? $cooperation->member_billing }}</dd></div>
-                    <div class="flex gap-2"><dt class="text-zinc-400">Rechnung:</dt><dd>{{ Cooperation::BILLING_INTERVALS[$cooperation->billing_interval] ?? $cooperation->billing_interval }}</dd></div>
+                    <div class="flex gap-2"><dt class="text-zinc-400">Rechnung:</dt><dd>{{ Cooperation::BILLING_INTERVALS[$cooperation->billing_interval] ?? $cooperation->billing_interval }} · {{ \App\Support\TaxRates::key($cooperation->tax_rate) }} % USt.</dd></div>
                     @if ($cooperation->customer)
                         <div class="relative z-10 flex gap-2"><dt class="text-zinc-400">Account:</dt><dd class="min-w-0 truncate"><a href="{{ route('adminv2.customer-management.customers.edit', $cooperation->customer) }}" class="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">{{ $cooperation->customer->company_name ?: $cooperation->customer->name }}</a></dd></div>
                     @endif

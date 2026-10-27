@@ -22,7 +22,7 @@
                 </tr>
                 <tr>
                     <td style="padding: 4px 16px 4px 0; color: #71717a; white-space: nowrap;">Abrechnung</td>
-                    <td style="padding: 4px 0;">{{ $owner?->currentBillingPeriod?->label() ?? 'kein Zeitraum erfasst' }}</td>
+                    <td style="padding: 4px 0;">{{ $owner?->currentBillingPeriod?->label() ?? 'kein Zeitraum erfasst' }} · {{ \App\Support\TaxRates::key($owner?->tax_rate) }} % USt.</td>
                 </tr>
                 <tr>
                     <td style="padding: 4px 16px 4px 0; color: #71717a; white-space: nowrap;">PDS-ID</td>

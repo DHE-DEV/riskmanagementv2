@@ -75,22 +75,22 @@
                         </h3>
 
                         <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                            <flux:badge size="sm" color="sky" inset="top bottom" class="font-mono">{{ $account->app_code }}</flux:badge>
+                            <flux:badge size="sm" color="sky" class="font-mono">{{ $account->app_code }}</flux:badge>
                             @if ($account->location_type === 'travel_advisor')
-                                <flux:badge size="sm" color="teal" inset="top bottom">Reiseberater</flux:badge>
+                                <flux:badge size="sm" color="teal">Reiseberater</flux:badge>
                             @endif
                             @php
                                 $billing = $account->currentBillingPeriod;
                             @endphp
                             @if (! $billing)
-                                <flux:badge size="sm" color="zinc" inset="top bottom">Abrechnung offen</flux:badge>
+                                <flux:badge size="sm" color="zinc">Abrechnung offen</flux:badge>
                             @elseif ($billing->billing_mode === 'cooperation')
-                                <flux:badge size="sm" color="indigo" inset="top bottom" icon="building-office-2">Über {{ $billing->cooperation?->name ?? 'Kooperation' }}</flux:badge>
+                                <flux:badge size="sm" color="indigo" icon="building-office-2">Über {{ $billing->cooperation?->name ?? 'Kooperation' }}</flux:badge>
                             @else
-                                <flux:badge size="sm" color="violet" inset="top bottom" icon="banknotes">Selbstzahler</flux:badge>
+                                <flux:badge size="sm" color="violet" icon="banknotes">Selbstzahler</flux:badge>
                             @endif
                             @if ($account->trashed())
-                                <flux:badge size="sm" color="amber" inset="top bottom">Papierkorb</flux:badge>
+                                <flux:badge size="sm" color="amber">Papierkorb</flux:badge>
                             @endif
                         </div>
 

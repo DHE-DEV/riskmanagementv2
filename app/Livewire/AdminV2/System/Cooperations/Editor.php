@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\CustomerBillingPeriod;
 use App\Rules\EmailList;
 use App\Support\OrgMailSettings;
+use App\Support\TaxRates;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -42,6 +43,9 @@ class Editor extends Component
     /** Festbetrag pro Buero und Monat (leer = keiner) */
     public string $fixedPricePerOffice = '';
 
+    /** Umsatzsteuer auf die Nettobetraege (TaxRates::OPTIONS) */
+    public string $taxRate = TaxRates::DEFAULT;
+
     public string $kickbackType = 'none';
 
     public string $kickbackValue = '';
@@ -70,6 +74,7 @@ class Editor extends Component
         $this->memberBilling = $model->member_billing;
         $this->billingInterval = $model->billing_interval;
         $this->fixedPricePerOffice = $model->fixed_price_per_office !== null ? str_replace('.', ',', (string) $model->fixed_price_per_office) : '';
+        $this->taxRate = TaxRates::key($model->tax_rate);
         $this->kickbackType = $model->kickback_type;
         $this->kickbackValue = $model->kickback_value !== null ? str_replace('.', ',', (string) $model->kickback_value) : '';
         foreach (['to', 'cc', 'bcc'] as $kind) {
@@ -137,6 +142,7 @@ class Editor extends Component
             'memberBilling' => ['required', Rule::in(array_keys(Cooperation::MEMBER_BILLING))],
             'billingInterval' => ['required', Rule::in(array_keys(Cooperation::BILLING_INTERVALS))],
             'fixedPricePerOffice' => ['nullable', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
+            'taxRate' => ['required', Rule::in(array_keys(TaxRates::OPTIONS))],
             'kickbackType' => ['required', Rule::in(array_keys(Cooperation::KICKBACK_TYPES))],
             'kickbackValue' => ['nullable', 'required_unless:kickbackType,none', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
             'invoiceEmails.*' => [new EmailList],
@@ -165,6 +171,7 @@ class Editor extends Component
             'member_billing' => $this->memberBilling,
             'billing_interval' => $this->billingInterval,
             'fixed_price_per_office' => trim($this->fixedPricePerOffice) !== '' ? str_replace(',', '.', trim($this->fixedPricePerOffice)) : null,
+            'tax_rate' => (int) $this->taxRate,
             'kickback_type' => $this->kickbackType,
             'kickback_value' => $this->kickbackType === 'none' ? null : str_replace(',', '.', $this->kickbackValue),
             'invoice_emails' => array_filter($invoiceEmails) ? $invoiceEmails : null,
