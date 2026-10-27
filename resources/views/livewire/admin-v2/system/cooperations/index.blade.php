@@ -36,6 +36,9 @@
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <flux:badge size="sm" :color="$cooperation->is_active ? 'green' : 'zinc'" inset="top bottom">{{ $cooperation->is_active ? 'Aktiv' : 'Inaktiv' }}</flux:badge>
                             <flux:badge size="sm" color="zinc" inset="top bottom">{{ $cooperation->members_count }} {{ $cooperation->members_count === 1 ? 'Mitglied' : 'Mitglieder' }}</flux:badge>
+                            @if ($fixedPrice = $cooperation->fixedPriceLabel())
+                                <flux:badge size="sm" color="violet" inset="top bottom">Festbetrag {{ $fixedPrice }}</flux:badge>
+                            @endif
                             @if ($kickback = $cooperation->kickbackLabel())
                                 <flux:badge size="sm" color="amber" inset="top bottom">Kickback {{ $kickback }}</flux:badge>
                             @endif

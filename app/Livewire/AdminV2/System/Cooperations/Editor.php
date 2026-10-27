@@ -37,6 +37,9 @@ class Editor extends Component
 
     public string $billingInterval = 'monthly';
 
+    /** Festbetrag pro Buero und Monat (leer = keiner) */
+    public string $fixedPricePerOffice = '';
+
     public string $kickbackType = 'none';
 
     public string $kickbackValue = '';
@@ -63,6 +66,7 @@ class Editor extends Component
         $this->customerId = (string) ($model->customer_id ?? '');
         $this->memberBilling = $model->member_billing;
         $this->billingInterval = $model->billing_interval;
+        $this->fixedPricePerOffice = $model->fixed_price_per_office !== null ? str_replace('.', ',', (string) $model->fixed_price_per_office) : '';
         $this->kickbackType = $model->kickback_type;
         $this->kickbackValue = $model->kickback_value !== null ? str_replace('.', ',', (string) $model->kickback_value) : '';
         $this->contactEmail = (string) $model->contact_email;
@@ -127,6 +131,7 @@ class Editor extends Component
             'customerId' => ['nullable', Rule::exists('customers', 'id')],
             'memberBilling' => ['required', Rule::in(array_keys(Cooperation::MEMBER_BILLING))],
             'billingInterval' => ['required', Rule::in(array_keys(Cooperation::BILLING_INTERVALS))],
+            'fixedPricePerOffice' => ['nullable', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
             'kickbackType' => ['required', Rule::in(array_keys(Cooperation::KICKBACK_TYPES))],
             'kickbackValue' => ['nullable', 'required_unless:kickbackType,none', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
             'contactEmail' => ['nullable', 'email', 'max:255'],
@@ -134,6 +139,7 @@ class Editor extends Component
         ], [
             'name.required' => 'Bitte den Namen der Kooperation eingeben.',
             'kickbackValue.required_unless' => 'Bitte den Kickback angeben (Prozent oder Betrag).',
+            'fixedPricePerOffice.regex' => 'Der Festbetrag ist ein Betrag mit höchstens zwei Nachkommastellen, z. B. 4,90.',
             'kickbackValue.regex' => 'Der Kickback ist eine Zahl mit höchstens zwei Nachkommastellen, z. B. 10 oder 2,50.',
             'contactEmail.email' => 'Bitte eine gültige E-Mail-Adresse eingeben.',
         ]);
@@ -152,6 +158,7 @@ class Editor extends Component
             'customer_id' => $this->customerId !== '' ? (int) $this->customerId : null,
             'member_billing' => $this->memberBilling,
             'billing_interval' => $this->billingInterval,
+            'fixed_price_per_office' => trim($this->fixedPricePerOffice) !== '' ? str_replace(',', '.', trim($this->fixedPricePerOffice)) : null,
             'kickback_type' => $this->kickbackType,
             'kickback_value' => $this->kickbackType === 'none' ? null : str_replace(',', '.', $this->kickbackValue),
             'contact_email' => trim($this->contactEmail) ?: null,

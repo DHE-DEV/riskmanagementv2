@@ -173,3 +173,35 @@ it('zeigt die Abrechnung bei den Unteraccounts', function () {
         ->assertSee('Selbstzahler')
         ->assertSee('Reiseberater');
 });
+
+it('speichert einen Festbetrag pro Buero und zeigt ihn beim Kunden', function () {
+    Livewire::test(CooperationEditor::class)
+        ->set('name', 'Kette Süd')
+        ->set('fixedPricePerOffice', '4,9x')
+        ->call('save')
+        ->assertHasErrors('fixedPricePerOffice')
+        ->set('fixedPricePerOffice', '4,90')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $cooperation = Cooperation::sole();
+    expect($cooperation->fixed_price_per_office)->toBe('4.90')
+        ->and($cooperation->fixedPriceLabel())->toBe('4,90 € pro Büro/Monat');
+
+    Livewire::test(CooperationEditor::class, ['cooperation' => $cooperation->id])
+        ->assertSet('fixedPricePerOffice', '4,90')
+        ->set('fixedPricePerOffice', '')
+        ->call('save');
+    expect($cooperation->fresh()->fixed_price_per_office)->toBeNull();
+
+    $cooperation->refresh()->update(['fixed_price_per_office' => '4.90']);
+    $customer = Customer::factory()->create();
+    $period = CustomerBillingPeriod::create(['customer_id' => $customer->id, 'cooperation_id' => $cooperation->id, 'billing_mode' => 'self_payer', 'starts_on' => '2026-01-01']);
+
+    expect($period->label())->toBe('Kette Süd · einzeln abgerechnet (Selbstzahler) · Festbetrag 4,90 € pro Büro/Monat');
+
+    Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->call('showTab', 'billing')
+        ->assertSee('Festbetrag 4,90 € pro Büro/Monat');
+    Livewire::test(CooperationIndex::class)->assertSee('Festbetrag 4,90 € pro Büro/Monat');
+});

@@ -72,7 +72,7 @@ class CustomerBillingPeriod extends Model
             ->first();
     }
 
-    /** z. B. "Selbstzahler" oder "Über Kooperation: solamento". */
+    /** z. B. "Selbststaendig · Selbstzahler" oder "solamento · ueber Kooperation abgerechnet · Festbetrag …". */
     public function label(): string
     {
         if (! $this->cooperation_id) {
@@ -80,10 +80,12 @@ class CustomerBillingPeriod extends Model
         }
 
         $name = $this->cooperation?->name ?? 'Kooperation';
+        $fixedPrice = $this->cooperation?->fixedPriceLabel();
 
-        return $this->billing_mode === 'cooperation'
+        return ($this->billing_mode === 'cooperation'
             ? $name.' · über Kooperation abgerechnet'
-            : $name.' · einzeln abgerechnet (Selbstzahler)';
+            : $name.' · einzeln abgerechnet (Selbstzahler)')
+            .($fixedPrice ? ' · Festbetrag '.$fixedPrice : '');
     }
 
     /** "01.01.2026 – offen" */

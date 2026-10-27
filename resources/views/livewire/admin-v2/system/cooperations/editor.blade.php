@@ -95,6 +95,12 @@
                         <flux:error name="billingInterval" />
                     </flux:field>
                     <flux:field>
+                        <flux:label>Festbetrag pro Büro</flux:label>
+                        <flux:input wire:model="fixedPricePerOffice" inputmode="decimal" placeholder="z. B. 4,90" />
+                        <flux:description>€ pro Büro und Monat, leer = kein Festbetrag. Bezahlt wird er gesammelt über die Kooperation oder vom Büro einzeln – je nach „Wer zahlt?“ beim Kunden.</flux:description>
+                        <flux:error name="fixedPricePerOffice" />
+                    </flux:field>
+                    <flux:field>
                         <flux:label>Kickback</flux:label>
                         <flux:select wire:model.live="kickbackType">
                             @foreach (Cooperation::KICKBACK_TYPES as $value => $label)

@@ -36,6 +36,7 @@ class Cooperation extends Model
         'customer_id',
         'member_billing',
         'billing_interval',
+        'fixed_price_per_office',
         'kickback_type',
         'kickback_value',
         'contact_email',
@@ -45,6 +46,7 @@ class Cooperation extends Model
 
     protected $casts = [
         'kickback_value' => 'decimal:2',
+        'fixed_price_per_office' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 
@@ -67,6 +69,14 @@ class Cooperation extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('name')->orderBy('id');
+    }
+
+    /** z. B. "4,90 € pro Büro/Monat"; null ohne Festbetrag. */
+    public function fixedPriceLabel(): ?string
+    {
+        return $this->fixed_price_per_office === null
+            ? null
+            : number_format((float) $this->fixed_price_per_office, 2, ',', '.').' € pro Büro/Monat';
     }
 
     /** z. B. "10 %" oder "2,50 €"; null ohne Kickback. */

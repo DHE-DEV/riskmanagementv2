@@ -44,6 +44,9 @@
                                     <span>Selbstständig ·</span>
                                 @endif
                                 <flux:badge size="sm" :color="$period->billing_mode === 'cooperation' ? 'indigo' : 'violet'" inset="top bottom">{{ \App\Models\CustomerBillingPeriod::BILLING_MODES[$period->billing_mode] ?? $period->billing_mode }}</flux:badge>
+                                @if ($fixedPrice = $period->cooperation?->fixedPriceLabel())
+                                    <flux:badge size="sm" color="zinc" inset="top bottom">Festbetrag {{ $fixedPrice }}</flux:badge>
+                                @endif
                             </div>
                             @if ($period->notes)
                                 <p class="mt-1 text-sm text-zinc-500">{{ $period->notes }}</p>
@@ -84,7 +87,15 @@
                                 <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                             @endforeach
                         </flux:select>
-                        <flux:description>{{ $billingForm['cooperation_id'] === '' ? 'Ohne Kooperation zahlt der Kunde selbst.' : 'Vorbelegt wie bei der Kooperation eingestellt; als Ausnahme auch einzeln.' }}</flux:description>
+                        @php
+                            $chosenCooperation = $billingForm['cooperation_id'] !== '' ? $cooperations->firstWhere('id', (int) $billingForm['cooperation_id']) : null;
+                        @endphp
+                        <flux:description>
+                            {{ $chosenCooperation ? 'Vorbelegt wie bei der Kooperation eingestellt; als Ausnahme auch einzeln.' : 'Ohne Kooperation zahlt der Kunde selbst.' }}
+                            @if ($chosenCooperation?->fixedPriceLabel())
+                                Festbetrag {{ $chosenCooperation->fixedPriceLabel() }} – {{ $billingForm['billing_mode'] === 'cooperation' ? 'rechnet die Kooperation ab' : 'bekommt das Büro einzeln berechnet' }}.
+                            @endif
+                        </flux:description>
                         <flux:error name="billingForm.billing_mode" />
                     </flux:field>
 

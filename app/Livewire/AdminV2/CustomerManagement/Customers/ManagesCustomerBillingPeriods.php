@@ -32,7 +32,7 @@ trait ManagesCustomerBillingPeriods
     #[Computed]
     public function cooperationOptions(): Collection
     {
-        return Cooperation::query()->ordered()->get(['id', 'name', 'member_billing', 'is_active']);
+        return Cooperation::query()->ordered()->get(['id', 'name', 'member_billing', 'fixed_price_per_office', 'is_active']);
     }
 
     /** Laufender offener Zeitraum, der beim Wechsel beendet werden kann. */
