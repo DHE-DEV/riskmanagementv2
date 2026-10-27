@@ -9,7 +9,7 @@
 @endphp
 
 <div class="flex flex-col gap-4">
-    <x-adminv2.card heading="Abrechnungsintervall" description="Monatlich, halbjährlich oder jährlich – für alle abonnierten Dienste oder einzelne Module. Ein Eintrag für ein Modul geht dem für alle Dienste vor. Zeiträume desselben Moduls dürfen sich nicht überschneiden.">
+    <x-adminv2.card heading="Abrechnungsintervall" description="Monatlich, halbjährlich oder jährlich – für alle abonnierten Dienste oder einzelne Module, bei Jahres- oder Halbjahreszahlung mit Rabatt. Ein Eintrag für ein Modul geht dem für alle Dienste vor. Zeiträume desselben Moduls dürfen sich nicht überschneiden.">
         <x-slot:actions>
             <flux:button size="sm" icon="plus" wire:click="newBillingInterval">Neuer Zeitraum</flux:button>
         </x-slot:actions>
@@ -34,6 +34,9 @@
                             <li wire:key="billing-interval-{{ $interval->id }}" class="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
                                 <div class="flex min-w-0 flex-wrap items-center gap-2">
                                     <flux:badge size="sm" :color="['monthly' => 'sky', 'half_yearly' => 'amber', 'yearly' => 'green'][$interval->interval] ?? 'zinc'" inset="top bottom">{{ $interval->intervalLabel() }}</flux:badge>
+                                    @if ($discount = $interval->discountLabel())
+                                        <flux:badge size="sm" color="amber" inset="top bottom">{{ $discount }}</flux:badge>
+                                    @endif
                                     <span class="text-sm tabular-nums text-zinc-700 dark:text-zinc-300">{{ $interval->rangeLabel() }}</span>
                                     @if ($isCurrent)
                                         <flux:badge size="sm" color="green" variant="outline" inset="top bottom">Aktuell</flux:badge>
@@ -73,13 +76,22 @@
 
                     <flux:field>
                         <flux:label>Intervall</flux:label>
-                        <flux:select wire:model="intervalForm.interval">
+                        <flux:select wire:model.live="intervalForm.interval">
                             @foreach (CustomerBillingInterval::INTERVALS as $value => $label)
                                 <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                             @endforeach
                         </flux:select>
                         <flux:error name="intervalForm.interval" />
                     </flux:field>
+
+                    @if ($intervalForm['interval'] !== 'monthly')
+                        <flux:field>
+                            <flux:label>Rabatt bei {{ $intervalForm['interval'] === 'yearly' ? 'Jahreszahlung' : 'Halbjahreszahlung' }}</flux:label>
+                            <flux:input wire:model="intervalForm.discount_percent" inputmode="decimal" placeholder="z. B. 10" />
+                            <flux:description>In Prozent, leer = kein Rabatt.</flux:description>
+                            <flux:error name="intervalForm.discount_percent" />
+                        </flux:field>
+                    @endif
 
                     <flux:field>
                         <flux:label>Startdatum</flux:label>

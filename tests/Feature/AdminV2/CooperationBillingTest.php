@@ -205,3 +205,31 @@ it('speichert einen Festbetrag pro Buero und zeigt ihn beim Kunden', function ()
         ->assertSee('Festbetrag 4,90 € pro Büro/Monat');
     Livewire::test(CooperationIndex::class)->assertSee('Festbetrag 4,90 € pro Büro/Monat');
 });
+
+it('speichert einen Rabatt bei Jahreszahlung, aber nicht bei monatlicher', function () {
+    $customer = Customer::factory()->create();
+
+    $editor = Livewire::test(Editor::class, ['customer' => $customer->id])->call('showTab', 'subscription');
+
+    $editor->call('newBillingInterval')
+        ->set('intervalForm.interval', 'yearly')
+        ->set('intervalForm.discount_percent', '120')
+        ->set('intervalForm.starts_on', '2027-01-01')
+        ->call('saveBillingInterval')
+        ->assertHasErrors('intervalForm.discount_percent')
+        ->set('intervalForm.discount_percent', '7,5')
+        ->call('saveBillingInterval')
+        ->assertHasNoErrors()
+        ->assertSee('7,5 % Rabatt');
+
+    $yearly = CustomerBillingInterval::sole();
+    expect($yearly->discount_percent)->toBe('7.50');
+
+    $editor->call('editBillingInterval', $yearly->id)
+        ->assertSet('intervalForm.discount_percent', '7,5')
+        ->set('intervalForm.interval', 'monthly')
+        ->call('saveBillingInterval')
+        ->assertHasNoErrors();
+
+    expect($yearly->fresh()->discount_percent)->toBeNull();
+});

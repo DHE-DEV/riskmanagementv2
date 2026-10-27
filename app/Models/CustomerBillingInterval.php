@@ -22,12 +22,14 @@ class CustomerBillingInterval extends Model
         'customer_id',
         'module',
         'interval',
+        'discount_percent',
         'starts_on',
         'ends_on',
         'notes',
     ];
 
     protected $casts = [
+        'discount_percent' => 'decimal:2',
         'starts_on' => 'date:Y-m-d',
         'ends_on' => 'date:Y-m-d',
     ];
@@ -76,6 +78,16 @@ class CustomerBillingInterval extends Model
     public function intervalLabel(): string
     {
         return self::INTERVALS[$this->interval] ?? $this->interval;
+    }
+
+    /** z. B. "10 % Rabatt"; null ohne Rabatt. */
+    public function discountLabel(): ?string
+    {
+        if ($this->discount_percent === null || (float) $this->discount_percent <= 0) {
+            return null;
+        }
+
+        return rtrim(rtrim(number_format((float) $this->discount_percent, 2, ',', '.'), '0'), ',').' % Rabatt';
     }
 
     public function rangeLabel(): string
