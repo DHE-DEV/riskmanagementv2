@@ -33,7 +33,7 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, ListsCustomerGtmLogs, ListsCustomerSubAccounts, ManagesCustomerAccess, ManagesCustomerBranches, ManagesCustomerTokens, QueriesLists, WithPagination;
+    use AuthorizesAdminV2, ListsCustomerGtmLogs, ListsCustomerSubAccounts, ManagesCustomerAccess, ManagesCustomerBillingIntervals, ManagesCustomerBillingPeriods, ManagesCustomerBranches, ManagesCustomerTokens, QueriesLists, WithPagination;
 
     /** Eintraege je Seite in den Listen unter dem Formular. */
     public const RELATION_PER_PAGE = 10;
@@ -42,9 +42,9 @@ class Editor extends Component
 
     public const BUSINESS_TYPES = [
         'travel_agency' => 'Reisebüro',
+        'mobile_travel_consultant' => 'Mobiler Reiseberater',
         'organizer' => 'Veranstalter',
         'online_provider' => 'Online Anbieter',
-        'mobile_travel_consultant' => 'Mobiler Reiseberater',
         'cooperation' => 'Kooperation',
         'software_provider' => 'Softwareanbieter',
         'other' => 'Sonstiges',
@@ -53,6 +53,8 @@ class Editor extends Component
     public const TABS = [
         'branches' => 'Filialen',
         'sub-accounts' => 'Unteraccounts',
+        'billing' => 'Abrechnung',
+        'subscription' => 'Abo',
         'access' => 'Zugriff auf andere Accounts',
         'tokens' => 'API Tokens',
         'gtm-logs' => 'GTM API Logs',
@@ -87,6 +89,12 @@ class Editor extends Component
 
     /** Zugeordnete Agenturen auch als Adressen anzeigen (Organisation, /branches). */
     public bool $showSubAccountsAsBranches = false;
+
+    public bool $canEditOwnAddress = false;
+
+    public bool $subAccountsCanEditOwnAddress = false;
+
+    public bool $notifyAddressChanges = false;
 
     /** @var array<int, string> Zentrale: diese Features erben die Unteraccounts */
     public array $inheritedFeatures = [];
@@ -138,6 +146,9 @@ class Editor extends Component
         $this->directoryListingActive = (bool) $model->directory_listing_active;
         $this->branchManagementActive = (bool) $model->branch_management_active;
         $this->showSubAccountsAsBranches = (bool) $model->show_sub_accounts_as_branches;
+        $this->canEditOwnAddress = (bool) $model->can_edit_own_address;
+        $this->subAccountsCanEditOwnAddress = (bool) $model->sub_accounts_can_edit_own_address;
+        $this->notifyAddressChanges = (bool) $model->notify_address_changes;
         $this->inheritedFeatures = array_values(array_intersect(CustomerFeatureOverride::getFeatureKeys(), (array) $model->inherited_features));
         $this->hideProfileCompletion = (bool) $model->hide_profile_completion;
         $this->gtmApiEnabled = (bool) $model->gtm_api_enabled;
@@ -300,6 +311,9 @@ class Editor extends Component
             'directory_listing_active' => $this->directoryListingActive,
             'branch_management_active' => $this->branchManagementActive,
             'show_sub_accounts_as_branches' => $this->showSubAccountsAsBranches,
+            'can_edit_own_address' => $this->canEditOwnAddress,
+            'sub_accounts_can_edit_own_address' => $this->subAccountsCanEditOwnAddress,
+            'notify_address_changes' => $this->notifyAddressChanges,
             'inherited_features' => ($inherited = array_values(array_intersect(CustomerFeatureOverride::getFeatureKeys(), $this->inheritedFeatures))) === [] ? null : $inherited,
             'hide_profile_completion' => $this->hideProfileCompletion,
             'gtm_api_enabled' => $this->gtmApiEnabled,

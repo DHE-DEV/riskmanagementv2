@@ -5,9 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Branch extends Model
 {
+    use SoftDeletes;
+
+    /** Art des Standorts – Tag in Einstellungen › Organisationsstruktur. */
+    public const LOCATION_TYPES = [
+        'agency' => 'Agentur',
+        'travel_advisor' => 'Reiseberater',
+    ];
+
     protected $fillable = [
         'customer_id',
         'app_code',
@@ -21,10 +30,19 @@ class Branch extends Model
         'latitude',
         'longitude',
         'is_headquarters',
+        'location_type',
+        'start_date',
+        'end_date',
+        'scheduled_deletion_at',
+        'deletion_reason',
+        'deletion_requested_by',
     ];
 
     protected $casts = [
         'is_headquarters' => 'boolean',
+        'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
+        'scheduled_deletion_at' => 'datetime:Y-m-d',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
     ];

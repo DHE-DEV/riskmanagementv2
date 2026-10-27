@@ -49,6 +49,8 @@ use App\Livewire\AdminV2\System\Ai as SystemAi;
 use App\Livewire\AdminV2\System\AiSearchEditor as SystemAiSearchEditor;
 use App\Livewire\AdminV2\System\Automator\Index as AutomatorIndex;
 use App\Livewire\AdminV2\System\Automator\Monitor as AutomatorMonitor;
+use App\Livewire\AdminV2\System\Cooperations\Editor as CooperationEditor;
+use App\Livewire\AdminV2\System\Cooperations\Index as CooperationIndex;
 use App\Livewire\AdminV2\System\MobileOperators\Editor as MobileOperatorEditor;
 use App\Livewire\AdminV2\System\MobileOperators\Index as MobileOperatorIndex;
 use App\Livewire\AdminV2\System\PushMessages as SystemPushMessages;
@@ -195,6 +197,9 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('system/recurring-tasks/{recurrence}', RecurringTaskEditor::class)->whereNumber('recurrence')->name('system.recurring-tasks.edit');
         Route::get('system/automator', AutomatorIndex::class)->name('system.automator.index');
         Route::get('system/automator/monitor', AutomatorMonitor::class)->name('system.automator.monitor');
+        Route::get('system/cooperations', CooperationIndex::class)->name('system.cooperations.index');
+        Route::get('system/cooperations/create', CooperationEditor::class)->name('system.cooperations.create');
+        Route::get('system/cooperations/{cooperation}', CooperationEditor::class)->whereNumber('cooperation')->name('system.cooperations.edit');
         Route::get('system/mobile-operators', MobileOperatorIndex::class)->name('system.mobile-operators.index');
         Route::get('system/mobile-operators/create', MobileOperatorEditor::class)->name('system.mobile-operators.create');
         Route::get('system/mobile-operators/{operator}', MobileOperatorEditor::class)->whereNumber('operator')->name('system.mobile-operators.edit');

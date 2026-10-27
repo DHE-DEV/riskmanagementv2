@@ -61,6 +61,13 @@ class AccountSwitchController extends Controller
 
         $query = Customer::where('assign_to', $customer->id);
 
+        // Tab „Agenturen“ bzw. „Reiseberater“ in Einstellungen › Organisationsstruktur
+        if ($request->input('location_type') === 'travel_advisor') {
+            $query->where('location_type', 'travel_advisor');
+        } elseif ($request->input('location_type') === 'agency') {
+            $query->where('location_type', '!=', 'travel_advisor');
+        }
+
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('app_code', 'like', "%{$search}%")

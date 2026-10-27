@@ -25,7 +25,9 @@
         </form>
 
         @if ($showSubAccountsAsBranches && $this->subAccountGeoStats['total'] > 0)
-            @php($geo = $this->subAccountGeoStats)
+            @php
+                $geo = $this->subAccountGeoStats;
+            @endphp
             {{-- Karte "Filialen & Standorte": Stand der Koordinaten --}}
             <div class="flex flex-wrap items-center gap-3 border-b border-zinc-100 px-5 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-300" @if ($geo['pending'] > 0) wire:poll.15s @endif>
                 <flux:icon.map-pin variant="mini" class="text-zinc-400" />
@@ -61,7 +63,9 @@
         <div class="@container" wire:loading.class="opacity-60" wire:target="subAccountSearch, nextPage, previousPage">
             <div class="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3">
                 @foreach ($subAccounts as $account)
-                    @php($editUrl = route('adminv2.customer-management.customers.edit', $account->id))
+                    @php
+                        $editUrl = route('adminv2.customer-management.customers.edit', $account->id);
+                    @endphp
                     <article wire:key="sub-account-{{ $account->id }}" @class([
                         'group relative flex min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700',
                         'opacity-70' => $account->trashed(),
@@ -72,6 +76,19 @@
 
                         <div class="mt-2 flex flex-wrap items-center gap-1.5">
                             <flux:badge size="sm" color="sky" inset="top bottom" class="font-mono">{{ $account->app_code }}</flux:badge>
+                            @if ($account->location_type === 'travel_advisor')
+                                <flux:badge size="sm" color="teal" inset="top bottom">Reiseberater</flux:badge>
+                            @endif
+                            @php
+                                $billing = $account->currentBillingPeriod;
+                            @endphp
+                            @if (! $billing)
+                                <flux:badge size="sm" color="zinc" inset="top bottom">Abrechnung offen</flux:badge>
+                            @elseif ($billing->billing_mode === 'cooperation')
+                                <flux:badge size="sm" color="indigo" inset="top bottom" icon="building-office-2">Über {{ $billing->cooperation?->name ?? 'Kooperation' }}</flux:badge>
+                            @else
+                                <flux:badge size="sm" color="violet" inset="top bottom" icon="banknotes">Selbstzahler</flux:badge>
+                            @endif
                             @if ($account->trashed())
                                 <flux:badge size="sm" color="amber" inset="top bottom">Papierkorb</flux:badge>
                             @endif

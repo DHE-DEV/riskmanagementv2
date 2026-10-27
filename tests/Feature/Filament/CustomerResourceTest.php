@@ -1155,7 +1155,7 @@ class CustomerResourceTest extends TestCase
         ])
             ->callTableAction('delete', $branch);
 
-        $this->assertDatabaseMissing('branches', ['id' => $branch->id]);
+        $this->assertSoftDeleted('branches', ['id' => $branch->id]);
     }
 
     /** @test */
@@ -1221,9 +1221,9 @@ class CustomerResourceTest extends TestCase
         ])
             ->callTableBulkAction('delete', [$branch1, $branch2, $branch3]);
 
-        $this->assertDatabaseMissing('branches', ['id' => $branch1->id]);
-        $this->assertDatabaseMissing('branches', ['id' => $branch2->id]);
-        $this->assertDatabaseMissing('branches', ['id' => $branch3->id]);
+        $this->assertSoftDeleted('branches', ['id' => $branch1->id]);
+        $this->assertSoftDeleted('branches', ['id' => $branch2->id]);
+        $this->assertSoftDeleted('branches', ['id' => $branch3->id]);
     }
 
     /** @test */

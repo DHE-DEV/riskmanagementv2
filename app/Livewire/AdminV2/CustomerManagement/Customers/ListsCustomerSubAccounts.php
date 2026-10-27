@@ -78,7 +78,7 @@ trait ListsCustomerSubAccounts
     #[Computed]
     public function subAccounts(): LengthAwarePaginator
     {
-        $query = $this->customer->assignedCustomers()->withTrashed();
+        $query = $this->customer->assignedCustomers()->withTrashed()->with('currentBillingPeriod.cooperation');
 
         if (($term = trim($this->subAccountSearch)) !== '') {
             $this->whereEveryWord($query, $term, ['app_code', 'company_name', 'email', 'company_postal_code', 'company_city', 'pds_account_id']);

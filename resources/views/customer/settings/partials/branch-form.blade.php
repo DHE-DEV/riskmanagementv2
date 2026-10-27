@@ -58,6 +58,17 @@
             <div x-show="branchTab === 'adresse'">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div class="sm:col-span-2 lg:col-span-3">
+                        <span class="block text-xs font-medium text-gray-700 mb-1">Art <span class="text-red-500">*</span></span>
+                        <div class="inline-flex rounded-lg border border-gray-200 p-0.5 text-sm" role="radiogroup" aria-label="Art des Standorts">
+                            @foreach (\App\Models\Branch::LOCATION_TYPES as $typeValue => $typeLabel)
+                                <button type="button" role="radio" :aria-checked="newForm.location_type === '{{ $typeValue }}'" @click="newForm.location_type = '{{ $typeValue }}'"
+                                        :class="newForm.location_type === '{{ $typeValue }}' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-1.5 rounded-md">
+                                    <i class="fas {{ $typeValue === 'travel_advisor' ? 'fa-user-tie' : 'fa-store' }} mr-1 text-xs"></i>{{ $typeLabel }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
                         <input type="text" x-model="newForm.name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Name der Adresse / Standort">
                     </div>
@@ -85,7 +96,13 @@
                         <label class="block text-xs font-medium text-gray-700 mb-1">Land <span class="text-red-500">*</span></label>
                         <input type="text" x-model="newForm.country" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1" for="branch-start-date">Startdatum</label>
+                        <input id="branch-start-date" type="date" x-model="newForm.start_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Ab wann der Standort aktiv ist – wichtig für die Abrechnung durch Passolution.</p>
+                    </div>
                 </div>
+                <p x-show="formError" x-text="formError" x-cloak class="mt-3 text-sm text-red-600"></p>
             </div>
 
             {{-- Tab: Rufnummern --}}

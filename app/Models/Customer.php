@@ -96,6 +96,11 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'directory_listing_active',
         'branch_management_active',
         'show_sub_accounts_as_branches',
+        'can_edit_own_address',
+        'sub_accounts_can_edit_own_address',
+        'notify_address_changes',
+        'org_mail_settings',
+        'location_type',
         'inherited_features',
         // SSO fields
         'agent_id',
@@ -178,6 +183,10 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'company_longitude' => 'float',
         'company_geocoded_at' => 'datetime',
         'show_sub_accounts_as_branches' => 'boolean',
+        'can_edit_own_address' => 'boolean',
+        'sub_accounts_can_edit_own_address' => 'boolean',
+        'notify_address_changes' => 'boolean',
+        'org_mail_settings' => 'array',
         'inherited_features' => 'array',
         'gtm_api_rate_limit' => 'integer',
         // PDS sync & Travel Links
@@ -638,6 +647,56 @@ class Customer extends Authenticatable implements MustVerifyEmail
 
         return ($options?->live_from && $options->live_from->isAfter(today()))
             || ($options?->end_of_use && $options->end_of_use->isBefore(today()));
+    }
+
+    /**
+     * Darf der Kunde seine Adresse selbst aendern? Freigabe am Kunden selbst
+     * (Admin v2 › Einstellungen) oder von der Zentrale, wenn sie ihre
+     * Freigabe an die Unteraccounts weitergibt.
+     */
+    public function canEditOwnAddress(): bool
+    {
+        if ($this->can_edit_own_address) {
+            return true;
+        }
+
+        $agency = $this->assign_to ? $this->assignedTo : null;
+
+        return (bool) ($agency?->can_edit_own_address && $agency->sub_accounts_can_edit_own_address);
+    }
+
+    /**
+     * Darf der Kunde diese Adresse (company|billing) speichern? Ohne Freigabe
+     * nur die Ersterfassung einer noch leeren Adresse (Profil-Vervollstaendigung).
+     */
+    public function canChangeAddress(string $type): bool
+    {
+        if ($this->canEditOwnAddress()) {
+            return true;
+        }
+
+        return blank($this->{$type.'_street'}) && blank($this->{$type.'_postal_code'}) && blank($this->{$type.'_city'});
+    }
+
+    /** Zeitraeume der Abrechnung: selbststaendig oder ueber eine Kooperation. */
+    public function billingPeriods(): HasMany
+    {
+        return $this->hasMany(CustomerBillingPeriod::class)->orderByDesc('starts_on');
+    }
+
+    /** Abrechnungsintervalle je Zeitraum – fuer alle Dienste oder einzelne Module. */
+    public function billingIntervals(): HasMany
+    {
+        return $this->hasMany(CustomerBillingInterval::class)->orderByRaw('module is not null')->orderBy('module')->orderByDesc('starts_on');
+    }
+
+    /** Der heute geltende Abrechnungszeitraum, falls erfasst. */
+    public function currentBillingPeriod(): HasOne
+    {
+        return $this->hasOne(CustomerBillingPeriod::class)->ofMany(
+            ['starts_on' => 'max'],
+            fn ($query) => $query->current(),
+        );
     }
 
     public function labels(): HasMany

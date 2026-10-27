@@ -111,6 +111,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::post('/profile/billing-address', [\App\Http\Controllers\Customer\ProfileController::class, 'updateBillingAddress'])
             ->name('profile.update-billing-address');
 
+        Route::post('/sub-accounts/{subAccount}/company-address', [\App\Http\Controllers\Customer\ProfileController::class, 'updateSubAccountAddress'])
+            ->name('sub-accounts.update-company-address');
+
+        Route::put('/organization/mail-settings', [\App\Http\Controllers\Customer\OrganizationMailSettingsController::class, 'update'])
+            ->name('organization.mail-settings.update');
+        Route::post('/organization/mail-settings/preview', [\App\Http\Controllers\Customer\OrganizationMailSettingsController::class, 'preview'])
+            ->name('organization.mail-settings.preview');
+
         Route::get('/profile/countries', [\App\Http\Controllers\Customer\ProfileController::class, 'getCountries'])
             ->name('profile.get-countries');
 

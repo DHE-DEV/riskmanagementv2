@@ -142,11 +142,25 @@
                                     <flux:label>Login via</flux:label>
                                     <flux:input :value="$customer->provider ? ucfirst($customer->provider) : 'E-Mail'" disabled />
                                 </flux:field>
+                                @if ($customer->exists)
+                                    @php
+                                        $currentBilling = $customer->currentBillingPeriod;
+                                    @endphp
+                                    <flux:field>
+                                        <flux:label>Abrechnung heute</flux:label>
+                                        <flux:input :value="$currentBilling?->label() ?? 'Kein Zeitraum erfasst'" disabled />
+                                        <flux:description>
+                                            Selbstständig oder über eine Kooperation, je Zeitraum.
+                                            <button type="button" wire:click="showTab('billing')" class="font-medium text-zinc-900 underline underline-offset-2 dark:text-white">Zeiträume verwalten</button>
+                                        </flux:description>
+                                    </flux:field>
+                                @endif
                             </div>
 
                             <flux:field>
                                 <flux:label>Geschäftstyp</flux:label>
-                                <div class="grid gap-x-5 gap-y-2.5 sm:grid-cols-2">
+                                {{-- Spaltenweise, damit „Mobiler Reiseberater“ unter „Reisebüro“ steht --}}
+                                <div class="gap-x-5 sm:columns-2 [&>*]:mb-2.5 [&>*]:break-inside-avoid">
                                     @foreach (Editor::BUSINESS_TYPES as $value => $label)
                                         <flux:checkbox wire:model="businessTypes" value="{{ $value }}" :label="$label" />
                                     @endforeach
@@ -243,6 +257,31 @@
                                     'Die Agenturen sind dort nur aufgeführt, nicht bearbeitbar – es sind eigenständige Kunden mit eigenem Login. Die Kachel und der Tab „Agenturen“ in der Organisationsstruktur gibt es unabhängig von dieser Einstellung.',
                                 ],
                             ],
+                            'canEditOwnAddress' => [
+                                'label' => 'Darf eigene Adresse ändern',
+                                'info' => [
+                                    'Der Kunde darf seine Firmenanschrift und Rechnungsadresse selbst ändern: im Dashboard über „Ändern“ in der Karte „Büro“ und in den Kästen „Firmenadresse“/„Rechnungsadresse“ sowie unter Einstellungen › Stammdaten › Adressen.',
+                                    'Als Zentrale darf der Kunde damit auch die Firmenanschrift seiner zugeordneten Büros ändern: Stift-Symbol oben rechts in der jeweiligen Agentur-Karte unter Einstellungen › Organisationsstruktur (sofern „Agenturen als Adressen anzeigen“ aktiv ist).',
+                                    'Ohne Freigabe kann der Kunde eine Adresse nur einmal erfassen, solange sie noch leer ist (Profil-Vervollständigung); eine vorhandene Adresse ändert dann nur Passolution.',
+                                    'Bei jeder Änderung geht eine Infomail mit alten und neuen Daten an info@passolution.de (in Kopie an Daniel Henninger und Dennis Zimon).',
+                                ],
+                            ],
+                            'subAccountsCanEditOwnAddress' => [
+                                'label' => 'Unteraccounts dürfen eigene Adresse ändern',
+                                'info' => [
+                                    'Gibt die Freigabe „Darf eigene Adresse ändern“ an alle zugeordneten Büros (Tab „Unteraccounts“) weiter: Jedes Büro darf dann seine eigene Adresse ändern.',
+                                    'Wirkt nur, wenn „Darf eigene Adresse ändern“ bei diesem Kunden eingeschaltet ist. Einzelne Büros lassen sich zusätzlich bei sich selbst freischalten.',
+                                    'Auch hier geht bei jeder Änderung die Infomail an Passolution.',
+                                ],
+                            ],
+                            'notifyAddressChanges' => [
+                                'label' => 'E-Mail bei Änderungen der Agenturen',
+                                'info' => [
+                                    'Derselbe Schalter wie beim Kunden unter Einstellungen › Organisationsstruktur › Tab „Einstellungen“. Ist er an, geht eine E-Mail raus, wenn eine zugeordnete Agentur ihre Adresse ändert oder der Kunde unter „Neue Adresse“ eine Filiale anlegt, ändert oder löscht.',
+                                    'Empfänger (An, CC, BCC), ob die Agentur selbst und wer die Änderung vorgenommen hat eine Mail bekommen, Betreff und Inhalt (auch als eigenes HTML) stellt der Kunde dort selbst ein. Ohne eigene Empfänger geht sie an die E-Mail-Adresse des Kunden.',
+                                    'Die Infomail an Passolution geht unabhängig davon immer.',
+                                ],
+                            ],
                             'hideProfileCompletion' => [
                                 'label' => 'Profil-Vervollständigung ausblenden',
                                 'info' => [
@@ -270,7 +309,7 @@
                         </div>
                     </x-adminv2.card>
 
-                    <x-adminv2.card heading="GTM API Einstellungen" collapsible collapse-key="customer-gtm-api">
+                    <x-adminv2.card heading="GTM API Einstellungen" description="Zugang zur Global Travel Monitor JSON-API (Ereignisse per Token abrufen) und Anfragen pro Minute." collapsible collapsed collapse-key="customer-gtm-api-v2">
                         <div class="flex flex-col gap-5">
                             <div x-data="{ info: false }">
                                 <div class="flex items-center gap-1">
@@ -302,7 +341,7 @@
                         description="Überschreiben Sie die globalen .env-Einstellungen für diesen Kunden. Leere Felder verwenden die Standard-Einstellung."
                         collapsible
                         collapsed
-                        collapse-key="customer-feature-overrides"
+                        collapse-key="customer-feature-overrides-v2"
                     >
                         <div class="flex flex-col gap-5">
                             <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -410,6 +449,10 @@
             <div wire:loading.class="opacity-60" wire:target="showTab">
                 @if ($tab === 'sub-accounts')
                     @include('livewire.admin-v2.customer-management.customers.partials.sub-accounts')
+                @elseif ($tab === 'billing')
+                    @include('livewire.admin-v2.customer-management.customers.partials.billing')
+                @elseif ($tab === 'subscription')
+                    @include('livewire.admin-v2.customer-management.customers.partials.subscription')
                 @elseif ($tab === 'access')
                     @include('livewire.admin-v2.customer-management.customers.partials.access')
                 @elseif ($tab === 'tokens')

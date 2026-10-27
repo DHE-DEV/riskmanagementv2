@@ -1207,11 +1207,13 @@
                     <div class="bg-white rounded-lg border border-gray-200 p-5 mb-5">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-sm font-semibold text-gray-900">Firmenanschrift</h4>
+                            @if($customer->canChangeAddress('company'))
                             <button @click="editSection = editSection === 'company' ? null : 'company'"
                                     class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
                                 <i class="fas fa-pen text-[10px]"></i>
                                 <span x-text="editSection === 'company' ? 'Abbrechen' : 'Bearbeiten'"></span>
                             </button>
+                            @endif
                         </div>
                         <div x-show="editSection !== 'company'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                             <div><span class="text-xs text-gray-500">Firmenname</span><p class="font-medium text-gray-900" x-text="company.company_name || '—'"></p></div>
@@ -1246,11 +1248,13 @@
                                     <i class="fas fa-copy text-[10px]"></i>
                                     Aus Firmenanschrift
                                 </button>
+                                @if($customer->canChangeAddress('billing'))
                                 <button @click="editSection = editSection === 'billing' ? null : 'billing'"
                                         class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
                                     <i class="fas fa-pen text-[10px]"></i>
                                     <span x-text="editSection === 'billing' ? 'Abbrechen' : 'Bearbeiten'"></span>
                                 </button>
+                                @endif
                             </div>
                         </div>
                         <div x-show="editSection !== 'billing'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
@@ -1904,17 +1908,36 @@
                         Struktur
                     </button>
                     @php
-                        // Alle zugeordneten Agenturen – dieselbe Menge wie die Liste im Tab.
+                        // Zugeordnete Accounts je Typ – dieselbe Menge wie die Listen in den Tabs.
                         $assignedCount = \App\Models\Customer::where('assign_to', $customer->id)->count();
+                        $advisorSubAccountCount = \App\Models\Customer::where('assign_to', $customer->id)->where('location_type', 'travel_advisor')->count();
+                        $agencyCount = $assignedCount - $advisorSubAccountCount;
+                        // Reiseberater-Standorte aus „Neue Adresse“
+                        $advisorBranches = $customer->branches()->where('location_type', 'travel_advisor')->orderBy('name')->get();
+                        $advisorCount = $advisorSubAccountCount + $advisorBranches->count();
                     @endphp
-                    @if($assignedCount > 0)
+                    @if($agencyCount > 0)
                     <button @click="orgTab = 'agenturen'"
                         class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
                         :class="orgTab === 'agenturen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
                         <i class="fas fa-store mr-2"></i>
-                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full" x-data="{ n: {{ $assignedCount }} }" @agencies-tab-count.window="n = $event.detail" x-text="n">{{ $assignedCount }}</span>
+                        Agenturen <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full" x-data="{ n: {{ $agencyCount }} }" @agencies-tab-count.window="n = $event.detail" x-text="n">{{ $agencyCount }}</span>
                     </button>
                     @endif
+                    @if($advisorCount > 0)
+                    <button @click="orgTab = 'reiseberater'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="orgTab === 'reiseberater' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-user-tie mr-2"></i>
+                        Reiseberater <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full" x-data="{ branches: {{ $advisorBranches->count() }}, n: {{ $advisorSubAccountCount }} }" @advisors-tab-count.window="n = $event.detail" x-text="branches + n">{{ $advisorCount }}</span>
+                    </button>
+                    @endif
+                    <button @click="orgTab = 'einstellungen'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                        :class="orgTab === 'einstellungen' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-gear mr-2"></i>
+                        Einstellungen
+                    </button>
                 </div>
 
                 {{-- ==================== Tab: Übersicht ==================== --}}
@@ -2020,10 +2043,12 @@
                             ? \App\Models\Customer::where('assign_to', $customer->id)
                                 ->with('legacyOptions:account_id,live_from,end_of_use')
                                 ->orderBy('company_name')->orderBy('id')
-                                ->get(['id', 'app_code', 'name', 'email', 'phone', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country'])
+                                ->get(['id', 'app_code', 'name', 'email', 'phone', 'company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country', 'location_type'])
                             : collect();
                         // Inaktiv wie im Tab "Agenturen": Laufzeit aus den Alt-Optionen noch nicht begonnen bzw. abgelaufen.
                         $subAccountInactive = fn ($account) => $account->isInactiveByLegacyOptions();
+                        // Zentrale mit Freigabe „Darf eigene Adresse aendern“ aendert auch die Adressen ihrer Bueros.
+                        $canEditSubAccountAddresses = $customer->canEditOwnAddress();
                     @endphp
 
                     <template x-if="!loading && branches.length === 0 && !showNewForm && {{ $subAccountAddresses->isEmpty() ? 'true' : 'false' }}">
@@ -2041,9 +2066,18 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-1 flex-wrap">
                                             <h4 class="text-sm font-semibold text-gray-900" x-text="branch.name"></h4>
+                                            <span x-show="branch.app_code" class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded" x-text="branch.app_code"></span>
                                             <span x-show="branch.is_headquarters" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
                                                 <i class="fas fa-crown mr-1 text-[8px]"></i>Hauptsitz
                                             </span>
+                                            <span x-show="branch.location_type === 'travel_advisor'" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-teal-100 text-teal-800"><i class="fas fa-user-tie mr-1 text-[8px]"></i>Reiseberater</span>
+                                            <span x-show="branch.location_type !== 'travel_advisor' && !branch.is_headquarters" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800"><i class="fas fa-store mr-1 text-[8px]"></i>Agentur</span>
+                                            <span x-show="branch.start_date" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600"><i class="fas fa-calendar-check mr-1 text-[8px]"></i>Start&nbsp;<span x-text="formatDate(branch.start_date)"></span></span>
+                                        </div>
+                                        <div x-show="branch.scheduled_deletion_at" x-cloak class="flex flex-wrap items-center gap-2 mb-1 px-2 py-1 rounded bg-red-50 text-xs text-red-700">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Wird am <strong x-text="formatDate(branch.scheduled_deletion_at)"></strong> gelöscht · Enddatum <strong x-text="formatDate(branch.end_date)"></strong></span>
+                                            <button type="button" @click="cancelDeletion(branch)" class="underline hover:text-red-900">Löschung abbrechen</button>
                                         </div>
                                         <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-1">
                                             <span>
@@ -2078,7 +2112,7 @@
                                         <button @click="editExistingBranch(branch)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" title="Bearbeiten">
                                             <i class="fas fa-pen text-xs"></i>
                                         </button>
-                                        <button x-show="!branch.is_headquarters" @click="deleteBranch(branch.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" title="Löschen">
+                                        <button x-show="!branch.is_headquarters && !branch.scheduled_deletion_at" @click="openDelete(branch)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" title="Löschen">
                                             <i class="fas fa-trash text-xs"></i>
                                         </button>
                                     </div>
@@ -2086,6 +2120,37 @@
                             </div>
                         </template>
                     </div>
+                    {{-- Dialog: Standort loeschen (Grund, Enddatum, Loeschtermin) --}}
+                    <template x-if="deleteForm">
+                        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @keydown.escape.window="deleteForm = null" @click.self="deleteForm = null">
+                            <form @submit.prevent="submitDelete()" class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 space-y-4" role="dialog" aria-modal="true" aria-labelledby="delete-branch-title">
+                                <div>
+                                    <h3 id="delete-branch-title" class="text-base font-semibold text-gray-900">Standort löschen</h3>
+                                    <p class="text-sm text-gray-500 mt-1" x-text="deleteForm.branch.name"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1" for="delete-end-date">Enddatum <span class="text-red-500">*</span></label>
+                                    <input id="delete-end-date" type="date" x-model="deleteForm.end_date" :min="tomorrow" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <p class="text-xs text-gray-500 mt-1">Bis wann der Standort genutzt wird – nur ein Datum in der Zukunft. Danach rechnet Passolution ihn nicht mehr ab.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1" for="delete-scheduled">Löschen am</label>
+                                    <input id="delete-scheduled" type="date" x-model="deleteForm.scheduled_deletion_at" :min="tomorrow" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <p class="text-xs text-gray-500 mt-1">Leer lassen, um den Standort sofort zu entfernen. Mit Datum bleibt er bis dahin sichtbar und wird dann automatisch gelöscht.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1" for="delete-reason">Grund</label>
+                                    <textarea id="delete-reason" x-model="deleteForm.deletion_reason" rows="3" maxlength="2000" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="z. B. Büro geschlossen, Umzug …"></textarea>
+                                </div>
+                                <p x-show="deleteForm.error" x-text="deleteForm.error" class="text-sm text-red-600"></p>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" @click="deleteForm = null" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">Abbrechen</button>
+                                    <button type="submit" :disabled="deleteForm.saving" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-60" x-text="deleteForm.scheduled_deletion_at ? 'Löschung planen' : 'Jetzt löschen'"></button>
+                                </div>
+                            </form>
+                        </div>
+                    </template>
+
                     @if($subAccountAddresses->isNotEmpty())
                         {{-- Agenturen (Unteraccounts) als Adressen: Suche, Status-Filter, Karten --}}
                         @php
@@ -2124,21 +2189,47 @@
                                         $inactive = $subAccountFilterData[$loop->index]['s'] === 'inactive';
                                     @endphp
                                     <div x-show="matches({{ $loop->index }})"
+                                         x-data="{
+                                             editing: false, saving: false, error: '',
+                                             a: @js($subAccount->only(['company_name', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country', 'location_type'])),
+                                             form: {},
+                                             edit() { this.form = { ...this.a }; this.error = ''; this.editing = true; },
+                                             async save() {
+                                                 this.saving = true; this.error = '';
+                                                 try {
+                                                     const res = await fetch(@js(route('customer.sub-accounts.update-company-address', $subAccount)), {
+                                                         method: 'POST',
+                                                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @js(csrf_token()) },
+                                                         body: JSON.stringify(this.form),
+                                                     });
+                                                     const data = await res.json();
+                                                     if (data.success) { this.a = { ...this.a, ...data.address, location_type: this.form.location_type }; this.editing = false; }
+                                                     else { this.error = data.message || 'Speichern fehlgeschlagen'; }
+                                                 } catch (e) { this.error = 'Speichern fehlgeschlagen'; }
+                                                 this.saving = false;
+                                             },
+                                         }"
                                          class="rounded-lg border p-3 {{ $inactive ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200' }}">
                                         <div class="flex items-start justify-between gap-2">
-                                            <h5 class="text-sm font-semibold text-gray-900 min-w-0 break-words">{{ $subAccount->company_name ?: $subAccount->name }}</h5>
-                                            @if($subAccount->app_code)
-                                                <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded flex-shrink-0">{{ $subAccount->app_code }}</span>
+                                            <h5 class="text-sm font-semibold text-gray-900 min-w-0 break-words" x-text="a.company_name || @js($subAccount->name)">{{ $subAccount->company_name ?: $subAccount->name }}</h5>
+                                            @if($canEditSubAccountAddresses)
+                                                <button type="button" x-show="!editing" @click="edit()" class="p-1.5 -m-1 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0" title="Adresse ändern" aria-label="Adresse von {{ $subAccount->company_name ?: $subAccount->name }} ändern">
+                                                    <i class="fas fa-pen text-xs"></i>
+                                                </button>
                                             @endif
                                         </div>
                                         <div class="flex flex-wrap gap-1 mt-1">
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800"><i class="fas fa-store mr-1 text-[8px]"></i>Agentur</span>
+                                            @if($subAccount->app_code)
+                                                <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{{ $subAccount->app_code }}</span>
+                                            @endif
+                                            <span x-show="a.location_type === 'travel_advisor'" @class(['inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-teal-100 text-teal-800']) @style(['display: none' => $subAccount->location_type !== 'travel_advisor'])><i class="fas fa-user-tie mr-1 text-[8px]"></i>Reiseberater</span>
+                                            <span x-show="a.location_type !== 'travel_advisor'" @class(['inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800']) @style(['display: none' => $subAccount->location_type === 'travel_advisor'])><i class="fas fa-store mr-1 text-[8px]"></i>Agentur</span>
                                             @if($inactive)
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700"><i class="fas fa-circle-pause mr-1 text-[8px]"></i>Inaktiv</span>
                                             @endif
                                         </div>
-                                        <div class="text-xs text-gray-500 mt-2 space-y-1">
-                                            <p><i class="fas fa-location-dot mr-1 w-3"></i>{{ trim($subAccount->company_street.' '.$subAccount->company_house_number) ?: '—' }}, {{ trim($subAccount->company_postal_code.' '.$subAccount->company_city) ?: '—' }}</p>
+                                        <div x-show="!editing" class="text-xs text-gray-500 mt-2 space-y-1">
+                                            <p><i class="fas fa-location-dot mr-1 w-3"></i><span x-text="((a.company_street || '') + ' ' + (a.company_house_number || '')).trim() || '—'">{{ trim($subAccount->company_street.' '.$subAccount->company_house_number) ?: '—' }}</span>, <span x-text="((a.company_postal_code || '') + ' ' + (a.company_city || '')).trim() || '—'">{{ trim($subAccount->company_postal_code.' '.$subAccount->company_city) ?: '—' }}</span></p>
                                             @if($subAccount->phone)
                                                 <p class="truncate"><i class="fas fa-phone mr-1 w-3"></i><a href="tel:{{ preg_replace('/[^0-9+]/', '', $subAccount->phone) }}" class="text-blue-600 hover:underline">{{ $subAccount->phone }}</a></p>
                                             @endif
@@ -2146,6 +2237,30 @@
                                                 <p class="truncate"><i class="fas fa-envelope mr-1 w-3"></i><a href="mailto:{{ $subAccount->email }}" class="text-blue-600 hover:underline">{{ $subAccount->email }}</a></p>
                                             @endif
                                         </div>
+                                        @if($canEditSubAccountAddresses)
+                                            <form x-show="editing" x-cloak @submit.prevent="save()" class="mt-3 space-y-2">
+                                                <select x-model="form.location_type" aria-label="Art" class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                    @foreach(\App\Models\Branch::LOCATION_TYPES as $typeValue => $typeLabel)
+                                                        <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="text" x-model="form.company_name" placeholder="Firmenname" aria-label="Firmenname" class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <div class="grid grid-cols-3 gap-2">
+                                                    <input type="text" x-model="form.company_street" placeholder="Straße" aria-label="Straße" class="col-span-2 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                    <input type="text" x-model="form.company_house_number" placeholder="Nr." aria-label="Hausnummer" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-2">
+                                                    <input type="text" x-model="form.company_postal_code" placeholder="PLZ" aria-label="PLZ" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                    <input type="text" x-model="form.company_city" placeholder="Ort" aria-label="Ort" class="col-span-2 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                </div>
+                                                <input type="text" x-model="form.company_country" placeholder="Land" aria-label="Land" class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <p x-show="error" x-text="error" class="text-xs text-red-600"></p>
+                                                <div class="flex gap-2 pt-1">
+                                                    <button type="submit" :disabled="saving" class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-60">Speichern</button>
+                                                    <button type="button" @click="editing = false" class="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200">Abbrechen</button>
+                                                </div>
+                                            </form>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
@@ -2159,259 +2274,48 @@
                 </div>
 
                 {{-- ==================== Tab: Agenturen ==================== --}}
-                @if($assignedCount > 0)
-                <div x-show="orgTab === 'agenturen'" x-cloak x-data="assignedAgencies()">
-                    {{-- Suche und Status-Filter --}}
-                    <div class="mb-4 flex flex-wrap items-center gap-3">
-                        <div class="relative min-w-56 flex-1">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search text-xs"></i></span>
-                            <input type="text" x-model="search" @input.debounce.300ms="loadAgencies()" @keydown.escape="search = ''; loadAgencies()"
-                                   placeholder="Suche nach Firma, Code, PLZ, Ort..."
-                                   class="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <button x-show="search.length > 0" @click="search = ''; loadAgencies()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
-                                <i class="fas fa-times-circle text-sm"></i>
-                            </button>
-                        </div>
-                        <select x-model="status" aria-label="Agenturen nach Status filtern"
-                                class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all">Alle Agenturen</option>
-                            <option value="active">Nur aktive</option>
-                            <option value="inactive">Nur inaktive</option>
-                        </select>
-                    </div>
-
-                    {{-- Tabelle --}}
-                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Code</th>
-                                    <th @click="toggleSort('company_name')" class="px-4 py-2 text-left text-xs font-semibold text-gray-600 cursor-pointer select-none hover:text-blue-600">
-                                        Firma
-                                        <i class="fas ml-1" :class="sortField === 'company_name' ? (sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-gray-300'"></i>
-                                    </th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Straße</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">PLZ</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ort</th>
-                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600 w-10"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-if="loading">
-                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Laden...</td></tr>
-                                </template>
-                                <template x-if="!loading && filteredAgencies.length === 0">
-                                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Keine Agenturen gefunden</td></tr>
-                                </template>
-                                <template x-for="agency in filteredAgencies" :key="agency.id">
-                                    <tr class="border-b border-gray-100"
-                                        :class="isInactive(agency) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'">
-                                        <td class="px-4 py-2"><span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="agency.app_code"></span></td>
-                                        <td class="px-4 py-2 font-medium">
-                                            <span x-text="agency.company_name || agency.name"></span>
-                                            <span x-show="isInactive(agency)" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">Inaktiv</span>
-                                        </td>
-                                        <td class="px-4 py-2 text-gray-600" x-text="agency.company_street || '—'"></td>
-                                        <td class="px-4 py-2 text-gray-600" x-text="agency.company_postal_code || '—'"></td>
-                                        <td class="px-4 py-2 text-gray-600" x-text="agency.company_city || '—'"></td>
-                                        <td class="px-4 py-2 text-right">
-                                            <div class="relative" x-data="{ menuOpen: false }">
-                                                <button @click="menuOpen = !menuOpen" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
-                                                    <i class="fas fa-ellipsis-vertical"></i>
-                                                </button>
-                                                <div x-show="menuOpen" @click.away="menuOpen = false" x-cloak
-                                                     class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
-                                                    <button @click="menuOpen = false; showAgencyDetail(agency)"
-                                                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                        <i class="fas fa-eye text-xs text-gray-400"></i> Details anzeigen
-                                                    </button>
-                                                    @if($isSuperAdmin)
-                                                    <form method="POST" :action="'/customer/account/switch/' + agency.id">
-                                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                        <button type="submit"
-                                                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                            <i class="fas fa-arrows-repeat text-xs text-gray-400"></i> Zur Agentur wechseln
-                                                        </button>
-                                                    </form>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Detail Modal --}}
-                    <div x-show="detailAgency" x-cloak class="fixed inset-0 z-[10000] flex items-center justify-center" @keydown.escape.window="detailAgency = null">
-                        <div class="absolute inset-0 bg-black/50" @click="detailAgency = null"></div>
-                        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" x-data="{ detailTab: 'kontakt' }">
-                            <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                                <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                    <i class="fas fa-building text-blue-600"></i>
-                                    <span x-text="detailAgency?.company_name"></span>
-                                    <span class="font-mono text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="detailAgency?.app_code"></span>
-                                </h3>
-                                <button @click="detailAgency = null" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-
-                            {{-- Tabs --}}
-                            <div class="flex border-b border-gray-200 px-5">
-                                <button @click="detailTab = 'kontakt'"
-                                        :class="detailTab === 'kontakt' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-2 text-xs font-medium border-b-2 transition-colors">
-                                    Kontakt & Adresse
-                                </button>
-                                @if($isSuperAdmin)
-                                <button @click="detailTab = 'legacy'"
-                                        :class="detailTab === 'legacy' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-2 text-xs font-medium border-b-2 transition-colors">
-                                    Legacy Optionen
-                                </button>
-                                @endif
-                            </div>
-
-                            {{-- Tab: Kontakt & Adresse --}}
-                            <div x-show="detailTab === 'kontakt'" class="p-5 space-y-4">
-                                {{-- Kontakt --}}
-                                <div>
-                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Kontakt</h4>
-                                    <div class="grid grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Name</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.name || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">E-Mail</span>
-                                            <a x-show="detailAgency?.email" :href="'mailto:' + detailAgency?.email" class="text-blue-600 hover:text-blue-800 hover:underline break-all" x-text="detailAgency?.email"></a>
-                                            <span x-show="!detailAgency?.email" class="text-gray-900">—</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Telefon</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.phone || '—'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Firmenadresse --}}
-                                <div>
-                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Firmenadresse</h4>
-                                    <div class="grid grid-cols-2 gap-3 text-sm">
-                                        <div class="col-span-2">
-                                            <span class="text-xs text-gray-500 block">Firma</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.company_name || '—'"></span>
-                                        </div>
-                                        <div class="col-span-2" x-show="detailAgency?.company_additional">
-                                            <span class="text-xs text-gray-500 block">Zusatz</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.company_additional"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Straße</span>
-                                            <span class="text-gray-900" x-text="(detailAgency?.company_street || '') + ' ' + (detailAgency?.company_house_number || '') || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">PLZ / Ort</span>
-                                            <span class="text-gray-900" x-text="(detailAgency?.company_postal_code || '') + ' ' + (detailAgency?.company_city || '') || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Land</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.company_country || '—'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Rechnungsadresse --}}
-                                <div x-show="detailAgency?.billing_company_name || detailAgency?.billing_street">
-                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Rechnungsadresse</h4>
-                                    <div class="grid grid-cols-2 gap-3 text-sm">
-                                        <div class="col-span-2">
-                                            <span class="text-xs text-gray-500 block">Firma</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.billing_company_name || '—'"></span>
-                                        </div>
-                                        <div class="col-span-2" x-show="detailAgency?.billing_additional">
-                                            <span class="text-xs text-gray-500 block">Zusatz</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.billing_additional"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Straße</span>
-                                            <span class="text-gray-900" x-text="(detailAgency?.billing_street || '') + ' ' + (detailAgency?.billing_house_number || '') || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">PLZ / Ort</span>
-                                            <span class="text-gray-900" x-text="(detailAgency?.billing_postal_code || '') + ' ' + (detailAgency?.billing_city || '') || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Land</span>
-                                            <span class="text-gray-900" x-text="detailAgency?.billing_country || '—'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Tab: Legacy Optionen (nur für Super-Admins) --}}
-                            @if($isSuperAdmin)
-                            <div x-show="detailTab === 'legacy'" class="p-5 space-y-4">
-                                <template x-if="!detailAgency?.legacy_options">
-                                    <div class="text-sm text-gray-500 text-center py-4">Keine Legacy-Optionen vorhanden</div>
-                                </template>
-                                <template x-if="detailAgency?.legacy_options">
-                                    {{-- Nur diese Alt-Optionen; myJACK nur, wenn eingetragen --}}
-                                    <div class="grid grid-cols-2 gap-3 text-sm">
-                                        <div class="col-span-2">
-                                            <span class="text-xs text-gray-500 block">Account Typ</span>
-                                            <span class="text-gray-900" x-text="({'1':'Testaccount VA','2':'Testaccount RB','3':'Veranstalter','4':'Reisebüro','5':'Reiseberater'})[detailAgency.legacy_options.account_type] || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Live ab</span>
-                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.live_from ? new Date(detailAgency.legacy_options.live_from).toLocaleDateString('de-DE') : '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Nutzungsende</span>
-                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.end_of_use ? new Date(detailAgency.legacy_options.end_of_use).toLocaleDateString('de-DE') : '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Visa Service</span>
-                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.show_visa_service ? 'Ja' : 'Nein'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Visa Orte</span>
-                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.visa_places || '—'"></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-gray-500 block">Reisewarnungen</span>
-                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.show_travel_warning ? 'Ja' + (detailAgency.legacy_options.travel_warning_country ? ' (' + detailAgency.legacy_options.travel_warning_country + ')' : '') : 'Nein'"></span>
-                                        </div>
-                                        <div x-show="detailAgency.legacy_options.myjack_agency_id">
-                                            <span class="text-xs text-gray-500 block">myJACK Agency ID</span>
-                                            <span class="text-gray-900" x-text="detailAgency.legacy_options.myjack_agency_id"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Pagination --}}
-                    <div class="flex items-center justify-between mt-3">
-                        <span class="text-xs text-gray-500" x-text="filteredAgencies.length + ' Agenturen'"></span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500" x-text="'Seite ' + page + ' von ' + lastPage"></span>
-                            <button @click="prevPage()" :disabled="page <= 1"
-                                    class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <button @click="nextPage()" :disabled="page >= lastPage"
-                                    class="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                @if($agencyCount > 0)
+                    @include('customer.settings.partials.tab-assigned-agencies', ['tabKey' => 'agenturen', 'locationType' => 'agency', 'countEvent' => 'agencies-tab-count', 'labelPlural' => 'Agenturen'])
                 @endif
+
+                {{-- ==================== Tab: Reiseberater ==================== --}}
+                @if($advisorCount > 0)
+                    <div x-show="orgTab === 'reiseberater'" x-cloak class="space-y-6">
+                        @if($advisorBranches->isNotEmpty())
+                            <div>
+                                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Standorte ({{ $advisorBranches->count() }})</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                                    @foreach($advisorBranches as $advisorBranch)
+                                        <div class="rounded-lg border border-gray-200 bg-white p-3">
+                                            <h5 class="text-sm font-semibold text-gray-900 break-words">{{ $advisorBranch->name }}</h5>
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">{{ $advisorBranch->app_code }}</span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-teal-100 text-teal-800"><i class="fas fa-user-tie mr-1 text-[8px]"></i>Reiseberater</span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-2"><i class="fas fa-location-dot mr-1 w-3"></i>{{ trim($advisorBranch->street.' '.$advisorBranch->house_number) ?: '—' }}, {{ trim($advisorBranch->postal_code.' '.$advisorBranch->city) ?: '—' }}</p>
+                                            @if($advisorBranch->start_date)
+                                                <p class="text-xs text-gray-500 mt-1"><i class="fas fa-calendar-check mr-1 w-3"></i>Start {{ $advisorBranch->start_date->format('d.m.Y') }}</p>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        @if($advisorSubAccountCount > 0)
+                            <div>
+                                @if($advisorBranches->isNotEmpty())
+                                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Zugeordnete Accounts</h4>
+                                @endif
+                                @include('customer.settings.partials.tab-assigned-agencies', ['tabKey' => 'reiseberater', 'locationType' => 'travel_advisor', 'countEvent' => 'advisors-tab-count', 'labelPlural' => 'Reiseberater'])
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- ==================== Tab: Einstellungen ==================== --}}
+                <div x-show="orgTab === 'einstellungen'" x-cloak>
+                    @include('customer.settings.partials.tab-org-mail-settings')
+                </div>
 
                 </div>
 
@@ -6692,7 +6596,7 @@ function usersManager() {
     };
 }
 
-function assignedAgencies() {
+function assignedAgencies(locationType = 'agency', countEvent = 'agencies-tab-count') {
     return {
         agencies: [],
         search: '',
@@ -6726,13 +6630,13 @@ function assignedAgencies() {
         },
 
         reportCount() {
-            window.dispatchEvent(new CustomEvent('agencies-tab-count', { detail: this.filteredAgencies.length }));
+            window.dispatchEvent(new CustomEvent(countEvent, { detail: this.filteredAgencies.length }));
         },
 
         async loadAgencies() {
             this.loading = true;
             try {
-                const params = new URLSearchParams({ page: this.page, search: this.search });
+                const params = new URLSearchParams({ page: this.page, search: this.search, location_type: locationType });
                 const res = await fetch(`/customer/assigned-agencies?${params}`);
                 const data = await res.json();
                 this.agencies = data.data;
@@ -6794,7 +6698,8 @@ function organizationManager() {
         branchEmails: [],
         branchWebs: [],
         branchContacts: [],
-        newForm: { editId: null, name: '', additional: '', street: '', house_number: '', postal_code: '', city: '', country: 'Deutschland', org_node_ids: [], org_node_data: [] },
+        newForm: { editId: null, name: '', additional: '', street: '', house_number: '', postal_code: '', city: '', country: 'Deutschland', location_type: 'agency', start_date: '', org_node_ids: [], org_node_data: [] },
+        formError: '',
 
         init() { this.loadAll(); },
 
@@ -6814,7 +6719,8 @@ function organizationManager() {
         },
 
         resetNewForm() {
-            this.newForm = { editId: null, name: '', additional: '', street: '', house_number: '', postal_code: '', city: '', country: 'Deutschland', org_node_ids: [], org_node_data: [] };
+            this.newForm = { editId: null, name: '', additional: '', street: '', house_number: '', postal_code: '', city: '', country: 'Deutschland', location_type: 'agency', start_date: '', org_node_ids: [], org_node_data: [] };
+            this.formError = '';
             this.branchPhones = [];
             this.branchEmails = [];
             this.branchWebs = [];
@@ -6832,6 +6738,12 @@ function organizationManager() {
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                     body: JSON.stringify(this.newForm)
                 });
+                this.formError = '';
+                if (! res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    this.formError = Object.values(data.errors || {}).flat()[0] || data.message || 'Speichern fehlgeschlagen';
+                    this.branchTab = 'adresse';
+                }
                 if (res.ok) {
                     const data = await res.json();
                     const branchId = data.branch?.id || this.newForm.editId;
@@ -6891,6 +6803,8 @@ function organizationManager() {
                 postal_code: branch.postal_code,
                 city: branch.city,
                 country: branch.country || 'Deutschland',
+                location_type: branch.location_type || 'agency',
+                start_date: branch.start_date || '',
                 org_node_ids: (branch.org_nodes || []).map(n => n.id),
                 org_node_data: (branch.org_nodes || []).map(n => ({
                     id: n.id,
@@ -6908,12 +6822,38 @@ function organizationManager() {
             this.showNewForm = true;
         },
 
-        async deleteBranch(id) {
-            if (!confirm('Standort wirklich löschen?')) return;
+        // Loeschen mit Grund, Enddatum (Pflicht, in der Zukunft) und optionalem Loeschtermin
+        deleteForm: null,
+        openDelete(branch) {
+            this.deleteForm = { branch, end_date: '', scheduled_deletion_at: '', deletion_reason: '', error: '', saving: false };
+        },
+        get tomorrow() {
+            const d = new Date(); d.setDate(d.getDate() + 1);
+            return d.toISOString().slice(0, 10);
+        },
+        async submitDelete() {
+            const f = this.deleteForm;
+            f.error = ''; f.saving = true;
             try {
-                await fetch('{{ route("customer.branches.index") }}/' + id, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
-                this.loadAll();
-            } catch (e) { console.error(e); }
+                const res = await fetch('{{ route("customer.branches.index") }}/' + f.branch.id, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ end_date: f.end_date, scheduled_deletion_at: f.scheduled_deletion_at || null, deletion_reason: f.deletion_reason }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success) { this.deleteForm = null; this.loadAll(); }
+                else { f.error = Object.values(data.errors || {}).flat()[0] || data.message || 'Löschen fehlgeschlagen'; }
+            } catch (e) { f.error = 'Löschen fehlgeschlagen'; }
+            f.saving = false;
+        },
+        async cancelDeletion(branch) {
+            await fetch('{{ route("customer.branches.index") }}/' + branch.id + '/cancel-deletion', { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
+            this.loadAll();
+        },
+        formatDate(value) {
+            if (!value) return '';
+            const [y, m, d] = String(value).slice(0, 10).split('-');
+            return d + '.' + m + '.' + y;
         },
 
         toggleOrgNode(id) {

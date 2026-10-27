@@ -30,6 +30,11 @@
     @endif
 
     <style>
+        /* Von Alpine versteckte Bereiche (Tabs, Formulare) nicht kurz aufblitzen lassen */
+        [x-cloak] {
+            display: none !important;
+        }
+
         body {
             margin: 0;
             padding: 0;

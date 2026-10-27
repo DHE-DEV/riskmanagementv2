@@ -113,6 +113,9 @@
                     <flux:navlist.item icon="device-phone-mobile" :href="route('adminv2.system.taxi-apps.index')" :current="request()->routeIs('adminv2.system.taxi-apps.*')">
                         Taxi Apps
                     </flux:navlist.item>
+                    <flux:navlist.item icon="building-office-2" :href="route('adminv2.system.cooperations.index')" :current="request()->routeIs('adminv2.system.cooperations.*')">
+                        Kooperationen
+                    </flux:navlist.item>
                     <flux:navlist.item icon="signal" :href="route('adminv2.system.mobile-operators.index')" :current="request()->routeIs('adminv2.system.mobile-operators.*')">
                         Mobilfunkanbieter
                     </flux:navlist.item>

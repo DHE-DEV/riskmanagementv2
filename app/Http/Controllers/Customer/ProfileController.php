@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CustomerAddressChangedMail;
+use App\Models\Branch;
+use App\Models\Customer;
+use App\Services\OrganizationChangeNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -32,7 +37,7 @@ class ProfileController extends Controller
             ]);
 
             session([
-                'logged_in_employee_name' => $employee->first_name . ' ' . $employee->last_name,
+                'logged_in_employee_name' => $employee->first_name.' '.$employee->last_name,
             ]);
         } else {
             $request->validate([
@@ -46,7 +51,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Persönliche Daten erfolgreich aktualisiert'
+            'message' => 'Persönliche Daten erfolgreich aktualisiert',
         ]);
     }
 
@@ -100,7 +105,7 @@ class ProfileController extends Controller
 
         $customer = auth('customer')->user();
 
-        if (!Hash::check($request->current_password, $customer->password)) {
+        if (! Hash::check($request->current_password, $customer->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Das aktuelle Passwort ist nicht korrekt.',
@@ -119,7 +124,7 @@ class ProfileController extends Controller
     public function updateCustomerType(Request $request)
     {
         $request->validate([
-            'customer_type' => 'required|in:business,private'
+            'customer_type' => 'required|in:business,private',
         ]);
 
         $customer = auth('customer')->user();
@@ -129,7 +134,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'customer_type' => $customer->customer_type,
-            'customer_type_label' => $customer->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde'
+            'customer_type_label' => $customer->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde',
         ]);
     }
 
@@ -137,7 +142,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'business_types' => 'array',
-            'business_types.*' => 'in:travel_agency,organizer,online_provider,mobile_travel_consultant,cooperation,software_provider,other'
+            'business_types.*' => 'in:travel_agency,organizer,online_provider,mobile_travel_consultant,cooperation,software_provider,other',
         ]);
 
         $customer = auth('customer')->user();
@@ -154,72 +159,74 @@ class ProfileController extends Controller
             'other' => 'Sonstiges',
         ];
 
-        $businessTypeLabels = array_map(function($type) use ($labels) {
+        $businessTypeLabels = array_map(function ($type) use ($labels) {
             return $labels[$type] ?? $type;
         }, $customer->business_type ?? []);
 
         return response()->json([
             'success' => true,
             'business_types' => $customer->business_type,
-            'business_type_labels' => $businessTypeLabels
+            'business_type_labels' => $businessTypeLabels,
         ]);
     }
 
     public function updateCompanyAddress(Request $request)
     {
-        $request->validate([
-            'company_name' => 'nullable|string|max:255',
-            'company_additional' => 'nullable|string|max:255',
-            'company_street' => 'nullable|string|max:255',
-            'company_house_number' => 'nullable|string|max:20',
-            'company_postal_code' => 'nullable|string|max:20',
-            'company_city' => 'nullable|string|max:255',
-            'company_country' => 'nullable|string|max:255',
-        ]);
-
-        $customer = auth('customer')->user();
-        $customer->update($request->only([
-            'company_name',
-            'company_additional',
-            'company_street',
-            'company_house_number',
-            'company_postal_code',
-            'company_city',
-            'company_country',
-        ]));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Firmenanschrift erfolgreich gespeichert'
-        ]);
+        return $this->saveAddress($request, auth('customer')->user(), CustomerAddressChangedMail::TYPE_COMPANY);
     }
 
     public function updateBillingAddress(Request $request)
     {
-        $request->validate([
-            'billing_company_name' => 'nullable|string|max:255',
-            'billing_additional' => 'nullable|string|max:255',
-            'billing_street' => 'nullable|string|max:255',
-            'billing_house_number' => 'nullable|string|max:20',
-            'billing_postal_code' => 'nullable|string|max:20',
-            'billing_city' => 'nullable|string|max:255',
-            'billing_country' => 'nullable|string|max:255',
-        ]);
+        return $this->saveAddress($request, auth('customer')->user(), CustomerAddressChangedMail::TYPE_BILLING);
+    }
 
-        $customer = auth('customer')->user();
-        $customer->update($request->only([
-            'billing_company_name',
-            'billing_additional',
-            'billing_street',
-            'billing_house_number',
-            'billing_postal_code',
-            'billing_city',
-            'billing_country',
-        ]));
+    /**
+     * Zentrale aendert die Firmenanschrift eines ihrer Bueros (Einstellungen ›
+     * Organisationsstruktur › Agenturen) – nur mit Freigabe „Darf eigene
+     * Adresse aendern“.
+     */
+    public function updateSubAccountAddress(Request $request, Customer $subAccount)
+    {
+        $agency = auth('customer')->user();
+
+        abort_unless($subAccount->assign_to === $agency->id && $agency->canEditOwnAddress(), 403);
+
+        // Agentur oder Reiseberater – Tag in den Karten der Organisationsstruktur
+        $type = $request->validate(['location_type' => ['nullable', Rule::in(array_keys(Branch::LOCATION_TYPES))]])['location_type'] ?? null;
+        if ($type) {
+            $subAccount->update(['location_type' => $type]);
+        }
+
+        return $this->saveAddress($request, $subAccount, CustomerAddressChangedMail::TYPE_COMPANY, authorized: true);
+    }
+
+    /**
+     * Adresse speichern und bei Aenderung die Infomails ausloesen. Ohne Freigabe
+     * darf der Kunde nur eine noch leere Adresse erstmals erfassen.
+     */
+    protected function saveAddress(Request $request, Customer $customer, string $type, bool $authorized = false)
+    {
+        $fields = array_keys(CustomerAddressChangedMail::FIELDS[$type]);
+        $request->validate(array_combine($fields, array_map(
+            fn ($field) => 'nullable|string|max:'.(str_ends_with($field, 'house_number') ? 20 : 255),
+            $fields,
+        )));
+
+        if (! $authorized && ! $customer->canChangeAddress($type)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Die Adresse kann nicht selbst geändert werden. Bitte wenden Sie sich an info@passolution.de.',
+            ], 403);
+        }
+
+        $before = $customer->only($fields);
+        $customer->update($request->only($fields));
+        app(OrganizationChangeNotifier::class)->customerAddressChanged($customer, $type, $before, $customer->only($fields));
 
         return response()->json([
             'success' => true,
-            'message' => 'Rechnungsadresse erfolgreich gespeichert'
+            'message' => CustomerAddressChangedMail::TYPE_LABELS[$type].' erfolgreich gespeichert',
+            'address' => $customer->only($fields),
         ]);
     }
 
@@ -229,20 +236,22 @@ class ProfileController extends Controller
 
         $countries = \App\Models\Country::whereNotNull('name_translations')
             ->get()
-            ->map(function($country) {
+            ->map(function ($country) {
                 $translations = is_string($country->name_translations)
                     ? json_decode($country->name_translations, true)
                     : $country->name_translations;
+
                 return [
                     'id' => $country->id,
                     'name' => $translations['de'] ?? $translations['en'] ?? 'Unknown',
-                    'iso_code' => $country->iso_code
+                    'iso_code' => $country->iso_code,
                 ];
             })
-            ->filter(function($country) use ($search) {
+            ->filter(function ($country) use ($search) {
                 if (empty($search)) {
                     return true;
                 }
+
                 return stripos($country['name'], $search) !== false;
             })
             ->sortBy('name')
@@ -254,7 +263,7 @@ class ProfileController extends Controller
     public function toggleHideProfileCompletion(Request $request)
     {
         $request->validate([
-            'hide' => 'required|boolean'
+            'hide' => 'required|boolean',
         ]);
 
         $customer = auth('customer')->user();
@@ -263,14 +272,14 @@ class ProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'hide_profile_completion' => $customer->hide_profile_completion
+            'hide_profile_completion' => $customer->hide_profile_completion,
         ]);
     }
 
     public function toggleDirectoryListing(Request $request)
     {
         $request->validate([
-            'active' => 'required|boolean'
+            'active' => 'required|boolean',
         ]);
 
         $customer = auth('customer')->user();
@@ -279,14 +288,14 @@ class ProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'directory_listing_active' => $customer->directory_listing_active
+            'directory_listing_active' => $customer->directory_listing_active,
         ]);
     }
 
     public function toggleBranchManagement(Request $request)
     {
         $request->validate([
-            'active' => 'required|boolean'
+            'active' => 'required|boolean',
         ]);
 
         $customer = auth('customer')->user();
@@ -295,7 +304,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'branch_management_active' => $customer->branch_management_active
+            'branch_management_active' => $customer->branch_management_active,
         ]);
     }
 }

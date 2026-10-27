@@ -505,11 +505,13 @@
                                         </svg>
                                         Angabe empfohlen
                                     </span>
+                                    @if(auth('customer')->user()->canChangeAddress('company'))
                                     <button @click="isEditing = !isEditing" class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                         </svg>
                                     </button>
+                                    @endif
                                 </div>
                             </div>
                             <p class="text-sm text-gray-400 mb-4">Bitte geben Sie die Anschrift Ihres Unternehmens ein. Diese Anschrift wird zur Veröffentlichung verwendet, wenn Sie dem Zustimmen.</p>
@@ -676,11 +678,13 @@
                                         </svg>
                                         Freiwillige Angabe
                                     </span>
+                                    @if(auth('customer')->user()->canChangeAddress('billing'))
                                     <button @click="isEditing = !isEditing" class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                         </svg>
                                     </button>
+                                    @endif
                                 </div>
                             </div>
                             <p class="text-sm text-gray-400 mb-4">Bitte geben Sie Ihre Rechnungsadresse ein. Diese Anschrift wird nur verwendet, wenn Sie kostenpflichtige Abos abschließen.</p>
@@ -808,36 +812,110 @@
                         </div>
                     </div>
 
-                    {{-- Büro: Account-Stammdaten aus pds_account_* --}}
+                    {{-- Büro: Firmenanschrift, ersatzweise Account-Stammdaten aus pds_account_* --}}
                     @php
                         $officeUser = auth('customer')->user();
+                        $officeCanEdit = $officeUser->canEditOwnAddress();
+                        $officeAddress = $officeUser->only(['company_name', 'company_additional', 'company_street', 'company_house_number', 'company_postal_code', 'company_city', 'company_country']);
                     @endphp
                     <div class="bg-white p-6 rounded-lg border border-gray-200"
                          x-data="{
-                             customerTypeLabel: '{{ auth('customer')->user()->customer_type ? (auth('customer')->user()->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}'
+                             customerTypeLabel: '{{ $officeUser->customer_type ? ($officeUser->customer_type === 'business' ? 'Firmenkunde' : 'Privatkunde') : 'Nicht festgelegt' }}',
+                             a: @js($officeAddress),
+                             form: {}, editing: false, saving: false, error: '',
+                             get hasAddress() { return !! (this.a.company_street || this.a.company_postal_code || this.a.company_city); },
+                             edit() { this.form = { ...this.a }; this.error = ''; this.editing = true; },
+                             async save() {
+                                 this.saving = true; this.error = '';
+                                 try {
+                                     const res = await fetch(@js(route('customer.profile.update-company-address')), {
+                                         method: 'POST',
+                                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @js(csrf_token()) },
+                                         body: JSON.stringify(this.form),
+                                     });
+                                     const data = await res.json();
+                                     if (data.success) {
+                                         this.a = { ...this.a, ...data.address };
+                                         this.editing = false;
+                                         window.dispatchEvent(new CustomEvent('company-address-updated', { detail: {
+                                             companyName: this.a.company_name || '', companyAdditional: this.a.company_additional || '',
+                                             companyStreet: this.a.company_street || '', companyHouseNumber: this.a.company_house_number || '',
+                                             companyPostalCode: this.a.company_postal_code || '', companyCity: this.a.company_city || '',
+                                             companyCountry: this.a.company_country || '',
+                                         } }));
+                                     } else {
+                                         this.error = data.message || 'Speichern fehlgeschlagen';
+                                     }
+                                 } catch (e) { this.error = 'Speichern fehlgeschlagen'; }
+                                 this.saving = false;
+                             },
                          }"
-                         @customer-type-updated.window="customerTypeLabel = $event.detail.label">
-                        <div class="flex items-center justify-between mb-2">
+                         @customer-type-updated.window="customerTypeLabel = $event.detail.label"
+                         @company-address-updated.window="a = { company_name: $event.detail.companyName, company_additional: $event.detail.companyAdditional, company_street: $event.detail.companyStreet, company_house_number: $event.detail.companyHouseNumber, company_postal_code: $event.detail.companyPostalCode, company_city: $event.detail.companyCity, company_country: $event.detail.companyCountry }">
+                        <div class="flex items-center justify-between gap-2 mb-2">
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Büro
                             </h3>
-                            <span
-                                x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
-                                x-text="customerTypeLabel"
-                                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    x-show="customerTypeLabel && customerTypeLabel !== 'Nicht festgelegt'"
+                                    x-text="customerTypeLabel"
+                                    class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                </span>
+                                @if($officeCanEdit)
+                                    <button type="button" x-show="!editing" @click="edit()" class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">Ändern</button>
+                                @endif
+                            </div>
                         </div>
-                        @if($officeUser->pds_account_name)
-                            <p class="text-sm font-medium text-gray-900">{{ $officeUser->pds_account_name }}</p>
-                        @endif
-                        @if($officeUser->pds_account_first_name || $officeUser->pds_account_last_name)
-                            <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_first_name ?? '').' '.($officeUser->pds_account_last_name ?? '')) }}</p>
-                        @endif
-                        @if($officeUser->pds_account_address_line_1)
-                            <p class="text-sm text-gray-700 mt-1">{{ $officeUser->pds_account_address_line_1 }}</p>
-                        @endif
-                        @if($officeUser->pds_account_zip_code || $officeUser->pds_account_city)
-                            <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_zip_code ?? '').' '.($officeUser->pds_account_city ?? '')) }}</p>
+
+                        <div x-show="!editing">
+                            {{-- Firmenanschrift, solange erfasst; sonst die Stammdaten aus pds-admin --}}
+                            <template x-if="hasAddress">
+                                <div>
+                                    <p x-show="a.company_name" x-text="a.company_name" class="text-sm font-medium text-gray-900"></p>
+                                    <p x-show="a.company_additional" x-text="a.company_additional" class="text-sm text-gray-700 mt-1"></p>
+                                    <p x-show="a.company_street || a.company_house_number" x-text="((a.company_street || '') + ' ' + (a.company_house_number || '')).trim()" class="text-sm text-gray-700 mt-1"></p>
+                                    <p x-show="a.company_postal_code || a.company_city" x-text="((a.company_postal_code || '') + ' ' + (a.company_city || '')).trim()" class="text-sm text-gray-700 mt-1"></p>
+                                    <p x-show="a.company_country" x-text="a.company_country" class="text-sm text-gray-700 mt-1"></p>
+                                </div>
+                            </template>
+                            <template x-if="! hasAddress">
+                                <div>
+                                    @if($officeUser->pds_account_name)
+                                        <p class="text-sm font-medium text-gray-900">{{ $officeUser->pds_account_name }}</p>
+                                    @endif
+                                    @if($officeUser->pds_account_first_name || $officeUser->pds_account_last_name)
+                                        <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_first_name ?? '').' '.($officeUser->pds_account_last_name ?? '')) }}</p>
+                                    @endif
+                                    @if($officeUser->pds_account_address_line_1)
+                                        <p class="text-sm text-gray-700 mt-1">{{ $officeUser->pds_account_address_line_1 }}</p>
+                                    @endif
+                                    @if($officeUser->pds_account_zip_code || $officeUser->pds_account_city)
+                                        <p class="text-sm text-gray-700 mt-1">{{ trim(($officeUser->pds_account_zip_code ?? '').' '.($officeUser->pds_account_city ?? '')) }}</p>
+                                    @endif
+                                </div>
+                            </template>
+                        </div>
+
+                        @if($officeCanEdit)
+                            <form x-show="editing" x-cloak @submit.prevent="save()" class="space-y-2 mt-2">
+                                <input type="text" x-model="form.company_name" placeholder="Firmenname" aria-label="Firmenname" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" x-model="form.company_additional" placeholder="Zusatz" aria-label="Zusatz" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input type="text" x-model="form.company_street" placeholder="Straße" aria-label="Straße" class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" x-model="form.company_house_number" placeholder="Nr." aria-label="Hausnummer" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input type="text" x-model="form.company_postal_code" placeholder="PLZ" aria-label="PLZ" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" x-model="form.company_city" placeholder="Ort" aria-label="Ort" class="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <input type="text" x-model="form.company_country" placeholder="Land" aria-label="Land" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <p x-show="error" x-text="error" class="text-xs text-red-600"></p>
+                                <div class="flex gap-2 pt-1">
+                                    <button type="submit" :disabled="saving" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60">Speichern</button>
+                                    <button type="button" @click="editing = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors">Abbrechen</button>
+                                </div>
+                            </form>
                         @endif
                     </div>
 
@@ -1159,12 +1237,14 @@
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Firmenadresse
                             </h3>
+                            @if(auth('customer')->user()->canChangeAddress('company'))
                             <button @click="isEditing = !isEditing"
                                     class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                 </svg>
                             </button>
+                            @endif
                         </div>
 
                         <!-- Anzeigemodus -->
@@ -1268,12 +1348,14 @@
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Rechnungsadresse
                             </h3>
+                            @if(auth('customer')->user()->canChangeAddress('billing'))
                             <button @click="isEditing = !isEditing"
                                     class="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                 </svg>
                             </button>
+                            @endif
                         </div>
 
                         <!-- Anzeigemodus -->

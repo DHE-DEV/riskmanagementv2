@@ -352,4 +352,23 @@ return [
 
     'agentur_super_admin_emails' => array_filter(array_map('trim', explode(',', env('AGENTUR_SUPER_ADMIN_EMAILS', '')))),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Adressaenderungen von Kunden
+    |--------------------------------------------------------------------------
+    |
+    | Aendert ein Kunde unter /customer/settings seine Firmen- oder
+    | Rechnungsadresse, geht eine Infomail mit alten und neuen Daten an "to",
+    | in Kopie an "cc" (jeweils kommagetrennt).
+    |
+    */
+
+    'customer_address_change_mail' => [
+        'to' => array_filter(array_map('trim', explode(',', env('CUSTOMER_ADDRESS_CHANGE_MAIL_TO', 'info@passolution.de')))),
+        'cc' => array_filter(array_map('trim', explode(',', env('CUSTOMER_ADDRESS_CHANGE_MAIL_CC', 'daniel.henninger@passolution.de,dennis.zimon@passolution.de')))),
+    ],
+
+    // Altes pds-admin (Backend) – fuer Direktlinks auf einen Kundendatensatz
+    'pds_backend_url' => rtrim(env('PDS_BACKEND_URL', 'https://backend.passolution.eu'), '/'),
+
 ];
