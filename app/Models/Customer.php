@@ -715,6 +715,12 @@ class Customer extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(CustomerBillingInterval::class)->orderByRaw('module is not null')->orderBy('module')->orderByDesc('starts_on');
     }
 
+    /** Vertraege mit Laufzeit, Bedingungen und individuellen Preisen */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(CustomerContract::class)->orderByDesc('starts_on');
+    }
+
     /** Der heute geltende Abrechnungszeitraum, falls erfasst. */
     public function currentBillingPeriod(): HasOne
     {

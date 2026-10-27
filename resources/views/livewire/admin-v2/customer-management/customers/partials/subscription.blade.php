@@ -8,6 +8,8 @@
 @endphp
 
 <div class="flex flex-col gap-4">
+    @include('livewire.admin-v2.customer-management.customers.partials.contracts')
+
     <x-adminv2.card heading="Abrechnungsintervall" description="Monatlich, halbjährlich oder jährlich – für alle abonnierten Dienste oder einzelne Module, bei Jahres- oder Halbjahreszahlung mit Rabatt. Ein Eintrag für ein Modul geht dem für alle Dienste vor. Zeiträume desselben Moduls dürfen sich nicht überschneiden.">
         <x-slot:actions>
             <flux:button size="sm" icon="plus" wire:click="newBillingInterval">Neuer Zeitraum</flux:button>

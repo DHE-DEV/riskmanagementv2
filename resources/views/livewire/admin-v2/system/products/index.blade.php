@@ -47,7 +47,7 @@
                                 <flux:badge size="sm" color="sky" inset="top bottom">{{ $product->features_count }} Leistungen</flux:badge>
                             @endif
                             @if ($product->requiredProduct)
-                                <flux:badge size="sm" color="amber" inset="top bottom">nur mit {{ $product->requiredProduct->name }}</flux:badge>
+                                <flux:badge size="sm" color="amber" inset="top bottom">nur mit {{ $product->requirementLabel() }}</flux:badge>
                             @endif
                         </div>
                     </div>

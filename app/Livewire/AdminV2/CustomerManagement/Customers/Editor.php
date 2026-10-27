@@ -35,7 +35,7 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, ListsCustomerGtmLogs, ListsCustomerSubAccounts, ManagesCustomerAccess, ManagesCustomerBillingIntervals, ManagesCustomerBillingPeriods, ManagesCustomerBranches, ManagesCustomerTokens, QueriesLists, WithPagination;
+    use AuthorizesAdminV2, ListsCustomerGtmLogs, ListsCustomerSubAccounts, ManagesCustomerAccess, ManagesCustomerBillingIntervals, ManagesCustomerBillingPeriods, ManagesCustomerBranches, ManagesCustomerContracts, ManagesCustomerTokens, QueriesLists, WithPagination;
 
     /** Eintraege je Seite in den Listen unter dem Formular. */
     public const RELATION_PER_PAGE = 10;

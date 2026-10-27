@@ -54,13 +54,24 @@
                 </flux:field>
                 <flux:field>
                     <flux:label>Nur buchbar zusammen mit</flux:label>
-                    <flux:select wire:model="requiresProductId">
-                        <flux:select.option value="">– keine Voraussetzung –</flux:select.option>
-                        @foreach ($this->requirementOptions as $option)
-                            <flux:select.option value="{{ $option->id }}">{{ $option->name }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <flux:select wire:model.live="requiresProductId" class="sm:flex-[2]">
+                            <flux:select.option value="">– keine Voraussetzung –</flux:select.option>
+                            @foreach ($this->requirementOptions as $option)
+                                <flux:select.option value="{{ $option->id }}">{{ $option->name }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        @if ($requiresProductId !== '')
+                            <flux:select wire:model="requiresVersionId" class="sm:flex-1" aria-label="Ausprägung des vorausgesetzten Produkts">
+                                <flux:select.option value="">beliebige Ausprägung</flux:select.option>
+                                @foreach ($this->requiredVersionOptions as $option)
+                                    <flux:select.option value="{{ $option->id }}">nur {{ $option->name }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                        @endif
+                    </div>
                     <flux:error name="requiresProductId" />
+                    <flux:error name="requiresVersionId" />
                 </flux:field>
             </div>
             <flux:switch wire:model="isActive" label="Aktiv" align="left" />

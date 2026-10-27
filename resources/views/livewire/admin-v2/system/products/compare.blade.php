@@ -43,7 +43,7 @@
                 <div class="flex flex-wrap items-center gap-1.5 text-xs text-zinc-500">
                     <span>Preis {{ \App\Models\Product::PRICE_BASES[$item->price_basis] ?? '' }}</span>
                     @if ($item->requiredProduct)
-                        <flux:badge size="sm" color="amber">nur mit {{ $item->requiredProduct->name }}</flux:badge>
+                        <flux:badge size="sm" color="amber">nur mit {{ $item->requirementLabel() }}</flux:badge>
                     @endif
                     <a href="{{ route('adminv2.system.products.edit', $item) }}" class="ms-2 underline underline-offset-2 print:hidden">Bearbeiten</a>
                 </div>

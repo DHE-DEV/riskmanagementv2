@@ -130,3 +130,36 @@ it('loescht kein Produkt, das in Abo-Zeitraeumen steckt', function () {
 
     expect(CustomerBillingInterval::labelForModule('wallet'))->toBe('Wallet');
 });
+
+it('bindet die Voraussetzung an eine bestimmte Auspraegung', function () {
+    $alert = Product::where('key', 'travel_alert')->sole();
+    $trs = Product::where('key', 'travel_requirements')->with('versions')->sole();
+    $premium = $trs->versions->firstWhere('name', 'Premium');
+    $wallet = Product::where('key', 'wallet')->with('versions')->sole();
+
+    // Auspraegung eines anderen Produkts wird abgelehnt
+    Livewire::test(Editor::class, ['product' => $alert->id])
+        ->assertSet('requiresProductId', (string) $trs->id)
+        ->assertSet('requiresVersionId', '')
+        ->set('requiresVersionId', (string) $wallet->versions->first()->id)
+        ->call('save')
+        ->assertHasErrors('requiresVersionId')
+        ->set('requiresVersionId', (string) $premium->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $alert->refresh();
+    expect($alert->requires_product_version_id)->toBe($premium->id)
+        ->and($alert->requirementLabel())->toBe('Travel Requirements Service (Premium)');
+
+    Livewire::test(Index::class)->assertSee('nur mit Travel Requirements Service (Premium)');
+
+    // Anderes Produkt gewaehlt: Auspraegung wird zurueckgesetzt
+    Livewire::test(Editor::class, ['product' => $alert->id])
+        ->set('requiresProductId', (string) $wallet->id)
+        ->assertSet('requiresVersionId', '')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($alert->fresh()->requires_product_version_id)->toBeNull();
+});

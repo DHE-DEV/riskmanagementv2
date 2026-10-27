@@ -28,7 +28,7 @@ class Index extends Component
     #[Computed]
     public function products(): Collection
     {
-        $query = Product::query()->with(['versions.prices', 'requiredProduct:id,name'])->withCount('features')->ordered();
+        $query = Product::query()->with(['versions.prices', 'requiredProduct:id,name', 'requiredVersion:id,name'])->withCount('features')->ordered();
 
         if (($term = trim($this->search)) !== '') {
             $this->whereEveryWord($query, $term, ['name', 'key', 'subtitle']);

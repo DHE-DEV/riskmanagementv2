@@ -25,6 +25,13 @@ Schedule::command('branches:delete-scheduled')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/branch-deletion-schedule.log'));
 
+// Erinnerung an vereinbarte Preiserhoehungen in Kundenvertraegen – taeglich, je Vertragsjahr einmal
+Schedule::command('contracts:price-increase-reminders')
+    ->dailyAt('07:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/contract-price-increase-schedule.log'));
+
 // Cleanup Expired Exports - runs every hour
 Schedule::command('exports:cleanup')
     ->hourly()
@@ -87,7 +94,7 @@ if (config('travel_detail.enabled') && config('travel_detail.retention.scheduled
 
 // Travel Links Sync (pro Kunde ein Job auf eigener Queue)
 Schedule::command('travel-links:sync')
-    ->cron('*/' . config('notifications.travel_links_sync_interval', 30) . ' * * * *')
+    ->cron('*/'.config('notifications.travel_links_sync_interval', 30).' * * * *')
     ->withoutOverlapping(10)
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/travel-links-sync.log'));
@@ -116,7 +123,7 @@ Schedule::command('app-devices:prune-transfers')
 
 // GTM Notification Queue
 Schedule::command('notifications:process-gtm')
-    ->cron('*/' . config('notifications.gtm_interval', 5) . ' * * * *')
+    ->cron('*/'.config('notifications.gtm_interval', 5).' * * * *')
     ->withoutOverlapping(10)
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/gtm-notifications.log'));
@@ -147,7 +154,7 @@ Schedule::command('tasks:send-reminders')
 
 // Travel Alert Notification Queue
 Schedule::command('notifications:process-travel-alert')
-    ->cron('*/' . config('notifications.travel_alert_interval', 5) . ' * * * *')
+    ->cron('*/'.config('notifications.travel_alert_interval', 5).' * * * *')
     ->withoutOverlapping(10)
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/travel-alert-notifications.log'));

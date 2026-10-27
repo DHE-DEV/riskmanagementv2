@@ -368,6 +368,12 @@ return [
         'cc' => array_filter(array_map('trim', explode(',', env('CUSTOMER_ADDRESS_CHANGE_MAIL_CC', 'daniel.henninger@passolution.de,dennis.zimon@passolution.de')))),
     ],
 
+    // Erinnerung an vereinbarte jaehrliche Preiserhoehungen in Kundenvertraegen
+    'contract_price_increase_mail' => [
+        'to' => array_filter(array_map('trim', explode(',', env('CONTRACT_PRICE_INCREASE_MAIL_TO', 'dennis.zimon@passolution.de')))),
+        'cc' => array_filter(array_map('trim', explode(',', env('CONTRACT_PRICE_INCREASE_MAIL_CC', 'daniel.henninger@passolution.de')))),
+    ],
+
     // Altes pds-admin (Backend) – fuer Direktlinks auf einen Kundendatensatz
     'pds_backend_url' => rtrim(env('PDS_BACKEND_URL', 'https://backend.passolution.eu'), '/'),
 

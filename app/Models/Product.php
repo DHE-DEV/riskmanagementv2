@@ -24,6 +24,7 @@ class Product extends Model
     protected $fillable = [
         'key',
         'requires_product_id',
+        'requires_product_version_id',
         'price_basis',
         'name',
         'subtitle',
@@ -61,6 +62,22 @@ class Product extends Model
     public function requiredProduct(): BelongsTo
     {
         return $this->belongsTo(self::class, 'requires_product_id');
+    }
+
+    /** Nur mit dieser Auspraegung des vorausgesetzten Produkts (leer = beliebige) */
+    public function requiredVersion(): BelongsTo
+    {
+        return $this->belongsTo(ProductVersion::class, 'requires_product_version_id');
+    }
+
+    /** z. B. "Travel Requirements Service (Premium)"; null ohne Voraussetzung. */
+    public function requirementLabel(): ?string
+    {
+        if (! $this->requiredProduct) {
+            return null;
+        }
+
+        return $this->requiredProduct->name.($this->requiredVersion ? ' ('.$this->requiredVersion->name.')' : '');
     }
 
     public function scopeOrdered(Builder $query): Builder

@@ -39,7 +39,7 @@ class Compare extends Component
                 'versions' => fn ($q) => $q->where('is_active', true),
                 'versions.prices',
                 'features.values',
-                'requiredProduct:id,name',
+                'requiredProduct:id,name', 'requiredVersion:id,name',
             ])
             ->ordered()
             ->get();

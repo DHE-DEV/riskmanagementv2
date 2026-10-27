@@ -45,6 +45,9 @@ class Editor extends Component
 
     public string $requiresProductId = '';
 
+    /** Ausprägung des vorausgesetzten Produkts (leer = beliebige) */
+    public string $requiresVersionId = '';
+
     public string $priceBasis = 'per_location';
 
     public bool $isActive = true;
@@ -73,6 +76,7 @@ class Editor extends Component
         $this->subtitle = (string) $model->subtitle;
         $this->description = (string) $model->description;
         $this->requiresProductId = (string) ($model->requires_product_id ?? '');
+        $this->requiresVersionId = (string) ($model->requires_product_version_id ?? '');
         $this->priceBasis = $model->price_basis ?: 'per_location';
         $this->isActive = (bool) $model->is_active;
         $this->sortOrder = (string) $model->sort_order;
@@ -126,6 +130,22 @@ class Editor extends Component
     public function requirementOptions(): Collection
     {
         return Product::query()->when($this->productId, fn ($q) => $q->whereKeyNot($this->productId))->ordered()->get(['id', 'name']);
+    }
+
+    /** Auspraegungen des vorausgesetzten Produkts */
+    #[Computed]
+    public function requiredVersionOptions(): Collection
+    {
+        return $this->requiresProductId !== ''
+            ? ProductVersion::where('product_id', (int) $this->requiresProductId)->orderBy('sort_order')->orderBy('id')->get(['id', 'name'])
+            : collect();
+    }
+
+    /** Anderes vorausgesetztes Produkt: Auspraegung neu waehlen. */
+    public function updatedRequiresProductId(): void
+    {
+        $this->requiresVersionId = '';
+        unset($this->requiredVersionOptions);
     }
 
     public function addVersion(): void
@@ -210,6 +230,7 @@ class Editor extends Component
             'subtitle' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'requiresProductId' => ['nullable', Rule::exists('products', 'id')],
+            'requiresVersionId' => ['nullable', Rule::exists('product_versions', 'id')->where('product_id', (int) $this->requiresProductId)],
             'priceBasis' => ['required', Rule::in(array_keys(Product::PRICE_BASES))],
             'sortOrder' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'versions' => ['required', 'array', 'min:1'],
@@ -250,6 +271,7 @@ class Editor extends Component
                 'subtitle' => trim($this->subtitle) ?: null,
                 'description' => trim($this->description) ?: null,
                 'requires_product_id' => $this->requiresProductId !== '' ? (int) $this->requiresProductId : null,
+                'requires_product_version_id' => $this->requiresProductId !== '' && $this->requiresVersionId !== '' ? (int) $this->requiresVersionId : null,
                 'price_basis' => $this->priceBasis,
                 'is_active' => $this->isActive,
                 'sort_order' => (int) ($this->sortOrder ?: 0),
