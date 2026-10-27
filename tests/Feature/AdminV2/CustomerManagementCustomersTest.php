@@ -935,3 +935,24 @@ it('gibt die Uebernahme auf, wenn der Kunde selbst eine Rechnungsadresse speiche
     expect($customer->fresh()->billing_same_as_company)->toBeFalse()
         ->and($customer->fresh()->billing_city)->toBe('Bonn');
 });
+
+it('zeigt die Mitarbeiter-Zugaenge des Kunden in einem eigenen Tab', function () {
+    $this->actingAs(customersAdmin());
+    $customer = managedCustomer();
+    $other = managedCustomer(['email' => 'andere@berg.test']);
+    \App\Models\Employee::create(['customer_id' => $customer->id, 'first_name' => 'Anna', 'last_name' => 'Aktiv', 'email' => 'anna@berg.test', 'position' => 'Reiseberaterin', 'is_active' => true]);
+    \App\Models\Employee::create(['customer_id' => $customer->id, 'first_name' => 'Ina', 'last_name' => 'Inaktiv', 'email' => 'ina@berg.test', 'is_active' => true, 'active_until' => '2026-01-31']);
+    \App\Models\Employee::create(['customer_id' => $other->id, 'first_name' => 'Fremd', 'last_name' => 'Person', 'email' => 'fremd@berg.test', 'is_active' => true]);
+
+    $editor = Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->call('showTab', 'employees')
+        ->assertSee('Anna Aktiv')
+        ->assertSee(\App\Models\Employee::where('customer_id', $customer->id)->count().' Zugänge')
+        ->assertSee('Reiseberaterin')
+        ->assertSee('Ina Inaktiv')
+        ->assertDontSee('Fremd Person');
+
+    $editor->set('employeeStatus', 'active')->assertSee('Anna Aktiv')->assertDontSee('Ina Inaktiv');
+    $editor->set('employeeStatus', 'inactive')->assertSee('Ina Inaktiv')->assertDontSee('Anna Aktiv');
+    $editor->set('employeeStatus', 'all')->set('employeeSearch', 'ina@')->assertSee('Ina Inaktiv')->assertDontSee('Anna Aktiv');
+});

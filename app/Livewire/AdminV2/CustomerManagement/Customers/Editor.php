@@ -37,7 +37,7 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, ListsCustomerGtmLogs, ListsCustomerSubAccounts, ManagesCustomerAccess, ManagesCustomerBillingIntervals, ManagesCustomerBillingPeriods, ManagesCustomerBranches, ManagesCustomerContracts, ManagesCustomerTokens, QueriesLists, WithPagination;
+    use AuthorizesAdminV2, ListsCustomerEmployees, ListsCustomerGtmLogs, ListsCustomerSubAccounts, ManagesCustomerAccess, ManagesCustomerBillingIntervals, ManagesCustomerBillingPeriods, ManagesCustomerBranches, ManagesCustomerContracts, ManagesCustomerTokens, QueriesLists, WithPagination;
 
     /** Eintraege je Seite in den Listen unter dem Formular. */
     public const RELATION_PER_PAGE = 10;
@@ -57,6 +57,7 @@ class Editor extends Component
     public const TABS = [
         'branches' => 'Filialen',
         'sub-accounts' => 'Unteraccounts',
+        'employees' => 'Mitarbeiter',
         'billing' => 'Abrechnung',
         'subscription' => 'Abo',
         'access' => 'Zugriff auf andere Accounts',

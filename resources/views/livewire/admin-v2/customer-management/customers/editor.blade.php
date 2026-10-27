@@ -63,7 +63,11 @@
                 {{-- Linke Spalte --}}
                 <div class="flex flex-col gap-6">
                     @foreach (['company' => 'Firmeninformationen', 'billing' => 'Rechnungsadresse'] as $prefix => $heading)
-                        <x-adminv2.card :heading="$heading" wire:key="address-{{ $prefix }}">
+                        {{-- Rechnungsadresse standardmaessig zugeklappt – bei Eingabefehlern offen, damit sie sichtbar sind --}}
+                        @php
+                            $billingCollapsible = $prefix === 'billing' && ! $errors->hasAny(['billing.*', 'invoiceEmails.*', 'taxRate']);
+                        @endphp
+                        <x-adminv2.card :heading="$heading" wire:key="address-{{ $prefix }}" :collapsible="$billingCollapsible" :collapsed="$billingCollapsible" :collapse-key="$billingCollapsible ? 'customer-billing-address' : null" :description="$prefix === 'billing' ? 'Rechnungsanschrift, Umsatzsteuer und Rechnungsempfänger' : null">
                             <div class="flex flex-col gap-5">
                                 @if ($prefix === 'billing')
                                     <flux:switch wire:model.live="billingSameAsCompany" label="Wie Firmeninformation" description="Die Rechnungsadresse übernimmt beim Speichern die Firmeninformation – auch wenn sie sich später ändert." align="left" />
@@ -500,6 +504,8 @@
             <div wire:loading.class="opacity-60" wire:target="showTab">
                 @if ($tab === 'sub-accounts')
                     @include('livewire.admin-v2.customer-management.customers.partials.sub-accounts')
+                @elseif ($tab === 'employees')
+                    @include('livewire.admin-v2.customer-management.customers.partials.employees')
                 @elseif ($tab === 'billing')
                     @include('livewire.admin-v2.customer-management.customers.partials.billing')
                 @elseif ($tab === 'subscription')
