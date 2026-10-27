@@ -111,10 +111,23 @@
                         <flux:error name="taxRate" />
                     </flux:field>
                     <flux:field>
-                        <flux:label>Festbetrag pro Büro</flux:label>
-                        <flux:input wire:model="fixedPricePerOffice" inputmode="decimal" placeholder="z. B. 4,90" />
-                        <flux:description>€ netto pro Büro und Monat, leer = kein Festbetrag. Bezahlt wird er gesammelt über die Kooperation oder vom Büro einzeln – je nach „Wer zahlt?“ beim Kunden.</flux:description>
+                        <flux:label>Festbetrag</flux:label>
+                        <div class="flex gap-2">
+                            <flux:input wire:model="fixedPricePerOffice" inputmode="decimal" :placeholder="$fixedPriceMode === 'flat' ? 'z. B. 5.000,00' : 'z. B. 4,90'" class="w-36" aria-label="Festbetrag in Euro" />
+                            <flux:select wire:model.live="fixedPriceMode" aria-label="Festbetrag gilt">
+                                @foreach (Cooperation::FIXED_PRICE_MODES as $value => $label)
+                                    <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                        </div>
+                        <flux:description>
+                            € netto pro Monat, leer = kein Festbetrag.
+                            {{ $fixedPriceMode === 'flat'
+                                ? 'Die Kooperation zahlt diesen Betrag einmal für alle Mitglieder zusammen – unabhängig von ihrer Anzahl.'
+                                : 'Je Büro; bezahlt gesammelt über die Kooperation oder vom Büro einzeln – je nach „Wer zahlt?“ beim Kunden.' }}
+                        </flux:description>
                         <flux:error name="fixedPricePerOffice" />
+                        <flux:error name="fixedPriceMode" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Kickback</flux:label>

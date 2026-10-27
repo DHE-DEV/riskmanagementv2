@@ -40,8 +40,10 @@ class Editor extends Component
 
     public string $billingInterval = 'monthly';
 
-    /** Festbetrag pro Buero und Monat (leer = keiner) */
+    /** Festbetrag pro Monat (leer = keiner) – je Buero oder pauschal, siehe $fixedPriceMode */
     public string $fixedPricePerOffice = '';
+
+    public string $fixedPriceMode = 'per_office';
 
     /** Umsatzsteuer auf die Nettobetraege (TaxRates::OPTIONS) */
     public string $taxRate = TaxRates::DEFAULT;
@@ -73,6 +75,7 @@ class Editor extends Component
         $this->customerId = (string) ($model->customer_id ?? '');
         $this->memberBilling = $model->member_billing;
         $this->billingInterval = $model->billing_interval;
+        $this->fixedPriceMode = $model->fixed_price_mode ?: 'per_office';
         $this->fixedPricePerOffice = $model->fixed_price_per_office !== null ? str_replace('.', ',', (string) $model->fixed_price_per_office) : '';
         $this->taxRate = TaxRates::key($model->tax_rate);
         $this->kickbackType = $model->kickback_type;
@@ -141,7 +144,8 @@ class Editor extends Component
             'customerId' => ['nullable', Rule::exists('customers', 'id')],
             'memberBilling' => ['required', Rule::in(array_keys(Cooperation::MEMBER_BILLING))],
             'billingInterval' => ['required', Rule::in(array_keys(Cooperation::BILLING_INTERVALS))],
-            'fixedPricePerOffice' => ['nullable', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
+            'fixedPricePerOffice' => ['nullable', 'regex:/^(?:(?:\d{1,3}(?:\.\d{3})+|\d{1,8})(?:,\d{1,2})?|\d{1,8}\.\d{1,2})$/'],
+            'fixedPriceMode' => ['required', Rule::in(array_keys(Cooperation::FIXED_PRICE_MODES))],
             'taxRate' => ['required', Rule::in(array_keys(TaxRates::OPTIONS))],
             'kickbackType' => ['required', Rule::in(array_keys(Cooperation::KICKBACK_TYPES))],
             'kickbackValue' => ['nullable', 'required_unless:kickbackType,none', 'regex:/^\d{1,8}([.,]\d{1,2})?$/'],
@@ -150,7 +154,7 @@ class Editor extends Component
         ], [
             'name.required' => 'Bitte den Namen der Kooperation eingeben.',
             'kickbackValue.required_unless' => 'Bitte den Kickback angeben (Prozent oder Betrag).',
-            'fixedPricePerOffice.regex' => 'Der Festbetrag ist ein Betrag mit höchstens zwei Nachkommastellen, z. B. 4,90.',
+            'fixedPricePerOffice.regex' => 'Der Festbetrag ist ein Betrag mit höchstens zwei Nachkommastellen, z. B. 4,90 oder 5.000,00.',
             'kickbackValue.regex' => 'Der Kickback ist eine Zahl mit höchstens zwei Nachkommastellen, z. B. 10 oder 2,50.',
         ]);
 
@@ -170,7 +174,8 @@ class Editor extends Component
             'customer_id' => $this->customerId !== '' ? (int) $this->customerId : null,
             'member_billing' => $this->memberBilling,
             'billing_interval' => $this->billingInterval,
-            'fixed_price_per_office' => trim($this->fixedPricePerOffice) !== '' ? str_replace(',', '.', trim($this->fixedPricePerOffice)) : null,
+            'fixed_price_per_office' => $this->decimal($this->fixedPricePerOffice),
+            'fixed_price_mode' => $this->fixedPriceMode,
             'tax_rate' => (int) $this->taxRate,
             'kickback_type' => $this->kickbackType,
             'kickback_value' => $this->kickbackType === 'none' ? null : str_replace(',', '.', $this->kickbackValue),
@@ -182,6 +187,17 @@ class Editor extends Component
         session()->flash('adminv2-toast', $created ? '„'.$model->name.'“ angelegt.' : '„'.$model->name.'“ gespeichert.');
 
         return $this->redirectRoute('adminv2.system.cooperations.index');
+    }
+
+    /** "5.000,00" → "5000.00", "4.90" bleibt; leer → null */
+    protected function decimal(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        return str_contains($value, ',') ? str_replace(['.', ','], ['', '.'], $value) : $value;
     }
 
     public function render()

@@ -25,6 +25,12 @@ class Cooperation extends Model
         'yearly' => 'Jährlich',
     ];
 
+    /** Festbetrag je Buero oder als Pauschale fuer alle Mitglieder */
+    public const FIXED_PRICE_MODES = [
+        'per_office' => 'pro Büro',
+        'flat' => 'pauschal für alle Mitglieder',
+    ];
+
     public const KICKBACK_TYPES = [
         'none' => 'Kein Kickback',
         'percent' => 'Prozentual',
@@ -37,6 +43,7 @@ class Cooperation extends Model
         'member_billing',
         'billing_interval',
         'fixed_price_per_office',
+        'fixed_price_mode',
         'kickback_type',
         'kickback_value',
         'invoice_emails',
@@ -74,12 +81,24 @@ class Cooperation extends Model
         return $query->orderBy('name')->orderBy('id');
     }
 
-    /** z. B. "4,90 € pro Büro/Monat"; null ohne Festbetrag. */
+    /** Pauschale fuer alle Mitglieder statt Betrag je Buero? */
+    public function hasFlatFee(): bool
+    {
+        return $this->fixed_price_per_office !== null && $this->fixed_price_mode === 'flat';
+    }
+
+    /** z. B. "4,90 € pro Büro/Monat" oder "Pauschale 5.000,00 €/Monat für alle Mitglieder"; null ohne Festbetrag. */
     public function fixedPriceLabel(): ?string
     {
-        return $this->fixed_price_per_office === null
-            ? null
-            : number_format((float) $this->fixed_price_per_office, 2, ',', '.').' € pro Büro/Monat';
+        if ($this->fixed_price_per_office === null) {
+            return null;
+        }
+
+        $amount = number_format((float) $this->fixed_price_per_office, 2, ',', '.').' €';
+
+        return $this->fixed_price_mode === 'flat'
+            ? 'Pauschale '.$amount.'/Monat für alle Mitglieder'
+            : 'Festbetrag '.$amount.' pro Büro/Monat';
     }
 
     /** z. B. "10 %" oder "2,50 €"; null ohne Kickback. */

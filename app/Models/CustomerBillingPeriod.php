@@ -85,7 +85,7 @@ class CustomerBillingPeriod extends Model
         return ($this->billing_mode === 'cooperation'
             ? $name.' · über Kooperation abgerechnet'
             : $name.' · einzeln abgerechnet (Selbstzahler)')
-            .($fixedPrice ? ' · Festbetrag '.$fixedPrice : '');
+            .($fixedPrice ? ' · '.$fixedPrice : '');
     }
 
     /** "01.01.2026 – offen" */

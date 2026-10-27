@@ -45,7 +45,7 @@
                                 @endif
                                 <flux:badge size="sm" :color="$period->billing_mode === 'cooperation' ? 'indigo' : 'violet'" inset="top bottom">{{ \App\Models\CustomerBillingPeriod::BILLING_MODES[$period->billing_mode] ?? $period->billing_mode }}</flux:badge>
                                 @if ($fixedPrice = $period->cooperation?->fixedPriceLabel())
-                                    <flux:badge size="sm" color="zinc" inset="top bottom">Festbetrag {{ $fixedPrice }}</flux:badge>
+                                    <flux:badge size="sm" color="zinc" inset="top bottom">{{ $fixedPrice }}</flux:badge>
                                 @endif
                             </div>
                             @if ($period->notes)
@@ -92,8 +92,10 @@
                         @endphp
                         <flux:description>
                             {{ $chosenCooperation ? 'Vorbelegt wie bei der Kooperation eingestellt; als Ausnahme auch einzeln.' : 'Ohne Kooperation zahlt der Kunde selbst.' }}
-                            @if ($chosenCooperation?->fixedPriceLabel())
-                                Festbetrag {{ $chosenCooperation->fixedPriceLabel() }} – {{ $billingForm['billing_mode'] === 'cooperation' ? 'rechnet die Kooperation ab' : 'bekommt das Büro einzeln berechnet' }}.
+                            @if ($chosenCooperation?->hasFlatFee())
+                                {{ $chosenCooperation->fixedPriceLabel() }} – zahlt die Kooperation, auch für dieses Büro.
+                            @elseif ($chosenCooperation?->fixedPriceLabel())
+                                {{ $chosenCooperation->fixedPriceLabel() }} – {{ $billingForm['billing_mode'] === 'cooperation' ? 'rechnet die Kooperation ab' : 'bekommt das Büro einzeln berechnet' }}.
                             @endif
                         </flux:description>
                         <flux:error name="billingForm.billing_mode" />

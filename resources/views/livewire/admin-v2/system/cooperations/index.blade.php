@@ -58,7 +58,7 @@
                     @if (($fixedPrice = $cooperation->fixedPriceLabel()) || $cooperation->kickbackLabel())
                         <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                             @if ($fixedPrice)
-                                <flux:badge size="sm" color="violet">Festbetrag {{ $fixedPrice }}</flux:badge>
+                                <flux:badge size="sm" color="violet">{{ $fixedPrice }}</flux:badge>
                             @endif
                             @if ($kickback = $cooperation->kickbackLabel())
                                 <flux:badge size="sm" color="amber">Kickback {{ $kickback }}</flux:badge>

@@ -186,7 +186,7 @@ it('speichert einen Festbetrag pro Buero und zeigt ihn beim Kunden', function ()
 
     $cooperation = Cooperation::sole();
     expect($cooperation->fixed_price_per_office)->toBe('4.90')
-        ->and($cooperation->fixedPriceLabel())->toBe('4,90 € pro Büro/Monat');
+        ->and($cooperation->fixedPriceLabel())->toBe('Festbetrag 4,90 € pro Büro/Monat');
 
     Livewire::test(CooperationEditor::class, ['cooperation' => $cooperation->id])
         ->assertSet('fixedPricePerOffice', '4,90')
@@ -283,4 +283,31 @@ it('speichert den Steuersatz an Kooperation und Kunde, Vorschlag 19 %', function
         ->assertHasNoErrors();
 
     expect($customer->fresh()->tax_rate)->toBe('0.00');
+});
+
+it('stellt einen pauschalen Festbetrag fuer alle Mitglieder ein', function () {
+    Livewire::test(CooperationEditor::class)
+        ->set('name', 'Kette Ost')
+        ->set('fixedPricePerOffice', '5.000,00')
+        ->set('fixedPriceMode', 'flat')
+        ->assertSee('einmal für alle Mitglieder zusammen')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $cooperation = Cooperation::sole();
+    expect($cooperation->fixed_price_per_office)->toBe('5000.00')
+        ->and($cooperation->hasFlatFee())->toBeTrue()
+        ->and($cooperation->fixedPriceLabel())->toBe('Pauschale 5.000,00 €/Monat für alle Mitglieder');
+
+    Livewire::test(CooperationIndex::class)->assertSee('Pauschale 5.000,00 €/Monat für alle Mitglieder');
+
+    $customer = Customer::factory()->create();
+    Livewire::test(Editor::class, ['customer' => $customer->id])
+        ->call('showTab', 'billing')
+        ->call('newBillingPeriod')
+        ->set('billingForm.cooperation_id', (string) $cooperation->id)
+        ->assertSee('zahlt die Kooperation, auch für dieses Büro');
+
+    $period = CustomerBillingPeriod::create(['customer_id' => $customer->id, 'cooperation_id' => $cooperation->id, 'billing_mode' => 'cooperation', 'starts_on' => '2026-01-01']);
+    expect($period->label())->toBe('Kette Ost · über Kooperation abgerechnet · Pauschale 5.000,00 €/Monat für alle Mitglieder');
 });
