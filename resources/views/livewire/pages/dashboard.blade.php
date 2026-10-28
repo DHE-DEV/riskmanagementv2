@@ -4616,11 +4616,18 @@ function renderEvents() {
     renderNewestEvents(uniqueEvents, newestEventsSection, newestEventsList);
 }
 
-// Sortierschluessel der Sidebar-Rubriken: wann wurde der Datensatz zuletzt
-// angefasst. Ohne updated_at faellt es auf created_at zurueck - Events ganz
+// Sortierschluessel der Sidebar-Rubriken: seit wann die aktuelle Fassung gilt.
+// Massgeblich ist activated_at - es aendert sich nur mit einer neuen Version
+// oder beim erneuten Freischalten, nicht bei jeder kleinen Korrektur (z. B.
+// einem Satzzeichen), die sonst das Ereignis nach oben schieben wuerde. Ohne
+// activated_at (Fremdquellen) zaehlt updated_at, dann created_at - Events ganz
 // ohne Zeitstempel landen am Ende der Liste.
+function eventPublishedStamp(event) {
+    return event?.activated_at || event?.updated_at || event?.created_at;
+}
+
 function eventUpdatedAtMs(event) {
-    let value = event?.updated_at || event?.created_at;
+    let value = eventPublishedStamp(event);
     if (!value) return 0;
     if (typeof value === 'string') {
         value = value.replace(' ', 'T');
@@ -4699,12 +4706,13 @@ function renderNewestEvents(uniqueEvents, sectionEl, listEl) {
     uniqueEvents.forEach(event => {
         const startDate = event.start_date || event.date_iso || event.date || event.event_date;
 
-        if (isToday(startDate) || isToday(event.created_at) || isToday(event.updated_at)) {
+        // Eine kleine Korrektur ohne neue Version zaehlt nicht als "aktualisiert".
+        if (isToday(startDate) || isToday(event.created_at) || isToday(eventPublishedStamp(event))) {
             newestEvents.push(event);
         }
     });
 
-    // Reihenfolge wie in den anderen Rubriken nach updated_at. Events, die nur
+    // Reihenfolge wie in den anderen Rubriken nach eventPublishedStamp. Events, die nur
     // wegen ihres Startdatums hier stehen, haben keinen Zeitstempel und landen
     // hinten.
     newestEvents.sort(byUpdatedAtDesc);

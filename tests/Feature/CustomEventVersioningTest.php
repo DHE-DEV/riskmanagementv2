@@ -110,3 +110,23 @@ it('loest ueber die UUID einer abgeloesten Version die aktuelle Fassung auf', fu
     expect($v1->fresh()->resolveCurrentVersion()->id)->toBe($v2->id)
         ->and($v2->fresh()->resolveCurrentVersion()->id)->toBe($v2->id);
 });
+
+it('laesst den Freischaltzeitpunkt bei kleinen Korrekturen stehen und setzt ihn erst mit einer neuen Version neu', function () {
+    // Das Dashboard sortiert "Laufende Ereignisse" nach activated_at: eine
+    // Korrektur ohne neue Version darf das Ereignis nicht nach oben schieben.
+    $this->travelTo(now()->subDay());
+    $v1 = makeEvent();
+    $activatedAt = $v1->activated_at->toDateTimeString();
+    $this->travelBack();
+
+    $v1->update(['popup_content' => 'Erste Fassung.']);
+    $v1->activateVersion();
+
+    expect($v1->fresh()->activated_at->toDateTimeString())->toBe($activatedAt)
+        ->and($v1->fresh()->updated_at->isToday())->toBeTrue();
+
+    $v2 = app(CustomEventVersionService::class)->createNewVersion($v1);
+    $v2->activateVersion();
+
+    expect($v2->fresh()->activated_at->isToday())->toBeTrue();
+});
