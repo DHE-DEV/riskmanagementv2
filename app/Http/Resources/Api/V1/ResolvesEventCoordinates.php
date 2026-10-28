@@ -2,13 +2,13 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\City;
-use App\Models\Region;
+use App\Services\CustomEventLocationService;
 
 /**
- * Resolves event coordinates using the same 4-level priority cascade as the map:
+ * Resolves event coordinates using the same priority cascade as the map
+ * (CustomEventLocationService::displayCoordinatesFor):
  * 1. City (if use_default_coordinates + city_id)
- * 2. Region (if use_default_coordinates + region_id)
+ * 2. Regional capital, then region (if use_default_coordinates + region_id)
  * 3. Capital city
  * 4. Country center
  * Custom pivot coordinates when use_default_coordinates = false.
@@ -29,35 +29,9 @@ trait ResolvesEventCoordinates
         $lng = null;
 
         if ($country->pivot && $country->pivot->use_default_coordinates) {
-            // 1. City coordinates
-            if ($country->pivot->city_id) {
-                $city = City::find($country->pivot->city_id);
-                if ($city && $city->lat && $city->lng) {
-                    $lat = $city->lat;
-                    $lng = $city->lng;
-                }
-            }
-
-            // 2. Region coordinates
-            if (!$lat && !$lng && $country->pivot->region_id) {
-                $region = Region::find($country->pivot->region_id);
-                if ($region && $region->lat && $region->lng) {
-                    $lat = $region->lat;
-                    $lng = $region->lng;
-                }
-            }
-
-            // 3. Capital city coordinates
-            if (!$lat && !$lng && $country->capital && $country->capital->lat && $country->capital->lng) {
-                $lat = $country->capital->lat;
-                $lng = $country->capital->lng;
-            }
-
-            // 4. Country center
-            if (!$lat && !$lng) {
-                $lat = $country->lat;
-                $lng = $country->lng;
-            }
+            // City > regional capital > region > capital > country center
+            [$lat, $lng] = app(CustomEventLocationService::class)
+                ->displayCoordinatesFor($country->id, $country->pivot->region_id, $country->pivot->city_id) ?? [null, null];
         } elseif ($country->pivot) {
             // Custom pivot coordinates
             $lat = $country->pivot->latitude;

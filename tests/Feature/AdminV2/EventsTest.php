@@ -421,6 +421,25 @@ it('nimmt fuer eine Region die Koordinaten ihrer Hauptstadt, nicht die der Lande
         ->and((int) $pivot->region_id)->toBe($catalonia->id);
 });
 
+it('setzt den Pin einer Region auf der Karte auf die Regionshauptstadt, nicht auf die Landeshauptstadt', function () {
+    $type = eventType('weather');
+    $germany = Country::factory()->create(['iso_code' => 'DE', 'iso3_code' => 'DEU', 'lat' => 51.0, 'lng' => 10.0]);
+    \App\Models\City::factory()->create(['country_id' => $germany->id, 'region_id' => null, 'name_translations' => ['de' => 'Berlin'], 'is_capital' => true, 'lat' => 52.52, 'lng' => 13.405]);
+    $nrw = \App\Models\Region::factory()->create(['country_id' => $germany->id, 'name_translations' => ['de' => 'Nordrhein-Westfalen'], 'lat' => null, 'lng' => null]);
+    \App\Models\City::factory()->create(['country_id' => $germany->id, 'region_id' => $nrw->id, 'name_translations' => ['de' => 'Düsseldorf'], 'is_capital' => false, 'is_regional_capital' => true, 'lat' => 51.2277, 'lng' => 6.7735]);
+
+    $event = CustomEvent::create(['title' => 'Unwetter NRW', 'priority' => 'medium', 'start_date' => now(), 'is_active' => true, 'review_status' => 'approved']);
+    $event->eventTypes()->sync([$type->id]);
+    app(\App\Services\CustomEventLocationService::class)->replace($event, [['country_id' => $germany->id, 'region_id' => $nrw->id, 'use_default_coordinates' => true]]);
+
+    $country = collect($this->getJson('/api/custom-events/dashboard-events')->assertOk()->json('data.events'))
+        ->firstWhere('id', $event->id)['countries'][0];
+
+    expect($country['latitude'])->toBe(51.2277)
+        ->and($country['longitude'])->toBe(6.7735)
+        ->and($event->fresh()->locationRecords('de')[0]['latitude'])->toBe(51.2277);
+});
+
 it('meldet eine Region ohne Hauptstadt statt still die Landeshauptstadt zu nehmen', function () {
     $type = eventType('weather');
     $spain = Country::factory()->create(['iso_code' => 'ES', 'iso3_code' => 'ESP', 'lat' => 40.0, 'lng' => -4.0]);

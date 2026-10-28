@@ -376,37 +376,9 @@ class CustomEventController extends Controller
         $lng = null;
 
         if ($country->pivot->use_default_coordinates) {
-            // Priorität: Stadt > Region > Hauptstadt > Land
-
-            // 1. Prüfe Stadt-Koordinaten
-            if ($country->pivot->city_id) {
-                $city = \App\Models\City::find($country->pivot->city_id);
-                if ($city && $city->lat && $city->lng) {
-                    $lat = $city->lat;
-                    $lng = $city->lng;
-                }
-            }
-
-            // 2. Prüfe Region-Koordinaten (wenn keine Stadt-Koordinaten)
-            if (!$lat && !$lng && $country->pivot->region_id) {
-                $region = \App\Models\Region::find($country->pivot->region_id);
-                if ($region && $region->lat && $region->lng) {
-                    $lat = $region->lat;
-                    $lng = $region->lng;
-                }
-            }
-
-            // 3. Prüfe Hauptstadt-Koordinaten (wenn keine Stadt/Region-Koordinaten)
-            if (!$lat && !$lng && $country->capital && $country->capital->lat && $country->capital->lng) {
-                $lat = $country->capital->lat;
-                $lng = $country->capital->lng;
-            }
-
-            // 4. Fallback: geografisches Zentrum des Landes
-            if (!$lat && !$lng) {
-                $lat = $country->lat;
-                $lng = $country->lng;
-            }
+            // Stadt > Regionshauptstadt > Region > Landeshauptstadt > Land
+            [$lat, $lng] = app(\App\Services\CustomEventLocationService::class)
+                ->displayCoordinatesFor($country->id, $country->pivot->region_id, $country->pivot->city_id) ?? [null, null];
         } else {
             // Verwende individuelle Koordinaten aus dem Pivot
             $lat = $country->pivot->latitude;

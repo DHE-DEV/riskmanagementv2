@@ -214,28 +214,9 @@ class GtmEventService
                 $lng = null;
 
                 if ($country->pivot && $country->pivot->use_default_coordinates) {
-                    if ($country->pivot->city_id) {
-                        $city = \App\Models\City::find($country->pivot->city_id);
-                        if ($city && $city->lat && $city->lng) {
-                            $lat = (float) $city->lat;
-                            $lng = (float) $city->lng;
-                        }
-                    }
-                    if (!$lat && !$lng && $country->pivot->region_id) {
-                        $region = Region::find($country->pivot->region_id);
-                        if ($region && $region->lat && $region->lng) {
-                            $lat = (float) $region->lat;
-                            $lng = (float) $region->lng;
-                        }
-                    }
-                    if (!$lat && !$lng && $country->capital && $country->capital->lat && $country->capital->lng) {
-                        $lat = (float) $country->capital->lat;
-                        $lng = (float) $country->capital->lng;
-                    }
-                    if (!$lat && !$lng) {
-                        $lat = (float) $country->lat;
-                        $lng = (float) $country->lng;
-                    }
+                    // Stadt > Regionshauptstadt > Region > Landeshauptstadt > Land
+                    [$lat, $lng] = app(CustomEventLocationService::class)
+                        ->displayCoordinatesFor($country->id, $country->pivot->region_id, $country->pivot->city_id) ?? [null, null];
                 } elseif ($country->pivot && $country->pivot->latitude && $country->pivot->longitude) {
                     $lat = (float) $country->pivot->latitude;
                     $lng = (float) $country->pivot->longitude;

@@ -423,21 +423,12 @@ class CustomEvent extends Model implements Feedable
                 return [(float) $pivot->latitude, (float) $pivot->longitude];
             }
         } else {
-            // Standard-Koordinaten: Stadt > Region > Hauptstadt > Land
-            if ($city && $city->lat && $city->lng) {
-                return [(float) $city->lat, (float) $city->lng];
-            }
+            // Standard-Koordinaten: Stadt > Regionshauptstadt > Region > Landeshauptstadt > Land
+            $coordinates = app(\App\Services\CustomEventLocationService::class)
+                ->displayCoordinatesFor($country->id, $region?->id, $city?->id);
 
-            if ($region && $region->lat && $region->lng) {
-                return [(float) $region->lat, (float) $region->lng];
-            }
-
-            if ($country->capital && $country->capital->lat && $country->capital->lng) {
-                return [(float) $country->capital->lat, (float) $country->capital->lng];
-            }
-
-            if ($country->lat && $country->lng) {
-                return [(float) $country->lat, (float) $country->lng];
+            if ($coordinates) {
+                return $coordinates;
             }
         }
 

@@ -183,6 +183,22 @@ class CustomEventLocationService
     }
 
     /**
+     * Koordinaten fuer die Anzeige eines Standorts mit Standard-Koordinaten:
+     * die eigene Ebene wie in {@see defaultCoordinatesFor()}, und fehlen dort
+     * die Daten, die naechsthoehere – damit der Pin nicht ganz wegfaellt.
+     * So landet eine Region ohne eigene Koordinaten bei ihrer Hauptstadt
+     * (NRW: Duesseldorf) und erst ohne diese bei der Landeshauptstadt.
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    public function displayCoordinatesFor(?int $countryId, ?int $regionId = null, ?int $cityId = null): ?array
+    {
+        return ($cityId ? $this->defaultCoordinatesFor($countryId, $regionId, $cityId) : null)
+            ?? ($regionId ? $this->defaultCoordinatesFor($countryId, $regionId) : null)
+            ?? $this->defaultCoordinatesFor($countryId);
+    }
+
+    /**
      * Warum es fuer diesen Standort keine Standard-Koordinaten gibt – als Satz
      * fuer die Erfassung, damit erkennbar ist, was in den Stammdaten fehlt.
      * Null, wenn Koordinaten vorhanden sind.
