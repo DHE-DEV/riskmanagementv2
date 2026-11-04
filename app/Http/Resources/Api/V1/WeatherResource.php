@@ -6,7 +6,7 @@ use Carbon\CarbonImmutable;
 
 /**
  * Wetterbericht fuer die Kunden-API: aktuelles Wetter (verarbeitet vom WeatherService),
- * die naechsten 24 Stunden in 3-Stunden-Schritten und bis zu fuenf Tage mit Tiefst-/Hoechstwert.
+ * die naechsten 24 Stunden in 3-Stunden-Schritten (mit $allHours alle, also rund fuenf Tage) und bis zu fuenf Tage mit Tiefst-/Hoechstwert.
  * Zeiten sind ISO 8601 in der Ortszeit des Standorts.
  */
 class WeatherResource
@@ -14,16 +14,17 @@ class WeatherResource
     /**
      * @param  array<string, mixed>  $current  Ergebnis von WeatherService::getCurrentWeather
      * @param  array<string, mixed>|null  $forecast  Rohantwort von GET /forecast (3-Stunden-Schritte)
+     * @param  bool  $allHours  Alle Schritte statt nur der naechsten 24 Stunden (Tagesplan der Reise)
      * @return array<string, mixed>
      */
-    public static function report(array $current, ?array $forecast, float $lat, float $lng, ?string $name): array
+    public static function report(array $current, ?array $forecast, float $lat, float $lng, ?string $name, bool $allHours = false): array
     {
         $offset = (int) ($forecast['city']['timezone'] ?? $current['timezone_offset'] ?? 0);
         $tz = self::timezone($offset);
         $list = is_array($forecast['list'] ?? null) ? $forecast['list'] : [];
 
         $hourly = [];
-        foreach (array_slice($list, 0, 8) as $entry) {
+        foreach ($allHours ? $list : array_slice($list, 0, 8) as $entry) {
             $hourly[] = [
                 'time' => CarbonImmutable::createFromTimestampUTC((int) $entry['dt'])->setTimezone($tz)->toIso8601String(),
                 'temperature' => round((float) ($entry['main']['temp'] ?? 0)),

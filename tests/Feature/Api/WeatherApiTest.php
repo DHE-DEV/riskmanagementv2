@@ -99,6 +99,18 @@ it('liefert das Wetter fuer Koordinaten und meldet Ausfaelle der Quelle', functi
     $this->withToken(weatherToken())->getJson('/api/v1/weather?lat=200&lng=13')->assertStatus(422);
 });
 
+it('liefert mit hourly=all alle 3-Stunden-Schritte, sonst nur 24 Stunden', function () {
+    fakeOpenWeather();
+
+    $short = $this->withToken(weatherToken())->getJson('/api/v1/weather?lat=52.52&lng=13.405')->assertOk();
+    expect($short->json('data.hourly'))->toHaveCount(8);
+
+    $all = $this->withToken(weatherToken())->getJson('/api/v1/weather?lat=52.52&lng=13.405&hourly=all')->assertOk();
+    expect($all->json('data.hourly'))->toHaveCount(16);
+
+    $this->withToken(weatherToken())->getJson('/api/v1/weather?lat=52.52&lng=13.405&hourly=x')->assertStatus(422);
+});
+
 it('meldet 503, wenn die Wetterquelle nicht antwortet', function () {
     Http::fake(['api.openweathermap.org/*' => Http::response('', 500)]);
 

@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Http;
 /**
  * Wetter fuer die Kunden-API – dieselbe Quelle wie auf der Plattform (OpenWeatherMap, Server-Schluessel).
  *
- *   GET /v1/weather?lat=52.52&lng=13.405&lang=de   – aktuelles Wetter, 24 Stunden und 5 Tage fuer einen Punkt
+ *   GET /v1/weather?lat=52.52&lng=13.405&lang=de   – aktuelles Wetter, 24 Stunden und 5 Tage fuer einen Punkt;
+ *                                                      mit hourly=all alle 3-Stunden-Schritte (rund 5 Tage)
  *   GET /v1/countries/{code}/weather?lang=de         – dasselbe fuer die Hauptstadt (sonst Landesmitte)
  *   GET /v1/weather/daily?lat=52.52&lng=13.405       – Tagesvorhersage fuer 16 Tage (Open-Meteo, ohne Schluessel),
  *                                                      fuer den Tagesplan einer Reise; 3 Stunden zwischengespeichert
@@ -28,9 +29,10 @@ class WeatherController extends Controller
             'lat' => 'required|numeric|between:-90,90',
             'lng' => 'required|numeric|between:-180,180',
             'lang' => 'nullable|string|max:5',
+            'hourly' => 'nullable|in:all',
         ]);
 
-        return $this->report((float) $request->input('lat'), (float) $request->input('lng'), self::lang($request), null);
+        return $this->report((float) $request->input('lat'), (float) $request->input('lng'), self::lang($request), null, $request->input('hourly') === 'all');
     }
 
     /** WMO-Wettercode (Open-Meteo) → Art des Wetters fuer die Symbole der Apps. */
@@ -105,7 +107,7 @@ class WeatherController extends Controller
         return response()->json(['success' => false, 'message' => 'No coordinates for this country.'], 404);
     }
 
-    private function report(float $lat, float $lng, string $lang, ?string $name): JsonResponse
+    private function report(float $lat, float $lng, string $lang, ?string $name, bool $allHours = false): JsonResponse
     {
         $current = $this->weather->getCurrentWeather($lat, $lng, $lang);
         $forecast = $this->weather->getForecast($lat, $lng, $lang);
@@ -116,7 +118,7 @@ class WeatherController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => WeatherResource::report($current, $forecast, $lat, $lng, $name),
+            'data' => WeatherResource::report($current, $forecast, $lat, $lng, $name, $allHours),
         ]);
     }
 
