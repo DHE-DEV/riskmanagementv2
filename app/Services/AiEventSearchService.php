@@ -48,12 +48,13 @@ class AiEventSearchService
 
         try {
             $ai = app(ChatGptService::class);
+            // Mit dem Modell der Vorlage, sonst mit dem Standardmodell.
             $answer = $ai->searchWeb($this->buildPrompt(
                 $search->exclude_existing,
                 $search->isTargeted() ? $search->filters : null,
                 $search->prompt,
                 $maxResults = $search->max_results ?: AiSettings::eventSearchMaxResults(),
-            ));
+            ), array_filter(['model' => $search->model]));
 
             // Liefert die KI mehr als gewuenscht, zaehlen die ersten – sie stehen nach Wichtigkeit.
             $found = array_slice($this->parse($answer), 0, $maxResults);
@@ -143,6 +144,8 @@ class AiEventSearchService
             // Auftrag und Name der Vorlage festhalten – so bleibt nachvollziehbar, womit gesucht wurde.
             'prompt' => $template?->prompt,
             'prompt_name' => $template?->name,
+            // Das Modell der Vorlage; nach dem Lauf steht hier das tatsaechlich verwendete.
+            'model' => $template?->model,
             'max_results' => $profile->max_results,
             'started_by' => $userId,
         ]);

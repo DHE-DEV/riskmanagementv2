@@ -20,13 +20,13 @@ use App\Support\AdminV2\AiRecordContexts;
 use App\Support\AiSettings;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
-use Throwable;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Throwable;
 
 /**
  * System > KI: API-Schluessel hinterlegen und das Modell waehlen, das der
@@ -109,6 +109,9 @@ class Ai extends Component
     public string $promptText = '';
 
     public bool $promptIsDefault = false;
+
+    /** Eigenes Modell der Vorlage; leer = Standardmodell. */
+    public string $promptModel = '';
 
     /** Eingabefeld fuer einen neuen Schluessel; wird nach dem Speichern geleert. */
     public string $newApiKey = '';
@@ -351,10 +354,29 @@ class Ai extends Component
     #[Computed]
     public function checkModelOptions(): array
     {
+        return $this->modelOptions($this->checkModel);
+    }
+
+    /**
+     * Modelle zur Auswahl fuer eine KI-Vorlage – wie bei den Pruefungen.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function promptModelOptions(): array
+    {
+        return $this->modelOptions($this->promptModel);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function modelOptions(string $selected): array
+    {
         $ids = array_column($this->models, 'id') ?: array_keys(config('ai_prices.models', []));
 
-        if ($this->checkModel !== '' && ! in_array($this->checkModel, $ids, true)) {
-            array_unshift($ids, $this->checkModel);
+        if ($selected !== '' && ! in_array($selected, $ids, true)) {
+            array_unshift($ids, $selected);
         }
 
         return array_values($ids);
@@ -543,7 +565,7 @@ class Ai extends Component
 
     public function createPrompt(): void
     {
-        $this->reset(['promptId', 'promptName', 'promptText', 'promptIsDefault']);
+        $this->reset(['promptId', 'promptName', 'promptText', 'promptIsDefault', 'promptModel']);
         $this->resetValidation();
 
         $this->modal('ai-prompt')->show();
@@ -558,6 +580,7 @@ class Ai extends Component
         $this->promptName = $prompt->name;
         $this->promptText = $prompt->prompt;
         $this->promptIsDefault = $prompt->is_default;
+        $this->promptModel = (string) $prompt->model;
 
         $this->modal('ai-prompt')->show();
     }
@@ -567,6 +590,7 @@ class Ai extends Component
         $this->validate([
             'promptName' => ['required', 'string', 'max:100', Rule::unique('ai_event_search_prompts', 'name')->ignore($this->promptId)],
             'promptText' => ['required', 'string', 'min:20', 'max:6000'],
+            'promptModel' => ['nullable', 'string', 'max:80'],
         ], [
             'promptName.required' => 'Bitte einen Namen für die Vorlage eingeben.',
             'promptName.unique' => 'Eine Vorlage mit diesem Namen gibt es bereits.',
@@ -575,7 +599,11 @@ class Ai extends Component
         ]);
 
         $prompt = $this->promptId ? AiEventSearchPrompt::findOrFail($this->promptId) : new AiEventSearchPrompt(['created_by' => auth('web')->id()]);
-        $prompt->fill(['name' => trim($this->promptName), 'prompt' => trim($this->promptText)])->save();
+        $prompt->fill([
+            'name' => trim($this->promptName),
+            'prompt' => trim($this->promptText),
+            'model' => trim($this->promptModel) ?: null,
+        ])->save();
 
         // Es gibt immer genau einen Standard: abwaehlen laesst er sich nur, indem ein anderer gewaehlt wird.
         if ($this->promptIsDefault || AiEventSearchPrompt::query()->where('is_default', true)->doesntExist()) {

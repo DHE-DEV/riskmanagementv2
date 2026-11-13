@@ -249,6 +249,7 @@
                                     @if ($prompt->is_default)
                                         <flux:badge size="sm" color="green" inset="top bottom" class="mt-1">Standard</flux:badge>
                                     @endif
+                                    <flux:badge size="sm" inset="top bottom" class="mt-1">{{ $prompt->model ?: 'Standardmodell' }}</flux:badge>
                                 </div>
                                 <div class="-me-1.5 -mt-1 shrink-0">
                                     <flux:dropdown align="end">
@@ -760,6 +761,18 @@
                     <flux:button size="xs" variant="ghost" wire:click="fillPromptWithBuiltIn">Mitgelieferten Auftrag als Ausgangspunkt einfügen</flux:button>
                 </div>
                 <flux:error name="promptText" />
+            </flux:field>
+
+            <flux:field>
+                <flux:label>Modell</flux:label>
+                <flux:description>Nur für Suchen mit dieser Vorlage; ohne Auswahl gilt das Standardmodell ({{ AiSettings::model() }}). Für die Websuche lohnt ein leistungsstarkes Modell – kleine Modelle suchen weniger gründlich und finden deutlich weniger.</flux:description>
+                <flux:select wire:model="promptModel">
+                    <flux:select.option value="">Standardmodell</flux:select.option>
+                    @foreach ($this->promptModelOptions as $modelId)
+                        <flux:select.option value="{{ $modelId }}">{{ $modelId }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:error name="promptModel" />
             </flux:field>
 
             <flux:switch wire:model="promptIsDefault" label="Als Standard verwenden" description="Die Standard-Vorlage gilt für jede hinterlegte Suche, die keine eigene Vorlage gewählt hat. Es gibt immer genau einen Standard." align="left" />

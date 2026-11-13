@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * KI-Vorlage: ein Auftrag (Prompt) fuer die KI-Suche nach Ereignissen.
  * Genau eine Vorlage ist der Standard – sie gilt fuer jede hinterlegte
- * Suche, die keine eigene Vorlage gewaehlt hat.
+ * Suche, die keine eigene Vorlage gewaehlt hat. Ein eigenes Modell ist
+ * moeglich; ohne gilt das Standardmodell unter System > KI.
  */
 class AiEventSearchPrompt extends Model
 {
-    protected $fillable = ['name', 'prompt', 'is_default', 'created_by'];
+    protected $fillable = ['name', 'prompt', 'model', 'is_default', 'created_by'];
 
     protected $casts = [
         'is_default' => 'boolean',

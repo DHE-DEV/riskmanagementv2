@@ -840,3 +840,45 @@ it('begrenzt die Zahl der Ergebnisse je hinterlegter Suche', function () {
 
     expect($service->run($service->createSearchFor($profile->fresh()))->found_count)->toBe(3);
 });
+
+it('sucht mit dem Modell der Vorlage, ohne eigenes mit dem Standardmodell', function () {
+    $service = app(AiEventSearchService::class);
+
+    // Im Dialog waehlbar und in der Liste sichtbar.
+    $page = Livewire::test(Ai::class)->set('tab', 'events')
+        ->call('createPrompt')
+        ->assertSet('promptModel', '')
+        ->set('promptName', 'Gründliche Suche')
+        ->set('promptText', 'Suche nach aktuellen Unwettern und Streiks in Europa.')
+        ->set('promptModel', 'gpt-6.1-sol')
+        ->call('savePrompt')
+        ->assertHasNoErrors()
+        ->assertSee('gpt-6.1-sol');
+
+    $template = AiEventSearchPrompt::firstWhere('name', 'Gründliche Suche');
+
+    expect($template->model)->toBe('gpt-6.1-sol');
+
+    $page->call('editPrompt', $template->id)->assertSet('promptModel', 'gpt-6.1-sol');
+
+    $profile = AiEventSearchProfile::create(['name' => 'Europa', 'prompt_id' => $template->id, 'exclude_existing' => true, 'is_active' => true]);
+
+    // Welches Modell der letzte Suchauftrag an OpenAI angefordert hat.
+    $lastModel = fn () => collect(Http::recorded())
+        ->map(fn (array $pair) => $pair[0])
+        ->filter(fn (Request $request) => $request->url() === 'https://api.openai.com/v1/responses')
+        ->last()?->data()['model'];
+
+    $service->run($service->createSearchFor($profile));
+
+    expect($lastModel())->toBe('gpt-6.1-sol');
+
+    // Modell wieder leeren: es gilt das Standardmodell (gpt-4o).
+    $page->call('editPrompt', $template->id)->set('promptModel', '')->call('savePrompt')->assertHasNoErrors();
+
+    expect($template->fresh()->model)->toBeNull();
+
+    $service->run($service->createSearchFor($profile->fresh()));
+
+    expect($lastModel())->toBe('gpt-4o');
+});
