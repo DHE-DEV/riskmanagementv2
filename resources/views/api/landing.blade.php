@@ -365,7 +365,7 @@
             <div class="api-card">
                 <span class="badge badge-auth">Bearer Token (Kunde)</span>
                 <h3>Events API</h3>
-                <p class="description">Für Kunden: Read-only Zugriff auf alle aktiven Events aller Anbieter. Mit dem <code>source</code>-Filter können Events nach Herkunft gefiltert werden (z.B. nur Events von einem bestimmten Partner). Benötigt einen Kunden-Token.</p>
+                <p class="description">Für Kunden: Read-only Zugriff auf alle aktiven Events aller Anbieter. Mit dem <code>source</code>-Filter können Events nach Herkunft gefiltert werden (z.B. nur Events von einem bestimmten Partner), mit <code>lang</code> auf Deutsch, Englisch oder Niederländisch. Benötigt einen Kunden-Token.</p>
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">/v1/events/{uuid}</span></li>
@@ -456,7 +456,7 @@
             <div class="api-card">
                 <span class="badge badge-public">Öffentlich</span>
                 <h3>Feed API</h3>
-                <p class="description">RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events. Keine Authentifizierung erforderlich.</p>
+                <p class="description">RSS/Atom-Feeds für aktuelle Sicherheits- und Reiserisiko-Events, mit <code>?lang=en</code> bzw. <code>?lang=nl</code> auch auf Englisch oder Niederländisch. Keine Authentifizierung erforderlich.</p>
                 <ul class="endpoints">
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">https://platform.passolution.de/feed/events</span></li>
                     <li><span class="method method-get">GET</span> <span class="endpoint-path">https://platform.passolution.de/feed/countries</span></li>

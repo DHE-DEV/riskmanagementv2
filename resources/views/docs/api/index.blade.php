@@ -101,6 +101,7 @@
                 <p class="mt-4 text-sm text-gray-600 leading-relaxed">
                     Read-only Zugriff auf aktive Sicherheits- und Reiserisiko-Events (Filter nach Risikostufe, Land, Kategorie, Region und Umkreis)
                     sowie Basisdaten: Länderinformationen mit Feiertagen und Risikoprofil, Regionen mit Inseln und Reisegebieten, Städte und Sehenswürdigkeiten, Landesgrenzen, Flughäfen, Airlines, Wechselkurse und Wetter.
+                    Events auf Deutsch, Englisch oder Niederländisch (<code class="text-xs">lang</code>).
                 </p>
                 <div class="mt-4 flex items-center text-xs text-gray-400">
                     <i class="fa-solid fa-lock mr-1.5"></i>
@@ -145,6 +146,7 @@
                 </div>
                 <p class="mt-4 text-sm text-gray-600 leading-relaxed">
                     RSS/Atom-Feeds für aktuelle Events und Länderinformationen. Keine Authentifizierung erforderlich.
+                    Event-Feeds auf Deutsch, Englisch oder Niederländisch (<code class="text-xs">?lang=en</code>).
                 </p>
                 <div class="mt-4 flex items-center text-xs text-gray-400">
                     <i class="fa-solid fa-globe mr-1.5"></i>
