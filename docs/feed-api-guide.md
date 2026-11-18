@@ -14,6 +14,8 @@ Die Feed API stellt aktuelle Sicherheits- und Reiserisiko-Events sowie Länderin
 https://platform.passolution.de/feed
 ```
 
+Die Base-URL selbst ist kein Feed – die Feeds liegen darunter, z. B. `https://platform.passolution.de/feed/events/all.xml`. Wer die Base-URL im Browser aufruft, landet auf dieser Anleitung.
+
 Die bisherige Adresse `https://global-travel-monitor.eu/feed` bleibt weiterhin gültig; bestehende Feed-Abonnements müssen nicht umgestellt werden.
 
 ---

@@ -350,6 +350,11 @@ Route::prefix('feed')->name('feed.')->group(function () {
         Route::get('schengen.xml', [CountryFeedController::class, 'schengenCountries'])->name('schengen');
     });
 
+    // Basisadressen sind selbst kein Feed: zur Feed-Anleitung weiterleiten statt 404.
+    Route::redirect('/', '/docs/api/feeds')->name('index');
+    Route::redirect('events', '/docs/api/feeds')->name('events.index');
+    Route::redirect('countries', '/docs/api/feeds')->name('countries.index');
+
     // Placeholder für zukünftige Feed-Kategorien:
     // Route::prefix('news')->name('news.')->group(function () { ... });
     // Route::prefix('advisories')->name('advisories.')->group(function () { ... });
