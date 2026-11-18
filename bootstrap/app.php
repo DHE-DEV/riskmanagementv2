@@ -90,6 +90,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // API immer mit JSON antworten (401 ohne Token, 422 bei Validierungsfehlern, 404 …),
+        // auch ohne "Accept: application/json" – statt auf die Login-Seite umzuleiten.
+        // Die Doku-Seiten unter /api/v1/documentation bleiben HTML.
+        $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return true;
+            }
+
+            if ($request->is('api/v1/documentation', 'api/v1/documentation/*')) {
+                return false;
+            }
+
+            return $request->is('api/*')
+                || ($request->getHost() === config('app.api_domain') && $request->is('v1/*'));
+        });
+
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
             if ($e->getStatusCode() !== 419) {
                 return null;
