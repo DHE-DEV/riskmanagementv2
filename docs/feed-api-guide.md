@@ -89,7 +89,7 @@ curl "https://platform.passolution.de/feed/events/countries/tr.xml?lang=en"
 - Übersetzt werden Kanaltitel und -beschreibung, Event-Titel, die Beschreibung (`<content:encoded>` bzw. `<content>`), die Kurzübersicht in `<description>` (Typ, Beginn, Ende, Priorität, Länder) sowie Kontinent- und Hauptstadtnamen in `country:data`.
 - Ohne `lang` ist der Feed immer deutsch – unabhängig von der Browser-Sprache. Eine Feed-URL liefert so stets dieselbe Sprache.
 - Ist ein Event noch nicht übersetzt, erscheinen Titel und Beschreibung auf Deutsch.
-- Event-Typ-Namen (z. B. „Sicherheit“) sind nur auf Deutsch verfügbar.
+- Auch die Event-Typ-Namen (z. B. „Sicherheit“ → „Security“) und Ländernamen in der Kurzübersicht erscheinen in der gewählten Sprache.
 - Die Sprache steht im RSS-Element `<language>`, im Atom-Attribut `xml:lang` und im HTTP-Header `Content-Language`.
 - Ein nicht unterstützter Wert (z. B. `lang=fr`) führt zu `400 Bad Request`.
 

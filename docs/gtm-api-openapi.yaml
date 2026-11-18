@@ -100,7 +100,8 @@ paths:
             enum: [de, en, nl]
             default: de
           description: |
-            Sprache von `title`, `description` und `locations`. Ohne Parameter Deutsch.
+            Sprache von `title`, `description`, `locations` sowie der Felder `name`
+            (Länder, Regionen, Städte, Kategorien) und `continent_name`. Ohne Parameter Deutsch.
             Fehlt die Übersetzung eines Events, kommt der deutsche Text; das Feld
             `language` des Events zeigt dann `de`. Die Antwort trägt den Header
             `Content-Language`. Andere Werte führen zu 422.
@@ -210,7 +211,8 @@ paths:
             enum: [de, en, nl]
             default: de
           description: |
-            Sprache von `title`, `description` und `locations`. Ohne Parameter Deutsch.
+            Sprache von `title`, `description`, `locations` sowie der Felder `name`
+            (Länder, Regionen, Städte, Kategorien) und `continent_name`. Ohne Parameter Deutsch.
             Fehlt die Übersetzung eines Events, kommt der deutsche Text; das Feld
             `language` des Events zeigt dann `de`. Die Antwort trägt den Header
             `Content-Language`. Andere Werte führen zu 422.
@@ -275,7 +277,8 @@ paths:
             enum: [de, en, nl]
             default: de
           description: |
-            Sprache von `title`, `description` und `locations`. Ohne Parameter Deutsch.
+            Sprache von `title`, `description`, `locations` sowie der Felder `name`
+            (Länder, Regionen, Städte, Kategorien) und `continent_name`. Ohne Parameter Deutsch.
             Fehlt die Übersetzung eines Events, kommt der deutsche Text; das Feld
             `language` des Events zeigt dann `de`. Die Antwort trägt den Header
             `Content-Language`. Andere Werte führen zu 422.
@@ -307,6 +310,14 @@ paths:
         Gibt eine Liste aller Länder zurück, die mindestens ein aktives Event haben,
         zusammen mit der Anzahl aktiver Events. Sortiert nach Anzahl (absteigend).
         Nicht paginiert.
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [de, en, nl]
+            default: de
+          description: "Sprache der Felder `name` und `continent_name`. Ohne Parameter Deutsch; andere Werte führen zu 422."
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -1135,6 +1146,14 @@ paths:
       description: |
         Gibt eine Liste aller aktiven Event-Typen zurück.
         Nützlich um die gültigen Werte für den event_category-Filter zu ermitteln.
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [de, en, nl]
+            default: de
+          description: "Sprache der Felder `name` und `continent_name`. Ohne Parameter Deutsch; andere Werte führen zu 422."
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -1452,6 +1471,7 @@ components:
           example: safety
         name:
           type: string
+          description: Name in der Sprache aus `lang` (Standard Deutsch)
           example: Sicherheit
 
     Region:
@@ -1520,6 +1540,10 @@ components:
         iso3_code:
           type: string
           example: TUR
+        name:
+          type: string
+          description: Ländername in der Sprache aus `lang` (Standard Deutsch)
+          example: Türkei
         name_de:
           type: string
           example: Tuerkei
@@ -1529,7 +1553,13 @@ components:
         continent:
           type: string
           nullable: true
+          description: Kontinent auf Englisch (unabhängig von `lang`)
           example: Asia
+        continent_name:
+          type: string
+          nullable: true
+          description: Kontinent in der Sprache aus `lang`
+          example: Asien
         latitude:
           type: number
           format: float
@@ -2091,6 +2121,10 @@ components:
         iso3_code:
           type: string
           example: DEU
+        name:
+          type: string
+          description: Ländername in der Sprache aus `lang` (Standard Deutsch)
+          example: Deutschland
         name_de:
           type: string
           example: Deutschland
@@ -2104,6 +2138,11 @@ components:
         continent_de:
           type: string
           nullable: true
+          example: Europa
+        continent_name:
+          type: string
+          nullable: true
+          description: Kontinent in der Sprache aus `lang`
           example: Europa
         lat:
           type: number

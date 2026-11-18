@@ -163,14 +163,17 @@ class GtmApiController extends Controller
         ])->header('Content-Language', $locale);
     }
 
-    public function countriesWithEvents(): JsonResponse
+    public function countriesWithEvents(Request $request): JsonResponse
     {
+        $request->validate(['lang' => $this->languageRule()]);
+        $locale = $this->applyLanguage($request);
+
         $countries = $this->eventService->getCountriesWithEventCounts();
 
         return response()->json([
             'success' => true,
             'data' => GtmCountryResource::collection($countries),
-        ]);
+        ])->header('Content-Language', $locale);
     }
 
     /**

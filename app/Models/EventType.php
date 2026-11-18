@@ -9,18 +9,35 @@ class EventType extends Model
 {
     protected $fillable = [
         'code',
-        'name', 
+        'name',
+        'name_translations',
         'description',
         'color',
         'icon',
         'is_active',
-        'sort_order'
+        'sort_order',
     ];
 
     protected $casts = [
+        'name_translations' => 'array',
         'is_active' => 'boolean',
-        'sort_order' => 'integer'
+        'sort_order' => 'integer',
     ];
+
+    /**
+     * Name in der gewünschten Sprache. Die Spalte name ist die Ausgangssprache (Deutsch);
+     * fehlt eine Übersetzung, kommt sie als Rückfall.
+     */
+    public function getName(?string $language = null): string
+    {
+        $language = strtolower($language ?: app()->getLocale());
+
+        if ($language !== CustomEvent::sourceLocale() && filled($this->name_translations[$language] ?? null)) {
+            return $this->name_translations[$language];
+        }
+
+        return (string) $this->name;
+    }
 
     /**
      * Get custom events of this type.

@@ -209,8 +209,8 @@ class EventFeedController extends Controller
 
                 return $this->generateRss(
                     $events,
-                    __('feed.type_title', ['type' => $eventType->name]),
-                    __('feed.type_description', ['type' => $eventType->name])
+                    __('feed.type_title', ['type' => $eventType->getName()]),
+                    __('feed.type_description', ['type' => $eventType->getName()])
                 );
             });
 
@@ -366,10 +366,10 @@ class EventFeedController extends Controller
         }
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $categories[] = $eventType->name;
+                $categories[] = $eventType->getName();
             }
         } elseif ($event->eventType) {
-            $categories[] = $event->eventType->name;
+            $categories[] = $event->eventType->getName();
         }
 
         // Short description = metadata summary
@@ -404,10 +404,10 @@ class EventFeedController extends Controller
         // Event types
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $xml .= '        <article:event_type code="'.$this->escapeXml($eventType->code).'">'.$this->escapeXml($eventType->name).'</article:event_type>'.PHP_EOL;
+                $xml .= '        <article:event_type code="'.$this->escapeXml($eventType->code).'">'.$this->escapeXml($eventType->getName()).'</article:event_type>'.PHP_EOL;
             }
         } elseif ($event->eventType) {
-            $xml .= '        <article:event_type code="'.$this->escapeXml($event->eventType->code).'">'.$this->escapeXml($event->eventType->name).'</article:event_type>'.PHP_EOL;
+            $xml .= '        <article:event_type code="'.$this->escapeXml($event->eventType->code).'">'.$this->escapeXml($event->eventType->getName()).'</article:event_type>'.PHP_EOL;
         }
         $xml .= '      </article:data>'.PHP_EOL;
 
@@ -582,10 +582,10 @@ class EventFeedController extends Controller
         // Event types
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $xml .= '      <article:event_type code="'.$this->escapeXml($eventType->code).'">'.$this->escapeXml($eventType->name).'</article:event_type>'.PHP_EOL;
+                $xml .= '      <article:event_type code="'.$this->escapeXml($eventType->code).'">'.$this->escapeXml($eventType->getName()).'</article:event_type>'.PHP_EOL;
             }
         } elseif ($event->eventType) {
-            $xml .= '      <article:event_type code="'.$this->escapeXml($event->eventType->code).'">'.$this->escapeXml($event->eventType->name).'</article:event_type>'.PHP_EOL;
+            $xml .= '      <article:event_type code="'.$this->escapeXml($event->eventType->code).'">'.$this->escapeXml($event->eventType->getName()).'</article:event_type>'.PHP_EOL;
         }
         $xml .= '    </article:data>'.PHP_EOL;
 
@@ -595,10 +595,10 @@ class EventFeedController extends Controller
 
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $xml .= '    <category term="'.$this->escapeXml($eventType->code).'" label="'.$this->escapeXml($eventType->name).'" />'.PHP_EOL;
+                $xml .= '    <category term="'.$this->escapeXml($eventType->code).'" label="'.$this->escapeXml($eventType->getName()).'" />'.PHP_EOL;
             }
         } elseif ($event->eventType) {
-            $xml .= '    <category term="'.$this->escapeXml($event->eventType->code).'" label="'.$this->escapeXml($event->eventType->name).'" />'.PHP_EOL;
+            $xml .= '    <category term="'.$this->escapeXml($event->eventType->code).'" label="'.$this->escapeXml($event->eventType->getName()).'" />'.PHP_EOL;
         }
 
         if ($event->creator) {
@@ -728,9 +728,9 @@ class EventFeedController extends Controller
         $details = [];
 
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
-            $details[] = __('feed.label_type').': '.$event->eventTypes->pluck('name')->join(', ');
+            $details[] = __('feed.label_type').': '.$event->eventTypes->map(fn (EventType $type) => $type->getName())->join(', ');
         } elseif ($event->eventType) {
-            $details[] = __('feed.label_type').': '.$event->eventType->name;
+            $details[] = __('feed.label_type').': '.$event->eventType->getName();
         }
         if ($event->start_date) {
             $details[] = __('feed.label_start').': '.$event->start_date->format($dateFormat);

@@ -87,3 +87,36 @@ it('lehnt eine nicht unterstützte Sprache ab', function (string $url) {
     'Liste' => ['/api/v1/events?lang=fr'],
     'Umkreis' => ['/api/v1/events/nearby?latitude=52.5&longitude=13.4&radius=100&lang=fr'],
 ]);
+
+it('liefert Länder-, Regions-, Kontinent- und Kategorienamen in der gewünschten Sprache', function () {
+    $continent = \App\Models\Continent::create(['code' => 'EU', 'name_translations' => ['de' => 'Europa', 'en' => 'Europe', 'nl' => 'Europa (NL)'], 'sort_order' => 1]);
+    $country = \App\Models\Country::create(['iso_code' => 'DE', 'iso3_code' => 'DEU', 'continent_id' => $continent->id, 'name_translations' => ['de' => 'Deutschland', 'en' => 'Germany', 'nl' => 'Duitsland']]);
+    $region = \App\Models\Region::create(['country_id' => $country->id, 'name_translations' => ['de' => 'Bayern', 'en' => 'Bavaria']]);
+    $type = \App\Models\EventType::create(['code' => 'safety', 'name' => 'Sicherheit', 'name_translations' => ['nl' => 'Veiligheid'], 'is_active' => true, 'sort_order' => 1]);
+    $event = translatedGtmEvent(['de' => 'Streik', 'nl' => 'Staking'], ['de' => '<p>Text</p>']);
+    $event->countries()->attach($country->id, ['region_id' => $region->id]);
+    $event->eventTypes()->attach($type->id);
+
+    $response = $this->withToken(gtmLanguageToken())->getJson('/api/v1/events?lang=nl');
+
+    $response->assertOk()
+        ->assertJsonPath('data.0.event_categories.0.name', 'Veiligheid')
+        ->assertJsonPath('data.0.countries.0.name', 'Duitsland')
+        ->assertJsonPath('data.0.countries.0.name_de', 'Deutschland')
+        ->assertJsonPath('data.0.countries.0.continent', 'Europe')
+        ->assertJsonPath('data.0.countries.0.continent_name', 'Europa (NL)')
+        ->assertJsonPath('data.0.countries.0.region.name', 'Bavaria');
+});
+
+it('liefert die Ereignis-Kategorien in der gewünschten Sprache, ohne lang auf Deutsch', function () {
+    \App\Models\EventType::create(['code' => 'strike', 'name' => 'Streik', 'name_translations' => ['en' => 'Strike'], 'is_active' => true, 'sort_order' => 1]);
+
+    $this->withToken(gtmLanguageToken())->withHeader('Accept-Language', 'en')->getJson('/api/v1/event-categories')
+        ->assertOk()
+        ->assertJsonPath('data.0.name', 'Streik');
+
+    $this->withToken(gtmLanguageToken())->getJson('/api/v1/event-categories?lang=en')
+        ->assertOk()
+        ->assertHeader('Content-Language', 'en')
+        ->assertJsonPath('data.0.name', 'Strike');
+});

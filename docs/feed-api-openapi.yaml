@@ -238,7 +238,7 @@ components:
         (Typ, Beginn, Priorität, Länder …). Ohne Parameter Deutsch – unabhängig von der
         Browser-Sprache. Fehlt die Übersetzung eines Events, erscheint der deutsche Text.
         Die Antwort trägt den Header `Content-Language`; ein nicht unterstützter Wert
-        führt zu `400 Bad Request`. Event-Typ-Namen gibt es nur auf Deutsch.
+        führt zu `400 Bad Request`.
   schemas:
     Meta:
       type: object

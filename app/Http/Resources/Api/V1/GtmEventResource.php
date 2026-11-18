@@ -29,10 +29,12 @@ class GtmEventResource extends JsonResource
             'longitude' => $firstCoords['longitude'],
             'event_categories' => $this->whenLoaded('eventTypes', fn () => $this->eventTypes->map(fn ($t) => [
                 'code' => $t->code,
-                'name' => $t->name,
+                'name' => $t->getName(app()->getLocale()),
             ])
             ),
+            // name/continent_name folgen ?lang=; name_de, name_en und continent (Englisch) bleiben fest.
             'countries' => $this->whenLoaded('countries', fn () => $this->countries->map(function ($c) {
+                $locale = app()->getLocale();
                 $coords = $this->getCoordinatesForCountry($c);
 
                 $region = $c->pivot?->region_id ? \App\Models\Region::find($c->pivot->region_id) : null;
@@ -41,19 +43,23 @@ class GtmEventResource extends JsonResource
                 return [
                     'iso_code' => $c->iso_code,
                     'iso3_code' => $c->iso3_code,
+                    'name' => $c->getName($locale),
                     'name_de' => $c->getName('de'),
                     'name_en' => $c->getName('en'),
                     'continent' => $c->continent?->getName('en'),
+                    'continent_name' => $c->continent?->getName($locale),
                     'latitude' => $coords['latitude'],
                     'longitude' => $coords['longitude'],
                     // Ein Land kann mehrere Standort-Datensaetze haben - je Eintrag eine Zeile.
                     'region' => $region ? [
                         'id' => $region->id,
+                        'name' => $region->getName($locale),
                         'name_de' => $region->getName('de'),
                         'name_en' => $region->getName('en'),
                     ] : null,
                     'city' => $city ? [
                         'id' => $city->id,
+                        'name' => $city->getName($locale),
                         'name_de' => $city->getName('de'),
                         'name_en' => $city->getName('en'),
                     ] : null,

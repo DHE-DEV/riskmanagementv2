@@ -149,16 +149,18 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "event_categories": [
         {
           "code": "safety",
-          "name": "Sicherheit"
+          "name": "Security"
         }
       ],
       "countries": [
         {
           "iso_code": "TR",
           "iso3_code": "TUR",
+          "name": "Turkey",
           "name_de": "Tuerkei",
           "name_en": "Turkey",
           "continent": "Asia",
+          "continent_name": "Asia",
           "latitude": 37.7749,
           "longitude": 35.3214
         }
@@ -185,7 +187,8 @@ curl -H "Authorization: Bearer {TOKEN}" \
 ### Sprache
 
 Mit dem Query-Parameter `lang` kommen die Events in einer anderen Sprache. Er gilt für
-`GET /v1/events`, `GET /v1/events/{uuid}` und `GET /v1/events/nearby`.
+`GET /v1/events`, `GET /v1/events/{uuid}`, `GET /v1/events/nearby`, `GET /v1/events/countries`
+und `GET /v1/event-categories`.
 
 | Wert | Sprache |
 |------|---------|
@@ -193,9 +196,12 @@ Mit dem Query-Parameter `lang` kommen die Events in einer anderen Sprache. Er gi
 | `en` | Englisch |
 | `nl` | Niederländisch |
 
-- Übersetzt werden `title`, `description` und die Ortsnamen in `locations`.
-  `countries` enthält wie bisher immer `name_de` und `name_en`; die Kategorienamen in
-  `event_categories` sind nur auf Deutsch verfügbar.
+- Übersetzt werden `title`, `description`, die Ortsnamen in `locations` sowie alle
+  Felder `name`: Kategorien (`event_categories[].name`), Länder (`countries[].name`),
+  Regionen und Städte (`region.name`, `city.name`). Den Kontinent liefert `continent_name`.
+- Die Felder `name_de`, `name_en` und `continent` (Englisch) bleiben unabhängig von `lang`
+  erhalten, damit bestehende Integrationen unverändert funktionieren.
+- Fehlt ein Ortsname in der gewünschten Sprache, kommt der englische.
 - Ohne `lang` antwortet die API immer auf Deutsch – unabhängig von `Accept-Language`.
 - Ist ein Event noch nicht übersetzt, kommt der deutsche Originaltext. Das Feld
   `language` zeigt je Event, in welcher Sprache `title` und `description` tatsächlich

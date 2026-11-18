@@ -103,3 +103,15 @@ it('leert den Feed-Cache jeder Sprache, wenn sich ein Ereignis ändert', functio
         ->assertOk()
         ->assertSee('Strike ended');
 });
+
+it('zeigt die Event-Typen im Feed in der gewünschten Sprache', function () {
+    config(['app.event_auto_translate' => false]);
+    $type = \App\Models\EventType::create(['code' => 'strike', 'name' => 'Streik', 'name_translations' => ['en' => 'Strike'], 'is_active' => true, 'sort_order' => 1]);
+    translatedFeedEvent()->eventTypes()->attach($type->id);
+
+    $response = $this->get('/feed/events/all.xml?lang=en');
+
+    $response->assertOk()
+        ->assertSee('Type: Strike')
+        ->assertSee('<article:event_type code="strike">Strike</article:event_type>', false);
+});

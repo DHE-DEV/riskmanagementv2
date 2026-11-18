@@ -11,7 +11,7 @@ class EventCategoryResource extends JsonResource
     {
         return [
             'code' => $this->code,
-            'name' => $this->name,
+            'name' => $this->getName(app()->getLocale()),
         ];
     }
 }

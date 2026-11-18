@@ -116,8 +116,15 @@ class BaseDataController extends Controller
         ]);
     }
 
-    public function eventCategories(): JsonResponse
+    /**
+     * Aktive Ereignis-Kategorien; Namen in ?lang= (Standard: Deutsch).
+     */
+    public function eventCategories(Request $request): JsonResponse
     {
+        $request->validate(['lang' => ['nullable', 'string', \Illuminate\Validation\Rule::in(\App\Models\CustomEvent::translationLocales())]]);
+        $locale = strtolower((string) $request->query('lang', \App\Models\CustomEvent::sourceLocale()));
+        app()->setLocale($locale);
+
         $categories = EventType::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
@@ -125,6 +132,6 @@ class BaseDataController extends Controller
         return response()->json([
             'success' => true,
             'data' => EventCategoryResource::collection($categories),
-        ]);
+        ])->header('Content-Language', $locale);
     }
 }
