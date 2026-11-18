@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\GtmCountryResource;
 use App\Http\Resources\Api\V1\GtmEventResource;
+use App\Models\CustomEvent;
 use App\Services\CountryLocator;
 use App\Services\GtmEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Validation\Rule;
 
 class GtmApiController extends Controller
 {
@@ -29,8 +32,10 @@ class GtmApiController extends Controller
             'end_date' => 'nullable|date',
             'per_page' => 'nullable|integer|min:1|max:100',
             'page' => 'nullable|integer|min:1',
+            'lang' => $this->languageRule(),
         ]);
 
+        $locale = $this->applyLanguage($request);
         $perPage = $request->integer('per_page', 25);
 
         $events = $this->eventService->getActiveEvents(
@@ -58,15 +63,18 @@ class GtmApiController extends Controller
                 'total' => $total,
                 'last_page' => max($lastPage, 1),
             ],
-        ]);
+        ])->header('Content-Language', $locale);
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
+        $request->validate(['lang' => $this->languageRule()]);
+        $locale = $this->applyLanguage($request);
+
         $events = $this->eventService->getActiveEvents();
         $event = $events->firstWhere('uuid', $id);
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'success' => false,
                 'message' => 'Event not found',
@@ -76,7 +84,7 @@ class GtmApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => new GtmEventResource($event),
-        ]);
+        ])->header('Content-Language', $locale);
     }
 
     public function nearby(Request $request): JsonResponse
@@ -88,8 +96,10 @@ class GtmApiController extends Controller
             'radius' => 'required|numeric|min:1|max:20000',
             'per_page' => 'nullable|integer|min:1|max:100',
             'page' => 'nullable|integer|min:1',
+            'lang' => $this->languageRule(),
         ]);
 
+        $locale = $this->applyLanguage($request);
         $location = [];
         // Land des Abfragepunkts - landesweite Ereignisse dieses Landes greifen
         // unabhaengig vom Radius (siehe GtmEventService::filterEventsByRadius).
@@ -99,10 +109,10 @@ class GtmApiController extends Controller
             $code = strtoupper($request->input('code'));
             $airportCode = \App\Models\AirportCode::where('iata_code', $code)->first();
 
-            if (!$airportCode) {
+            if (! $airportCode) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unknown 3-letter code: ' . $code,
+                    'message' => 'Unknown 3-letter code: '.$code,
                 ], 404);
             }
 
@@ -150,7 +160,7 @@ class GtmApiController extends Controller
                 'total' => $total,
                 'last_page' => max($lastPage, 1),
             ],
-        ]);
+        ])->header('Content-Language', $locale);
     }
 
     public function countriesWithEvents(): JsonResponse
@@ -161,5 +171,28 @@ class GtmApiController extends Controller
             'success' => true,
             'data' => GtmCountryResource::collection($countries),
         ]);
+    }
+
+    /**
+     * Erlaubte Werte für ?lang= (Ausgangssprache und konfigurierte Übersetzungen).
+     *
+     * @return array<int, mixed>
+     */
+    private function languageRule(): array
+    {
+        return ['nullable', 'string', Rule::in(CustomEvent::translationLocales())];
+    }
+
+    /**
+     * Ausgabesprache setzen: ?lang=, sonst die Ausgangssprache (Deutsch).
+     * Accept-Language und Sprach-Cookie gelten für die API bewusst nicht.
+     */
+    private function applyLanguage(Request $request): string
+    {
+        $locale = strtolower((string) $request->query('lang', CustomEvent::sourceLocale()));
+
+        App::setLocale($locale);
+
+        return $locale;
     }
 }

@@ -40,6 +40,8 @@ paths:
                 $ref: '#/components/schemas/Meta'
 
   /events/all.xml:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
     get:
       tags: [Event-Feeds]
       summary: Alle aktiven Events (RSS 2.0)
@@ -56,6 +58,8 @@ paths:
                 description: RSS 2.0 XML mit benutzerdefinierten Namespaces
 
   /events/all.atom:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
     get:
       tags: [Event-Feeds]
       summary: Alle aktiven Events (Atom 1.0)
@@ -80,6 +84,7 @@ paths:
           type: string
           enum: [high, medium, low, info]
         description: Prioritätsstufe
+      - $ref: '#/components/parameters/Lang'
     get:
       tags: [Event-Feeds]
       summary: Events nach Priorität (RSS 2.0)
@@ -101,6 +106,7 @@ paths:
         schema:
           type: string
         description: "ISO 3166-1 alpha-2 (z.B. de) oder alpha-3 (z.B. deu), case-insensitive"
+      - $ref: '#/components/parameters/Lang'
     get:
       tags: [Event-Feeds]
       summary: Events nach Land (RSS 2.0)
@@ -122,6 +128,7 @@ paths:
         schema:
           type: string
         description: "Event-Typ-Code (aus meta.json), case-insensitive"
+      - $ref: '#/components/parameters/Lang'
     get:
       tags: [Event-Feeds]
       summary: Events nach Event-Typ (RSS 2.0)
@@ -143,6 +150,7 @@ paths:
         schema:
           type: integer
         description: Numerische Region-ID
+      - $ref: '#/components/parameters/Lang'
     get:
       tags: [Event-Feeds]
       summary: Events nach Region (RSS 2.0)
@@ -216,6 +224,21 @@ paths:
                 type: string
 
 components:
+  parameters:
+    Lang:
+      name: lang
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [de, en, nl]
+        default: de
+      description: |
+        Sprache des Feeds: Kanaltitel, Event-Titel, Beschreibung und Beschriftungen
+        (Typ, Beginn, Priorität, Länder …). Ohne Parameter Deutsch – unabhängig von der
+        Browser-Sprache. Fehlt die Übersetzung eines Events, erscheint der deutsche Text.
+        Die Antwort trägt den Header `Content-Language`; ein nicht unterstützter Wert
+        führt zu `400 Bad Request`. Event-Typ-Namen gibt es nur auf Deutsch.
   schemas:
     Meta:
       type: object

@@ -68,6 +68,29 @@ curl https://platform.passolution.de/feed/events/meta.json
 
 Alle Event-Feeds liefern nur **aktive, nicht-archivierte Events**, deren Startdatum in der Vergangenheit liegt. Maximal 100 Events pro Feed, sortiert nach Startdatum (neueste zuerst).
 
+### Sprache
+
+Alle Event-Feeds (RSS und Atom) gibt es in mehreren Sprachen. Die Sprache wird mit dem Query-Parameter `lang` gewählt:
+
+| Wert | Sprache |
+|------|---------|
+| `de` | Deutsch (Standard, auch ohne Parameter) |
+| `en` | Englisch |
+| `nl` | Niederländisch |
+
+```bash
+curl "https://platform.passolution.de/feed/events/all.xml?lang=en"
+curl "https://platform.passolution.de/feed/events/all.atom?lang=nl"
+curl "https://platform.passolution.de/feed/events/countries/tr.xml?lang=en"
+```
+
+- Übersetzt werden Kanaltitel und -beschreibung, Event-Titel, die Beschreibung (`<content:encoded>` bzw. `<content>`), die Kurzübersicht in `<description>` (Typ, Beginn, Ende, Priorität, Länder) sowie Kontinent- und Hauptstadtnamen in `country:data`.
+- Ohne `lang` ist der Feed immer deutsch – unabhängig von der Browser-Sprache. Eine Feed-URL liefert so stets dieselbe Sprache.
+- Ist ein Event noch nicht übersetzt, erscheinen Titel und Beschreibung auf Deutsch.
+- Event-Typ-Namen (z. B. „Sicherheit“) sind nur auf Deutsch verfügbar.
+- Die Sprache steht im RSS-Element `<language>`, im Atom-Attribut `xml:lang` und im HTTP-Header `Content-Language`.
+- Ein nicht unterstützter Wert (z. B. `lang=fr`) führt zu `400 Bad Request`.
+
 ### Alle Events
 
 | Format | URL |

@@ -178,6 +178,9 @@ return [
     'event_languages' => env('EVENT_LANGUAGES', 'de,en,nl'),
     'event_source_language' => env('EVENT_SOURCE_LANGUAGE', 'de'),
 
+    // Freigegebene globale Ereignisse automatisch per DeepL in fehlende Sprachen übersetzen.
+    'event_auto_translate' => (bool) env('EVENT_AUTO_TRANSLATE', true),
+
     // Sichtbarer Sprachumschalter im Frontend-Header (an/aus per .env).
     'event_language_switcher_enabled' => env('EVENT_LANGUAGE_SWITCHER_ENABLED', false),
 

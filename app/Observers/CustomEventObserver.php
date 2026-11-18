@@ -2,7 +2,9 @@
 
 namespace App\Observers;
 
+use App\Jobs\TranslateCustomEvent;
 use App\Models\CustomEvent;
+use App\Services\DeepLTranslationService;
 use Illuminate\Support\Facades\Cache;
 
 class CustomEventObserver
@@ -33,9 +35,10 @@ class CustomEventObserver
     public function saved(CustomEvent $customEvent): void
     {
         $this->clearFeedCaches();
+        $this->queueAutoTranslation($customEvent);
 
         // Lade die EventTypes-Beziehung, falls noch nicht geladen
-        if (!$customEvent->relationLoaded('eventTypes')) {
+        if (! $customEvent->relationLoaded('eventTypes')) {
             $customEvent->load('eventTypes');
         }
 
@@ -67,6 +70,26 @@ class CustomEventObserver
     }
 
     /**
+     * Freigegebene globale Ereignisse im Hintergrund in fehlende Sprachen übersetzen –
+     * beim Anlegen, bei Freigabe und wenn sich Titel oder Beschreibung ändern.
+     */
+    private function queueAutoTranslation(CustomEvent $customEvent): void
+    {
+        $relevantChange = $customEvent->wasRecentlyCreated || $customEvent->wasChanged([
+            'review_status', 'customer_id', 'title', 'popup_content', 'title_translations', 'popup_content_translations',
+        ]);
+
+        if (! $relevantChange
+            || ! $customEvent->qualifiesForAutoTranslation()
+            || $customEvent->missingTranslationLocales() === []
+            || ! app(DeepLTranslationService::class)->isConfigured()) {
+            return;
+        }
+
+        TranslateCustomEvent::dispatch($customEvent->id)->afterCommit();
+    }
+
+    /**
      * Clear all feed caches so new/updated/deleted events are immediately visible.
      */
     private function clearFeedCaches(): void
@@ -74,13 +97,14 @@ class CustomEventObserver
         // GTM API cache
         Cache::forget('gtm_all_events');
 
-        // Static feed keys
-        Cache::forget('feed:all_events:rss');
-        Cache::forget('feed:all_events:atom');
+        // Static feed keys (je Sprache, siehe EventFeedController)
+        foreach (CustomEvent::translationLocales() as $locale) {
+            Cache::forget("feed:all_events:rss:{$locale}");
+            Cache::forget("feed:all_events:atom:{$locale}");
 
-        // Priority feeds
-        foreach (['high', 'medium', 'low', 'info'] as $priority) {
-            Cache::forget("feed:priority:{$priority}:rss");
+            foreach (['high', 'medium', 'low', 'info'] as $priority) {
+                Cache::forget("feed:priority:{$priority}:rss:{$locale}");
+            }
         }
 
         // Dynamic keys (country, type, region) — clear via database query
@@ -88,7 +112,7 @@ class CustomEventObserver
         if (config('cache.default') === 'database') {
             $table = config('cache.stores.database.table', 'cache');
             $prefix = config('cache.prefix', '');
-            $pattern = ($prefix ? $prefix . '_' : '') . 'feed:%';
+            $pattern = ($prefix ? $prefix.'_' : '').'feed:%';
 
             \Illuminate\Support\Facades\DB::table($table)
                 ->where('key', 'like', $pattern)

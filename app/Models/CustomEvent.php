@@ -169,7 +169,7 @@ class CustomEvent extends Model implements Feedable
         $name = $names[$locale] ?? strtoupper($locale);
 
         if ($withFlag && isset($flags[$locale])) {
-            return $flags[$locale] . ' ' . $name;
+            return $flags[$locale].' '.$name;
         }
 
         return $name;
@@ -218,6 +218,63 @@ class CustomEvent extends Model implements Feedable
     public function getTitle(?string $locale = null): ?string
     {
         return $this->resolveTranslation($this->title_translations, $this->attributes['title'] ?? null, $locale);
+    }
+
+    /**
+     * Sprache, in der der Titel für die gewünschte Sprache tatsächlich vorliegt:
+     * die gewünschte Sprache, falls übersetzt, sonst die Ausgangssprache (Fallback).
+     */
+    public function titleLocale(?string $locale = null): string
+    {
+        $locale = strtolower($locale ?: app()->getLocale());
+
+        if (! empty($this->title_translations[$locale])) {
+            return $locale;
+        }
+
+        return static::sourceLocale();
+    }
+
+    /**
+     * Wird dieses Ereignis automatisch übersetzt? Nur freigegebene globale Ereignisse
+     * mit Titel in der Ausgangssprache – Kunden-Ereignisse und ungeprüfte KI-Entwürfe nicht.
+     */
+    public function qualifiesForAutoTranslation(): bool
+    {
+        return config('app.event_auto_translate')
+            && $this->customer_id === null
+            && $this->review_status === 'approved'
+            && filled($this->title_translations[static::sourceLocale()] ?? null);
+    }
+
+    /**
+     * Zielsprachen, in denen Titel oder Beschreibung fehlen, obwohl die Ausgangssprache gefüllt ist.
+     *
+     * @return array<int, string>
+     */
+    public function missingTranslationLocales(): array
+    {
+        $source = static::sourceLocale();
+        $titles = $this->title_translations ?? [];
+        $contents = $this->popup_content_translations ?? [];
+
+        return array_values(array_filter(
+            static::translationLocales(),
+            fn (string $locale) => $locale !== $source && (
+                (filled($titles[$source] ?? null) && blank($titles[$locale] ?? null))
+                || (filled($contents[$source] ?? null) && blank($contents[$locale] ?? null))
+            ),
+        ));
+    }
+
+    /**
+     * Beschreibung (popup_content) nur in genau dieser Sprache, ohne Fallback.
+     */
+    public function popupContentTranslation(string $locale): ?string
+    {
+        $value = $this->popup_content_translations[strtolower($locale)] ?? null;
+
+        return filled($value) ? $value : null;
     }
 
     /**
@@ -822,6 +879,7 @@ class CustomEvent extends Model implements Feedable
         // Wenn event_type 'general' ist, hole den korrekten Code aus der Beziehung
         if ($this->attributes['event_type'] === 'general' && $this->event_type_id) {
             $eventType = EventType::find($this->event_type_id);
+
             return $eventType && $eventType->code ? $eventType->code : 'other';
         }
 
@@ -908,7 +966,7 @@ class CustomEvent extends Model implements Feedable
     public function setEventTypeIdAttribute($value)
     {
         $this->attributes['event_type_id'] = $value;
-        
+
         // Automatisch event_type aus EventType-Beziehung setzen
         if ($value) {
             $eventType = EventType::find($value);
@@ -978,20 +1036,20 @@ class CustomEvent extends Model implements Feedable
                 // Nicht-archivierte Events
                 $q->where('archived', false)
                   // Oder archivierte Events, die noch nicht abgelaufen sind
-                  ->orWhere(function ($subQ) {
-                      $subQ->where('archived', true)
-                           ->where(function ($dateQ) {
-                               // Events mit Enddatum: 1 Jahr nach Enddatum noch sichtbar
-                               $dateQ->whereNotNull('end_date')
-                                     ->where('end_date', '>=', now()->subYear())
-                               // Events ohne Enddatum: 1 Jahr nach Archivierungsdatum noch sichtbar
-                               ->orWhere(function ($archQ) {
-                                   $archQ->whereNull('end_date')
-                                         ->whereNotNull('archived_at')
-                                         ->where('archived_at', '>=', now()->subYear());
-                               });
-                           });
-                  });
+                    ->orWhere(function ($subQ) {
+                        $subQ->where('archived', true)
+                            ->where(function ($dateQ) {
+                                // Events mit Enddatum: 1 Jahr nach Enddatum noch sichtbar
+                                $dateQ->whereNotNull('end_date')
+                                    ->where('end_date', '>=', now()->subYear())
+                                // Events ohne Enddatum: 1 Jahr nach Archivierungsdatum noch sichtbar
+                                    ->orWhere(function ($archQ) {
+                                        $archQ->whereNull('end_date')
+                                            ->whereNotNull('archived_at')
+                                            ->where('archived_at', '>=', now()->subYear());
+                                    });
+                            });
+                    });
             });
     }
 
@@ -1002,11 +1060,11 @@ class CustomEvent extends Model implements Feedable
     {
         return $query->where(function ($q) use ($startDate, $endDate) {
             $q->whereBetween('start_date', [$startDate, $endDate])
-              ->orWhereBetween('end_date', [$startDate, $endDate])
-              ->orWhere(function ($subQ) use ($startDate, $endDate) {
-                  $subQ->where('start_date', '<=', $startDate)
-                       ->where('end_date', '>=', $endDate);
-              });
+                ->orWhereBetween('end_date', [$startDate, $endDate])
+                ->orWhere(function ($subQ) use ($startDate, $endDate) {
+                    $subQ->where('start_date', '<=', $startDate)
+                        ->where('end_date', '>=', $endDate);
+                });
         });
     }
 
@@ -1142,18 +1200,18 @@ class CustomEvent extends Model implements Feedable
      */
     public function isVisible(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
-        if (!$this->archived) {
+        if (! $this->archived) {
             return true;
         }
 
         // For archived events, check if they're still within the 1-year visibility period
         $referenceDate = $this->end_date ?: $this->archived_at;
 
-        if (!$referenceDate) {
+        if (! $referenceDate) {
             return false;
         }
 
@@ -1211,13 +1269,13 @@ class CustomEvent extends Model implements Feedable
 
         // Add country name if available
         if ($this->country) {
-            $title .= ' - ' . $this->country->name;
+            $title .= ' - '.$this->country->name;
         } elseif ($this->countries && $this->countries->count() > 0) {
             $countryNames = $this->countries->pluck('name')->take(3)->implode(', ');
             if ($this->countries->count() > 3) {
-                $countryNames .= ' +' . ($this->countries->count() - 3);
+                $countryNames .= ' +'.($this->countries->count() - 3);
             }
-            $title .= ' - ' . $countryNames;
+            $title .= ' - '.$countryNames;
         }
 
         return $title;
@@ -1238,7 +1296,7 @@ class CustomEvent extends Model implements Feedable
 
         // Limit length to 500 characters
         if (strlen($summary) > 500) {
-            $summary = substr($summary, 0, 497) . '...';
+            $summary = substr($summary, 0, 497).'...';
         }
 
         return $summary;
@@ -1262,7 +1320,7 @@ class CustomEvent extends Model implements Feedable
 
         // Add priority as category
         if ($this->priority) {
-            $categories[] = ucfirst($this->priority) . ' Priority';
+            $categories[] = ucfirst($this->priority).' Priority';
         }
 
         return implode(', ', $categories);
@@ -1323,9 +1381,9 @@ class CustomEvent extends Model implements Feedable
         // Automatically set archived_at when archiving
         static::updating(function ($event) {
             if ($event->isDirty('archived')) {
-                if ($event->archived && !$event->archived_at) {
+                if ($event->archived && ! $event->archived_at) {
                     $event->archived_at = now();
-                } elseif (!$event->archived) {
+                } elseif (! $event->archived) {
                     $event->archived_at = null;
                 }
             }

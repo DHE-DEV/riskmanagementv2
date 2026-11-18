@@ -93,6 +93,17 @@ paths:
             default: 1
             minimum: 1
           description: Seitennummer
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [de, en, nl]
+            default: de
+          description: |
+            Sprache von `title`, `description` und `locations`. Ohne Parameter Deutsch.
+            Fehlt die Übersetzung eines Events, kommt der deutsche Text; das Feld
+            `language` des Events zeigt dann `de`. Die Antwort trägt den Header
+            `Content-Language`. Andere Werte führen zu 422.
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -192,6 +203,17 @@ paths:
             default: 1
             minimum: 1
           description: Seitennummer
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [de, en, nl]
+            default: de
+          description: |
+            Sprache von `title`, `description` und `locations`. Ohne Parameter Deutsch.
+            Fehlt die Übersetzung eines Events, kommt der deutsche Text; das Feld
+            `language` des Events zeigt dann `de`. Die Antwort trägt den Header
+            `Content-Language`. Andere Werte führen zu 422.
       responses:
         '200':
           description: Erfolgreiche Abfrage
@@ -245,6 +267,18 @@ paths:
     get:
       tags: [Events]
       summary: Einzelnes Event anzeigen
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [de, en, nl]
+            default: de
+          description: |
+            Sprache von `title`, `description` und `locations`. Ohne Parameter Deutsch.
+            Fehlt die Übersetzung eines Events, kommt der deutsche Text; das Feld
+            `language` des Events zeigt dann `de`. Die Antwort trägt den Header
+            `Content-Language`. Andere Werte führen zu 422.
       responses:
         '200':
           description: Event gefunden
@@ -1144,6 +1178,13 @@ components:
           type: string
           nullable: true
           example: A 6.2 magnitude earthquake struck southeastern Turkey.
+        language:
+          type: string
+          enum: [de, en, nl]
+          description: |
+            Sprache, in der `title` und `description` tatsächlich vorliegen. Entspricht
+            `lang`, außer die Übersetzung fehlt – dann `de` (deutscher Originaltext).
+          example: en
         risk_level:
           type: string
           enum: [high, medium, low, info]

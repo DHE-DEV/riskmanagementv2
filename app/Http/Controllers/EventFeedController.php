@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CustomEvent;
 use App\Models\Country;
+use App\Models\CustomEvent;
 use App\Models\EventType;
 use App\Models\Region;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -42,14 +43,20 @@ class EventFeedController extends Controller
      */
     public function allEvents(): Response
     {
-        $cacheKey = 'feed:all_events:rss';
+        $locale = $this->applyRequestedLanguage();
+        if ($locale === null) {
+            return $this->unsupportedLanguageResponse();
+        }
+
+        $cacheKey = "feed:all_events:rss:{$locale}";
 
         $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
             $events = $this->getActiveEvents();
-            return $this->generateRss($events, 'Global Travel Monitor - Aktuelle Ereignisse', 'Aktuelle Reisesicherheitsinformationen und Ereignisse');
+
+            return $this->generateRss($events, __('feed.all_title'), __('feed.all_description'));
         });
 
-        return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+        return $this->feedResponse($content, 'application/rss+xml', $locale);
     }
 
     /**
@@ -57,14 +64,20 @@ class EventFeedController extends Controller
      */
     public function allEventsAtom(): Response
     {
-        $cacheKey = 'feed:all_events:atom';
+        $locale = $this->applyRequestedLanguage();
+        if ($locale === null) {
+            return $this->unsupportedLanguageResponse();
+        }
+
+        $cacheKey = "feed:all_events:atom:{$locale}";
 
         $content = Cache::remember($cacheKey, $this->cacheDuration, function () {
             $events = $this->getActiveEvents();
-            return $this->generateAtom($events, 'Global Travel Monitor - Aktuelle Ereignisse', 'Aktuelle Reisesicherheitsinformationen und Ereignisse');
+
+            return $this->generateAtom($events, __('feed.all_title'), __('feed.all_description'));
         });
 
-        return response($content, 200)->header('Content-Type', 'application/atom+xml; charset=utf-8');
+        return $this->feedResponse($content, 'application/atom+xml', $locale);
     }
 
     /**
@@ -73,35 +86,34 @@ class EventFeedController extends Controller
      */
     public function byPriority(string $priority): Response
     {
+        $locale = $this->applyRequestedLanguage();
+        if ($locale === null) {
+            return $this->unsupportedLanguageResponse();
+        }
+
         $validPriorities = ['high', 'medium', 'low', 'info'];
         $priority = strtolower($priority);
 
-        if (!in_array($priority, $validPriorities)) {
-            return $this->generateErrorResponse("Ungültige Priorität: {$priority}. Gültig: " . implode(', ', $validPriorities));
+        if (! in_array($priority, $validPriorities)) {
+            return $this->generateErrorResponse("Ungültige Priorität: {$priority}. Gültig: ".implode(', ', $validPriorities));
         }
 
-        $cacheKey = "feed:priority:{$priority}:rss";
+        $cacheKey = "feed:priority:{$priority}:rss:{$locale}";
 
-        $priorityNames = [
-            'high' => 'Hoch',
-            'medium' => 'Mittel',
-            'low' => 'Niedrig',
-            'info' => 'Information',
-        ];
-
-        $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($priority, $priorityNames) {
+        $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($priority) {
             $events = $this->getActiveEvents()
                 ->where('priority', $priority);
 
-            $priorityName = $priorityNames[$priority] ?? ucfirst($priority);
+            $priorityName = $this->priorityLabel($priority);
+
             return $this->generateRss(
                 $events,
-                "Ereignisse - Priorität {$priorityName}",
-                "Ereignisse mit Priorität: {$priorityName}"
+                __('feed.priority_title', ['priority' => $priorityName]),
+                __('feed.priority_description', ['priority' => $priorityName])
             );
         });
 
-        return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+        return $this->feedResponse($content, 'application/rss+xml', $locale);
     }
 
     /**
@@ -109,7 +121,12 @@ class EventFeedController extends Controller
      */
     public function byCountry(string $countryCode): Response
     {
-        $cacheKey = "feed:country:{$countryCode}:rss";
+        $locale = $this->applyRequestedLanguage();
+        if ($locale === null) {
+            return $this->unsupportedLanguageResponse();
+        }
+
+        $cacheKey = "feed:country:{$countryCode}:rss:{$locale}";
 
         try {
             $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($countryCode) {
@@ -118,7 +135,7 @@ class EventFeedController extends Controller
                     ->orWhere('iso3_code', strtoupper($countryCode))
                     ->first();
 
-                if (!$country) {
+                if (! $country) {
                     throw new \Exception("Country not found: {$countryCode}");
                 }
 
@@ -132,20 +149,23 @@ class EventFeedController extends Controller
                     if ($event->countries && $event->countries->contains('id', $country->id)) {
                         return true;
                     }
+
                     return false;
                 });
 
-                $countryName = $country->getName('en');
+                $countryName = $country->getName(App::getLocale());
+
                 return $this->generateRss(
                     $events,
-                    "Events in {$countryName}",
-                    "Risk management events for {$countryName}"
+                    __('feed.country_title', ['country' => $countryName]),
+                    __('feed.country_description', ['country' => $countryName])
                 );
             });
 
-            return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+            return $this->feedResponse($content, 'application/rss+xml', $locale);
         } catch (\Exception $e) {
-            Log::error("Feed error for country {$countryCode}: " . $e->getMessage());
+            Log::error("Feed error for country {$countryCode}: ".$e->getMessage());
+
             return $this->generateErrorResponse("Country not found: {$countryCode}");
         }
     }
@@ -155,7 +175,12 @@ class EventFeedController extends Controller
      */
     public function byEventType(string $typeCode): Response
     {
-        $cacheKey = "feed:type:{$typeCode}:rss";
+        $locale = $this->applyRequestedLanguage();
+        if ($locale === null) {
+            return $this->unsupportedLanguageResponse();
+        }
+
+        $cacheKey = "feed:type:{$typeCode}:rss:{$locale}";
 
         try {
             $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($typeCode) {
@@ -164,7 +189,7 @@ class EventFeedController extends Controller
                     ->where('is_active', true)
                     ->first();
 
-                if (!$eventType) {
+                if (! $eventType) {
                     throw new \Exception("Event type not found: {$typeCode}");
                 }
 
@@ -178,19 +203,21 @@ class EventFeedController extends Controller
                     if ($event->eventTypes && $event->eventTypes->contains('id', $eventType->id)) {
                         return true;
                     }
+
                     return false;
                 });
 
                 return $this->generateRss(
                     $events,
-                    "{$eventType->name} Events",
-                    "Risk management events of type: {$eventType->name}"
+                    __('feed.type_title', ['type' => $eventType->name]),
+                    __('feed.type_description', ['type' => $eventType->name])
                 );
             });
 
-            return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+            return $this->feedResponse($content, 'application/rss+xml', $locale);
         } catch (\Exception $e) {
-            Log::error("Feed error for event type {$typeCode}: " . $e->getMessage());
+            Log::error("Feed error for event type {$typeCode}: ".$e->getMessage());
+
             return $this->generateErrorResponse("Event type not found: {$typeCode}");
         }
     }
@@ -200,14 +227,19 @@ class EventFeedController extends Controller
      */
     public function byRegion(int $regionId): Response
     {
-        $cacheKey = "feed:region:{$regionId}:rss";
+        $locale = $this->applyRequestedLanguage();
+        if ($locale === null) {
+            return $this->unsupportedLanguageResponse();
+        }
+
+        $cacheKey = "feed:region:{$regionId}:rss:{$locale}";
 
         try {
             $content = Cache::remember($cacheKey, $this->cacheDuration, function () use ($regionId) {
                 // Find region
                 $region = Region::with('country')->find($regionId);
 
-                if (!$region) {
+                if (! $region) {
                     throw new \Exception("Region not found: {$regionId}");
                 }
 
@@ -221,22 +253,24 @@ class EventFeedController extends Controller
                     if ($event->country_id === $region->country_id) {
                         return true;
                     }
+
                     return false;
                 });
 
-                $regionName = $region->getName('en');
-                $countryName = $region->country->getName('en');
+                $regionName = $region->getName(App::getLocale());
+                $countryName = $region->country->getName(App::getLocale());
 
                 return $this->generateRss(
                     $events,
-                    "Events in {$regionName}, {$countryName}",
-                    "Risk management events for the {$regionName} region"
+                    __('feed.region_title', ['region' => $regionName, 'country' => $countryName]),
+                    __('feed.region_description', ['region' => $regionName])
                 );
             });
 
-            return response($content, 200)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+            return $this->feedResponse($content, 'application/rss+xml', $locale);
         } catch (\Exception $e) {
-            Log::error("Feed error for region {$regionId}: " . $e->getMessage());
+            Log::error("Feed error for region {$regionId}: ".$e->getMessage());
+
             return $this->generateErrorResponse("Region not found: {$regionId}");
         }
     }
@@ -280,7 +314,7 @@ class EventFeedController extends Controller
                 'countries.capital',
                 'eventType',
                 'eventTypes',
-                'eventCategory'
+                'eventCategory',
             ])
             ->orderBy('start_date', 'desc')
             ->limit($this->maxItems)
@@ -295,22 +329,22 @@ class EventFeedController extends Controller
         $buildDate = now()->toRfc2822String();
         $lastBuildDate = $events->first()?->updated_at?->toRfc2822String() ?? $buildDate;
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:country="http://global-travel-monitor.eu/ns/country" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:article="http://global-travel-monitor.eu/ns/article">' . PHP_EOL;
-        $xml .= '  <channel>' . PHP_EOL;
-        $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
-        $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
-        $xml .= '    <description>' . $this->escapeXml($description) . '</description>' . PHP_EOL;
-        $xml .= '    <language>de-DE</language>' . PHP_EOL;
-        $xml .= '    <lastBuildDate>' . $lastBuildDate . '</lastBuildDate>' . PHP_EOL;
-        $xml .= '    <pubDate>' . $buildDate . '</pubDate>' . PHP_EOL;
-        $xml .= '    <atom:link href="' . $this->escapeXml(url()->current()) . '" rel="self" type="application/rss+xml" />' . PHP_EOL;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
+        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:country="http://global-travel-monitor.eu/ns/country" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:article="http://global-travel-monitor.eu/ns/article">'.PHP_EOL;
+        $xml .= '  <channel>'.PHP_EOL;
+        $xml .= '    <title>'.$this->escapeXml($title).'</title>'.PHP_EOL;
+        $xml .= '    <link>'.$this->escapeXml($this->baseUrl).'</link>'.PHP_EOL;
+        $xml .= '    <description>'.$this->escapeXml($description).'</description>'.PHP_EOL;
+        $xml .= '    <language>'.$this->escapeXml(__('feed.language_tag')).'</language>'.PHP_EOL;
+        $xml .= '    <lastBuildDate>'.$lastBuildDate.'</lastBuildDate>'.PHP_EOL;
+        $xml .= '    <pubDate>'.$buildDate.'</pubDate>'.PHP_EOL;
+        $xml .= '    <atom:link href="'.$this->escapeXml(url()->current()).'" rel="self" type="application/rss+xml" />'.PHP_EOL;
 
         foreach ($events as $event) {
             $xml .= $this->generateRssItem($event);
         }
 
-        $xml .= '  </channel>' . PHP_EOL;
+        $xml .= '  </channel>'.PHP_EOL;
         $xml .= '</rss>';
 
         return $xml;
@@ -321,14 +355,14 @@ class EventFeedController extends Controller
      */
     private function generateRssItem($event): string
     {
-        $link = $this->baseUrl . '/?event=' . $event->id;
+        $link = $this->baseUrl.'/?event='.$event->id;
         $pubDate = $event->created_at->toRfc2822String();
         $title = $event->title;
 
         // Build categories
         $categories = [];
         if ($event->priority) {
-            $categories[] = 'Priority: ' . ucfirst($event->priority);
+            $categories[] = 'Priority: '.ucfirst($event->priority);
         }
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
@@ -338,87 +372,55 @@ class EventFeedController extends Controller
             $categories[] = $event->eventType->name;
         }
 
-        // Build short summary (for <description>)
-        $details = [];
-        // Event type (Typ: Sicherheit, Reiseverkehr, etc.)
-        if ($event->eventTypes && $event->eventTypes->count() > 0) {
-            $typeNames = $event->eventTypes->pluck('name')->join(', ');
-            $details[] = 'Typ: ' . $typeNames;
-        } elseif ($event->eventType) {
-            $details[] = 'Typ: ' . $event->eventType->name;
-        }
-        if ($event->start_date) {
-            $details[] = 'Beginn: ' . $event->start_date->format('d.m.Y H:i');
-        }
-        if ($event->end_date) {
-            $details[] = 'Ende: ' . $event->end_date->format('d.m.Y H:i');
-        }
-        if ($event->priority) {
-            $priorityTranslations = [
-                'low' => 'Niedrig',
-                'medium' => 'Mittel',
-                'high' => 'Hoch',
-                'critical' => 'Kritisch',
-                'info' => 'Info',
-            ];
-            $priorityDe = $priorityTranslations[strtolower($event->priority)] ?? ucfirst($event->priority);
-            $details[] = 'Priorität: ' . $priorityDe;
-        }
-        if ($event->countries && $event->countries->count() > 0) {
-            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
-            $details[] = 'Länder: ' . $countryNames;
-        } elseif ($event->country) {
-            $details[] = 'Land: ' . $event->country->getName('de');
-        }
-
         // Short description = metadata summary
-        $shortDescription = !empty($details) ? implode(' | ', $details) : 'Keine Details verfügbar';
+        $details = $this->eventDetails($event);
+        $shortDescription = ! empty($details) ? implode(' | ', $details) : __('feed.no_details');
 
         // Full content (for <content:encoded>)
-        $eventDescription = $event->description ?: $event->popup_content ?: null;
+        $eventDescription = $this->eventDescription($event);
         $fullContent = $eventDescription
             ? strip_tags($eventDescription)
-            : 'Keine Beschreibung verfügbar';
+            : __('feed.no_description');
 
-        $xml = '    <item>' . PHP_EOL;
-        $xml .= '      <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
-        $xml .= '      <link>' . $this->escapeXml($link) . '</link>' . PHP_EOL;
-        $xml .= '      <guid isPermaLink="true">' . $this->escapeXml($link) . '</guid>' . PHP_EOL;
-        $xml .= '      <description>' . $this->escapeXml($shortDescription) . '</description>' . PHP_EOL;
-        $xml .= '      <content:encoded><![CDATA[' . $fullContent . ']]></content:encoded>' . PHP_EOL;
-        $xml .= '      <pubDate>' . $pubDate . '</pubDate>' . PHP_EOL;
+        $xml = '    <item>'.PHP_EOL;
+        $xml .= '      <title>'.$this->escapeXml($title).'</title>'.PHP_EOL;
+        $xml .= '      <link>'.$this->escapeXml($link).'</link>'.PHP_EOL;
+        $xml .= '      <guid isPermaLink="true">'.$this->escapeXml($link).'</guid>'.PHP_EOL;
+        $xml .= '      <description>'.$this->escapeXml($shortDescription).'</description>'.PHP_EOL;
+        $xml .= '      <content:encoded><![CDATA['.$fullContent.']]></content:encoded>'.PHP_EOL;
+        $xml .= '      <pubDate>'.$pubDate.'</pubDate>'.PHP_EOL;
 
         // Article-specific data (display period, priority, and event types)
-        $xml .= '      <article:data>' . PHP_EOL;
+        $xml .= '      <article:data>'.PHP_EOL;
         if ($event->start_date) {
-            $xml .= '        <article:start_date>' . $event->start_date->toRfc2822String() . '</article:start_date>' . PHP_EOL;
+            $xml .= '        <article:start_date>'.$event->start_date->toRfc2822String().'</article:start_date>'.PHP_EOL;
         }
         if ($event->end_date) {
-            $xml .= '        <article:end_date>' . $event->end_date->toRfc2822String() . '</article:end_date>' . PHP_EOL;
+            $xml .= '        <article:end_date>'.$event->end_date->toRfc2822String().'</article:end_date>'.PHP_EOL;
         }
         if ($event->priority) {
-            $xml .= '        <article:priority>' . $this->escapeXml($event->priority) . '</article:priority>' . PHP_EOL;
+            $xml .= '        <article:priority>'.$this->escapeXml($event->priority).'</article:priority>'.PHP_EOL;
         }
         // Event types
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $xml .= '        <article:event_type code="' . $this->escapeXml($eventType->code) . '">' . $this->escapeXml($eventType->name) . '</article:event_type>' . PHP_EOL;
+                $xml .= '        <article:event_type code="'.$this->escapeXml($eventType->code).'">'.$this->escapeXml($eventType->name).'</article:event_type>'.PHP_EOL;
             }
         } elseif ($event->eventType) {
-            $xml .= '        <article:event_type code="' . $this->escapeXml($event->eventType->code) . '">' . $this->escapeXml($event->eventType->name) . '</article:event_type>' . PHP_EOL;
+            $xml .= '        <article:event_type code="'.$this->escapeXml($event->eventType->code).'">'.$this->escapeXml($event->eventType->name).'</article:event_type>'.PHP_EOL;
         }
-        $xml .= '      </article:data>' . PHP_EOL;
+        $xml .= '      </article:data>'.PHP_EOL;
 
         foreach ($categories as $category) {
-            $xml .= '      <category>' . $this->escapeXml($category) . '</category>' . PHP_EOL;
+            $xml .= '      <category>'.$this->escapeXml($category).'</category>'.PHP_EOL;
         }
 
         if ($event->creator) {
-            $xml .= '      <dc:creator>' . $this->escapeXml($event->creator->name) . '</dc:creator>' . PHP_EOL;
+            $xml .= '      <dc:creator>'.$this->escapeXml($event->creator->name).'</dc:creator>'.PHP_EOL;
         }
 
         // Add source information
-        $xml .= '      <source url="' . $this->escapeXml($this->baseUrl) . '">Global Travel Monitor by Passolution</source>' . PHP_EOL;
+        $xml .= '      <source url="'.$this->escapeXml($this->baseUrl).'">Global Travel Monitor by Passolution</source>'.PHP_EOL;
 
         // Add country image as enclosure (use first country)
         $countryCode = null;
@@ -431,14 +433,14 @@ class EventFeedController extends Controller
         if ($countryCode) {
             $imageUrl = $this->getCountryImageUrl($countryCode);
             if ($imageUrl) {
-                $xml .= '      <enclosure url="' . $this->escapeXml($imageUrl) . '" type="image/jpeg" />' . PHP_EOL;
+                $xml .= '      <enclosure url="'.$this->escapeXml($imageUrl).'" type="image/jpeg" />'.PHP_EOL;
             }
         }
 
         // Add detailed country data for each country
         $xml .= $this->generateCountryData($event);
 
-        $xml .= '    </item>' . PHP_EOL;
+        $xml .= '    </item>'.PHP_EOL;
 
         return $xml;
     }
@@ -459,41 +461,41 @@ class EventFeedController extends Controller
         }
 
         foreach ($countries as $country) {
-            $xml .= '      <country:data>' . PHP_EOL;
-            $xml .= '        <country:name_de>' . $this->escapeXml($country->getName('de')) . '</country:name_de>' . PHP_EOL;
-            $xml .= '        <country:name_en>' . $this->escapeXml($country->getName('en')) . '</country:name_en>' . PHP_EOL;
-            $xml .= '        <country:iso_code>' . $this->escapeXml($country->iso_code ?? '') . '</country:iso_code>' . PHP_EOL;
-            $xml .= '        <country:iso3_code>' . $this->escapeXml($country->iso3_code ?? '') . '</country:iso3_code>' . PHP_EOL;
-            $xml .= '        <country:is_eu_member>' . ($country->is_eu_member ? 'true' : 'false') . '</country:is_eu_member>' . PHP_EOL;
-            $xml .= '        <country:is_schengen_member>' . ($country->is_schengen_member ? 'true' : 'false') . '</country:is_schengen_member>' . PHP_EOL;
+            $xml .= '      <country:data>'.PHP_EOL;
+            $xml .= '        <country:name_de>'.$this->escapeXml($country->getName('de')).'</country:name_de>'.PHP_EOL;
+            $xml .= '        <country:name_en>'.$this->escapeXml($country->getName('en')).'</country:name_en>'.PHP_EOL;
+            $xml .= '        <country:iso_code>'.$this->escapeXml($country->iso_code ?? '').'</country:iso_code>'.PHP_EOL;
+            $xml .= '        <country:iso3_code>'.$this->escapeXml($country->iso3_code ?? '').'</country:iso3_code>'.PHP_EOL;
+            $xml .= '        <country:is_eu_member>'.($country->is_eu_member ? 'true' : 'false').'</country:is_eu_member>'.PHP_EOL;
+            $xml .= '        <country:is_schengen_member>'.($country->is_schengen_member ? 'true' : 'false').'</country:is_schengen_member>'.PHP_EOL;
 
             // Continent (from relationship)
             if ($country->continent) {
-                $xml .= '        <country:continent>' . $this->escapeXml($country->continent->getName('de')) . '</country:continent>' . PHP_EOL;
+                $xml .= '        <country:continent>'.$this->escapeXml($country->continent->getName(App::getLocale())).'</country:continent>'.PHP_EOL;
             }
 
             // Currency
             if ($country->currency_code) {
-                $xml .= '        <country:currency_code>' . $this->escapeXml($country->currency_code) . '</country:currency_code>' . PHP_EOL;
+                $xml .= '        <country:currency_code>'.$this->escapeXml($country->currency_code).'</country:currency_code>'.PHP_EOL;
             }
 
             // Phone prefix
             if ($country->phone_prefix) {
-                $xml .= '        <country:phone_prefix>' . $this->escapeXml($country->phone_prefix) . '</country:phone_prefix>' . PHP_EOL;
+                $xml .= '        <country:phone_prefix>'.$this->escapeXml($country->phone_prefix).'</country:phone_prefix>'.PHP_EOL;
             }
 
             // Capital with coordinates (from relationship)
             if ($country->capital) {
-                $xml .= '        <country:capital>' . PHP_EOL;
-                $xml .= '          <country:capital_name>' . $this->escapeXml($country->capital->getName('de')) . '</country:capital_name>' . PHP_EOL;
+                $xml .= '        <country:capital>'.PHP_EOL;
+                $xml .= '          <country:capital_name>'.$this->escapeXml($country->capital->getName(App::getLocale())).'</country:capital_name>'.PHP_EOL;
                 if ($country->capital->lat && $country->capital->lng) {
-                    $xml .= '          <geo:lat>' . $country->capital->lat . '</geo:lat>' . PHP_EOL;
-                    $xml .= '          <geo:long>' . $country->capital->lng . '</geo:long>' . PHP_EOL;
+                    $xml .= '          <geo:lat>'.$country->capital->lat.'</geo:lat>'.PHP_EOL;
+                    $xml .= '          <geo:long>'.$country->capital->lng.'</geo:long>'.PHP_EOL;
                 }
-                $xml .= '        </country:capital>' . PHP_EOL;
+                $xml .= '        </country:capital>'.PHP_EOL;
             }
 
-            $xml .= '      </country:data>' . PHP_EOL;
+            $xml .= '      </country:data>'.PHP_EOL;
         }
 
         return $xml;
@@ -504,10 +506,10 @@ class EventFeedController extends Controller
      */
     private function getCountryImageUrl(string $countryCode): ?string
     {
-        $imagePath = public_path('images/countries/' . strtolower($countryCode) . '.jpg');
+        $imagePath = public_path('images/countries/'.strtolower($countryCode).'.jpg');
 
         if (file_exists($imagePath)) {
-            return $this->baseUrl . '/images/countries/' . strtolower($countryCode) . '.jpg';
+            return $this->baseUrl.'/images/countries/'.strtolower($countryCode).'.jpg';
         }
 
         return null;
@@ -521,14 +523,14 @@ class EventFeedController extends Controller
         $updated = $events->first()?->updated_at?->toAtomString() ?? now()->toAtomString();
         $feedUrl = url()->current();
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:article="http://global-travel-monitor.eu/ns/article">' . PHP_EOL;
-        $xml .= '  <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
-        $xml .= '  <subtitle>' . $this->escapeXml($subtitle) . '</subtitle>' . PHP_EOL;
-        $xml .= '  <link href="' . $this->escapeXml($this->baseUrl) . '" rel="alternate" />' . PHP_EOL;
-        $xml .= '  <link href="' . $this->escapeXml($feedUrl) . '" rel="self" />' . PHP_EOL;
-        $xml .= '  <id>' . $this->escapeXml($feedUrl) . '</id>' . PHP_EOL;
-        $xml .= '  <updated>' . $updated . '</updated>' . PHP_EOL;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
+        $xml .= '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:article="http://global-travel-monitor.eu/ns/article" xml:lang="'.$this->escapeXml(__('feed.language_tag')).'">'.PHP_EOL;
+        $xml .= '  <title>'.$this->escapeXml($title).'</title>'.PHP_EOL;
+        $xml .= '  <subtitle>'.$this->escapeXml($subtitle).'</subtitle>'.PHP_EOL;
+        $xml .= '  <link href="'.$this->escapeXml($this->baseUrl).'" rel="alternate" />'.PHP_EOL;
+        $xml .= '  <link href="'.$this->escapeXml($feedUrl).'" rel="self" />'.PHP_EOL;
+        $xml .= '  <id>'.$this->escapeXml($feedUrl).'</id>'.PHP_EOL;
+        $xml .= '  <updated>'.$updated.'</updated>'.PHP_EOL;
 
         foreach ($events as $event) {
             $xml .= $this->generateAtomEntry($event);
@@ -544,99 +546,65 @@ class EventFeedController extends Controller
      */
     private function generateAtomEntry($event): string
     {
-        $link = $this->baseUrl . '/?event=' . $event->id;
+        $link = $this->baseUrl.'/?event='.$event->id;
         $updated = $event->updated_at->toAtomString();
         $published = $event->created_at->toAtomString();
         $title = $event->title;
 
-        // Build content
-        // Use description, fallback to popup_content, then to 'No description available'
-        $eventDescription = $event->description ?: $event->popup_content ?: null;
-        $content = $eventDescription
-            ? $this->escapeXml(strip_tags($eventDescription))
-            : 'Keine Beschreibung verfügbar';
+        // Build content: description in the requested language, then the metadata summary
+        $eventDescription = $this->eventDescription($event);
+        $content = $this->escapeXml($eventDescription ? strip_tags($eventDescription) : __('feed.no_description'));
 
-        $details = [];
-        // Event type (Typ: Sicherheit, Reiseverkehr, etc.)
-        if ($event->eventTypes && $event->eventTypes->count() > 0) {
-            $typeNames = $event->eventTypes->pluck('name')->join(', ');
-            $details[] = 'Typ: ' . $typeNames;
-        } elseif ($event->eventType) {
-            $details[] = 'Typ: ' . $event->eventType->name;
-        }
-        if ($event->start_date) {
-            $details[] = 'Beginn: ' . $event->start_date->format('d.m.Y H:i');
-        }
-        if ($event->end_date) {
-            $details[] = 'Ende: ' . $event->end_date->format('d.m.Y H:i');
-        }
-        if ($event->priority) {
-            $priorityTranslations = [
-                'low' => 'Niedrig',
-                'medium' => 'Mittel',
-                'high' => 'Hoch',
-                'critical' => 'Kritisch',
-                'info' => 'Info',
-            ];
-            $priorityDe = $priorityTranslations[strtolower($event->priority)] ?? ucfirst($event->priority);
-            $details[] = 'Priorität: ' . $priorityDe;
-        }
-        if ($event->countries && $event->countries->count() > 0) {
-            $countryNames = $event->countries->map(fn($c) => $c->getName('de'))->join(', ');
-            $details[] = 'Länder: ' . $countryNames;
-        } elseif ($event->country) {
-            $details[] = 'Land: ' . $event->country->getName('de');
+        $details = $this->eventDetails($event);
+        if (! empty($details)) {
+            $content .= "\n\n".$this->escapeXml(implode(' | ', $details));
         }
 
-        if (!empty($details)) {
-            $content .= "\n\n" . implode(' | ', $details);
-        }
-
-        $xml = '  <entry>' . PHP_EOL;
-        $xml .= '    <title>' . $this->escapeXml($title) . '</title>' . PHP_EOL;
-        $xml .= '    <link href="' . $this->escapeXml($link) . '" />' . PHP_EOL;
-        $xml .= '    <id>' . $this->escapeXml($link) . '</id>' . PHP_EOL;
-        $xml .= '    <updated>' . $updated . '</updated>' . PHP_EOL;
-        $xml .= '    <published>' . $published . '</published>' . PHP_EOL;
-        $xml .= '    <content type="text">' . $content . '</content>' . PHP_EOL;
+        $xml = '  <entry>'.PHP_EOL;
+        $xml .= '    <title>'.$this->escapeXml($title).'</title>'.PHP_EOL;
+        $xml .= '    <link href="'.$this->escapeXml($link).'" />'.PHP_EOL;
+        $xml .= '    <id>'.$this->escapeXml($link).'</id>'.PHP_EOL;
+        $xml .= '    <updated>'.$updated.'</updated>'.PHP_EOL;
+        $xml .= '    <published>'.$published.'</published>'.PHP_EOL;
+        $xml .= '    <content type="text">'.$content.'</content>'.PHP_EOL;
 
         // Article-specific data (display period, priority, and event types)
-        $xml .= '    <article:data>' . PHP_EOL;
+        $xml .= '    <article:data>'.PHP_EOL;
         if ($event->start_date) {
-            $xml .= '      <article:start_date>' . $event->start_date->toAtomString() . '</article:start_date>' . PHP_EOL;
+            $xml .= '      <article:start_date>'.$event->start_date->toAtomString().'</article:start_date>'.PHP_EOL;
         }
         if ($event->end_date) {
-            $xml .= '      <article:end_date>' . $event->end_date->toAtomString() . '</article:end_date>' . PHP_EOL;
+            $xml .= '      <article:end_date>'.$event->end_date->toAtomString().'</article:end_date>'.PHP_EOL;
         }
         if ($event->priority) {
-            $xml .= '      <article:priority>' . $this->escapeXml($event->priority) . '</article:priority>' . PHP_EOL;
+            $xml .= '      <article:priority>'.$this->escapeXml($event->priority).'</article:priority>'.PHP_EOL;
         }
         // Event types
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $xml .= '      <article:event_type code="' . $this->escapeXml($eventType->code) . '">' . $this->escapeXml($eventType->name) . '</article:event_type>' . PHP_EOL;
+                $xml .= '      <article:event_type code="'.$this->escapeXml($eventType->code).'">'.$this->escapeXml($eventType->name).'</article:event_type>'.PHP_EOL;
             }
         } elseif ($event->eventType) {
-            $xml .= '      <article:event_type code="' . $this->escapeXml($event->eventType->code) . '">' . $this->escapeXml($event->eventType->name) . '</article:event_type>' . PHP_EOL;
+            $xml .= '      <article:event_type code="'.$this->escapeXml($event->eventType->code).'">'.$this->escapeXml($event->eventType->name).'</article:event_type>'.PHP_EOL;
         }
-        $xml .= '    </article:data>' . PHP_EOL;
+        $xml .= '    </article:data>'.PHP_EOL;
 
         if ($event->priority) {
-            $xml .= '    <category term="' . $this->escapeXml(strtolower($event->priority)) . '" label="Priority: ' . $this->escapeXml(ucfirst($event->priority)) . '" />' . PHP_EOL;
+            $xml .= '    <category term="'.$this->escapeXml(strtolower($event->priority)).'" label="Priority: '.$this->escapeXml(ucfirst($event->priority)).'" />'.PHP_EOL;
         }
 
         if ($event->eventTypes && $event->eventTypes->count() > 0) {
             foreach ($event->eventTypes as $eventType) {
-                $xml .= '    <category term="' . $this->escapeXml($eventType->code) . '" label="' . $this->escapeXml($eventType->name) . '" />' . PHP_EOL;
+                $xml .= '    <category term="'.$this->escapeXml($eventType->code).'" label="'.$this->escapeXml($eventType->name).'" />'.PHP_EOL;
             }
         } elseif ($event->eventType) {
-            $xml .= '    <category term="' . $this->escapeXml($event->eventType->code) . '" label="' . $this->escapeXml($event->eventType->name) . '" />' . PHP_EOL;
+            $xml .= '    <category term="'.$this->escapeXml($event->eventType->code).'" label="'.$this->escapeXml($event->eventType->name).'" />'.PHP_EOL;
         }
 
         if ($event->creator) {
-            $xml .= '    <author>' . PHP_EOL;
-            $xml .= '      <name>' . $this->escapeXml($event->creator->name) . '</name>' . PHP_EOL;
-            $xml .= '    </author>' . PHP_EOL;
+            $xml .= '    <author>'.PHP_EOL;
+            $xml .= '      <name>'.$this->escapeXml($event->creator->name).'</name>'.PHP_EOL;
+            $xml .= '    </author>'.PHP_EOL;
         }
 
         // Add country image as enclosure link (use first country)
@@ -650,11 +618,11 @@ class EventFeedController extends Controller
         if ($countryCode) {
             $imageUrl = $this->getCountryImageUrl($countryCode);
             if ($imageUrl) {
-                $xml .= '    <link rel="enclosure" type="image/jpeg" href="' . $this->escapeXml($imageUrl) . '" />' . PHP_EOL;
+                $xml .= '    <link rel="enclosure" type="image/jpeg" href="'.$this->escapeXml($imageUrl).'" />'.PHP_EOL;
             }
         }
 
-        $xml .= '  </entry>' . PHP_EOL;
+        $xml .= '  </entry>'.PHP_EOL;
 
         return $xml;
     }
@@ -670,17 +638,115 @@ class EventFeedController extends Controller
     /**
      * Generate error response in RSS format
      */
-    private function generateErrorResponse(string $message): Response
+    private function generateErrorResponse(string $message, int $status = 404): Response
     {
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<rss version="2.0">' . PHP_EOL;
-        $xml .= '  <channel>' . PHP_EOL;
-        $xml .= '    <title>Error</title>' . PHP_EOL;
-        $xml .= '    <link>' . $this->escapeXml($this->baseUrl) . '</link>' . PHP_EOL;
-        $xml .= '    <description>' . $this->escapeXml($message) . '</description>' . PHP_EOL;
-        $xml .= '  </channel>' . PHP_EOL;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
+        $xml .= '<rss version="2.0">'.PHP_EOL;
+        $xml .= '  <channel>'.PHP_EOL;
+        $xml .= '    <title>Error</title>'.PHP_EOL;
+        $xml .= '    <link>'.$this->escapeXml($this->baseUrl).'</link>'.PHP_EOL;
+        $xml .= '    <description>'.$this->escapeXml($message).'</description>'.PHP_EOL;
+        $xml .= '  </channel>'.PHP_EOL;
         $xml .= '</rss>';
 
-        return response($xml, 404)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+        return response($xml, $status)->header('Content-Type', 'application/rss+xml; charset=utf-8');
+    }
+
+    /**
+     * Ausgabesprache aus ?lang= setzen; ohne Parameter die Ausgangssprache (Deutsch).
+     * Browser-Sprache und Sprach-Cookie gelten für Feeds bewusst nicht, damit eine
+     * Feed-URL immer dieselbe Sprache liefert. Null bei nicht unterstützter Sprache.
+     */
+    private function applyRequestedLanguage(): ?string
+    {
+        $requested = request()->query('lang');
+
+        if ($requested !== null && ! is_string($requested)) {
+            return null;
+        }
+
+        $locale = $requested === null ? CustomEvent::sourceLocale() : strtolower($requested);
+
+        if (! in_array($locale, CustomEvent::translationLocales(), true)) {
+            return null;
+        }
+
+        App::setLocale($locale);
+
+        return $locale;
+    }
+
+    private function unsupportedLanguageResponse(): Response
+    {
+        $requested = request()->query('lang');
+
+        return $this->generateErrorResponse(
+            'Unsupported language: '.(is_string($requested) ? $requested : '').'. Supported: '.implode(', ', CustomEvent::translationLocales()),
+            400
+        );
+    }
+
+    private function feedResponse(string $content, string $mimeType, string $locale): Response
+    {
+        return response($content, 200)
+            ->header('Content-Type', $mimeType.'; charset=utf-8')
+            ->header('Content-Language', $locale);
+    }
+
+    private function priorityLabel(string $priority): string
+    {
+        $labels = __('feed.priorities');
+        $priority = strtolower($priority);
+
+        return is_array($labels) && isset($labels[$priority]) ? $labels[$priority] : ucfirst($priority);
+    }
+
+    /**
+     * Beschreibung in der Ausgabesprache. Eine Übersetzung geht der unübersetzten
+     * Spalte description vor; sonst gilt die bisherige Reihenfolge.
+     */
+    private function eventDescription(CustomEvent $event): ?string
+    {
+        $locale = App::getLocale();
+
+        if ($locale !== CustomEvent::sourceLocale() && ($translated = $event->popupContentTranslation($locale)) !== null) {
+            return $translated;
+        }
+
+        return $event->description ?: $event->popup_content ?: null;
+    }
+
+    /**
+     * Metadaten-Zusammenfassung (Typ, Beginn, Ende, Priorität, Länder) in der Ausgabesprache.
+     *
+     * @return array<int, string>
+     */
+    private function eventDetails(CustomEvent $event): array
+    {
+        $locale = App::getLocale();
+        $dateFormat = __('feed.date_format');
+        $details = [];
+
+        if ($event->eventTypes && $event->eventTypes->count() > 0) {
+            $details[] = __('feed.label_type').': '.$event->eventTypes->pluck('name')->join(', ');
+        } elseif ($event->eventType) {
+            $details[] = __('feed.label_type').': '.$event->eventType->name;
+        }
+        if ($event->start_date) {
+            $details[] = __('feed.label_start').': '.$event->start_date->format($dateFormat);
+        }
+        if ($event->end_date) {
+            $details[] = __('feed.label_end').': '.$event->end_date->format($dateFormat);
+        }
+        if ($event->priority) {
+            $details[] = __('feed.label_priority').': '.$this->priorityLabel($event->priority);
+        }
+        if ($event->countries && $event->countries->count() > 0) {
+            $details[] = __('feed.label_countries').': '.$event->countries->map(fn ($c) => $c->getName($locale))->join(', ');
+        } elseif ($event->country) {
+            $details[] = __('feed.label_country').': '.$event->country->getName($locale);
+        }
+
+        return $details;
     }
 }

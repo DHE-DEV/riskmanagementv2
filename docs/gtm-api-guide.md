@@ -91,6 +91,7 @@ GET /v1/events
 | `end_date` | date | Nein | Nur Events bis zu diesem Datum (z.B. `2026-04-30`) |
 | `per_page` | integer | Nein | Einträge pro Seite (Standard: 25, Maximum: 100) |
 | `page` | integer | Nein | Seitennummer (Standard: 1) |
+| `lang` | string | Nein | Sprache: `de` (Standard), `en`, `nl` – siehe [Sprache](#sprache) |
 
 **Beispiele:**
 
@@ -122,6 +123,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 # Filter kombinieren
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://platform.passolution.de/api/v1/events?risk_level=high&country=TR&source=manual&per_page=10"
+
+# Events auf Englisch
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/events?lang=en"
 ```
 
 **Response (200 OK):**
@@ -134,6 +139,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "title": "Earthquake in Turkey",
       "description": "A 6.2 magnitude earthquake struck southeastern Turkey.",
+      "language": "en",
       "risk_level": "high",
       "start_date": "2025-03-15T08:30:00Z",
       "end_date": null,
@@ -173,6 +179,29 @@ curl -H "Authorization: Bearer {TOKEN}" \
   }
 }
 ```
+
+---
+
+### Sprache
+
+Mit dem Query-Parameter `lang` kommen die Events in einer anderen Sprache. Er gilt für
+`GET /v1/events`, `GET /v1/events/{uuid}` und `GET /v1/events/nearby`.
+
+| Wert | Sprache |
+|------|---------|
+| `de` | Deutsch (Standard, auch ohne Parameter) |
+| `en` | Englisch |
+| `nl` | Niederländisch |
+
+- Übersetzt werden `title`, `description` und die Ortsnamen in `locations`.
+  `countries` enthält wie bisher immer `name_de` und `name_en`; die Kategorienamen in
+  `event_categories` sind nur auf Deutsch verfügbar.
+- Ohne `lang` antwortet die API immer auf Deutsch – unabhängig von `Accept-Language`.
+- Ist ein Event noch nicht übersetzt, kommt der deutsche Originaltext. Das Feld
+  `language` zeigt je Event, in welcher Sprache `title` und `description` tatsächlich
+  vorliegen (z. B. `de` trotz `lang=en`).
+- Die Antwort enthält den Header `Content-Language` mit der angefragten Sprache.
+- Ein nicht unterstützter Wert (z. B. `lang=fr`) führt zu `422 Unprocessable Entity`.
 
 ---
 
