@@ -92,6 +92,20 @@ if (config('travel_detail.enabled') && config('travel_detail.retention.scheduled
         ->appendOutputTo(storage_path('logs/travel-detail-purge.log'));
 }
 
+// Travel Alert: pds-Reisen der genutzten Konten lokal spiegeln (Delta jede Minute,
+// nachts vollständiger Abgleich, der auch gelöschte Links entfernt)
+Schedule::command('travel-alert:sync-trips')
+    ->everyMinute()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/travel-alert-sync-trips.log'));
+
+Schedule::command('travel-alert:sync-trips --full')
+    ->dailyAt('03:40')
+    ->withoutOverlapping(120)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/travel-alert-sync-trips.log'));
+
 // Travel Links Sync (pro Kunde ein Job auf eigener Queue)
 Schedule::command('travel-links:sync')
     ->cron('*/'.config('notifications.travel_links_sync_interval', 30).' * * * *')

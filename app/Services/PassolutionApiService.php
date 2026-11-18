@@ -232,21 +232,65 @@ class PassolutionApiService
     /** Höchstens so viele Seiten à 1000 Links je Abruf (Schutz vor Ausreißern). */
     public const TRAVEL_DETAILS_MAX_PAGES = 30;
 
+    /** So viele Seiten werden gleichzeitig angefragt. */
+    private const TRAVEL_DETAILS_PARALLEL_PAGES = 10;
+
+    /**
+     * Alle Reisen eines Kontos ab einem Tag (Reiseende) – für den lokalen Spiegel des
+     * Travel Alert. Streng: Fehlt auch nur eine Seite, kommt null zurück, damit der
+     * Abgleich keine Reisen löscht, die nur nicht geladen wurden.
+     *
+     * @param  callable(array<string, mixed>): array<string, mixed>  $mapRow  verschlankt jede Reise gleich nach dem Laden
+     * @return array<int, array<string, mixed>>|null
+     */
+    public function fetchAllTravelDetailsOfAccount(int $accountId, string $endDateFrom, callable $mapRow, int $maxPages = 200): ?array
+    {
+        $token = config('services.passolution.internal_token') ?: $this->apiKey;
+
+        if (! $token) {
+            return null;
+        }
+
+        $params = [
+            'account_id' => $accountId,
+            'per_page' => 1000,
+            'sort_by' => 'start_date',
+            'sort_order' => 'desc',
+            '__with' => '__cruise-info',
+            'end_date' => ['>=' => $endDateFrom],
+        ];
+
+        try {
+            return $this->fetchAllTravelDetailPages("{$this->internalBaseUrl}/__internal/account/travel-details", $token, $params, $maxPages, true, $mapRow);
+        } catch (\Exception $e) {
+            Log::error('Passolution API: Vollabruf der Travel-Details fehlgeschlagen', [
+                'account_id' => $accountId,
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     /**
      * Alle Seiten von __internal/account/travel-details: erst Seite 1, die übrigen
-     * gleichzeitig. Früher kam nur Seite 1 – bei mehr als 1000 Reisen im Zeitraum
-     * fehlten dann ausgerechnet die laufenden (Sortierung nach Reisebeginn absteigend).
+     * gleichzeitig (in Gruppen). Früher kam nur Seite 1 – bei mehr als 1000 Reisen im
+     * Zeitraum fehlten dann ausgerechnet die laufenden (Sortierung nach Reisebeginn absteigend).
      *
      * @param  array<string, mixed>  $params
-     * @return array<int, array<string, mixed>>|null null, wenn Seite 1 scheitert
+     * @param  bool  $strict  true: null, sobald eine Seite fehlt oder die Seitengrenze greift
+     * @param  (callable(array<string, mixed>): array<string, mixed>)|null  $mapRow
+     * @return array<int, array<string, mixed>>|null null, wenn Seite 1 scheitert (bzw. streng: irgendeine)
      */
-    private function fetchAllTravelDetailPages(string $url, string $token, array $params): ?array
+    private function fetchAllTravelDetailPages(string $url, string $token, array $params, int $maxPages = self::TRAVEL_DETAILS_MAX_PAGES, bool $strict = false, ?callable $mapRow = null): ?array
     {
-        $request = fn () => Http::withHeaders(['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token])->timeout(20);
+        $map = fn (array $data): array => $mapRow ? array_map($mapRow, $data) : $data;
 
         $t0 = microtime(true);
         try {
-            $first = $request()->get($url, $params + ['page' => 1]);
+            $first = Http::withHeaders(['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token])
+                ->timeout(20)
+                ->get($url, $params + ['page' => 1]);
         } catch (\Exception $e) {
             \App\Support\PdsDebug::record('GET', $url, $params, null, $t0, null, $e->getMessage());
             throw $e;
@@ -258,16 +302,20 @@ class PassolutionApiService
             return null;
         }
 
-        $rows = $first->json('data', []);
+        $rows = $map($first->json('data', []));
         $lastPage = (int) ($first->json('meta.last_page') ?? 1);
 
-        if ($lastPage > self::TRAVEL_DETAILS_MAX_PAGES) {
+        if ($lastPage > $maxPages) {
             Log::warning('Passolution API: Travel-Details über der Seitengrenze – nicht alle Reisen geladen', [
                 'pages' => $lastPage,
-                'max_pages' => self::TRAVEL_DETAILS_MAX_PAGES,
+                'max_pages' => $maxPages,
                 'total' => $first->json('meta.total'),
             ]);
-            $lastPage = self::TRAVEL_DETAILS_MAX_PAGES;
+
+            if ($strict) {
+                return null;
+            }
+            $lastPage = $maxPages;
         }
 
         if ($lastPage < 2) {
@@ -275,29 +323,35 @@ class PassolutionApiService
         }
 
         $t1 = microtime(true);
-        $responses = Http::pool(fn ($pool) => array_map(
-            fn (int $page) => $pool->as((string) $page)
-                ->withHeaders(['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token])
-                ->timeout(20)
-                ->get($url, $params + ['page' => $page]),
-            range(2, $lastPage),
-        ));
+        foreach (array_chunk(range(2, $lastPage), self::TRAVEL_DETAILS_PARALLEL_PAGES) as $pages) {
+            $responses = Http::pool(fn ($pool) => array_map(
+                fn (int $page) => $pool->as((string) $page)
+                    ->withHeaders(['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token])
+                    ->timeout(20)
+                    ->get($url, $params + ['page' => $page]),
+                $pages,
+            ));
 
-        foreach (range(2, $lastPage) as $page) {
-            $response = $responses[(string) $page] ?? null;
+            foreach ($pages as $page) {
+                $response = $responses[(string) $page] ?? null;
 
-            if ($response instanceof \Illuminate\Http\Client\Response && $response->successful()) {
-                array_push($rows, ...$response->json('data', []));
+                if ($response instanceof \Illuminate\Http\Client\Response && $response->successful()) {
+                    array_push($rows, ...$map($response->json('data', [])));
 
-                continue;
+                    continue;
+                }
+
+                Log::warning('Passolution API: Travel-Details-Seite nicht geladen', [
+                    'page' => $page,
+                    'status' => $response instanceof \Illuminate\Http\Client\Response ? $response->status() : null,
+                    'error' => $response instanceof \Throwable ? $response->getMessage() : null,
+                ]);
+
+                // Streng: lieber gar nichts als unvollständig. Sonst: lieber fast vollständig als leer.
+                if ($strict) {
+                    return null;
+                }
             }
-
-            // Eine fehlende Seite soll nicht alles verwerfen: lieber fast vollständig als leer.
-            Log::warning('Passolution API: Travel-Details-Seite nicht geladen', [
-                'page' => $page,
-                'status' => $response instanceof \Illuminate\Http\Client\Response ? $response->status() : null,
-                'error' => $response instanceof \Throwable ? $response->getMessage() : null,
-            ]);
         }
         \App\Support\PdsDebug::record('GET', $url, $params + ['pages' => '2-'.$lastPage], 200, $t1, ['rows' => count($rows)]);
 
@@ -313,9 +367,10 @@ class PassolutionApiService
      *
      * @param  string|null  $since  Wasserstand (Y-m-d H:i:s); null = von Anfang
      * @param  array|null  $cursor  ['last_change_at' => ..., 'id' => ...] der letzten Seite
+     * @param  array<int, int>  $accountIds  optional: nur Links dieser pds-Konten
      * @return array{data: array, meta: array}|null null bei Fehler
      */
-    public function fetchTravelDetailChanges(?string $since, ?array $cursor = null, int $perPage = 1000): ?array
+    public function fetchTravelDetailChanges(?string $since, ?array $cursor = null, int $perPage = 1000, array $accountIds = []): ?array
     {
         $token = config('services.passolution.internal_token') ?: $this->apiKey;
 
@@ -332,6 +387,10 @@ class PassolutionApiService
         if (! empty($cursor['last_change_at']) && isset($cursor['id'])) {
             $query['cursor_last_change_at'] = $cursor['last_change_at'];
             $query['cursor_id'] = $cursor['id'];
+        }
+        // Nur diese Konten (ältere pds-Stände ignorieren den Filter; Aufrufer filtern daher selbst nach).
+        if ($accountIds !== []) {
+            $query['account_ids'] = array_values(array_map('intval', $accountIds));
         }
 
         $url = "{$this->internalBaseUrl}/__internal/travel-details/changes";

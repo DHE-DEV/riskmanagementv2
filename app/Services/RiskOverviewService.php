@@ -8,6 +8,7 @@ use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Models\TravelDetail\TdTrip;
+use App\Services\TravelDetail\TravelAlertTripMirror;
 use App\Support\ResolvesPdsIdentity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -155,7 +156,9 @@ class RiskOverviewService
 
             // Service-Token ueber die Identitaets-E-Mail (keycloak ?: employee ?:
             // customer->email) hat Vorrang -> macht veraltete per-User-Tokens irrelevant.
-            if ($ssoEmail) {
+            $apiTravelers = $this->mirroredTravelDetails($customer, $startDate, $endDate);
+
+            if ($apiTravelers === null && $ssoEmail) {
                 $apiTravelers = $this->fetchTravelAlertTravelDetails($ssoEmail, $startDate, $endDate);
             }
 
@@ -270,6 +273,31 @@ class RiskOverviewService
     /**
      * Extract country codes from API traveler data.
      */
+    /**
+     * Reisen aus dem lokalen Spiegel (große Konten, siehe TravelAlertTripMirror) – oder null,
+     * wenn das Konto noch nicht gespiegelt ist. Merkt das Konto zugleich für den Spiegel vor.
+     *
+     * @return array<int, array<string, mixed>>|null
+     */
+    protected function mirroredTravelDetails(Customer $customer, string $startDate, string $endDate): ?array
+    {
+        if (! $customer->pds_account_id) {
+            return null;
+        }
+
+        $mirror = app(TravelAlertTripMirror::class);
+
+        try {
+            $mirror->noteRequest((int) $customer->pds_account_id);
+
+            return $mirror->localTrips((int) $customer->pds_account_id, $startDate, $endDate);
+        } catch (\Throwable $e) {
+            Log::warning('Travel Alert: lokaler Reise-Spiegel nicht lesbar, Live-Abruf', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
     /** So lange teilen sich Reiseliste, Länderansicht und Länderdetails eine pds-Abfrage. */
     public const PDS_TRIPS_CACHE_MINUTES = 5;
 
@@ -286,7 +314,7 @@ class RiskOverviewService
         $load = function () use ($email, $startDate, $endDate): ?array {
             $rows = app(PassolutionApiService::class)->fetchTravelDetailsByEmail($email, $startDate, $endDate);
 
-            return $rows === null ? null : array_map(fn (array $row) => $this->slimTravelDetail($row), $rows);
+            return $rows === null ? null : array_map(fn (array $row) => TravelAlertTripMirror::slim($row), $rows);
         };
 
         if (($cached = Cache::get($key)) !== null) {
@@ -309,42 +337,6 @@ class RiskOverviewService
         } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
             return $load();
         }
-    }
-
-    /**
-     * Nur die Felder einer pds-Reise, die der Travel Alert liest – hält den
-     * Zwischenspeicher auch bei zehntausenden Reisen klein.
-     *
-     * @param  array<string, mixed>  $row
-     * @return array<string, mixed>
-     */
-    protected function slimTravelDetail(array $row): array
-    {
-        $codes = fn ($list) => array_values(array_map(
-            fn ($item) => ['code' => is_array($item) ? ($item['code'] ?? null) : null],
-            is_array($list) ? $list : [],
-        ));
-
-        return [
-            'tid' => $row['tid'] ?? null,
-            'id' => $row['id'] ?? null,
-            'trip_name' => $row['trip_name'] ?? null,
-            'start_date' => $row['start_date'] ?? null,
-            'end_date' => $row['end_date'] ?? null,
-            'travelers_count' => $row['travelers_count'] ?? null,
-            'destinations' => $row['destinations'] ?? [],
-            'destinations_list' => $codes($row['destinations_list'] ?? []),
-            'countries' => $codes($row['countries'] ?? []),
-            'nationalities' => $row['nationalities'] ?? [],
-            'cruise_compass' => $row['cruise_compass'] ?? null,
-            'cruise' => isset($row['cruise']['port_calls']) && is_array($row['cruise']['port_calls'])
-                ? ['port_calls' => array_values(array_map(fn ($call) => [
-                    'day' => $call['day'] ?? null,
-                    'port' => ['country' => ['code' => $call['port']['country']['code'] ?? null]],
-                ], $row['cruise']['port_calls']))]
-                : null,
-            'travel' => ['with_minors' => $row['travel']['with_minors'] ?? null],
-        ];
     }
 
     protected function extractCountryCodesFromApiTraveler(array $traveler): array
@@ -1268,7 +1260,9 @@ class RiskOverviewService
 
             // Service-Token ueber die Identitaets-E-Mail (keycloak ?: employee ?:
             // customer->email) hat Vorrang -> macht veraltete per-User-Tokens irrelevant.
-            if ($ssoEmail) {
+            $apiTravelers = $this->mirroredTravelDetails($customer, $startDate, $endDate);
+
+            if ($apiTravelers === null && $ssoEmail) {
                 Log::info('RiskOverview: Reisen via Service-Token', ['sso_email' => $ssoEmail]);
                 $apiTravelers = $this->fetchTravelAlertTravelDetails($ssoEmail, $startDate, $endDate);
             }
