@@ -24,8 +24,10 @@ class SetEventLocale
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Admin-/Filament-Bereich nicht beeinflussen.
-        if ($request->is('admin', 'admin/*')) {
+        // Admin-/Filament-Bereich nicht beeinflussen. Feeds wählen ihre Sprache selbst
+        // per ?lang= (EventFeedController) – ein Feed-Abruf oder ein Test aus der API-Doku
+        // darf die gemerkte Anzeigesprache der Plattform nicht umstellen.
+        if ($request->is('admin', 'admin/*', 'feed', 'feed/*', 'docs', 'docs/*')) {
             return $next($request);
         }
 

@@ -115,3 +115,20 @@ it('zeigt die Event-Typen im Feed in der gewünschten Sprache', function () {
         ->assertSee('Type: Strike')
         ->assertSee('<article:event_type code="strike">Strike</article:event_type>', false);
 });
+
+it('stellt beim Abruf eines Feeds mit lang die Anzeigesprache der Plattform nicht um', function () {
+    translatedFeedEvent();
+
+    $response = $this->get('/feed/events/all.xml?lang=nl');
+
+    $response->assertOk()
+        ->assertSee('Staking op de luchthaven')
+        ->assertCookieMissing('app_locale')
+        ->assertSessionMissing('app_locale');
+});
+
+it('merkt sich die Sprache weiterhin, wenn sie auf einer Plattform-Seite gewählt wird', function () {
+    $response = $this->get('/?lang=en');
+
+    $response->assertCookie('app_locale', 'en', false);
+});
