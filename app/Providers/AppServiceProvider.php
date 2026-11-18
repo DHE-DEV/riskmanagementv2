@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\PersonalAccessToken;
 use SocialiteProviders\Keycloak\KeycloakExtendSocialite;
 use SocialiteProviders\LaravelPassport\LaravelPassportExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -57,12 +58,16 @@ class AppServiceProvider extends ServiceProvider
             fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">')
         );
 
-        // GTM API Rate Limiter - per customer, configurable rate limit
+        // GTM API Rate Limiter: Höhe je Kunde einstellbar, gezählt je Token und IP.
+        // So verbrauchen weder andere Tokens desselben Kunden (Integrationen, Doku-Tests)
+        // noch die vielen Installationen eines geteilten App-Tokens ein gemeinsames Kontingent.
         RateLimiter::for('gtm-api', function (Request $request) {
             $customer = $request->user();
             $limit = $customer?->gtm_api_rate_limit ?? 60;
+            $token = $customer?->currentAccessToken();
+            $owner = $token instanceof PersonalAccessToken ? 'token:'.$token->getKey() : 'customer:'.($customer?->getKey() ?? 'guest');
 
-            return Limit::perMinute($limit)->by($customer?->id ?: $request->ip());
+            return Limit::perMinute($limit)->by($owner.'|'.$request->ip());
         });
 
         // Geraete-Endpunkte der Apps: je Geraet bzw. IP, nicht je Kunde (alle Installationen teilen einen Token).

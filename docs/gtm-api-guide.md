@@ -32,7 +32,7 @@ Die bisherigen Adressen `https://api.global-travel-monitor.de/v1` und `https://g
 
 ## Rate Limit
 
-Standardmäßig sind **60 Requests pro Minute** erlaubt. Das Limit kann je Kunde höher eingestellt sein; den aktuellen Wert liefern die Antwort-Header `X-RateLimit-Limit` und `X-RateLimit-Remaining`. Bei Überschreitung erhalten Sie einen `429 Too Many Requests`-Response. Prüfen Sie den `Retry-After`-Header für die Wartezeit in Sekunden.
+Standardmäßig sind **60 Requests pro Minute** erlaubt – gezählt je API-Token und aufrufender IP-Adresse. Mehrere Tokens oder Server desselben Kunden haben also jeweils ein eigenes Kontingent. Das Limit kann je Kunde höher eingestellt sein; den aktuellen Wert liefern die Antwort-Header `X-RateLimit-Limit` und `X-RateLimit-Remaining`. Bei Überschreitung erhalten Sie einen `429 Too Many Requests`-Response. Prüfen Sie den `Retry-After`-Header für die Wartezeit in Sekunden.
 
 ---
 

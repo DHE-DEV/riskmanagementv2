@@ -2247,7 +2247,7 @@ components:
             $ref: '#/components/schemas/ValidationError'
 
     TooManyRequests:
-      description: Rate Limit überschritten (60 Requests pro Minute)
+      description: Rate Limit überschritten (Standard 60 Requests pro Minute je Token und IP)
       headers:
         Retry-After:
           schema:
