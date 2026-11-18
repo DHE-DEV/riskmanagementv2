@@ -42,6 +42,9 @@
             default => 'bis '.$formatDate($periodTo),
         }, 'period', null];
     }
+    if (isset($this->translationFilterOptions()[$translation])) {
+        $badges[] = ['Übersetzung', $this->translationFilterOptions()[$translation], 'translation', null];
+    }
     if (isset($this->taskFilterOptions()[$taskFilter])) {
         $badges[] = ['Aufgaben', $this->taskFilterOptions()[$taskFilter], 'taskFilter', null];
     }
@@ -148,6 +151,22 @@
                         @foreach ($scopeOptions as $value => $label)
                             <label wire:key="scope-chip-{{ $value }}" class="{{ $chip }}">
                                 <input type="radio" wire:model.live="scope" value="{{ $value }}" class="sr-only" />
+                                {{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <div class="{{ $groupLabel }}">Übersetzung</div>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="{{ $chip }}">
+                            <input type="radio" wire:model.live="translation" value="" class="sr-only" />
+                            Alle
+                        </label>
+                        @foreach ($this->translationFilterOptions() as $value => $label)
+                            <label wire:key="translation-chip-{{ $value }}" class="{{ $chip }}">
+                                <input type="radio" wire:model.live="translation" value="{{ $value }}" class="sr-only" />
                                 {{ $label }}
                             </label>
                         @endforeach
@@ -404,7 +423,7 @@
     <div
         class="grid gap-4 lg:grid-cols-2"
         wire:loading.class="opacity-60"
-        wire:target="tab, search, priorities, types, countryIds, periodFrom, periodTo, scope, taskFilter, taskPerson, sort, toggleDirection, removeFilter, resetFilters, gotoPage, nextPage, previousPage"
+        wire:target="tab, search, priorities, types, countryIds, periodFrom, periodTo, scope, translation, taskFilter, taskPerson, sort, toggleDirection, removeFilter, resetFilters, gotoPage, nextPage, previousPage"
     >
         @forelse ($events as $event)
             @php
@@ -461,6 +480,11 @@
                             {{ $eventType->name }}
                         </span>
                     @endforeach
+                    @if ($event->customer_id === null && in_array($event->translation_status, ['missing', 'stale'], true))
+                        <span class="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-400/10 dark:text-amber-300" title="{{ $event->translation_status === 'missing' ? 'Fehlt: '.strtoupper(implode(', ', $event->missingTranslationLocales())) : 'Veraltet: '.strtoupper(implode(', ', $event->staleTranslationLocales())) }}">
+                            {{ $event->translation_status === 'missing' ? 'Übersetzung fehlt' : 'Übersetzung veraltet' }}
+                        </span>
+                    @endif
                     @if ($event->is_nationwide)
                         <span class="rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-400/10 dark:text-sky-300">landesweit</span>
                     @endif

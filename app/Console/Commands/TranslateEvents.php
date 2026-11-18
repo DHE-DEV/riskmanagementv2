@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Übersetzt alle laufenden und künftigen globalen Ereignisse per DeepL in die
- * fehlenden Sprachen (EVENT_LANGUAGES, z. B. de, en, nl). Vorhandene, auch manuell
- * gepflegte Übersetzungen bleiben unangetastet; ein erneuter Lauf übersetzt nur,
- * was noch fehlt.
+ * fehlenden Sprachen (EVENT_LANGUAGES, z. B. de, en, nl) und erneuert veraltete
+ * Übersetzungen, die niemand von Hand geändert hat. Manuell gepflegte Übersetzungen
+ * bleiben unangetastet; ein erneuter Lauf übersetzt nur, was noch offen ist.
  *
  *   php artisan events:translate --dry-run   (Anzahl und Zeichenmenge ansehen)
  *   php artisan events:translate             (übersetzen)
@@ -32,7 +32,7 @@ class TranslateEvents extends Command
             $events = $events->take((int) $this->option('limit'));
         }
 
-        $this->info($events->count().' Ereignis(se) mit fehlenden Übersetzungen ('.implode(', ', CustomEvent::translationLocales()).').');
+        $this->info($events->count().' Ereignis(se) mit fehlenden oder veralteten Übersetzungen ('.implode(', ', CustomEvent::translationLocales()).').');
 
         if ($this->option('dry-run')) {
             $this->line('Etwa '.number_format($events->sum(fn (CustomEvent $event) => $this->charactersToTranslate($event)), 0, ',', '.').' Zeichen gingen an DeepL.');
@@ -93,7 +93,7 @@ class TranslateEvents extends Command
             ->where(fn (Builder $query) => $query->whereNull('end_date')->orWhere('end_date', '>=', now()->startOfDay()))
             ->orderBy('start_date')
             ->get()
-            ->filter(fn (CustomEvent $event) => $event->missingTranslationLocales() !== [])
+            ->filter(fn (CustomEvent $event) => $event->localesNeedingTranslation() !== [])
             ->values();
     }
 
@@ -104,11 +104,15 @@ class TranslateEvents extends Command
         $contents = $event->popup_content_translations ?? [];
         $characters = 0;
 
-        foreach ($event->missingTranslationLocales() as $locale) {
-            if (blank($titles[$locale] ?? null)) {
+        $refresh = $event->autoRefreshableTranslationLocales();
+
+        foreach ($event->localesNeedingTranslation() as $locale) {
+            $overwrite = in_array($locale, $refresh, true);
+
+            if ($overwrite || blank($titles[$locale] ?? null)) {
                 $characters += mb_strlen((string) ($titles[$source] ?? ''));
             }
-            if (blank($contents[$locale] ?? null)) {
+            if ($overwrite || blank($contents[$locale] ?? null)) {
                 $characters += mb_strlen((string) ($contents[$source] ?? ''));
             }
         }

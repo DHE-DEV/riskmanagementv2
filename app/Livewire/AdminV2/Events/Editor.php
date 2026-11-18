@@ -989,6 +989,7 @@ class Editor extends Component
         $titles = $event->title_translations ?? [];
         $contents = $event->popup_content_translations ?? [];
         $translated = 0;
+        $done = [];
         $errors = [];
 
         foreach (CustomEvent::translationLocales() as $locale) {
@@ -997,6 +998,8 @@ class Editor extends Component
             }
 
             try {
+                $before = $translated;
+
                 if (filled($titles[$source] ?? null) && ($this->overwriteTranslations || blank($titles[$locale] ?? null))) {
                     $titles[$locale] = $deepl->translate($titles[$source], $locale, $source);
                     $translated++;
@@ -1006,15 +1009,22 @@ class Editor extends Component
                     $contents[$locale] = $deepl->translateHtml($contents[$source], $locale, $source);
                     $translated++;
                 }
+
+                if ($translated > $before) {
+                    $done[] = $locale;
+                }
             } catch (\Throwable $e) {
                 $errors[] = strtoupper($locale).': '.$e->getMessage();
             }
         }
 
-        $event->update([
+        $event->fill([
             'title_translations' => $titles,
             'popup_content_translations' => $contents,
         ]);
+        // Festhalten, aus welchem Stand übersetzt wurde – Grundlage für "Übersetzung veraltet".
+        $event->markTranslated($done);
+        $event->save();
 
         session()->flash('adminv2-toast', match (true) {
             $errors !== [] => 'Übersetzung teilweise fehlgeschlagen – '.implode(' | ', $errors),

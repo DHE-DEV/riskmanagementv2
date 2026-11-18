@@ -53,6 +53,8 @@ class CustomEvent extends Model implements Feedable
         'marker_size',
         'popup_content',
         'popup_content_translations',
+        'translation_meta',
+        'translation_status',
         'source',
         'source_show_frontend',
         'source_link_text',
@@ -89,6 +91,7 @@ class CustomEvent extends Model implements Feedable
         'activated_at' => 'datetime',
         'title_translations' => 'array',
         'popup_content_translations' => 'array',
+        'translation_meta' => 'array',
         'latitude' => 'decimal:16',
         'longitude' => 'decimal:16',
         'start_date' => 'datetime',
@@ -265,6 +268,112 @@ class CustomEvent extends Model implements Feedable
                 || (filled($contents[$source] ?? null) && blank($contents[$locale] ?? null))
             ),
         ));
+    }
+
+    /**
+     * Fingerabdruck von Titel und Beschreibung einer Sprache – erkennt Änderungen am Text.
+     */
+    public function translationHash(string $locale): string
+    {
+        $title = trim((string) ($this->title_translations[$locale] ?? ''));
+        $content = trim((string) ($this->popup_content_translations[$locale] ?? ''));
+
+        return sha1($title."\n".$content);
+    }
+
+    /**
+     * Übersetzungen, die aus einem älteren Stand der Ausgangssprache stammen.
+     * Ohne gespeicherten Stand (Altbestand ohne Nachverfolgung) gilt eine Übersetzung als aktuell.
+     *
+     * @return array<int, string>
+     */
+    public function staleTranslationLocales(): array
+    {
+        $source = static::sourceLocale();
+        $sourceHash = $this->translationHash($source);
+        $meta = $this->translation_meta ?? [];
+
+        return array_values(array_filter(
+            static::translationLocales(),
+            fn (string $locale) => $locale !== $source
+                && filled($this->title_translations[$locale] ?? null)
+                && isset($meta[$locale]['source'])
+                && $meta[$locale]['source'] !== $sourceHash,
+        ));
+    }
+
+    /**
+     * Veraltete Übersetzungen, die seit der maschinellen Übersetzung niemand von Hand
+     * geändert hat – die darf DeepL ohne Rückfrage neu übersetzen.
+     *
+     * @return array<int, string>
+     */
+    public function autoRefreshableTranslationLocales(): array
+    {
+        $meta = $this->translation_meta ?? [];
+
+        return array_values(array_filter(
+            $this->staleTranslationLocales(),
+            fn (string $locale) => ($meta[$locale]['result'] ?? null) === $this->translationHash($locale),
+        ));
+    }
+
+    /**
+     * Sprachen, die eine automatische Übersetzung braucht: fehlende und veraltete, unbearbeitete.
+     *
+     * @return array<int, string>
+     */
+    public function localesNeedingTranslation(): array
+    {
+        return array_values(array_unique(array_merge($this->missingTranslationLocales(), $this->autoRefreshableTranslationLocales())));
+    }
+
+    /**
+     * Für diese Sprachen festhalten, dass sie aus dem aktuellen Stand übersetzt wurden.
+     *
+     * @param  array<int, string>  $locales
+     */
+    public function markTranslated(array $locales): void
+    {
+        $meta = $this->translation_meta ?? [];
+        $sourceHash = $this->translationHash(static::sourceLocale());
+
+        foreach ($locales as $locale) {
+            $meta[$locale] = ['source' => $sourceHash, 'result' => $this->translationHash($locale), 'at' => now()->toIso8601String()];
+        }
+
+        $this->translation_meta = $meta;
+    }
+
+    /**
+     * Ausgangslage für vorhandene Übersetzungen ohne Nachverfolgung: als aktuell markieren.
+     *
+     * @return array<string, array{source: string, result: string, at: string}>|null
+     */
+    public function baselineTranslationMeta(): ?array
+    {
+        $meta = $this->translation_meta ?? [];
+        $sourceHash = $this->translationHash(static::sourceLocale());
+
+        foreach (static::translationLocales() as $locale) {
+            if ($locale !== static::sourceLocale() && ! isset($meta[$locale]) && filled($this->title_translations[$locale] ?? null)) {
+                $meta[$locale] = ['source' => $sourceHash, 'result' => $this->translationHash($locale), 'at' => now()->toIso8601String()];
+            }
+        }
+
+        return $meta ?: null;
+    }
+
+    /**
+     * complete | missing | stale – für Filter und Markierungen im Admin.
+     */
+    public function computeTranslationStatus(): string
+    {
+        return match (true) {
+            $this->missingTranslationLocales() !== [] => 'missing',
+            $this->staleTranslationLocales() !== [] => 'stale',
+            default => 'complete',
+        };
     }
 
     /**
@@ -1376,6 +1485,7 @@ class CustomEvent extends Model implements Feedable
         static::saving(function (CustomEvent $event) {
             $event->syncTranslationColumns();
             $event->syncLegacySourceColumns();
+            $event->translation_status = $event->computeTranslationStatus();
         });
 
         // Automatically set archived_at when archiving

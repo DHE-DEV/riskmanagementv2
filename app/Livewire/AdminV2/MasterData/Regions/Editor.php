@@ -6,6 +6,7 @@ use App\Jobs\FillRegionInfoJob;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
+use App\Livewire\AdminV2\Concerns\EditsNameTranslations;
 use App\Livewire\AdminV2\Concerns\EditsRegionInfo;
 use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Country;
@@ -29,7 +30,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, EditsRegionInfo, RunsAiChecks;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, EditsNameTranslations, EditsRegionInfo, RunsAiChecks;
 
     /** So viele Staedte zeigt die Seitenspalte. */
     public const RELATED_LIMIT = 12;
@@ -50,6 +51,8 @@ class Editor extends Component
 
     public function mount(?int $region = null): void
     {
+        $this->fillOtherNames(null);
+
         $this->info = RegionInfo::toForm(null);
 
         if ($region === null) {
@@ -65,6 +68,7 @@ class Editor extends Component
         $this->recordId = $record->id;
         $this->nameDe = (string) ($record->name_translations['de'] ?? '');
         $this->nameEn = (string) ($record->name_translations['en'] ?? '');
+        $this->fillOtherNames($record->name_translations);
         $this->code = (string) $record->code;
         $this->countryId = (string) $record->country_id;
         $this->keywords = implode(', ', $record->keywords ?? []);
@@ -225,7 +229,7 @@ class Editor extends Component
         $created = ! $record->exists;
 
         $record->fill([
-            'name_translations' => $this->translations($record->name_translations, $this->nameDe, $this->nameEn),
+            'name_translations' => $this->withOtherNames($this->translations($record->name_translations, $this->nameDe, $this->nameEn)),
             'code' => $this->code,
             'country_id' => (int) $this->countryId,
             'keywords' => $this->tags($this->keywords),

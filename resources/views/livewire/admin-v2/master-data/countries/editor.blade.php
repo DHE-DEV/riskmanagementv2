@@ -61,7 +61,10 @@
                                 <p class="text-sm font-medium text-zinc-800 dark:text-white">Namen in weiteren Sprachen</p>
                                 <p class="mt-0.5 text-sm text-zinc-500">Sprachkürzel und Name, z. B. fr – Allemagne.</p>
                             </div>
-                            <flux:button size="sm" icon="plus" wire:click="addName">Sprache</flux:button>
+                            <div class="flex items-center gap-2">
+                                <flux:button size="sm" variant="ghost" icon="language" wire:click="completeNames" wire:loading.attr="disabled" wire:target="completeNames">Fehlende Sprachen ergänzen</flux:button>
+                                <flux:button size="sm" icon="plus" wire:click="addName">Sprache</flux:button>
+                            </div>
                         </div>
 
                         <x-adminv2.ai-field-hint key="names" :review="$aiReview" :applyable="false" class="!mt-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />

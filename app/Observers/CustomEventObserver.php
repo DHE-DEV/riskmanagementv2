@@ -81,7 +81,7 @@ class CustomEventObserver
 
         if (! $relevantChange
             || ! $customEvent->qualifiesForAutoTranslation()
-            || $customEvent->missingTranslationLocales() === []
+            || $customEvent->localesNeedingTranslation() === []
             || ! app(DeepLTranslationService::class)->isConfigured()) {
             return;
         }

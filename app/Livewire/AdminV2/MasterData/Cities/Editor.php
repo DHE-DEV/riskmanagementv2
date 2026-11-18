@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Cities;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
+use App\Livewire\AdminV2\Concerns\EditsNameTranslations;
 use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\City;
 use App\Models\Country;
@@ -24,7 +25,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, EditsNameTranslations, RunsAiChecks;
 
     public string $nameDe = '';
 
@@ -45,6 +46,8 @@ class Editor extends Component
 
     public function mount(?int $city = null): void
     {
+        $this->fillOtherNames(null);
+
         if ($city === null) {
             // Vorbelegt, wenn die Seite aus einem Land oder einer Region heraus geoeffnet wird.
             if ($subregion = Subregion::find((int) request()->query('subregion'))) {
@@ -66,6 +69,7 @@ class Editor extends Component
         $this->recordId = $record->id;
         $this->nameDe = (string) ($record->name_translations['de'] ?? '');
         $this->nameEn = (string) ($record->name_translations['en'] ?? '');
+        $this->fillOtherNames($record->name_translations);
         $this->countryId = (string) $record->country_id;
         $this->regionId = (string) $record->region_id;
         $this->subregionId = (string) $record->subregion_id;
@@ -196,7 +200,7 @@ class Editor extends Component
         $created = ! $record->exists;
 
         $record->fill([
-            'name_translations' => $this->translations($record->name_translations, $this->nameDe, $this->nameEn),
+            'name_translations' => $this->withOtherNames($this->translations($record->name_translations, $this->nameDe, $this->nameEn)),
             'country_id' => (int) $this->countryId,
             'region_id' => $this->regionId === '' ? null : (int) $this->regionId,
             'subregion_id' => $this->subregionId === '' ? null : (int) $this->subregionId,

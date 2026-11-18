@@ -753,6 +753,68 @@ class Editor extends Component
         $this->extraNames[] = ['code' => '', 'name' => ''];
     }
 
+    /**
+     * Fehlende Namen in den Sprachen aus EVENT_LANGUAGES ergänzen (ohne zu speichern):
+     * zuerst aus der ICU-Länderliste (PHP intl), sonst per DeepL. Vorhandene bleiben.
+     */
+    public function completeNames(DeepLTranslationService $deepl): void
+    {
+        $present = collect($this->extraNames)->pluck('code')->map(fn ($code) => mb_strtolower(trim((string) $code)))->all();
+        $iso = strtoupper(trim($this->isoCode));
+        $added = 0;
+        $errors = [];
+
+        foreach (CustomEvent::translationLocales() as $locale) {
+            if ($locale === 'de' || ($locale === 'en' && trim($this->nameEn) !== '') || in_array($locale, $present, true)) {
+                continue;
+            }
+
+            $name = $this->intlCountryName($iso, $locale);
+
+            if ($name === null) {
+                $source = trim($this->nameEn) !== '' && $locale !== 'en' ? ['en', $this->nameEn] : ['de', $this->nameDe];
+
+                if (trim($source[1]) === '' || ! $deepl->isConfigured()) {
+                    $errors[] = strtoupper($locale).': kein Name in der intl-Länderliste'.($deepl->isConfigured() ? '' : ', DeepL nicht konfiguriert');
+
+                    continue;
+                }
+
+                try {
+                    $name = $deepl->translateBatch([trim($source[1])], $locale, $source[0], 'Names of countries and territories.')[0];
+                } catch (\Throwable $e) {
+                    $errors[] = strtoupper($locale).': '.$e->getMessage();
+
+                    continue;
+                }
+            }
+
+            if ($locale === 'en') {
+                $this->nameEn = $name;
+            } else {
+                $this->extraNames[] = ['code' => $locale, 'name' => $name];
+            }
+            $added++;
+        }
+
+        $this->dispatch('adminv2-toast', ...match (true) {
+            $errors !== [] => ['message' => 'Nicht alle Sprachen ergänzt – '.implode(' | ', $errors), 'variant' => 'danger'],
+            $added > 0 => ['message' => "{$added} Sprache(n) ergänzt – bitte prüfen und speichern."],
+            default => ['message' => 'Alle Sprachen sind bereits ausgefüllt.'],
+        });
+    }
+
+    private function intlCountryName(string $iso, string $locale): ?string
+    {
+        if ($iso === '' || ! class_exists(\Locale::class)) {
+            return null;
+        }
+
+        $name = \Locale::getDisplayRegion('-'.$iso, $locale);
+
+        return $name !== '' && strcasecmp($name, $iso) !== 0 && ! str_starts_with($name, 'Unknown') ? $name : null;
+    }
+
     public function removeName(int $index): void
     {
         unset($this->extraNames[$index]);

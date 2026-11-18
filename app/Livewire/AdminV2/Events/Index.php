@@ -68,6 +68,10 @@ class Index extends Component
     #[Url(except: '')]
     public string $scope = '';
 
+    /** Übersetzungsstand: missing | stale | complete */
+    #[Url(as: 'translation', except: '')]
+    public string $translation = '';
+
     /** Aufgaben am Ereignis: open | mine | overdue | done | none */
     #[Url(as: 'tasks', except: '')]
     public string $taskFilter = '';
@@ -109,7 +113,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array(Str::before($property, '.'), ['tab', 'search', 'priorities', 'types', 'countryIds', 'periodFrom', 'periodTo', 'scope', 'taskFilter', 'taskPerson', 'sort'], true)) {
+        if (in_array(Str::before($property, '.'), ['tab', 'search', 'priorities', 'types', 'countryIds', 'periodFrom', 'periodTo', 'scope', 'translation', 'taskFilter', 'taskPerson', 'sort'], true)) {
             $this->resetPage();
         }
     }
@@ -142,6 +146,7 @@ class Index extends Component
             )),
             'period' => [$this->periodFrom, $this->periodTo] = ['', ''],
             'scope' => $this->scope = '',
+            'translation' => $this->translation = '',
             'taskFilter' => $this->taskFilter = '',
             'taskPerson' => $this->taskPerson = '',
             'search' => $this->search = '',
@@ -159,7 +164,7 @@ class Index extends Component
 
     public function resetFilters(): void
     {
-        $this->reset(['search', 'priorities', 'types', 'countryIds', 'periodFrom', 'periodTo', 'scope', 'taskFilter', 'taskPerson']);
+        $this->reset(['search', 'priorities', 'types', 'countryIds', 'periodFrom', 'periodTo', 'scope', 'translation', 'taskFilter', 'taskPerson']);
         $this->resetPage();
     }
 
@@ -193,6 +198,18 @@ class Index extends Component
     /**
      * Auswahl des Aufgaben-Filters.
      *
+     * @return array<string, string>
+     */
+    public function translationFilterOptions(): array
+    {
+        return [
+            'missing' => 'Übersetzung fehlt',
+            'stale' => 'Übersetzung veraltet',
+            'complete' => 'Vollständig übersetzt',
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     public function taskFilterOptions(): array
@@ -479,6 +496,10 @@ class Index extends Component
         }
 
         $this->applyTaskFilters($query);
+
+        if (isset($this->translationFilterOptions()[$this->translation])) {
+            $query->where('translation_status', $this->translation);
+        }
 
         match ($this->scope) {
             'nationwide' => $query->where('is_nationwide', true),

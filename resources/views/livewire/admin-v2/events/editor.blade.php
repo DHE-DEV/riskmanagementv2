@@ -12,6 +12,9 @@
     $isTrashed = (bool) $event?->trashed();
     $activeOther = $event ? $this->versions->first(fn ($version) => $version->is_active && $version->id !== $event->id) : null;
     $typeLabels = ['country' => 'Land', 'region' => 'Region', 'city' => 'Stadt'];
+    // Gespeicherte Übersetzungen, die aus einem älteren Stand der Ausgangssprache stammen.
+    $staleLocales = $event?->staleTranslationLocales() ?? [];
+    $autoRefreshLocales = $event?->autoRefreshableTranslationLocales() ?? [];
 @endphp
 
 @assets
@@ -370,7 +373,9 @@
                                     : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'"
                             >
                                 {{ CustomEvent::localeLabel($locale) }}
-                                @if (filled($titles[$locale] ?? null))
+                                @if (in_array($locale, $staleLocales, true))
+                                    <span class="size-1.5 rounded-full bg-amber-500" title="Übersetzung veraltet – der Text in der Ausgangssprache wurde danach geändert"></span>
+                                @elseif (filled($titles[$locale] ?? null))
                                     <span class="size-1.5 rounded-full bg-green-500" title="Titel vorhanden"></span>
                                 @else
                                     <span class="size-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600" title="Noch kein Titel"></span>
@@ -381,6 +386,18 @@
 
                     @foreach ($locales as $locale)
                         <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif class="flex flex-col gap-5" wire:key="content-{{ $locale }}">
+                            @if (in_array($locale, $staleLocales, true))
+                                <flux:callout variant="warning" icon="exclamation-triangle" heading="Übersetzung veraltet">
+                                    <flux:callout.text>
+                                        Der Text in {{ CustomEvent::localeLabel($sourceLocale, false) }} wurde nach dieser Übersetzung geändert.
+                                        @if (in_array($locale, $autoRefreshLocales, true))
+                                            Freigegebene Ereignisse werden automatisch neu übersetzt; sonst über „Übersetzen“ mit Überschreiben.
+                                        @else
+                                            Die Übersetzung wurde von Hand bearbeitet und wird deshalb nicht automatisch ersetzt – bitte prüfen oder über „Übersetzen“ mit Überschreiben neu erstellen.
+                                        @endif
+                                    </flux:callout.text>
+                                </flux:callout>
+                            @endif
                             <flux:input
                                 wire:model.blur="titles.{{ $locale }}"
                                 :label="'Titel'.($locale === $sourceLocale ? '' : ' ('.strtoupper($locale).')')"

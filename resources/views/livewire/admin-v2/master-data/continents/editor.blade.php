@@ -26,6 +26,8 @@
                         </div>
                     </div>
 
+                    <x-adminv2.master-data.other-names />
+
                     <div class="grid gap-5 sm:grid-cols-2">
                         <flux:field>
                             <flux:label>Code</flux:label>

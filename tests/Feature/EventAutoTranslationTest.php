@@ -86,7 +86,7 @@ it('übersetzt mit events:translate laufende und künftige Ereignisse, aber kein
     fakeDeepL();
 
     $this->artisan('events:translate')
-        ->expectsOutputToContain('2 Ereignis(se) mit fehlenden Übersetzungen')
+        ->expectsOutputToContain('2 Ereignis(se) mit fehlenden oder veralteten Übersetzungen')
         ->expectsOutputToContain('8 Feld(er) übersetzt.')
         ->assertSuccessful();
 
@@ -101,7 +101,7 @@ it('schickt bei events:translate --dry-run nichts an DeepL', function () {
     fakeDeepL();
 
     $this->artisan('events:translate --dry-run')
-        ->expectsOutputToContain('1 Ereignis(se) mit fehlenden Übersetzungen')
+        ->expectsOutputToContain('1 Ereignis(se) mit fehlenden oder veralteten Übersetzungen')
         ->assertSuccessful();
 
     Http::assertNothingSent();
@@ -122,4 +122,31 @@ it('meldet fehlgeschlagene Übersetzungen und behält die gelungenen', function 
         ->assertFailed();
 
     expect($event->refresh()->title_translations)->toBe(['de' => 'Streik am Flughafen', 'en' => 'EN: Streik am Flughafen']);
+});
+
+it('übersetzt nach einer Änderung des deutschen Texts die unbearbeiteten Sprachen neu', function () {
+    fakeDeepL();
+    $event = germanEvent();
+    expect($event->refresh()->translation_status)->toBe('complete');
+
+    $event->update(['title_translations' => array_merge($event->title_translations, ['de' => 'Streik beendet'])]);
+
+    $event->refresh();
+    expect($event->title_translations['en'])->toBe('[EN-GB] Streik beendet')
+        ->and($event->title_translations['nl'])->toBe('[NL] Streik beendet')
+        ->and($event->translation_status)->toBe('complete');
+});
+
+it('lässt von Hand korrigierte Übersetzungen stehen und markiert sie als veraltet', function () {
+    fakeDeepL();
+    $event = germanEvent();
+    $event->refresh()->update(['title_translations' => array_merge($event->title_translations, ['en' => 'Airport strike (checked)'])]);
+
+    $event->refresh()->update(['title_translations' => array_merge($event->title_translations, ['de' => 'Streik beendet'])]);
+
+    $event->refresh();
+    expect($event->title_translations['en'])->toBe('Airport strike (checked)')
+        ->and($event->title_translations['nl'])->toBe('[NL] Streik beendet')
+        ->and($event->staleTranslationLocales())->toBe(['en'])
+        ->and($event->translation_status)->toBe('stale');
 });

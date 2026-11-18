@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Continents;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
+use App\Livewire\AdminV2\Concerns\EditsNameTranslations;
 use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\Continent;
 use App\Support\AdminV2\MasterData;
@@ -20,7 +21,7 @@ use Livewire\Component;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, EditsNameTranslations, RunsAiChecks;
 
     public string $nameDe = '';
 
@@ -37,6 +38,8 @@ class Editor extends Component
 
     public function mount(?int $continent = null): void
     {
+        $this->fillOtherNames(null);
+
         if ($continent === null) {
             $this->sortOrder = (string) ((int) Continent::max('sort_order') + 1);
 
@@ -48,6 +51,7 @@ class Editor extends Component
         $this->recordId = $record->id;
         $this->nameDe = (string) ($record->name_translations['de'] ?? '');
         $this->nameEn = (string) ($record->name_translations['en'] ?? '');
+        $this->fillOtherNames($record->name_translations);
         $this->code = (string) $record->code;
         $this->sortOrder = (string) $record->sort_order;
         $this->description = (string) $record->description;
@@ -106,7 +110,7 @@ class Editor extends Component
         $created = ! $record->exists;
 
         $record->fill([
-            'name_translations' => $this->translations($record->name_translations, $this->nameDe, $this->nameEn),
+            'name_translations' => $this->withOtherNames($this->translations($record->name_translations, $this->nameDe, $this->nameEn)),
             'code' => $this->code,
             'sort_order' => (int) $this->sortOrder,
             'description' => trim($this->description) ?: null,
