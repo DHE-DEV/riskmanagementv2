@@ -100,6 +100,12 @@
 								{
 									"key": "page",
 									"value": "1"
+								},
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Das Feld language im Event zeigt, in welcher Sprache Titel und Beschreibung tatsächlich vorliegen.",
+									"disabled": true
 								}
 							]
 						},
@@ -119,7 +125,15 @@
 						"url": {
 							"raw": "{{api_base_url}}/v1/events/{{event_uuid}}",
 							"host": ["{{api_base_url}}"],
-							"path": ["v1", "events", "{{event_uuid}}"]
+							"path": ["v1", "events", "{{event_uuid}}"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Das Feld language im Event zeigt, in welcher Sprache Titel und Beschreibung tatsächlich vorliegen.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Einzelnes Event anhand der UUID."
 					}
@@ -1041,7 +1055,15 @@
 						"url": {
 							"raw": "{{base_url}}/feed/events/all.xml",
 							"host": ["{{base_url}}"],
-							"path": ["feed", "events", "all.xml"]
+							"path": ["feed", "events", "all.xml"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Titel, Beschreibung und Beschriftungen in dieser Sprache.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Alle aktiven Events als RSS 2.0 Feed (max. 100)."
 					}
@@ -1056,7 +1078,15 @@
 						"url": {
 							"raw": "{{base_url}}/feed/events/all.atom",
 							"host": ["{{base_url}}"],
-							"path": ["feed", "events", "all.atom"]
+							"path": ["feed", "events", "all.atom"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Titel, Beschreibung und Beschriftungen in dieser Sprache.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Alle aktiven Events als Atom 1.0 Feed."
 					}
@@ -1071,7 +1101,15 @@
 						"url": {
 							"raw": "{{base_url}}/feed/events/priority/high.xml",
 							"host": ["{{base_url}}"],
-							"path": ["feed", "events", "priority", "high.xml"]
+							"path": ["feed", "events", "priority", "high.xml"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Titel, Beschreibung und Beschriftungen in dieser Sprache.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Events gefiltert nach Priorität: high, medium, low, info"
 					}
@@ -1086,7 +1124,15 @@
 						"url": {
 							"raw": "{{base_url}}/feed/events/countries/de.xml",
 							"host": ["{{base_url}}"],
-							"path": ["feed", "events", "countries", "de.xml"]
+							"path": ["feed", "events", "countries", "de.xml"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Titel, Beschreibung und Beschriftungen in dieser Sprache.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Events für ein Land (ISO alpha-2 oder alpha-3, case-insensitive)."
 					}
@@ -1101,7 +1147,15 @@
 						"url": {
 							"raw": "{{base_url}}/feed/events/types/earthquake.xml",
 							"host": ["{{base_url}}"],
-							"path": ["feed", "events", "types", "earthquake.xml"]
+							"path": ["feed", "events", "types", "earthquake.xml"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Titel, Beschreibung und Beschriftungen in dieser Sprache.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Events gefiltert nach Event-Typ-Code."
 					}
@@ -1116,7 +1170,15 @@
 						"url": {
 							"raw": "{{base_url}}/feed/events/regions/1.xml",
 							"host": ["{{base_url}}"],
-							"path": ["feed", "events", "regions", "1.xml"]
+							"path": ["feed", "events", "regions", "1.xml"],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en",
+									"description": "Sprache: de (Standard) | en | nl. Titel, Beschreibung und Beschriftungen in dieser Sprache.",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Events gefiltert nach Region-ID."
 					}
