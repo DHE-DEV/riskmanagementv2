@@ -211,11 +211,22 @@ Mit dem Query-Parameter `lang` kommen die Events in einer anderen Sprache. Er gi
 GET /v1/events/{uuid}
 ```
 
-**Beispiel:**
+**Query-Parameter:**
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|--------------|
+| `lang` | string | Nein | Sprache: `de` (Standard), `en`, `nl` – siehe [Sprache](#sprache) |
+
+**Beispiele:**
 
 ```bash
+# Event auf Deutsch
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://platform.passolution.de/api/v1/events/550e8400-e29b-41d4-a716-446655440000"
+
+# Dasselbe Event auf Englisch
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/events/550e8400-e29b-41d4-a716-446655440000?lang=en"
 ```
 
 **Response (200 OK):**
@@ -280,6 +291,7 @@ Sucht aktive Events im Umkreis eines Standorts. Der Standort kann entweder über
 | `radius` | numeric | Ja | Umkreis in Kilometern (1–20.000) |
 | `per_page` | integer | Nein | Ergebnisse pro Seite (1–100, Standard: 25) |
 | `page` | integer | Nein | Seitennummer (Standard: 1) |
+| `lang` | string | Nein | Sprache: `de` (Standard), `en`, `nl` – siehe [Sprache](#sprache) |
 
 \* Entweder `code` oder `latitude` + `longitude` muss angegeben werden.
 
@@ -293,6 +305,10 @@ curl -H "Authorization: Bearer {TOKEN}" \
 # Mit Geokoordinaten
 curl -H "Authorization: Bearer {TOKEN}" \
   "https://platform.passolution.de/api/v1/events/nearby?latitude=50.0379&longitude=8.5622&radius=500"
+
+# Im Umkreis von München, auf Niederländisch
+curl -H "Authorization: Bearer {TOKEN}" \
+  "https://platform.passolution.de/api/v1/events/nearby?code=MUC&radius=250&lang=nl"
 ```
 
 **Response (200 OK):**
