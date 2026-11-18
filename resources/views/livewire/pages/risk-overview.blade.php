@@ -1,6 +1,6 @@
 @php
 $active = 'travel-alert';
-$version = '1.1.0';
+$version = '1.2.0';
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -122,11 +122,11 @@ $version = '1.1.0';
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-700">Nur
                                                 betroffen</span>
                                         </template>
-                                        <template x-if="filters.label">
+                                        <template x-for="labelId in filters.labels" :key="'active-label-' + labelId">
                                             <span
                                                 class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">
-                                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
-                                                <span x-text="availableLabels.find(l => l.id == filters.label)?.name || 'Label'"></span>
+                                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + labelColor({ id: labelId })"></span>
+                                                <span x-text="labelName({ id: labelId })"></span>
                                             </span>
                                         </template>
                                     </span>
@@ -193,6 +193,7 @@ $version = '1.1.0';
                                                     <div class="mb-1">
                                                         <h4 class="text-xs font-semibold text-gray-900 line-clamp-2"
                                                             x-text="trip.folder_name"></h4>
+                                                        <x-risk-overview.label-chips items="trip.labels" class="mt-1" />
                                                     </div>
 
                                                     <!-- Dates & participants -->
@@ -282,11 +283,11 @@ $version = '1.1.0';
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700"
                                                 x-text="filters.country"></span>
                                         </template>
-                                        <template x-if="filters.label">
+                                        <template x-for="labelId in filters.labels" :key="'active-label-' + labelId">
                                             <span
                                                 class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">
-                                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
-                                                <span x-text="availableLabels.find(l => l.id == filters.label)?.name || 'Label'"></span>
+                                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + labelColor({ id: labelId })"></span>
+                                                <span x-text="labelName({ id: labelId })"></span>
                                             </span>
                                         </template>
                                     </span>
@@ -474,22 +475,7 @@ $version = '1.1.0';
                             tooltip-text="Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden." />
 
                         <!-- Label Filter -->
-                        <div class="mb-4" x-show="availableLabels.length > 0">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Label</label>
-                            <div class="relative">
-                                <select x-model="filters.label"
-                                    class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                    <option :value="null">Alle Labels</option>
-                                    <template x-for="label in availableLabels" :key="label.id">
-                                        <option :value="label.id" x-text="label.name"></option>
-                                    </template>
-                                </select>
-                                <template x-if="filters.label">
-                                    <span class="absolute right-8 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full"
-                                        :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
-                                </template>
-                            </div>
-                        </div>
+                        <x-risk-overview.label-filter />
 
                         <!-- Only with events filter -->
                         <div class="mb-4">
@@ -543,22 +529,7 @@ $version = '1.1.0';
                         </div>
 
                         <!-- Label Filter -->
-                        <div class="mb-4" x-show="availableLabels.length > 0">
-                            <label class="text-xs font-medium text-gray-700 mb-2 block">Label</label>
-                            <div class="relative">
-                                <select x-model="filters.label"
-                                    class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                    <option :value="null">Alle Labels</option>
-                                    <template x-for="label in availableLabels" :key="label.id">
-                                        <option :value="label.id" x-text="label.name"></option>
-                                    </template>
-                                </select>
-                                <template x-if="filters.label">
-                                    <span class="absolute right-8 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full"
-                                        :style="'background-color: ' + (availableLabels.find(l => l.id == filters.label)?.color || '#6b7280')"></span>
-                                </template>
-                            </div>
-                        </div>
+                        <x-risk-overview.label-filter />
 
                         <!-- Days Filter -->
                         <x-risk-overview.day-range-buttons callback="loadData()" label="Zeitraum (Reisende)"
@@ -699,6 +670,7 @@ $version = '1.1.0';
                                                         </div>
                                                         <p class="text-xs text-gray-600 line-clamp-3"
                                                             x-text="event.description"></p>
+                                                        <x-risk-overview.label-chips items="event.labels" class="mt-2" />
                                                         <div
                                                             class="flex items-center justify-between mt-3 text-xs text-gray-500">
                                                             <div class="flex items-center gap-2">
@@ -1158,8 +1130,11 @@ $version = '1.1.0';
                                             <!-- Trip header -->
                                             <div class="p-4 border-b border-gray-100">
                                                 <div class="flex items-start justify-between mb-2">
-                                                    <h4 class="text-sm font-semibold text-gray-900"
-                                                        x-text="trip.folder_name"></h4>
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-sm font-semibold text-gray-900"
+                                                            x-text="trip.folder_name"></h4>
+                                                        <x-risk-overview.label-chips items="trip.labels" class="mt-1.5" />
+                                                    </div>
                                                     <div class="flex items-center gap-2 flex-shrink-0">
                                                         <span
                                                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
@@ -1231,6 +1206,7 @@ $version = '1.1.0';
                                                                 <div class="flex-1 min-w-0">
                                                                     <p class="text-xs font-medium text-gray-800 truncate"
                                                                         x-text="event.title"></p>
+                                                                    <x-risk-overview.label-chips items="event.labels" class="mt-1" />
                                                                     <div
                                                                         class="flex items-center gap-1 mt-0.5 flex-wrap">
                                                                         <template x-for="mc in event.matched_countries"
@@ -1331,6 +1307,7 @@ $version = '1.1.0';
                                                     </div>
                                                     <p class="text-xs text-gray-600 mt-1 line-clamp-2"
                                                         x-text="event.description"></p>
+                                                    <x-risk-overview.label-chips items="event.labels" class="mt-2" />
                                                     <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
                                                         <span x-text="event.event_type"></span>
                                                         <span
@@ -1471,6 +1448,7 @@ $version = '1.1.0';
                                                             <p class="text-xs text-gray-500 mt-0.5"
                                                                 x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')">
                                                             </p>
+                                                            <x-risk-overview.label-chips items="event.labels" class="mt-1" />
                                                         </div>
                                                         <x-risk-overview.priority-badge priority="event.priority"
                                                             class="flex-shrink-0" />
@@ -1901,7 +1879,7 @@ $version = '1.1.0';
                                             <div class="relative">
                                                 <input type="text" x-model="labelInput" @input="searchLabels()"
                                                     @keydown.enter.prevent="addLabelFromInput()"
-                                                    @focus="if (labelInput.trim().length > 0) showLabelSuggestions = true"
+                                                    @focus="searchLabels(true)"
                                                     @click.away="showLabelSuggestions = false"
                                                     placeholder="Label hinzufügen..."
                                                     class="w-full text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
@@ -1978,6 +1956,7 @@ $version = '1.1.0';
                                                 </div>
                                                 <p class="text-xs text-gray-600 line-clamp-3"
                                                     x-text="event.description"></p>
+                                                <x-risk-overview.label-chips items="event.labels" class="mt-2" />
                                                 <div class="flex items-center gap-2 mt-3 text-xs text-gray-500">
                                                     <span x-text="event.event_type"></span>
                                                     <span>&bull;</span>
@@ -2094,7 +2073,7 @@ $version = '1.1.0';
                                                 <div class="relative">
                                                     <input type="text" x-model="labelInput" @input="searchLabels()"
                                                         @keydown.enter.prevent="addLabelFromInput()"
-                                                        @focus="if (labelInput.trim().length > 0) showLabelSuggestions = true"
+                                                        @focus="searchLabels(true)"
                                                         @click.away="showLabelSuggestions = false"
                                                         placeholder="Label hinzufügen..."
                                                         class="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
@@ -2170,6 +2149,7 @@ $version = '1.1.0';
                                                     <p class="text-xs text-gray-500 mt-0.5"
                                                         x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')">
                                                     </p>
+                                                    <x-risk-overview.label-chips items="event.labels" class="mt-1" />
                                                     <div class="flex flex-wrap gap-1 mt-1">
                                                         <template x-for="mc in (event.matched_countries || [])"
                                                             :key="mc.code">
@@ -2580,7 +2560,7 @@ $version = '1.1.0';
                             <div class="relative">
                                 <input type="text" x-model="eventLabelInput" @input="searchEventLabels()"
                                     @keydown.enter.prevent="addEventLabelFromInput()"
-                                    @focus="if (eventLabelInput.trim().length > 0) showEventLabelSuggestions = true"
+                                    @focus="searchEventLabels(true)"
                                     @click.away="showEventLabelSuggestions = false"
                                     placeholder="Label hinzufügen..."
                                     class="w-full text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
@@ -2661,6 +2641,9 @@ $version = '1.1.0';
                 </div>
             </div>
         </div>
+
+        <!-- Labels verwalten -->
+        <x-risk-overview.label-manager />
 
         <!-- Traveler Detail Modal -->
         <div x-show="showTravelerModal" x-cloak x-transition:enter="transition ease-out duration-200"
@@ -2901,6 +2884,7 @@ $version = '1.1.0';
             isDebugUser: {{ isset($isDebugUser) && $isDebugUser ? 'true' : 'false' }},
             routes: {
                 labelsSearch: '{{ route("risk-overview.labels.search") }}',
+                labels: '{{ route("risk-overview.labels.index") }}',
                 data: '{{ route("risk-overview.data") }}',
                 trips: '{{ route("risk-overview.trips") }}',
                 country: '{{ url("/travel-alert/country") }}',

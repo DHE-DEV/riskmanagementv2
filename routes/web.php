@@ -533,6 +533,25 @@ Route::get('/travel-alert/labels/search', [\App\Http\Controllers\Customer\RiskOv
     ->middleware('auth:customer')
     ->name('risk-overview.labels.search');
 
+// Labels verwalten: anlegen, umbenennen/umfärben, löschen (samt Zuordnungen)
+Route::get('/travel-alert/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'labelsIndex'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.index');
+
+Route::post('/travel-alert/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'storeLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.store');
+
+Route::patch('/travel-alert/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'updateLabel'])
+    ->whereUuid('labelId')
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.update');
+
+Route::delete('/travel-alert/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'destroyLabel'])
+    ->whereUuid('labelId')
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.destroy');
+
 Route::post('/travel-alert/folder/{folderId}/labels', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'attachLabel'])
     ->middleware('auth:customer')
     ->name('risk-overview.folder.labels.attach');

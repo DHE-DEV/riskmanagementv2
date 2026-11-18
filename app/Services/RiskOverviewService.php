@@ -111,11 +111,11 @@ class RiskOverviewService
             $tripName = $trip->raw_payload['trip_name']
                 ?? $trip->raw_payload['trip']['name']
                 ?? $trip->booking_reference
-                ?? 'Reise ' . $trip->external_trip_id;
+                ?? 'Reise '.$trip->external_trip_id;
 
             $tripData = [
                 'trip_id' => $tripId,
-                'folder_id' => 'api-' . $tripId,
+                'folder_id' => 'api-'.$tripId,
                 'folder_name' => $tripName,
                 'folder_number' => null,
                 'start_date' => $trip->computed_start_at?->format('Y-m-d'),
@@ -319,18 +319,18 @@ class RiskOverviewService
      * Get aggregated risk data grouped by country.
      * Returns countries with active events and affected travelers count.
      */
-    public function getAggregatedRiskData(int $customerId, ?string $priorityFilter = null, int $daysAhead = 30, ?int $labelId = null): array
+    public function getAggregatedRiskData(int $customerId, ?string $priorityFilter = null, int $daysAhead = 30, array $labelIds = []): array
     {
-        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$daysAhead}_{$labelId}";
+        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$daysAhead}_".Label::filterCacheKey($customerId, $labelIds);
         $cacheDuration = config('feed.cache_duration', 300); // 5 minutes default
 
-        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $daysAhead, $labelId) {
+        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $daysAhead, $labelIds) {
             // Get all active events
             $events = $this->gtmEventService->getActiveEvents($priorityFilter);
 
-            // Filter events by label if specified
-            if ($labelId) {
-                $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+            // Nur Ereignisse mit einem der gewählten Labels des Kunden
+            if ($labelIds !== []) {
+                $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
                 $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
             }
 
@@ -356,18 +356,18 @@ class RiskOverviewService
     /**
      * Get aggregated risk data grouped by country with custom date range.
      */
-    public function getAggregatedRiskDataByDateRange(int $customerId, string $dateFrom, ?string $dateTo = null, ?string $priorityFilter = null, ?int $labelId = null): array
+    public function getAggregatedRiskDataByDateRange(int $customerId, string $dateFrom, ?string $dateTo = null, ?string $priorityFilter = null, array $labelIds = []): array
     {
-        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$dateFrom}_{$dateTo}_{$labelId}";
+        $cacheKey = "risk_overview_{$customerId}_{$priorityFilter}_{$dateFrom}_{$dateTo}_".Label::filterCacheKey($customerId, $labelIds);
         $cacheDuration = config('feed.cache_duration', 300);
 
-        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $dateFrom, $dateTo, $labelId) {
+        return Cache::remember($cacheKey, $cacheDuration, function () use ($customerId, $priorityFilter, $dateFrom, $dateTo, $labelIds) {
             // Get all active events
             $events = $this->gtmEventService->getActiveEvents($priorityFilter);
 
-            // Filter events by label if specified
-            if ($labelId) {
-                $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+            // Nur Ereignisse mit einem der gewählten Labels des Kunden
+            if ($labelIds !== []) {
+                $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
                 $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
             }
 
@@ -805,14 +805,14 @@ class RiskOverviewService
     /**
      * Get detailed risk information for a specific country.
      */
-    public function getCountryRiskDetails(int $customerId, string $countryCode, int $daysAhead = 30, ?int $labelId = null): array
+    public function getCountryRiskDetails(int $customerId, string $countryCode, int $daysAhead = 30, array $labelIds = []): array
     {
         // Get events for this country
         $events = $this->gtmEventService->getActiveEvents(null, $countryCode);
 
-        // Filter events by label if specified
-        if ($labelId) {
-            $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+        // Nur Ereignisse mit einem der gewählten Labels des Kunden
+        if ($labelIds !== []) {
+            $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
             $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
         }
 
@@ -856,14 +856,14 @@ class RiskOverviewService
     /**
      * Get detailed risk information for a specific country with custom date range.
      */
-    public function getCountryRiskDetailsByDateRange(int $customerId, string $countryCode, string $dateFrom, ?string $dateTo = null, ?int $labelId = null): array
+    public function getCountryRiskDetailsByDateRange(int $customerId, string $countryCode, string $dateFrom, ?string $dateTo = null, array $labelIds = []): array
     {
         // Get events for this country
         $events = $this->gtmEventService->getActiveEvents(null, $countryCode);
 
-        // Filter events by label if specified
-        if ($labelId) {
-            $allowedEventIds = Label::eventIdsForLabel($customerId, $labelId);
+        // Nur Ereignisse mit einem der gewählten Labels des Kunden
+        if ($labelIds !== []) {
+            $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
             $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
         }
 
@@ -1144,12 +1144,12 @@ class RiskOverviewService
             $tripName = $trip->raw_payload['trip_name']
                 ?? $trip->raw_payload['trip']['name']
                 ?? $trip->booking_reference
-                ?? 'Reise ' . $trip->external_trip_id;
+                ?? 'Reise '.$trip->external_trip_id;
 
             $tripsByTripId[$tripId] = [
                 'trip_id' => $tripId,
                 'pds_tid' => $tripId,
-                'folder_id' => 'api-' . $tripId,
+                'folder_id' => 'api-'.$tripId,
                 'folder_name' => $trip->trip_name ?? $tripName,
                 'start_date' => $trip->computed_start_at?->format('Y-m-d'),
                 'end_date' => $trip->computed_end_at?->format('Y-m-d'),
@@ -1280,7 +1280,7 @@ class RiskOverviewService
             }
 
             // Load labels for API trips
-            if (!empty($tripsByTripId)) {
+            if (! empty($tripsByTripId)) {
                 $pdsTids = array_keys($tripsByTripId);
                 $labelsByTid = Label::forPdsTrips($customer->id, $pdsTids);
                 foreach ($tripsByTripId as $tid => &$trip) {

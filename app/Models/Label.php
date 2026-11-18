@@ -10,6 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Label extends BaseCustomerModel
 {
+    /**
+     * Farben für Labels – gut unterscheidbar, lesbar mit weißer Schrift.
+     * Neue Labels bekommen reihum die nächste Farbe.
+     */
+    public const PALETTE = [
+        '#2563EB', '#DC2626', '#059669', '#D97706', '#7C3AED',
+        '#DB2777', '#0891B2', '#65A30D', '#EA580C', '#475569',
+    ];
+
     protected $fillable = [
         'customer_id',
         'name',
@@ -134,6 +143,78 @@ class Label extends BaseCustomerModel
     /**
      * Get event IDs that have a specific label for a customer.
      */
+    /**
+     * IDs der Ereignisse, die mindestens eines der Labels des Kunden tragen.
+     *
+     * @param  array<int, string>  $labelIds
+     * @return array<int, int>
+     */
+    public static function eventIdsForLabels(int $customerId, array $labelIds): array
+    {
+        if ($labelIds === []) {
+            return [];
+        }
+
+        return \Illuminate\Support\Facades\DB::table('custom_event_label')
+            ->join('labels', 'labels.id', '=', 'custom_event_label.label_id')
+            ->where('labels.customer_id', $customerId)
+            ->whereIn('custom_event_label.label_id', $labelIds)
+            ->pluck('custom_event_label.custom_event_id')
+            ->unique()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Nächste Palettenfarbe für ein neues Label des Kunden.
+     */
+    public static function nextColor(int $customerId): string
+    {
+        $count = static::withoutGlobalScopes()->where('customer_id', $customerId)->count();
+
+        return self::PALETTE[$count % count(self::PALETTE)];
+    }
+
+    /**
+     * Label des Kunden mit diesem Namen holen oder neu anlegen (mit Palettenfarbe).
+     */
+    public static function findOrCreateForCustomer(int $customerId, string $name): self
+    {
+        $label = static::withoutGlobalScopes()->where('customer_id', $customerId)->where('name', $name)->first();
+
+        return $label ?? static::create([
+            'customer_id' => $customerId,
+            'name' => $name,
+            'color' => static::nextColor($customerId),
+        ]);
+    }
+
+    /**
+     * Teil des Cache-Schlüssels für Label-gefilterte Daten: gewählte Labels plus ein
+     * Zähler, der bei jeder Label-Zuordnung steigt – so liefert der Cache nie einen alten Stand.
+     *
+     * @param  array<int, string>  $labelIds
+     */
+    public static function filterCacheKey(int $customerId, array $labelIds): string
+    {
+        if ($labelIds === []) {
+            return 'nolabel';
+        }
+
+        sort($labelIds);
+
+        return implode('-', $labelIds).'_v'.\Illuminate\Support\Facades\Cache::get("labels_version_{$customerId}", 0);
+    }
+
+    /**
+     * Nach einer Änderung an Labels oder Zuordnungen: Label-gefilterte Caches verwerfen.
+     */
+    public static function bumpCacheVersion(int $customerId): void
+    {
+        $key = "labels_version_{$customerId}";
+        \Illuminate\Support\Facades\Cache::forever($key, (int) \Illuminate\Support\Facades\Cache::get($key, 0) + 1);
+    }
+
     public static function eventIdsForLabel(int $customerId, int $labelId): array
     {
         return \Illuminate\Support\Facades\DB::table('custom_event_label')
