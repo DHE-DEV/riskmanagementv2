@@ -78,27 +78,51 @@ class Label extends BaseCustomerModel
             ->whereIn('pds_tid', $pdsTids)
             ->get();
 
+        return static::groupPayloads($pivots, 'pds_tid');
+    }
+
+    /**
+     * Label-Listen je Besitzer (Reise bzw. Ereignis) aus Zuordnungszeilen – in der
+     * Reihenfolge der Labels und mit Zuordnungsdatum.
+     *
+     * @return array<string|int, array<int, array<string, mixed>>>
+     */
+    protected static function groupPayloads(\Illuminate\Support\Collection $pivots, string $ownerColumn): array
+    {
         if ($pivots->isEmpty()) {
             return [];
         }
 
-        $labelIds = $pivots->pluck('label_id')->unique()->toArray();
-        $labels = static::whereIn('id', $labelIds)->get()->keyBy('id');
+        $labels = static::whereIn('id', $pivots->pluck('label_id')->unique())->ordered()->get();
+        $position = $labels->pluck('id')->flip();
+        $labels = $labels->keyBy('id');
 
         $result = [];
-        foreach ($pivots as $pivot) {
+        foreach ($pivots->sortBy(fn ($pivot) => $position[$pivot->label_id] ?? PHP_INT_MAX) as $pivot) {
             if ($labels->has($pivot->label_id)) {
-                $label = $labels->get($pivot->label_id);
-                $result[$pivot->pds_tid][] = [
-                    'id' => $label->id,
-                    'name' => $label->name,
-                    'color' => $label->color,
-                    'icon' => $label->icon,
-                ];
+                $result[$pivot->{$ownerColumn}][] = static::payload($labels->get($pivot->label_id), $pivot->created_at ?? null);
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Label für die Oberfläche; optional mit Zeitpunkt der Zuordnung.
+     *
+     * @return array{id: string, name: string, color: string, icon: ?string, description: ?string, sort_order: int, assigned_at: ?string}
+     */
+    public static function payload(self $label, mixed $assignedAt = null): array
+    {
+        return [
+            'id' => $label->id,
+            'name' => $label->name,
+            'color' => $label->color,
+            'icon' => $label->icon,
+            'description' => $label->description,
+            'sort_order' => (int) $label->sort_order,
+            'assigned_at' => $assignedAt ? \Illuminate\Support\Carbon::parse($assignedAt)->toIso8601String() : null,
+        ];
     }
 
     /**
@@ -114,30 +138,10 @@ class Label extends BaseCustomerModel
             ->join('labels', 'labels.id', '=', 'custom_event_label.label_id')
             ->where('labels.customer_id', $customerId)
             ->whereIn('custom_event_label.custom_event_id', $eventIds)
-            ->select('custom_event_label.custom_event_id', 'custom_event_label.label_id')
+            ->select('custom_event_label.custom_event_id', 'custom_event_label.label_id', 'custom_event_label.created_at')
             ->get();
 
-        if ($pivots->isEmpty()) {
-            return [];
-        }
-
-        $labelIds = $pivots->pluck('label_id')->unique()->toArray();
-        $labels = static::whereIn('id', $labelIds)->get()->keyBy('id');
-
-        $result = [];
-        foreach ($pivots as $pivot) {
-            if ($labels->has($pivot->label_id)) {
-                $label = $labels->get($pivot->label_id);
-                $result[$pivot->custom_event_id][] = [
-                    'id' => $label->id,
-                    'name' => $label->name,
-                    'color' => $label->color,
-                    'icon' => $label->icon,
-                ];
-            }
-        }
-
-        return $result;
+        return static::groupPayloads($pivots, 'custom_event_id');
     }
 
     /**
@@ -166,6 +170,21 @@ class Label extends BaseCustomerModel
     }
 
     /**
+     * IDs aller Ereignisse, die mindestens ein Label des Kunden tragen.
+     *
+     * @return array<int, int>
+     */
+    public static function labeledEventIds(int $customerId): array
+    {
+        return \Illuminate\Support\Facades\DB::table('custom_event_label')
+            ->join('labels', 'labels.id', '=', 'custom_event_label.label_id')
+            ->where('labels.customer_id', $customerId)
+            ->distinct()
+            ->pluck('custom_event_label.custom_event_id')
+            ->toArray();
+    }
+
+    /**
      * Nächste Palettenfarbe für ein neues Label des Kunden.
      */
     public static function nextColor(int $customerId): string
@@ -186,7 +205,16 @@ class Label extends BaseCustomerModel
             'customer_id' => $customerId,
             'name' => $name,
             'color' => static::nextColor($customerId),
+            'sort_order' => static::nextSortOrder($customerId),
         ]);
+    }
+
+    /**
+     * Neue Labels ans Ende der vom Kunden festgelegten Reihenfolge.
+     */
+    public static function nextSortOrder(int $customerId): int
+    {
+        return (int) static::withoutGlobalScopes()->where('customer_id', $customerId)->max('sort_order') + 1;
     }
 
     /**

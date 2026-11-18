@@ -40,9 +40,18 @@ function riskOverviewApp() {
         labelManagerLoading: false,
         labelManagerBusy: false,
         labelManagerError: '',
-        newLabel: { name: '', color: '' },
+        newLabel: { name: '', color: '', description: '' },
         editingLabelId: null,
-        editLabel: { name: '', color: '' },
+        editLabel: { name: '', color: '', description: '' },
+        mergingLabelId: null,
+        mergeTargetId: '',
+
+        // Label direkt an einer Karte vergeben (Popover) – Ereignis oder Reise
+        quickLabel: { item: null, kind: 'event', top: 0, left: 0, query: '', busy: false },
+
+        // Mehrfachauswahl: mehrere Ereignisse oder Reisen auf einmal labeln
+        selection: { mode: null, scope: null, ids: [] },
+        bulk: { labelId: '', newName: '', busy: false, message: '' },
         filterOpen: false,
         showTripFilters: false,
         showCountryFilters: false,
@@ -104,8 +113,11 @@ function riskOverviewApp() {
             } else {
                 params.append('days', this.filters.days);
             }
-            if (this.filters.labels.length > 0) {
-                params.append('labels', this.filters.labels.join(','));
+            // Server filtert Ereignisse: gewählte Labels und "none" (Ereignis ohne Label)
+            const serverLabels = this.filters.labels.filter(id => !String(id).startsWith('__'));
+            if (this.filters.labels.includes(this.NO_EVENT_LABEL)) serverLabels.push('none');
+            if (serverLabels.length > 0) {
+                params.append('labels', serverLabels.join(','));
             }
             return params;
         },
@@ -114,8 +126,8 @@ function riskOverviewApp() {
             try {
                 const resp = await fetch(`${window.__riskOverviewConfig.routes.labelsSearch}?q=`);
                 this.availableLabels = await resp.json();
-                // Gelöschte Labels aus dem Filter nehmen
-                this.filters.labels = this.filters.labels.filter(id => this.availableLabels.some(l => l.id === id));
+                // Gelöschte Labels aus dem Filter nehmen (die "ohne Label"-Optionen bleiben)
+                this.filters.labels = this.filters.labels.filter(id => String(id).startsWith('__') || this.availableLabels.some(l => l.id === id));
             } catch (e) {
                 console.error('Error loading available labels', e);
             }
@@ -123,17 +135,24 @@ function riskOverviewApp() {
 
         // ── Labels: Darstellung ──────────────────────────────────────────
 
+        /** Filter-Optionen ohne echtes Label */
+        NO_TRIP_LABEL: '__trip_none',
+        NO_EVENT_LABEL: '__event_none',
+
         labelById(id) {
             return this.availableLabels.find(l => l.id === id) || null;
         },
 
         /** Aktuelle Farbe (nach Umfärben sofort überall gleich). */
         labelColor(label) {
+            if (String(label?.id).startsWith('__')) return '#9ca3af';
             return this.labelById(label?.id)?.color || label?.color || '#6b7280';
         },
 
         /** Aktueller Name (nach Umbenennen sofort überall gleich). */
         labelName(label) {
+            if (label?.id === this.NO_TRIP_LABEL) return 'Reise ohne Label';
+            if (label?.id === this.NO_EVENT_LABEL) return 'Ereignis ohne Label';
             return this.labelById(label?.id)?.name || label?.name || 'Label';
         },
 
@@ -167,16 +186,45 @@ function riskOverviewApp() {
             return (labels || []).some(l => this.filters.labels.includes(l.id));
         },
 
+        /** Passt die Reise selbst zum Label-Filter (eigenes Label oder "Reise ohne Label")? */
+        tripMatchesLabelFilter(trip) {
+            return this.hasFilteredLabel(trip?.labels)
+                || (this.filters.labels.includes(this.NO_TRIP_LABEL) && !(trip?.labels || []).length);
+        },
+
+        /** Passt das Ereignis zum Label-Filter (eigenes Label oder "Ereignis ohne Label")? */
+        eventMatchesLabelFilter(event) {
+            return this.hasFilteredLabel(event?.labels)
+                || (this.filters.labels.includes(this.NO_EVENT_LABEL) && !(event?.labels || []).length);
+        },
+
+        /** In der vom Kunden festgelegten Reihenfolge, sonst alphabetisch. */
+        sortLabels(labels) {
+            return [...labels].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name, 'de'));
+        },
+
+        /** Tooltip eines Label-Chips: Beschreibung und wann es gesetzt wurde. */
+        labelTooltip(chip, action = '') {
+            const label = this.labelById(chip?.id) || chip || {};
+            return [
+                this.labelName(chip),
+                label.description || '',
+                chip?.assigned_at ? 'gesetzt am ' + this.formatDate(chip.assigned_at) : '',
+                action,
+            ].filter(Boolean).join(' · ');
+        },
+
         /** Neu angelegtes Label sofort in Filter und Vorschläge aufnehmen. */
         rememberLabel(label) {
             if (!label || this.labelById(label.id)) return;
-            this.availableLabels = [...this.availableLabels, label].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+            this.availableLabels = this.sortLabels([...this.availableLabels, label]);
         },
 
         /** Name oder Farbe eines Labels in allen geladenen Reisen und Ereignissen übernehmen. */
         applyLabelUpdateEverywhere(label) {
-            const patch = list => (list || []).forEach(l => { if (l.id === label.id) Object.assign(l, { name: label.name, color: label.color }); });
-            this.availableLabels = this.availableLabels.map(l => l.id === label.id ? { ...l, name: label.name, color: label.color } : l);
+            const fields = { name: label.name, color: label.color, description: label.description ?? null };
+            const patch = list => (list || []).forEach(l => { if (l.id === label.id) Object.assign(l, fields); });
+            this.availableLabels = this.availableLabels.map(l => l.id === label.id ? { ...l, ...fields } : l);
             this.trips.forEach(trip => { patch(trip.labels); (trip.events || []).forEach(ev => patch(ev.labels)); });
             (this.countryDetails?.events || []).forEach(ev => patch(ev.labels));
             patch(this.selectedEvent?.labels);
@@ -213,6 +261,7 @@ function riskOverviewApp() {
                 this.managedLabels = data.labels;
                 this.labelPalette = data.palette;
                 if (!this.newLabel.color) this.newLabel.color = this.labelPalette[this.managedLabels.length % this.labelPalette.length];
+                this.availableLabels = this.sortLabels(this.managedLabels.map(({ trips_count, events_count, ...label }) => label));
             } catch (e) {
                 this.labelManagerError = 'Die Labels konnten nicht geladen werden.';
             } finally {
@@ -244,9 +293,11 @@ function riskOverviewApp() {
             this.labelManagerBusy = true;
             this.labelManagerError = '';
             try {
-                const data = await this.sendLabelRequest(window.__riskOverviewConfig.routes.labels, 'POST', { name, color: this.newLabel.color || null });
+                const data = await this.sendLabelRequest(window.__riskOverviewConfig.routes.labels, 'POST', {
+                    name, color: this.newLabel.color || null, description: this.newLabel.description || null,
+                });
                 this.rememberLabel(data.label);
-                this.newLabel = { name: '', color: '' };
+                this.newLabel = { name: '', color: '', description: '' };
                 await this.loadManagedLabels();
             } catch (e) {
                 this.labelManagerError = e.message;
@@ -257,7 +308,8 @@ function riskOverviewApp() {
 
         startEditLabel(label) {
             this.editingLabelId = label.id;
-            this.editLabel = { name: label.name, color: label.color };
+            this.mergingLabelId = null;
+            this.editLabel = { name: label.name, color: label.color, description: label.description || '' };
             this.labelManagerError = '';
         },
 
@@ -274,7 +326,9 @@ function riskOverviewApp() {
             this.labelManagerBusy = true;
             this.labelManagerError = '';
             try {
-                const data = await this.sendLabelRequest(`${window.__riskOverviewConfig.routes.labels}/${label.id}`, 'PATCH', { name, color: this.editLabel.color });
+                const data = await this.sendLabelRequest(`${window.__riskOverviewConfig.routes.labels}/${label.id}`, 'PATCH', {
+                    name, color: this.editLabel.color, description: this.editLabel.description || null,
+                });
                 Object.assign(label, data.label);
                 this.applyLabelUpdateEverywhere(data.label);
                 this.editingLabelId = null;
@@ -307,6 +361,66 @@ function riskOverviewApp() {
         filterByManagedLabel(label) {
             this.filters.labels = [label.id];
             this.closeLabelManager();
+        },
+
+        /** Label in der Liste nach oben (-1) oder unten (+1) schieben und speichern. */
+        async moveManagedLabel(label, direction) {
+            const index = this.managedLabels.findIndex(l => l.id === label.id);
+            const target = index + direction;
+            if (index < 0 || target < 0 || target >= this.managedLabels.length) return;
+            const list = [...this.managedLabels];
+            [list[index], list[target]] = [list[target], list[index]];
+            list.forEach((l, i) => { l.sort_order = i + 1; });
+            this.managedLabels = list;
+            this.availableLabels = this.sortLabels(this.availableLabels.map(l => ({ ...l, sort_order: list.find(m => m.id === l.id)?.sort_order ?? l.sort_order })));
+            try {
+                await this.sendLabelRequest(window.__riskOverviewConfig.routes.labelsOrder, 'POST', { ids: list.map(l => l.id) });
+            } catch (e) {
+                this.labelManagerError = e.message;
+            }
+        },
+
+        startMergeLabel(label) {
+            this.mergingLabelId = label.id;
+            this.editingLabelId = null;
+            this.mergeTargetId = '';
+            this.labelManagerError = '';
+        },
+
+        /** Label in ein anderes überführen: Zuordnungen wandern mit, das Label entfällt. */
+        async mergeManagedLabel(label) {
+            const target = this.managedLabels.find(l => l.id === this.mergeTargetId);
+            if (!target) {
+                this.labelManagerError = 'Bitte das Ziel-Label wählen.';
+                return;
+            }
+            if (!window.confirm(`„${label.name}“ in „${target.name}“ zusammenführen? Alle Reisen und Ereignisse mit „${label.name}“ tragen danach „${target.name}“.`)) return;
+            this.labelManagerBusy = true;
+            this.labelManagerError = '';
+            try {
+                await this.sendLabelRequest(`${window.__riskOverviewConfig.routes.labels}/${label.id}/merge`, 'POST', { target_id: target.id });
+                this.replaceLabelEverywhere(label.id, target);
+                this.mergingLabelId = null;
+                await this.loadManagedLabels();
+            } catch (e) {
+                this.labelManagerError = e.message;
+            } finally {
+                this.labelManagerBusy = false;
+            }
+        },
+
+        /** Nach dem Zusammenführen: Quell-Label überall durch das Ziel ersetzen (ohne Doppelte). */
+        replaceLabelEverywhere(sourceId, target) {
+            const swap = owner => {
+                if (!owner || !owner.labels || !owner.labels.some(l => l.id === sourceId)) return;
+                const rest = owner.labels.filter(l => l.id !== sourceId);
+                owner.labels = rest.some(l => l.id === target.id) ? rest : [...rest, { ...target }];
+            };
+            this.trips.forEach(trip => { swap(trip); (trip.events || []).forEach(swap); });
+            (this.countryDetails?.events || []).forEach(swap);
+            swap(this.selectedEvent);
+            this.availableLabels = this.availableLabels.filter(l => l.id !== sourceId);
+            this.filters.labels = [...new Set(this.filters.labels.map(id => id === sourceId ? target.id : id))];
         },
 
         toggleMaximize(section) {
@@ -360,30 +474,41 @@ function riskOverviewApp() {
             }, 250);
         },
 
+        /**
+         * Label an einer Reise setzen (labelId oder neuer Name) bzw. entfernen –
+         * lokale Reisen über den Ordner, API-Reisen über ihre PDS-ID.
+         */
+        async changeTripLabel(trip, { labelId = null, name = null, detach = false }) {
+            if (!trip) return;
+            let base;
+            if (trip.source === 'api') {
+                const pdsTid = trip.pds_tid || trip.trip_id;
+                if (!pdsTid) return;
+                base = `/travel-alert/pds-trip/${encodeURIComponent(pdsTid)}/labels`;
+            } else {
+                if (!trip.folder_id) return;
+                base = `/travel-alert/folder/${trip.folder_id}/labels`;
+            }
+            const data = await this.fetchApi(detach ? `${base}/${labelId}` : base, detach ? { method: 'DELETE' } : {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(labelId ? { label_id: labelId } : { name }),
+            });
+            if (data.success) {
+                this.rememberLabel(data.label);
+                this.setTripLabels(trip.folder_id, data.labels);
+            }
+        },
+
+        setTripLabels(folderId, labels) {
+            this.trips.forEach(t => { if (t.folder_id === folderId) t.labels = [...labels]; });
+            if (this.selectedTrip && this.selectedTrip.folder_id === folderId) this.selectedTrip.labels = [...labels];
+        },
+
         async attachLabel(labelId, labelName) {
             if (!this.selectedTrip) return;
             try {
-                const body = labelId ? { label_id: labelId } : { name: labelName };
-                let url;
-                if (this.selectedTrip.source === 'api') {
-                    const pdsTid = this.selectedTrip.pds_tid || this.selectedTrip.trip_id;
-                    if (!pdsTid) return;
-                    url = `/travel-alert/pds-trip/${encodeURIComponent(pdsTid)}/labels`;
-                } else {
-                    if (!this.selectedTrip.folder_id) return;
-                    url = `/travel-alert/folder/${this.selectedTrip.folder_id}/labels`;
-                }
-                const data = await this.fetchApi(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                });
-                if (data.success) {
-                    this.rememberLabel(data.label);
-                    this.selectedTrip.labels = data.labels;
-                    const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
-                    if (idx !== -1) this.trips[idx].labels = data.labels;
-                }
+                await this.changeTripLabel(this.selectedTrip, { labelId, name: labelName });
             } catch (e) {
                 console.error('Attach label error', e);
             }
@@ -395,23 +520,7 @@ function riskOverviewApp() {
         async detachLabel(labelId) {
             if (!this.selectedTrip) return;
             try {
-                let url;
-                if (this.selectedTrip.source === 'api') {
-                    const pdsTid = this.selectedTrip.pds_tid || this.selectedTrip.trip_id;
-                    if (!pdsTid) return;
-                    url = `/travel-alert/pds-trip/${encodeURIComponent(pdsTid)}/labels/${labelId}`;
-                } else {
-                    if (!this.selectedTrip.folder_id) return;
-                    url = `/travel-alert/folder/${this.selectedTrip.folder_id}/labels/${labelId}`;
-                }
-                const data = await this.fetchApi(url, {
-                    method: 'DELETE',
-                });
-                if (data.success) {
-                    this.selectedTrip.labels = data.labels;
-                    const idx = this.trips.findIndex(t => t.folder_id === this.selectedTrip.folder_id);
-                    if (idx !== -1) this.trips[idx].labels = data.labels;
-                }
+                await this.changeTripLabel(this.selectedTrip, { labelId, detach: true });
             } catch (e) {
                 console.error('Detach label error', e);
             }
@@ -453,22 +562,32 @@ function riskOverviewApp() {
             }, 250);
         },
 
+        /**
+         * Label an einem Ereignis setzen (labelId oder neuer Name) bzw. entfernen –
+         * und das Ergebnis in allen Karten, im Dialog und im Filter übernehmen.
+         */
+        async changeEventLabel(event, { labelId = null, name = null, detach = false }) {
+            if (!event) return;
+            const url = detach
+                ? `/travel-alert/event/${event.id}/labels/${labelId}`
+                : `/travel-alert/event/${event.id}/labels`;
+            const data = await this.fetchApi(url, detach ? { method: 'DELETE' } : {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(labelId ? { label_id: labelId } : { name }),
+            });
+            if (data.success) {
+                this.rememberLabel(data.label);
+                event.labels = [...data.labels];
+                if (this.selectedEvent && this.selectedEvent.id === event.id) this.selectedEvent.labels = [...data.labels];
+                this.updateEventLabelsEverywhere(event.id, data.labels);
+            }
+        },
+
         async attachEventLabel(labelId, labelName) {
             if (!this.selectedEvent) return;
             try {
-                const body = labelId ? { label_id: labelId } : { name: labelName };
-                const url = `/travel-alert/event/${this.selectedEvent.id}/labels`;
-                const data = await this.fetchApi(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                });
-                if (data.success) {
-                    this.rememberLabel(data.label);
-                    this.selectedEvent.labels = data.labels;
-                    // Update labels in trips data and country details
-                    this.updateEventLabelsEverywhere(this.selectedEvent.id, data.labels);
-                }
+                await this.changeEventLabel(this.selectedEvent, { labelId, name: labelName });
             } catch (e) {
                 console.error('Attach event label error', e);
             }
@@ -480,14 +599,188 @@ function riskOverviewApp() {
         async detachEventLabel(labelId) {
             if (!this.selectedEvent) return;
             try {
-                const url = `/travel-alert/event/${this.selectedEvent.id}/labels/${labelId}`;
-                const data = await this.fetchApi(url, { method: 'DELETE' });
-                if (data.success) {
-                    this.selectedEvent.labels = data.labels;
-                    this.updateEventLabelsEverywhere(this.selectedEvent.id, data.labels);
-                }
+                await this.changeEventLabel(this.selectedEvent, { labelId, detach: true });
             } catch (e) {
                 console.error('Detach event label error', e);
+            }
+        },
+
+        // ── Label direkt an der Ereigniskarte ────────────────────────────
+
+        openQuickLabel(item, domEvent, kind = 'event') {
+            const rect = domEvent.currentTarget.getBoundingClientRect();
+            const width = 260;
+            this.quickLabel = {
+                item,
+                kind,
+                top: Math.min(rect.bottom + 6, window.innerHeight - 320),
+                left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                query: '',
+                busy: false,
+            };
+            this.$nextTick(() => document.getElementById('quick-label-input')?.focus());
+        },
+
+        closeQuickLabel() {
+            this.quickLabel.item = null;
+        },
+
+        get quickLabelTitle() {
+            const item = this.quickLabel.item;
+            return item ? (this.quickLabel.kind === 'trip' ? item.folder_name : item.title) : '';
+        },
+
+        get quickLabelOptions() {
+            const query = this.quickLabel.query.trim().toLowerCase();
+            return this.availableLabels.filter(l => !query || l.name.toLowerCase().includes(query));
+        },
+
+        get quickLabelCanCreate() {
+            const query = this.quickLabel.query.trim().toLowerCase();
+            return query.length > 0 && !this.availableLabels.some(l => l.name.toLowerCase() === query);
+        },
+
+        itemHasLabel(item, labelId) {
+            return (item?.labels || []).some(l => l.id === labelId);
+        },
+
+        changeQuickTargetLabel(options) {
+            return this.quickLabel.kind === 'trip'
+                ? this.changeTripLabel(this.quickLabel.item, options)
+                : this.changeEventLabel(this.quickLabel.item, options);
+        },
+
+        async toggleQuickLabel(label) {
+            const item = this.quickLabel.item;
+            if (!item || this.quickLabel.busy) return;
+            this.quickLabel.busy = true;
+            try {
+                await this.changeQuickTargetLabel({ labelId: label.id, detach: this.itemHasLabel(item, label.id) });
+            } catch (e) {
+                console.error('Quick label error', e);
+            } finally {
+                this.quickLabel.busy = false;
+            }
+        },
+
+        async createQuickLabel() {
+            const item = this.quickLabel.item;
+            const name = this.quickLabel.query.trim();
+            if (!item || !name || this.quickLabel.busy) return;
+            const existing = this.availableLabels.find(l => l.name.toLowerCase() === name.toLowerCase());
+            if (existing) {
+                if (!this.itemHasLabel(item, existing.id)) await this.toggleQuickLabel(existing);
+                this.quickLabel.query = '';
+                return;
+            }
+            this.quickLabel.busy = true;
+            try {
+                await this.changeQuickTargetLabel({ name });
+                this.quickLabel.query = '';
+            } catch (e) {
+                console.error('Quick label create error', e);
+            } finally {
+                this.quickLabel.busy = false;
+            }
+        },
+
+        // ── Mehrfachauswahl ──────────────────────────────────────────────
+
+        /** Auswahl starten: 'events' (scope 'trip' oder 'country') oder 'trips'. */
+        startSelection(mode, scope = null) {
+            this.closeQuickLabel();
+            this.selection = { mode, scope, ids: [] };
+            this.bulk = { labelId: this.bulk.labelId || '', newName: '', busy: false, message: '' };
+        },
+
+        endSelection() {
+            this.selection = { mode: null, scope: null, ids: [] };
+        },
+
+        selectionKey(item) {
+            return this.selection.mode === 'trips' ? item.folder_id : item.id;
+        },
+
+        isSelected(item) {
+            return !!this.selection.mode && this.selection.ids.includes(this.selectionKey(item));
+        },
+
+        toggleSelected(item) {
+            const key = this.selectionKey(item);
+            this.selection.ids = this.selection.ids.includes(key)
+                ? this.selection.ids.filter(k => k !== key)
+                : [...this.selection.ids, key];
+        },
+
+        /** Die Karten, aus denen gerade ausgewählt wird. */
+        get selectionCandidates() {
+            if (this.selection.mode === 'trips') return this.filteredTrips;
+            if (this.selection.scope === 'country') return this.countryDetails?.events || [];
+            return this.filteredTripEvents;
+        },
+
+        get allCandidatesSelected() {
+            const candidates = this.selectionCandidates;
+            return candidates.length > 0 && candidates.every(item => this.isSelected(item));
+        },
+
+        toggleSelectAll() {
+            this.selection.ids = this.allCandidatesSelected ? [] : this.selectionCandidates.map(item => this.selectionKey(item));
+        },
+
+        /** Karten-Klick: in der Auswahl an- bzw. abwählen, sonst wie gewohnt öffnen. */
+        onEventCardClick(event) {
+            if (this.selection.mode === 'events') {
+                this.toggleSelected(event);
+            } else {
+                this.openEventModal(event);
+            }
+        },
+
+        onTripCardClick(trip) {
+            if (this.selection.mode === 'trips') {
+                this.toggleSelected(trip);
+            } else {
+                this.selectTrip(trip);
+            }
+        },
+
+        /** Gewähltes Label an allen gewählten Karten setzen (detach=false) oder entfernen. */
+        async applyBulkLabel(detach = false) {
+            if (this.selection.ids.length === 0 || this.bulk.busy) return;
+            const creating = this.bulk.labelId === '__new';
+            const name = this.bulk.newName.trim();
+            if ((!this.bulk.labelId) || (creating && (detach || !name))) {
+                this.bulk.message = creating ? 'Bitte einen Namen für das neue Label eingeben.' : 'Bitte ein Label wählen.';
+                return;
+            }
+            this.bulk.busy = true;
+            this.bulk.message = '';
+            try {
+                const payload = {
+                    detach,
+                    ...(creating ? { name } : { label_id: this.bulk.labelId }),
+                    ...(this.selection.mode === 'trips' ? { trip_ids: this.selection.ids } : { event_ids: this.selection.ids }),
+                };
+                const data = await this.sendLabelRequest(window.__riskOverviewConfig.routes.labelsBulk, 'POST', payload);
+                this.rememberLabel(data.label);
+                Object.entries(data.events || {}).forEach(([eventId, labels]) => {
+                    const id = Number(eventId);
+                    this.updateEventLabelsEverywhere(id, labels);
+                    if (this.selectedEvent?.id === id) this.selectedEvent.labels = [...labels];
+                });
+                Object.entries(data.trips || {}).forEach(([folderId, labels]) => this.setTripLabels(folderId, labels));
+                const count = this.selection.ids.length;
+                const noun = this.selection.mode === 'trips' ? (count === 1 ? 'Reise' : 'Reisen') : (count === 1 ? 'Ereignis' : 'Ereignissen');
+                this.bulk.message = `„${data.label.name}“ ${detach ? 'von' : 'an'} ${count} ${noun} ${detach ? 'entfernt' : 'vergeben'}.`;
+                if (creating) {
+                    this.bulk.labelId = data.label.id;
+                    this.bulk.newName = '';
+                }
+            } catch (e) {
+                this.bulk.message = e.message;
+            } finally {
+                this.bulk.busy = false;
             }
         },
 
@@ -543,25 +836,20 @@ function riskOverviewApp() {
             }
             // Label-Filter: Trägt die Reise selbst ein gewähltes Label, bleiben alle Ereignisse
             // sichtbar; sonst nur die Ereignisse mit einem der Labels.
-            if (this.filters.labels.length > 0 && !this.hasFilteredLabel(this.selectedTrip.labels)) {
-                events = events.filter(e => this.hasFilteredLabel(e.labels));
+            if (this.filters.labels.length > 0 && !this.tripMatchesLabelFilter(this.selectedTrip)) {
+                events = events.filter(e => this.eventMatchesLabelFilter(e));
             }
             return events;
         },
 
-        get filteredTrips() {
+        /** Reisen nach allen Filtern außer den Labels – Grundlage für Liste und Zähler. */
+        get tripsBeforeLabelFilter() {
             let result = this.trips;
             if (this.filters.priority) {
                 result = result.filter(t => t.events && t.events.some(e => e.priority === this.filters.priority));
             }
             if (this.filters.onlyWithEvents) {
                 result = result.filter(t => t.total_events > 0);
-            }
-            if (this.filters.labels.length > 0) {
-                // Die Reise selbst oder eines ihrer Ereignisse trägt eines der Labels
-                result = result.filter(t =>
-                    this.hasFilteredLabel(t.labels) || (t.events || []).some(e => this.hasFilteredLabel(e.labels))
-                );
             }
 
             // Filter by travel date overlap (skip for "Alle" = -1)
@@ -593,6 +881,33 @@ function riskOverviewApp() {
             }
 
             return result;
+        },
+
+        get filteredTrips() {
+            const trips = this.tripsBeforeLabelFilter;
+            if (this.filters.labels.length === 0) return trips;
+            // Die Reise selbst oder eines ihrer Ereignisse passt zu einer der gewählten Optionen
+            return trips.filter(t =>
+                this.tripMatchesLabelFilter(t) || (t.events || []).some(e => this.eventMatchesLabelFilter(e))
+            );
+        },
+
+        /**
+         * Anzahl Reisen je Filter-Option im aktuellen Zeitraum (ohne Label-Filter) –
+         * so zeigt der Filter den offenen Arbeitsstand, z. B. "Ereignis ohne Label · 12".
+         */
+        get labelFilterCounts() {
+            const counts = {};
+            const trips = this.tripsBeforeLabelFilter;
+            const add = (key) => { counts[key] = (counts[key] || 0) + 1; };
+            trips.forEach(trip => {
+                const ids = new Set((trip.labels || []).map(l => l.id));
+                (trip.events || []).forEach(e => (e.labels || []).forEach(l => ids.add(l.id)));
+                ids.forEach(add);
+                if (!(trip.labels || []).length) add(this.NO_TRIP_LABEL);
+                if ((trip.events || []).some(e => !(e.labels || []).length)) add(this.NO_EVENT_LABEL);
+            });
+            return counts;
         },
 
         get filteredTripsSummary() {
@@ -656,7 +971,26 @@ function riskOverviewApp() {
             };
         },
 
+        /** Gewählte Label-Filter in diesem Browser merken (Bedienkomfort, kein Muss). */
+        restoreLabelFilter() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('travelAlert.labelFilter') || '[]');
+                if (Array.isArray(saved)) this.filters.labels = saved.filter(id => typeof id === 'string');
+            } catch (e) {
+                // Speicher nicht verfügbar (privates Fenster o. Ä.) – dann eben ohne
+            }
+        },
+
+        storeLabelFilter() {
+            try {
+                localStorage.setItem('travelAlert.labelFilter', JSON.stringify(this.filters.labels));
+            } catch (e) {
+                // siehe restoreLabelFilter
+            }
+        },
+
         init() {
+            this.restoreLabelFilter();
             this.$nextTick(() => {
                 this.initMap();
                 this.loadData();
@@ -672,10 +1006,19 @@ function riskOverviewApp() {
                     }
                 });
 
+                // Label-Popover schließen, sobald gescrollt wird (es hängt an der Karte)
+                document.addEventListener('scroll', (e) => {
+                    if (this.quickLabel.item && !e.target.closest?.('#quick-label-popover')) this.closeQuickLabel();
+                }, true);
+
                 // ESC key to close modals
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
-                        if (this.showTravelerModal) {
+                        if (this.quickLabel.item) {
+                            this.closeQuickLabel();
+                        } else if (this.selection.mode && !this.showEventModal && !this.showTravelerModal && !this.showLabelManager) {
+                            this.endSelection();
+                        } else if (this.showTravelerModal) {
                             this.closeTravelerModal();
                         } else if (this.showEventModal) {
                             this.closeEventModal();
@@ -695,6 +1038,7 @@ function riskOverviewApp() {
                 });
 
                 this.$watch('filters.labels', () => {
+                    this.storeLabelFilter();
                     if (this.sidebarTab === 'laender') {
                         this.loadData();
                     } else {

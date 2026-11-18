@@ -542,6 +542,19 @@ Route::post('/travel-alert/labels', [\App\Http\Controllers\Customer\RiskOverview
     ->middleware('auth:customer')
     ->name('risk-overview.labels.store');
 
+Route::post('/travel-alert/labels/order', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'reorderLabels'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.order');
+
+Route::post('/travel-alert/labels/bulk', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'bulkLabel'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.bulk');
+
+Route::post('/travel-alert/labels/{labelId}/merge', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'mergeLabel'])
+    ->whereUuid('labelId')
+    ->middleware('auth:customer')
+    ->name('risk-overview.labels.merge');
+
 Route::patch('/travel-alert/labels/{labelId}', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'updateLabel'])
     ->whereUuid('labelId')
     ->middleware('auth:customer')

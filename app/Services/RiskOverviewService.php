@@ -328,11 +328,7 @@ class RiskOverviewService
             // Get all active events
             $events = $this->gtmEventService->getActiveEvents($priorityFilter);
 
-            // Nur Ereignisse mit einem der gewählten Labels des Kunden
-            if ($labelIds !== []) {
-                $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
-                $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
-            }
+            $events = $this->filterEventsByLabels($events, $customerId, $labelIds);
 
             // Group events by country
             $countriesData = $this->groupEventsByCountry($events);
@@ -365,11 +361,7 @@ class RiskOverviewService
             // Get all active events
             $events = $this->gtmEventService->getActiveEvents($priorityFilter);
 
-            // Nur Ereignisse mit einem der gewählten Labels des Kunden
-            if ($labelIds !== []) {
-                $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
-                $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
-            }
+            $events = $this->filterEventsByLabels($events, $customerId, $labelIds);
 
             // Group events by country
             $countriesData = $this->groupEventsByCountry($events);
@@ -388,6 +380,27 @@ class RiskOverviewService
                 'summary' => $summary,
             ];
         });
+    }
+
+    /**
+     * Ereignisse nach Labels des Kunden filtern: mit einem der gewählten Labels oder –
+     * mit "none" in der Auswahl – ganz ohne Label des Kunden. Leere Auswahl = kein Filter.
+     *
+     * @param  array<int, string>  $labelIds  Label-UUIDs, optional "none"
+     */
+    protected function filterEventsByLabels(Collection $events, int $customerId, array $labelIds): Collection
+    {
+        if ($labelIds === []) {
+            return $events;
+        }
+
+        $wantUnlabeled = in_array('none', $labelIds, true);
+        $selected = array_values(array_diff($labelIds, ['none']));
+        $withSelected = array_flip(Label::eventIdsForLabels($customerId, $selected));
+        $labeled = $wantUnlabeled ? array_flip(Label::labeledEventIds($customerId)) : [];
+
+        return $events->filter(fn ($event) => isset($withSelected[$event->id])
+            || ($wantUnlabeled && ! isset($labeled[$event->id])));
     }
 
     /**
@@ -810,11 +823,7 @@ class RiskOverviewService
         // Get events for this country
         $events = $this->gtmEventService->getActiveEvents(null, $countryCode);
 
-        // Nur Ereignisse mit einem der gewählten Labels des Kunden
-        if ($labelIds !== []) {
-            $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
-            $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
-        }
+        $events = $this->filterEventsByLabels($events, $customerId, $labelIds);
 
         // Get travelers in this country
         $travelers = $this->filterTravelersByEventOverlap(
@@ -861,11 +870,7 @@ class RiskOverviewService
         // Get events for this country
         $events = $this->gtmEventService->getActiveEvents(null, $countryCode);
 
-        // Nur Ereignisse mit einem der gewählten Labels des Kunden
-        if ($labelIds !== []) {
-            $allowedEventIds = Label::eventIdsForLabels($customerId, $labelIds);
-            $events = $events->filter(fn ($event) => in_array($event->id, $allowedEventIds));
-        }
+        $events = $this->filterEventsByLabels($events, $customerId, $labelIds);
 
         // Get travelers in this country
         $travelers = $this->filterTravelersByEventOverlap(
@@ -1459,12 +1464,8 @@ class RiskOverviewService
                 'destinations' => $destinations,
                 'destination_codes' => $countryCodes,
                 'labels' => $folder->relationLoaded('labels')
-                    ? $folder->labels->map(fn ($l) => [
-                        'id' => $l->id,
-                        'name' => $l->name,
-                        'color' => $l->color,
-                        'icon' => $l->icon,
-                    ])->toArray()
+                    ? $folder->labels->sortBy([['sort_order', 'asc'], ['name', 'asc']])
+                        ->map(fn ($l) => Label::payload($l, $l->pivot?->created_at))->values()->toArray()
                     : [],
                 'travel_link_url' => null,
                 'source' => 'local',

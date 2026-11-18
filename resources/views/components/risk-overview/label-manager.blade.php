@@ -30,6 +30,8 @@
                             <i class="fa-regular fa-plus"></i> Anlegen
                         </button>
                     </div>
+                    <input type="text" x-model="newLabel.description" maxlength="255" placeholder="Beschreibung (optional), z. B. Kunde telefonisch informiert"
+                        class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500">
                     <div class="mt-2 flex flex-wrap gap-1.5">
                         <template x-for="color in labelPalette" :key="'new-' + color">
                             <button type="button" @click="newLabel.color = color" class="h-5 w-5 rounded-full ring-offset-1 transition"
@@ -57,6 +59,7 @@
                                 <template x-if="editingLabelId !== label.id">
                                     <div class="min-w-0 flex-1">
                                         <p class="truncate text-sm font-medium text-gray-900" x-text="label.name"></p>
+                                        <p class="truncate text-[11px] text-gray-500" x-show="label.description" x-text="label.description"></p>
                                         <p class="text-[11px] text-gray-500"
                                             x-text="label.trips_count + (label.trips_count === 1 ? ' Reise' : ' Reisen') + ' · ' + label.events_count + (label.events_count === 1 ? ' Ereignis' : ' Ereignisse')"></p>
                                     </div>
@@ -68,6 +71,18 @@
                                 </template>
 
                                 <div class="flex shrink-0 items-center gap-1" x-show="editingLabelId !== label.id">
+                                    <button type="button" @click="moveManagedLabel(label, -1)" :disabled="managedLabels[0]?.id === label.id"
+                                        class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30" title="Nach oben">
+                                        <i class="fa-regular fa-arrow-up text-xs"></i>
+                                    </button>
+                                    <button type="button" @click="moveManagedLabel(label, 1)" :disabled="managedLabels[managedLabels.length - 1]?.id === label.id"
+                                        class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30" title="Nach unten">
+                                        <i class="fa-regular fa-arrow-down text-xs"></i>
+                                    </button>
+                                    <button type="button" @click="startMergeLabel(label)" x-show="managedLabels.length > 1"
+                                        class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="In anderes Label zusammenführen">
+                                        <i class="fa-regular fa-code-merge text-xs"></i>
+                                    </button>
                                     <button type="button" @click="filterByManagedLabel(label)" class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Danach filtern">
                                         <i class="fa-regular fa-filter text-xs"></i>
                                     </button>
@@ -83,6 +98,24 @@
                                         class="rounded-lg bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-40">Speichern</button>
                                     <button type="button" @click="cancelEditLabel()" class="rounded-lg px-2 py-1 text-xs text-gray-500 hover:text-gray-800">Abbrechen</button>
                                 </div>
+                            </div>
+
+                            <div class="mt-2 ps-6" x-show="editingLabelId === label.id">
+                                <input type="text" x-model="editLabel.description" maxlength="255" placeholder="Beschreibung (optional)"
+                                    class="w-full rounded-lg border border-gray-300 px-2.5 py-1 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div class="mt-2 flex flex-wrap items-center gap-2 ps-6" x-show="mergingLabelId === label.id">
+                                <span class="text-xs text-gray-600">Zusammenführen in</span>
+                                <select x-model="mergeTargetId" class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Label wählen …</option>
+                                    <template x-for="target in managedLabels.filter(l => l.id !== label.id)" :key="'merge-' + label.id + '-' + target.id">
+                                        <option :value="target.id" x-text="target.name"></option>
+                                    </template>
+                                </select>
+                                <button type="button" @click="mergeManagedLabel(label)" :disabled="!mergeTargetId || labelManagerBusy"
+                                    class="rounded-lg bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-40">Zusammenführen</button>
+                                <button type="button" @click="mergingLabelId = null" class="rounded-lg px-2 py-1 text-xs text-gray-500 hover:text-gray-800">Abbrechen</button>
                             </div>
 
                             <div class="mt-2 flex flex-wrap gap-1.5 ps-6" x-show="editingLabelId === label.id">

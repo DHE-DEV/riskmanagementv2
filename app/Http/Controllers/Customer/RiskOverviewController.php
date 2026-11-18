@@ -613,7 +613,7 @@ class RiskOverviewController extends Controller
             ->when($query !== '', fn ($builder) => $builder->where('name', 'like', '%'.$query.'%'))
             ->ordered()
             ->limit($query === '' ? 200 : 20)
-            ->get(['id', 'name', 'color', 'icon']);
+            ->get(['id', 'name', 'color', 'icon', 'description', 'sort_order']);
 
         return response()->json($labels);
     }
@@ -667,7 +667,9 @@ class RiskOverviewController extends Controller
         $label = Label::create([
             'customer_id' => $customer->id,
             'name' => $data['name'],
+            'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? Label::nextColor($customer->id),
+            'sort_order' => Label::nextSortOrder($customer->id),
         ]);
 
         return response()->json(['success' => true, 'label' => $this->labelPayload($label)], 201);
@@ -687,10 +689,11 @@ class RiskOverviewController extends Controller
         $label = Label::where('customer_id', $customer->id)->findOrFail($labelId);
         $data = $this->validateLabel($request, $customer->id, $label->id);
 
-        $label->update(array_filter([
+        $label->update([
             'name' => $data['name'],
-            'color' => $data['color'] ?? null,
-        ]));
+            'description' => $data['description'] ?? null,
+            'color' => $data['color'] ?? $label->color,
+        ]);
         Label::bumpCacheVersion($customer->id);
 
         return response()->json(['success' => true, 'label' => $this->labelPayload($label)]);
@@ -718,6 +721,136 @@ class RiskOverviewController extends Controller
         Label::bumpCacheVersion($customer->id);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Reihenfolge der Labels festlegen (IDs in gewünschter Reihenfolge).
+     */
+    public function reorderLabels(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $ids = $request->validate(['ids' => ['required', 'array'], 'ids.*' => ['string']])['ids'];
+        $own = Label::where('customer_id', $customer->id)->whereIn('id', $ids)->pluck('id')->all();
+
+        DB::transaction(function () use ($ids, $own) {
+            foreach (array_values(array_intersect($ids, $own)) as $position => $id) {
+                Label::whereKey($id)->update(['sort_order' => $position + 1]);
+            }
+        });
+        Label::bumpCacheVersion($customer->id);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Ein Label in ein anderes überführen: alle Zuordnungen wandern zum Ziel, das Label entfällt.
+     */
+    public function mergeLabel(Request $request, string $labelId): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $source = Label::where('customer_id', $customer->id)->findOrFail($labelId);
+        $targetId = $request->validate(['target_id' => ['required', 'string', Rule::notIn([$source->id])]], [
+            'target_id.required' => 'Bitte das Label wählen, in das zusammengeführt wird.',
+            'target_id.not_in' => 'Ein Label lässt sich nicht in sich selbst zusammenführen.',
+        ])['target_id'];
+        $target = Label::where('customer_id', $customer->id)->findOrFail($targetId);
+
+        DB::transaction(function () use ($source, $target, $customer) {
+            foreach ([['folder_label', 'folder_id'], ['custom_event_label', 'custom_event_id']] as [$table, $owner]) {
+                $already = DB::table($table)->where('label_id', $target->id)->pluck($owner)->all();
+                DB::table($table)->where('label_id', $source->id)->whereIn($owner, $already)->delete();
+                DB::table($table)->where('label_id', $source->id)->update(['label_id' => $target->id]);
+            }
+
+            $already = DB::table('pds_trip_label')->where('customer_id', $customer->id)->where('label_id', $target->id)->pluck('pds_tid')->all();
+            DB::table('pds_trip_label')->where('customer_id', $customer->id)->where('label_id', $source->id)->whereIn('pds_tid', $already)->delete();
+            DB::table('pds_trip_label')->where('customer_id', $customer->id)->where('label_id', $source->id)->update(['label_id' => $target->id]);
+
+            $source->delete();
+        });
+        Label::bumpCacheVersion($customer->id);
+
+        return response()->json(['success' => true, 'label' => $this->labelPayload($target)]);
+    }
+
+    /**
+     * Ein Label an mehreren Ereignissen und Reisen auf einmal setzen oder entfernen.
+     * Reisen kommen als folder_id; "api-<tid>" steht für eine Reise aus der PDS-API.
+     */
+    public function bulkLabel(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $data = $request->validate([
+            'detach' => ['boolean'],
+            'event_ids' => ['array', 'max:500'],
+            'event_ids.*' => ['integer'],
+            'trip_ids' => ['array', 'max:500'],
+            'trip_ids.*' => ['string'],
+        ]);
+        $detach = (bool) ($data['detach'] ?? false);
+
+        $label = $detach
+            ? Label::where('customer_id', $customer->id)->where('id', $request->input('label_id'))->first()
+                ?? response()->json(['success' => false, 'message' => 'Label nicht gefunden'], 404)
+            : $this->resolveLabel($request, $customer->id);
+
+        if ($label instanceof JsonResponse) {
+            return $label;
+        }
+
+        $eventIds = CustomEvent::whereIn('id', $data['event_ids'] ?? [])->pluck('id')->all();
+        $tripIds = $data['trip_ids'] ?? [];
+        $pdsTids = array_values(array_map(fn (string $id) => substr($id, 4), array_filter($tripIds, fn (string $id) => str_starts_with($id, 'api-'))));
+        $folderIds = Folder::where('customer_id', $customer->id)
+            ->whereIn('id', array_filter($tripIds, fn (string $id) => ! str_starts_with($id, 'api-')))
+            ->pluck('id')->all();
+
+        DB::transaction(function () use ($label, $detach, $eventIds, $folderIds, $pdsTids, $customer) {
+            if ($detach) {
+                DB::table('custom_event_label')->where('label_id', $label->id)->whereIn('custom_event_id', $eventIds)->delete();
+                DB::table('folder_label')->where('label_id', $label->id)->whereIn('folder_id', $folderIds)->delete();
+                DB::table('pds_trip_label')->where('customer_id', $customer->id)->where('label_id', $label->id)->whereIn('pds_tid', $pdsTids)->delete();
+
+                return;
+            }
+
+            $now = now();
+            DB::table('custom_event_label')->insertOrIgnore(array_map(fn ($id) => ['custom_event_id' => $id, 'label_id' => $label->id, 'created_at' => $now, 'updated_at' => $now], $eventIds));
+            DB::table('folder_label')->insertOrIgnore(array_map(fn ($id) => ['folder_id' => $id, 'label_id' => $label->id, 'created_at' => $now, 'updated_at' => $now], $folderIds));
+            DB::table('pds_trip_label')->insertOrIgnore(array_map(fn ($tid) => ['customer_id' => $customer->id, 'pds_tid' => $tid, 'label_id' => $label->id, 'created_at' => $now, 'updated_at' => $now], $pdsTids));
+        });
+        Label::bumpCacheVersion($customer->id);
+
+        $folderLabels = [];
+        foreach (Folder::where('customer_id', $customer->id)->whereIn('id', $folderIds)->get() as $folder) {
+            $folderLabels[$folder->id] = $this->folderLabels($folder);
+        }
+
+        $eventLabels = Label::forCustomEvents($customer->id, $eventIds);
+        $pdsLabels = Label::forPdsTrips($customer->id, $pdsTids);
+
+        return response()->json([
+            'success' => true,
+            'label' => $this->labelPayload($label),
+            'events' => (object) collect($eventIds)->mapWithKeys(fn ($id) => [$id => $eventLabels[$id] ?? []])->all(),
+            'trips' => (object) (collect($folderIds)->mapWithKeys(fn ($id) => [$id => $folderLabels[$id] ?? []])->all()
+                + collect($pdsTids)->mapWithKeys(fn ($tid) => ['api-'.$tid => $pdsLabels[$tid] ?? []])->all()),
+        ]);
     }
 
     /**
@@ -749,7 +882,7 @@ class RiskOverviewController extends Controller
         return response()->json([
             'success' => true,
             'label' => $this->labelPayload($label),
-            'labels' => $folder->labels()->ordered()->get()->map(fn (Label $l) => $this->labelPayload($l))->values(),
+            'labels' => $this->folderLabels($folder),
         ]);
     }
 
@@ -775,7 +908,7 @@ class RiskOverviewController extends Controller
 
         return response()->json([
             'success' => true,
-            'labels' => $folder->labels()->ordered()->get()->map(fn (Label $l) => $this->labelPayload($l))->values(),
+            'labels' => $this->folderLabels($folder),
         ]);
     }
 
@@ -898,7 +1031,7 @@ class RiskOverviewController extends Controller
     }
 
     /**
-     * Gewählte Labels aus ?labels=1,2 (oder labels[]=…); ?label=1 bleibt für ältere Aufrufe gültig.
+     * Gewählte Labels aus ?labels=<uuid>,<uuid>,none (oder labels[]=…); ?label= bleibt für ältere Aufrufe gültig.
      *
      * @return array<int, string>
      */
@@ -907,7 +1040,8 @@ class RiskOverviewController extends Controller
         $raw = $request->input('labels', $request->input('label'));
         $values = is_array($raw) ? $raw : explode(',', (string) $raw);
 
-        return array_values(array_unique(array_filter(array_map(fn ($id) => trim((string) $id), $values), fn (string $id) => Str::isUuid($id))));
+        // "none" = Ereignisse ohne Label
+        return array_values(array_unique(array_filter(array_map(fn ($id) => trim((string) $id), $values), fn (string $id) => $id === 'none' || Str::isUuid($id))));
     }
 
     /**
@@ -934,42 +1068,59 @@ class RiskOverviewController extends Controller
     }
 
     /**
-     * @return array{name: string, color?: string|null}
+     * @return array{name: string, color?: string|null, description?: string|null}
      */
     private function validateLabel(Request $request, int $customerId, ?string $ignoreId = null): array
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:50', Rule::unique('labels', 'name')->where('customer_id', $customerId)->ignore($ignoreId)],
             'color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'description' => ['nullable', 'string', 'max:255'],
         ], [
             'name.required' => 'Bitte einen Namen angeben.',
             'name.max' => 'Der Name darf höchstens 50 Zeichen lang sein.',
             'name.unique' => 'Ein Label mit diesem Namen gibt es bereits.',
             'color.regex' => 'Die Farbe ist ein Hex-Wert wie #2563EB.',
+            'description.max' => 'Die Beschreibung darf höchstens 255 Zeichen lang sein.',
         ]);
 
         $data['name'] = trim($data['name']);
+        $data['description'] = trim((string) ($data['description'] ?? '')) ?: null;
 
         return $data;
     }
 
     /**
-     * @return array{id: string, name: string, color: string, icon: ?string}
+     * @return array<string, mixed>
      */
     private function labelPayload(Label $label): array
     {
-        return ['id' => $label->id, 'name' => $label->name, 'color' => $label->color, 'icon' => $label->icon];
+        return Label::payload($label);
     }
 
-    private function pdsTripLabels(int $customerId, string $pdsTid): \Illuminate\Support\Collection
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function pdsTripLabels(int $customerId, string $pdsTid): array
     {
-        return Label::forPdsTrip($customerId, $pdsTid)->sortBy([['sort_order', 'asc'], ['name', 'asc']])
-            ->map(fn (Label $l) => $this->labelPayload($l))->values();
+        return Label::forPdsTrips($customerId, [$pdsTid])[$pdsTid] ?? [];
     }
 
-    private function eventLabels(CustomEvent $event, int $customerId): \Illuminate\Support\Collection
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function eventLabels(CustomEvent $event, int $customerId): array
     {
         return $event->labels()->where('labels.customer_id', $customerId)->ordered()->get()
-            ->map(fn (Label $l) => $this->labelPayload($l))->values();
+            ->map(fn (Label $l) => Label::payload($l, $l->pivot?->created_at))->values()->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function folderLabels(Folder $folder): array
+    {
+        return $folder->labels()->ordered()->get()
+            ->map(fn (Label $l) => Label::payload($l, $l->pivot?->created_at))->values()->all();
     }
 }

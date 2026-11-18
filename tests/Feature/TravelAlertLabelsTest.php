@@ -127,5 +127,81 @@ it('zeigt auf der Travel-Alert-Seite Label-Filter, Verwaltung und Label-Chips', 
     $response->assertOk()
         ->assertSee('Labels verwalten')
         ->assertSee('toggleLabelFilter(chip.id)', false)
+        ->assertSee('openQuickLabel(event, $event, \'event\')', false)
+        ->assertSee('openQuickLabel(trip, $event, \'trip\')', false)
+        ->assertSee('Mehrere labeln')
+        ->assertSee('Label suchen oder neu anlegen')
         ->assertSee(route('risk-overview.labels.index'), false);
+});
+
+it('zeigt mit "none" nur Ereignisse ohne Label des Kunden, auch kombiniert mit einem Label', function () {
+    $italy = \App\Models\Country::factory()->create(['iso_code' => 'IT', 'iso3_code' => 'ITA']);
+    $spain = \App\Models\Country::factory()->create(['iso_code' => 'ES', 'iso3_code' => 'ESP']);
+    $france = \App\Models\Country::factory()->create(['iso_code' => 'FR', 'iso3_code' => 'FRA']);
+    $done = Label::create(['customer_id' => $this->customer->id, 'name' => 'Erledigt']);
+    $callBack = Label::create(['customer_id' => $this->customer->id, 'name' => 'Rückruf']);
+    $foreign = Label::withoutGlobalScopes()->create(['customer_id' => Customer::factory()->create()->id, 'name' => 'Fremd']);
+    tap(labelEvent(), fn ($e) => $e->update(['country_id' => $italy->id]))->labels()->attach($done->id);
+    tap(labelEvent(), fn ($e) => $e->update(['country_id' => $spain->id]))->labels()->attach($foreign->id);
+    tap(labelEvent(), fn ($e) => $e->update(['country_id' => $france->id]))->labels()->attach($callBack->id);
+    \Illuminate\Support\Facades\Cache::flush();
+
+    $unlabeled = $this->getJson(route('risk-overview.data', ['labels' => 'none', 'days' => 30]));
+    $combined = $this->getJson(route('risk-overview.data', ['labels' => 'none,'.$callBack->id, 'days' => 30]));
+
+    expect(collect($unlabeled->json('data.countries'))->pluck('country.code')->all())->toBe(['ES'])
+        ->and(collect($combined->json('data.countries'))->pluck('country.code')->sort()->values()->all())->toBe(['ES', 'FR']);
+});
+
+it('vergibt und entfernt ein Label an mehreren Ereignissen und API-Reisen auf einmal', function () {
+    $first = labelEvent();
+    $second = labelEvent();
+
+    $response = $this->postJson(route('risk-overview.labels.bulk'), [
+        'name' => 'Rückruf',
+        'event_ids' => [$first->id, $second->id],
+        'trip_ids' => ['api-trip-7'],
+    ]);
+
+    $label = Label::where('name', 'Rückruf')->first();
+    $response->assertOk()
+        ->assertJsonPath("events.{$first->id}.0.name", 'Rückruf')
+        ->assertJsonPath('trips.api-trip-7.0.name', 'Rückruf');
+    expect($response->json("events.{$first->id}.0.assigned_at"))->not->toBeNull();
+    $this->assertDatabaseHas('pds_trip_label', ['customer_id' => $this->customer->id, 'pds_tid' => 'trip-7', 'label_id' => $label->id]);
+
+    $this->postJson(route('risk-overview.labels.bulk'), ['label_id' => $label->id, 'detach' => true, 'event_ids' => [$first->id]])
+        ->assertOk()
+        ->assertJsonPath("events.{$first->id}", []);
+    $this->assertDatabaseMissing('custom_event_label', ['custom_event_id' => $first->id, 'label_id' => $label->id]);
+    $this->assertDatabaseHas('custom_event_label', ['custom_event_id' => $second->id, 'label_id' => $label->id]);
+});
+
+it('führt ein Label in ein anderes zusammen, ohne doppelte Zuordnungen', function () {
+    $source = Label::create(['customer_id' => $this->customer->id, 'name' => 'Erledigt']);
+    $target = Label::create(['customer_id' => $this->customer->id, 'name' => 'Bearbeitet']);
+    $both = labelEvent();
+    $onlySource = labelEvent();
+    $both->labels()->attach([$source->id, $target->id]);
+    $onlySource->labels()->attach($source->id);
+
+    $this->postJson(route('risk-overview.labels.merge', $source->id), ['target_id' => $target->id])->assertOk();
+
+    $this->assertModelMissing($source);
+    expect($both->labels()->pluck('labels.id')->all())->toBe([$target->id])
+        ->and($onlySource->labels()->pluck('labels.id')->all())->toBe([$target->id]);
+});
+
+it('speichert Reihenfolge und Beschreibung und liefert die Labels in dieser Reihenfolge', function () {
+    $this->postJson(route('risk-overview.labels.store'), ['name' => 'B-Label', 'description' => 'Kunde telefonisch informiert'])->assertCreated();
+    $this->postJson(route('risk-overview.labels.store'), ['name' => 'A-Label'])->assertCreated();
+    $ids = Label::where('customer_id', $this->customer->id)->orderBy('name')->pluck('id')->all();
+
+    $this->postJson(route('risk-overview.labels.order'), ['ids' => array_reverse($ids)])->assertOk();
+
+    $this->getJson(route('risk-overview.labels.search', ['q' => '']))
+        ->assertOk()
+        ->assertJsonPath('0.name', 'B-Label')
+        ->assertJsonPath('0.description', 'Kunde telefonisch informiert')
+        ->assertJsonPath('1.name', 'A-Label');
 });

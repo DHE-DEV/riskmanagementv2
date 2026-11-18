@@ -1,6 +1,6 @@
 @php
 $active = 'travel-alert';
-$version = '1.2.0';
+$version = '1.4.0';
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -179,21 +179,33 @@ $version = '1.2.0';
                                             </div>
                                         </div>
 
+                                        <!-- Mehrere Reisen auf einmal labeln -->
+                                        <div class="mb-2 flex justify-end">
+                                            <button type="button"
+                                                @click="selection.mode === 'trips' ? endSelection() : startSelection('trips')"
+                                                class="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors"
+                                                :class="selection.mode === 'trips' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                                                <i class="fa-regular fa-square-check"></i>
+                                                <span x-text="selection.mode === 'trips' ? 'Auswahl beenden' : 'Mehrere Reisen labeln'"></span>
+                                            </button>
+                                        </div>
+
                                         <!-- Trip cards -->
                                         <div class="space-y-2">
                                             <template x-for="trip in filteredTrips" :key="trip.folder_id">
                                                 <div class="rounded-lg border-l-4 p-3 cursor-pointer transition-colors"
-                                                    @click="selectTrip(trip)" :style="'border-left-color: ' + (trip.total_events > 0
+                                                    @click="onTripCardClick(trip)" :style="'border-left-color: ' + (trip.total_events > 0
                                             ? (trip.highest_priority === 'high' ? '#ef4444' : trip.highest_priority === 'medium' ? '#f97316' : trip.highest_priority === 'low' ? '#eab308' : '#3b82f6')
                                             : '#d1d5db')" :class="[
                                              trip.total_events === 0 ? 'opacity-60' : '',
+                                             isSelected(trip) ? 'ring-2 ring-blue-500 ring-offset-1' : '',
                                              selectedTrip?.folder_id === trip.folder_id ? 'bg-blue-50 border border-blue-500 text-blue-700 font-semibold' : 'bg-white border border-gray-200 hover:bg-gray-50'
                                          ]">
                                                     <!-- Trip name -->
                                                     <div class="mb-1">
                                                         <h4 class="text-xs font-semibold text-gray-900 line-clamp-2"
                                                             x-text="trip.folder_name"></h4>
-                                                        <x-risk-overview.label-chips items="trip.labels" class="mt-1" />
+                                                        <x-risk-overview.label-chips items="trip.labels" quick="trip" quick-kind="trip" class="mt-1" />
                                                     </div>
 
                                                     <!-- Dates & participants -->
@@ -635,12 +647,13 @@ $version = '1.2.0';
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                             title="Ereignisse" count-expression="countryDetails.events.length"
-                                            maximize-section="events" />
+                                            maximize-section="events" select-scope="country" />
                                         <div class="flex-1 overflow-y-auto p-4">
                                             <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
                                                     <div x-data="{ menuOpen: false }" class="relative bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
-                                                        @click="openEventModal(event)" :class="{
+                                                        @click="onEventCardClick(event)" :class="{
+                                                 'ring-2 ring-blue-500 ring-offset-1': isSelected(event),
                                                          'border-l-red-500': event.priority === 'high',
                                                          'border-l-orange-500': event.priority === 'medium',
                                                          'border-l-green-500': event.priority === 'low',
@@ -670,7 +683,7 @@ $version = '1.2.0';
                                                         </div>
                                                         <p class="text-xs text-gray-600 line-clamp-3"
                                                             x-text="event.description"></p>
-                                                        <x-risk-overview.label-chips items="event.labels" class="mt-2" />
+                                                        <x-risk-overview.label-chips items="event.labels" quick="event" class="mt-2" />
                                                         <div
                                                             class="flex items-center justify-between mt-3 text-xs text-gray-500">
                                                             <div class="flex items-center gap-2">
@@ -1196,7 +1209,8 @@ $version = '1.2.0';
                                                 <div class="space-y-2">
                                                     <template x-for="event in trip.events" :key="event.id">
                                                         <div class="p-2 rounded border-l-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                                                            @click="openEventModal(event)" :class="{
+                                                            @click="onEventCardClick(event)" :class="{
+                                                 'ring-2 ring-blue-500 ring-offset-1': isSelected(event),
                                                              'border-l-red-500 bg-red-50': event.priority === 'high',
                                                              'border-l-orange-500 bg-orange-50': event.priority === 'medium',
                                                              'border-l-yellow-500 bg-yellow-50': event.priority === 'low',
@@ -1206,7 +1220,7 @@ $version = '1.2.0';
                                                                 <div class="flex-1 min-w-0">
                                                                     <p class="text-xs font-medium text-gray-800 truncate"
                                                                         x-text="event.title"></p>
-                                                                    <x-risk-overview.label-chips items="event.labels" class="mt-1" />
+                                                                    <x-risk-overview.label-chips items="event.labels" quick="event" class="mt-1" />
                                                                     <div
                                                                         class="flex items-center gap-1 mt-0.5 flex-wrap">
                                                                         <template x-for="mc in event.matched_countries"
@@ -1280,7 +1294,8 @@ $version = '1.2.0';
                                         <div class="space-y-3">
                                             <template x-for="event in countryDetails.events" :key="event.id">
                                                 <div x-data="{ menuOpen: false }" class="relative bg-gray-50 p-3 rounded-lg border-l-4 cursor-pointer hover:bg-gray-100 transition-colors"
-                                                    @click="openEventModal(event)" :class="{
+                                                    @click="onEventCardClick(event)" :class="{
+                                                 'ring-2 ring-blue-500 ring-offset-1': isSelected(event),
                                                      'border-red-500': event.priority === 'high',
                                                      'border-orange-500': event.priority === 'medium',
                                                      'border-green-500': event.priority === 'low',
@@ -1307,7 +1322,7 @@ $version = '1.2.0';
                                                     </div>
                                                     <p class="text-xs text-gray-600 mt-1 line-clamp-2"
                                                         x-text="event.description"></p>
-                                                    <x-risk-overview.label-chips items="event.labels" class="mt-2" />
+                                                    <x-risk-overview.label-chips items="event.labels" quick="event" class="mt-2" />
                                                     <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
                                                         <span x-text="event.event_type"></span>
                                                         <span
@@ -1431,12 +1446,13 @@ $version = '1.2.0';
                                         <x-risk-overview.section-header
                                             icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                             title="Ereignisse" count-expression="countryDetails.events.length"
-                                            maximize-section="events" />
+                                            maximize-section="events" select-scope="country" />
                                         <div class="flex-1 overflow-y-auto">
                                             <div class="divide-y divide-gray-200">
                                                 <template x-for="event in countryDetails.events" :key="event.id">
                                                     <div x-data="{ menuOpen: false }" class="px-4 py-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-4 border-l-4"
-                                                        @click="openEventModal(event)" :class="{
+                                                        @click="onEventCardClick(event)" :class="{
+                                                 'ring-2 ring-blue-500 ring-offset-1': isSelected(event),
                                                          'border-l-red-500': event.priority === 'high',
                                                          'border-l-orange-500': event.priority === 'medium',
                                                          'border-l-green-500': event.priority === 'low',
@@ -1448,7 +1464,7 @@ $version = '1.2.0';
                                                             <p class="text-xs text-gray-500 mt-0.5"
                                                                 x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')">
                                                             </p>
-                                                            <x-risk-overview.label-chips items="event.labels" class="mt-1" />
+                                                            <x-risk-overview.label-chips items="event.labels" quick="event" class="mt-1" />
                                                         </div>
                                                         <x-risk-overview.priority-badge priority="event.priority"
                                                             class="flex-shrink-0" />
@@ -1866,7 +1882,7 @@ $version = '1.2.0';
                                                 <template x-for="label in (selectedTrip.labels || [])" :key="label.id">
                                                     <span
                                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white"
-                                                        :style="'background-color: ' + label.color">
+                                                        :title="labelTooltip(label)" :style="'background-color: ' + label.color">
                                                         <i class="fa-regular text-[10px]" :class="label.icon"></i>
                                                         <span x-text="label.name"></span>
                                                         <button @click.stop="detachLabel(label.id)"
@@ -1917,6 +1933,7 @@ $version = '1.2.0';
                                 <x-risk-overview.section-header
                                     icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                     title="Ereignisse" count-expression="filteredTripEvents.length"
+                                    select-scope="trip"
                                     maximize-section="tripEvents"
                                     maximize-var="tripMaximizedSection" toggle-method="toggleTripMaximize">
                                     <template x-if="selectedTripCountry">
@@ -1942,7 +1959,8 @@ $version = '1.2.0';
                                     <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                                         <template x-for="event in filteredTripEvents" :key="event.id">
                                             <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow"
-                                                @click="openEventModal(event)" :class="{
+                                                @click="onEventCardClick(event)" :class="{
+                                                 'ring-2 ring-blue-500 ring-offset-1': isSelected(event),
                                                  'border-l-red-500': event.priority === 'high',
                                                  'border-l-orange-500': event.priority === 'medium',
                                                  'border-l-green-500': event.priority === 'low',
@@ -1956,7 +1974,7 @@ $version = '1.2.0';
                                                 </div>
                                                 <p class="text-xs text-gray-600 line-clamp-3"
                                                     x-text="event.description"></p>
-                                                <x-risk-overview.label-chips items="event.labels" class="mt-2" />
+                                                <x-risk-overview.label-chips items="event.labels" quick="event" class="mt-2" />
                                                 <div class="flex items-center gap-2 mt-3 text-xs text-gray-500">
                                                     <span x-text="event.event_type"></span>
                                                     <span>&bull;</span>
@@ -2060,7 +2078,7 @@ $version = '1.2.0';
                                                         :key="label.id">
                                                         <span
                                                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] text-white"
-                                                            :style="'background-color: ' + label.color">
+                                                            :title="labelTooltip(label)" :style="'background-color: ' + label.color">
                                                             <i class="fa-regular text-[9px]" :class="label.icon"></i>
                                                             <span x-text="label.name"></span>
                                                             <button @click.stop="detachLabel(label.id)"
@@ -2112,6 +2130,7 @@ $version = '1.2.0';
                                 <x-risk-overview.section-header
                                     icon="fa-regular fa-triangle-exclamation" icon-color="text-orange-500"
                                     title="Ereignisse" count-expression="filteredTripEvents.length"
+                                    select-scope="trip"
                                     maximize-section="tripEvents"
                                     maximize-var="tripMaximizedSection" toggle-method="toggleTripMaximize">
                                     <template x-if="selectedTripCountry">
@@ -2137,7 +2156,8 @@ $version = '1.2.0';
                                     <div class="divide-y divide-gray-200">
                                         <template x-for="event in filteredTripEvents" :key="event.id">
                                             <div class="px-4 py-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-4 border-l-4"
-                                                @click="openEventModal(event)" :class="{
+                                                @click="onEventCardClick(event)" :class="{
+                                                 'ring-2 ring-blue-500 ring-offset-1': isSelected(event),
                                                  'border-l-red-500': event.priority === 'high',
                                                  'border-l-orange-500': event.priority === 'medium',
                                                  'border-l-green-500': event.priority === 'low',
@@ -2149,7 +2169,7 @@ $version = '1.2.0';
                                                     <p class="text-xs text-gray-500 mt-0.5"
                                                         x-text="event.event_type + ' • ' + formatDate(event.start_date) + (event.end_date ? ' - ' + formatDate(event.end_date) : '')">
                                                     </p>
-                                                    <x-risk-overview.label-chips items="event.labels" class="mt-1" />
+                                                    <x-risk-overview.label-chips items="event.labels" quick="event" class="mt-1" />
                                                     <div class="flex flex-wrap gap-1 mt-1">
                                                         <template x-for="mc in (event.matched_countries || [])"
                                                             :key="mc.code">
@@ -2547,9 +2567,10 @@ $version = '1.2.0';
                                 <template x-for="label in (selectedEvent?.labels || [])" :key="label.id">
                                     <span
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white"
-                                        :style="'background-color: ' + (label.color || '#6b7280')">
+                                        :title="labelTooltip(label)" :style="'background-color: ' + (label.color || '#6b7280')">
                                         <i class="fa-regular text-[10px]" :class="label.icon" x-show="label.icon"></i>
                                         <span x-text="label.name"></span>
+                                        <span class="opacity-80" x-show="label.assigned_at" x-text="'· ' + formatDate(label.assigned_at)"></span>
                                         <button @click.stop="detachEventLabel(label.id)"
                                             class="ml-0.5 hover:opacity-70">
                                             <i class="fa-regular fa-xmark text-[10px]"></i>
@@ -2644,6 +2665,12 @@ $version = '1.2.0';
 
         <!-- Labels verwalten -->
         <x-risk-overview.label-manager />
+
+        <!-- Labels an Ereignis- und Reisekarten -->
+        <x-risk-overview.label-quick-popover />
+
+        <!-- Mehrfachauswahl: Labels für mehrere Karten -->
+        <x-risk-overview.label-bulk-bar />
 
         <!-- Traveler Detail Modal -->
         <div x-show="showTravelerModal" x-cloak x-transition:enter="transition ease-out duration-200"
@@ -2885,6 +2912,8 @@ $version = '1.2.0';
             routes: {
                 labelsSearch: '{{ route("risk-overview.labels.search") }}',
                 labels: '{{ route("risk-overview.labels.index") }}',
+                labelsOrder: '{{ route("risk-overview.labels.order") }}',
+                labelsBulk: '{{ route("risk-overview.labels.bulk") }}',
                 data: '{{ route("risk-overview.data") }}',
                 trips: '{{ route("risk-overview.trips") }}',
                 country: '{{ url("/travel-alert/country") }}',
