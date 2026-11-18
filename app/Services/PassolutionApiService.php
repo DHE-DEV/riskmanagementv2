@@ -134,22 +134,14 @@ class PassolutionApiService
 
         foreach (['user_email', 'account_email'] as $param) {
             $reqParams = array_merge([$param => $email], $query);
-            $t0 = microtime(true);
+
             try {
-                $response = Http::withHeaders([
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Bearer '.$token,
-                ])
-                    ->timeout(20)
-                    ->get($url, $reqParams);
+                $rows = $this->fetchAllTravelDetailPages($url, $token, $reqParams);
 
-                \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
-
-                if ($response->successful()) {
-                    return $response->json('data', []);
+                if ($rows !== null) {
+                    return $rows;
                 }
             } catch (\Exception $e) {
-                \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
                 Log::error('Passolution API: Travel-Details-Abruf fehlgeschlagen', [
                     'email' => $email,
                     'param' => $param,
@@ -215,29 +207,19 @@ class PassolutionApiService
         }
 
         $url = "{$this->internalBaseUrl}/__internal/account/travel-details";
-        $t0 = microtime(true);
 
         try {
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Authorization' => 'Bearer '.$token,
-            ])
-                ->timeout(20)
-                ->get($url, $reqParams);
+            $rows = $this->fetchAllTravelDetailPages($url, $token, $reqParams);
 
-            \App\Support\PdsDebug::record('GET', $url, $reqParams, $response->status(), $t0, $response->json());
-            $this->lastTravelDetailsStatus = $response->status();
-
-            if ($response->successful()) {
-                return $response->json('data', []);
+            if ($rows !== null) {
+                return $rows;
             }
 
             Log::warning('Passolution API: Travel-Details-Abruf nicht erfolgreich', [
                 'account_id' => $accountId,
-                'status' => $response->status(),
+                'status' => $this->lastTravelDetailsStatus,
             ]);
         } catch (\Exception $e) {
-            \App\Support\PdsDebug::record('GET', $url, $reqParams, null, $t0, null, $e->getMessage());
             Log::error('Passolution API: Travel-Details-Abruf fehlgeschlagen', [
                 'account_id' => $accountId,
                 'message' => $e->getMessage(),
@@ -245,6 +227,81 @@ class PassolutionApiService
         }
 
         return null;
+    }
+
+    /** Höchstens so viele Seiten à 1000 Links je Abruf (Schutz vor Ausreißern). */
+    public const TRAVEL_DETAILS_MAX_PAGES = 30;
+
+    /**
+     * Alle Seiten von __internal/account/travel-details: erst Seite 1, die übrigen
+     * gleichzeitig. Früher kam nur Seite 1 – bei mehr als 1000 Reisen im Zeitraum
+     * fehlten dann ausgerechnet die laufenden (Sortierung nach Reisebeginn absteigend).
+     *
+     * @param  array<string, mixed>  $params
+     * @return array<int, array<string, mixed>>|null null, wenn Seite 1 scheitert
+     */
+    private function fetchAllTravelDetailPages(string $url, string $token, array $params): ?array
+    {
+        $request = fn () => Http::withHeaders(['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token])->timeout(20);
+
+        $t0 = microtime(true);
+        try {
+            $first = $request()->get($url, $params + ['page' => 1]);
+        } catch (\Exception $e) {
+            \App\Support\PdsDebug::record('GET', $url, $params, null, $t0, null, $e->getMessage());
+            throw $e;
+        }
+        \App\Support\PdsDebug::record('GET', $url, $params + ['page' => 1], $first->status(), $t0, $first->json());
+        $this->lastTravelDetailsStatus = $first->status();
+
+        if (! $first->successful()) {
+            return null;
+        }
+
+        $rows = $first->json('data', []);
+        $lastPage = (int) ($first->json('meta.last_page') ?? 1);
+
+        if ($lastPage > self::TRAVEL_DETAILS_MAX_PAGES) {
+            Log::warning('Passolution API: Travel-Details über der Seitengrenze – nicht alle Reisen geladen', [
+                'pages' => $lastPage,
+                'max_pages' => self::TRAVEL_DETAILS_MAX_PAGES,
+                'total' => $first->json('meta.total'),
+            ]);
+            $lastPage = self::TRAVEL_DETAILS_MAX_PAGES;
+        }
+
+        if ($lastPage < 2) {
+            return $rows;
+        }
+
+        $t1 = microtime(true);
+        $responses = Http::pool(fn ($pool) => array_map(
+            fn (int $page) => $pool->as((string) $page)
+                ->withHeaders(['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token])
+                ->timeout(20)
+                ->get($url, $params + ['page' => $page]),
+            range(2, $lastPage),
+        ));
+
+        foreach (range(2, $lastPage) as $page) {
+            $response = $responses[(string) $page] ?? null;
+
+            if ($response instanceof \Illuminate\Http\Client\Response && $response->successful()) {
+                array_push($rows, ...$response->json('data', []));
+
+                continue;
+            }
+
+            // Eine fehlende Seite soll nicht alles verwerfen: lieber fast vollständig als leer.
+            Log::warning('Passolution API: Travel-Details-Seite nicht geladen', [
+                'page' => $page,
+                'status' => $response instanceof \Illuminate\Http\Client\Response ? $response->status() : null,
+                'error' => $response instanceof \Throwable ? $response->getMessage() : null,
+            ]);
+        }
+        \App\Support\PdsDebug::record('GET', $url, $params + ['pages' => '2-'.$lastPage], 200, $t1, ['rows' => count($rows)]);
+
+        return $rows;
     }
 
     /**

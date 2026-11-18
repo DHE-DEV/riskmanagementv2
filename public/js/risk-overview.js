@@ -66,6 +66,8 @@ function riskOverviewApp() {
         tripActiveTab: 'tiles',
         tripMaximizedSection: null,
         trips: [],
+        // Große Konten haben tausende Reisen: die Liste zeigt sie schrittweise
+        tripListLimit: 100,
         tripsSummary: { total_trips: 0, trips_with_events: 0, total_events_across_trips: 0 },
         loadingTrips: false,
         tripsLoaded: false,
@@ -910,6 +912,15 @@ function riskOverviewApp() {
             return counts;
         },
 
+        /** Die gerade angezeigten Reisen der Liste (schrittweise mehr). */
+        get visibleTrips() {
+            return this.filteredTrips.slice(0, this.tripListLimit);
+        },
+
+        showMoreTrips() {
+            this.tripListLimit += 100;
+        },
+
         get filteredTripsSummary() {
             const filtered = this.filteredTrips;
             let tripsWithEvents = 0;
@@ -1037,6 +1048,9 @@ function riskOverviewApp() {
                     this.reselectCountryIfNeeded();
                 });
 
+                // Andere Filter: Liste wieder von vorn zeigen
+                this.$watch('filters', () => { this.tripListLimit = 100; });
+
                 this.$watch('filters.labels', () => {
                     this.storeLabelFilter();
                     if (this.sidebarTab === 'laender') {
@@ -1150,6 +1164,7 @@ function riskOverviewApp() {
                 this.logDebug('getTrips', Object.fromEntries(params), result, fetchStart, endpoint);
 
                 if (result.success) {
+                    this.tripListLimit = 100;
                     this.trips = result.data.trips;
                     this.tripsSummary = result.data.summary;
                     this.tripsLoaded = true;

@@ -156,8 +156,7 @@ class RiskOverviewService
             // Service-Token ueber die Identitaets-E-Mail (keycloak ?: employee ?:
             // customer->email) hat Vorrang -> macht veraltete per-User-Tokens irrelevant.
             if ($ssoEmail) {
-                $apiTravelers = app(PassolutionApiService::class)
-                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate);
+                $apiTravelers = $this->fetchTravelAlertTravelDetails($ssoEmail, $startDate, $endDate);
             }
 
             // Fallback: per-User-Token, falls der Service-Token nichts lieferte.
@@ -271,6 +270,83 @@ class RiskOverviewService
     /**
      * Extract country codes from API traveler data.
      */
+    /** So lange teilen sich Reiseliste, Länderansicht und Länderdetails eine pds-Abfrage. */
+    public const PDS_TRIPS_CACHE_MINUTES = 5;
+
+    /**
+     * Reisen eines Kontos aus der pds-API für den Travel Alert – alle Seiten, auf die
+     * benötigten Felder reduziert und kurz zwischengespeichert. Gleichzeitige Anfragen
+     * (Reiseliste und Länderansicht laden parallel) warten auf denselben Abruf.
+     *
+     * @return array<int, array<string, mixed>>|null null bei Fehler
+     */
+    protected function fetchTravelAlertTravelDetails(string $email, string $startDate, string $endDate): ?array
+    {
+        $key = 'travel_alert_pds_trips:'.md5(mb_strtolower($email).'|'.$startDate.'|'.$endDate);
+        $load = function () use ($email, $startDate, $endDate): ?array {
+            $rows = app(PassolutionApiService::class)->fetchTravelDetailsByEmail($email, $startDate, $endDate);
+
+            return $rows === null ? null : array_map(fn (array $row) => $this->slimTravelDetail($row), $rows);
+        };
+
+        if (($cached = Cache::get($key)) !== null) {
+            return $cached;
+        }
+
+        try {
+            return Cache::lock($key.':lock', 60)->block(45, function () use ($key, $load) {
+                if (($cached = Cache::get($key)) !== null) {
+                    return $cached;
+                }
+
+                $rows = $load();
+                if ($rows !== null) {
+                    Cache::put($key, $rows, now()->addMinutes(self::PDS_TRIPS_CACHE_MINUTES));
+                }
+
+                return $rows;
+            });
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
+            return $load();
+        }
+    }
+
+    /**
+     * Nur die Felder einer pds-Reise, die der Travel Alert liest – hält den
+     * Zwischenspeicher auch bei zehntausenden Reisen klein.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    protected function slimTravelDetail(array $row): array
+    {
+        $codes = fn ($list) => array_values(array_map(
+            fn ($item) => ['code' => is_array($item) ? ($item['code'] ?? null) : null],
+            is_array($list) ? $list : [],
+        ));
+
+        return [
+            'tid' => $row['tid'] ?? null,
+            'id' => $row['id'] ?? null,
+            'trip_name' => $row['trip_name'] ?? null,
+            'start_date' => $row['start_date'] ?? null,
+            'end_date' => $row['end_date'] ?? null,
+            'travelers_count' => $row['travelers_count'] ?? null,
+            'destinations' => $row['destinations'] ?? [],
+            'destinations_list' => $codes($row['destinations_list'] ?? []),
+            'countries' => $codes($row['countries'] ?? []),
+            'nationalities' => $row['nationalities'] ?? [],
+            'cruise_compass' => $row['cruise_compass'] ?? null,
+            'cruise' => isset($row['cruise']['port_calls']) && is_array($row['cruise']['port_calls'])
+                ? ['port_calls' => array_values(array_map(fn ($call) => [
+                    'day' => $call['day'] ?? null,
+                    'port' => ['country' => ['code' => $call['port']['country']['code'] ?? null]],
+                ], $row['cruise']['port_calls']))]
+                : null,
+            'travel' => ['with_minors' => $row['travel']['with_minors'] ?? null],
+        ];
+    }
+
     protected function extractCountryCodesFromApiTraveler(array $traveler): array
     {
         $countryCodes = [];
@@ -1194,8 +1270,7 @@ class RiskOverviewService
             // customer->email) hat Vorrang -> macht veraltete per-User-Tokens irrelevant.
             if ($ssoEmail) {
                 Log::info('RiskOverview: Reisen via Service-Token', ['sso_email' => $ssoEmail]);
-                $apiTravelers = app(PassolutionApiService::class)
-                    ->fetchTravelDetailsByEmail($ssoEmail, $startDate, $endDate);
+                $apiTravelers = $this->fetchTravelAlertTravelDetails($ssoEmail, $startDate, $endDate);
             }
 
             // Fallback: per-User-Token, falls der Service-Token nichts lieferte.
