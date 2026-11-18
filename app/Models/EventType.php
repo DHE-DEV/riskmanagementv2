@@ -40,6 +40,14 @@ class EventType extends Model
     }
 
     /**
+     * Ereignisse, die diesem Typ zugeordnet sind (Mehrfachzuordnung).
+     */
+    public function events(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(CustomEvent::class, 'custom_event_event_type');
+    }
+
+    /**
      * Get custom events of this type.
      */
     public function customEvents(): HasMany

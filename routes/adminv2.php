@@ -51,6 +51,8 @@ use App\Livewire\AdminV2\System\Automator\Index as AutomatorIndex;
 use App\Livewire\AdminV2\System\Automator\Monitor as AutomatorMonitor;
 use App\Livewire\AdminV2\System\Cooperations\Editor as CooperationEditor;
 use App\Livewire\AdminV2\System\Cooperations\Index as CooperationIndex;
+use App\Livewire\AdminV2\System\EventTypes\Editor as EventTypeEditor;
+use App\Livewire\AdminV2\System\EventTypes\Index as EventTypeIndex;
 use App\Livewire\AdminV2\System\MobileOperators\Editor as MobileOperatorEditor;
 use App\Livewire\AdminV2\System\MobileOperators\Index as MobileOperatorIndex;
 use App\Livewire\AdminV2\System\Products\Compare as ProductCompare;
@@ -210,6 +212,9 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('system/mobile-operators', MobileOperatorIndex::class)->name('system.mobile-operators.index');
         Route::get('system/mobile-operators/create', MobileOperatorEditor::class)->name('system.mobile-operators.create');
         Route::get('system/mobile-operators/{operator}', MobileOperatorEditor::class)->whereNumber('operator')->name('system.mobile-operators.edit');
+        Route::get('system/event-types', EventTypeIndex::class)->name('system.event-types.index');
+        Route::get('system/event-types/create', EventTypeEditor::class)->name('system.event-types.create');
+        Route::get('system/event-types/{type}', EventTypeEditor::class)->whereNumber('type')->name('system.event-types.edit');
         Route::get('system/taxi-apps', TaxiAppIndex::class)->name('system.taxi-apps.index');
         Route::get('system/taxi-apps/create', TaxiAppEditor::class)->name('system.taxi-apps.create');
         Route::get('system/taxi-apps/{app}', TaxiAppEditor::class)->whereNumber('app')->name('system.taxi-apps.edit');
