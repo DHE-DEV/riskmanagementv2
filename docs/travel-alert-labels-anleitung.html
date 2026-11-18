@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Labels im Travel Alert – Anleitung</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+.foot .ver { text-transform: none; letter-spacing: .04em; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+/* UI-Elemente, die in der Oberflaeche so heissen */
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+.ui-btn {
+  display: inline-block;
+  background: var(--ink); color: #fff;
+  border-radius: 1.4mm;
+  padding: .4mm 2mm;
+  font-weight: 600; font-size: 8.8pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.4mm 0;
+  font-size: 9.4pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 5mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.8mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 5mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+/* Screenshots und Label-Chips (Labels-Anleitung) */
+.shot {
+  border: .6pt solid var(--line); border-radius: 2.6mm; overflow: hidden;
+  background: #fff; box-shadow: 0 1.2mm 4mm rgba(0, 39, 66, .08);
+}
+.shot img { display: block; width: 100%; }
+.cap { font-size: 8pt; color: var(--muted); margin-top: 1.8mm; line-height: 1.4; }
+.chip {
+  display: inline-block; border-radius: 99mm; padding: .2mm 2.2mm;
+  font-size: 8pt; font-weight: 600; color: #fff; white-space: nowrap;
+}
+.chip.dash { color: var(--muted); background: #fff; border: .6pt dashed #B9C7D0; }
+.chip.dark { background: #1F2937; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; align-items: start; }
+.split-wide { display: grid; grid-template-columns: 58mm 1fr; gap: 7mm; align-items: start; }
+
+</style>
+</head>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".26"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="640" cy="360" r="320" fill="url(#glow)"/>
+
+      <!-- Motiv: Karten mit Labels -->
+      <g stroke="#5E8FA8" stroke-opacity=".35" fill="none" stroke-width="1.2">
+        <rect x="430" y="214" width="190" height="96" rx="10"/>
+        <rect x="430" y="330" width="190" height="96" rx="10"/>
+        <rect x="430" y="446" width="190" height="96" rx="10"/>
+        <line x1="452" y1="246" x2="560" y2="246"/>
+        <line x1="452" y1="362" x2="540" y2="362"/>
+        <line x1="452" y1="478" x2="574" y2="478"/>
+      </g>
+      <g>
+        <rect x="452" y="266" width="62" height="20" rx="10" fill="#059669" fill-opacity=".85"/>
+        <rect x="520" y="266" width="44" height="20" rx="10" fill="#7C3AED" fill-opacity=".85"/>
+        <rect x="452" y="382" width="54" height="20" rx="10" fill="#D97706" fill-opacity=".85"/>
+        <rect x="452" y="498" width="70" height="20" rx="10" fill="none" stroke="#CEE741" stroke-opacity=".8" stroke-dasharray="4 3" stroke-width="1.6"/>
+      </g>
+      <g transform="translate(652,560) rotate(-18)">
+        <path d="M 0 0 H 70 L 96 26 L 70 52 H 0 Z" fill="#CEE741" fill-opacity=".16" stroke="#CEE741" stroke-opacity=".75" stroke-width="2"/>
+        <circle cx="18" cy="26" r="6" fill="#CEE741"/>
+      </g>
+
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:28mm">
+      <div class="kicker" style="color:#CEE741">Anleitung für Travel Alert</div>
+      <h1 class="mt2">Labels im<br>Travel Alert.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Wie du Reisen und Ereignisse markierst, nach Labels filterst und viele auf einmal
+        bearbeitest – damit dein Team jederzeit sieht, was schon erledigt ist und was noch offen.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Was Labels sind</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Ein Label vergeben</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Viele auf einmal labeln</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Nach Labels filtern</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">Labels verwalten</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">So arbeitest du im Alltag damit</span></div>
+      <div class="toc-row"><span class="n">07</span><span class="t">Häufige Fragen</span></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Version 1.0</span>
+      <span>18.11.2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · GRUNDLAGE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Grundlage</div>
+    <h2 class="mt2">Labels machen deinen<br>Arbeitsstand sichtbar.</h2>
+
+    <p class="lead mt3" style="max-width:155mm">
+      Ein Label ist ein farbiges Etikett, das du an eine Reise oder an ein Ereignis hängst –
+      zum Beispiel <span class="chip" style="background:#059669">Kunde informiert</span> oder
+      <span class="chip" style="background:#D97706">Rückruf</span>. So erkennst du auf einen Blick,
+      was schon bearbeitet ist, und findest über den Filter genau die Karten, um die du dich noch
+      kümmern musst.
+    </p>
+
+    <div class="grid2 mt4">
+      <div class="card">
+        <h3>Labels an Reisen</h3>
+        <p>Markieren die Reise als Ganzes: etwa <b>VIP</b>, <b>Kunde informiert</b> oder
+           <b>Gruppenreise</b>. Sie erscheinen in der Reiseliste links und in den Reisedetails.</p>
+      </div>
+      <div class="card">
+        <h3>Labels an Ereignissen</h3>
+        <p>Markieren, wie du mit einem Ereignis umgegangen bist: etwa <b>Geprüft</b>,
+           <b>Rückruf</b> oder <b>Erledigt</b>. Ein Ereignis, das mehrere deiner Reisen betrifft,
+           trägt sein Label überall, wo es auftaucht.</p>
+      </div>
+    </div>
+
+    <h3 class="mt5">Gut zu wissen</h3>
+    <ul class="checks mt2">
+      <li><b>Nur für dein Konto sichtbar.</b> Labels gehören zu deinem Kundenkonto. Andere Kunden
+          sehen weder deine Labels noch was du markiert hast – auch nicht bei denselben Ereignissen.</li>
+      <li><b>Für alle im Konto gleich.</b> Wer sich mit deinem Konto anmeldet, sieht dieselben Labels.
+          Das macht sie zum gemeinsamen Arbeitsstand im Team.</li>
+      <li><b>Beliebig viele je Karte.</b> Eine Reise oder ein Ereignis kann mehrere Labels tragen.
+          Bis zu drei stehen direkt auf der Karte, weitere zeigt ein „+2“.</li>
+      <li><b>Sofort überall.</b> Vergibst oder entfernst du ein Label, aktualisieren sich alle Karten
+          ohne Neuladen – auch die Zahlen im Filter.</li>
+    </ul>
+
+    <div class="note mt5">
+      <span class="head">Ein Tipp vorab</span>
+      Leg dir zu Beginn wenige, klar benannte Labels an – drei bis fünf reichen meist. Am besten
+      solche, die einen Arbeitsschritt beschreiben („Kunde informiert“, „Rückruf“, „Erledigt“).
+      Wie du sie anlegst, steht ab Seite 7.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Grundlage</span><span class="ver">v1.0 · 18.11.2026</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · VERGEBEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Vergeben</div>
+    <h2 class="mt2">Ein Label vergeben –<br>direkt an der Karte.</h2>
+
+    <p class="lead mt3" style="max-width:155mm">
+      Jede Ereignis- und jede Reisekarte hat neben ihren Labels einen kleinen gestrichelten
+      Knopf <span class="chip dash">Label</span>. Ein Klick darauf öffnet eine Liste, in der du
+      Labels an- und abhakst – ohne das Ereignis oder die Reise zu öffnen.
+    </p>
+
+    <div class="shot mt4"><img src="assets/travel-alert-labels/03-popover.png" alt="Label-Liste an einer Ereigniskarte"></div>
+    <p class="cap">Die Liste an einer Ereigniskarte: Rückruf ist bereits gesetzt, die übrigen Labels lassen sich per Klick ergänzen.</p>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Auf <span class="chip dash">Label</span> an der Karte klicken</h3>
+          <p>Trägt die Karte schon Labels, zeigt der Knopf nur ein Etikett mit Plus.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Label anhaken – oder neu anlegen</h3>
+          <p>Ein Klick setzt das Label, ein zweiter nimmt es wieder ab. Gibt es das passende Label
+             noch nicht, tipp den Namen ins Suchfeld und drück Enter: Es wird angelegt und gleich
+             vergeben. Jedes neue Label bekommt automatisch eine eigene Farbe.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Mit <span class="ui">Fertig</span> schließen</h3>
+          <p>Oder einfach daneben klicken bzw. Escape drücken. Gespeichert ist jeder Haken sofort.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Vergeben</span><span class="ver">v1.0 · 18.11.2026</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · VERGEBEN, FORTSETZUNG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Vergeben, Fortsetzung</div>
+    <h2 class="mt2">Auch an Reisen und<br>in den Details.</h2>
+
+    <div class="split-wide mt4">
+      <div>
+        <div class="shot"><img src="assets/travel-alert-labels/01-reiseliste.png" alt="Reiseliste mit Labels"></div>
+        <p class="cap">Reiseliste links: Labels stehen direkt unter dem Reisenamen.</p>
+      </div>
+      <div>
+        <h3>An der Reisekarte links</h3>
+        <p class="mt1" style="font-size:9.4pt">
+          Der Knopf <span class="chip dash">Label</span> funktioniert in der Reiseliste genauso wie
+          an den Ereignissen. So markierst du eine Reise, ohne sie zu öffnen.
+        </p>
+
+        <h3 class="mt4">In den Reisedetails</h3>
+        <p class="mt1" style="font-size:9.4pt">
+          Wählst du eine Reise aus, stehen ihre Labels oben rechts unter
+          <span class="ui">Labels</span>. Ein Klick in das Feld <span class="ui">Label hinzufügen…</span>
+          zeigt alle vorhandenen Labels zur Auswahl; das kleine × an einem Label nimmt es ab.
+        </p>
+
+        <h3 class="mt4">Im geöffneten Ereignis</h3>
+        <p class="mt1" style="font-size:9.4pt">
+          Auch im Fenster eines Ereignisses gibt es den Bereich <span class="ui">Labels</span>.
+          Dort siehst du zusätzlich, <b>wann</b> ein Label gesetzt wurde, etwa
+          <span class="chip" style="background:#059669">Kunde informiert · 17.11.2026</span>.
+        </p>
+
+        <h3 class="mt4">Ein Klick auf ein Label filtert</h3>
+        <p class="mt1" style="font-size:9.4pt">
+          Klickst du auf einer Karte auf ein Label selbst, zeigt Travel Alert nur noch die Karten
+          mit diesem Label. Ein zweiter Klick hebt den Filter wieder auf. Fährst du mit der Maus
+          über ein Label, nennt ein Hinweis seine Beschreibung und das Datum der Vergabe.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Vergeben</span><span class="ver">v1.0 · 18.11.2026</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · MEHRERE -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Mehrere auf einmal</div>
+    <h2 class="mt2">Zehn Ereignisse,<br>ein Klick.</h2>
+
+    <p class="lead mt3" style="max-width:155mm">
+      Wenn viele Karten dasselbe Label brauchen – etwa alle Ereignisse einer Reise auf
+      „Kunde informiert“ –, wählst du sie gemeinsam aus und vergibst das Label in einem Schritt.
+    </p>
+
+    <div class="shot mt4"><img src="assets/travel-alert-labels/04-mehrfachauswahl.png" alt="Mehrfachauswahl mit Leiste"></div>
+    <p class="cap">Drei Ereignisse ausgewählt, unten die Leiste zum Vergeben oder Entfernen.</p>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Auswahl starten</h3>
+          <p>Bei Ereignissen in der Kopfzeile <span class="ui">Ereignisse</span> auf
+             <span class="ui">Mehrere labeln</span>, bei Reisen über der Reiseliste auf
+             <span class="ui">Mehrere Reisen labeln</span>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Karten anklicken</h3>
+          <p>Jeder Klick wählt eine Karte an oder ab; gewählte Karten sind blau umrandet.
+             <span class="ui">Alle sichtbaren</span> in der Leiste wählt auf einen Schlag alles,
+             was gerade angezeigt wird – praktisch zusammen mit dem Filter.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Label wählen und <span class="ui-btn">Vergeben</span> oder <span class="ui">Entfernen</span></h3>
+          <p>Unter <span class="ui">＋ Neues Label …</span> legst du auch hier ein neues an.
+             Eine Meldung bestätigt, an wie vielen Karten das Label gesetzt oder entfernt wurde.
+             Mit <span class="ui">Fertig</span> oder Escape endet die Auswahl.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Mehrere auf einmal</span><span class="ver">v1.0 · 18.11.2026</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · FILTERN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Filtern</div>
+    <h2 class="mt2">Nur sehen,<br>was noch offen ist.</h2>
+
+    <div class="split mt4">
+      <div>
+        <div class="shot"><img src="assets/travel-alert-labels/05-filter.png" alt="Label-Filter mit Zahlen"></div>
+        <p class="cap">Filter unter <span class="ui">Filter</span> oben links. Die Zahl nennt die Reisen im gewählten Zeitraum.</p>
+      </div>
+      <div>
+        <p style="font-size:9.6pt">
+          Den Label-Filter findest du, wenn du oben links <span class="ui">Filter</span> aufklappst.
+          Jedes Label ist ein Knopf; mehrere lassen sich gleichzeitig wählen.
+        </p>
+        <ul class="checks mt3">
+          <li><b>Mehrere Labels</b> bedeuten „eines davon genügt“: Gezeigt werden Karten, die
+              mindestens eines der gewählten Labels tragen.</li>
+          <li><b>Die Zahl am Knopf</b> sagt dir, wie viele Reisen im gewählten Zeitraum dazu passen
+              – dein offener Arbeitsstand auf einen Blick.</li>
+          <li><b>Die Auswahl bleibt gespeichert</b> – in diesem Browser, auch nach dem Neuladen.
+              <span class="ui">Zurücksetzen</span> hebt sie auf.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="mt5">Die beiden Optionen „ohne Label“</h3>
+    <table class="mt2">
+      <thead><tr><th style="width:34%">Option</th><th>Zeigt dir</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="chip dash">Reise ohne Label</span></td>
+          <td>Reisen, die selbst noch kein Label tragen – zum Beispiel Kunden, die du noch nicht
+              kontaktiert hast. Ihre Ereignisse bleiben dabei alle sichtbar.</td>
+        </tr>
+        <tr class="alt">
+          <td><span class="chip dark">Ereignis ohne Label</span></td>
+          <td>Reisen mit mindestens einem Ereignis, das noch kein Label trägt. Öffnest du eine
+              solche Reise, siehst du nur diese unbearbeiteten Ereignisse. Ideal für die tägliche
+              Abarbeitung (Seite 9).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note mt4">
+      <span class="head">Reisen oder Länder</span>
+      Im Reiter <span class="ui">Reisen</span> wirkt der Filter auf Reisen und ihre Ereignisse.
+      Im Reiter <span class="ui">Länder</span> filtert er die Ereignisse je Land – dort gibt es
+      keine Zahlen an den Knöpfen und die Option „Reise ohne Label“ hat keine Wirkung.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Filtern</span><span class="ver">v1.0 · 18.11.2026</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · VERWALTEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Verwalten</div>
+    <h2 class="mt2">Alle Labels<br>an einem Ort.</h2>
+
+    <div class="split-wide mt4" style="grid-template-columns: 78mm 1fr">
+      <div>
+        <div class="shot"><img src="assets/travel-alert-labels/06-verwaltung.png" alt="Labels verwalten"></div>
+        <p class="cap">Erreichbar über <span class="ui">Labels verwalten</span> im Filter oder in der Label-Liste einer Karte.</p>
+      </div>
+      <ul class="fields">
+        <li><span class="name">Neues Label</span>
+            Name eintragen, optional eine Beschreibung, Farbe wählen, <span class="ui-btn">Anlegen</span>.</li>
+        <li><span class="name">Beschreibung</span>
+            Erklärt dem Team, wofür ein Label gedacht ist – etwa „Kunde telefonisch informiert“.
+            Sie erscheint in der Label-Liste und als Hinweis an jedem Label.</li>
+        <li><span class="name">Nutzung</span>
+            Unter jedem Label steht, wie viele Reisen und Ereignisse es tragen.</li>
+        <li><span class="name">↑ ↓ Reihenfolge</span>
+            Verschiebt das Label. Die Reihenfolge gilt überall: im Filter, in der Auswahl und auf den Karten.</li>
+        <li><span class="name">Trichter · Danach filtern</span>
+            Schließt das Fenster und zeigt nur Karten mit diesem Label.</li>
+        <li><span class="name">Stift · Bearbeiten</span>
+            Name, Beschreibung und Farbe ändern. Die Änderung gilt sofort auf allen Karten.</li>
+        <li><span class="name">Zusammenführen und Löschen</span>
+            Siehe nächste Seite.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Verwalten</span><span class="ver">v1.0 · 18.11.2026</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · ZUSAMMENFÜHREN / LÖSCHEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Verwalten, Fortsetzung</div>
+    <h2 class="mt2">Aufräumen, ohne<br>etwas zu verlieren.</h2>
+
+    <div class="split-wide mt4" style="grid-template-columns: 78mm 1fr">
+      <div>
+        <div class="shot"><img src="assets/travel-alert-labels/07-zusammenfuehren.png" alt="Label zusammenführen"></div>
+        <p class="cap">„Erledigt“ wird in „Kunde informiert“ zusammengeführt.</p>
+      </div>
+      <div>
+        <h3>Zusammenführen</h3>
+        <p class="mt1" style="font-size:9.4pt">
+          Hat sich im Team ein doppeltes Label eingeschlichen – „Erledigt“ und „Bearbeitet“
+          meinen dasselbe –, führst du eines ins andere über. Über das Symbol mit den zwei Pfeilen
+          wählst du das Ziel und bestätigst mit <span class="ui-btn">Zusammenführen</span>.
+        </p>
+        <ul class="checks mt3">
+          <li>Alle Reisen und Ereignisse mit dem alten Label tragen danach das Ziel-Label.</li>
+          <li>Karten, die schon beide hatten, behalten das Ziel-Label einmal.</li>
+          <li>Das alte Label verschwindet; ein aktiver Filter darauf wechselt aufs Ziel.</li>
+        </ul>
+
+        <h3 class="mt4">Löschen</h3>
+        <p class="mt1" style="font-size:9.4pt">
+          Der Papierkorb entfernt das Label – und damit auch alle seine Zuordnungen zu Reisen und
+          Ereignissen. Vorher fragt Travel Alert nach und nennt, wie viele Karten betroffen sind.
+        </p>
+
+        <div class="warn mt4">
+          <span class="head">Löschen lässt sich nicht rückgängig machen</span>
+          Willst du ein Label nur loswerden, weil es ein anderes doppelt? Dann ist
+          <b>Zusammenführen</b> der bessere Weg – dabei bleibt jede Markierung erhalten.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Verwalten</span><span class="ver">v1.0 · 18.11.2026</span><span>08</span></div>
+</section>
+
+<!-- ======================================================== 9 · PRAXIS -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Praxis</div>
+    <h2 class="mt2">Die tägliche Runde<br>in fünf Minuten.</h2>
+
+    <p class="lead mt3" style="max-width:155mm">
+      Ein bewährter Ablauf, um neue Ereignisse abzuarbeiten und nichts zu übersehen.
+      Die Labelnamen sind Beispiele – nimm die, die zu deinem Team passen.
+    </p>
+
+    <div class="mt4">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Filter auf <span class="chip dark">Ereignis ohne Label</span> stellen</h3>
+          <p>Die Zahl am Knopf zeigt sofort, wie viele Reisen noch unbearbeitete Ereignisse haben.
+             Da der Filter gespeichert bleibt, startest du morgen direkt hier.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Reise öffnen und Ereignisse sichten</h3>
+          <p>Es erscheinen nur die Ereignisse ohne Label. Ein Klick auf eine Karte öffnet die Details.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Ergebnis per Label festhalten</h3>
+          <p>Nicht relevant für deine Reisenden? <span class="chip" style="background:#2563EB">Geprüft</span>.
+             Kunde benachrichtigt? <span class="chip" style="background:#059669">Kunde informiert</span>.
+             Braucht es noch einen Anruf? <span class="chip" style="background:#D97706">Rückruf</span>.
+             Viele gleiche Fälle erledigst du über <span class="ui">Mehrere labeln</span>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div>
+          <h3>Reise verschwindet aus der Liste</h3>
+          <p>Sobald alle ihre Ereignisse ein Label tragen, passt die Reise nicht mehr zum Filter –
+             die Liste wird mit jeder Bearbeitung kürzer.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div>
+          <h3>Offene Rückrufe nachhalten</h3>
+          <p>Filter auf <span class="chip" style="background:#D97706">Rückruf</span> umstellen. Nach dem Anruf
+             das Label in der Label-Liste der Karte abhaken und <b>Kunde informiert</b> setzen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Praxis</span><span class="ver">v1.0 · 18.11.2026</span><span>09</span></div>
+</section>
+
+<!-- ======================================================== 10 · FRAGEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">07 · Häufige Fragen</div>
+    <h2 class="mt2">Wenn etwas anders<br>aussieht als erwartet.</h2>
+
+    <table class="mt4">
+      <thead><tr><th style="width:38%">Frage</th><th>Antwort</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Ich sehe weniger Reisen als sonst.</b></td>
+          <td>Vermutlich ist noch ein Label-Filter aktiv – er bleibt gespeichert. Oben links unter
+              <span class="ui">Filter</span> stehen die aktiven Labels; <span class="ui">Zurücksetzen</span> hebt sie auf.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Eine Reise zeigt im Filter nicht alle Ereignisse.</b></td>
+          <td>Das ist gewollt: Ist die Reise nur wegen eines Ereignis-Labels sichtbar, siehst du auch nur
+              die passenden Ereignisse. Ohne Filter erscheinen wieder alle.</td>
+        </tr>
+        <tr>
+          <td><b>Sehen andere Kunden meine Labels?</b></td>
+          <td>Nein. Labels sind nur in deinem Konto sichtbar – auch wenn ihr dasselbe Ereignis seht.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Sieht mein Team meine Labels?</b></td>
+          <td>Ja, alle, die mit demselben Konto arbeiten. Labels sind euer gemeinsamer Arbeitsstand.</td>
+        </tr>
+        <tr>
+          <td><b>Wer hat ein Label gesetzt?</b></td>
+          <td>Angezeigt wird, <b>wann</b> es gesetzt wurde (im geöffneten Ereignis und als Hinweis am Label).
+              Die Person wird nicht gespeichert.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Was passiert mit Labels, wenn ein Ereignis aktualisiert wird?</b></td>
+          <td>Bekommt ein Ereignis eine neue Fassung, wandern deine Labels mit. Was sich geändert hat,
+              zeigt die Versionshistorie im geöffneten Ereignis – prüf sie, ob dein Label noch passt.</td>
+        </tr>
+        <tr>
+          <td><b>Ich habe ein Label versehentlich gelöscht.</b></td>
+          <td>Ein gelöschtes Label lässt sich nicht wiederherstellen. Leg es neu an und vergib es über
+              <span class="ui">Mehrere labeln</span> erneut.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Wie viele Labels kann ich anlegen?</b></td>
+          <td>Beliebig viele. Übersichtlich bleibt es mit wenigen, klar benannten Labels.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Fragen</span><span class="ver">v1.0 · 18.11.2026</span><span>10</span></div>
+</section>
+
+<!-- ======================================================== 11 · RÜCKSEITE -->
+<section class="page back">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#001B2F"/>
+          <stop offset="100%" stop-color="#003A5E"/>
+        </linearGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#bg)"/>
+      <path d="M 794 0 L 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630 L 0 0 Z"
+            fill="#CEE741" fill-opacity=".05"/>
+      <path d="M 794 150 C 620 190, 470 300, 380 430 C 280 574, 150 640, 0 630"
+            fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <div class="kicker" style="color:#CEE741">Auf einen Blick</div>
+    <h2 class="mt2" style="color:#fff">Wenige Labels,<br>klarer Arbeitsstand.</h2>
+    <div class="rule mt3"></div>
+    <p class="lead mt3" style="max-width:120mm; color:#A9C3D2">
+      Labels entfalten ihren Nutzen, wenn alle im Team dieselben verwenden. Einmal kurz
+      absprechen, was welches Label bedeutet – und die Beschreibung im Label festhalten.
+    </p>
+
+    <div class="grid2 mt5">
+      <div class="back-card">
+        <h4>Vergeben</h4>
+        <p>Gestrichelter Knopf „Label“ an jeder Karte – oder „Mehrere labeln“ für viele auf einmal.</p>
+      </div>
+      <div class="back-card">
+        <h4>Filtern</h4>
+        <p>Oben links unter „Filter“. „Ereignis ohne Label“ zeigt, was noch offen ist.</p>
+      </div>
+      <div class="back-card">
+        <h4>Verwalten</h4>
+        <p>„Labels verwalten“: anlegen, beschreiben, sortieren, umbenennen, zusammenführen.</p>
+      </div>
+      <div class="back-card">
+        <h4>Nur für dich</h4>
+        <p>Labels sind nur in deinem Konto sichtbar – für alle, die mit ihm arbeiten.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <img src="assets/passolution-logo-white.png" alt="Passolution" style="width:40mm">
+      <p class="small mt3" style="color:#7A9BAE">
+        Passolution GmbH · Stand: November 2026<br>
+        Diese Anleitung beschreibt die Bedienung im Travel Alert. Bezeichnungen können sich mit
+        künftigen Versionen ändern.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
