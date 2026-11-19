@@ -15,7 +15,6 @@ use App\Services\Ai\ClaudeService;
 use App\Services\Ai\GeminiService;
 use App\Services\AiCheckBatchService;
 use App\Services\AiCheckTaskService;
-use App\Services\ChatGptService;
 use App\Services\OpenAiModelService;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\AiRecordContexts;
@@ -977,10 +976,7 @@ class Ai extends Component
         set_time_limit(90);
 
         try {
-            $answer = app(ChatGptService::class)->sendPrompt(
-                'Antworte nur mit dem Wort: bereit',
-                ['model' => trim($this->model) ?: AiSettings::model(), 'max_tokens' => 20, 'temperature' => 0],
-            );
+            $answer = app(OpenAiModelService::class)->testConnection(trim($this->model) ?: AiSettings::model());
 
             $this->testResult = ['ok' => true, 'message' => 'Die KI antwortet: „'.mb_substr($answer, 0, 80).'“'];
         } catch (\Throwable $e) {

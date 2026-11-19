@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\AiProviders;
+use App\Support\AiSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,24 @@ class AiEventSearchPrompt extends Model
     public function profiles(): HasMany
     {
         return $this->hasMany(AiEventSearchProfile::class, 'prompt_id');
+    }
+
+    /**
+     * Das Modell, mit dem diese Vorlage sucht: ihr eigenes, sonst das Standardmodell.
+     */
+    public function effectiveModel(): string
+    {
+        return trim((string) $this->model) ?: AiSettings::model();
+    }
+
+    /**
+     * Modell und Anbieter zum Anzeigen, z. B. "claude-opus-5-5 (Anthropic (Claude))".
+     */
+    public function modelLabel(): string
+    {
+        $model = $this->effectiveModel();
+
+        return $model.' ('.AiProviders::label(AiProviders::forModel($model)).')'.(blank($this->model) ? ' – Standardmodell' : '');
     }
 
     /**

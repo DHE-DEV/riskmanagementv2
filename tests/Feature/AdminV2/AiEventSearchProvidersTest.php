@@ -341,3 +341,22 @@ it('zeigt die Einstellungen als letzten Reiter und leitet den frueheren Reiter "
         ->assertSee('Google (Gemini)')
         ->assertSee('Die Gemini-Modelle erscheinen, sobald ein gültiger Schlüssel hinterlegt ist.');
 });
+
+it('zeigt bei Suchen und Vorlagen, mit welchem Modell und Anbieter tatsaechlich gesucht wird', function () {
+    $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
+    App\Models\AiEventSearchPrompt::create(['name' => 'Suchtest', 'prompt' => 'Suche nach aktuellen Ereignissen in Europa.', 'model' => 'gpt-6.1-sol'])->makeDefault();
+    $claude = App\Models\AiEventSearchPrompt::create(['name' => 'EU mit Claude', 'prompt' => 'Suche nach aktuellen Ereignissen in Europa.', 'model' => 'claude-opus-5-5']);
+    // Heisst nach Claude, waehlt aber keine Vorlage – sucht also mit der Standard-Vorlage.
+    $profile = App\Models\AiEventSearchProfile::create(['name' => 'EU-Lage – Claude Opus 5.5', 'country_codes' => ['IT']]);
+
+    Livewire::test(Ai::class)
+        ->assertSee('Vorlage: Standard („Suchtest“)')
+        ->assertSee('Modell: gpt-6.1-sol (OpenAI)');
+
+    Livewire::test(App\Livewire\AdminV2\System\AiSearchEditor::class, ['profile' => $profile->id])
+        ->assertSee('Sucht mit')
+        ->assertSee('gpt-6.1-sol (OpenAI)')
+        ->assertSee('EU mit Claude – claude-opus-5-5')
+        ->set('promptId', (string) $claude->id)
+        ->assertSee('claude-opus-5-5 (Anthropic (Claude))');
+});

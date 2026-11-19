@@ -445,7 +445,9 @@
                                     @else
                                         <flux:badge size="sm" inset="top bottom">Nur von Hand</flux:badge>
                                     @endif
-                                    <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">Vorlage: {{ $profile->promptTemplate?->name ?? 'Standard' }}</span>
+                                    @php $profilePrompt = $profile->effectivePrompt(); @endphp
+                                    <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">Vorlage: {{ $profile->promptTemplate?->name ?? 'Standard'.($profilePrompt ? ' („'.$profilePrompt->name.'“)' : '') }}</span>
+                                    <span class="rounded-md bg-sky-50 px-2 py-0.5 text-xs text-sky-800 dark:bg-sky-400/10 dark:text-sky-200">Modell: {{ $profilePrompt?->modelLabel() ?? \App\Support\AiSettings::model() }}</span>
                                     @if ($profile->max_results)
                                         <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">höchstens {{ $profile->max_results }} {{ $profile->max_results === 1 ? 'Ergebnis' : 'Ergebnisse' }}</span>
                                     @endif

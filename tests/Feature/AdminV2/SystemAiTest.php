@@ -218,3 +218,23 @@ it('kennt die Preise der Modelle aus der Preisliste – ein eigener Preis hat Vo
 
     expect(AiSettings::prices('gpt-6.1-sol'))->toBe(['input' => 2.0, 'output' => 10.0]);
 });
+
+it('erklaert beim OpenAI-Verbindungstest typische Fehler verstaendlich', function (int $status, array $error, string $hint) {
+    SystemSetting::write(AiSettings::KEY_API_KEY, 'sk-admin-111111111111111ABCD', encrypted: true);
+    Http::fake([
+        'api.openai.com/v1/models' => Http::response(['data' => []]),
+        'api.openai.com/v1/chat/completions' => Http::response(['error' => $error], $status),
+    ]);
+
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
+        ->call('testConnection')
+        ->assertSet('testResult.ok', false)
+        ->assertSee($hint)
+        ->assertSee($error['message']);
+})->with([
+    'Schluessel ungueltig' => [401, ['message' => 'Incorrect API key provided.', 'code' => 'invalid_api_key'], 'Der Schlüssel ist ungültig, abgelaufen oder wurde widerrufen.'],
+    'Guthaben leer' => [429, ['message' => 'You exceeded your current quota.', 'code' => 'insufficient_quota'], 'Das Guthaben bzw. Kontingent des OpenAI-Kontos ist aufgebraucht.'],
+    'Anfragelimit' => [429, ['message' => 'Rate limit reached for requests.', 'code' => 'rate_limit_exceeded'], 'Das Anfragelimit des OpenAI-Kontos ist erreicht.'],
+    'Modell fehlt' => [404, ['message' => 'The model `gpt-x` does not exist.', 'code' => 'model_not_found'], 'Das gewählte Modell ist mit diesem Schlüssel nicht verfügbar.'],
+    'Stoerung' => [503, ['message' => 'Service unavailable.'], 'OpenAI ist gerade überlastet oder gestört.'],
+]);

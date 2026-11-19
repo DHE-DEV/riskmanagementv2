@@ -54,10 +54,14 @@
                             <flux:select wire:model.live="promptId">
                                 <flux:select.option value="">Standard-Vorlage{{ $defaultPrompt ? ' („'.$defaultPrompt->name.'“)' : '' }}</flux:select.option>
                                 @foreach ($this->prompts as $prompt)
-                                    <flux:select.option value="{{ $prompt->id }}">{{ $prompt->name }}{{ $prompt->is_default ? ' (derzeit Standard)' : '' }}</flux:select.option>
+                                    <flux:select.option value="{{ $prompt->id }}">{{ $prompt->name }}{{ $prompt->is_default ? ' (derzeit Standard)' : '' }} – {{ $prompt->effectiveModel() }}</flux:select.option>
                                 @endforeach
                             </flux:select>
                             @if ($shownPrompt)
+                                <p class="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                    Sucht mit <span class="font-mono font-medium text-zinc-900 dark:text-white">{{ $shownPrompt->modelLabel() }}</span>.
+                                    <span class="text-zinc-500">Das Modell legt die Vorlage fest, nicht der Name der Suche.</span>
+                                </p>
                                 <details class="mt-2 text-sm">
                                     <summary class="cursor-pointer text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">KI Prompt der Vorlage „{{ $shownPrompt->name }}“ ansehen</summary>
                                     <p class="mt-2 rounded-lg bg-zinc-50 p-3 text-sm whitespace-pre-line text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">{{ $shownPrompt->prompt }}</p>

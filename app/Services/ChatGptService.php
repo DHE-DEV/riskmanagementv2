@@ -57,7 +57,7 @@ class ChatGptService
      * spaeter) erwarten max_completion_tokens und lassen temperature nicht zu.
      * Weil sie zusaetzlich "nachdenken", brauchen sie deutlich mehr Antwort-Budget.
      */
-    protected function completionParameters(string $model, array $options): array
+    public function completionParameters(string $model, array $options): array
     {
         $maxTokens = $options['max_tokens'] ?? 2000;
 
