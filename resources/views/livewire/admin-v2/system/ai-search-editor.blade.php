@@ -76,6 +76,7 @@
                             <flux:description>Keines gewählt = alle Länder. Um nur einzelne Länder auszunehmen: „Alle auswählen“ und die unerwünschten abwählen.</flux:description>
                             <div class="mb-2 flex flex-wrap items-center gap-2">
                                 <flux:button size="xs" icon="check" wire:click="selectAllCountries">Alle auswählen</flux:button>
+                                <flux:button size="xs" icon="globe-europe-africa" wire:click="selectEuCountries" title="Wählt genau die Länder, die in den Stammdaten als EU-Mitglied markiert sind">EU-Staaten</flux:button>
                                 <flux:button size="xs" variant="ghost" icon="x-mark" wire:click="clearCountries">Alle abwählen</flux:button>
                                 <span class="text-xs tabular-nums text-zinc-500">
                                     @php $countryTotal = $this->countryOptions->count(); $countrySelected = count($countries); @endphp

@@ -882,3 +882,16 @@ it('sucht mit dem Modell der Vorlage, ohne eigenes mit dem Standardmodell', func
 
     expect($lastModel())->toBe('gpt-4o');
 });
+
+it('waehlt fuer eine hinterlegte Suche per Knopf genau die EU-Staaten', function () {
+    $this->italy->update(['is_eu_member' => true]);
+    $this->greece->update(['is_eu_member' => true]);
+    Country::factory()->create(['iso_code' => 'CH', 'iso3_code' => 'CHE', 'is_eu_member' => false, 'name_translations' => ['de' => 'Schweiz', 'en' => 'Switzerland']]);
+
+    Livewire::withQueryParams([])
+        ->test(AiSearchEditor::class)
+        ->assertSee('EU-Staaten')
+        ->set('countries', ['CH'])
+        ->call('selectEuCountries')
+        ->assertSet('countries', ['GR', 'IT']);
+});

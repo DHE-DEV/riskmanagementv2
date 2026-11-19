@@ -176,6 +176,22 @@ class AiSearchEditor extends Component
             ->all();
     }
 
+    /**
+     * Genau die Mitgliedstaaten der EU waehlen (laut Stammdaten "EU-Mitglied").
+     */
+    public function selectEuCountries(): void
+    {
+        $this->countries = Country::query()
+            ->where('is_eu_member', true)
+            ->whereNotNull('iso_code')
+            ->pluck('iso_code')
+            ->map(fn ($code) => strtoupper((string) $code))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
+
     public function clearCountries(): void
     {
         $this->countries = [];
