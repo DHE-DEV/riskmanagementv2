@@ -228,6 +228,7 @@ it('legt aus einem Eintrag ein vorbelegtes Ereignis an und markiert den Eintrag 
 
     $entry = InfosystemEntry::factory()->create([
         'api_id' => 7001,
+        'appearance' => 0,
         'header' => 'Italien - Streik im Nahverkehr',
         'content' => "Der Nahverkehr steht still.\n\nBetroffen sind Bus und Bahn.",
         'country_code' => 'IT',
@@ -250,6 +251,7 @@ it('legt aus einem Eintrag ein vorbelegtes Ereignis an und markiert den Eintrag 
         ->assertSet('contents.de', '<p>Der Nahverkehr steht still.</p><p>Betroffen sind Bus und Bahn.</p>')
         ->assertSet('startDate', '2026-10-07T00:00')
         ->assertSet('eventTypeIds', [(string) $travel->id, (string) $safety->id])
+        ->assertSet('priority', 'medium')
         ->assertSee('Aus dem Passolution Infosystem übernommen')
         ->call('save')
         ->assertHasNoErrors();
@@ -279,3 +281,20 @@ it('legt aus einem Eintrag ein vorbelegtes Ereignis an und markiert den Eintrag 
         ->assertSet('infosystemApiId', null)
         ->assertSet('titles.de', '');
 });
+
+it('schlaegt die Risikostufe aus der Anzeigefarbe des Infosystems vor', function (int $appearance, string $priority) {
+    InfosystemEntry::factory()->create(['api_id' => 7100 + $appearance, 'appearance' => $appearance]);
+
+    $this->actingAs(infosystemAdmin());
+
+    Livewire::withQueryParams(['infosystem' => 7100 + $appearance])
+        ->test(Editor::class)
+        ->assertSet('priority', $priority);
+})->with([
+    'keine Farbe' => [0, 'medium'],
+    'gruen' => [1, 'low'],
+    'blau' => [2, 'info'],
+    'gelb' => [3, 'medium'],
+    'rot' => [4, 'high'],
+    'unbekannte Farbe' => [9, 'medium'],
+]);

@@ -150,7 +150,7 @@ class Editor extends Component
     /**
      * Ein neues Ereignis aus einem Eintrag des Passolution Infosystems: Titel,
      * Beschreibung, Datum, Land und Event-Typen sind vorbelegt – wie im
-     * bisherigen Admin. Ist der Eintrag schon veroeffentlicht, bleibt das
+     * bisherigen Admin –, dazu die Risikostufe aus der Anzeigefarbe. Ist der Eintrag schon veroeffentlicht, bleibt das
      * Formular leer.
      */
     protected function prefillFromInfosystem(int $apiId): void
@@ -172,6 +172,12 @@ class Editor extends Component
         }
 
         $this->eventTypeIds = array_map('strval', Infosystem::eventTypeIds($entry));
+
+        // Risikostufe aus der Anzeigefarbe – nur eine der bestehenden Stufen.
+        $priority = Infosystem::priority($entry);
+        if ($priority !== null && array_key_exists($priority, CustomEvent::getPriorityOptions())) {
+            $this->priority = $priority;
+        }
 
         $country = $entry->country_code
             ? \App\Models\Country::query()
@@ -486,6 +492,100 @@ class Editor extends Component
         $this->sources[] = ['show_frontend' => true, 'link_text' => '', 'link_url' => ''];
     }
 
+    /** Adresse einer Quelle vor der Aenderung – nur innerhalb dieser Anfrage. */
+    protected ?string $previousSourceUrl = null;
+
+    public function updatingSources($value, string $key): void
+    {
+        if (str_ends_with($key, '.link_url')) {
+            $index = (int) Str::before($key, '.');
+            $this->previousSourceUrl = (string) ($this->sources[$index]['link_url'] ?? '');
+        }
+    }
+
+    /**
+     * Nach dem Eintragen einer Adresse steht als Link-Text die Domain, z. B.
+     * "test.de". Ein selbst geschriebener Link-Text bleibt erhalten; nur ein
+     * leerer oder der zuvor automatisch gesetzte wird ersetzt.
+     */
+    public function updatedSources($value, string $key): void
+    {
+        if (! str_ends_with($key, '.link_url')) {
+            return;
+        }
+
+        $index = (int) Str::before($key, '.');
+        $value = self::normalizeSourceUrl((string) $value);
+        $this->sources[$index]['link_url'] = $value;
+
+        // Gleich beim Verlassen des Felds pruefen – nicht erst beim Speichern.
+        $this->resetErrorBag("sources.{$index}.link_url");
+        if ($value !== '') {
+            $this->validateOnly("sources.{$index}.link_url");
+        }
+
+        $text = trim((string) ($this->sources[$index]['link_text'] ?? ''));
+        $previousDomain = self::sourceDomain((string) $this->previousSourceUrl);
+
+        if ($text !== '' && $text !== $previousDomain) {
+            return;
+        }
+
+        $domain = self::sourceDomain((string) $value);
+
+        if ($domain !== null || $text === $previousDomain) {
+            $this->sources[$index]['link_text'] = (string) $domain;
+        }
+    }
+
+    /**
+     * Eine eingefuegte Adresse aufraeumen: Leerraum am Rand entfernt, Leerzeichen
+     * und Zeilenumbrueche darin kodiert, fehlendes Protokoll als https ergaenzt.
+     */
+    public static function normalizeSourceUrl(string $url): string
+    {
+        $url = trim($url);
+
+        if ($url === '') {
+            return '';
+        }
+
+        $url = preg_replace('/\s+/u', '%20', $url);
+
+        if (! preg_match('#^[a-z][a-z0-9+.-]*:#i', $url) && self::sourceDomain($url) !== null) {
+            $url = 'https://'.$url;
+        }
+
+        return $url;
+    }
+
+    /**
+     * Die Domain einer Adresse ohne "www.", z. B. "https://www.test.de/a?b"
+     * => "test.de". Eine Adresse ohne Protokoll gilt als https.
+     */
+    public static function sourceDomain(string $url): ?string
+    {
+        $url = trim($url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        // Ohne parse_url: das zerlegt Domains mit Umlauten oder kyrillischen
+        // Zeichen in ungueltiges UTF-8.
+        $rest = preg_replace('#^[a-z][a-z0-9+.-]*://#iu', '', $url);
+        $host = preg_replace('#[/?\#].*$#su', '', (string) $rest);
+        $host = preg_replace('#^[^@]*@#u', '', (string) $host);
+        $host = preg_replace('#:\d+$#', '', (string) $host);
+
+        if (! is_string($host) || ! mb_check_encoding($host, 'UTF-8')
+            || ! preg_match('#^[\p{L}\p{N}-]+(\.[\p{L}\p{N}-]+)+$#u', $host)) {
+            return null;
+        }
+
+        return preg_replace('/^www\./u', '', mb_strtolower($host));
+    }
+
     public function removeSource(int $index): void
     {
         unset($this->sources[$index]);
@@ -715,6 +815,7 @@ class Editor extends Component
             'startDate.required' => 'Bitte ein Startdatum angeben.',
             'endDate.after_or_equal' => 'Das Enddatum darf nicht vor dem Startdatum liegen.',
             'sources.*.link_url.url' => 'Bitte eine vollständige Adresse eingeben (https://…).',
+            'sources.*.link_url.max' => 'Die Adresse darf höchstens 2048 Zeichen lang sein.',
         ];
     }
 

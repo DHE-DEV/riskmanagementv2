@@ -578,3 +578,80 @@ it('legt Ereignisse so an, dass die Kunden-Ansicht sie nach dem Veroeffentlichen
 
     expect(\Illuminate\Support\Facades\DB::table('custom_events')->where('id', $draft->id)->value('archived'))->toBe(0);
 });
+
+it('setzt nach dem Eintragen einer Quell-Adresse die Domain als Link-Text', function () {
+    $this->actingAs(adminUser());
+
+    Livewire::test(Editor::class)
+        ->set('sources.0.link_url', 'https://www.Test.de/reise/hinweis?x=1')
+        ->assertSet('sources.0.link_text', 'test.de')
+        // Eine neue Adresse ersetzt den automatisch gesetzten Text ...
+        ->set('sources.0.link_url', 'auswaertiges-amt.de/de/laender')
+        ->assertSet('sources.0.link_text', 'auswaertiges-amt.de')
+        // ... einen selbst geschriebenen nicht.
+        ->set('sources.0.link_text', 'Auswärtiges Amt')
+        ->set('sources.0.link_url', 'https://www.bmi.bund.de')
+        ->assertSet('sources.0.link_text', 'Auswärtiges Amt');
+});
+
+it('prueft eine Quell-Adresse schon beim Verlassen des Felds', function () {
+    $this->actingAs(adminUser());
+
+    Livewire::test(Editor::class)
+        ->set('sources.0.link_url', 'kein link')
+        ->assertHasErrors(['sources.0.link_url' => 'url'])
+        ->assertSet('sources.0.link_text', '')
+        // Eine gueltige Adresse nimmt den Hinweis wieder weg.
+        ->set('sources.0.link_url', '  test.de/seite mit leerzeichen  ')
+        ->assertHasNoErrors('sources.0.link_url')
+        ->assertSet('sources.0.link_url', 'https://test.de/seite%20mit%20leerzeichen')
+        ->assertSet('sources.0.link_text', 'test.de');
+});
+
+it('speichert ein neues Ereignis mit langer kodierter kyrillischer Quell-Adresse', function () {
+    $this->actingAs(adminUser());
+    $country = Country::factory()->create(['lat' => 55.75, 'lng' => 37.61]);
+    $url = 'https://www.mid.ru/ru/foreign_policy/news/'.rawurlencode('консульское информирование граждан россии о ситуации в стране пребывания');
+
+    expect(strlen($url))->toBeGreaterThan(255);
+
+    Livewire::test(Editor::class)
+        ->set('titles.de', 'Hinweis des Außenministeriums')
+        ->set('eventTypeIds', [(string) eventType('general')->id])
+        ->call('addLocation', 'country', $country->id)
+        ->set('sources.0.link_url', $url)
+        ->assertSet('sources.0.link_text', 'mid.ru')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $event = CustomEvent::query()->latest('id')->first();
+
+    expect($event->normalizedSourceLinks()[0]['link_url'])->toBe($url)
+        ->and($event->source_link_url)->toBe($url);
+});
+
+it('erkennt kyrillische Domains als Link-Text', function () {
+    expect(Editor::sourceDomain('https://мвд.рф/news/item/1'))->toBe('мвд.рф')
+        ->and(Editor::sourceDomain('https://WWW.Test.de:8080/x'))->toBe('test.de');
+});
+
+it('findet Ereignisse ueber den deutschen oder englischen Namen ihres Landes', function () {
+    $italy = Country::factory()->create(['name_translations' => ['de' => 'Italien', 'en' => 'Italy'], 'lat' => 41.9, 'lng' => 12.5]);
+    $france = Country::factory()->create(['name_translations' => ['de' => 'Frankreich', 'en' => 'France'], 'lat' => 48.8, 'lng' => 2.3]);
+    storedEvent(['title' => 'Streik im Nahverkehr'])->countries()->attach($italy->id);
+    storedEvent(['title' => 'Unwetter an der Küste'])->countries()->attach($france->id);
+
+    $this->actingAs(adminUser());
+
+    Livewire::test(Index::class)
+        ->set('tab', 'all')
+        ->set('search', 'italien')
+        ->assertSee('Streik im Nahverkehr')
+        ->assertDontSee('Unwetter an der Küste')
+        ->set('search', 'FRANCE')
+        ->assertSee('Unwetter an der Küste')
+        ->assertDontSee('Streik im Nahverkehr')
+        ->set('search', 'unwetter')
+        ->assertSee('Unwetter an der Küste')
+        ->assertDontSee('Streik im Nahverkehr');
+});

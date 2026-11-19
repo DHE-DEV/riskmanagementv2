@@ -459,13 +459,17 @@ class Index extends Component
     {
         if (($search = trim($this->search)) !== '') {
             $like = '%'.mb_strtolower($search).'%';
+            $countryIds = $this->countryIdsMatching($like);
 
-            $query->where(function (Builder $q) use ($like) {
-                $q->whereRaw('LOWER(title) LIKE ?', [$like])
-                    ->orWhereHas('countries', function (Builder $country) use ($like) {
-                        $country->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE ?", [$like])
-                            ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE ?", [$like]);
-                    });
+            $query->where(function (Builder $q) use ($like, $countryIds) {
+                $q->whereRaw('LOWER(title) LIKE ?', [$like]);
+
+                if ($countryIds !== []) {
+                    $q->orWhereIn('custom_events.id', fn ($pivot) => $pivot
+                        ->select('custom_event_id')
+                        ->from('country_custom_event')
+                        ->whereIn('country_id', $countryIds));
+                }
             });
         }
 
@@ -509,6 +513,26 @@ class Index extends Component
         };
 
         return $query;
+    }
+
+    /** @var array<string, array<int, int>> */
+    protected array $countryIdsBySearch = [];
+
+    /**
+     * Laender, deren deutscher oder englischer Name zur Suche passt – einmal je
+     * Anfrage ermittelt statt je Ereignis in jeder Zaehlabfrage der Reiter.
+     *
+     * @return array<int, int>
+     */
+    protected function countryIdsMatching(string $like): array
+    {
+        return $this->countryIdsBySearch[$like] ??= Country::query()
+            ->where(fn (Builder $q) => $q
+                ->whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.de'))) LIKE ?", [$like])
+                ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE ?", [$like]))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /**

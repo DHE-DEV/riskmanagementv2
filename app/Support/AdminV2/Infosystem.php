@@ -42,6 +42,27 @@ class Infosystem
     ];
 
     /**
+     * Anzeigefarbe des Infosystems ("appearance", gepflegt in pds-admin) =>
+     * Risikostufe eines Ereignisses. Es werden nur die bestehenden Stufen aus
+     * CustomEvent::getPriorityOptions() vorgeschlagen; 0 = keine Farbe.
+     */
+    public const APPEARANCE_PRIORITIES = [
+        1 => 'low',     // gruen
+        2 => 'info',    // blau
+        3 => 'medium',  // gelb
+        4 => 'high',    // rot
+    ];
+
+    /**
+     * Die vorgeschlagene Risikostufe eines Eintrags, oder null, wenn im
+     * Infosystem keine Anzeigefarbe hinterlegt ist.
+     */
+    public static function priority(InfosystemEntry $entry): ?string
+    {
+        return self::APPEARANCE_PRIORITIES[(int) $entry->appearance] ?? null;
+    }
+
+    /**
      * Der Titel eines Ereignisses: Die Kopfzeile im Infosystem beginnt mit
      * dem Land ("Italien - Streik im Nahverkehr") – alles bis zum ersten
      * Bindestrich entfaellt.
