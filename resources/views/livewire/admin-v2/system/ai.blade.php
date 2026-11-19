@@ -379,6 +379,7 @@
                                         <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" aria-label="Aktionen für {{ $prompt->name }}" />
                                         <flux:menu>
                                             <flux:menu.item icon="pencil-square" wire:click="editPrompt({{ $prompt->id }})">Bearbeiten</flux:menu.item>
+                                            <flux:menu.item icon="document-duplicate" wire:click="duplicatePrompt({{ $prompt->id }})">Duplizieren</flux:menu.item>
                                             @unless ($prompt->is_default)
                                                 <flux:menu.item icon="star" wire:click="makeDefaultPrompt({{ $prompt->id }})">Als Standard verwenden</flux:menu.item>
                                                 <flux:menu.separator />

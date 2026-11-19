@@ -650,6 +650,29 @@ class Ai extends Component
         $this->modal('ai-prompt')->show();
     }
 
+    /**
+     * Eine Vorlage als Ausgangspunkt fuer eine neue: das Formular oeffnet sich
+     * mit Auftrag und Modell der Vorlage; gespeichert wird erst beim Speichern.
+     */
+    public function duplicatePrompt(int $promptId): void
+    {
+        $prompt = AiEventSearchPrompt::findOrFail($promptId);
+
+        $name = mb_substr($prompt->name, 0, 90).' (Kopie)';
+        for ($number = 2; AiEventSearchPrompt::query()->where('name', $name)->exists(); $number++) {
+            $name = mb_substr($prompt->name, 0, 86).' (Kopie '.$number.')';
+        }
+
+        $this->resetValidation();
+        $this->promptId = null;
+        $this->promptName = $name;
+        $this->promptText = $prompt->prompt;
+        $this->promptIsDefault = false;
+        $this->promptModel = (string) $prompt->model;
+
+        $this->modal('ai-prompt')->show();
+    }
+
     public function savePrompt(): void
     {
         $this->validate([

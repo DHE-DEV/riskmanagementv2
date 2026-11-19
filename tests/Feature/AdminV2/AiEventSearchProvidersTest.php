@@ -360,3 +360,34 @@ it('zeigt bei Suchen und Vorlagen, mit welchem Modell und Anbieter tatsaechlich 
         ->set('promptId', (string) $claude->id)
         ->assertSee('claude-opus-5-5 (Anthropic (Claude))');
 });
+
+it('dupliziert eine KI-Vorlage als Ausgangspunkt fuer eine neue', function () {
+    $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
+    $original = App\Models\AiEventSearchPrompt::create(['name' => 'EU-Lage', 'prompt' => 'Suche nach aktuellen Ereignissen in Europa.', 'model' => 'gpt-6.1-sol']);
+    $original->makeDefault();
+    $count = App\Models\AiEventSearchPrompt::count();
+
+    $page = Livewire::test(Ai::class)
+        ->assertSee('Duplizieren')
+        ->call('duplicatePrompt', $original->id)
+        ->assertSet('promptId', null)
+        ->assertSet('promptName', 'EU-Lage (Kopie)')
+        ->assertSet('promptText', 'Suche nach aktuellen Ereignissen in Europa.')
+        ->assertSet('promptModel', 'gpt-6.1-sol')
+        ->assertSet('promptIsDefault', false);
+
+    // Erst beim Speichern entsteht die Kopie – hier mit anderem Modell.
+    expect(App\Models\AiEventSearchPrompt::count())->toBe($count);
+
+    $page->set('promptModel', 'claude-opus-5-5')->call('savePrompt')->assertHasNoErrors();
+
+    $copy = App\Models\AiEventSearchPrompt::query()->where('name', 'EU-Lage (Kopie)')->firstOrFail();
+
+    expect($copy->model)->toBe('claude-opus-5-5')
+        ->and($copy->is_default)->toBeFalse()
+        ->and($original->fresh()->is_default)->toBeTrue()
+        ->and($original->fresh()->model)->toBe('gpt-6.1-sol');
+
+    // Ein zweites Mal: der Name bleibt eindeutig.
+    $page->call('duplicatePrompt', $original->id)->assertSet('promptName', 'EU-Lage (Kopie 2)');
+});
