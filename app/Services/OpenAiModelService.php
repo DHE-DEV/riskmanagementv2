@@ -109,6 +109,25 @@ class OpenAiModelService
         return $hint ? $hint.' ('.$original.')' : $original;
     }
 
+    /**
+     * Eine verstaendliche Meldung, wenn OpenAI gar nicht oder nicht rechtzeitig
+     * antwortet – mit der Originalmeldung in Klammern.
+     */
+    public static function describeConnectionError(\Throwable $e, int $timeoutSeconds): string
+    {
+        $message = $e->getMessage();
+        // Die technische Meldung von cURL ohne den Verweis auf deren Doku.
+        $original = trim((string) preg_replace('/\s*\(see https?:\/\/[^)]*\)/', '', $message));
+
+        $hint = match (true) {
+            str_contains($message, 'cURL error 28'), stripos($message, 'timed out') !== false => 'OpenAI hat nicht innerhalb von '.$timeoutSeconds.' Sekunden geantwortet. Gründliche Websuchen dauern teils länger – bitte später erneut versuchen oder ein schnelleres Modell bzw. weniger Ergebnisse wählen.',
+            str_contains($message, 'cURL error 6'), str_contains($message, 'cURL error 7') => 'OpenAI ist nicht erreichbar (Verbindung oder Namensauflösung fehlgeschlagen).',
+            default => 'Fehler bei der Kommunikation mit OpenAI.',
+        };
+
+        return $hint.' ('.$original.')';
+    }
+
     public function forgetCache(): void
     {
         Cache::forget(self::CACHE_KEY);

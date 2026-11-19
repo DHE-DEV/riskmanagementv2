@@ -895,3 +895,24 @@ it('waehlt fuer eine hinterlegte Suche per Knopf genau die EU-Staaten', function
         ->call('selectEuCountries')
         ->assertSet('countries', ['GR', 'IT']);
 });
+
+it('haelt Fehler von OpenAI am Suchlauf verstaendlich fest', function () {
+    $GLOBALS['aiSearchResponse'] = fn () => Http::response(['error' => ['message' => 'You exceeded your current quota.', 'code' => 'insufficient_quota']], 429);
+
+    expect(runAiSearch()->error)->toContain('Das Guthaben bzw. Kontingent des OpenAI-Kontos ist aufgebraucht.')
+        ->toContain('You exceeded your current quota.');
+
+    $GLOBALS['aiSearchResponse'] = fn () => Http::response(['error' => ['message' => 'Incorrect API key provided.', 'code' => 'invalid_api_key']], 401);
+
+    expect(runAiSearch()->error)->toContain('Der Schlüssel ist ungültig, abgelaufen oder wurde widerrufen.');
+
+    // Keine Antwort in der vorgesehenen Zeit.
+    $GLOBALS['aiSearchResponse'] = fn () => throw new Illuminate\Http\Client\ConnectionException('cURL error 28: Operation timed out after 240002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.openai.com/v1/responses');
+
+    $search = runAiSearch();
+
+    expect($search->status)->toBe(AiEventSearch::STATUS_FAILED)
+        ->and($search->error)->toContain('OpenAI hat nicht innerhalb von 300 Sekunden geantwortet.')
+        ->toContain('cURL error 28')
+        ->not->toContain('curl.haxx.se');
+});

@@ -216,7 +216,7 @@ class ChatGptService
             'Content-Type' => 'application/json',
         ])
             // Suchen und Lesen dauert laenger als eine reine Textantwort.
-            ->timeout($options['timeout'] ?? 240)
+            ->timeout($options['timeout'] ?? 300)
             ->post('https://api.openai.com/v1/responses', array_filter([
                 'model' => $model,
                 'input' => $prompt,
@@ -240,13 +240,13 @@ class ChatGptService
         } catch (Exception $e) {
             Log::error('OpenAI-Websuche fehlgeschlagen', ['message' => $e->getMessage()]);
 
-            throw new Exception('Fehler bei der Kommunikation mit OpenAI: '.$e->getMessage());
+            throw new Exception(OpenAiModelService::describeConnectionError($e, (int) ($options['timeout'] ?? 300)));
         }
 
         if (! $response->successful()) {
             Log::error('OpenAI-Websuche: API-Fehler', ['status' => $response->status(), 'error' => $response->json()]);
 
-            throw new Exception('OpenAI-Fehler: '.($response->json('error.message') ?? 'Unbekannter Fehler (HTTP '.$response->status().')'));
+            throw new Exception('OpenAI-Fehler: '.OpenAiModelService::describeError($response));
         }
 
         $data = $response->json();
