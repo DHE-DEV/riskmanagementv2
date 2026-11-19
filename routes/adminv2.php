@@ -67,6 +67,7 @@ use App\Livewire\AdminV2\System\TaxiApps\Index as TaxiAppIndex;
 use App\Livewire\AdminV2\System\Teams as SystemTeams;
 use App\Livewire\AdminV2\System\Templates\Editor as TemplateEditor;
 use App\Livewire\AdminV2\System\Templates\Index as TemplateIndex;
+use App\Livewire\AdminV2\System\TravelAlertMirror as SystemTravelAlertMirror;
 use App\Livewire\AdminV2\Tasks\Detail as TaskDetail;
 use App\Livewire\AdminV2\Tasks\Index as TaskIndex;
 use App\Support\AdminV2\MasterData;
@@ -197,6 +198,7 @@ Route::prefix('adminv2')->name('adminv2.')->group(function () {
         Route::get('system/teams', SystemTeams::class)->name('system.teams');
         Route::get('system/qr-codes', SystemQrCodes::class)->name('system.qr-codes');
         Route::get('system/push', SystemPushMessages::class)->name('system.push');
+        Route::get('system/travel-alert-mirror', SystemTravelAlertMirror::class)->name('system.travel-alert-mirror');
         Route::get('system/recurring-tasks', RecurringTaskIndex::class)->name('system.recurring-tasks.index');
         Route::get('system/recurring-tasks/create', RecurringTaskEditor::class)->name('system.recurring-tasks.create');
         Route::get('system/recurring-tasks/{recurrence}', RecurringTaskEditor::class)->whereNumber('recurrence')->name('system.recurring-tasks.edit');

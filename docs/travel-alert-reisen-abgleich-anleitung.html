@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Wie Reisen in den Travel Alert kommen – Anleitung</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+.foot .ver { text-transform: none; letter-spacing: .04em; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+/* UI-Elemente, die in der Oberflaeche so heissen */
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+.ui-btn {
+  display: inline-block;
+  background: var(--ink); color: #fff;
+  border-radius: 1.4mm;
+  padding: .4mm 2mm;
+  font-weight: 600; font-size: 8.8pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.4mm 0;
+  font-size: 9.4pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 5mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.8mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 5mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+/* Screenshots und Label-Chips (Labels-Anleitung) */
+.shot {
+  border: .6pt solid var(--line); border-radius: 2.6mm; overflow: hidden;
+  background: #fff; box-shadow: 0 1.2mm 4mm rgba(0, 39, 66, .08);
+}
+.shot img { display: block; width: 100%; }
+.cap { font-size: 8pt; color: var(--muted); margin-top: 1.8mm; line-height: 1.4; }
+.chip {
+  display: inline-block; border-radius: 99mm; padding: .2mm 2.2mm;
+  font-size: 8pt; font-weight: 600; color: #fff; white-space: nowrap;
+}
+.chip.dash { color: var(--muted); background: #fff; border: .6pt dashed #B9C7D0; }
+.chip.dark { background: #1F2937; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; align-items: start; }
+.split-wide { display: grid; grid-template-columns: 58mm 1fr; gap: 7mm; align-items: start; }
+
+/* Ablauf-Grafik und Zeitachse (Abgleich-Anleitung) */
+.diagram { border: .6pt solid var(--line); border-radius: 3mm; background: #FBFDFE; padding: 4mm; }
+.diagram svg { display: block; width: 100%; height: auto; }
+.legend { display: flex; gap: 6mm; flex-wrap: wrap; font-size: 8pt; color: var(--muted); margin-top: 2.4mm; }
+.legend i { display: inline-block; width: 6mm; height: 0; border-top: 1mm solid; vertical-align: middle; margin-right: 1.6mm; }
+.clock {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22mm; padding: 1mm 2.4mm; border-radius: 99mm;
+  background: var(--ink); color: var(--lime); font-weight: 800; font-size: 8.4pt; white-space: nowrap;
+}
+.clock.soft { background: var(--mist); color: var(--ink); border: .6pt solid var(--line); }
+.status { display: inline-block; border-radius: 99mm; padding: .3mm 2.2mm; font-size: 8pt; font-weight: 700; white-space: nowrap; }
+.status.ok { background: #E3F6EC; color: #065F46; }
+.status.wait { background: #FFF4DB; color: #92400E; }
+.status.bad { background: #FDE8E5; color: #9B2C1F; }
+.mock { border: .6pt solid var(--line); border-radius: 2.6mm; overflow: hidden; font-size: 8.2pt; }
+.mock-head { background: var(--mist); padding: 2.4mm 3.4mm; font-weight: 700; border-bottom: .6pt solid var(--line); }
+.mock-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; padding: 3mm; }
+.mock-tile { border: .6pt solid var(--line); border-radius: 1.8mm; padding: 2mm; }
+.mock-tile .v { font-size: 11pt; font-weight: 800; }
+.mock-tile .l { font-size: 7pt; color: var(--muted); }
+.mock table td, .mock table th { font-size: 7.8pt; padding: 1.6mm 2mm; }
+.mock table { margin: 0 3mm 3mm; width: calc(100% - 6mm); }
+.qa h3 { font-size: 10pt; margin-bottom: 1mm; }
+.qa p { font-size: 9pt; color: var(--ink-2); }
+.qa + .qa { margin-top: 4.2mm; }
+</style>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/>
+          <stop offset="55%" stop-color="#002742"/>
+          <stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".26"/>
+          <stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="620" cy="380" r="320" fill="url(#glow)"/>
+
+      <!-- Motiv: zwei Datenbestände, die sich laufend abgleichen -->
+      <g fill="none" stroke="#5E8FA8" stroke-opacity=".45" stroke-width="1.4">
+        <ellipse cx="500" cy="250" rx="62" ry="16"/>
+        <path d="M 438 250 V 330 A 62 16 0 0 0 562 330 V 250"/>
+        <path d="M 438 290 A 62 16 0 0 0 562 290"/>
+        <ellipse cx="640" cy="470" rx="62" ry="16"/>
+        <path d="M 578 470 V 550 A 62 16 0 0 0 702 550 V 470"/>
+        <path d="M 578 510 A 62 16 0 0 0 702 510"/>
+      </g>
+      <g fill="none" stroke="#CEE741" stroke-width="2.2" stroke-linecap="round">
+        <path d="M 580 300 C 640 320, 660 360, 650 420" stroke-opacity=".85"/>
+        <path d="M 643 410 L 650 424 L 660 412" stroke-opacity=".85"/>
+        <path d="M 560 540 C 500 520, 480 470, 492 380" stroke-opacity=".45" stroke-dasharray="5 5"/>
+      </g>
+      <g transform="translate(560,640)">
+        <circle r="34" fill="none" stroke="#CEE741" stroke-opacity=".7" stroke-width="2"/>
+        <line x1="0" y1="0" x2="0" y2="-22" stroke="#CEE741" stroke-width="2.6" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="15" y2="8" stroke="#CEE741" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
+
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z"
+            fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+
+    <div style="margin-top:28mm">
+      <div class="kicker" style="color:#CEE741">Anleitung für Travel Alert</div>
+      <h1 class="mt2">Wie Reisen in den<br>Travel Alert kommen.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Woher der Travel Alert die Reisen eines Kunden bekommt, was dabei automatisch
+        im Hintergrund passiert und wie schnell eine Änderung sichtbar wird – ohne Technik-Vorwissen erklärt.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Worum es geht</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Der Ablauf auf einen Blick</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Was automatisch passiert – und wann</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Typische Situationen</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">Kontrolle im Admin</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Häufige Fragen</span></div>
+    </div>
+
+    <div class="cover-meta mt4">
+      <span>Version 1.0</span>
+      <span>19.11.2026</span>
+      <span>Passolution GmbH</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · WORUM ES GEHT -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Worum es geht</div>
+    <h2 class="mt2">Der Travel Alert zeigt, welche<br>Reisenden betroffen sind.</h2>
+
+    <p class="lead mt3" style="max-width:160mm">
+      Dafür braucht er die Reisen des Kunden. Diese entstehen nicht im Travel Alert selbst,
+      sondern als <b>Travel Detail Links</b> im Passolution Data Service (kurz: pds) – dort,
+      wo Reisebüros und Veranstalter ihre Reisen anlegen. Der Travel Alert holt sich diese Reisen
+      und legt sie neben die aktuellen Ereignisse.
+    </p>
+
+    <div class="grid2 mt5">
+      <div class="card">
+        <h3>Früher: bei jedem Öffnen nachfragen</h3>
+        <p>
+          Jedes Mal, wenn ein Kunde den Travel Alert öffnete, fragte die Plattform alle seine
+          Reisen beim pds neu ab. Bei kleinen Kunden ging das schnell. Ein großer Kunde mit
+          rund 25.000 Reisen wartete aber bis zu 20 Sekunden – und sah trotzdem nur die
+          ersten 1.000 Reisen.
+        </p>
+      </div>
+      <div class="card" style="border-color:var(--lime-2); background:#FBFDF2">
+        <h3>Jetzt: eine eigene, laufend aktuelle Kopie</h3>
+        <p>
+          Für Kunden, die den Travel Alert nutzen, hält die Plattform eine eigene Kopie ihrer
+          Reisen bereit. Sie wird automatisch jede Minute aufgefrischt. Beim Öffnen muss nichts
+          mehr abgefragt werden: Alle Reisen sind sofort da – beim großen Kunden in rund einer Sekunde.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="mt5">Drei Begriffe, die in dieser Anleitung vorkommen</h3>
+    <ul class="fields mt2">
+      <li><span class="name">pds (Passolution Data Service)</span>Das System, in dem die Reisen eines Kunden gespeichert sind. Hier entstehen und ändern sich die Reisen.</li>
+      <li><span class="name">Kopie (im Admin: „Spiegel“)</span>Die Reisen eines Kunden, wie sie die Plattform für den Travel Alert bereithält. Sie wird automatisch mit dem pds abgeglichen und nie von Hand bearbeitet.</li>
+      <li><span class="name">Abgleich</span>Der automatische Vorgang, der die Kopie auf den Stand des pds bringt – entweder nur mit den Änderungen (jede Minute) oder komplett (jede Nacht).</li>
+    </ul>
+
+    <div class="note mt4">
+      <span class="head">Gut zu wissen</span>
+      Beim Kunden muss dafür <b>nichts eingestellt</b> werden. Alles in dieser Anleitung läuft
+      automatisch, sobald ein Kunde den Travel Alert nutzt.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Worum es geht</span><span class="ver">v1.0 · 19.11.2026</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · ABLAUF -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Der Ablauf auf einen Blick</div>
+    <h2 class="mt2">Vom Reisebüro bis<br>auf den Bildschirm.</h2>
+
+    <div class="diagram mt4">
+      <svg viewBox="0 0 640 560" xmlns="http://www.w3.org/2000/svg" font-family="InterVar, Inter, sans-serif">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#002742"/>
+          </marker>
+          <marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8FAE14"/>
+          </marker>
+          <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#9BB0BD"/>
+          </marker>
+        </defs>
+
+        <!-- Spalte 1: Reisebüro + pds -->
+        <rect x="10" y="20" width="170" height="74" rx="10" fill="#fff" stroke="#D4E1E8"/>
+        <text x="95" y="50" text-anchor="middle" font-size="13" font-weight="700" fill="#002742">Reisebüro</text>
+        <text x="95" y="70" text-anchor="middle" font-size="10.5" fill="#5C7688">legt Reisen an, ändert</text>
+        <text x="95" y="84" text-anchor="middle" font-size="10.5" fill="#5C7688">oder löscht sie</text>
+
+        <line x1="95" y1="94" x2="95" y2="140" stroke="#002742" stroke-width="1.6" marker-end="url(#arr)"/>
+
+        <rect x="10" y="144" width="170" height="250" rx="12" fill="#002742"/>
+        <text x="95" y="178" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">pds</text>
+        <text x="95" y="198" text-anchor="middle" font-size="10.5" fill="#A9C3D2">Passolution Data Service</text>
+        <text x="95" y="236" text-anchor="middle" font-size="10.5" fill="#CEE741">alle Reisen</text>
+        <text x="95" y="252" text-anchor="middle" font-size="10.5" fill="#CEE741">aller Kunden</text>
+        <g fill="none" stroke="#5E8FA8" stroke-width="1.4">
+          <ellipse cx="95" cy="300" rx="38" ry="10"/>
+          <path d="M57 300 V 350 A 38 10 0 0 0 133 350 V 300"/>
+          <path d="M57 325 A 38 10 0 0 0 133 325"/>
+        </g>
+
+        <!-- Spalte 2: Plattform-Kopie -->
+        <rect x="290" y="144" width="170" height="250" rx="12" fill="#FBFDF2" stroke="#B6D22E" stroke-width="1.6"/>
+        <text x="375" y="178" text-anchor="middle" font-size="15" font-weight="800" fill="#002742">Kopie</text>
+        <text x="375" y="198" text-anchor="middle" font-size="10.5" fill="#5C7688">auf der Plattform</text>
+        <text x="375" y="236" text-anchor="middle" font-size="10.5" fill="#5C6B12">nur Kunden, die den</text>
+        <text x="375" y="252" text-anchor="middle" font-size="10.5" fill="#5C6B12">Travel Alert nutzen</text>
+        <g fill="none" stroke="#8FAE14" stroke-width="1.4">
+          <ellipse cx="375" cy="300" rx="38" ry="10"/>
+          <path d="M337 300 V 350 A 38 10 0 0 0 413 350 V 300"/>
+          <path d="M337 325 A 38 10 0 0 0 413 325"/>
+        </g>
+
+        <!-- Pfeile pds -> Kopie -->
+        <path d="M 180 196 H 286" stroke="#8FAE14" stroke-width="2.4" fill="none" marker-end="url(#arrL)"/>
+        <rect x="190" y="164" width="88" height="22" rx="11" fill="#002742"/>
+        <text x="234" y="179" text-anchor="middle" font-size="10" font-weight="800" fill="#CEE741">jede Minute</text>
+        <text x="234" y="214" text-anchor="middle" font-size="9.5" fill="#5C7688">nur Änderungen</text>
+
+        <path d="M 180 290 H 286" stroke="#8FAE14" stroke-width="2.4" fill="none" marker-end="url(#arrL)"/>
+        <rect x="190" y="258" width="88" height="22" rx="11" fill="#002742"/>
+        <text x="234" y="273" text-anchor="middle" font-size="10" font-weight="800" fill="#CEE741">nachts 03:40</text>
+        <text x="234" y="308" text-anchor="middle" font-size="9.5" fill="#5C7688">alles komplett,</text>
+        <text x="234" y="321" text-anchor="middle" font-size="9.5" fill="#5C7688">auch Löschungen</text>
+
+        <path d="M 180 366 H 286" stroke="#8FAE14" stroke-width="2.4" fill="none" marker-end="url(#arrL)"/>
+        <rect x="190" y="334" width="88" height="22" rx="11" fill="#F1F6F8" stroke="#D4E1E8"/>
+        <text x="234" y="349" text-anchor="middle" font-size="9.5" font-weight="800" fill="#002742">neuer Kunde</text>
+        <text x="234" y="384" text-anchor="middle" font-size="9.5" fill="#5C7688">einmal komplett</text>
+
+        <!-- Spalte 3: Travel Alert -->
+        <rect x="520" y="144" width="110" height="250" rx="12" fill="#fff" stroke="#002742" stroke-width="1.6"/>
+        <text x="575" y="178" text-anchor="middle" font-size="13" font-weight="800" fill="#002742">Travel</text>
+        <text x="575" y="195" text-anchor="middle" font-size="13" font-weight="800" fill="#002742">Alert</text>
+        <rect x="538" y="222" width="74" height="12" rx="3" fill="#F1F6F8"/>
+        <rect x="538" y="240" width="74" height="12" rx="3" fill="#F1F6F8"/>
+        <rect x="538" y="258" width="74" height="12" rx="3" fill="#F1F6F8"/>
+        <rect x="538" y="276" width="46" height="12" rx="6" fill="#059669" fill-opacity=".8"/>
+        <text x="575" y="320" text-anchor="middle" font-size="9.5" fill="#5C7688">Kunde öffnet:</text>
+        <text x="575" y="334" text-anchor="middle" font-size="9.5" fill="#5C7688">alle Reisen</text>
+        <text x="575" y="348" text-anchor="middle" font-size="9.5" fill="#5C7688">in ca. 1 Sekunde</text>
+
+        <path d="M 460 270 H 516" stroke="#002742" stroke-width="2.4" fill="none" marker-end="url(#arr)"/>
+        <text x="488" y="260" text-anchor="middle" font-size="9.5" fill="#5C7688">liest</text>
+
+        <!-- Erstes Öffnen: Rückweg / Vormerken -->
+        <path d="M 575 394 V 450 H 375 V 398" stroke="#9BB0BD" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#arrG)"/>
+        <text x="475" y="470" text-anchor="middle" font-size="9.5" fill="#5C7688">erstes Öffnen: Kunde wird für die Kopie vorgemerkt</text>
+
+        <path d="M 575 394 V 420 H 95 V 398" stroke="#9BB0BD" stroke-width="1.6" fill="none" stroke-dasharray="2 4" marker-end="url(#arrG)"/>
+        <text x="200" y="440" text-anchor="middle" font-size="9.5" fill="#5C7688">bis die Kopie fertig ist: direkt beim pds fragen</text>
+
+        <!-- Zeitband unten -->
+        <rect x="10" y="500" width="620" height="44" rx="10" fill="#F1F6F8"/>
+        <text x="26" y="518" font-size="10" font-weight="800" fill="#002742">Nach 30 Tagen ohne Öffnen</text>
+        <text x="26" y="534" font-size="10" fill="#5C7688">wird die Kopie eines Kunden gelöscht. Öffnet er den Travel Alert wieder, beginnt der Ablauf von vorn.</text>
+      </svg>
+      <div class="legend">
+        <span><i style="border-color:#8FAE14"></i>automatischer Abgleich</span>
+        <span><i style="border-color:#002742"></i>Anzeige beim Kunden</span>
+        <span><i style="border-color:#9BB0BD; border-top-style:dashed"></i>nur beim allerersten Öffnen</span>
+      </div>
+    </div>
+
+    <div class="grid3 mt4">
+      <div class="card"><h3>1 · Entstehen</h3><p>Reisen werden im pds angelegt und geändert – wie bisher. Daran ändert sich nichts.</p></div>
+      <div class="card"><h3>2 · Abgleichen</h3><p>Die Plattform holt sich die Änderungen selbstständig – jede Minute und nachts komplett.</p></div>
+      <div class="card"><h3>3 · Anzeigen</h3><p>Öffnet der Kunde den Travel Alert, liest er aus der Kopie: schnell und vollständig.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Ablauf</span><span class="ver">v1.0 · 19.11.2026</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · AUTOMATIK -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Was automatisch passiert</div>
+    <h2 class="mt2">Fünf Automatismen,<br>feste Zeiten.</h2>
+    <p class="lead mt3" style="max-width:160mm">
+      Niemand muss etwas anstoßen. Diese Vorgänge laufen von selbst auf dem Server der Plattform:
+    </p>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:30mm">Wann</th><th style="width:48mm">Was passiert</th><th>Wozu</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="clock">jede Minute</span></td>
+          <td><b>Änderungen abholen</b></td>
+          <td>Die Plattform fragt beim pds: „Was hat sich seit dem letzten Mal geändert?“ Neue und geänderte Reisen landen in der Kopie. Wo sie zuletzt aufgehört hat, merkt sie sich – auch nach einer Störung geht nichts verloren.</td>
+        </tr>
+        <tr class="alt">
+          <td><span class="clock">jede Minute</span></td>
+          <td><b>Neue Kunden aufnehmen</b></td>
+          <td>Kunden, die den Travel Alert zum ersten Mal geöffnet haben, bekommen ihre Kopie: alle Reisen, die heute oder später enden, auf einmal. Bei sehr großen Kunden dauert das etwa eine halbe Minute.</td>
+        </tr>
+        <tr>
+          <td><span class="clock">täglich 03:40</span></td>
+          <td><b>Nächtlicher Komplett-Abgleich</b></td>
+          <td>Alle Kopien werden vollständig neu geladen. Dabei verschwinden auch Reisen, die im pds gelöscht wurden, und bereits beendete Reisen. Geht dabei etwas schief, bleibt der alte Stand stehen – es wird nie „aus Versehen“ etwas gelöscht.</td>
+        </tr>
+        <tr class="alt">
+          <td><span class="clock soft">beim Öffnen</span></td>
+          <td><b>Nutzung merken</b></td>
+          <td>Jedes Öffnen des Travel Alert vermerkt den Kunden als „aktiv“. Nur aktive Kunden werden abgeglichen.</td>
+        </tr>
+        <tr>
+          <td><span class="clock soft">nach 30 Tagen</span></td>
+          <td><b>Aufräumen</b></td>
+          <td>Hat ein Kunde den Travel Alert 30 Tage nicht geöffnet, wird seine Kopie gelöscht. Das spart Platz und Abgleiche für Kunden, die ihn gerade nicht nutzen.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">Der Lebenslauf eines Kunden</h3>
+    <div class="diagram mt2">
+      <svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg" font-family="InterVar, Inter, sans-serif">
+        <line x1="56" y1="60" x2="590" y2="60" stroke="#D4E1E8" stroke-width="6" stroke-linecap="round"/>
+        <line x1="56" y1="60" x2="470" y2="60" stroke="#B6D22E" stroke-width="6" stroke-linecap="round"/>
+        <g font-size="10" fill="#002742" text-anchor="middle">
+          <circle cx="56" cy="60" r="10" fill="#002742"/>
+          <text x="56" y="34" font-weight="800">öffnet</text>
+          <text x="56" y="90" fill="#5C7688">Tag 0</text>
+          <text x="56" y="104" fill="#5C7688">direkt beim pds</text>
+
+          <circle cx="160" cy="60" r="10" fill="#CEE741" stroke="#002742" stroke-width="2"/>
+          <text x="160" y="34" font-weight="800">Kopie fertig</text>
+          <text x="160" y="90" fill="#5C7688">ca. 1 Minute später</text>
+          <text x="160" y="104" fill="#5C7688">ab jetzt schnell</text>
+
+          <text x="305" y="34" font-weight="800">laufend aktuell</text>
+          <text x="305" y="90" fill="#5C7688">jede Minute Änderungen,</text>
+          <text x="305" y="104" fill="#5C7688">jede Nacht komplett</text>
+
+          <circle cx="470" cy="60" r="10" fill="#fff" stroke="#9BB0BD" stroke-width="2"/>
+          <text x="470" y="34" font-weight="800">zuletzt geöffnet</text>
+          <text x="470" y="90" fill="#5C7688">ab hier zählen</text>
+          <text x="470" y="104" fill="#5C7688">30 Tage</text>
+
+          <circle cx="590" cy="60" r="10" fill="#FDE8E5" stroke="#9B2C1F" stroke-width="2"/>
+          <text x="584" y="34" font-weight="800">Kopie gelöscht</text>
+          <text x="584" y="90" fill="#5C7688">nächstes Öffnen:</text>
+          <text x="584" y="104" fill="#5C7688">wieder ab Tag 0</text>
+        </g>
+        <text x="320" y="138" text-anchor="middle" font-size="9.5" fill="#5C7688">Jedes Öffnen setzt die 30 Tage neu. Wer regelmäßig hineinschaut, behält seine Kopie dauerhaft.</text>
+      </svg>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Automatismen</span><span class="ver">v1.0 · 19.11.2026</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · SITUATIONEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Typische Situationen</div>
+    <h2 class="mt2">Wann sieht der Kunde<br>was?</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr><th style="width:56mm">Situation</th><th style="width:38mm">Sichtbar im Travel Alert</th><th>Erklärung</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Reisebüro legt eine neue Reise an</b></td>
+          <td><span class="status ok">nach 1–2 Minuten</span></td>
+          <td>Der minütliche Abgleich holt sie ab.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Reiseziel oder Reisedaten ändern sich</b></td>
+          <td><span class="status ok">nach 1–2 Minuten</span></td>
+          <td>Ebenfalls über den minütlichen Abgleich.</td>
+        </tr>
+        <tr>
+          <td><b>Reise wird im pds gelöscht</b></td>
+          <td><span class="status wait">am nächsten Morgen</span></td>
+          <td>Löschungen meldet der pds nicht einzeln. Der nächtliche Komplett-Abgleich entfernt sie.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Geschäftsreise wird geändert</b></td>
+          <td><span class="status wait">am nächsten Morgen</span></td>
+          <td>Geschäftsreisen sind im minütlichen Abgleich nicht enthalten, im nächtlichen schon.</td>
+        </tr>
+        <tr>
+          <td><b>Kunde öffnet den Travel Alert zum allerersten Mal</b></td>
+          <td><span class="status ok">sofort</span></td>
+          <td>Beim ersten Mal fragt die Plattform direkt beim pds nach – bei großen Kunden dauert das ein paar Sekunden. Ab dem nächsten Öffnen kommt alles aus der Kopie.</td>
+        </tr>
+        <tr class="alt">
+          <td><b>Kunde war über 30 Tage nicht im Travel Alert</b></td>
+          <td><span class="status ok">sofort</span></td>
+          <td>Wie beim ersten Mal: kurz direkt beim pds, danach wieder aus der neuen Kopie.</td>
+        </tr>
+        <tr>
+          <td><b>Neues Ereignis wird veröffentlicht</b></td>
+          <td><span class="status ok">beim nächsten Öffnen</span></td>
+          <td>Ereignisse haben mit der Kopie nichts zu tun: Der Travel Alert legt beim Öffnen immer die aktuellen Ereignisse neben die Reisen.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note mt4">
+      <span class="head">Seite schon offen?</span>
+      Wer den Travel Alert gerade geöffnet hat, sieht Änderungen nach dem <b>Neuladen der Seite</b>.
+    </div>
+
+    <div class="warn mt3">
+      <span class="head">Voraussetzungen beim Kunden</span>
+      Damit ein Kunde eine Kopie bekommt, muss sein Plattform-Konto mit seinem <b>pds-Konto verknüpft</b>
+      und der Travel Alert für ihn <b>freigeschaltet</b> sein. Fehlt die
+      Verknüpfung, funktioniert der Travel Alert trotzdem – er fragt dann wie früher bei jedem Öffnen beim pds nach.
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Situationen</span><span class="ver">v1.0 · 19.11.2026</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · ADMIN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Kontrolle im Admin</div>
+    <h2 class="mt2">Alles auf einer Seite:<br>der Travel-Alert-Spiegel.</h2>
+    <p class="lead mt3" style="max-width:160mm">
+      Im Admin unter <span class="ui">System</span> → <span class="ui">Travel-Alert-Spiegel</span>
+      siehst du, für welche Kunden gerade eine Kopie besteht und ob die Abgleiche laufen.
+      Die Seite aktualisiert sich alle 30 Sekunden selbst.
+    </p>
+
+    <div class="mock mt4">
+      <div class="mock-head">Travel-Alert-Spiegel</div>
+      <div class="mock-tiles">
+        <div class="mock-tile"><div class="l">Gespiegelte Konten</div><div class="v">12</div></div>
+        <div class="mock-tile"><div class="l">Gespiegelte Reisen</div><div class="v">48.310</div></div>
+        <div class="mock-tile"><div class="l">Delta-Feed (jede Minute)</div><div class="v">vor 20 Sek.</div></div>
+        <div class="mock-tile"><div class="l">Vollabgleich</div><div class="v">aktuell</div></div>
+      </div>
+      <table>
+        <thead><tr><th>pds-Konto</th><th>Kunden</th><th style="text-align:right">Reisen</th><th>Zuletzt geöffnet</th><th>Vollabruf</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">3181</td><td>Beispiel-Reisen GmbH</td><td style="text-align:right">20.099</td><td>19.11. 09:12</td><td>19.11. 03:40</td><td><span class="status ok">Aktiv</span></td></tr>
+          <tr><td class="mono">4711</td><td>Musterreisebüro</td><td style="text-align:right">0</td><td>19.11. 10:05</td><td>–</td><td><span class="status wait">Wartet auf Vollabruf</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">Vereinfachte Darstellung mit Beispieldaten.</p>
+
+    <h3 class="mt4">Was die Anzeigen bedeuten</h3>
+    <ul class="fields mt2">
+      <li><span class="name"><span class="status ok">Aktiv</span></span>Alles in Ordnung: Die Kopie ist vollständig und wird laufend abgeglichen.</li>
+      <li><span class="name"><span class="status wait">Wartet auf Vollabruf</span></span>Der Kunde hat den Travel Alert gerade zum ersten Mal geöffnet. Spätestens nach ein bis zwei Minuten wechselt das zu „Aktiv“. Bis dahin funktioniert der Travel Alert wie früher.</li>
+      <li><span class="name"><span class="status bad">Veraltet</span></span>Der nächtliche Komplett-Abgleich hat für diesen Kunden länger als einen Tag nicht geklappt. Der Kunde sieht weiterhin Reisen und Änderungen, Löschungen kommen aber nicht an. Bitte an die Technik melden.</li>
+      <li><span class="name">Kachel „Delta-Feed“ rot – „Läuft nicht“</span>Der minütliche Abgleich ist seit über 10 Minuten nicht gelaufen. Änderungen kommen dann nicht mehr an. Bitte sofort an die Technik melden.</li>
+    </ul>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Kontrolle</span><span class="ver">v1.0 · 19.11.2026</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · FAQ -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Häufige Fragen</div>
+    <h2 class="mt2">Häufige Fragen.</h2>
+
+    <div class="grid2 mt5" style="gap:7mm">
+      <div>
+        <div class="qa">
+          <h3>Muss ich beim Kunden etwas einschalten?</h3>
+          <p>Nein. Die Kopie entsteht von selbst, sobald der Kunde den Travel Alert öffnet. Voraussetzung ist nur, dass sein Konto mit dem pds verknüpft ist.</p>
+        </div>
+        <div class="qa">
+          <h3>Ein großer Kunde startet morgen – kann man vorbereiten?</h3>
+          <p>Ja. Die Technik kann seine Kopie vorab anlegen. Dann ist der Travel Alert schon beim ersten Öffnen schnell.</p>
+        </div>
+        <div class="qa">
+          <h3>Der Kunde sagt, eine Reise fehlt.</h3>
+          <p>Wurde sie gerade erst angelegt, ein bis zwei Minuten warten und die Seite neu laden. Fehlt sie dann noch, prüfen, ob der eingestellte Zeitraum zur Reise passt. Erst danach an die Technik melden.</p>
+        </div>
+        <div class="qa">
+          <h3>Der Kunde sieht eine Reise, die gelöscht wurde.</h3>
+          <p>Das ist bis zum nächsten Morgen normal. Der nächtliche Abgleich um 03:40 Uhr entfernt sie.</p>
+        </div>
+      </div>
+      <div>
+        <div class="qa">
+          <h3>Gehen Labels verloren, wenn die Kopie gelöscht wird?</h3>
+          <p>Nein. Labels werden getrennt gespeichert und bleiben erhalten. Nach dem nächsten Öffnen hängen sie wieder an denselben Reisen.</p>
+        </div>
+        <div class="qa">
+          <h3>Was ist, wenn der pds einmal nicht erreichbar ist?</h3>
+          <p>Die Kopie bleibt, wie sie ist, und der Travel Alert zeigt den letzten Stand. Sobald der pds wieder antwortet, holt der Abgleich alles Verpasste nach.</p>
+        </div>
+        <div class="qa">
+          <h3>Sind vergangene Reisen in der Kopie?</h3>
+          <p>Nein, nur Reisen, die heute oder später enden. Der Travel Alert schaut nach vorn. Wer einen Zeitraum in der Vergangenheit wählt, bekommt die Reisen wie früher direkt vom pds.</p>
+        </div>
+        <div class="qa">
+          <h3>Sehen andere Kunden die Kopie?</h3>
+          <p>Nein. Jeder Kunde sieht nur die Reisen seines eigenen pds-Kontos – genau wie vorher.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Travel Alert</b> · Fragen</span><span class="ver">v1.0 · 19.11.2026</span><span>07</span></div>
+</section>
+
+<!-- ======================================================== 8 · RÜCKSEITE -->
+<section class="page back">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <rect width="794" height="1123" fill="#002742"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856"
+            fill="none" stroke="#CEE741" stroke-opacity=".4" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="frame">
+    <div class="kicker" style="color:#CEE741">Auf einen Blick</div>
+    <h2 class="mt2" style="color:#fff">Alles läuft von selbst.<br>Du musst nur wissen, wann.</h2>
+    <div class="rule mt3"></div>
+
+    <div class="grid2 mt5">
+      <div class="back-card">
+        <h4>Jede Minute</h4>
+        <p>Neue und geänderte Reisen werden abgeholt. Neue Kunden bekommen ihre Kopie.</p>
+      </div>
+      <div class="back-card">
+        <h4>Jede Nacht, 03:40 Uhr</h4>
+        <p>Komplett-Abgleich: Gelöschte Reisen und Geschäftsreisen kommen auf den neuesten Stand.</p>
+      </div>
+      <div class="back-card">
+        <h4>Beim Öffnen</h4>
+        <p>Der Kunde gilt als aktiv. Beim allerersten Mal fragt die Plattform noch direkt beim pds nach.</p>
+      </div>
+      <div class="back-card">
+        <h4>Nach 30 Tagen ohne Öffnen</h4>
+        <p>Die Kopie wird gelöscht – und beim nächsten Öffnen automatisch neu angelegt.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <img src="assets/passolution-logo-white.png" alt="Passolution" style="width:40mm">
+      <p class="small mt3" style="color:#7A9BAE">
+        Passolution GmbH · Stand: November 2026<br>
+        Diese Anleitung beschreibt den Abgleich der Reisen für den Travel Alert. Zeiten und
+        Bezeichnungen können sich mit künftigen Versionen ändern.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -131,6 +131,9 @@
                     <flux:navlist.item icon="bell-alert" :href="route('adminv2.system.push')" :current="request()->routeIs('adminv2.system.push')">
                         Push senden
                     </flux:navlist.item>
+                    <flux:navlist.item icon="circle-stack" :href="route('adminv2.system.travel-alert-mirror')" :current="request()->routeIs('adminv2.system.travel-alert-mirror')">
+                        Travel-Alert-Spiegel
+                    </flux:navlist.item>
                     <flux:navlist.item
                         icon="queue-list"
                         :href="route('adminv2.system.automator.index')"
