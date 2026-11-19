@@ -9,6 +9,7 @@ use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
 use App\Models\TravelAlertOrder;
+use App\Models\TravelAlertStatus;
 use App\Services\CustomerFeatureService;
 use App\Services\KeycloakUserService;
 use App\Services\RiskOverviewService;
@@ -784,6 +785,75 @@ class RiskOverviewController extends Controller
     }
 
     /**
+     * Ereignisse und/oder Reisen als erledigt bzw. wieder offen markieren (einzeln oder mehrere).
+     * Reisen werden über ihre Listen-ID adressiert: lokale Ordner-ID oder "api-<tid>".
+     */
+    public function updateStatus(Request $request): JsonResponse
+    {
+        $customer = auth('customer')->user();
+
+        if (! $customer) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $data = $request->validate([
+            'done' => ['required', 'boolean'],
+            'event_ids' => ['array', 'max:1000'],
+            'event_ids.*' => ['integer'],
+            'trip_ids' => ['array', 'max:1000'],
+            'trip_ids.*' => ['string', 'max:128'],
+        ]);
+        $done = (bool) $data['done'];
+
+        $eventKeys = CustomEvent::whereIn('id', $data['event_ids'] ?? [])->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $tripIds = $data['trip_ids'] ?? [];
+        $pdsKeys = array_values(array_filter($tripIds, fn (string $id) => preg_match('/^api-[A-Za-z0-9-]{1,120}$/', $id) === 1));
+        $folderKeys = Folder::where('customer_id', $customer->id)
+            ->whereIn('id', array_filter($tripIds, fn (string $id) => ctype_digit($id)))
+            ->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $tripKeys = [...$pdsKeys, ...$folderKeys];
+
+        $now = now();
+        DB::transaction(function () use ($customer, $done, $eventKeys, $tripKeys, $now) {
+            foreach ([TravelAlertStatus::TYPE_EVENT => $eventKeys, TravelAlertStatus::TYPE_TRIP => $tripKeys] as $type => $keys) {
+                if ($keys === []) {
+                    continue;
+                }
+
+                if (! $done) {
+                    TravelAlertStatus::where('customer_id', $customer->id)->where('subject_type', $type)->whereIn('subject_key', $keys)->delete();
+
+                    continue;
+                }
+
+                TravelAlertStatus::upsert(
+                    array_map(fn (string $key) => [
+                        'customer_id' => $customer->id,
+                        'subject_type' => $type,
+                        'subject_key' => $key,
+                        'done_at' => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ], $keys),
+                    ['customer_id', 'subject_type', 'subject_key'],
+                    ['done_at', 'updated_at'],
+                );
+            }
+        });
+
+        // Status-gefilterte Ereignis-Caches verwerfen (teilen sich die Version mit den Labels)
+        Label::bumpCacheVersion($customer->id);
+
+        $doneAt = $done ? $now->toIso8601String() : null;
+
+        return response()->json([
+            'success' => true,
+            'events' => (object) collect($eventKeys)->mapWithKeys(fn (string $key) => [$key => $doneAt])->all(),
+            'trips' => (object) collect($tripKeys)->mapWithKeys(fn (string $key) => [$key => $doneAt])->all(),
+        ]);
+    }
+
+    /**
      * Ein Label an mehreren Ereignissen und Reisen auf einmal setzen oder entfernen.
      * Reisen kommen als folder_id; "api-<tid>" steht für eine Reise aus der PDS-API.
      */
@@ -1041,7 +1111,15 @@ class RiskOverviewController extends Controller
         $values = is_array($raw) ? $raw : explode(',', (string) $raw);
 
         // "none" = Ereignisse ohne Label
-        return array_values(array_unique(array_filter(array_map(fn ($id) => trim((string) $id), $values), fn (string $id) => $id === 'none' || Str::isUuid($id))));
+        $labelIds = array_values(array_unique(array_filter(array_map(fn ($id) => trim((string) $id), $values), fn (string $id) => $id === 'none' || Str::isUuid($id))));
+
+        // ?status=open|done – reist als Token in derselben Filterliste mit (siehe filterEventsByLabels)
+        $status = $request->input('status');
+        if (in_array($status, ['open', 'done'], true)) {
+            $labelIds[] = 'status:'.$status;
+        }
+
+        return $labelIds;
     }
 
     /**

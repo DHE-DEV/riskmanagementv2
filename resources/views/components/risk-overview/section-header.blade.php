@@ -31,7 +31,7 @@
                 class="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors"
                 :class="selection.mode === 'events' && selection.scope === '{{ $selectScope }}' ? 'bg-blue-600 text-white' : 'text-gray-600 {{ $hoverColor }}'">
                 <i class="fa-regular fa-square-check"></i>
-                <span x-text="selection.mode === 'events' && selection.scope === '{{ $selectScope }}' ? 'Auswahl beenden' : 'Mehrere labeln'"></span>
+                <span x-text="selection.mode === 'events' && selection.scope === '{{ $selectScope }}' ? 'Auswahl beenden' : 'Mehrere auswählen'"></span>
             </button>
         @endif
         @if($maximizeSection)

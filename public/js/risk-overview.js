@@ -32,7 +32,14 @@ function riskOverviewApp() {
             // Label-Filter je Reiter: Reisen und Ereignisse filtern unabhängig voneinander
             labels: [],
             eventLabels: [],
+            // Status-Filter je Reiter: 'all' | 'open' | 'done'
+            tripStatus: 'all',
+            eventStatus: 'all',
         },
+        // Reisen, deren Status in dieser Sitzung geändert wurde: bleiben trotz Status-Filter
+        // sichtbar, bis neu geladen oder der Filter gewechselt wird (nichts springt weg)
+        statusPinnedTrips: [],
+        statusBusy: false,
         availableLabels: [],
 
         // Labels verwalten
@@ -121,6 +128,7 @@ function riskOverviewApp() {
             // Nur der Ereignis-Filter geht an den Server; der Reisen-Filter wirkt im Browser
             const serverLabels = this.filters.eventLabels.filter(id => !String(id).startsWith('__'));
             if (this.filters.eventLabels.includes(this.NO_EVENT_LABEL)) serverLabels.push('none');
+            if (this.filters.eventStatus !== 'all') params.append('status', this.filters.eventStatus);
             if (serverLabels.length > 0) {
                 params.append('labels', serverLabels.join(','));
             }
@@ -875,8 +883,111 @@ function riskOverviewApp() {
             return events;
         },
 
+        // ── Status: offen / erledigt ─────────────────────────────────────
+
+        isEventDone(event) {
+            return !!event?.done_at;
+        },
+
+        /**
+         * Ist die Reise erledigt? Ja, wenn sie als erledigt markiert ist und seitdem kein
+         * neues, offenes Ereignis dazukam – oder wenn sie Ereignisse hat und alle erledigt sind.
+         */
+        isTripDone(trip) {
+            const events = trip?.events || [];
+            if (events.length > 0 && events.every(e => this.isEventDone(e))) return true;
+            if (!trip?.done_at) return false;
+            const doneAt = Date.parse(trip.done_at);
+            return !events.some(e => !this.isEventDone(e) && (Date.parse(e.created_at_iso || e.created_at) || 0) > doneAt);
+        },
+
+        /** Reise ist erledigt, aber nur weil alle Ereignisse erledigt sind (kein eigener Haken). */
+        isTripDoneByEventsOnly(trip) {
+            return this.isTripDone(trip) && !trip?.done_at;
+        },
+
+        /** Eine neue Meldung kam nach "erledigt" – die Reise ist dadurch wieder offen. */
+        isTripReopened(trip) {
+            return !!trip?.done_at && !this.isTripDone(trip);
+        },
+
+        isDone(item, kind) {
+            return kind === 'trip' ? this.isTripDone(item) : this.isEventDone(item);
+        },
+
+        doneButtonTitle(item, kind) {
+            if (kind === 'trip' && this.isTripDoneByEventsOnly(item)) return 'Erledigt, weil alle Ereignisse erledigt sind';
+            if (kind === 'trip' && this.isTripReopened(item)) return 'Wieder offen: neues Ereignis nach „erledigt“ – Klick: erneut erledigt';
+            return this.isDone(item, kind) ? 'Klick: wieder öffnen' : 'Als erledigt markieren';
+        },
+
+        async toggleDone(item, kind) {
+            if (kind === 'trip' && this.isTripDoneByEventsOnly(item)) return;
+            const done = kind === 'trip' ? !this.isTripDone(item) : !this.isEventDone(item);
+            const key = kind === 'trip' ? item.folder_id : item.id;
+            await this.sendStatus(done, kind === 'trip' ? { trip_ids: [String(key)] } : { event_ids: [key] });
+        },
+
+        /** Status an den Server senden und überall übernehmen. */
+        async sendStatus(done, payload) {
+            if (this.statusBusy) return null;
+            this.statusBusy = true;
+            try {
+                const data = await this.sendLabelRequest(window.__riskOverviewConfig.routes.status, 'POST', { done, ...payload });
+                Object.entries(data.events || {}).forEach(([id, doneAt]) => this.setEventDoneEverywhere(Number(id), doneAt));
+                Object.entries(data.trips || {}).forEach(([folderId, doneAt]) => {
+                    this.trips.forEach(t => { if (String(t.folder_id) === folderId) t.done_at = doneAt; });
+                    if (this.selectedTrip && String(this.selectedTrip.folder_id) === folderId) this.selectedTrip.done_at = doneAt;
+                });
+                // Geänderte Reisen bleiben vorerst sichtbar – auch die, deren Status über ein Ereignis wechselt
+                const eventIds = Object.keys(data.events || {}).map(Number);
+                const touched = this.trips.filter(t => Object.prototype.hasOwnProperty.call(data.trips || {}, String(t.folder_id))
+                    || (t.events || []).some(e => eventIds.includes(e.id)));
+                this.statusPinnedTrips = [...new Set([...this.statusPinnedTrips, ...touched.map(t => String(t.folder_id))])];
+                return data;
+            } catch (e) {
+                alert(e.message);
+                return null;
+            } finally {
+                this.statusBusy = false;
+            }
+        },
+
+        setEventDoneEverywhere(eventId, doneAt) {
+            this.trips.forEach(trip => (trip.events || []).forEach(ev => { if (ev.id === eventId) ev.done_at = doneAt; }));
+            (this.countryDetails?.events || []).forEach(ev => { if (ev.id === eventId) ev.done_at = doneAt; });
+            if (this.selectedEvent?.id === eventId) this.selectedEvent.done_at = doneAt;
+        },
+
+        async applyBulkStatus(done) {
+            if (this.selection.ids.length === 0) return;
+            const payload = this.selection.mode === 'trips'
+                ? { trip_ids: this.selection.ids.map(String) }
+                : { event_ids: this.selection.ids };
+            const data = await this.sendStatus(done, payload);
+            if (data) {
+                const count = this.selection.ids.length;
+                const noun = this.selection.mode === 'trips' ? (count === 1 ? 'Reise' : 'Reisen') : (count === 1 ? 'Ereignis' : 'Ereignisse');
+                this.bulk.message = `${count} ${noun} ${done ? 'als erledigt markiert' : 'wieder geöffnet'}.`;
+            }
+        },
+
+        /** Anzahl offener bzw. erledigter Reisen unter den übrigen Filtern (für die Filter-Knöpfe). */
+        get tripStatusCounts() {
+            const trips = this.tripsBeforeStatusFilter;
+            const done = trips.filter(t => this.isTripDone(t)).length;
+            return { all: trips.length, open: trips.length - done, done };
+        },
+
         /** Reisen nach allen Filtern außer den Labels – Grundlage für Liste und Zähler. */
         get tripsBeforeLabelFilter() {
+            const trips = this.tripsBeforeStatusFilter;
+            if (this.filters.tripStatus === 'all') return trips;
+            const wantDone = this.filters.tripStatus === 'done';
+            return trips.filter(t => this.isTripDone(t) === wantDone || this.statusPinnedTrips.includes(String(t.folder_id)));
+        },
+
+        get tripsBeforeStatusFilter() {
             let result = this.trips;
             if (this.filters.priority) {
                 result = result.filter(t => t.events && t.events.some(e => e.priority === this.filters.priority));
@@ -1018,6 +1129,9 @@ function riskOverviewApp() {
             try {
                 const saved = JSON.parse(localStorage.getItem('travelAlert.labelFilter') || '[]');
                 if (Array.isArray(saved)) this.filters.labels = saved.filter(id => typeof id === 'string');
+                const statuses = JSON.parse(localStorage.getItem('travelAlert.statusFilter') || '{}');
+                if (['all', 'open', 'done'].includes(statuses.trips)) this.filters.tripStatus = statuses.trips;
+                if (['all', 'open', 'done'].includes(statuses.events)) this.filters.eventStatus = statuses.events;
                 const savedEvents = JSON.parse(localStorage.getItem('travelAlert.eventLabelFilter') || '[]');
                 if (Array.isArray(savedEvents)) this.filters.eventLabels = savedEvents.filter(id => typeof id === 'string' && id !== this.NO_TRIP_LABEL);
             } catch (e) {
@@ -1029,6 +1143,7 @@ function riskOverviewApp() {
             try {
                 localStorage.setItem('travelAlert.labelFilter', JSON.stringify(this.filters.labels));
                 localStorage.setItem('travelAlert.eventLabelFilter', JSON.stringify(this.filters.eventLabels));
+                localStorage.setItem('travelAlert.statusFilter', JSON.stringify({ trips: this.filters.tripStatus, events: this.filters.eventStatus }));
             } catch (e) {
                 // siehe restoreLabelFilter
             }
@@ -1087,6 +1202,20 @@ function riskOverviewApp() {
 
                 // Reisen-Filter wirkt nur im Browser auf die Reisenliste
                 this.$watch('filters.labels', () => this.storeLabelFilter());
+                this.$watch('filters.tripStatus', () => {
+                    this.statusPinnedTrips = [];
+                    this.storeLabelFilter();
+                });
+
+                // Ereignis-Status: wie der Ereignis-Label-Filter serverseitig
+                this.$watch('filters.eventStatus', () => {
+                    this.storeLabelFilter();
+                    if (this.sidebarTab === 'laender') {
+                        this.loadData();
+                    } else {
+                        this.countriesStale = true;
+                    }
+                });
 
                 // Ereignis-Filter: Länder und Ereignisse neu vom Server holen
                 this.$watch('filters.eventLabels', () => {
@@ -1204,6 +1333,7 @@ function riskOverviewApp() {
                 if (result.success) {
                     this.tripListLimit = 100;
                     this.trips = result.data.trips;
+                    this.statusPinnedTrips = [];
                     this.tripsSummary = result.data.summary;
                     this.tripsLoaded = true;
 
@@ -1452,6 +1582,9 @@ function riskOverviewApp() {
                 dateFrom: '',
                 dateTo: '',
                 labels: [],
+                eventLabels: [],
+                tripStatus: 'all',
+                eventStatus: 'all',
             };
         },
 

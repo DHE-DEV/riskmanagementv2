@@ -1,6 +1,6 @@
 @php
 $active = 'travel-alert';
-$version = '1.5.1';
+$version = '1.6.0';
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -122,6 +122,11 @@ $version = '1.5.1';
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-700">Nur
                                                 betroffen</span>
                                         </template>
+                                        <template x-if="filters.tripStatus !== 'all'">
+                                            <span
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700"
+                                                x-text="filters.tripStatus === 'open' ? 'Offen' : 'Erledigt'"></span>
+                                        </template>
                                         <template x-for="labelId in filters.labels" :key="'active-label-' + labelId">
                                             <span
                                                 class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">
@@ -179,14 +184,15 @@ $version = '1.5.1';
                                             </div>
                                         </div>
 
-                                        <!-- Mehrere Reisen auf einmal labeln -->
+                                        <!-- Status-Filter / mehrere Reisen auf einmal bearbeiten -->
+                                        <x-risk-overview.status-filter scope="trips" compact class="mb-2" />
                                         <div class="mb-2 flex justify-end">
                                             <button type="button"
                                                 @click="selection.mode === 'trips' ? endSelection() : startSelection('trips')"
                                                 class="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors"
                                                 :class="selection.mode === 'trips' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                                                 <i class="fa-regular fa-square-check"></i>
-                                                <span x-text="selection.mode === 'trips' ? 'Auswahl beenden' : 'Mehrere Reisen labeln'"></span>
+                                                <span x-text="selection.mode === 'trips' ? 'Auswahl beenden' : 'Mehrere auswählen'"></span>
                                             </button>
                                         </div>
 
@@ -304,6 +310,11 @@ $version = '1.5.1';
                                             <span
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700"
                                                 x-text="filters.country"></span>
+                                        </template>
+                                        <template x-if="filters.eventStatus !== 'all'">
+                                            <span
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700"
+                                                x-text="filters.eventStatus === 'open' ? 'Offen' : 'Erledigt'"></span>
                                         </template>
                                         <template x-for="labelId in filters.eventLabels" :key="'active-event-label-' + labelId">
                                             <span
@@ -497,6 +508,9 @@ $version = '1.5.1';
                             tooltip-text="Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden." />
 
                         <!-- Label Filter -->
+                        <!-- Status Filter -->
+                        <x-risk-overview.status-filter scope="trips" />
+
                         <x-risk-overview.label-filter scope="trips" />
 
                         <!-- Only with events filter -->
@@ -551,6 +565,9 @@ $version = '1.5.1';
                         </div>
 
                         <!-- Label Filter -->
+                        <!-- Status Filter -->
+                        <x-risk-overview.status-filter scope="events" />
+
                         <x-risk-overview.label-filter scope="events" />
 
                         <!-- Days Filter -->
@@ -2933,6 +2950,7 @@ $version = '1.5.1';
                 labels: '{{ route("risk-overview.labels.index") }}',
                 labelsOrder: '{{ route("risk-overview.labels.order") }}',
                 labelsBulk: '{{ route("risk-overview.labels.bulk") }}',
+                status: '{{ route("risk-overview.status") }}',
                 data: '{{ route("risk-overview.data") }}',
                 trips: '{{ route("risk-overview.trips") }}',
                 country: '{{ url("/travel-alert/country") }}',

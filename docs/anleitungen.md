@@ -13,7 +13,7 @@ Tabelle unten.
 | Der Ablauf, Station für Station erklärt | 1.1 | 17.08.2026 | [ablauf-erklaert-anleitung.pdf](ablauf-erklaert-anleitung.pdf) |
 | Benachrichtigungen – Was die Zeit-Einstellungen bewirken | 1.0 | 11.08.2026 | [benachrichtigungs-intervalle-anleitung.pdf](benachrichtigungs-intervalle-anleitung.pdf) |
 | Travel Alert – Freischaltung | 1.0 | 11.08.2026 | [travel-alert-freischaltung-anleitung.pdf](travel-alert-freischaltung-anleitung.pdf) |
-| Labels im Travel Alert | 1.0 | 18.11.2026 | [travel-alert-labels-anleitung.pdf](travel-alert-labels-anleitung.pdf) |
+| Labels und Status im Travel Alert | 2.0 | 19.11.2026 | [travel-alert-labels-anleitung.pdf](travel-alert-labels-anleitung.pdf) |
 | Wie Reisen in den Travel Alert kommen | 1.0 | 19.11.2026 | [travel-alert-reisen-abgleich-anleitung.pdf](travel-alert-reisen-abgleich-anleitung.pdf) |
 | Passolution APIs im Überblick | 1.0 | 11.08.2026 | [api-ueberblick.pdf](api-ueberblick.pdf) |
 

@@ -1,6 +1,7 @@
 {{--
     Leiste der Mehrfachauswahl (Travel Alert): ein Label an allen gewählten Ereignissen
-    bzw. Reisen auf einmal vergeben oder entfernen – auch als neues Label.
+    bzw. Reisen auf einmal vergeben oder entfernen – auch als neues Label – und sie
+    gemeinsam als erledigt oder offen markieren.
 --}}
 <div x-show="selection.mode" x-cloak x-transition
     class="fixed bottom-4 left-1/2 z-[200003] w-[min(56rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-2xl"
@@ -34,6 +35,17 @@
             <button type="button" @click="applyBulkLabel(true)" :disabled="!selection.ids.length || bulk.busy || bulk.labelId === '__new'"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40">
                 <i class="fa-regular fa-tag"></i> Entfernen
+            </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button type="button" @click="applyBulkStatus(true)" :disabled="!selection.ids.length || statusBusy"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-40">
+                <i class="fa-regular fa-circle-check"></i> Erledigt
+            </button>
+            <button type="button" @click="applyBulkStatus(false)" :disabled="!selection.ids.length || statusBusy"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+                <i class="fa-regular fa-circle"></i> Offen
             </button>
         </div>
 

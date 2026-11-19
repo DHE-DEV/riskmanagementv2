@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomEvent;
 use App\Models\Folder\Folder;
 use App\Models\Label;
+use App\Models\TravelAlertStatus;
 use App\Models\TravelDetail\TdTrip;
 use App\Services\TravelDetail\TravelAlertTripMirror;
 use App\Support\ResolvesPdsIdentity;
@@ -458,6 +459,16 @@ class RiskOverviewService
      */
     protected function filterEventsByLabels(Collection $events, int $customerId, array $labelIds): Collection
     {
+        // Status-Token ("status:open" / "status:done") wirkt zusätzlich (UND) zu den Labels
+        $statusTokens = array_values(array_filter($labelIds, fn (string $id) => str_starts_with($id, 'status:')));
+        $labelIds = array_values(array_diff($labelIds, $statusTokens));
+
+        if ($statusTokens !== []) {
+            $doneIds = array_flip(TravelAlertStatus::doneEventIds($customerId));
+            $wantDone = $statusTokens[0] === 'status:done';
+            $events = $events->filter(fn ($event) => isset($doneIds[$event->id]) === $wantDone);
+        }
+
         if ($labelIds === []) {
             return $events;
         }
@@ -854,7 +865,7 @@ class RiskOverviewService
     /**
      * Format a single event into an array for API responses.
      */
-    protected function formatEvent(CustomEvent $event, array $labels = []): array
+    protected function formatEvent(CustomEvent $event, array $labels = [], ?string $doneAt = null): array
     {
         return [
             'id' => $event->id,
@@ -874,7 +885,11 @@ class RiskOverviewService
             'data_source' => $event->data_source,
             'tags' => $event->tags,
             'labels' => $labels,
+            // Status im Travel Alert: gesetzt = erledigt (Zeitpunkt), null = offen
+            'done_at' => $doneAt,
             'created_at' => $event->created_at?->format('Y-m-d'),
+            // Genauer Zeitpunkt: "bearbeitet" vergleicht ihn mit der Label-Vergabe an der Reise
+            'created_at_iso' => $event->created_at?->toIso8601String(),
             'updated_at' => $event->updated_at?->format('Y-m-d'),
             // Versionsstand: ab Version 2 wurde das Ereignis nachtraeglich
             // aktualisiert - die Historie laedt das Frontend bei Bedarf nach.
@@ -902,9 +917,10 @@ class RiskOverviewService
         // Batch-load labels for events
         $eventIds = $events->pluck('id')->toArray();
         $labelsByEvent = Label::forCustomEvents($customerId, $eventIds);
+        $doneByEvent = TravelAlertStatus::doneAtFor($customerId, TravelAlertStatus::TYPE_EVENT, $eventIds);
 
         // Format events
-        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event, $labelsByEvent[$event->id] ?? []))->values()->toArray();
+        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event, $labelsByEvent[$event->id] ?? [], $doneByEvent[$event->id] ?? null))->values()->toArray();
 
         // Get country info
         $country = Country::where('iso_code', $countryCode)
@@ -949,9 +965,10 @@ class RiskOverviewService
         // Batch-load labels for events
         $eventIds = $events->pluck('id')->toArray();
         $labelsByEvent = Label::forCustomEvents($customerId, $eventIds);
+        $doneByEvent = TravelAlertStatus::doneAtFor($customerId, TravelAlertStatus::TYPE_EVENT, $eventIds);
 
         // Format events
-        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event, $labelsByEvent[$event->id] ?? []))->values()->toArray();
+        $formattedEvents = $events->map(fn (CustomEvent $event) => $this->formatEvent($event, $labelsByEvent[$event->id] ?? [], $doneByEvent[$event->id] ?? null))->values()->toArray();
 
         // Get country info
         $country = Country::where('iso_code', $countryCode)
@@ -1418,6 +1435,7 @@ class RiskOverviewService
         // 2. Batch-load labels for events
         $eventIds = $events->pluck('id')->toArray();
         $labelsByEvent = Label::forCustomEvents($customerId, $eventIds);
+        $doneByEvent = TravelAlertStatus::doneAtFor($customerId, TravelAlertStatus::TYPE_EVENT, $eventIds);
 
         // 3. Index events by country code
         $eventsByCountry = [];
@@ -1443,7 +1461,7 @@ class RiskOverviewService
                 }
             }
 
-            $formatted = $this->formatEvent($event, $labelsByEvent[$event->id] ?? []);
+            $formatted = $this->formatEvent($event, $labelsByEvent[$event->id] ?? [], $doneByEvent[$event->id] ?? null);
 
             foreach ($eventCountries as $country) {
                 $code = $country->iso_code;
@@ -1558,6 +1576,9 @@ class RiskOverviewService
             }
         }
 
+        // Status "erledigt" der Reisen (Schlüssel = folder_id der Liste)
+        $doneByTrip = TravelAlertStatus::doneAtFor($customerId, TravelAlertStatus::TYPE_TRIP, array_column($trips, 'folder_id'));
+
         // 5. Match events to trips (by country AND date overlap)
         $tripsWithEvents = [];
         $totalEventsAcrossTrips = 0;
@@ -1635,6 +1656,7 @@ class RiskOverviewService
             $tripData['events'] = $matchedEvents;
             $tripData['total_events'] = count($matchedEvents);
             $tripData['highest_priority'] = $highestPriority;
+            $tripData['done_at'] = $doneByTrip[(string) $trip['folder_id']] ?? null;
 
             $tripsWithEvents[] = $tripData;
             $totalEventsAcrossTrips += count($matchedEvents);

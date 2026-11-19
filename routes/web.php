@@ -550,6 +550,10 @@ Route::post('/travel-alert/labels/bulk', [\App\Http\Controllers\Customer\RiskOve
     ->middleware('auth:customer')
     ->name('risk-overview.labels.bulk');
 
+Route::post('/travel-alert/status', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'updateStatus'])
+    ->middleware('auth:customer')
+    ->name('risk-overview.status');
+
 Route::post('/travel-alert/labels/{labelId}/merge', [\App\Http\Controllers\Customer\RiskOverviewController::class, 'mergeLabel'])
     ->whereUuid('labelId')
     ->middleware('auth:customer')

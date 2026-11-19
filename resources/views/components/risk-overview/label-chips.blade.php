@@ -8,6 +8,8 @@
     - quick:      JS-Ausdruck der Karte (Ereignis oder Reise) – Knopf, der Labels direkt an
                   der Karte vergibt (Popover); zugleich Ziel der Mehrfachauswahl
     - quick-kind: "event" (Standard) oder "trip"
+
+    Mit quick zeigt die Leiste außerdem den Status (offen / erledigt) als Knopf.
 --}}
 @props([
     'items',
@@ -23,6 +25,19 @@
 <template x-if="{{ $quick ? 'true' : 'false' }} || ({{ $items }} || []).length > 0">
     <div {{ $attributes->merge(['class' => 'flex flex-wrap items-center gap-1']) }}>
         @if ($quick)
+            {{-- Status offen / erledigt --}}
+            <button type="button" @click.stop="toggleDone({{ $quick }}, '{{ $quickKind }}')"
+                x-show="selection.mode !== '{{ $selectionMode }}'"
+                class="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-tight transition"
+                :class="isDone({{ $quick }}, '{{ $quickKind }}')
+                    ? 'border-green-600 bg-green-600 text-white hover:bg-green-700'
+                    : ('{{ $quickKind }}' === 'trip' && isTripReopened({{ $quick }}) ? 'border-amber-400 bg-amber-50 text-amber-700 hover:border-amber-500' : 'border-gray-300 bg-white text-gray-500 hover:border-green-500 hover:text-green-700')"
+                :title="doneButtonTitle({{ $quick }}, '{{ $quickKind }}')"
+                :aria-pressed="isDone({{ $quick }}, '{{ $quickKind }}').toString()">
+                <i class="text-[9px]" :class="isDone({{ $quick }}, '{{ $quickKind }}') ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle-check'"></i>
+                <span x-text="isDone({{ $quick }}, '{{ $quickKind }}') ? 'Erledigt' : ('{{ $quickKind }}' === 'trip' && isTripReopened({{ $quick }}) ? 'Wieder offen' : 'Offen')"></span>
+            </button>
+
             {{-- Mehrfachauswahl: Häkchen statt Schnellvergabe --}}
             <template x-if="selection.mode === '{{ $selectionMode }}'">
                 <button type="button" @click.stop="toggleSelected({{ $quick }})"

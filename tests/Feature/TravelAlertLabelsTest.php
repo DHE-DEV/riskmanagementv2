@@ -129,7 +129,7 @@ it('zeigt auf der Travel-Alert-Seite Label-Filter, Verwaltung und Label-Chips', 
         ->assertSee('toggleLabelFilter(chip.id)', false)
         ->assertSee('openQuickLabel(event, $event, \'event\')', false)
         ->assertSee('openQuickLabel(trip, $event, \'trip\')', false)
-        ->assertSee('Mehrere labeln')
+        ->assertSee('Mehrere auswählen')
         ->assertSee('Label suchen oder neu anlegen')
         ->assertSee(route('risk-overview.labels.index'), false);
 });
