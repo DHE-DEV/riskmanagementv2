@@ -27,7 +27,7 @@ class AiProviders
      */
     public const PROVIDERS = [
         self::OPENAI => ['label' => 'OpenAI', 'setting' => AiSettings::KEY_API_KEY, 'config' => 'services.openai.key', 'env' => 'RISK_CHARGPT_KEY', 'placeholder' => 'sk-…'],
-        self::ANTHROPIC => ['label' => 'Anthropic (Claude)', 'setting' => 'ai.anthropic.api_key', 'config' => 'services.anthropic.key', 'env' => 'ANTHROPIC_API_KEY', 'placeholder' => 'sk-ant-…'],
+        self::ANTHROPIC => ['label' => 'Anthropic (Claude)', 'setting' => 'ai.anthropic.api_key', 'config' => 'services.anthropic.key', 'env' => 'ANTHROPIC_API_KEY bzw. RISK_CLAUDE_KEY', 'placeholder' => 'sk-ant-…'],
         self::GEMINI => ['label' => 'Google (Gemini)', 'setting' => 'ai.gemini.api_key', 'config' => 'services.gemini.key', 'env' => 'GEMINI_API_KEY', 'placeholder' => 'AIza…'],
     ];
 

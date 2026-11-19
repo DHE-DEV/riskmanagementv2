@@ -149,6 +149,30 @@
                                 </div>
                             </form>
 
+                            <div class="flex flex-col gap-2">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <flux:button size="sm" icon="signal" wire:click="testProvider('{{ $provider }}')" :disabled="! $providerSource">Verbindung testen</flux:button>
+                                    <span class="text-sm text-zinc-500">{{ $provider === AiProviders::ANTHROPIC ? 'Schickt eine kurze Anfrage an Claude Haiku 5.5 (Bruchteil eines Cents).' : 'Ruft die verfügbaren Modelle ab (kostenlos).' }}</span>
+                                </div>
+                                <div wire:loading.flex wire:target="testProvider('{{ $provider }}')" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
+                                    <flux:icon.arrow-path variant="micro" class="animate-spin" /> Verbindung wird geprüft …
+                                </div>
+                                @if ($result = $providerTestResults[$provider] ?? null)
+                                    <div
+                                        wire:loading.remove
+                                        wire:target="testProvider('{{ $provider }}')"
+                                        @class([
+                                            'flex gap-2 rounded-lg border px-3 py-2 text-sm',
+                                            'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $result['ok'],
+                                            'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $result['ok'],
+                                        ])
+                                    >
+                                        <flux:icon :icon="$result['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
+                                        <span class="min-w-0 break-words">{{ $result['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $result['message'] }}</span>
+                                    </div>
+                                @endif
+                            </div>
+
                             @if ($provider === AiProviders::GEMINI && $providerSource && $this->geminiModels === [] && $geminiModelsError)
                                 <flux:text class="text-sm text-red-600">Die Gemini-Modelle ließen sich nicht abrufen: {{ $geminiModelsError }}</flux:text>
                             @endif

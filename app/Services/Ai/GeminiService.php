@@ -6,6 +6,7 @@ use App\Support\AiProviders;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -70,7 +71,7 @@ class GeminiService
         if (! $response->successful()) {
             Log::error('Gemini-Websuche: API-Fehler', ['status' => $response->status(), 'error' => $response->json('error')]);
 
-            throw new Exception('Gemini-Fehler: '.($response->json('error.message') ?? 'Unbekannter Fehler (HTTP '.$response->status().')'));
+            throw new Exception('Gemini-Fehler: '.self::describeError($response));
         }
 
         $usage = (array) $response->json('usageMetadata', []);
@@ -131,7 +132,7 @@ class GeminiService
             $response = $this->request()->timeout(20)->get(self::BASE_URL.'/models', ['pageSize' => 1000]);
 
             if (! $response->successful()) {
-                throw new Exception($response->json('error.message') ?: 'Gemini antwortet mit Status '.$response->status().'.');
+                throw new Exception(self::describeError($response));
             }
 
             return collect($response->json('models', []))
@@ -143,6 +144,28 @@ class GeminiService
                 ->sortKeysDesc()
                 ->all();
         });
+    }
+
+    /**
+     * Eine verstaendliche Meldung zu einer Fehlerantwort der Gemini-API – mit
+     * der Originalmeldung in Klammern fuer die Fehlersuche.
+     */
+    public static function describeError(Response $response): string
+    {
+        $original = (string) ($response->json('error.message') ?: 'HTTP '.$response->status());
+        $reason = (string) collect((array) $response->json('error.details', []))->pluck('reason')->filter()->first();
+        $state = (string) $response->json('error.status');
+
+        $hint = match (true) {
+            in_array($reason, ['API_KEY_INVALID', 'API_KEY_EXPIRED'], true), $response->status() === 401 => 'Der Schlüssel ist ungültig oder abgelaufen. Bitte in Google AI Studio einen neuen Schlüssel erzeugen und hier eintragen.',
+            $response->status() === 403 => 'Der Schlüssel hat dafür keine Berechtigung (z. B. Gemini-API im Google-Cloud-Projekt nicht aktiviert oder Schlüssel eingeschränkt).',
+            $response->status() === 404 => 'Das Modell ist mit diesem Schlüssel nicht verfügbar.',
+            $response->status() === 429, $state === 'RESOURCE_EXHAUSTED' => 'Das Kontingent des Google-Projekts ist erreicht (im kostenlosen Tarif sehr niedrig). Bitte später erneut versuchen oder die Abrechnung im Projekt aktivieren.',
+            $response->status() >= 500 => 'Gemini ist gerade überlastet oder gestört. Bitte später erneut versuchen.',
+            default => null,
+        };
+
+        return $hint ? $hint.' ('.$original.')' : $original;
     }
 
     public function forgetModels(): void

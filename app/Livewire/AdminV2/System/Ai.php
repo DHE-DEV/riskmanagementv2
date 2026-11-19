@@ -122,6 +122,9 @@ class Ai extends Component
     /** Neue Schluessel der weiteren Anbieter (Claude, Gemini) – je Anbieter. */
     public array $newProviderKeys = [AiProviders::ANTHROPIC => '', AiProviders::GEMINI => ''];
 
+    /** Ergebnis des Verbindungstests je Anbieter: ['ok' => bool, 'message' => string]. */
+    public array $providerTestResults = [];
+
     /** Fehler beim Abruf der Gemini-Modelle. */
     public ?string $geminiModelsError = null;
 
@@ -883,6 +886,7 @@ class Ai extends Component
 
         SystemSetting::write(AiProviders::PROVIDERS[$provider]['setting'], trim($this->newProviderKeys[$provider]), encrypted: true);
         $this->newProviderKeys[$provider] = '';
+        unset($this->providerTestResults[$provider]);
         $this->forgetProviderModels($provider);
 
         $this->dispatch('adminv2-toast', message: 'Schlüssel für '.AiProviders::label($provider).' gespeichert.');
@@ -895,9 +899,38 @@ class Ai extends Component
         }
 
         SystemSetting::write(AiProviders::PROVIDERS[$provider]['setting'], null);
+        unset($this->providerTestResults[$provider]);
         $this->forgetProviderModels($provider);
 
         $this->dispatch('adminv2-toast', message: 'Hinterlegter Schlüssel für '.AiProviders::label($provider).' entfernt.');
+    }
+
+    /**
+     * Verbindungstest fuer Claude (kurze Anfrage an Claude Haiku) bzw.
+     * Gemini (Abruf der verfuegbaren Modelle).
+     */
+    public function testProvider(string $provider): void
+    {
+        if (! in_array($provider, [AiProviders::ANTHROPIC, AiProviders::GEMINI], true)) {
+            return;
+        }
+
+        set_time_limit(90);
+
+        try {
+            if ($provider === AiProviders::ANTHROPIC) {
+                $answer = app(ClaudeService::class)->testConnection();
+                $message = 'Claude antwortet: „'.mb_substr($answer, 0, 80).'“';
+            } else {
+                $models = app(GeminiService::class)->models(fresh: true);
+                unset($this->geminiModels, $this->promptModelOptions);
+                $message = count($models).' Gemini-Modelle verfügbar'.($models !== [] ? ', z. B. '.implode(', ', array_slice(array_keys($models), 0, 3)) : '').'.';
+            }
+
+            $this->providerTestResults[$provider] = ['ok' => true, 'message' => $message];
+        } catch (Throwable $e) {
+            $this->providerTestResults[$provider] = ['ok' => false, 'message' => $e->getMessage()];
+        }
     }
 
     protected function forgetProviderModels(string $provider): void

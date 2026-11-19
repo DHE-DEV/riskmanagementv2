@@ -3,7 +3,10 @@
 namespace App\Services\Ai;
 
 use Anthropic\Client;
+use Anthropic\Core\Exceptions\APIConnectionException;
 use Anthropic\Core\Exceptions\APIException;
+use Anthropic\Core\Exceptions\APIStatusException;
+use Anthropic\Core\Exceptions\APITimeoutException;
 use App\Support\AiProviders;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -107,7 +110,7 @@ class ClaudeService
         } catch (APIException $e) {
             Log::error('Claude-Websuche fehlgeschlagen', ['model' => $model, 'message' => $e->getMessage()]);
 
-            throw new Exception('Claude-Fehler: '.$e->getMessage(), previous: $e);
+            throw new Exception('Claude-Fehler: '.self::describeError($e), previous: $e);
         }
 
         $this->lastUsage = [
@@ -129,6 +132,60 @@ class ClaudeService
         }
 
         return trim($text);
+    }
+
+    /**
+     * Kurze Anfrage an das kleinste Modell – zeigt, ob Schluessel und
+     * Guthaben zusammen funktionieren.
+     *
+     * @throws Exception
+     */
+    public function testConnection(): string
+    {
+        try {
+            $message = $this->client()->messages->create(
+                maxTokens: 512,
+                messages: [['role' => 'user', 'content' => 'Antworte nur mit dem Wort: bereit']],
+                model: 'claude-haiku-5-5',
+                outputConfig: ['effort' => 'low'],
+                requestOptions: ['timeout' => 60.0],
+            );
+        } catch (APIException $e) {
+            throw new Exception('Claude-Fehler: '.self::describeError($e), previous: $e);
+        }
+
+        $text = '';
+        foreach ($message->content as $block) {
+            if (($block->type ?? null) === 'text') {
+                $text .= $block->text;
+            }
+        }
+
+        return trim($text) !== '' ? trim($text) : '(keine Textantwort, Stopgrund: '.$message->stopReason.')';
+    }
+
+    /**
+     * Eine verstaendliche Meldung zu einem Fehler der Anthropic-API – mit der
+     * Originalmeldung in Klammern fuer die Fehlersuche.
+     */
+    public static function describeError(APIException $e): string
+    {
+        $original = $e instanceof APIStatusException ? ($e->getAPIMessage() ?: $e->getMessage()) : $e->getMessage();
+        $status = $e instanceof APIStatusException ? $e->status : null;
+
+        $hint = match (true) {
+            $e instanceof APITimeoutException => 'Anthropic hat nicht rechtzeitig geantwortet.',
+            $e instanceof APIConnectionException => 'Anthropic ist nicht erreichbar.',
+            $status === 401 => 'Der Schlüssel ist ungültig, abgelaufen oder wurde widerrufen. Bitte in der Claude Console einen neuen Schlüssel erzeugen und hier eintragen.',
+            $status === 402, str_contains(strtolower($original), 'credit balance') => 'Das Guthaben des Anthropic-Kontos ist aufgebraucht. Bitte in der Claude Console unter Billing aufladen.',
+            $status === 403 => 'Der Schlüssel hat dafür keine Berechtigung (z. B. Websuche in der Organisation ausgeschaltet oder Workspace gesperrt).',
+            $status === 404 => 'Das Modell ist mit diesem Schlüssel nicht verfügbar.',
+            $status === 429 => 'Das Anfrage- oder Ausgabelimit des Kontos ist erreicht. Bitte später erneut versuchen oder das Limit in der Claude Console erhöhen.',
+            $status === 529, $status !== null && $status >= 500 => 'Anthropic ist gerade überlastet oder gestört. Bitte später erneut versuchen.',
+            default => null,
+        };
+
+        return $hint ? $hint.' ('.$original.')' : $original;
     }
 
     /**

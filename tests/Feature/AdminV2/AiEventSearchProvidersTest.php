@@ -85,6 +85,8 @@ beforeEach(function () {
     Carbon::setTestNow('2026-10-02 10:00:00');
     SystemSetting::flushResolved();
     Http::preventStrayRequests();
+    // Echte Schluessel aus der lokalen .env duerfen hier keine Rolle spielen.
+    config(['services.anthropic.key' => null, 'services.gemini.key' => null]);
 
     SystemSetting::write(AiSettings::KEY_API_KEY, 'sk-test-1234567890', encrypted: true);
     SystemSetting::write(AiSettings::KEY_MODEL, 'gpt-4o');
@@ -253,4 +255,72 @@ it('hinterlegt unter System > KI Schluessel fuer Claude und Gemini und bietet de
     $page->call('removeProviderKey', 'anthropic');
 
     expect(AiProviders::apiKey(AiProviders::ANTHROPIC))->toBeNull();
+});
+
+it('liest RISK_CLAUDE_KEY als Ersatz, wenn kein Anthropic-Schluessel hinterlegt ist', function () {
+    config(['services.anthropic.key' => 'sk-ant-api-aus-env-1234']);
+
+    expect(AiProviders::apiKey(AiProviders::ANTHROPIC))->toBe('sk-ant-api-aus-env-1234')
+        ->and(AiProviders::apiKeySource(AiProviders::ANTHROPIC))->toBe('env');
+
+    SystemSetting::write(AiProviders::PROVIDERS[AiProviders::ANTHROPIC]['setting'], 'sk-ant-api-admin-5678', encrypted: true);
+
+    expect(AiProviders::apiKey(AiProviders::ANTHROPIC))->toBe('sk-ant-api-admin-5678');
+});
+
+it('testet unter System > KI die Verbindung zu Claude und Gemini', function () {
+    SystemSetting::write(AiProviders::PROVIDERS[AiProviders::ANTHROPIC]['setting'], 'sk-ant-api-1234567890abcdef', encrypted: true);
+    SystemSetting::write(AiProviders::PROVIDERS[AiProviders::GEMINI]['setting'], 'AIza-test-1234567890abc', encrypted: true);
+    $history = fakeClaude(
+        claudeMessage([['type' => 'text', 'text' => 'bereit']], model: 'claude-haiku-5-5'),
+        new Response(529, ['Content-Type' => 'application/json'], json_encode(['type' => 'error', 'error' => ['type' => 'overloaded_error', 'message' => 'Overloaded']])),
+    );
+    Http::fake(['generativelanguage.googleapis.com/v1beta/models*' => Http::response(['models' => [
+        ['name' => 'models/gemini-test-pro', 'displayName' => 'Gemini Test Pro', 'supportedGenerationMethods' => ['generateContent']],
+    ]])]);
+
+    $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
+
+    $page = Livewire::test(Ai::class)
+        ->call('testProvider', 'anthropic')
+        ->assertSet('providerTestResults.anthropic.ok', true)
+        ->assertSee('Claude antwortet: „bereit“')
+        ->call('testProvider', 'gemini')
+        ->assertSet('providerTestResults.gemini.ok', true)
+        ->assertSee('1 Gemini-Modelle verfügbar, z. B. gemini-test-pro.')
+        // Ein Fehler von Anthropic wird angezeigt, nicht geworfen.
+        ->call('testProvider', 'anthropic')
+        ->assertSet('providerTestResults.anthropic.ok', false)
+        ->assertSee('Verbindung fehlgeschlagen');
+
+    expect(json_decode((string) $history[0]['request']->getBody(), true)['model'])->toBe('claude-haiku-5-5');
+});
+
+it('erklaert typische Fehler wie einen abgelaufenen Schluessel oder fehlendes Guthaben', function () {
+    SystemSetting::write(AiProviders::PROVIDERS[AiProviders::ANTHROPIC]['setting'], 'sk-ant-api-1234567890abcdef', encrypted: true);
+    SystemSetting::write(AiProviders::PROVIDERS[AiProviders::GEMINI]['setting'], 'AIza-test-1234567890abc', encrypted: true);
+    $error = fn (int $status, string $type, string $message) => new Response($status, ['Content-Type' => 'application/json'], json_encode(['type' => 'error', 'error' => ['type' => $type, 'message' => $message]]));
+    fakeClaude(
+        $error(401, 'authentication_error', 'invalid x-api-key'),
+        $error(400, 'invalid_request_error', 'Your credit balance is too low to access the Anthropic API.'),
+        $error(429, 'rate_limit_error', 'Rate limited'),
+    );
+    Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['error' => [
+        'code' => 400, 'message' => 'API key expired. Please renew the API key.', 'status' => 'INVALID_ARGUMENT',
+        'details' => [['@type' => 'type.googleapis.com/google.rpc.ErrorInfo', 'reason' => 'API_KEY_EXPIRED']],
+    ]], 400)]);
+
+    $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
+
+    Livewire::test(Ai::class)
+        ->call('testProvider', 'anthropic')
+        ->assertSee('Der Schlüssel ist ungültig, abgelaufen oder wurde widerrufen.')
+        ->call('testProvider', 'anthropic')
+        ->assertSee('Das Guthaben des Anthropic-Kontos ist aufgebraucht.')
+        ->call('testProvider', 'anthropic')
+        ->assertSee('Das Anfrage- oder Ausgabelimit des Kontos ist erreicht.')
+        ->call('testProvider', 'gemini')
+        ->assertSet('providerTestResults.gemini.ok', false)
+        ->assertSee('Der Schlüssel ist ungültig oder abgelaufen.')
+        ->assertSee('API key expired');
 });

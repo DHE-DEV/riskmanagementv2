@@ -152,7 +152,8 @@ return [
     // Weitere KI-Anbieter fuer die KI-Suche nach Ereignissen. Ein unter
     // System > KI hinterlegter Schluessel hat Vorrang.
     'anthropic' => [
-        'key' => env('ANTHROPIC_API_KEY'),
+        // Ersatzweise der bisherige RISK_CLAUDE_KEY.
+        'key' => env('ANTHROPIC_API_KEY') ?: env('RISK_CLAUDE_KEY'),
     ],
 
     'gemini' => [
