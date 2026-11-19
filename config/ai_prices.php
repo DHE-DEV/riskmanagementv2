@@ -74,6 +74,13 @@ return [
 
         'gpt-3.5-turbo' => ['input' => 0.50, 'output' => 1.50],
         'gpt-3.5-turbo-0125' => ['input' => 0.50, 'output' => 1.50],
+
+        // Anthropic (Claude), Stand 2026-11-03, https://platform.claude.com/docs/en/about-claude/pricing
+        // Die Websuche kostet bei Anthropic zusaetzlich je Suchanfrage – hier nicht enthalten.
+        'claude-fable-5-2' => ['input' => 8.00, 'output' => 40.00],
+        'claude-opus-5-5' => ['input' => 4.00, 'output' => 20.00],
+        'claude-sonnet-5-5' => ['input' => 2.00, 'output' => 10.00],
+        'claude-haiku-5-5' => ['input' => 0.10, 'output' => 0.50],
     ],
 
 ];

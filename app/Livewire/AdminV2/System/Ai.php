@@ -11,12 +11,15 @@ use App\Models\AiCheckRun;
 use App\Models\AiEventSearchProfile;
 use App\Models\AiEventSearchPrompt;
 use App\Models\SystemSetting;
+use App\Services\Ai\ClaudeService;
+use App\Services\Ai\GeminiService;
 use App\Services\AiCheckBatchService;
 use App\Services\AiCheckTaskService;
 use App\Services\ChatGptService;
 use App\Services\OpenAiModelService;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\AiRecordContexts;
+use App\Support\AiProviders;
 use App\Support\AiSettings;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -115,6 +118,12 @@ class Ai extends Component
 
     /** Eingabefeld fuer einen neuen Schluessel; wird nach dem Speichern geleert. */
     public string $newApiKey = '';
+
+    /** Neue Schluessel der weiteren Anbieter (Claude, Gemini) – je Anbieter. */
+    public array $newProviderKeys = [AiProviders::ANTHROPIC => '', AiProviders::GEMINI => ''];
+
+    /** Fehler beim Abruf der Gemini-Modelle. */
+    public ?string $geminiModelsError = null;
 
     public string $model = '';
 
@@ -365,7 +374,51 @@ class Ai extends Component
     #[Computed]
     public function promptModelOptions(): array
     {
-        return $this->modelOptions($this->promptModel);
+        $options = array_map(
+            fn (string $id) => ['id' => $id, 'label' => $id, 'provider' => AiProviders::label(AiProviders::forModel($id))],
+            $this->modelOptions(AiProviders::forModel($this->promptModel) === AiProviders::OPENAI ? $this->promptModel : ''),
+        );
+
+        // Die KI-Suche kann auch mit Claude oder Gemini suchen – sofern ein Schluessel hinterlegt ist.
+        if (AiProviders::apiKey(AiProviders::ANTHROPIC)) {
+            foreach (ClaudeService::MODELS as $id => $label) {
+                $options[] = ['id' => $id, 'label' => $label.' ('.$id.')', 'provider' => AiProviders::label(AiProviders::ANTHROPIC)];
+            }
+        }
+
+        foreach ($this->geminiModels as $id => $label) {
+            $options[] = ['id' => $id, 'label' => ($label !== '' ? $label.' ('.$id.')' : $id), 'provider' => AiProviders::label(AiProviders::GEMINI)];
+        }
+
+        // Das gewaehlte Modell bleibt immer dabei.
+        if ($this->promptModel !== '' && ! in_array($this->promptModel, array_column($options, 'id'), true)) {
+            array_unshift($options, ['id' => $this->promptModel, 'label' => $this->promptModel, 'provider' => AiProviders::label(AiProviders::forModel($this->promptModel))]);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Die Gemini-Modelle, die mit dem hinterlegten Schluessel verfuegbar sind.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function geminiModels(): array
+    {
+        $this->geminiModelsError = null;
+
+        if (! AiProviders::apiKey(AiProviders::GEMINI)) {
+            return [];
+        }
+
+        try {
+            return app(GeminiService::class)->models();
+        } catch (Throwable $e) {
+            $this->geminiModelsError = $e->getMessage();
+
+            return [];
+        }
     }
 
     /**
@@ -373,7 +426,11 @@ class Ai extends Component
      */
     protected function modelOptions(string $selected): array
     {
-        $ids = array_column($this->models, 'id') ?: array_keys(config('ai_prices.models', []));
+        // KI-Pruefungen laufen nur ueber OpenAI – die Preisliste enthaelt auch Claude.
+        $ids = array_column($this->models, 'id') ?: array_values(array_filter(
+            array_keys(config('ai_prices.models', [])),
+            fn (string $id) => AiProviders::forModel($id) === AiProviders::OPENAI,
+        ));
 
         if ($selected !== '' && ! in_array($selected, $ids, true)) {
             array_unshift($ids, $selected);
@@ -804,6 +861,52 @@ class Ai extends Component
         $this->refreshModels();
 
         $this->dispatch('adminv2-toast', message: 'Hinterlegter Schlüssel entfernt.');
+    }
+
+    /**
+     * Schluessel fuer Claude oder Gemini speichern (verschluesselt).
+     */
+    public function saveProviderKey(string $provider): void
+    {
+        if (! in_array($provider, [AiProviders::ANTHROPIC, AiProviders::GEMINI], true)) {
+            return;
+        }
+
+        $this->validate(
+            ["newProviderKeys.{$provider}" => ['required', 'string', 'min:20', 'max:300', 'regex:/^\S+$/']],
+            [
+                "newProviderKeys.{$provider}.required" => 'Bitte den API-Schlüssel eingeben.',
+                "newProviderKeys.{$provider}.min" => 'Das sieht nicht nach einem vollständigen Schlüssel aus.',
+                "newProviderKeys.{$provider}.regex" => 'Der Schlüssel darf keine Leerzeichen enthalten.',
+            ],
+        );
+
+        SystemSetting::write(AiProviders::PROVIDERS[$provider]['setting'], trim($this->newProviderKeys[$provider]), encrypted: true);
+        $this->newProviderKeys[$provider] = '';
+        $this->forgetProviderModels($provider);
+
+        $this->dispatch('adminv2-toast', message: 'Schlüssel für '.AiProviders::label($provider).' gespeichert.');
+    }
+
+    public function removeProviderKey(string $provider): void
+    {
+        if (! in_array($provider, [AiProviders::ANTHROPIC, AiProviders::GEMINI], true)) {
+            return;
+        }
+
+        SystemSetting::write(AiProviders::PROVIDERS[$provider]['setting'], null);
+        $this->forgetProviderModels($provider);
+
+        $this->dispatch('adminv2-toast', message: 'Hinterlegter Schlüssel für '.AiProviders::label($provider).' entfernt.');
+    }
+
+    protected function forgetProviderModels(string $provider): void
+    {
+        if ($provider === AiProviders::GEMINI) {
+            app(GeminiService::class)->forgetModels();
+        }
+
+        unset($this->geminiModels, $this->promptModelOptions);
     }
 
     public function saveModel(): void

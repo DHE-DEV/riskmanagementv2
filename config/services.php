@@ -149,6 +149,16 @@ return [
         'model' => env('OPENAI_MODEL'),
     ],
 
+    // Weitere KI-Anbieter fuer die KI-Suche nach Ereignissen. Ein unter
+    // System > KI hinterlegter Schluessel hat Vorrang.
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+    ],
+
     // Social Authentication Providers for Customers
     'facebook' => [
         'client_id' => env('FACEBOOK_CLIENT_ID'),

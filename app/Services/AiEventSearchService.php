@@ -11,6 +11,7 @@ use App\Models\CustomEvent;
 use App\Models\EventType;
 use App\Support\AdminV2\EventState;
 use App\Support\AdminV2\RichText;
+use App\Support\AiProviders;
 use App\Support\AiSettings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -47,8 +48,9 @@ class AiEventSearchService
         $this->knownTopics = null;
 
         try {
-            $ai = app(ChatGptService::class);
-            // Mit dem Modell der Vorlage, sonst mit dem Standardmodell.
+            // Mit dem Modell der Vorlage, sonst mit dem Standardmodell – je nach
+            // Modell bei OpenAI, Anthropic (Claude) oder Google (Gemini).
+            $ai = AiProviders::webSearchFor($search->model ?: AiSettings::model());
             $answer = $ai->searchWeb($this->buildPrompt(
                 $search->exclude_existing,
                 $search->isTargeted() ? $search->filters : null,

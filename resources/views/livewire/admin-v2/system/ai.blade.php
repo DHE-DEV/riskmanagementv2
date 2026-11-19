@@ -1,5 +1,6 @@
 @php
     use App\Support\AdminV2\AiAreas;
+    use App\Support\AiProviders;
     use App\Support\AiSettings;
 
     $keySource = AiSettings::apiKeySource();
@@ -106,6 +107,57 @@
                             </div>
                         @endif
                     </div>
+                </div>
+            </x-adminv2.card>
+
+            {{-- Weitere Anbieter fuer die KI-Suche nach Ereignissen --}}
+            <x-adminv2.card heading="Claude und Gemini" description="Weitere Anbieter für die KI-Suche nach Ereignissen. Mit hinterlegtem Schlüssel lassen sich ihre Modelle in den KI-Vorlagen wählen (Reiter „Ereignisse“). Die Schlüssel werden verschlüsselt gespeichert und nicht wieder angezeigt.">
+                <div class="flex flex-col gap-6">
+                    @foreach ([AiProviders::ANTHROPIC, AiProviders::GEMINI] as $provider)
+                        @php
+                            $providerSource = AiProviders::apiKeySource($provider);
+                            $definition = AiProviders::PROVIDERS[$provider];
+                        @endphp
+                        <div class="flex flex-col gap-3" wire:key="provider-key-{{ $provider }}">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <flux:heading size="sm">{{ $definition['label'] }}</flux:heading>
+                                @if ($providerSource)
+                                    <flux:badge color="green" size="sm" inset="top bottom">Hinterlegt</flux:badge>
+                                    <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiProviders::maskedApiKey($provider) }}</span>
+                                    <span class="text-sm text-zinc-500">{{ $providerSource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env ('.$definition['env'].')' }}</span>
+                                @else
+                                    <flux:badge color="zinc" size="sm" inset="top bottom">Nicht hinterlegt</flux:badge>
+                                @endif
+                            </div>
+
+                            <form wire:submit="saveProviderKey('{{ $provider }}')" class="flex flex-col gap-3">
+                                <flux:input
+                                    wire:model="newProviderKeys.{{ $provider }}"
+                                    type="password"
+                                    :label="$providerSource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen'"
+                                    :placeholder="$definition['placeholder']"
+                                    autocomplete="off"
+                                    viewable
+                                />
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
+                                    @if ($providerSource === 'admin')
+                                        <flux:button variant="ghost" wire:click="removeProviderKey('{{ $provider }}')" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
+                                            Hinterlegten Schlüssel entfernen
+                                        </flux:button>
+                                    @endif
+                                </div>
+                            </form>
+
+                            @if ($provider === AiProviders::GEMINI && $providerSource && $this->geminiModels === [] && $geminiModelsError)
+                                <flux:text class="text-sm text-red-600">Die Gemini-Modelle ließen sich nicht abrufen: {{ $geminiModelsError }}</flux:text>
+                            @endif
+                        </div>
+
+                        @if (! $loop->last)
+                            <flux:separator />
+                        @endif
+                    @endforeach
                 </div>
             </x-adminv2.card>
 
@@ -765,11 +817,15 @@
 
             <flux:field>
                 <flux:label>Modell</flux:label>
-                <flux:description>Nur für Suchen mit dieser Vorlage; ohne Auswahl gilt das Standardmodell ({{ AiSettings::model() }}). Für die Websuche lohnt ein leistungsstarkes Modell – kleine Modelle suchen weniger gründlich und finden deutlich weniger.</flux:description>
+                <flux:description>Nur für Suchen mit dieser Vorlage; ohne Auswahl gilt das Standardmodell ({{ AiSettings::model() }}). Für die Websuche lohnt ein leistungsstarkes Modell – kleine Modelle suchen weniger gründlich und finden deutlich weniger. Claude und Gemini stehen zur Wahl, sobald unter „Allgemein“ ein Schlüssel hinterlegt ist.</flux:description>
                 <flux:select wire:model="promptModel">
                     <flux:select.option value="">Standardmodell</flux:select.option>
-                    @foreach ($this->promptModelOptions as $modelId)
-                        <flux:select.option value="{{ $modelId }}">{{ $modelId }}</flux:select.option>
+                    @foreach (collect($this->promptModelOptions)->groupBy('provider') as $providerLabel => $options)
+                        <optgroup label="{{ $providerLabel }}">
+                            @foreach ($options as $option)
+                                <flux:select.option value="{{ $option['id'] }}">{{ $option['label'] }}</flux:select.option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </flux:select>
                 <flux:error name="promptModel" />
