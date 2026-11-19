@@ -29,7 +29,9 @@ function riskOverviewApp() {
             customDateRange: false,
             dateFrom: '',
             dateTo: '',
+            // Label-Filter je Reiter: Reisen und Ereignisse filtern unabhängig voneinander
             labels: [],
+            eventLabels: [],
         },
         availableLabels: [],
 
@@ -116,8 +118,9 @@ function riskOverviewApp() {
                 params.append('days', this.filters.days);
             }
             // Server filtert Ereignisse: gewählte Labels und "none" (Ereignis ohne Label)
-            const serverLabels = this.filters.labels.filter(id => !String(id).startsWith('__'));
-            if (this.filters.labels.includes(this.NO_EVENT_LABEL)) serverLabels.push('none');
+            // Nur der Ereignis-Filter geht an den Server; der Reisen-Filter wirkt im Browser
+            const serverLabels = this.filters.eventLabels.filter(id => !String(id).startsWith('__'));
+            if (this.filters.eventLabels.includes(this.NO_EVENT_LABEL)) serverLabels.push('none');
             if (serverLabels.length > 0) {
                 params.append('labels', serverLabels.join(','));
             }
@@ -129,7 +132,9 @@ function riskOverviewApp() {
                 const resp = await fetch(`${window.__riskOverviewConfig.routes.labelsSearch}?q=`);
                 this.availableLabels = await resp.json();
                 // Gelöschte Labels aus dem Filter nehmen (die "ohne Label"-Optionen bleiben)
-                this.filters.labels = this.filters.labels.filter(id => String(id).startsWith('__') || this.availableLabels.some(l => l.id === id));
+                const known = id => String(id).startsWith('__') || this.availableLabels.some(l => l.id === id);
+                this.filters.labels = this.filters.labels.filter(known);
+                this.filters.eventLabels = this.filters.eventLabels.filter(known);
             } catch (e) {
                 console.error('Error loading available labels', e);
             }
@@ -169,18 +174,31 @@ function riskOverviewApp() {
 
         // ── Labels: Filter ───────────────────────────────────────────────
 
-        isLabelFiltered(id) {
-            return this.filters.labels.includes(id);
+        /**
+         * Welcher Label-Filter gemeint ist: "trips" (Reiter Reisen) oder "events" (Reiter Ereignisse).
+         * Ohne Angabe gilt der gerade offene Reiter.
+         */
+        labelScope(scope = null) {
+            return scope || (this.sidebarTab === 'laender' ? 'events' : 'trips');
         },
 
-        toggleLabelFilter(id) {
-            this.filters.labels = this.isLabelFiltered(id)
-                ? this.filters.labels.filter(l => l !== id)
-                : [...this.filters.labels, id];
+        labelFilterKey(scope = null) {
+            return this.labelScope(scope) === 'events' ? 'eventLabels' : 'labels';
         },
 
-        clearLabelFilters() {
-            this.filters.labels = [];
+        isLabelFiltered(id, scope = null) {
+            return this.filters[this.labelFilterKey(scope)].includes(id);
+        },
+
+        toggleLabelFilter(id, scope = null) {
+            const key = this.labelFilterKey(scope);
+            this.filters[key] = this.filters[key].includes(id)
+                ? this.filters[key].filter(l => l !== id)
+                : [...this.filters[key], id];
+        },
+
+        clearLabelFilters(scope = null) {
+            this.filters[this.labelFilterKey(scope)] = [];
         },
 
         /** Trägt die Liste mindestens eines der gewählten Labels? */
@@ -198,6 +216,17 @@ function riskOverviewApp() {
         eventMatchesLabelFilter(event) {
             return this.hasFilteredLabel(event?.labels)
                 || (this.filters.labels.includes(this.NO_EVENT_LABEL) && !(event?.labels || []).length);
+        },
+
+        /**
+         * Hinweis an der Reisekarte, wenn die Reise nur über ihre Ereignisse zum Label-Filter
+         * passt (die Reise selbst trägt das Label nicht) – sonst leerer Text.
+         */
+        tripEventFilterHint(trip) {
+            if (this.filters.labels.length === 0 || this.tripMatchesLabelFilter(trip)) return '';
+            const hits = (trip?.events || []).filter(e => this.eventMatchesLabelFilter(e)).length;
+            if (hits === 0) return '';
+            return hits === 1 ? '1 Ereignis mit gewähltem Label' : hits + ' Ereignisse mit gewähltem Label';
         },
 
         /** In der vom Kunden festgelegten Reihenfolge, sonst alphabetisch. */
@@ -237,6 +266,7 @@ function riskOverviewApp() {
             const strip = owner => { if (owner && owner.labels) owner.labels = owner.labels.filter(l => l.id !== id); };
             this.availableLabels = this.availableLabels.filter(l => l.id !== id);
             this.filters.labels = this.filters.labels.filter(l => l !== id);
+            this.filters.eventLabels = this.filters.eventLabels.filter(l => l !== id);
             this.trips.forEach(trip => { strip(trip); (trip.events || []).forEach(strip); });
             (this.countryDetails?.events || []).forEach(strip);
             strip(this.selectedEvent);
@@ -361,7 +391,7 @@ function riskOverviewApp() {
         },
 
         filterByManagedLabel(label) {
-            this.filters.labels = [label.id];
+            this.filters[this.labelFilterKey()] = [label.id];
             this.closeLabelManager();
         },
 
@@ -423,6 +453,7 @@ function riskOverviewApp() {
             swap(this.selectedEvent);
             this.availableLabels = this.availableLabels.filter(l => l.id !== sourceId);
             this.filters.labels = [...new Set(this.filters.labels.map(id => id === sourceId ? target.id : id))];
+            this.filters.eventLabels = [...new Set(this.filters.eventLabels.map(id => id === sourceId ? target.id : id))];
         },
 
         toggleMaximize(section) {
@@ -930,7 +961,7 @@ function riskOverviewApp() {
                 totalEvents += t.total_events;
             });
             return {
-                total_trips: this.trips.length,
+                total_trips: filtered.length,
                 trips_with_events: tripsWithEvents,
                 total_events_across_trips: totalEvents,
             };
@@ -987,6 +1018,8 @@ function riskOverviewApp() {
             try {
                 const saved = JSON.parse(localStorage.getItem('travelAlert.labelFilter') || '[]');
                 if (Array.isArray(saved)) this.filters.labels = saved.filter(id => typeof id === 'string');
+                const savedEvents = JSON.parse(localStorage.getItem('travelAlert.eventLabelFilter') || '[]');
+                if (Array.isArray(savedEvents)) this.filters.eventLabels = savedEvents.filter(id => typeof id === 'string' && id !== this.NO_TRIP_LABEL);
             } catch (e) {
                 // Speicher nicht verfügbar (privates Fenster o. Ä.) – dann eben ohne
             }
@@ -995,6 +1028,7 @@ function riskOverviewApp() {
         storeLabelFilter() {
             try {
                 localStorage.setItem('travelAlert.labelFilter', JSON.stringify(this.filters.labels));
+                localStorage.setItem('travelAlert.eventLabelFilter', JSON.stringify(this.filters.eventLabels));
             } catch (e) {
                 // siehe restoreLabelFilter
             }
@@ -1051,7 +1085,11 @@ function riskOverviewApp() {
                 // Andere Filter: Liste wieder von vorn zeigen
                 this.$watch('filters', () => { this.tripListLimit = 100; });
 
-                this.$watch('filters.labels', () => {
+                // Reisen-Filter wirkt nur im Browser auf die Reisenliste
+                this.$watch('filters.labels', () => this.storeLabelFilter());
+
+                // Ereignis-Filter: Länder und Ereignisse neu vom Server holen
+                this.$watch('filters.eventLabels', () => {
                     this.storeLabelFilter();
                     if (this.sidebarTab === 'laender') {
                         this.loadData();

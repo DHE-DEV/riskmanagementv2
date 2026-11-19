@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Änderungsbericht 18./19. November 2026</title>
+<style>
+@font-face {
+  font-family: 'InterVar';
+  src: url('../public/fonts/filament/filament/inter/inter-latin-wght-normal-NRMW37G5.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --ink:      #002742;
+  --ink-2:    #073F5E;
+  --ink-3:    #0E5578;
+  --lime:     #CEE741;
+  --lime-2:   #B6D22E;
+  --lime-ink: #5C6B12;
+  --mist:     #F1F6F8;
+  --line:     #D4E1E8;
+  --muted:    #5C7688;
+  --warn-bg:  #FFF8E8;
+  --warn-br:  #F0DFB8;
+  --warn-ink: #6B4E12;
+  --stop-bg:  #FEF1EF;
+  --stop-br:  #F3CFC8;
+  --stop-ink: #8E3122;
+  --paper:    #FFFFFF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: 'InterVar', 'Inter', 'Ubuntu', -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 10.2pt;
+  line-height: 1.55;
+  background: #8894a0;
+}
+
+@page { size: A4; margin: 0; }
+
+.page {
+  position: relative;
+  width: 210mm; height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 4mm 12mm rgba(0,0,0,.35); } }
+
+.frame { position: absolute; inset: 20mm 18mm 18mm 18mm; }
+
+.foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase;
+  color: #9BB0BD; border-top: .6pt solid var(--line); padding-top: 2.6mm;
+}
+.foot b { color: var(--ink); font-weight: 700; }
+.foot .ver { text-transform: none; letter-spacing: .04em; }
+
+.kicker {
+  font-size: 7.6pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 { font-size: 30pt; font-weight: 800; letter-spacing: -.025em; line-height: 1.08; }
+h2 { font-size: 21pt; font-weight: 800; letter-spacing: -.02em; line-height: 1.14; }
+h3 { font-size: 11.5pt; font-weight: 700; }
+h4 { font-size: 9.2pt; font-weight: 700; letter-spacing: .02em; }
+p { hyphens: auto; }
+.lead { font-size: 12.2pt; line-height: 1.5; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: 8.6pt; line-height: 1.5; }
+.mono {
+  font-family: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  font-size: 8.4pt;
+}
+
+/* UI-Elemente, die in der Oberflaeche so heissen */
+.ui {
+  display: inline-block;
+  border: .6pt solid var(--line);
+  background: #F7FAFC;
+  border-radius: 1.4mm;
+  padding: .2mm 1.4mm;
+  font-weight: 600;
+  font-size: 9.2pt;
+  white-space: nowrap;
+}
+.ui-btn {
+  display: inline-block;
+  background: var(--ink); color: #fff;
+  border-radius: 1.4mm;
+  padding: .4mm 2mm;
+  font-weight: 600; font-size: 8.8pt;
+  white-space: nowrap;
+}
+
+/* Cover */
+.cover { background: var(--ink); color: #fff; }
+.cover-art { position: absolute; inset: 0; overflow: hidden; }
+.cover .frame { inset: 22mm 18mm 20mm 18mm; display: flex; flex-direction: column; }
+.cover-logo { width: 46mm; }
+.cover h1 { font-size: 40pt; line-height: 1.04; letter-spacing: -.035em; }
+.cover .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.cover-sub { font-size: 12.6pt; line-height: 1.45; color: #A9C3D2; max-width: 116mm; }
+.cover-meta {
+  display: flex; gap: 8mm; font-size: 8pt; letter-spacing: .12em;
+  text-transform: uppercase; color: #7A9BAE;
+}
+.toc { margin-top: auto; }
+.toc-row {
+  display: flex; gap: 4mm; align-items: baseline;
+  border-top: .6pt solid rgba(255,255,255,.16);
+  padding: 2.4mm 0;
+  font-size: 9.4pt;
+}
+.toc-row .n { color: var(--lime); font-weight: 800; width: 7mm; flex: 0 0 auto; }
+.toc-row .t { color: #DCEAF2; }
+
+/* Bausteine */
+.card {
+  border: .6pt solid var(--line); border-radius: 2.6mm;
+  padding: 4.4mm; background: #fff;
+}
+.card h3 { margin-bottom: 1.6mm; }
+.card p { font-size: 9pt; line-height: 1.45; color: var(--ink-2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+
+.checks { list-style: none; }
+.checks li {
+  position: relative; padding-left: 7.6mm; margin-bottom: 3.4mm;
+  font-size: 9.6pt; line-height: 1.45;
+}
+.checks li::before {
+  content: ''; position: absolute; left: 0; top: .6mm;
+  width: 4.8mm; height: 4.8mm; border-radius: 1.2mm;
+  border: .8pt solid var(--lime-2); background: #FBFDF2;
+}
+.checks li::after {
+  content: ''; position: absolute; left: 1.5mm; top: 2mm;
+  width: 1.8mm; height: .9mm;
+  border-left: .6mm solid var(--lime-2); border-bottom: .6mm solid var(--lime-2);
+  transform: rotate(-45deg);
+}
+.checks b { font-weight: 700; }
+
+.step { display: flex; gap: 4.4mm; align-items: flex-start; margin-bottom: 5mm; }
+.step-n {
+  flex: 0 0 8mm; height: 8mm; border-radius: 50%;
+  background: var(--lime); color: var(--ink);
+  font-weight: 800; font-size: 10pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: 1.2mm; }
+.step p { font-size: 9.4pt; color: var(--ink-2); }
+
+.note, .warn, .stop {
+  border-radius: 2.4mm; padding: 3.8mm 4.2mm;
+  font-size: 9pt; line-height: 1.45;
+}
+.note { background: var(--mist); border: .6pt solid var(--line); color: var(--ink-2); }
+.warn { background: var(--warn-bg); border: .6pt solid var(--warn-br); color: var(--warn-ink); }
+.stop { background: var(--stop-bg); border: .6pt solid var(--stop-br); color: var(--stop-ink); }
+.note b, .warn b, .stop b { font-weight: 700; }
+.warn .head, .stop .head, .note .head {
+  display: block; font-size: 7.6pt; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 800; margin-bottom: 1.6mm;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); padding: 0 3mm 2.2mm 0; border-bottom: .8pt solid var(--ink);
+}
+td {
+  padding: 2.8mm 3mm; border-bottom: .6pt solid var(--line);
+  font-size: 9.2pt; vertical-align: top; line-height: 1.4;
+}
+td:first-child, th:first-child { padding-left: 0; }
+tr.alt td { background: #FAFCFD; }
+
+.fields { list-style: none; }
+.fields li {
+  border-bottom: .6pt solid var(--line);
+  padding: 2.8mm 0;
+  font-size: 9.2pt; line-height: 1.45;
+}
+.fields li:last-child { border-bottom: 0; }
+.fields .name { font-weight: 700; display: block; margin-bottom: .6mm; }
+
+.back { background: var(--ink); color: #fff; }
+.back .frame { display: flex; flex-direction: column; }
+.back .rule { width: 26mm; height: 1.6mm; background: var(--lime); border-radius: 1mm; }
+.back-card {
+  border: .6pt solid rgba(255,255,255,.18); border-radius: 3mm;
+  padding: 5mm; background: rgba(255,255,255,.05);
+}
+.back-card h4 { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-size: 7.4pt; }
+.back-card p { font-size: 9.2pt; color: #C6DAE5; margin-top: 2mm; line-height: 1.5; }
+
+.mt1{margin-top:2mm}.mt2{margin-top:4mm}.mt3{margin-top:6mm}.mt4{margin-top:8mm}
+.mt5{margin-top:11mm}.mt6{margin-top:14mm}
+.mb2{margin-bottom:4mm}.mb3{margin-bottom:6mm}
+/* Screenshots und Label-Chips (Labels-Anleitung) */
+.shot {
+  border: .6pt solid var(--line); border-radius: 2.6mm; overflow: hidden;
+  background: #fff; box-shadow: 0 1.2mm 4mm rgba(0, 39, 66, .08);
+}
+.shot img { display: block; width: 100%; }
+.cap { font-size: 8pt; color: var(--muted); margin-top: 1.8mm; line-height: 1.4; }
+.chip {
+  display: inline-block; border-radius: 99mm; padding: .2mm 2.2mm;
+  font-size: 8pt; font-weight: 600; color: #fff; white-space: nowrap;
+}
+.chip.dash { color: var(--muted); background: #fff; border: .6pt dashed #B9C7D0; }
+.chip.dark { background: #1F2937; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; align-items: start; }
+.split-wide { display: grid; grid-template-columns: 58mm 1fr; gap: 7mm; align-items: start; }
+
+/* Ablauf-Grafik und Zeitachse (Abgleich-Anleitung) */
+.diagram { border: .6pt solid var(--line); border-radius: 3mm; background: #FBFDFE; padding: 4mm; }
+.diagram svg { display: block; width: 100%; height: auto; }
+.legend { display: flex; gap: 6mm; flex-wrap: wrap; font-size: 8pt; color: var(--muted); margin-top: 2.4mm; }
+.legend i { display: inline-block; width: 6mm; height: 0; border-top: 1mm solid; vertical-align: middle; margin-right: 1.6mm; }
+.clock {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22mm; padding: 1mm 2.4mm; border-radius: 99mm;
+  background: var(--ink); color: var(--lime); font-weight: 800; font-size: 8.4pt; white-space: nowrap;
+}
+.clock.soft { background: var(--mist); color: var(--ink); border: .6pt solid var(--line); }
+.status { display: inline-block; border-radius: 99mm; padding: .3mm 2.2mm; font-size: 8pt; font-weight: 700; white-space: nowrap; }
+.status.ok { background: #E3F6EC; color: #065F46; }
+.status.wait { background: #FFF4DB; color: #92400E; }
+.status.bad { background: #FDE8E5; color: #9B2C1F; }
+.mock { border: .6pt solid var(--line); border-radius: 2.6mm; overflow: hidden; font-size: 8.2pt; }
+.mock-head { background: var(--mist); padding: 2.4mm 3.4mm; font-weight: 700; border-bottom: .6pt solid var(--line); }
+.mock-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; padding: 3mm; }
+.mock-tile { border: .6pt solid var(--line); border-radius: 1.8mm; padding: 2mm; }
+.mock-tile .v { font-size: 11pt; font-weight: 800; }
+.mock-tile .l { font-size: 7pt; color: var(--muted); }
+.mock table td, .mock table th { font-size: 7.8pt; padding: 1.6mm 2mm; }
+.mock table { margin: 0 3mm 3mm; width: calc(100% - 6mm); }
+.qa h3 { font-size: 10pt; margin-bottom: 1mm; }
+.qa p { font-size: 9pt; color: var(--ink-2); }
+.qa + .qa { margin-top: 4.2mm; }
+/* Änderungsbericht */
+.mono { hyphens: manual; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.kpi { border: .6pt solid var(--line); border-radius: 2.6mm; padding: 4mm 4.4mm; }
+.kpi .l { font-size: 8pt; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
+.kpi .v { font-size: 20pt; font-weight: 800; letter-spacing: -.02em; margin-top: 1.2mm; }
+.kpi .v small { font-size: 10pt; font-weight: 600; color: var(--muted); }
+.kpi .d { display: inline-block; margin-top: 1.4mm; background: var(--lime); color: var(--ink); font-weight: 800; font-size: 9pt; border-radius: 99mm; padding: .3mm 2.4mm; }
+.kpi .s { font-size: 8.4pt; color: var(--ink-2); margin-top: 1.6mm; line-height: 1.4; }
+td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gain { font-weight: 800; color: #065F46; }
+.tag { display: inline-block; font-size: 7pt; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; border-radius: 1mm; padding: .2mm 1.4mm; }
+.tag.pds { background: var(--ink); color: var(--lime); }
+.tag.pf { background: var(--mist); color: var(--ink); border: .5pt solid var(--line); }
+.commits td { font-size: 8.2pt; padding: 1.7mm 2mm; }
+.commits td.mono { font-size: 7.8pt; white-space: nowrap; }
+ul.dots { list-style: none; }
+ul.dots li { position: relative; padding-left: 4.4mm; font-size: 9.1pt; line-height: 1.45; margin-bottom: 1.6mm; color: var(--ink-2); }
+ul.dots li::before { content: ''; position: absolute; left: 0; top: 1.9mm; width: 1.8mm; height: 1.8mm; border-radius: 50%; background: var(--lime-2); }
+.block h3 { margin-bottom: 1.6mm; }
+.block + .block { margin-top: 5mm; }
+</style>
+<body>
+
+<!-- ======================================================== 1 · COVER -->
+<section class="page cover">
+  <div class="cover-art">
+    <svg width="100%" height="100%" viewBox="0 0 794 1123" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#003A5E"/><stop offset="55%" stop-color="#002742"/><stop offset="100%" stop-color="#001B2F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#CEE741" stop-opacity=".26"/><stop offset="100%" stop-color="#CEE741" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="794" height="1123" fill="url(#cg)"/>
+      <circle cx="620" cy="380" r="320" fill="url(#glow)"/>
+      <!-- Motiv: Balken vorher/nachher -->
+      <g>
+        <rect x="430" y="230" width="230" height="26" rx="6" fill="#5E8FA8" fill-opacity=".45"/>
+        <rect x="430" y="266" width="22" height="26" rx="6" fill="#CEE741"/>
+        <rect x="430" y="330" width="210" height="26" rx="6" fill="#5E8FA8" fill-opacity=".45"/>
+        <rect x="430" y="366" width="14" height="26" rx="6" fill="#CEE741"/>
+        <rect x="430" y="430" width="60" height="26" rx="6" fill="#5E8FA8" fill-opacity=".45"/>
+        <rect x="430" y="466" width="200" height="26" rx="6" fill="#CEE741"/>
+      </g>
+      <path d="M 0 1123 L 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856 L 794 1123 Z" fill="#CEE741" fill-opacity=".07"/>
+      <path d="M 0 1010 C 180 1056, 340 1020, 470 946 C 620 860, 720 842, 794 856" fill="none" stroke="#CEE741" stroke-opacity=".5" stroke-width="2"/>
+    </svg>
+  </div>
+  <div class="frame">
+    <img class="cover-logo" src="assets/passolution-logo-white.png" alt="Passolution">
+    <div style="margin-top:28mm">
+      <div class="kicker" style="color:#CEE741">Änderungsbericht · Plattform und pds-api</div>
+      <h1 class="mt2">Was sich am 18. und<br>19. November geändert hat.</h1>
+      <div class="rule mt3"></div>
+      <p class="cover-sub mt3">
+        Schwerpunkt: Der Travel Alert lädt große Kunden um ein Vielfaches schneller und zeigt
+        erstmals alle Reisen. Dazu Mehrsprachigkeit für API und Feeds, Labels im Travel Alert
+        und mehrere Korrekturen.
+      </p>
+    </div>
+    <div class="toc">
+      <div class="toc-row"><span class="n">01</span><span class="t">Die Ergebnisse in Zahlen</span></div>
+      <div class="toc-row"><span class="n">02</span><span class="t">Travel Alert: Ursache und Lösung</span></div>
+      <div class="toc-row"><span class="n">03</span><span class="t">Alle Messungen im Detail</span></div>
+      <div class="toc-row"><span class="n">04</span><span class="t">Änderungen in pds-api</span></div>
+      <div class="toc-row"><span class="n">05</span><span class="t">Änderungen in der Plattform</span></div>
+      <div class="toc-row"><span class="n">06</span><span class="t">Alle Commits, Messmethode, offene Punkte</span></div>
+    </div>
+    <div class="cover-meta mt4"><span>Version 1.0</span><span>19.11.2026</span><span>Passolution GmbH</span></div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 · ZAHLEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">01 · Die Ergebnisse in Zahlen</div>
+    <h2 class="mt2">Schneller, und zum ersten<br>Mal vollständig.</h2>
+    <p class="lead mt3" style="max-width:160mm">
+      Gemessen am größten Travel-Alert-Kunden (Kunde 490, rund 25.000 Travel Detail Links,
+      30-Tage-Zeitraum) und an den beiden pds-Schnittstellen, die die Plattform nutzt.
+    </p>
+
+    <div class="kpis mt4">
+      <div class="kpi">
+        <div class="l">Reisen laden · Kunde 490</div>
+        <div class="v">18,4 s <small>→</small> 1,2 s</div>
+        <span class="d">mind. −93 %</span>
+        <div class="s">Vorher allein die pds-Abfrage, jetzt die gesamte Aufbereitung inkl. Abgleich mit den Ereignissen.</div>
+      </div>
+      <div class="kpi">
+        <div class="l">Sichtbare Reisen · Kunde 490</div>
+        <div class="v">1.000 <small>→</small> 5.074</div>
+        <span class="d">+407 %</span>
+        <div class="s">Vorher wurde nur die erste Seite à 1.000 Reisen geladen – ausgerechnet ohne die laufenden Reisen.</div>
+      </div>
+      <div class="kpi">
+        <div class="l">pds: Reisen eines Kontos · je 1.000</div>
+        <div class="v">16,6 s <small>→</small> 0,3 s</div>
+        <span class="d">−98,2 %</span>
+        <div class="s">Datenbankabfragen 4.005 → 10 (−99,8 %). Antwort inhaltlich identisch.</div>
+      </div>
+      <div class="kpi">
+        <div class="l">pds: Delta-Feed · je 1.000 Änderungen</div>
+        <div class="v">17,1 s <small>→</small> 0,3 s</div>
+        <span class="d">−98,2 %</span>
+        <div class="s">Datenbankabfragen 4.006 → 8 (−99,8 %). Antwort inhaltlich identisch.</div>
+      </div>
+    </div>
+
+    <h3 class="mt5">Ladezeit der Reisen für Kunde 490, live gemessen</h3>
+    <div class="diagram mt2">
+      <svg viewBox="0 0 640 196" xmlns="http://www.w3.org/2000/svg" font-family="InterVar, Inter, sans-serif" role="img"
+           aria-label="Ladezeit der Reisen für Kunde 490: vorher 18,4 Sekunden für 1.000 Reisen, nach dem pds-Fix 1,8 Sekunden für 1.000 Reisen, mit lokalem Spiegel 1,2 Sekunden für 5.074 Reisen">
+        <!-- Skala: 0..20 s auf 400 px ab x=200 -->
+        <g stroke="#E3ECF1" stroke-width="1">
+          <line x1="200" y1="14" x2="200" y2="160"/><line x1="300" y1="14" x2="300" y2="160"/>
+          <line x1="400" y1="14" x2="400" y2="160"/><line x1="500" y1="14" x2="500" y2="160"/>
+          <line x1="600" y1="14" x2="600" y2="160"/>
+        </g>
+        <g font-size="9" fill="#5C7688" text-anchor="middle">
+          <text x="200" y="176">0 s</text><text x="300" y="176">5 s</text><text x="400" y="176">10 s</text>
+          <text x="500" y="176">15 s</text><text x="600" y="176">20 s</text>
+        </g>
+        <g font-size="10.5" fill="#002742">
+          <text x="0" y="36" font-weight="700">Vorher</text>
+          <text x="0" y="50" fill="#5C7688" font-size="9.5">1.000 von 5.214 Reisen</text>
+          <text x="0" y="86" font-weight="700">Nach pds-Fix</text>
+          <text x="0" y="100" fill="#5C7688" font-size="9.5">weiterhin 1.000 Reisen</text>
+          <text x="0" y="136" font-weight="700">Mit lokalem Spiegel</text>
+          <text x="0" y="150" fill="#5C7688" font-size="9.5">alle 5.074 Reisen</text>
+        </g>
+        <path d="M200,26 H564 a4,4 0 0 1 4,4 V48 a4,4 0 0 1 -4,4 H200 Z" fill="#9BB0BD"/>
+        <text x="574" y="44" font-size="10" font-weight="700" fill="#002742">18,4 s</text>
+        <path d="M200,76 H232 a4,4 0 0 1 4,4 V98 a4,4 0 0 1 -4,4 H200 Z" fill="#0E5578"/>
+        <text x="244" y="94" font-size="10" font-weight="700" fill="#002742">1,8 s  (−90 %)</text>
+        <path d="M200,126 H220 a4,4 0 0 1 4,4 V148 a4,4 0 0 1 -4,4 H200 Z" fill="#0E5578"/>
+        <text x="232" y="144" font-size="10" font-weight="700" fill="#002742">1,2 s  (−93 %)</text>
+      </svg>
+      <div class="legend">
+        <span><i style="border-color:#9BB0BD"></i>vorher</span>
+        <span><i style="border-color:#0E5578"></i>nachher</span>
+        <span>„Vorher“ ist nur die pds-Abfrage; die Seite brauchte insgesamt noch länger. Die Ersparnis ist also eher größer.</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Änderungsbericht</b> · Zahlen</span><span class="ver">v1.0 · 19.11.2026</span><span>02</span></div>
+</section>
+
+<!-- ======================================================== 3 · URSACHE UND LÖSUNG -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">02 · Travel Alert: Ursache und Lösung</div>
+    <h2 class="mt2">Vier Ursachen,<br>vier Lösungen.</h2>
+
+    <h3 class="mt4">Ausgangslage</h3>
+    <p class="mt1" style="font-size:9.6pt; color:var(--ink-2); max-width:165mm">
+      Ein Kunde mit rund 25.000 aktiven Travel Detail Links wartete beim Öffnen des Travel Alert
+      18 bis 20 Sekunden. Im 30-Tage-Zeitraum hat er 5.214 Reisen, angezeigt wurden aber nur 1.000.
+      Weil die Reisen nach Reisebeginn absteigend sortiert kommen, fehlten ausgerechnet die
+      Reisen, die gerade laufen.
+    </p>
+
+    <table class="mt4">
+      <thead><tr><th style="width:44mm">Ursache</th><th>Lösung</th><th style="width:22mm">Wo</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Langsame Schnittstelle</b><br><span class="small muted">je Reise rund 4 einzelne Datenbankabfragen („N+1“)</span></td>
+          <td>Zusammengehörige Daten werden je Seite auf einmal geladen; die individuellen Inhalte des Kontos einmal statt je Reise. Gleiches für den Delta-Feed.</td>
+          <td><span class="tag pds">pds-api</span></td>
+        </tr>
+        <tr class="alt">
+          <td><b>Nur die erste Seite</b><br><span class="small muted">höchstens 1.000 Reisen</span></td>
+          <td><b>Stufe 1:</b> alle Seiten laden, ab Seite 2 parallel in Zehnergruppen (Obergrenze 30.000 Reisen). Gilt auch für die Benachrichtigungen. Reiseliste, Länderansicht und Länderdetails teilen sich 5 Minuten lang ein Ergebnis.</td>
+          <td><span class="tag pf">Plattform</span></td>
+        </tr>
+        <tr>
+          <td><b>Bei jedem Öffnen neu abfragen</b><br><span class="small muted">tausende Reisen über das Netz</span></td>
+          <td><b>Stufe 2:</b> lokaler Spiegel der Reisen für Konten, die Travel Alert nutzen. Jede Minute Änderungen aus dem Delta-Feed, nachts ein Komplett-Abgleich. Der Travel Alert liest lokal.</td>
+          <td><span class="tag pf">Plattform</span> <span class="tag pds">pds-api</span></td>
+        </tr>
+        <tr class="alt">
+          <td><b>Browser rendert alles</b><br><span class="small muted">tausende Karten auf einmal</span></td>
+          <td>Die Reiseliste zeigt 100 Reisen und lädt per „Weitere anzeigen“ nach; die Ansicht „Reisen“ wird erst beim Öffnen aufgebaut. Zähler und Filter beziehen sich weiter auf alle Reisen.</td>
+          <td><span class="tag pf">Plattform</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt5">Ablauf nach der Umstellung</h3>
+    <ul class="dots mt2" style="max-width:165mm">
+      <li><b>Erstes Öffnen</b> eines Kunden: Live-Abruf aller Seiten (Stufe 1), der Kunde wird für den Spiegel vorgemerkt.</li>
+      <li><b>Innerhalb einer Minute</b> lädt der Hintergrundlauf alle Reisen des Kontos, die heute oder später enden (Kunde 490: 20.099 Reisen in 23 s).</li>
+      <li><b>Ab dann</b> liest der Travel Alert lokal; jede Minute kommen die Änderungen dazu, nachts um 03:40 ein vollständiger Abgleich, der auch gelöschte Links entfernt.</li>
+      <li><b>Nach 30 Tagen</b> ohne Aufruf wird der Spiegel eines Kontos gelöscht.</li>
+      <li>Fehlt beim Vollabruf auch nur eine Seite, bleibt der alte Stand stehen – es wird nichts fälschlich gelöscht.</li>
+    </ul>
+    <div class="note mt3">
+      <span class="head">Für Nicht-Techniker</span>
+      Der Ablauf ist ausführlich mit Grafik in der Anleitung „Wie Reisen in den Travel Alert kommen“ (v1.0) beschrieben.
+    </div>
+  </div>
+  <div class="foot"><span><b>Änderungsbericht</b> · Ursache und Lösung</span><span class="ver">v1.0 · 19.11.2026</span><span>03</span></div>
+</section>
+
+<!-- ======================================================== 4 · MESSUNGEN -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">03 · Alle Messungen im Detail</div>
+    <h2 class="mt2">Vorher, nachher,<br>Verbesserung.</h2>
+
+    <table class="mt4">
+      <thead>
+        <tr><th>Messung</th><th class="num">Vorher</th><th class="num">Nachher</th><th class="num">Veränderung</th><th class="num">Faktor</th></tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" style="padding-top:3.4mm"><span class="tag pds">pds-api</span> <b>Reisen eines Kontos</b> <span class="small muted">· je Seite à 1.000 Links, lokal</span></td></tr>
+        <tr><td>Antwortzeit</td><td class="num">16,6 s</td><td class="num">0,3 s</td><td class="num gain">−98,2 %</td><td class="num">55×</td></tr>
+        <tr class="alt"><td>Datenbankabfragen</td><td class="num">4.005</td><td class="num">10</td><td class="num gain">−99,8 %</td><td class="num">400×</td></tr>
+
+        <tr><td colspan="5" style="padding-top:3.4mm"><span class="tag pds">pds-api</span> <b>Delta-Feed</b> <span class="small muted">· je Seite à 1.000 Änderungen, lokal</span></td></tr>
+        <tr><td>Antwortzeit</td><td class="num">17,1 s</td><td class="num">0,3 s</td><td class="num gain">−98,2 %</td><td class="num">57×</td></tr>
+        <tr class="alt"><td>Datenbankabfragen</td><td class="num">4.006</td><td class="num">8</td><td class="num gain">−99,8 %</td><td class="num">500×</td></tr>
+        <tr><td>Übertragene Änderungen</td><td class="num" colspan="2" style="text-align:left">alle Konten → nur gespiegelte Konten</td><td class="num gain">s. Hinweis</td><td class="num">–</td></tr>
+
+        <tr><td colspan="5" style="padding-top:3.4mm"><span class="tag pf">Plattform</span> <b>Travel Alert, Kunde 490</b> <span class="small muted">· live, 30 Tage</span></td></tr>
+        <tr><td>Ladezeit, nur pds-Fix</td><td class="num">≥ 18,4 s</td><td class="num">1,8 s</td><td class="num gain">−90,2 %</td><td class="num">10×</td></tr>
+        <tr class="alt"><td>Ladezeit, mit lokalem Spiegel</td><td class="num">≥ 18,4 s</td><td class="num">1,2 s</td><td class="num gain">−93,5 %</td><td class="num">15×</td></tr>
+        <tr><td>Ladezeit, zweiter Aufruf</td><td class="num">≥ 18,4 s</td><td class="num">1,06 s</td><td class="num gain">−94,2 %</td><td class="num">17×</td></tr>
+        <tr class="alt"><td>Angezeigte Reisen</td><td class="num">1.000</td><td class="num">5.074</td><td class="num gain">+407 %</td><td class="num">5×</td></tr>
+        <tr><td>Zeit je angezeigter Reise</td><td class="num">18,4 ms</td><td class="num">0,24 ms</td><td class="num gain">−98,7 %</td><td class="num">78×</td></tr>
+        <tr class="alt"><td>pds-Aufrufe beim Öffnen</td><td class="num">1</td><td class="num">0</td><td class="num gain">−100 %</td><td class="num">–</td></tr>
+      </tbody>
+    </table>
+
+    <div class="grid2 mt4">
+    <div class="note">
+      <span class="head">So sind die Zahlen zu lesen</span>
+      <b>Veränderung</b> = (nachher − vorher) / vorher. <b>Faktor</b> = vorher / nachher, gerundet.
+      „≥ 18,4 s“: Gemessen wurde vorher nur die pds-Abfrage; die ganze Seite brauchte zusätzlich Zeit.
+      Die Prozentwerte beim Travel Alert sind daher Mindestwerte. Die 5.074 Reisen (statt 5.214 am Vortag)
+      ergeben sich, weil seither Reisen geendet haben.
+    </div>
+    <div class="warn">
+      <span class="head">Hinweis Delta-Feed</span>
+      Im ersten Lauf vor dem pds-Deploy kamen 1.340 Änderungen aller Konten an, von denen 1 relevant war.
+      Seit dem Deploy liefert der Feed nur noch Änderungen der gespiegelten Konten. Das ist ein Wert aus
+      einem einzelnen Lauf über ein 3-Stunden-Fenster, keine Dauermessung.
+    </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Änderungsbericht</b> · Messungen</span><span class="ver">v1.0 · 19.11.2026</span><span>04</span></div>
+</section>
+
+<!-- ======================================================== 5 · PDS-API -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">04 · Änderungen in pds-api</div>
+    <h2 class="mt2">Zwei Änderungen,<br>live auf api-internal.</h2>
+    <p class="lead mt3" style="max-width:160mm">
+      Branch <span class="mono">feature/internal-client-accounts</span>, deployt per Skript auf Cloud Run
+      <span class="mono">api-internal</span> (Projekt pds-prod-api-eu). Live-Stand laut
+      <span class="mono">/version</span>: <span class="mono">c0aea8a</span>.
+    </p>
+
+    <div class="block mt4">
+      <h3><span class="mono">4722228</span> · Reisen eines Kontos ohne N+1-Abfragen</h3>
+      <ul class="dots">
+        <li>Endpunkt <span class="mono">GET __internal/account/travel-details</span> – über ihn lädt die Plattform die Reisen eines Kunden.</li>
+        <li>Lädt Ziele, individuelle Inhalte, Veranstalter und Reisende je Seite gemeinsam vor (Eager Loading).</li>
+        <li>Die individuellen Inhalte des Kontos werden einmal je Seite geladen statt für jede Reise (optionaler Vorlade-Hook in <span class="mono">TravelDetailsResource</span>).</li>
+        <li>Geprüft an 5 Konten: Antwort vorher und nachher byte-identisch (md5).</li>
+        <li>Unverändert: Kreuzfahrt-Informationen werden weiterhin je Kreuzfahrt geladen.</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h3><span class="mono">c0aea8a</span> · Delta-Feed ohne N+1-Abfragen, Filter nach Konten</h3>
+      <ul class="dots">
+        <li>Endpunkt <span class="mono">GET __internal/travel-details/changes</span> – liefert alle seit einem Zeitpunkt geänderten Links, kontoübergreifend.</li>
+        <li>Gleiche Vorlade-Logik wie oben; Antwort vorher und nachher md5-identisch.</li>
+        <li>Neu: optionaler Parameter <span class="mono">account_ids[]</span> (bis 5.000 Konten). Die Plattform schickt die gespiegelten Konten mit und bekommt nur deren Änderungen.</li>
+        <li>Davon profitiert auch der Push-Scanner der TripData-App, der denselben Feed alle 2 Minuten liest.</li>
+      </ul>
+    </div>
+
+    <div class="warn mt4">
+      <span class="head">Nach Bitbucket pushen</span>
+      Beide Commits laufen live auf Cloud Run, wurden aber aus dem lokalen Stand deployt. Der Branch hat
+      kein Upstream; ob die Commits in Bitbucket liegen, war nicht prüfbar. Fehlen sie dort, würde ein
+      Deploy über das PDS Deployment Tool (baut aus Bitbucket) sie wieder entfernen.
+    </div>
+  </div>
+  <div class="foot"><span><b>Änderungsbericht</b> · pds-api</span><span class="ver">v1.0 · 19.11.2026</span><span>05</span></div>
+</section>
+
+<!-- ======================================================== 6 · PLATTFORM -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">05 · Änderungen in der Plattform</div>
+    <h2 class="mt2">Travel Alert, Mehrsprachigkeit,<br>Labels, Korrekturen.</h2>
+
+    <div class="grid2 mt4" style="gap:6mm">
+      <div>
+        <div class="block">
+          <h3>Travel Alert: Geschwindigkeit</h3>
+          <ul class="dots">
+            <li>Alle pds-Seiten parallel laden, Grenze 30 Seiten, Warnung im Log.</li>
+            <li>5-Minuten-Zwischenspeicher je Konto und Zeitraum, nur benötigte Felder.</li>
+            <li>Lokaler Spiegel: Tabellen <span class="mono">travel_alert_pds_accounts/_trips</span>, Befehl <span class="mono">travel-alert:sync-trips</span> (minütlich, 03:40 <span class="mono" style="white-space:nowrap">--full</span>).</li>
+            <li>Reiseliste in 100er-Schritten, Ansicht „Reisen“ erst beim Öffnen.</li>
+            <li>Admin v2 › System › <b>Travel-Alert-Spiegel</b>: Konten, Reisen, Status, Stand der Abgleiche.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3>Travel Alert: Labels</h3>
+          <ul class="dots">
+            <li>Labels an Reisen und Ereignissen, in den Karten sichtbar.</li>
+            <li>Mehrfach-Filter, Filter „ohne Label“, Zähler je Label, gemerkter Filter.</li>
+            <li>Schnellvergabe an der Karte, Mehrfachauswahl, Verwaltung mit Beschreibung, Reihenfolge und Zusammenführen.</li>
+            <li>Anleitung „Labels im Travel Alert“ (v1.0).</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="block">
+          <h3>Mehrsprachigkeit</h3>
+          <ul class="dots">
+            <li>GTM-API und RSS-/Atom-Feeds über <span class="mono">?lang=</span>, Standard weiter Deutsch.</li>
+            <li>Ereignisse automatisch per DeepL übersetzt; Befehle <span class="mono">events:translate</span> und <span class="mono">names:translate</span>.</li>
+            <li>Länder-, Orts- und Kategorienamen je Sprache; Pflege in Admin v2, auch für Event-Typen.</li>
+            <li>Weitere Sprachen nur per Konfiguration.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3>API und Korrekturen</h3>
+          <ul class="dots">
+            <li>API antwortet ohne Token und bei Fehlern immer mit JSON.</li>
+            <li>GTM-Rate-Limit je Token und IP statt je Kunde.</li>
+            <li>Feed-Abrufe stellen die Anzeigesprache nicht mehr um (Travel Alert erschien auf Niederländisch).</li>
+            <li>Feed-Basisadressen leiten zur Anleitung.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3>Dokumentation und Betrieb</h3>
+          <ul class="dots">
+            <li>API-Doku, Postman-Sammlung und Überblick um die Sprachauswahl ergänzt; veraltete Seiten entfernt.</li>
+            <li>Branch <span class="mono">staging</span> für eine Stage-Umgebung angelegt (Mails an Mailpit).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Änderungsbericht</b> · Plattform</span><span class="ver">v1.0 · 19.11.2026</span><span>06</span></div>
+</section>
+
+<!-- ======================================================== 7 · COMMITS -->
+<section class="page">
+  <div class="frame">
+    <div class="kicker">06 · Alle Commits, Messmethode, offene Punkte</div>
+    <h2 class="mt2">Nachvollziehbar<br>bis zum Commit.</h2>
+
+    <table class="commits mt3">
+      <thead><tr><th style="width:18mm">Commit</th><th style="width:22mm">Zeit</th><th>Inhalt</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">c0aea8a</td><td>19.11. 00:49</td><td><span class="tag pds">pds</span> Delta-Feed ohne N+1, Filter <span class="mono">account_ids</span></td></tr>
+        <tr class="alt"><td class="mono">4722228</td><td>19.11. 00:15</td><td><span class="tag pds">pds</span> Reisen eines Kontos ohne N+1 (4.005 → 10 Abfragen)</td></tr>
+        <tr><td class="mono">45c626b8</td><td>19.11. 01:02</td><td>Admin-Übersicht Travel-Alert-Spiegel, Anleitung Reise-Abgleich</td></tr>
+        <tr class="alt"><td class="mono">f5e41ff9</td><td>19.11. 00:42</td><td>pds-Reisen genutzter Konten lokal spiegeln</td></tr>
+        <tr><td class="mono">8a72292b</td><td>19.11. 00:34</td><td>Alle pds-Reisen laden, gemeinsamer Zwischenspeicher, Liste schrittweise</td></tr>
+        <tr class="alt"><td class="mono">38eeb067</td><td>18.11. 23:03</td><td>Feed-Abrufe stellen die Anzeigesprache nicht mehr um</td></tr>
+        <tr><td class="mono">33837655</td><td>18.11. 22:54</td><td>Anleitung „Labels im Travel Alert“</td></tr>
+        <tr class="alt"><td class="mono">42722f52</td><td>18.11. 22:54</td><td>Labels: ohne Label filtern, schnell und mehrfach vergeben</td></tr>
+        <tr><td class="mono">6b01fdc8</td><td>18.11. 21:16</td><td>Labels in Karten, Mehrfach-Filter und Verwaltung</td></tr>
+        <tr class="alt"><td class="mono">0c6e7229</td><td>18.11. 21:03</td><td>Admin v2: Mehrsprachigkeit in Stammdaten und Ereignissen</td></tr>
+        <tr><td class="mono">56594939</td><td>18.11. 16:51</td><td>Admin v2: Event-Typen mit Namen je Sprache</td></tr>
+        <tr class="alt"><td class="mono">9f3966d3</td><td>18.11. 16:32</td><td>Orts- und Kategorienamen je Sprache, <span class="mono">names:translate</span></td></tr>
+        <tr><td class="mono">75708643</td><td>18.11. 16:13</td><td>API antwortet ohne Token und bei Fehlern mit JSON</td></tr>
+        <tr class="alt"><td class="mono">c0a8f7b3</td><td>18.11. 16:10</td><td>GTM-Rate-Limit je Token und IP</td></tr>
+        <tr><td class="mono">6df2a30e</td><td>18.11. 16:06</td><td>Feed-Basisadressen leiten zur Anleitung</td></tr>
+        <tr class="alt"><td class="mono">120afe19 · d3284494 · e5f305c0 · 665edfe6</td><td>18.11. 15:37–16:01</td><td>API-Doku, Postman, Überblick; veraltete Seiten entfernt</td></tr>
+        <tr><td class="mono">ea993ba6</td><td>18.11. 15:30</td><td>GTM-API und Feeds mehrsprachig, DeepL-Übersetzung</td></tr>
+      </tbody>
+    </table>
+    <p class="cap">Plattform-Commits liegen auf <span class="mono">platform-2026-07</span> (live) und <span class="mono">staging</span>.</p>
+
+    <div class="grid2 mt4">
+      <div class="note">
+        <span class="head">Messmethode</span>
+        pds-Werte lokal gegen eine Kopie der pds-Datenbank, je 1.000 Links, Antworten per md5 verglichen.
+        Travel-Alert-Werte live auf dem Plattform-Server per <span class="mono">getTripsWithEvents(490)</span>.
+        Einzelmessungen, keine Mittelwerte.
+      </div>
+      <div class="warn">
+        <span class="head">Offene Punkte</span>
+        pds-Commits nach Bitbucket pushen (prüfen). Geschäftsreisen kommen nur über den nächtlichen Abgleich.
+        Anonymisierung der Live-Daten auf Stage ist vorgemerkt, nicht umgesetzt.
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Änderungsbericht</b> · Commits</span><span class="ver">v1.0 · 19.11.2026</span><span>07</span></div>
+</section>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 @php
 $active = 'travel-alert';
-$version = '1.5.0';
+$version = '1.5.1';
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -206,6 +206,9 @@ $version = '1.5.0';
                                                         <h4 class="text-xs font-semibold text-gray-900 line-clamp-2"
                                                             x-text="trip.folder_name"></h4>
                                                         <x-risk-overview.label-chips items="trip.labels" quick="trip" quick-kind="trip" class="mt-1" />
+                                                        <p class="mt-1 text-[10px] text-gray-500" x-show="tripEventFilterHint(trip)">
+                                                            <i class="fa-regular fa-bell mr-0.5"></i><span x-text="tripEventFilterHint(trip)"></span>
+                                                        </p>
                                                     </div>
 
                                                     <!-- Dates & participants -->
@@ -302,7 +305,7 @@ $version = '1.5.0';
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700"
                                                 x-text="filters.country"></span>
                                         </template>
-                                        <template x-for="labelId in filters.labels" :key="'active-label-' + labelId">
+                                        <template x-for="labelId in filters.eventLabels" :key="'active-event-label-' + labelId">
                                             <span
                                                 class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">
                                                 <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + labelColor({ id: labelId })"></span>
@@ -494,7 +497,7 @@ $version = '1.5.0';
                             tooltip-text="Wähle einen Zeitraum aus. Der gewählte Zeitraum bestimmt die Darstellung der Reisen, die bis zu diesem Zeitraum stattfinden." />
 
                         <!-- Label Filter -->
-                        <x-risk-overview.label-filter />
+                        <x-risk-overview.label-filter scope="trips" />
 
                         <!-- Only with events filter -->
                         <div class="mb-4">
@@ -548,7 +551,7 @@ $version = '1.5.0';
                         </div>
 
                         <!-- Label Filter -->
-                        <x-risk-overview.label-filter />
+                        <x-risk-overview.label-filter scope="events" />
 
                         <!-- Days Filter -->
                         <x-risk-overview.day-range-buttons callback="loadData()" label="Zeitraum (Reisende)"
@@ -1113,29 +1116,29 @@ $version = '1.5.0';
                     </template>
 
                     <!-- No trips -->
-                    <template x-if="!loadingTrips && trips.length === 0">
+                    <template x-if="!loadingTrips && filteredTrips.length === 0">
                         <x-risk-overview.empty-state variant="centered" icon="fa-regular fa-suitcase"
                             title="Keine Reisen gefunden"
                             message="Im ausgewählten Zeitraum sind keine Reisen vorhanden." />
                     </template>
 
                     <!-- Trips list -->
-                    <template x-if="activeTab === 'trips' && !loadingTrips && trips.length > 0">
+                    <template x-if="activeTab === 'trips' && !loadingTrips && filteredTrips.length > 0">
                         <div class="flex-1 flex flex-col min-h-0">
                             <!-- Summary bar -->
                             <div class="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
                                 <div class="flex items-center gap-4 text-sm text-gray-600">
                                     <span>
                                         <i class="fa-regular fa-suitcase-rolling mr-1"></i>
-                                        <span x-text="tripsSummary.total_trips"></span> Reisen
+                                        <span x-text="filteredTripsSummary.total_trips"></span> Reisen
                                     </span>
                                     <span>
                                         <i class="fa-regular fa-triangle-exclamation mr-1 text-orange-500"></i>
-                                        <span x-text="tripsSummary.trips_with_events"></span> mit Ereignissen
+                                        <span x-text="filteredTripsSummary.trips_with_events"></span> mit Ereignissen
                                     </span>
                                     <span>
                                         <i class="fa-regular fa-bell mr-1"></i>
-                                        <span x-text="tripsSummary.total_events_across_trips"></span> Ereignisse gesamt
+                                        <span x-text="filteredTripsSummary.total_events_across_trips"></span> Ereignisse gesamt
                                     </span>
                                 </div>
                             </div>
@@ -1143,7 +1146,7 @@ $version = '1.5.0';
                             <!-- Trip cards -->
                             <div class="flex-1 overflow-y-auto p-4">
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <template x-for="trip in trips.slice(0, tripListLimit)" :key="trip.folder_id">
+                                    <template x-for="trip in visibleTrips" :key="trip.folder_id">
                                         <div class="bg-white rounded-lg border shadow-sm overflow-hidden" :class="trip.total_events > 0
                                             ? (trip.highest_priority === 'high' ? 'border-red-300' : trip.highest_priority === 'medium' ? 'border-orange-300' : trip.highest_priority === 'low' ? 'border-yellow-300' : 'border-blue-300')
                                             : 'border-gray-200 opacity-60'">
@@ -1154,6 +1157,9 @@ $version = '1.5.0';
                                                         <h4 class="text-sm font-semibold text-gray-900"
                                                             x-text="trip.folder_name"></h4>
                                                         <x-risk-overview.label-chips items="trip.labels" class="mt-1.5" />
+                                                        <p class="mt-1 text-[10px] text-gray-500" x-show="tripEventFilterHint(trip)">
+                                                            <i class="fa-regular fa-bell mr-0.5"></i><span x-text="tripEventFilterHint(trip)"></span>
+                                                        </p>
                                                     </div>
                                                     <div class="flex items-center gap-2 flex-shrink-0">
                                                         <span
@@ -1257,10 +1263,10 @@ $version = '1.5.0';
                                             </div>
                                         </div>
                                     </template>
-                                    <template x-if="trips.length > tripListLimit">
+                                    <template x-if="filteredTrips.length > visibleTrips.length">
                                         <button type="button" @click="showMoreTrips()"
                                             class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                                            <span x-text="'Weitere anzeigen (' + Math.min(tripListLimit, trips.length) + ' von ' + trips.length + ')'"></span>
+                                            <span x-text="'Weitere anzeigen (' + visibleTrips.length + ' von ' + filteredTrips.length + ')'"></span>
                                         </button>
                                     </template>
                                 </div>

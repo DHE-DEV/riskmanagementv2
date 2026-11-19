@@ -17,6 +17,12 @@ Tabelle unten.
 | Wie Reisen in den Travel Alert kommen | 1.0 | 19.11.2026 | [travel-alert-reisen-abgleich-anleitung.pdf](travel-alert-reisen-abgleich-anleitung.pdf) |
 | Passolution APIs im Überblick | 1.0 | 11.08.2026 | [api-ueberblick.pdf](api-ueberblick.pdf) |
 
+## Berichte
+
+| Bericht | Version | Datum | Datei |
+|---|---|---|---|
+| Änderungsbericht 18./19. November 2026 (Travel Alert, pds-api, Mehrsprachigkeit) | 1.0 | 19.11.2026 | [aenderungsbericht-2026-11-19.pdf](aenderungsbericht-2026-11-19.pdf) |
+
 ## Diagramme
 
 | Diagramm | Version | Datum | Datei |
