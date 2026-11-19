@@ -47,8 +47,8 @@ class Ai extends Component
 
     // KI-Vorlage (Formular im Dialog)
     /** Reiter: general, events oder ein Stammdaten-Bereich (AiAreas) */
-    #[Url(except: 'general')]
-    public string $tab = 'general';
+    #[Url(except: 'events')]
+    public string $tab = 'events';
 
     /** KI-Pruefung, die gerade bearbeitet wird; null = neue */
     #[Locked]
@@ -148,8 +148,13 @@ class Ai extends Component
         $this->model = AiSettings::model();
         $this->loadPrices();
 
+        // Frueher hiess der Reiter "Allgemein" – alte Links fuehren zu den Einstellungen.
+        if ($this->tab === 'general') {
+            $this->tab = 'settings';
+        }
+
         if (! isset($this->tabs()[$this->tab])) {
-            $this->tab = 'general';
+            $this->tab = 'events';
         }
     }
 
@@ -158,8 +163,9 @@ class Ai extends Component
      */
     public function tabs(): array
     {
-        return ['general' => 'Allgemein', 'events' => 'Passolution Ereignisse']
-            + array_map(fn (string $label) => 'Stammdaten – '.$label, AiAreas::labels());
+        return ['events' => 'Passolution Ereignisse']
+            + array_map(fn (string $label) => 'Stammdaten – '.$label, AiAreas::labels())
+            + ['settings' => 'Einstellungen'];
     }
 
     /**

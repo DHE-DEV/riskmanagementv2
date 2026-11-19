@@ -228,8 +228,8 @@ it('hinterlegt unter System > KI Schluessel fuer Claude und Gemini und bietet de
 
     $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
 
-    $page = Livewire::test(Ai::class)
-        ->assertSee('Claude und Gemini')
+    $page = Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
+        ->assertSee('Anthropic (Claude)')->assertSee('Google (Gemini)')
         ->set('newProviderKeys.anthropic', 'kurz')
         ->call('saveProviderKey', 'anthropic')
         ->assertHasErrors('newProviderKeys.anthropic')
@@ -281,7 +281,7 @@ it('testet unter System > KI die Verbindung zu Claude und Gemini', function () {
 
     $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
 
-    $page = Livewire::test(Ai::class)
+    $page = Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->call('testProvider', 'anthropic')
         ->assertSet('providerTestResults.anthropic.ok', true)
         ->assertSee('Claude antwortet: „bereit“')
@@ -312,7 +312,7 @@ it('erklaert typische Fehler wie einen abgelaufenen Schluessel oder fehlendes Gu
 
     $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
 
-    Livewire::test(Ai::class)
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->call('testProvider', 'anthropic')
         ->assertSee('Der Schlüssel ist ungültig, abgelaufen oder wurde widerrufen.')
         ->call('testProvider', 'anthropic')
@@ -323,4 +323,21 @@ it('erklaert typische Fehler wie einen abgelaufenen Schluessel oder fehlendes Gu
         ->assertSet('providerTestResults.gemini.ok', false)
         ->assertSee('Der Schlüssel ist ungültig oder abgelaufen.')
         ->assertSee('API key expired');
+});
+
+it('zeigt die Einstellungen als letzten Reiter und leitet den frueheren Reiter "Allgemein" dorthin', function () {
+    $this->actingAs(User::factory()->create(['is_admin' => true, 'is_active' => true]));
+
+    $page = Livewire::test(Ai::class)->assertSet('tab', 'events');
+
+    expect(array_key_last($page->instance()->tabs()))->toBe('settings')
+        ->and($page->instance()->tabs())->not->toHaveKey('general');
+
+    Livewire::withQueryParams(['tab' => 'general'])->test(Ai::class)
+        ->assertSet('tab', 'settings')
+        ->assertSee('OpenAI')
+        ->assertSee('Anthropic (Claude)')
+        ->assertSee('Claude Opus 5.5')
+        ->assertSee('Google (Gemini)')
+        ->assertSee('Die Gemini-Modelle erscheinen, sobald ein gültiger Schlüssel hinterlegt ist.');
 });

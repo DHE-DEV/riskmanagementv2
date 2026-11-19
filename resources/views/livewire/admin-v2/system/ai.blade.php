@@ -17,7 +17,7 @@
     </div>
 
 
-    {{-- Reiter: Allgemeines, Ereignisse, je Stammdaten-Bereich die KI-Pruefungen --}}
+    {{-- Reiter: Ereignisse, je Stammdaten-Bereich die KI-Pruefungen, zuletzt die Einstellungen --}}
     <div class="flex flex-wrap gap-1">
         @foreach ($this->tabs() as $key => $label)
             <button
@@ -41,157 +41,92 @@
     {{-- Je Reiter ein eigener, mit Schluessel versehener Block: beim Wechsel wird er komplett
          ersetzt statt Stueck fuer Stueck abgeglichen – das vertraegt der DOM-Abgleich sonst nicht. --}}
     <div wire:key="tab-content-{{ $tab }}" class="flex flex-col gap-6">
-    @if ($tab === 'general')
+    @if ($tab === 'settings')
     <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-6">
-            {{-- API-Schluessel --}}
-            <x-adminv2.card heading="API-Schlüssel" description="Zugang zu OpenAI. Der Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.">
-                <div class="flex flex-col gap-5">
-                    <div class="flex flex-wrap items-center gap-3">
-                        @if ($keySource)
-                            <flux:badge color="green" inset="top bottom">Hinterlegt</flux:badge>
-                            <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiSettings::maskedApiKey() }}</span>
-                            <span class="text-sm text-zinc-500">
-                                {{ $keySource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env (RISK_CHARGPT_KEY)' }}
-                            </span>
-                        @else
-                            <flux:badge color="amber" inset="top bottom">Fehlt</flux:badge>
-                            <span class="text-sm text-zinc-500">Ohne Schlüssel stehen KI-Assistent und Quellen-Prüfung nicht zur Verfügung.</span>
-                        @endif
-                    </div>
-
-                    <form wire:submit="saveApiKey" class="flex flex-col gap-3">
-                        <flux:input
-                            wire:model="newApiKey"
-                            type="password"
-                            label="{{ $keySource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen' }}"
-                            placeholder="sk-…"
-                            autocomplete="off"
-                            viewable
-                        />
-                        <div class="flex flex-wrap items-center gap-2">
-                            <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
-                            @if ($keySource === 'admin')
-                                <flux:button variant="ghost" wire:click="removeApiKey" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
-                                    Hinterlegten Schlüssel entfernen
-                                </flux:button>
-                            @endif
-                        </div>
-                    </form>
-
-                    <flux:separator />
-
-                    <div class="flex flex-col gap-3">
-                        <div class="flex flex-wrap items-center gap-3">
-                            <flux:button icon="signal" wire:click="testConnection" :disabled="! $keySource">Verbindung testen</flux:button>
-                            <span class="text-sm text-zinc-500">Schickt eine kurze Anfrage an „{{ $model ?: $activeModel }}“.</span>
-                        </div>
-
-                        <div wire:loading.flex wire:target="testConnection" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
-                            <flux:icon.arrow-path variant="micro" class="animate-spin" /> Die KI wird gefragt …
-                        </div>
-
-                        @if ($testResult)
-                            <div
-                                wire:loading.remove
-                                wire:target="testConnection"
-                                @class([
-                                    'flex gap-2 rounded-lg border px-3 py-2 text-sm',
-                                    'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $testResult['ok'],
-                                    'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $testResult['ok'],
-                                ])
-                            >
-                                <flux:icon :icon="$testResult['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
-                                <span class="min-w-0 break-words">{{ $testResult['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $testResult['message'] }}</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </x-adminv2.card>
-
-            {{-- Weitere Anbieter fuer die KI-Suche nach Ereignissen --}}
-            <x-adminv2.card heading="Claude und Gemini" description="Weitere Anbieter für die KI-Suche nach Ereignissen. Mit hinterlegtem Schlüssel lassen sich ihre Modelle in den KI-Vorlagen wählen (Reiter „Ereignisse“). Die Schlüssel werden verschlüsselt gespeichert und nicht wieder angezeigt.">
-                <div class="flex flex-col gap-6">
-                    @foreach ([AiProviders::ANTHROPIC, AiProviders::GEMINI] as $provider)
-                        @php
-                            $providerSource = AiProviders::apiKeySource($provider);
-                            $definition = AiProviders::PROVIDERS[$provider];
-                        @endphp
-                        <div class="flex flex-col gap-3" wire:key="provider-key-{{ $provider }}">
-                            <div class="flex flex-wrap items-center gap-3">
-                                <flux:heading size="sm">{{ $definition['label'] }}</flux:heading>
-                                @if ($providerSource)
-                                    <flux:badge color="green" size="sm" inset="top bottom">Hinterlegt</flux:badge>
-                                    <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiProviders::maskedApiKey($provider) }}</span>
-                                    <span class="text-sm text-zinc-500">{{ $providerSource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env ('.$definition['env'].')' }}</span>
-                                @else
-                                    <flux:badge color="zinc" size="sm" inset="top bottom">Nicht hinterlegt</flux:badge>
-                                @endif
-                            </div>
-
-                            <form wire:submit="saveProviderKey('{{ $provider }}')" class="flex flex-col gap-3">
-                                <flux:input
-                                    wire:model="newProviderKeys.{{ $provider }}"
-                                    type="password"
-                                    :label="$providerSource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen'"
-                                    :placeholder="$definition['placeholder']"
-                                    autocomplete="off"
-                                    viewable
-                                />
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
-                                    @if ($providerSource === 'admin')
-                                        <flux:button variant="ghost" wire:click="removeProviderKey('{{ $provider }}')" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
-                                            Hinterlegten Schlüssel entfernen
-                                        </flux:button>
-                                    @endif
-                                </div>
-                            </form>
-
-                            <div class="flex flex-col gap-2">
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <flux:button size="sm" icon="signal" wire:click="testProvider('{{ $provider }}')" :disabled="! $providerSource">Verbindung testen</flux:button>
-                                    <span class="text-sm text-zinc-500">{{ $provider === AiProviders::ANTHROPIC ? 'Schickt eine kurze Anfrage an Claude Haiku 5.5 (Bruchteil eines Cents).' : 'Ruft die verfügbaren Modelle ab (kostenlos).' }}</span>
-                                </div>
-                                <div wire:loading.flex wire:target="testProvider('{{ $provider }}')" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
-                                    <flux:icon.arrow-path variant="micro" class="animate-spin" /> Verbindung wird geprüft …
-                                </div>
-                                @if ($result = $providerTestResults[$provider] ?? null)
-                                    <div
-                                        wire:loading.remove
-                                        wire:target="testProvider('{{ $provider }}')"
-                                        @class([
-                                            'flex gap-2 rounded-lg border px-3 py-2 text-sm',
-                                            'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $result['ok'],
-                                            'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $result['ok'],
-                                        ])
-                                    >
-                                        <flux:icon :icon="$result['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
-                                        <span class="min-w-0 break-words">{{ $result['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $result['message'] }}</span>
-                                    </div>
-                                @endif
-                            </div>
-
-                            @if ($provider === AiProviders::GEMINI && $providerSource && $this->geminiModels === [] && $geminiModelsError)
-                                <flux:text class="text-sm text-red-600">Die Gemini-Modelle ließen sich nicht abrufen: {{ $geminiModelsError }}</flux:text>
-                            @endif
-                        </div>
-
-                        @if (! $loop->last)
-                            <flux:separator />
-                        @endif
-                    @endforeach
-                </div>
-            </x-adminv2.card>
-
-        </div>
-
-        {{-- Modell --}}
-        <x-adminv2.card heading="Modell" description="Gilt für alle KI-Funktionen. Die Liste zeigt die Modelle, die mit dem hinterlegten Schlüssel verfügbar sind.">
+        {{-- OpenAI: Standard fuer alle KI-Funktionen --}}
+        <x-adminv2.card heading="OpenAI" description="Standard-Anbieter für alle KI-Funktionen: KI-Assistent, Quellen-Prüfung, KI-Prüfungen und KI-Suche. Der Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.">
             <x-slot:actions>
-                <flux:button size="sm" icon="arrow-path" wire:click="refreshModels" :disabled="! $keySource">Liste aktualisieren</flux:button>
+                @if ($keySource)
+                    <flux:badge color="green" size="sm">Hinterlegt</flux:badge>
+                @else
+                    <flux:badge color="amber" size="sm">Fehlt</flux:badge>
+                @endif
             </x-slot:actions>
+
+            <div class="flex flex-col gap-5">
+                <div class="flex flex-wrap items-center gap-3">
+                    @if ($keySource)
+                        <flux:badge color="green" inset="top bottom">Hinterlegt</flux:badge>
+                        <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiSettings::maskedApiKey() }}</span>
+                        <span class="text-sm text-zinc-500">
+                            {{ $keySource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env (RISK_CHARGPT_KEY)' }}
+                        </span>
+                    @else
+                        <flux:badge color="amber" inset="top bottom">Fehlt</flux:badge>
+                        <span class="text-sm text-zinc-500">Ohne Schlüssel stehen KI-Assistent und Quellen-Prüfung nicht zur Verfügung.</span>
+                    @endif
+                </div>
+
+                <form wire:submit="saveApiKey" class="flex flex-col gap-3">
+                    <flux:input
+                        wire:model="newApiKey"
+                        type="password"
+                        label="{{ $keySource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen' }}"
+                        placeholder="sk-…"
+                        autocomplete="off"
+                        viewable
+                    />
+                    <div class="flex flex-wrap items-center gap-2">
+                        <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
+                        @if ($keySource === 'admin')
+                            <flux:button variant="ghost" wire:click="removeApiKey" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
+                                Hinterlegten Schlüssel entfernen
+                            </flux:button>
+                        @endif
+                    </div>
+                </form>
+
+                <flux:separator />
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <flux:button icon="signal" wire:click="testConnection" :disabled="! $keySource">Verbindung testen</flux:button>
+                        <span class="text-sm text-zinc-500">Schickt eine kurze Anfrage an „{{ $model ?: $activeModel }}“.</span>
+                    </div>
+
+                    <div wire:loading.flex wire:target="testConnection" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
+                        <flux:icon.arrow-path variant="micro" class="animate-spin" /> Die KI wird gefragt …
+                    </div>
+
+                    @if ($testResult)
+                        <div
+                            wire:loading.remove
+                            wire:target="testConnection"
+                            @class([
+                                'flex gap-2 rounded-lg border px-3 py-2 text-sm',
+                                'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $testResult['ok'],
+                                'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $testResult['ok'],
+                            ])
+                        >
+                            <flux:icon :icon="$testResult['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
+                            <span class="min-w-0 break-words">{{ $testResult['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $testResult['message'] }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <flux:separator class="my-6" />
+
+            {{-- Modelle des Schluessels, Standardmodell und Preise --}}
+            <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">Modelle und Standardmodell</h3>
+                    <p class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">Das Standardmodell gilt für alle KI-Funktionen. Die Liste zeigt die Modelle, die mit dem hinterlegten Schlüssel verfügbar sind.</p>
+                </div>
+                <flux:button size="sm" icon="arrow-path" wire:click="refreshModels" :disabled="! $keySource">Liste aktualisieren</flux:button>
+            </div>
+
+
 
             <form wire:submit="saveModel" class="flex flex-col gap-4">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -305,6 +240,118 @@
                 </div>
             </form>
         </x-adminv2.card>
+
+        {{-- Weitere Anbieter: nur fuer die KI-Suche nach Ereignissen --}}
+        @foreach ([AiProviders::ANTHROPIC, AiProviders::GEMINI] as $provider)
+            @php
+                $providerSource = AiProviders::apiKeySource($provider);
+                $definition = AiProviders::PROVIDERS[$provider];
+            @endphp
+            <x-adminv2.card :heading="$definition['label']" description="Für die KI-Suche nach Ereignissen: Die Modelle lassen sich in den KI-Vorlagen wählen (Reiter „Passolution Ereignisse“). Der Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt." wire:key="provider-card-{{ $provider }}">
+                <x-slot:actions>
+                    @if ($providerSource)
+                        <flux:badge color="green" size="sm">Hinterlegt</flux:badge>
+                    @else
+                        <flux:badge color="zinc" size="sm">Nicht hinterlegt</flux:badge>
+                    @endif
+                </x-slot:actions>
+
+                <div class="flex flex-col gap-3" wire:key="provider-key-{{ $provider }}">
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                                @if ($providerSource)
+                                                    <flux:badge color="green" size="sm" inset="top bottom">Hinterlegt</flux:badge>
+                                                    <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{{ AiProviders::maskedApiKey($provider) }}</span>
+                                                    <span class="text-sm text-zinc-500">{{ $providerSource === 'admin' ? 'im Admin-Bereich gespeichert' : 'aus der .env ('.$definition['env'].')' }}</span>
+                                                @else
+                                                    <flux:badge color="zinc" size="sm" inset="top bottom">Nicht hinterlegt</flux:badge>
+                                                @endif
+                                            </div>
+
+                                            <form wire:submit="saveProviderKey('{{ $provider }}')" class="flex flex-col gap-3">
+                                                <flux:input
+                                                    wire:model="newProviderKeys.{{ $provider }}"
+                                                    type="password"
+                                                    :label="$providerSource === 'admin' ? 'Schlüssel ersetzen' : 'Schlüssel hinterlegen'"
+                                                    :placeholder="$definition['placeholder']"
+                                                    autocomplete="off"
+                                                    viewable
+                                                />
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <flux:button type="submit" variant="primary" icon="key">Schlüssel speichern</flux:button>
+                                                    @if ($providerSource === 'admin')
+                                                        <flux:button variant="ghost" wire:click="removeProviderKey('{{ $provider }}')" wire:confirm="Den hinterlegten Schlüssel entfernen? Danach gilt wieder der Schlüssel aus der .env, falls dort einer steht.">
+                                                            Hinterlegten Schlüssel entfernen
+                                                        </flux:button>
+                                                    @endif
+                                                </div>
+                                            </form>
+
+                                            <div class="flex flex-col gap-2">
+                                                <div class="flex flex-wrap items-center gap-3">
+                                                    <flux:button size="sm" icon="signal" wire:click="testProvider('{{ $provider }}')" :disabled="! $providerSource">Verbindung testen</flux:button>
+                                                    <span class="text-sm text-zinc-500">{{ $provider === AiProviders::ANTHROPIC ? 'Schickt eine kurze Anfrage an Claude Haiku 5.5 (Bruchteil eines Cents).' : 'Ruft die verfügbaren Modelle ab (kostenlos).' }}</span>
+                                                </div>
+                                                <div wire:loading.flex wire:target="testProvider('{{ $provider }}')" class="hidden items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400" role="status">
+                                                    <flux:icon.arrow-path variant="micro" class="animate-spin" /> Verbindung wird geprüft …
+                                                </div>
+                                                @if ($result = $providerTestResults[$provider] ?? null)
+                                                    <div
+                                                        wire:loading.remove
+                                                        wire:target="testProvider('{{ $provider }}')"
+                                                        @class([
+                                                            'flex gap-2 rounded-lg border px-3 py-2 text-sm',
+                                                            'border-green-200 bg-green-50 text-green-900 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-100' => $result['ok'],
+                                                            'border-red-200 bg-red-50 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100' => ! $result['ok'],
+                                                        ])
+                                                    >
+                                                        <flux:icon :icon="$result['ok'] ? 'check-circle' : 'x-circle'" variant="mini" class="mt-0.5 shrink-0" />
+                                                        <span class="min-w-0 break-words">{{ $result['ok'] ? 'Verbindung in Ordnung. ' : 'Verbindung fehlgeschlagen: ' }}{{ $result['message'] }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            @if ($provider === AiProviders::GEMINI && $providerSource && $this->geminiModels === [] && $geminiModelsError)
+                                                <flux:text class="text-sm text-red-600">Die Gemini-Modelle ließen sich nicht abrufen: {{ $geminiModelsError }}</flux:text>
+                                            @endif
+                                        </div>
+
+                <flux:separator class="my-6" />
+
+                <h3 class="mb-3 text-sm font-semibold text-zinc-900 dark:text-white">Modelle</h3>
+                @php
+                    $providerModels = $provider === AiProviders::ANTHROPIC
+                        ? \App\Services\Ai\ClaudeService::MODELS
+                        : $this->geminiModels;
+                @endphp
+                @if ($provider === AiProviders::GEMINI && ! $providerSource)
+                    <p class="text-sm text-zinc-500">Die Gemini-Modelle erscheinen, sobald ein gültiger Schlüssel hinterlegt ist.</p>
+                @elseif ($providerModels === [])
+                    <p class="text-sm text-zinc-500">Keine Modelle verfügbar.</p>
+                @else
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        @foreach ($providerModels as $modelId => $modelLabel)
+                            @php $modelPrices = AiSettings::prices($modelId); @endphp
+                            <div wire:key="provider-model-{{ $modelId }}" class="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+                                <div class="min-w-0">
+                                    <div class="truncate text-sm font-medium text-zinc-900 dark:text-white">{{ $modelLabel ?: $modelId }}</div>
+                                    <div class="truncate font-mono text-xs text-zinc-500">{{ $modelId }}</div>
+                                </div>
+                                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-zinc-600 dark:text-zinc-400">
+                                    <dt>Eingabe</dt>
+                                    <dd class="text-end tabular-nums text-zinc-900 dark:text-white">{{ $modelPrices ? rtrim(rtrim(number_format($modelPrices['input'], 2, ',', '.'), '0'), ',').' $' : '–' }}</dd>
+                                    <dt>Ausgabe</dt>
+                                    <dd class="text-end tabular-nums text-zinc-900 dark:text-white">{{ $modelPrices ? rtrim(rtrim(number_format($modelPrices['output'], 2, ',', '.'), '0'), ',').' $' : '–' }}</dd>
+                                </dl>
+                                <span class="text-[0.7rem] text-zinc-400">{{ $modelPrices ? 'US-Dollar je 1 Mio. Token · Preisliste' : 'kein Preis bekannt' }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if ($provider === AiProviders::ANTHROPIC)
+                        <p class="mt-3 text-xs text-zinc-500">Die Websuche kostet bei Anthropic zusätzlich je Suchanfrage; das ist in den Kosten eines Suchlaufs nicht enthalten.</p>
+                    @endif
+                @endif
+            </x-adminv2.card>
+        @endforeach
     </div>
     @elseif ($tab === 'events')
     <div class="flex flex-col gap-6">
@@ -823,6 +870,8 @@
     @endif
 
     {{-- KI-Vorlage anlegen / bearbeiten --}}
+    {{-- Nur im Reiter der Vorlagen: die Modellliste darin soll sonst nicht mitgerendert werden. --}}
+    @if ($tab === 'events')
     <flux:modal name="ai-prompt" class="md:w-[44rem]">
         <form wire:submit="savePrompt" class="flex flex-col gap-5">
             <flux:heading size="lg">{{ $promptId ? 'Vorlage bearbeiten' : 'Neue Vorlage' }}</flux:heading>
@@ -841,7 +890,7 @@
 
             <flux:field>
                 <flux:label>Modell</flux:label>
-                <flux:description>Nur für Suchen mit dieser Vorlage; ohne Auswahl gilt das Standardmodell ({{ AiSettings::model() }}). Für die Websuche lohnt ein leistungsstarkes Modell – kleine Modelle suchen weniger gründlich und finden deutlich weniger. Claude und Gemini stehen zur Wahl, sobald unter „Allgemein“ ein Schlüssel hinterlegt ist.</flux:description>
+                <flux:description>Nur für Suchen mit dieser Vorlage; ohne Auswahl gilt das Standardmodell ({{ AiSettings::model() }}). Für die Websuche lohnt ein leistungsstarkes Modell – kleine Modelle suchen weniger gründlich und finden deutlich weniger. Claude und Gemini stehen zur Wahl, sobald unter „Einstellungen“ ein Schlüssel hinterlegt ist.</flux:description>
                 <flux:select wire:model="promptModel">
                     <flux:select.option value="">Standardmodell</flux:select.option>
                     @foreach (collect($this->promptModelOptions)->groupBy('provider') as $providerLabel => $options)
@@ -863,4 +912,5 @@
             </div>
         </form>
     </flux:modal>
+    @endif
 </div>

@@ -43,7 +43,7 @@ function fakeOpenAiModels(): void
 it('speichert den Schluessel verschluesselt und zeigt ihn nur unkenntlich', function () {
     fakeOpenAiModels();
 
-    Livewire::test(Ai::class)
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->assertSee('Fehlt')
         ->set('newApiKey', 'sk-test-1234567890abcdefGHIJ')
         ->call('saveApiKey')
@@ -76,7 +76,7 @@ it('faellt ohne hinterlegten Schluessel auf die .env zurueck', function () {
         ->and(AiSettings::model())->toBe('gpt-4.1');
 
     // Entfernen stellt den Rueckfall wieder her.
-    Livewire::test(Ai::class)->call('removeApiKey');
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)->call('removeApiKey');
 
     expect(AiSettings::apiKeySource())->toBe('env');
 });
@@ -87,7 +87,7 @@ it('listet nur Chat-Modelle des Schluessels und speichert die Auswahl', function
 
     expect(array_column(app(OpenAiModelService::class)->chatModels(), 'id'))->toBe(['gpt-4.1', 'o3-mini', 'gpt-4o-mini']);
 
-    Livewire::test(Ai::class)
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->assertSee('gpt-4.1')
         ->assertSee('o3-mini')
         ->assertDontSee('whisper-1')
@@ -137,7 +137,7 @@ it('zeigt beim Verbindungstest Erfolg und die Fehlermeldung von OpenAI', functio
     SystemSetting::write(AiSettings::KEY_API_KEY, 'sk-admin-111111111111111ABCD', encrypted: true);
     fakeOpenAiModels();
 
-    Livewire::test(Ai::class)->call('testConnection')->assertSee('Verbindung in Ordnung.');
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)->call('testConnection')->assertSee('Verbindung in Ordnung.');
 
     Http::swap(new \Illuminate\Http\Client\Factory);
     Http::fake([
@@ -145,7 +145,7 @@ it('zeigt beim Verbindungstest Erfolg und die Fehlermeldung von OpenAI', functio
         'api.openai.com/v1/chat/completions' => Http::response(['error' => ['message' => 'You have no credits remaining.']], 429),
     ]);
 
-    Livewire::test(Ai::class)
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->call('testConnection')
         ->assertSee('Verbindung fehlgeschlagen')
         ->assertSee('You have no credits remaining.');
@@ -157,7 +157,7 @@ it('speichert die Preise je Modell fuer die Kostenanzeige', function () {
 
     SystemSetting::write(AiSettings::KEY_MODEL, 'gpt-4o-mini');
 
-    Livewire::test(Ai::class)
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->set('priceInput', '0,15')
         ->set('priceOutput', 'abc')
         ->call('savePrices')
@@ -174,11 +174,11 @@ it('speichert die Preise je Modell fuer die Kostenanzeige', function () {
         ->and(AiSettings::cost('o3-mini', 1000, 1000))->toBeNull();
 
     // Beim erneuten Oeffnen stehen die Preise des aktiven Modells in den Feldern.
-    Livewire::test(Ai::class)->assertSet('priceInput', '0,15')->assertSet('priceOutput', '0,6');
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)->assertSet('priceInput', '0,15')->assertSet('priceOutput', '0,6');
 });
 
 it('ist nur fuer Administratoren erreichbar', function () {
-    $this->get('/adminv2/system/ai')->assertOk()->assertSee('API-Schlüssel');
+    $this->get('/adminv2/system/ai?tab=settings')->assertOk()->assertSee('Modelle und Standardmodell');
 
     $this->actingAs(User::factory()->create(['is_admin' => false]))
         ->get('/adminv2/system/ai')
@@ -201,7 +201,7 @@ it('kennt die Preise der Modelle aus der Preisliste – ein eigener Preis hat Vo
         ->and(AiSettings::priceSource('gpt-live-1'))->toBeNull();
 
     // Die Seite zeigt den Listenpreis; die Felder bleiben leer.
-    Livewire::test(Ai::class)
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)
         ->assertSet('priceInput', '')
         ->assertSee('2 $ Eingabe, 10 $ Ausgabe')
         // Eigener Preis: hat Vorrang.
@@ -214,7 +214,7 @@ it('kennt die Preise der Modelle aus der Preisliste – ein eigener Preis hat Vo
         ->and(AiSettings::priceSource('gpt-6.1-sol'))->toBe('admin');
 
     // Entfernen: es gilt wieder die Preisliste.
-    Livewire::test(Ai::class)->set('priceInput', '')->set('priceOutput', '')->call('savePrices');
+    Livewire::withQueryParams(['tab' => 'settings'])->test(Ai::class)->set('priceInput', '')->set('priceOutput', '')->call('savePrices');
 
     expect(AiSettings::prices('gpt-6.1-sol'))->toBe(['input' => 2.0, 'output' => 10.0]);
 });
