@@ -287,7 +287,7 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($openSuggestions > 0)
-                                <flux:button size="sm" variant="primary" icon="arrow-down-tray" wire:click="applyAllAiSuggestions">Alle {{ $openSuggestions }} Vorschläge übernehmen</flux:button>
+                                <flux:button size="sm" variant="primary" icon="arrow-down-tray" wire:click="applyAllAiSuggestions">{{ $openSuggestions === 1 ? '1 Vorschlag übernehmen' : 'Alle '.$openSuggestions.' Vorschläge übernehmen' }}</flux:button>
                             @endif
                             @if ($openNotes > 0)
                                 <flux:button size="sm" icon="pencil-square" wire:click="applyAllAiNotes">{{ $openNotes }} {{ $openNotes === 1 ? 'Text' : 'Texte' }} in Notizen übernehmen</flux:button>

@@ -1122,6 +1122,34 @@ it('nennt der KI bei Stufen, Listen und Ja/Nein-Feldern das erlaubte Format', fu
     });
 });
 
+it('zeigt beim erneuten Oeffnen bereits gespeicherte Vorschlaege und Notiztexte als uebernommen', function () {
+    $country = country('Testland', 'TL', continent('Europa', 'EU'), ['risk_profile' => ['climate' => [
+        'extreme_weather_risk' => 4,
+        'best_travel_months' => ['April', 'Mai', 'Oktober'],
+        'notes' => ['extreme_weather_risk' => ['de' => 'Hitze und Starkregen je nach Region.']],
+    ]]]);
+    $review = AiFieldReview::create([
+        'user_id' => auth('web')->id(), 'area' => 'countries', 'section' => 'risk_climate',
+        'subject_type' => $country->getMorphClass(), 'subject_id' => $country->id, 'status' => AiFieldReview::STATUS_DONE, 'finished_at' => now(),
+        'result' => ['summary' => null, 'sources' => [], 'usage' => null, 'fields' => [
+            'risk_climate_extreme_weather_risk' => ['status' => 'change', 'value' => '4 – Hoch', 'note' => 'Hitze und Starkregen je nach Region.', 'sources' => []],
+            'risk_climate_best_travel_months' => ['status' => 'change', 'value' => 'April, Mai, Oktober', 'note' => 'Frühling und Herbst.', 'sources' => []],
+            'risk_climate_climate_zone' => ['status' => 'change', 'value' => 'Mittelmeerklima', 'note' => null, 'sources' => []],
+        ]],
+    ]);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('openAiReview', $review->id)
+        ->assertSet('aiReview.fields.risk_climate_extreme_weather_risk.applied', true)
+        ->assertSet('aiReview.fields.risk_climate_extreme_weather_risk.note_applied', true)
+        ->assertSet('aiReview.fields.risk_climate_best_travel_months.applied', true)
+        // Noch nicht im Formular: bleibt offen.
+        ->assertSet('aiReview.fields.risk_climate_best_travel_months.note_applied', null)
+        ->assertSet('aiReview.fields.risk_climate_climate_zone.applied', null)
+        ->assertSee('1 Vorschlag übernehmen')
+        ->assertSee('1 Text in Notizen übernehmen');
+});
+
 it('legt ein Ergebnis mit offenen Vorschlaegen zurueck in die Liste, wenn ein anderes es im Formular abloest', function () {
     $country = country('Testland', 'TL', continent('Europa', 'EU'));
     $finished = fn (string $section, string $key) => AiFieldReview::create([

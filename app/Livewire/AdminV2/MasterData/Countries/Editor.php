@@ -1548,6 +1548,19 @@ class Editor extends Component
         return true;
     }
 
+    protected function aiNoteApplied(string $key, string $text): bool
+    {
+        $resolved = CountryRiskProfile::resolvePlaceholder($key);
+
+        if (! $resolved || ! CountryRiskProfile::hasNote($resolved[2])) {
+            return false;
+        }
+
+        [$category, $field] = $resolved;
+
+        return str_contains((string) ($this->riskProfile[$category]['notes'][$field][CustomEvent::sourceLocale()] ?? ''), trim($text));
+    }
+
     /**
      * Vorschlag der KI-Feldpruefung in das Formular uebernehmen.
      */

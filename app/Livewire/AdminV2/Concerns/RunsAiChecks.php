@@ -387,8 +387,62 @@ trait RunsAiChecks
 
         $this->aiReview = ['section' => $review->section] + (array) $review->result;
         $this->aiReviewId = $review->id;
+        $this->markAppliedAiItems();
         $review->update(['seen_at' => $review->seen_at ?? now()]);
         unset($this->aiFinishedReviews);
+    }
+
+    /**
+     * Was im Formular schon steht, gilt als uebernommen – auch nach dem Neuladen
+     * eines Ergebnisses, dessen Vorschlaege laengst gespeichert sind.
+     */
+    protected function markAppliedAiItems(): void
+    {
+        $context = $this->aiContext();
+
+        foreach ($this->aiReview['fields'] ?? [] as $key => $field) {
+            if (($field['status'] ?? null) === AiFieldReviewService::STATUS_CHANGE && filled($field['value'] ?? null)
+                && $this->aiSuggestionMatches($key, (string) $field['value'], $context)) {
+                $this->aiReview['fields'][$key]['applied'] = true;
+            }
+
+            if (filled($field['note'] ?? null) && $this->aiNoteApplied($key, (string) $field['note'])) {
+                $this->aiReview['fields'][$key]['note_applied'] = true;
+            }
+        }
+    }
+
+    /**
+     * Hat das Feld schon den vorgeschlagenen Wert? Vergleicht ohne Gross-/Kleinschreibung
+     * und Leerraum; Zahlen auch ohne Tausendertrennzeichen.
+     *
+     * @param  array<string, mixed>  $context  aktuelle Formularwerte (aiContext)
+     */
+    protected function aiSuggestionMatches(string $key, string $value, array $context): bool
+    {
+        if (! array_key_exists($key, $context)) {
+            return false;
+        }
+
+        $normalize = fn (string $text) => mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $text)));
+        $current = $normalize(app(AiCheckService::class)->format($context[$key]));
+        $suggested = $normalize($value);
+
+        if ($current === $suggested) {
+            return true;
+        }
+
+        $digits = fn (string $text) => preg_replace('/[\s.,\']/u', '', $text);
+
+        return is_numeric($digits($current)) && $digits($current) === $digits($suggested);
+    }
+
+    /**
+     * Steht die Begruendung schon in der Notiz des Feldes? Ohne Notizen: false.
+     */
+    protected function aiNoteApplied(string $key, string $text): bool
+    {
+        return false;
     }
 
     /**
