@@ -312,6 +312,17 @@ class Customer extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * SSO-Kunden haben kein Passwort. Laravel vergleicht beim "Angemeldet
+     * bleiben"-Cookie aber zwingend mit dem Passwort-Hash – mit null bricht
+     * das ab (TypeError in hash_equals). Leerer Text entspricht dem Wert, mit
+     * dem das Cookie beim Anmelden gebildet wurde, bestehende Cookies gelten weiter.
+     */
+    public function getAuthPassword(): string
+    {
+        return (string) ($this->password ?? '');
+    }
+
+    /**
      * Send the email verification notification in German.
      */
     public function sendEmailVerificationNotification(): void
