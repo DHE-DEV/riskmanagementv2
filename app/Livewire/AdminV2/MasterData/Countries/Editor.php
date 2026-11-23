@@ -1506,6 +1506,26 @@ class Editor extends Component
     }
 
     /**
+     * Erlaubte Werte der Felder des Risikoprofils (Stufen, Ja/Nein, Listen).
+     *
+     * @return array<string, string>
+     */
+    protected function aiReviewFormats(string $section): array
+    {
+        $formats = [];
+
+        foreach (array_keys($this->aiReviewLabels($section)) as $key) {
+            $resolved = CountryRiskProfile::resolvePlaceholder($key);
+
+            if ($resolved && ($format = CountryRiskProfile::formatHint($resolved[2])) !== null) {
+                $formats[$key] = $format;
+            }
+        }
+
+        return $formats;
+    }
+
+    /**
      * Die Begruendung der KI kommt in die Notiz des Punktes (Ausgangssprache);
      * eine vorhandene Notiz bleibt stehen, der Text wird angehaengt.
      */

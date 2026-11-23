@@ -244,6 +244,22 @@ class CountryRiskProfile
     }
 
     /**
+     * Welche Werte ein Feld annimmt – fuer die KI-Feldpruefung, damit sich ihre
+     * Vorschlaege uebernehmen lassen. null bei Freitext.
+     */
+    public static function formatHint(array $meta): ?string
+    {
+        return match ($meta['type']) {
+            'level' => 'genau eine Stufe als „Zahl – Bezeichnung“: '.implode(', ', array_map(fn (int $level, string $label) => $level.' – '.$label, array_keys(self::LEVELS), self::LEVELS)).'; Erläuterungen gehören in "note"',
+            'bool' => 'Ja oder Nein',
+            'number' => 'eine ganze Zahl ohne Einheit',
+            'tags' => 'Liste kurzer Einträge, durch Komma getrennt, ohne Sätze'.(isset($meta['placeholder']) ? ' ('.$meta['placeholder'].')' : ''),
+            'text' => 'kurze Angabe in einer Zeile, kein Fließtext',
+            default => null,
+        };
+    }
+
+    /**
      * Vorschlag der KI in den Formularwert eines Feldes uebersetzen; null, wenn
      * er nicht passt (z. B. unbekannte Stufe).
      */

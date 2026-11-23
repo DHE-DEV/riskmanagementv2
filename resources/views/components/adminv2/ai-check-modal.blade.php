@@ -261,8 +261,8 @@
                 </div>
             @endif
 
-            {{-- Deutlich sichtbarer Fortschritt waehrend des Laufs --}}
-            <div x-show="busy" x-cloak class="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 px-4 py-3">
+            {{-- Deutlich sichtbarer Fortschritt waehrend des Laufs – nicht bei der Feldpruefung, die im Hintergrund laeuft --}}
+            <div x-show="busy && ! {{ $reviewMode ? 'true' : 'false' }}" x-cloak class="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 px-4 py-3">
                 <div class="flex items-center gap-3 text-sm text-zinc-800 dark:text-zinc-200">
                     <flux:icon.arrow-path variant="mini" class="shrink-0 animate-spin text-[var(--color-accent)]" />
                     <span>Die KI arbeitet – das dauert meist 5 bis 30 Sekunden, bei vielen Feldern auch länger. Das Fenster bitte geöffnet lassen.</span>

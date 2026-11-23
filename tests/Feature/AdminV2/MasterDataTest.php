@@ -1104,6 +1104,53 @@ it('bearbeitet einen Auftrag nur einmal und haelt Fehler und abgebrochene Laeufe
         ->and(AiFieldReview::query()->open()->whereKey($stuck->id)->exists())->toBeFalse();
 });
 
+it('nennt der KI bei Stufen, Listen und Ja/Nein-Feldern das erlaubte Format', function () {
+    Queue::fake();
+    $country = country('Testland', 'TL', continent('Europa', 'EU'));
+
+    Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('openAiCheck', 'risk_climate')->set('aiCheckId', 'review')->call('reviewAiFields');
+
+    Queue::assertPushed(ReviewAiFieldsJob::class, function (ReviewAiFieldsJob $job) {
+        $prompt = app(AiFieldReviewService::class)->buildPrompt('countries', 'risk_climate', $job->context, $job->labels, $job->extra, $job->extraLabels, $job->hint, $job->formats);
+
+        return str_contains($prompt, "risk_climate_extreme_weather_risk („Klima › Extremwetter-Risiko“): –\n  Erlaubter Wert: genau eine Stufe als „Zahl – Bezeichnung“: 1 – Sehr niedrig")
+            && str_contains($prompt, "risk_climate_best_travel_months („Klima › Beste Reisemonate“): –\n  Erlaubter Wert: Liste kurzer Einträge, durch Komma getrennt")
+            // Freitext bleibt ohne Vorgabe.
+            && ! isset($job->formats['risk_climate_description'])
+            && str_contains($prompt, 'muss "value" genau diesem Format folgen');
+    });
+});
+
+it('legt ein Ergebnis mit offenen Vorschlaegen zurueck in die Liste, wenn ein anderes es im Formular abloest', function () {
+    $country = country('Testland', 'TL', continent('Europa', 'EU'));
+    $finished = fn (string $section, string $key) => AiFieldReview::create([
+        'user_id' => auth('web')->id(), 'area' => 'countries', 'section' => $section,
+        'subject_type' => $country->getMorphClass(), 'subject_id' => $country->id, 'status' => AiFieldReview::STATUS_DONE,
+        'result' => ['fields' => [$key => ['status' => 'change', 'value' => '230', 'note' => null, 'sources' => []]], 'summary' => null, 'sources' => [], 'usage' => null], 'finished_at' => now(),
+    ]);
+
+    $power = $finished('power', 'voltage');
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('checkAiReviews')
+        ->assertSet('aiReviewId', $power->id);
+
+    // Das Fenster zeigt Klima; dessen Ergebnis kommt herein und loest Strom ab.
+    $climate = $finished('risk_climate', 'risk_climate_climate_zone');
+    $component->call('openAiCheck', 'risk_climate')
+        ->call('checkAiReviews')
+        ->assertSet('aiReviewId', $climate->id)
+        ->assertDispatched('adminv2-toast', fn (string $name, array $params) => str_contains($params['message'], 'noch offene Vorschläge'));
+
+    expect($power->fresh()->seen_at)->toBeNull()
+        ->and($component->instance()->aiFinishedReviews->pluck('id')->all())->toBe([$power->id]);
+
+    // Alle Vorschlaege uebernommen: ein naechstes Ergebnis loest ab, ohne etwas zurueckzulegen.
+    $component->call('openAiReview', $power->id)->call('applyAllAiSuggestions');
+    $component->call('openAiReview', $climate->id);
+    expect($power->fresh()->seen_at)->not->toBeNull();
+});
+
 it('bringt fertige Auftraege ins Formular, haelt weitere zum Oeffnen bereit und oeffnet sie per Link', function () {
     Queue::fake();
     $country = country('Testland', 'TL', continent('Europa', 'EU'));

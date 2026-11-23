@@ -243,6 +243,7 @@ trait RunsAiChecks
             array_diff_key($all, $context),
             AiAreas::placeholders($this->aiArea(), null),
             $this->aiReviewHint($this->aiSection),
+            $this->aiReviewFormats($this->aiSection),
         );
 
         unset($this->aiOpenReviews);
@@ -377,10 +378,43 @@ trait RunsAiChecks
 
     protected function loadAiReview(AiFieldReview $review): void
     {
+        // Ein Ergebnis mit offenen Vorschlaegen geht nicht verloren: es rueckt zurueck in "Fertige Pruefungen".
+        if ($this->aiReviewId && $this->aiReviewId !== $review->id && $this->aiReviewHasOpenItems()) {
+            AiFieldReview::query()->where('user_id', auth('web')->id())->whereKey($this->aiReviewId)->update(['seen_at' => null]);
+            $this->aiAnnouncedReviewIds[] = $this->aiReviewId;
+            $this->dispatch('adminv2-toast', message: 'Die vorherige Feldprüfung „'.AiAreas::sectionLabel($this->aiArea(), $this->aiReview['section']).'“ hat noch offene Vorschläge – sie liegt im KI-Fenster unter „Feldprüfungen zu diesem Eintrag“.');
+        }
+
         $this->aiReview = ['section' => $review->section] + (array) $review->result;
         $this->aiReviewId = $review->id;
         $review->update(['seen_at' => $review->seen_at ?? now()]);
         unset($this->aiFinishedReviews);
+    }
+
+    /**
+     * Steht im Formular ein Ergebnis mit noch nicht uebernommenen Vorschlaegen oder Notiztexten?
+     */
+    protected function aiReviewHasOpenItems(): bool
+    {
+        foreach ($this->aiReview['fields'] ?? [] as $field) {
+            if (($field['status'] ?? null) === AiFieldReviewService::STATUS_CHANGE && ! ($field['applied'] ?? false)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Erlaubte Werte je Feld fuer die Feldpruefung, z. B. "Stufe 1–5" oder
+     * "Liste, durch Komma getrennt" – Schluessel => Beschreibung. Ohne Angabe
+     * gilt ein Feld als Freitext.
+     *
+     * @return array<string, string>
+     */
+    protected function aiReviewFormats(string $section): array
+    {
+        return [];
     }
 
     /**

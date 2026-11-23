@@ -21,11 +21,15 @@ class ReviewAiFieldsJob implements ShouldQueue
 
     public int $timeout = AiFieldReviewService::TIMEOUT + 30;
 
+    /** @var array<string, string> erlaubte Werte je Feld (Schluessel => Beschreibung) */
+    public array $formats = [];
+
     /**
      * @param  array<string, mixed>  $context
      * @param  array<string, string>  $labels
      * @param  array<string, mixed>  $extra
      * @param  array<string, string>  $extraLabels
+     * @param  array<string, string>  $formats
      */
     public function __construct(
         public int $reviewId,
@@ -34,7 +38,9 @@ class ReviewAiFieldsJob implements ShouldQueue
         public array $extra,
         public array $extraLabels,
         public ?string $hint = null,
+        array $formats = [],
     ) {
+        $this->formats = $formats;
         $this->onQueue(config('queue.ai_queue'));
     }
 
@@ -53,7 +59,7 @@ class ReviewAiFieldsJob implements ShouldQueue
         }
 
         try {
-            $result = $service->review($review->area, $review->section, $this->context, $this->labels, $this->extra, $this->extraLabels, $review->model, $this->hint);
+            $result = $service->review($review->area, $review->section, $this->context, $this->labels, $this->extra, $this->extraLabels, $review->model, $this->hint, $this->formats);
 
             $review->update(['status' => AiFieldReview::STATUS_DONE, 'result' => $result, 'finished_at' => now()]);
         } catch (Throwable $exception) {

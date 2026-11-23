@@ -32,14 +32,15 @@ class AiFieldReviewService
      * @param  array<string, mixed>  $extra  weitere Angaben des Eintrags zur Einordnung (z. B. Name, ISO-Code)
      * @param  array<string, string>  $extraLabels
      * @param  string|null  $hint  Hinweis des Formulars zu diesem Abschnitt, z. B. wie die Felder zusammenhaengen
+     * @param  array<string, string>  $formats  erlaubte Werte je Feld, z. B. Stufen oder Listen
      * @return array{fields: array<string, array{status: string, value: ?string, note: ?string, sources: array<int, string>}>, summary: ?string, sources: array<int, array{url: string, title: ?string}>, prompt: string, usage: ?array}
      */
-    public function review(string $area, string $section, array $context, array $labels, array $extra, array $extraLabels, ?string $model = null, ?string $hint = null): array
+    public function review(string $area, string $section, array $context, array $labels, array $extra, array $extraLabels, ?string $model = null, ?string $hint = null, array $formats = []): array
     {
         $model = $model ?: AiSettings::model();
         $ai = AiProviders::webSearchFor($model);
 
-        $prompt = $this->buildPrompt($area, $section, $context, $labels, $extra, $extraLabels, $hint);
+        $prompt = $this->buildPrompt($area, $section, $context, $labels, $extra, $extraLabels, $hint, $formats);
         $result = $this->parse($ai->searchWeb($prompt, ['model' => $model, 'timeout' => self::TIMEOUT]), array_keys($labels));
 
         $usage = $ai->lastUsage();
@@ -62,8 +63,9 @@ class AiFieldReviewService
      * @param  array<string, string>  $labels
      * @param  array<string, mixed>  $extra
      * @param  array<string, string>  $extraLabels
+     * @param  array<string, string>  $formats
      */
-    public function buildPrompt(string $area, string $section, array $context, array $labels, array $extra, array $extraLabels, ?string $hint = null): string
+    public function buildPrompt(string $area, string $section, array $context, array $labels, array $extra, array $extraLabels, ?string $hint = null, array $formats = []): string
     {
         $checks = app(AiCheckService::class);
         $areaLabel = AiAreas::label($area);
@@ -71,7 +73,8 @@ class AiFieldReviewService
 
         $fields = [];
         foreach ($labels as $key => $label) {
-            $fields[] = '- '.$key.' („'.$label.'“): '.$checks->format($context[$key] ?? null);
+            $fields[] = '- '.$key.' („'.$label.'“): '.$checks->format($context[$key] ?? null)
+                .(isset($formats[$key]) ? "\n  Erlaubter Wert: ".$formats[$key] : '');
         }
 
         $identity = [];
@@ -103,6 +106,7 @@ class AiFieldReviewService
             ]),
             'Antworte ausschließlich mit JSON in genau dieser Form, ohne Erklärungen davor oder danach:',
             '{"summary": "ein Satz zum Gesamteindruck", "fields": {"<schlüssel>": {"status": "ok" | "change" | "unknown", "value": "<empfohlener Wert>", "note": "<kurze Begründung>", "sources": ["<URL der Quelle>"]}}}',
+            $formats !== [] ? 'Steht bei einem Feld „Erlaubter Wert“, muss "value" genau diesem Format folgen – sonst lässt sich der Vorschlag nicht übernehmen. Begründungen und Einschränkungen gehören in "note", nicht in "value".' : null,
             'Regeln: "ok", wenn der aktuelle Wert richtig ist. "change", wenn er falsch, veraltet oder leer ist und du einen Wert empfehlen kannst – dann steht in "value" der vollständige empfohlene Wert. "unknown", wenn du es nicht verlässlich beurteilen kannst. In "sources" stehen die Adressen der Seiten, auf die sich die Bewertung stützt.',
             'Hat ein Feld mehrere Angaben (Listen, „alle Angaben“), steht in "value" je Angabe eine eigene Zeile in der Form „Bezeichnung: Wert“ – als Text mit Zeilenumbrüchen, nicht als JSON und nicht als Fließtext.',
             'Werte so schreiben, wie sie im Feld stehen sollen: Ja/Nein für Ja/Nein-Felder, Zahlen ohne Tausendertrennzeichen, Koordinaten dezimal mit Punkt, Codes in Großbuchstaben, Kontinente/Länder/Regionen/Städte/Typen mit ihrem deutschen Namen. Gib zu jedem Schlüssel genau einen Eintrag zurück.',
